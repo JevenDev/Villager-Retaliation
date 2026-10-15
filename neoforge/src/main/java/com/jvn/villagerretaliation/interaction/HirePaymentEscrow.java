@@ -11,7 +11,7 @@ public final class HirePaymentEscrow {
 
     public static int earlyEndRefund(ServerLevel level, Villager villager) {
         HireContract contract = HireContractStore.load(villager).orElse(null);
-        if (contract == null || contract.oneOffBuilderJob()) return 0;
+        if (contract == null || (contract.oneOffBuilderJob() || contract.tutorialTrial())) return 0;
         int committed = Math.max(released(contract), accrued(level, contract));
         int remaining = Math.max(0, paid(contract) - committed);
         int percent = Mth.clamp(VillagerRetaliationConfig.HIRED_CONTRACT_EARLY_END_REFUND_PERCENT.get(), 0, 100);
@@ -20,13 +20,13 @@ public final class HirePaymentEscrow {
 
     public static void releaseEarned(ServerLevel level, Villager villager) {
         HireContract contract = HireContractStore.load(villager).orElse(null);
-        if (contract == null || contract.oneOffBuilderJob()) return;
+        if (contract == null || (contract.oneOffBuilderJob() || contract.tutorialTrial())) return;
         release(villager, contract, Math.max(0, accrued(level, contract) - released(contract)));
     }
 
     public static void settle(ServerLevel level, Villager villager, int refund) {
         HireContract contract = HireContractStore.load(villager).orElse(null);
-        if (contract == null || contract.oneOffBuilderJob()) return;
+        if (contract == null || (contract.oneOffBuilderJob() || contract.tutorialTrial())) return;
         releaseEarned(level, villager);
         int paid = paid(contract);
         int released = released(contract);

@@ -52,6 +52,29 @@ public final class HireContract {
         return contract;
     }
 
+    /** A finite sponsored assignment has no elapsed-time expiry, escrow or renewal. */
+    public static HireContract tutorial(UUID owner, long startGameTime, HiredVillagerRole role, UUID trial) {
+        if (role == null || trial == null) throw new IllegalArgumentException("Tutorial role and trial are required");
+        HireContract contract = empty(owner, startGameTime, role);
+        contract.tag.putUUID("TutorialTrial", trial);
+        contract.endGameTime(startGameTime);
+        contract.durationDays(0);
+        contract.dailyCost(0);
+        contract.emeraldsPaid(0);
+        contract.mountedTravel(false);
+        return contract;
+    }
+    public static HireContract tutorial(UUID owner, long startGameTime, HiredVillagerRole role, UUID trial, UUID assignment) {
+        HireContract contract = tutorial(owner, startGameTime, role, trial);
+        contract.tag.putUUID(CONTRACT_ID, java.util.Objects.requireNonNull(assignment));
+        return contract;
+    }
+
+    public boolean tutorialTrial() { return tag.hasUUID("TutorialTrial"); }
+    public Optional<UUID> tutorialId() {
+        return tutorialTrial() ? Optional.of(tag.getUUID("TutorialTrial")) : Optional.empty();
+    }
+
     private static HireContract empty(UUID owner, long startGameTime, HiredVillagerRole role) {
         HireContract contract = new HireContract(new CompoundTag());
         contract.tag.putUUID(CONTRACT_ID, UUID.randomUUID());
@@ -87,7 +110,7 @@ public final class HireContract {
     public boolean hasEmeraldsReleased() { return tag.contains(EMERALDS_RELEASED, Tag.TAG_INT); }
     public void emeraldsRefunded(int value) { tag.putInt(EMERALDS_REFUNDED, value); }
     public boolean autoPayment() { return tag.getBoolean(AUTO_PAYMENT); }
-    public void autoPayment(boolean value) { tag.putBoolean(AUTO_PAYMENT, value); }
+    public void autoPayment(boolean value) { tag.putBoolean(AUTO_PAYMENT, value && !tutorialTrial()); }
     public boolean mountedTravel() { return !tag.contains(MOUNTED_TRAVEL) || tag.getBoolean(MOUNTED_TRAVEL); }
     public void mountedTravel(boolean value) { tag.putBoolean(MOUNTED_TRAVEL, value); }
     public boolean oneOffBuilderJob() { return tag.getBoolean(ONE_OFF_BUILDER_JOB); }

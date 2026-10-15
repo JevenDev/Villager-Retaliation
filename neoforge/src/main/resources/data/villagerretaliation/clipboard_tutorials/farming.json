@@ -1,0 +1,321 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_farming",
+  "role": "farming",
+  "title": "Farmer  -  A field that feeds itself",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Farmer  -  A field that feeds itself\n\n**Outcome:** a small wheat plot and an observed till → plant → harvest → replant/deposit cycle.\n\n**Release gate:** `FarmingWorker` requires FARMER profession despite broader role availability. Offer this lesson through an actual Farmer until eligibility/execution is reconciled. Supplies cannot fix that mismatch.\n\n**Trial ceiling:** one tilled square, one initial planting, one ripe wheat harvest with one replant, and its delivery. A separate pre-existing ripe wheat plant can avoid waiting for the newly planted crop to mature.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Agree on the lesson",
+      "sequences": [],
+      "design_objective": "accept the free lesson from an actual Farmer and inspect the proposed small plot.",
+      "design_check": "server confirms profession, unspent/resumable entitlement, permissions and no conflicting work that would be overwritten.",
+      "design_provisions": "free bounded assignment and lesson access; one Clipboard only if the shared grant is unclaimed. No field, crop or wage reward.",
+      "design_hook": "eligibility checks the real runtime profession requirement, not only the offered role list.",
+      "design_notes": "1. Agree on the lesson\n\n**NPC:** “A tidy little patch will teach you more than a field full of guesses. I’ll show you wheat first.”\n\n**Objective:** accept the free lesson from an actual Farmer and inspect the proposed small plot.\n\n**Check:** server confirms profession, unspent/resumable entitlement, permissions and no conflicting work that would be overwritten.\n\n**Provides:** free bounded assignment and lesson access; one Clipboard only if the shared grant is unclaimed. No field, crop or wage reward.\n\n**Hook:** eligibility checks the real runtime profession requirement, not only the offered role list."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Give the field its supply cupboard",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the hoe and wheat seeds inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Farmer, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "place a usable hoe and wheat seeds in a reachable chest; select Assign Supplies → container → Farmer → Assign Clipboard Storage.",
+      "design_check": "committed same-dimension Supplies; worker can obtain a usable hoe and at least two seeds through allowed inventories/storage.",
+      "design_provisions": "teaches inputs and seed reserve. Optional proposed aid: one loaned wooden hoe and two once-issued wheat seeds. These are working inputs, not rewards.",
+      "design_hook": "count accessible usable items, not contents of a merely selected or blocked chest.",
+      "design_notes": "2. Give the field its supply cupboard\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the hoe and wheat seeds inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Farmer, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “A well-stocked cupboard keeps the field working.”\n\n**Objective:** place a usable hoe and wheat seeds in a reachable chest; select Assign Supplies → container → Farmer → Assign Clipboard Storage.\n\n**Check:** committed same-dimension Supplies; worker can obtain a usable hoe and at least two seeds through allowed inventories/storage.\n\n**Provides:** teaches inputs and seed reserve. Optional proposed aid: one loaned wooden hoe and two once-issued wheat seeds. These are working inputs, not rewards.\n\n**Hook:** count accessible usable items, not contents of a merely selected or blocked chest."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Mark the land and harvest destination",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the centre of our wheat patch and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Farmer, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the centre of our wheat patch, then acknowledge the actual saved area on the bound Farmer. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Farmer, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit a small Set Work Area containing suitable ground and access; assign Output.",
+      "design_check": "persisted bounds contain suitable tillable/plantable ground; Output accepts wheat and applicable seed output; paths work.",
+      "design_provisions": "teaches 3-D bounds and input/output separation. Drawing a draft does not convert land.",
+      "design_hook": "check committed state, ground suitability and protection; show coordinate-specific obstruction instead of advancing on an outline alone.",
+      "design_notes": "3. Mark the land and harvest destination\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the centre of our wheat patch and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Farmer, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the centre of our wheat patch, then acknowledge the actual saved area on the bound Farmer. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Farmer, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Mark only the ground you want tended. This other chest is where the harvest belongs.”\n\n**Objective:** commit a small Set Work Area containing suitable ground and access; assign Output.\n\n**Check:** persisted bounds contain suitable tillable/plantable ground; Output accepts wheat and applicable seed output; paths work.\n\n**Provides:** teaches 3-D bounds and input/output separation. Drawing a draft does not convert land.\n\n**Hook:** check committed state, ground suitability and protection; show coordinate-specific obstruction instead of advancing on an outline alone."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Choose what the Farmer may do",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Configure Farming. Click the Crop row until it reads Wheat. Set Till Dirt and Grass, Plant Crops and Harvest Crops on. Read each state before clicking; these controls toggle."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "choose Wheat; enable Till dirt and grass, Plant crops and Harvest crops in existing Farming configuration.",
+      "design_check": "authoritative `HiredFarmingOptions` reflects all choices; readiness passes before work starts.",
+      "design_provisions": "teaches separate activity toggles and crop selection. No capability unlock or item grant.",
+      "design_hook": "observe server settings, not screen visits; pause work until ready.",
+      "design_notes": "4. Choose what the Farmer may do\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Configure Farming. Click the Crop row until it reads Wheat. Set Till Dirt and Grass, Plant Crops and Harvest Crops on. Read each state before clicking; these controls toggle.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Wheat today. Let me till, plant, and harvest, and I’ll keep seed for the next crop.”\n\n**Objective:** choose Wheat; enable Till dirt and grass, Plant crops and Harvest crops in existing Farming configuration.\n\n**Check:** authoritative `HiredFarmingOptions` reflects all choices; readiness passes before work starts.\n\n**Provides:** teaches separate activity toggles and crop selection. No capability unlock or item grant.\n\n**Hook:** observe server settings, not screen visits; pause work until ready."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Watch the first planting",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "allow one valid square to be tilled and planted with wheat.",
+      "design_check": "attributable till and plant actions; seed consumed normally; wheat actually placed.",
+      "design_provisions": "a planted crop from supplied input; teaches growth waiting versus missing supplies.",
+      "design_hook": "successful worker/planting events, including Farmer inventory bridge; atomically decrement action allowance.",
+      "design_notes": "5. Watch the first planting\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “There. Worked soil, then seed. A planted crop still needs time to grow.”\n\n**Objective:** allow one valid square to be tilled and planted with wheat.\n\n**Check:** attributable till and plant actions; seed consumed normally; wheat actually placed.\n\n**Provides:** a planted crop from supplied input; teaches growth waiting versus missing supplies.\n\n**Hook:** successful worker/planting events, including Farmer inventory bridge; atomically decrement action allowance."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Harvest, replace and deliver",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Farmer, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "harvest one ripe wheat crop in the approved patch, replant and deliver its output.",
+      "design_check": "mature-wheat harvest, replant and attributable wheat deposit. Explicitly identify a separate already-ripe crop if used.",
+      "design_provisions": "actual wheat and genuine surplus permitted by seed handling; no guaranteed seed count or bonus stack.",
+      "design_hook": "trace harvest through inventory/deposit. If immature, show Waiting for wheat to ripen; resume without another seed grant. No hidden instant growth.",
+      "design_notes": "6. Harvest, replace and deliver\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Farmer, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “That ripe wheat is ready. I’ll cut it, put seed back, and bring the harvest in.”\n\n**Objective:** harvest one ripe wheat crop in the approved patch, replant and deliver its output.\n\n**Check:** mature-wheat harvest, replant and attributable wheat deposit. Explicitly identify a separate already-ripe crop if used.\n\n**Provides:** actual wheat and genuine surplus permitted by seed handling; no guaranteed seed count or bonus stack.\n\n**Hook:** trace harvest through inventory/deposit. If immature, show Waiting for wheat to ripen; resume without another seed grant. No hidden instant growth."
+    },
+    {
+      "id": "step_7",
+      "title": "7. Close the lesson",
+      "sequences": [],
+      "design_objective": "choose A, actual normal Farming quote, or B, stop.",
+      "design_check": "completion once; output delivered or safely recoverable; free productive allowance closed.",
+      "design_provisions": "completion record and real harvest; paid continuation only after actual quote acceptance.",
+      "design_hook": "",
+      "design_notes": "7. Close the lesson\n\n**NPC:** “You’ve got the whole cycle now. Keep seed supplied and room in the harvest chest. Shall I stay on?”\n\n**Objective:** choose A, actual normal Farming quote, or B, stop.\n\n**Check:** completion once; output delivered or safely recoverable; free productive allowance closed.\n\n**Provides:** completion record and real harvest; paid continuation only after actual quote acceptance.\n\n**Recovery:** distinguish missing hoe, missing seed, growing crop, full Output and inaccessible field. Replacing the NPC resumes counters without another kit.\n\nSources: `interaction/work/FarmingWorker.java:78-121,296-351,411-429`; `interaction/work/HiredFarmingOptions.java`; `interaction/HireContractLifecycle.java`; `interaction/work/HiredFarmingInventoryBridge.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "supplies",
+        "item_tag": "minecraft:hoes"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "policy"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_farming",
+        "role": "farming",
+        "check": "completed"
+      }
+    ]
+  }
+}

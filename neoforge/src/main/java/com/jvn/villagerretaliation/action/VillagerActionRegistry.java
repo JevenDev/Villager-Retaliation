@@ -28,6 +28,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class VillagerActionRegistry {
     private static final List<ActionTypeRegistration> REGISTRATIONS = List.of(
+            register("tutorial", VillagerActionDefinition.Kind.TUTORIAL, aliases(),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE, ActionCapability.WORLD_KNOWN)),
             register("companion_unlock", VillagerActionDefinition.Kind.COMPANION_UNLOCK, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("companion_service", VillagerActionDefinition.Kind.COMPANION_SERVICE, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("companion_bond", VillagerActionDefinition.Kind.COMPANION_BOND, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
@@ -392,6 +394,11 @@ public final class VillagerActionRegistry {
             Set<String> aliases, Set<ActionCapability> capabilities) {
         ActionTypeDescriptor descriptor = new ActionTypeDescriptor(id, kind, aliases, capabilities);
         return switch (kind) {
+            case TUTORIAL -> registration(descriptor, action -> action.questId() != null
+                            && com.jvn.villagerretaliation.interaction.HiredVillagerRole.bySerializedName(action.factKey()) != null
+                            && java.util.Set.of("start", "activate", "quote", "continue", "stop", "replace").contains(action.factValue()),
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.quest.tutorial.TutorialService.execute(context, action),
+                    com.jvn.villagerretaliation.quest.tutorial.TutorialService::actionSchema, RecoveryMode.RECEIPT_REQUIRED, true);
             case COMPANION_SERVICE -> registration(descriptor, action -> net.minecraft.resources.ResourceLocation.tryParse(action.factKey()) != null
                             && action.factKey().length() <= 128 && action.amount() >= 200 && action.amount() <= 168000
                             && Integer.parseInt(action.factValue()) >= 0 && Integer.parseInt(action.factValue()) <= 1000,

@@ -1,0 +1,304 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_smelter",
+  "role": "smelter",
+  "title": "Smelter  -  From Raw Metal to Useful Iron",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Smelter  -  From Raw Metal to Useful Iron\n\n**Premise and dialogue:** “Raw iron is a beginning, not a finished supply. Mark my furnace and give me a place for the ingots. We'll run one small batch together.”\n\n**Existing scope:** raw iron, raw gold and raw copper to their ingots through supported furnace/blast-furnace recipes. Do not teach glass, charcoal, ore blocks or arbitrary modded metals as existing support. Target two raw iron to two ingots, validated at runtime.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1 Accept the demonstration",
+      "sequences": [],
+      "design_objective": "",
+      "design_check": "SMELTER lesson reserved and worker bound.",
+      "design_provisions": "free two-ingot assignment, shared Clipboard if needed and supported-metals explanation.",
+      "design_hook": "",
+      "design_notes": "1 Accept the demonstration\n\n**Tutor:** “We'll turn two pieces of raw iron into useful ingots. No fee for this first batch.”\n\n**Check:** SMELTER lesson reserved and worker bound.\n\n**Provides:** free two-ingot assignment, shared Clipboard if needed and supported-metals explanation."
+    },
+    {
+      "id": "step_2",
+      "title": "2 Mark the furnace",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at our furnace and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Smelter, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview our furnace, then acknowledge the actual saved area on the bound Smelter. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Apply a workplace around a reachable furnace.",
+      "design_check": "committed area, loaded supported station and accessible work position.",
+      "design_provisions": "furnace loan or prepared station and path guidance. Blast furnace is supported but not required.",
+      "design_hook": "",
+      "design_notes": "2 Mark the furnace\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at our furnace and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Smelter, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview our furnace, then acknowledge the actual saved area on the bound Smelter. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Optional flavour line:** “Mark the furnace you want me to use, with a clear way to reach it.”\n\n**Task:** Apply a workplace around a reachable furnace.\n\n**Check:** committed area, loaded supported station and accessible work position.\n\n**Provides:** furnace loan or prepared station and path guidance. Blast furnace is supported but not required."
+    },
+    {
+      "id": "step_3",
+      "title": "3 Connect raw supplies and finished stock",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Smelter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Smelter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Assign Supplies and Output.",
+      "design_check": "assignments, permissions, access, filters and capacity.",
+      "design_provisions": "tracked container loans where needed and visible material direction.",
+      "design_hook": "",
+      "design_notes": "3 Connect raw supplies and finished stock\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n2. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Smelter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Smelter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Show me where the raw metal waits and where the finished ingots go.”\n\n**Task:** Assign Supplies and Output.\n\n**Check:** assignments, permissions, access, filters and capacity.\n\n**Provides:** tracked container loans where needed and visible material direction."
+    },
+    {
+      "id": "step_4",
+      "title": "4 Select iron and stock the batch",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the lesson’s Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking to open it. Click the < or > arrows until the recipe for iron ingots from the supported raw iron recipe is shown."
+            },
+            {
+              "id": "card_2",
+              "text": "Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it."
+            },
+            {
+              "id": "card_3",
+              "text": "Put the filter away, use an empty hand on me, and choose Job → Job Inventory. Pick up the configured Recipe Filter with a left mouse click, then left-click my filter slot to place it. Show me the installed filter."
+            },
+            {
+              "id": "card_4",
+              "text": "Put the Clipboard away before opening the supply chest. Press {Use} on the chest with an empty hand and place the allocated ingredients and fuel, where required, in it."
+            }
+          ],
+          "confirmation_guidance": "Highlight the actual filter slot and selected recipe ID/result. Confirm the installed filter and effective runtime recipe, not just an open filter editor. Supply a Recipe Filter as a once-only lesson loan if needed. The tutorial needs a slot highlight; do not invent a slot number or a keyboard shortcut.",
+          "recovery": "If the recipe is absent, stop and show the missing supported recipe; do not pretend a similar result is the same recipe. If a different filter is already installed, retain it safely and ask before replacing it. Use the arrows again to correct a wrong selection.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Configure the existing output selection for iron ingots.",
+      "design_check": "selected runtime recipe is a supported raw-metal-to-ingot transformation.",
+      "design_provisions": "two raw iron and enough supported fuel once. New tutorial cap limits this legacy work path without a settlement queue.",
+      "design_hook": "",
+      "design_notes": "4 Select iron and stock the batch\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the lesson’s Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking to open it. Click the < or > arrows until the recipe for iron ingots from the supported raw iron recipe is shown.”\n2. “Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it.”\n3. “Put the filter away, use an empty hand on me, and choose Job → Job Inventory. Pick up the configured Recipe Filter with a left mouse click, then left-click my filter slot to place it. Show me the installed filter.”\n4. “Put the Clipboard away before opening the supply chest. Press {Use} on the chest with an empty hand and place the allocated ingredients and fuel, where required, in it.”\n\n**Show / confirm:** Highlight the actual filter slot and selected recipe ID/result. Confirm the installed filter and effective runtime recipe, not just an open filter editor. Supply a Recipe Filter as a once-only lesson loan if needed. The tutorial needs a slot highlight; do not invent a slot number or a keyboard shortcut.\n\n**If it goes wrong:** “If the recipe is absent, stop and show the missing supported recipe; do not pretend a similar result is the same recipe. If a different filter is already installed, retain it safely and ask before replacing it. Use the arrows again to correct a wrong selection.”\n\n\n**Optional flavour line:** “Choose iron, then set out the two raw pieces and enough fuel.”\n\n**Task:** Configure the existing output selection for iron ingots.\n\n**Check:** selected runtime recipe is a supported raw-metal-to-ingot transformation.\n\n**Provides:** two raw iron and enough supported fuel once. New tutorial cap limits this legacy work path without a settlement queue."
+    },
+    {
+      "id": "step_5",
+      "title": "5 Run the furnace",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Enable work.",
+      "design_check": "allocated raw iron genuinely processed and collected by this worker, excluding pre-existing furnace output.",
+      "design_provisions": "missing-input/fuel, station and full-output diagnostics; real furnace waiting remains.",
+      "design_hook": "",
+      "design_notes": "5 Run the furnace\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “The furnace needs time. I'll keep the batch moving and collect the iron.”\n\n**Task:** Enable work.\n\n**Check:** allocated raw iron genuinely processed and collected by this worker, excluding pre-existing furnace output.\n\n**Provides:** missing-input/fuel, station and full-output diagnostics; real furnace waiting remains."
+    },
+    {
+      "id": "step_6",
+      "title": "6 Receive useful iron",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Smelter, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Inspect Output and return to the smelter.",
+      "design_check": "two attributable ingots deposited; free processing stopped.",
+      "design_provisions": "",
+      "design_hook": "",
+      "design_notes": "6 Receive useful iron\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Smelter, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “Two ingots, ready for your next project. Want to see my usual rate?”\n\n**Task:** Inspect Output and return to the smelter.\n\n**Check:** two attributable ingots deposited; free processing stopped.\n\n**Provides/reward:** those ingots and a Craftsman lesson suggestion, not an invented recipe or gated job unlock. “Useful iron, ready for your next project. Keep the furnace running at my normal rate, or call it a day?” Apply shared ending.\n\n**A Continue working:** “Show me your normal price.” Present the current role, duration, currency and total. Start ordinary paid work only after the player accepts a still-valid quote.\n\n**B Stop here:** “Thanks. Stop working.” End this tutorial assignment safely, reconcile its output and identifiable loans, and keep the lesson completed. Dismissal leaves work paused.\n\n\n**New hooks:** supported recipe validation; input allocation and station-processing provenance; collected and deposited quantity; completion handling for already-loaded inputs. Nearby unrelated metals are outside the free assignment."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "storage",
+        "parameter": "supply"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "selection"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_smelter",
+        "role": "smelter",
+        "check": "completed"
+      }
+    ]
+  }
+}

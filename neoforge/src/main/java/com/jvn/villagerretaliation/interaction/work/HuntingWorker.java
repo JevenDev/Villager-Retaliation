@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
@@ -64,6 +66,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager) && (!TutorialWorkService.canTick(villager,role()) || !TutorialHuntingPlan.settings(context.state()))) return;
         if (!context.hasWorkArea() && !context.hasRoute()) {
             setTaskState(context, HiredWorkerTaskState.NO_WORK_AREA);
             return;
@@ -106,6 +109,16 @@ public final class HuntingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if(TutorialWorkService.isTrial(villager)){
+            if(!TutorialWorkService.canTick(villager,role())||!TutorialHuntingPlan.settings(context.state()))return WorkResult.idle("interaction.work.tutorial.paused");
+            var run=TutorialWorkService.run(villager).orElseThrow();
+            if(run.committedUnits("kill")>=1){
+                var loot=collectHuntingLoot(level,villager,context);if(loot!=null)return loot;
+                TutorialHuntEvents.finishCollection(villager);
+                var deposit=depositOutputsOrMoveToStorage(level,context,villager,PATROL_SPEED);
+                return WorkResult.idle(deposit==DepositResult.STORAGE_FULL?storageFullStatus(context):"interaction.work.hunting.collected_loot");
+            }
+        }
         context.setProgressTicks(0);
         if (!context.hasWorkArea() && !context.hasRoute()) {
             return waitForWorkAreaAssignment(level, villager, context);
@@ -258,7 +271,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
                         .filter(target -> isEligibleTarget(villager, target, context, targets))
                 : com.jvn.villagerretaliation.settlement.SettlementHuntingTargetService.requestedNativeTarget(villager,
                         target -> isEligibleTarget(villager, target, context, targets)).or(() -> findNearestTarget(level, villager, context, targets));
-        return selected.filter(target -> {
+        return selected.filter(target -> !TutorialWorkService.isTrial(villager)||TutorialHuntingPlan.allowed(villager,target)).filter(target -> {
                     if (!HiredEntityClaims.reserve(level, villager, target)) return false;
                     if (!VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) {
                         HiredEntityClaims.release(villager);

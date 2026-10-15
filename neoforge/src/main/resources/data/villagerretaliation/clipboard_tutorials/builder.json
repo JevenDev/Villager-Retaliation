@@ -1,0 +1,273 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_builder",
+  "role": "builder",
+  "title": "Builder A Small Beginning",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "one_off_project_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Builder A Small Beginning\n\nBuild the exact structure minecraft:village/plains/houses/plains_accessory_1, shown as Plains: Accessory 1. Use an eligible available adult mason tutor. This is a standalone personal build; no settlement plot, certification, bed or profession-station objective is added.\n\nBefore the lesson is playable, resolve the actual server template and its fingerprint, preview, exact material bill and required tools. The fixture cannot promise unverified block counts or a fixed wood-and-stone shopping list. Both blueprint purchase and labor are free for this single tutorial job.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "Invitation and assignment",
+      "sequences": [],
+      "design_objective": "",
+      "design_check": "owner, tutor, role, trial ID and blueprint job ID are durably bound; no currency deduction or wallet increase; the correct preview exists. Merely opening a dialogue does not count.",
+      "design_provisions": "the shared Clipboard (reuse the player’s existing one if suitable), one trial-bound Construction Blueprint for the exact ID, one ordinary book for the optional checklist lesson, two chests, and a trial manifest. Grant each provision only once. The server must have successfully resolved the template before supplying its blueprint. At this stage do not dump all materials into the player’s already full inventory: reserve them for the supply step, with safe delivery recovery.",
+      "design_hook": "",
+      "design_notes": "Invitation and assignment\n\nTutor: “A sound build starts with a clear plan. Let’s put up Accessory 1 together. I’ll take this first job without a fee, and we’ll set the supplies beside the site. You choose where it stands.”\n\nPlayer: “Show me how.”\n\nOn acceptance, reserve this eligible, unassigned adult mason to this player and trial ID. Create a free, bounded BUILDER trial assignment, with the worker initially paused pending setup. Do not charge daily wages, blueprint purchase or labor; do not enable renewal. Existing hires or civic workers should not be commandeered. If this villager is already occupied, find an eligible available tutor or explain why this trial cannot start.\n\nGive/check: the shared Clipboard (reuse the player’s existing one if suitable), one trial-bound Construction Blueprint for the exact ID, one ordinary book for the optional checklist lesson, two chests, and a trial manifest. Grant each provision only once. The server must have successfully resolved the template before supplying its blueprint. At this stage do not dump all materials into the player’s already full inventory: reserve them for the supply step, with safe delivery recovery.\n\nProof: owner, tutor, role, trial ID and blueprint job ID are durably bound; no currency deduction or wallet increase; the correct preview exists. Merely opening a dialogue does not count."
+    },
+    {
+      "id": "step_2",
+      "title": "1. Choose the footprint",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away and hold the Construction Blueprint for Plains: Accessory 1. Point at the ground where it should stand and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "Move the ghost with the scroll wheel. Hold {AltModifier} while scrolling to move sideways, {ShiftModifier} to move up or down, or {AltModifier} and {ShiftModifier} together to rotate. Show me where every corner and the entrance will be."
+            }
+          ],
+          "confirmation_guidance": "Highlight the scanned footprint, origin and access; validate it on the server. Placement lock is optional and unbound by default; offer physical inventory-slot right-click as its existing alternative, never invent an F-key.",
+          "recovery": "If the ghost overlaps something you want to keep, reposition it before starting. If the template cannot be loaded, show that blocker rather than guessing its size or materials.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Use an open, supported, loaded site near the tutor. Right-click a block with the blueprint to position it. Scroll moves horizontally along the player’s facing; Alt-scroll strafes; Shift-scroll adjusts height; Alt+Shift-scroll rotates. Placement lock is optional, not required for completion: its key starts unbound, and the item also supports right-clicking its inventory slot to toggle lock. Explain the currently bound control rather than invent a default key.",
+      "design_check": "validate the final origin, dimension and rotation server-side with the ordinary site planner. Record the approved plan fingerprint and bounds. Moving the ghost alone is not valid-site proof. If unsuitable, identify the actual obstruction or distance problem and let the player move it.",
+      "design_provisions": "no additional consumables; highlight the scanned footprint and an unobstructed path from tutor to materials and placement targets. The lesson site is player-selected, not a settlement plot. Preserve existing protected/building blocks; do not auto-clear the area.",
+      "design_hook": "",
+      "design_notes": "1. Choose the footprint\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away and hold the Construction Blueprint for Plains: Accessory 1. Point at the ground where it should stand and press {Use}.”\n2. “Move the ghost with the scroll wheel. Hold Alt while scrolling to move sideways, Shift to move up or down, or Alt and Shift together to rotate. Show me where every corner and the entrance will be.”\n\n**Show / confirm:** Highlight the scanned footprint, origin and access; validate it on the server. Placement lock is optional and unbound by default; offer physical inventory-slot right-click as its existing alternative, never invent an F-key.\n\n**If it goes wrong:** “If the ghost overlaps something you want to keep, reposition it before starting. If the template cannot be loaded, show that blocker rather than guessing its size or materials.”\n\n\nOptional flavour line: “Hold the blueprint and look at the open ground. Move the ghost until every corner fits. Leave me a way around the outside.”\n\nTask: Use an open, supported, loaded site near the tutor. Right-click a block with the blueprint to position it. Scroll moves horizontally along the player’s facing; Alt-scroll strafes; Shift-scroll adjusts height; Alt+Shift-scroll rotates. Placement lock is optional, not required for completion: its key starts unbound, and the item also supports right-clicking its inventory slot to toggle lock. Explain the currently bound control rather than invent a default key.\n\nGive/check: no additional consumables; highlight the scanned footprint and an unobstructed path from tutor to materials and placement targets. The lesson site is player-selected, not a settlement plot. Preserve existing protected/building blocks; do not auto-clear the area.\n\nProof: validate the final origin, dimension and rotation server-side with the ordinary site planner. Record the approved plan fingerprint and bounds. Moving the ghost alone is not valid-site proof. If unsuitable, identify the actual obstruction or distance problem and let the player move it.\n\nEvidence: `client/item/ConstructionBlueprintPlacementClient.java:23-82`; `interaction/VillagerInteractionService.java:1372-1415,2358-2405`; `interaction/work/builder/BuilderSitePlanner.java`."
+    },
+    {
+      "id": "step_3",
+      "title": "2. Set out the supplies",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the exact materials and tools shown on this blueprint’s scanned checklist inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Builder, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Builder, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Place two reachable chests outside the footprint. Assign the first as Supplies and the second as Output through the personal Clipboard storage workflow. Keep them near the actual build bounds, in the same dimension, loaded and reachable. The default material-storage radius is 32 blocks measured from the footprint, not an unrestricted remote search.",
+      "design_check": "server storage assignments belong to this trial’s worker; manifest deficits are zero in accessible supplies plus worker inventory; Output has room. The builder can also search assigned non-payment storage in the code, but dedicated Supplies/Output is the clearest teaching setup. Do not require the player to insert materials into a settlement depot.",
+      "design_provisions": "deliver the exact scanned material manifest, plus the tools required by any scanned transformation/preparation actions, to the player for loading into Supplies. For a deliberately clear, supported fixture, no unnecessary obstruction-breaking tools should be required; determine actual tool needs from the plan rather than promising a universal axe/pickaxe list. Grant tool quality and durability sufficient for the entire fixture. If exactBlockMaterials includes state-specific or multiple ingredients, grant all of them. Player places the granted supplies into the assigned chest.",
+      "design_hook": "",
+      "design_notes": "2. Set out the supplies\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the exact materials and tools shown on this blueprint’s scanned checklist inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Builder, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Builder, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\nOptional flavour line: “Set one chest just outside the ghost. With your Clipboard, assign it to me for supplies. Keep another beside it for anything left over. A Payment chest isn’t needed for this lesson.”\n\nTask: Place two reachable chests outside the footprint. Assign the first as Supplies and the second as Output through the personal Clipboard storage workflow. Keep them near the actual build bounds, in the same dimension, loaded and reachable. The default material-storage radius is 32 blocks measured from the footprint, not an unrestricted remote search.\n\nGive/check: deliver the exact scanned material manifest, plus the tools required by any scanned transformation/preparation actions, to the player for loading into Supplies. For a deliberately clear, supported fixture, no unnecessary obstruction-breaking tools should be required; determine actual tool needs from the plan rather than promising a universal axe/pickaxe list. Grant tool quality and durability sufficient for the entire fixture. If exactBlockMaterials includes state-specific or multiple ingredients, grant all of them. Player places the granted supplies into the assigned chest.\n\nOptional instruction: “Craft the blueprint with this book to make a checklist. You keep the blueprint. Shift-right-click the supply chest with the checklist to count it.” The checklist records observed amounts and allows manual checkboxes; it is a convenience, **not authoritative quest proof**.\n\nProof: server storage assignments belong to this trial’s worker; manifest deficits are zero in accessible supplies plus worker inventory; Output has room. The builder can also search assigned non-payment storage in the code, but dedicated Supplies/Output is the clearest teaching setup. Do not require the player to insert materials into a settlement depot.\n\nEvidence: `interaction/work/builder/BuilderWorker.java:795-943,1097-1107`; resource guide `work/builder.md`; `inventory/AssignedStorageService.java`."
+    },
+    {
+      "id": "step_4",
+      "title": "3. Start the one-off job",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the exact Accessory 1 Construction Blueprint again. Point at me and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "In the blueprint conversation, choose Start job. Check that this lesson shows zero blueprint and labor fees. Show me the accepted job before you put the plan away."
+            }
+          ],
+          "confirmation_guidance": "Confirm the active matching build job and zero actual charge. Free fee display and trial sponsorship are new engine work; refuse the paid path if the tutorial waiver is not active.",
+          "recovery": "If you see the ordinary payable quote, stop here. The tutorial has not applied its free-job policy; paying is not a required tutorial step.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Hold the correct unstarted blueprint, interact with the tutor and choose the actual “Start job” dialogue option. Show “Tutorial fee: 0; materials supplied for this lesson.” The normal fee can be shown separately for learning, clearly not payable now.",
+      "design_check": "the matching construction job is active and at the recorded site; all relevant currency balances remain unchanged. Do not count buying an unrelated blueprint, selecting Builder in a menu or a client start-button click.",
+      "design_provisions": "no money. Atomically validate trial ownership, exact structure/fingerprint, valid site, eligible tutor and unspent grant ledger; initialize the same BuilderTaskState work loop under the trial payment policy. Lock the trial to this job ID so its fee waiver cannot be reused for another blueprint.",
+      "design_hook": "",
+      "design_notes": "3. Start the one-off job\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the exact Accessory 1 Construction Blueprint again. Point at me and press {Use}.”\n2. “In the blueprint conversation, choose Start job. Check that this lesson shows zero blueprint and labor fees. Show me the accepted job before you put the plan away.”\n\n**Show / confirm:** Confirm the active matching build job and zero actual charge. Free fee display and trial sponsorship are new engine work; refuse the paid path if the tutorial waiver is not active.\n\n**If it goes wrong:** “If you see the ordinary payable quote, stop here. The tutorial has not applied its free-job policy; paying is not a required tutorial step.”\n\n\nOptional flavour line: “That’s the plan and the stock ready. Bring me the blueprint and choose ‘Start job.’ This first construction is on me.”\n\nTask: Hold the correct unstarted blueprint, interact with the tutor and choose the actual “Start job” dialogue option. Show “Tutorial fee: 0; materials supplied for this lesson.” The normal fee can be shown separately for learning, clearly not payable now.\n\nGive/check: no money. Atomically validate trial ownership, exact structure/fingerprint, valid site, eligible tutor and unspent grant ledger; initialize the same BuilderTaskState work loop under the trial payment policy. Lock the trial to this job ID so its fee waiver cannot be reused for another blueprint.\n\nProof: the matching construction job is active and at the recorded site; all relevant currency balances remain unchanged. Do not count buying an unrelated blueprint, selecting Builder in a menu or a client start-button click.\n\nEvidence: `interaction/VillagerInteractionService.java:419,523-544,1751-1848`; `interaction/HiredVillagerContractService.java:472`; `interaction/HireContract.java:44-52`."
+    },
+    {
+      "id": "step_5",
+      "title": "4. Watch the work and solve real blockers",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the Clipboard, aim into empty air and press {Use} without sneaking. Select Builder and my named entry to read the current work status."
+            },
+            {
+              "id": "card_2",
+              "text": "If I need materials, put the Clipboard away, open the assigned supply chest with {Use}, and add only the missing items shown on the checklist. If the path is blocked, clear a safe route without breaking protected structures."
+            }
+          ],
+          "confirmation_guidance": "Show the exact missing item/count or blocked approach from current diagnostics; keep the last successful placement as progress only.",
+          "recovery": "A selected chest is not an opened chest. Use an empty hand to load it. If the supplies are already present, check access and the correct worker’s assignment instead of granting another kit.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Watch at least one actual placement and consult the Clipboard worker status. Keep the owner online and the site loaded; respect rest, threats and protection. No force-loading or accelerated block injection. The quest may stage a reversible missing-material example only if its manifest clearly identifies the withheld item and releases it exactly once when requested; a surprise destructive obstruction is unnecessary.",
+      "design_check": "record successful placement events from the bound worker/job. Partial construction is progress, not completion. A manually built look-alike, old blueprint completion, unrelated builder or settlement project cannot satisfy this step.",
+      "design_provisions": "only a missing provision proved absent because of interrupted grant delivery; no infinite refill. The already-issued materials should suffice for the clean fixture. If the player spends them elsewhere, explain the missing amount instead of duplicating all grants.",
+      "design_hook": "",
+      "design_notes": "4. Watch the work and solve real blockers\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the Clipboard, aim into empty air and press {Use} without sneaking. Select Builder and my named entry to read the current work status.”\n2. “If I need materials, put the Clipboard away, open the assigned supply chest with {Use}, and add only the missing items shown on the checklist. If the path is blocked, clear a safe route without breaking protected structures.”\n\n**Show / confirm:** Show the exact missing item/count or blocked approach from current diagnostics; keep the last successful placement as progress only.\n\n**If it goes wrong:** “A selected chest is not an opened chest. Use an empty hand to load it. If the supplies are already present, check access and the correct worker’s assignment instead of granting another kit.”\n\n\nOptional flavour line: “I’ll fetch the blocks and place them. If I stop, check my work status. Missing stock, a blocked approach and a full chest each need a different fix.”\n\nTask: Watch at least one actual placement and consult the Clipboard worker status. Keep the owner online and the site loaded; respect rest, threats and protection. No force-loading or accelerated block injection. The quest may stage a reversible missing-material example only if its manifest clearly identifies the withheld item and releases it exactly once when requested; a surprise destructive obstruction is unnecessary.\n\nGive/check: only a missing provision proved absent because of interrupted grant delivery; no infinite refill. The already-issued materials should suffice for the clean fixture. If the player spends them elsewhere, explain the missing amount instead of duplicating all grants.\n\nProof: record successful placement events from the bound worker/job. Partial construction is progress, not completion. A manually built look-alike, old blueprint completion, unrelated builder or settlement project cannot satisfy this step."
+    },
+    {
+      "id": "step_6",
+      "title": "5. Inspect the completed Accessory 1",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Walk around the finished Accessory 1 and look at the completed structure. When the job reports finished, put the blueprint and Clipboard away and press {Use} on me."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose our lesson conversation to review the finished job."
+            }
+          ],
+          "confirmation_guidance": "Acknowledge the durable matching Builder completion receipt before offering another project; the player looking at a structure alone cannot prove completion.",
+          "recovery": "If the job is still active or blocked, return to its work status. Do not call a partial or manually built look-alike complete.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Return to the tutor after the real builder completion. Preserve the built structure and any legitimate leftovers.",
+      "design_check": "emit a durable quest completion receipt **before** BuilderTaskState is cleared, containing trial ID, player UUID, worker UUID, builder job ID, exact structure ID, plan fingerprint, origin, dimension and rotation. Verify the bound build finished normally and inspect expected finished block states with safe allowances for legitimate runtime state changes. Existing completion updates matching blueprints and fires onBlueprintCompleted, but structure-only advancement progress alone is too weak to prove this particular tutorial. The event/receipt should survive reload and dialogue delay.",
+      "design_provisions": "no further building materials or wages. Return/unassign only trial-owned resources and remaining recoverable supplies according to the closing choice. Do not reclaim placed blocks or destroy player-added contents.",
+      "design_hook": "",
+      "design_notes": "5. Inspect the completed Accessory 1\n\n**Teach and demonstrate (spoken in order):**\n1. “Walk around the finished Accessory 1 and look at the completed structure. When the job reports finished, put the blueprint and Clipboard away and press {Use} on me.”\n2. “Choose our lesson conversation to review the finished job.”\n\n**Show / confirm:** Acknowledge the durable matching Builder completion receipt before offering another project; the player looking at a structure alone cannot prove completion.\n\n**If it goes wrong:** “If the job is still active or blocked, return to its work status. Do not call a partial or manually built look-alike complete.”\n\n\nOptional flavour line: “There it is. You chose the site, supplied the materials and gave me the order. That is all a small personal construction needs.”\n\nTask: Return to the tutor after the real builder completion. Preserve the built structure and any legitimate leftovers.\n\nGive/check: no further building materials or wages. Return/unassign only trial-owned resources and remaining recoverable supplies according to the closing choice. Do not reclaim placed blocks or destroy player-added contents.\n\nProof: emit a durable quest completion receipt **before** BuilderTaskState is cleared, containing trial ID, player UUID, worker UUID, builder job ID, exact structure ID, plan fingerprint, origin, dimension and rotation. Verify the bound build finished normally and inspect expected finished block states with safe allowances for legitimate runtime state changes. Existing completion updates matching blueprints and fires onBlueprintCompleted, but structure-only advancement progress alone is too weak to prove this particular tutorial. The event/receipt should survive reload and dialogue delay.\n\nEvidence: `interaction/work/builder/BuilderWorker.java:2730-2749`; `item/ConstructionBlueprintItem.java` matching-blueprint completion; `interaction/work/builder/BuilderTaskState.java`."
+    },
+    {
+      "id": "step_7",
+      "title": "6. Closing conversation: A or B",
+      "sequences": [],
+      "design_objective": "",
+      "design_check": "",
+      "design_provisions": "",
+      "design_hook": "",
+      "design_notes": "6. Closing conversation: A or B\n\nTutor: “Our free job is finished. Would you like to order another build at my usual price, or shall we stop here?”\n\nA  -  “Continue at the normal fee.” Open the normal structure selection and current itemized blueprint/project quotes. This is permission to enter the ordinary ordering flow, **not** permission to bill an unknown structure or start another Accessory 1 automatically. The player explicitly confirms the chosen blueprint purchase and then the quoted one-off construction start through normal controls. No daily Builder contract is created. Materials for future builds are the player’s responsibility. If the user wants all tutorials to charge directly on A, Builder still needs a selected new project and its quote before it can do so honestly.\n\nB  -  “Stop here.” End only this trial assignment, release its worker claims, and retain the completed building. Do not charge a cancellation fee, resurrect the completed project or end any later unrelated paid contract. Mark the tutorial complete with outcome STOPPED.\n\nIf the tutor’s ordinary one-off service has already released the worker on completion, the quest can retain its dialogue reference without retaining a working contract. A pending closing conversation is never authorization for continued free work."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "blueprint"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "storage",
+        "parameter": "supply"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "selection"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "assignment"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_builder",
+        "role": "builder",
+        "check": "completed"
+      }
+    ]
+  }
+}

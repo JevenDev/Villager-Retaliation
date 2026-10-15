@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.builder;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
@@ -83,6 +85,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if(TutorialWorkService.isTrial(villager)&&!TutorialWorkService.canTick(villager,role()))return WorkResult.idle("interaction.work.tutorial.paused");
         try {
             return tickBuild(level, villager, hirer, context);
         } finally {
@@ -124,6 +127,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         BlockPos origin = BuilderTaskState.origin(context.state());
+        if(TutorialWorkService.isTrial(villager)&&!TutorialBuilderPlan.matches(level,villager,plan.get(),origin,BuilderTaskState.jobId(context.state()).orElse(null)))
+            return WorkResult.idle("interaction.work.tutorial.paused");
         HiredWorkArea area = SettlementConstructionService.workArea(villager, context.state());
         if (!SettlementConstructionService.prepare(villager, context.state())) {
             if (SettlementConstructionService.allows(villager, context.state(), plan.get())) {
@@ -1850,6 +1855,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BlockPos buildCenter,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
+        if(TutorialWorkService.isTrial(villager))return WorkResult.idle("Clear the blocked lesson site before resuming. The free project does not authorize extra demolition.");
         PlacementPart obstruction = firstPlacementObstruction(level, group);
         if (obstruction == null) {
             return null;
@@ -2671,6 +2677,11 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 : actionTool;
         swingWorkItem(level, villager, placementItem);
 
+        TutorialRun.Permit tutorialPermit=null;
+        if(TutorialWorkService.isTrial(villager)){
+            tutorialPermit=TutorialWorkService.reserve(villager,"place",TutorialWorkService.position(level,group.materialPart().worldPos()),1);
+            if(tutorialPermit==null)return false;
+        }
         for (PlacementPart part : group.parts()) {
             BlockPos worldPos = part.worldPos();
             BuilderStructureScanner.BuildBlock block = part.block();
@@ -2711,6 +2722,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         if (consumesMaterial) {
             context.inventory().consumeSupply(materialBlock::materialMatches, 1);
         }
+        if(tutorialPermit!=null)TutorialWorkService.committed(villager,tutorialPermit,"",0,"");
         return true;
     }
 
@@ -2727,6 +2739,14 @@ public final class BuilderWorker extends AbstractBlockWorker {
             ServerPlayer hirer,
             HiredWorkContext context,
             BuilderStructureScanner.StructurePlan plan) {
+        TutorialRun.Permit tutorialPermit=null;
+        if(TutorialWorkService.isTrial(villager)){
+            var run=TutorialWorkService.run(villager).orElseThrow();
+            if(run.committedUnits("place")<1||plan.blocks().stream().anyMatch(b->!BuilderStructureScanner.sameSchematicState(level.getBlockState(plan.worldPos(BuilderTaskState.origin(context.state()),b)),b.state())))
+                return WorkResult.idle("interaction.work.tutorial.paused");
+            tutorialPermit=TutorialWorkService.reserve(villager,"build_complete",BuilderTaskState.jobId(context.state()).orElseThrow().toString(),1);
+            if(tutorialPermit==null)return WorkResult.idle("interaction.work.tutorial.paused");
+        }
         Map<String, String> replacements = BuilderTaskState.replacements(context.state());
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.DEPOSITING_LEFTOVERS);
         if (!com.jvn.villagerretaliation.settlement.SettlementConstructionMaterials.managed(villager, context.state())) {
@@ -2742,6 +2762,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             BuilderTaskState.structureId(context.state())
                     .ifPresent(structureId -> VillagerReputationAdvancements.onBlueprintCompleted(hirer, structureId));
         }
+        if(tutorialPermit!=null)TutorialWorkService.committed(villager,tutorialPermit,"",0,"");
         BuilderTaskState.clearTask(context.state());
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);

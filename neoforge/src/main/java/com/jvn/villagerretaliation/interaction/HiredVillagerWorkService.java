@@ -106,10 +106,16 @@ public final class HiredVillagerWorkService {
         if (!(villager.level() instanceof ServerLevel level) || shouldSkipHiredWorkTick(villager)) {
             return;
         }
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.reconcileContinuation(villager);
         HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
         VillagerWorkAuthority contract = VillagerWorkAuthority.resolve(level, villager);
         HiredTemporaryWorkService.validate(level, villager, contract);
         if (!contract.active()) {
+            return;
+        }
+        if (!com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.canTick(villager, contract.role())) {
+            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+            setStatus(state(villager), "interaction.work.tutorial.paused");
             return;
         }
         HiredStressGridService.keepStressWorkerAwake(villager);
@@ -1630,6 +1636,7 @@ public final class HiredVillagerWorkService {
             return false;
         }
         safeRoute.save(state);
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(villager,player.getUUID(),"work_route_committed",Map.of("nodes",Integer.toString(safeRoute.nodes().size()),"loop",Boolean.toString(safeRoute.loop())));
         HiredRouteNavigator.clearProgress(state);
         HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, safeRoute.first());
         setStatus(state, "interaction.work.status.waiting_tick");
@@ -1713,6 +1720,7 @@ public final class HiredVillagerWorkService {
                     .save(state);
             setStatus(state, "interaction.work.status.center_set_here", Map.of("range", workArea(state, villager).rangeDescription()));
             sendStatusNotice(player, villager, state);
+            com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(villager, player.getUUID(), "work_area_committed", Map.of());
             return true;
         }
         HiredWorkArea area = requested.clampedTo(maxRadius);
@@ -1731,6 +1739,7 @@ public final class HiredVillagerWorkService {
                 ? "interaction.work.status.custom_box_capped"
                 : "interaction.work.status.custom_box", Map.of("dimensions", dimensions(area)));
         sendStatusNotice(player, villager, state);
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(villager, player.getUUID(), "work_area_committed", Map.of());
         return true;
     }
 
@@ -1762,6 +1771,7 @@ public final class HiredVillagerWorkService {
                 ? "interaction.work.status.center_reset_to_villager"
                 : "interaction.work.status.center_set_here", Map.of("range", workArea(state, villager).rangeDescription()));
         sendStatusNotice(player, villager, state);
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(villager, player.getUUID(), "work_area_committed", Map.of());
     }
 
     private static boolean builderIgnoresWorkArea(ServerPlayer player, ServerLevel level, Villager villager, HiredVillagerRole role) {
@@ -1886,6 +1896,7 @@ public final class HiredVillagerWorkService {
     }
 
     private static void sendStatusNotice(ServerPlayer player, Villager villager, CompoundTag state) {
+        com.jvn.villagerretaliation.quest.tutorial.TutorialSetupObserver.settings(villager,player.getUUID(),state);
         VillagerInteractionService.sendVillagerNotice(player, villager, state.getString("Status"), statusReplacements(state));
     }
 

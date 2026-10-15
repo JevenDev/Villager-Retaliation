@@ -1,0 +1,321 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_logging",
+  "role": "logging",
+  "title": "Logger  -  Leave another tree behind",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Logger  -  Leave another tree behind\n\n**Outcome:** harvest one deliberately chosen small tree, deliver wood and plant a replacement.\n\n**Trial ceiling:** one previewed tree, maximum eight approved log blocks, one replacement sapling and bounded pickup/delivery. Reject larger trees for this lesson instead of unexpectedly leaving half a tree.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Pick the tree",
+      "sequences": [],
+      "design_objective": "accept lesson and identify a permitted small recognizable tree.",
+      "design_check": "actual tree plan fits cap and excludes unapproved structures/protection.",
+      "design_provisions": "bounded assignment; no generated tree, free demolition or forest-wide labor.",
+      "design_hook": "preview/freeze scope with real plan and claim logic; revalidate changed plan before breaking.",
+      "design_notes": "1. Pick the tree\n\n**NPC:** “Choose one ordinary little tree. Leave the garden trees outside our line.”\n\n**Objective:** accept lesson and identify a permitted small recognizable tree.\n\n**Check:** actual tree plan fits cap and excludes unapproved structures/protection.\n\n**Provides:** bounded assignment; no generated tree, free demolition or forest-wide labor.\n\n**Hook:** preview/freeze scope with real plan and claim logic; revalidate changed plan before breaking."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Supply tools and replacement stock",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the axe and matching sapling inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Logger, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit Supplies containing usable axe and suitable sapling.",
+      "design_check": "axe accessible; sapling appropriate for valid intended planting location.",
+      "design_provisions": "teaches renewable inputs. Proposed aid: one loaned wooden axe and one matching sapling, issued once.",
+      "design_hook": "normal planting consumes sapling; removing the new sapling never triggers replenishment.",
+      "design_notes": "2. Supply tools and replacement stock\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the axe and matching sapling inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Logger, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “An axe for the trunk, and a suitable sapling for what comes after.”\n\n**Objective:** commit Supplies containing usable axe and suitable sapling.\n\n**Check:** axe accessible; sapling appropriate for valid intended planting location.\n\n**Provides:** teaches renewable inputs. Proposed aid: one loaned wooden axe and one matching sapling, issued once.\n\n**Hook:** normal planting consumes sapling; removing the new sapling never triggers replenishment."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Mark tree and timber chest",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground at the base of our one tree and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Logger, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the ground at the base of our one tree, then acknowledge the actual saved area on the bound Logger. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Logger, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit a tight 3-D work area and Output for wood/applicable drops.",
+      "design_check": "complete plan authorized; approach and Output reachable.",
+      "design_provisions": "teaches vertical bounds and protection of neighboring planting.",
+      "design_hook": "validate planned log coordinates, not only trunk base; normal recognition/protection remain.",
+      "design_notes": "3. Mark tree and timber chest\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground at the base of our one tree and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Logger, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the ground at the base of our one tree, then acknowledge the actual saved area on the bound Logger. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Logger, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Let the outline cover the whole tree, but no more forest than we need.”\n\n**Objective:** commit a tight 3-D work area and Output for wood/applicable drops.\n\n**Check:** complete plan authorized; approach and Output reachable.\n\n**Provides:** teaches vertical bounds and protection of neighboring planting.\n\n**Hook:** validate planned log coordinates, not only trunk base; normal recognition/protection remain."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Set simple forestry policy",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Configure Logging. Turn Plant saplings and Pick up decay drops on. Turn Strip logs, Harvest leaves and Bonemeal saplings off. Check each displayed state rather than clicking every row once."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Plant saplings and Pick up decay drops on; Strip logs, Harvest leaves and Bonemeal saplings off.",
+      "design_check": "effective options match, including task overrides.",
+      "design_provisions": "teaches independent existing switches; ordinary logs, no promised leaves or stripped logs.",
+      "design_hook": "forest tasks override effective replant/bonemeal behavior. Avoid selecting a task that defeats the lesson policy.",
+      "design_notes": "4. Set simple forestry policy\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Configure Logging. Turn Plant saplings and Pick up decay drops on. Turn Strip logs, Harvest leaves and Bonemeal saplings off. Check each displayed state rather than clicking every row once.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Plant saplings on. Stripping and bonemeal off for this first tree. We’ll keep the job easy to read.”\n\n**Objective:** Plant saplings and Pick up decay drops on; Strip logs, Harvest leaves and Bonemeal saplings off.\n\n**Check:** effective options match, including task overrides.\n\n**Provides:** teaches independent existing switches; ordinary logs, no promised leaves or stripped logs.\n\n**Hook:** forest tasks override effective replant/bonemeal behavior. Avoid selecting a task that defeats the lesson policy."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Fell approved tree",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "authorize preview and let worker harvest allowed plan.",
+      "design_check": "real claim/reach/break events; successful log actions counted; no productive second-tree claim.",
+      "design_provisions": "actual timber and supported incidental drops; quantity follows previewed tree, no bonus stack.",
+      "design_hook": "wrap full tree plan in scope; do not use a timer alone that unexpectedly leaves a half-tree.",
+      "design_notes": "5. Fell approved tree\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Stand clear. I’ll finish this tree before looking for another.”\n\n**Objective:** authorize preview and let worker harvest allowed plan.\n\n**Check:** real claim/reach/break events; successful log actions counted; no productive second-tree claim.\n\n**Provides:** actual timber and supported incidental drops; quantity follows previewed tree, no bonus stack.\n\n**Hook:** wrap full tree plan in scope; do not use a timer alone that unexpectedly leaves a half-tree."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Replant and deliver",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Logger, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "allow one valid replant and deposit.",
+      "design_check": "real sapling consumption/placement and attributable wood delivery. New tree growth not required.",
+      "design_provisions": "planted replacement and real timber; teaches stock/site requirement.",
+      "design_hook": "bounded replant/deposit cleanup after log ceiling, planting capped at one; diagnose invalid site without new sapling grant.",
+      "design_notes": "6. Replant and deliver\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Logger, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “One sapling back in the ground, then the timber goes to your chest.”\n\n**Objective:** allow one valid replant and deposit.\n\n**Check:** real sapling consumption/placement and attributable wood delivery. New tree growth not required.\n\n**Provides:** planted replacement and real timber; teaches stock/site requirement.\n\n**Hook:** bounded replant/deposit cleanup after log ceiling, planting capped at one; diagnose invalid site without new sapling grant."
+    },
+    {
+      "id": "step_7",
+      "title": "7. Keep working or stop",
+      "sequences": [],
+      "design_objective": "A, actual normal Logging quote, or B, stop.",
+      "design_check": "completion once; no free second tree queued; loans safely settled.",
+      "design_provisions": "completion and bounded real output.",
+      "design_hook": "",
+      "design_notes": "7. Keep working or stop\n\n**NPC:** “That’s the bargain with a woodland: take wood, leave something growing. Shall I carry on?”\n\n**Objective:** A, actual normal Logging quote, or B, stop.\n\n**Check:** completion once; no free second tree queued; loans safely settled.\n\n**Provides:** completion and bounded real output.\n\n**Recovery:** missing sapling differs from invalid ground; blocked access differs from another worker’s claim. Resume existing plan, no new allowance.\n\nSources: `interaction/work/logging/LoggingWorker.java:178-365,412-500,783-985`; `interaction/work/logging/HiredLoggingOptions.java`; `interaction/work/HiredTemporaryTask.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "supplies",
+        "item_tag": "minecraft:axes"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "policy"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_logging",
+        "role": "logging",
+        "check": "completed"
+      }
+    ]
+  }
+}

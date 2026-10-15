@@ -1,0 +1,360 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_animal_handling",
+  "role": "animal_handling",
+  "title": "Animal Handler  -  Care before collection",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Animal Handler  -  Care before collection\n\n**Outcome:** configure a sheep pen, demonstrate one renewable product action and one controlled breeding operation.\n\n**Trial ceiling:** one shearing, one completed breeding-pair operation and wool delivery. No repeated milking, egg farming or culling in free productive allowance.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Meet the animals",
+      "sequences": [],
+      "design_objective": "accept lesson; identify reachable safe pen, two eligible adult sheep, one ready to shear.",
+      "design_check": "normal handling accepts species/targets; breeding state and wool readiness checked separately.",
+      "design_provisions": "bounded assignment; no spawned sheep or lamb gifts.",
+      "design_hook": "record animal UUIDs and separate action counters. Cooldown is waiting, not missing supplies.",
+      "design_notes": "1. Meet the animals\n\n**NPC:** “We’ll start with two grown sheep. One fleece, then a little care for the next generation.”\n\n**Objective:** accept lesson; identify reachable safe pen, two eligible adult sheep, one ready to shear.\n\n**Check:** normal handling accepts species/targets; breeding state and wool readiness checked separately.\n\n**Provides:** bounded assignment; no spawned sheep or lamb gifts.\n\n**Hook:** record animal UUIDs and separate action counters. Cooldown is waiting, not missing supplies."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Stock supplies",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the shears and wheat for the pair inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Animal Handler, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit Supplies with usable shears and food for one normal sheep breeding pair.",
+      "design_check": "actual accessible tool and correct breeding food.",
+      "design_provisions": "teaches species-specific inputs. Proposed aid: one loaned shears and two wheat, once only. Working inputs, not bonus reward.",
+      "design_hook": "exact species food acceptance; no replacement feed on reconnect.",
+      "design_notes": "2. Stock supplies\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the shears and wheat for the pair inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Animal Handler, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Shears for the fleece, wheat for the pair. Put both where I can fetch them.”\n\n**Objective:** commit Supplies with usable shears and food for one normal sheep breeding pair.\n\n**Check:** actual accessible tool and correct breeding food.\n\n**Provides:** teaches species-specific inputs. Proposed aid: one loaned shears and two wheat, once only. Working inputs, not bonus reward.\n\n**Hook:** exact species food acceptance; no replacement feed on reconnect."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Mark pen and product chest",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground inside our sheep pen and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Animal Handler, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the ground inside our sheep pen, then acknowledge the actual saved area on the bound Animal Handler. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Animal Handler, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit work area around pen and Output.",
+      "design_check": "targets within valid bounds; real handling/storage access.",
+      "design_provisions": "teaches fence/access requirement; no teleportation through fences.",
+      "design_hook": "use live reachability; visible animals inside bounds are insufficient.",
+      "design_notes": "3. Mark pen and product chest\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground inside our sheep pen and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Animal Handler, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the ground inside our sheep pen, then acknowledge the actual saved area on the bound Animal Handler. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Animal Handler, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Include the animals and a clear path inside. Wool goes to this chest.”\n\n**Objective:** commit work area around pen and Output.\n\n**Check:** targets within valid bounds; real handling/storage access.\n\n**Provides:** teaches fence/access requirement; no teleportation through fences.\n\n**Hook:** use live reachability; visible animals inside bounds are insufficient."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Choose intended care",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Configure Animal Handling. Open the breeding-target list and select Sheep rather than the all-species setting; return to the handling options. Turn Shearing and Breeding on, and Culling, Milking and Collection off."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "choose sheep in existing species selection; demonstrated activities on, Culling off; unrelated Milking and Collection off for controlled example.",
+      "design_check": "actual species/activity settings, including effective temporary behavior.",
+      "design_provisions": "teaches Shearing, Breeding, Milking, Collection and Culling. Explain milk needs bucket/supported animal and eggs must actually exist. No extra products granted.",
+      "design_hook": "tutorial authority forbids culling regardless of accidental changes; do not assume equal activity scheduling priority.",
+      "design_notes": "4. Choose intended care\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Configure Animal Handling. Open the breeding-target list and select Sheep rather than the all-species setting; return to the handling options. Turn Shearing and Breeding on, and Culling, Milking and Collection off.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Shearing and breeding for now. Leave culling off; that is a different decision.”\n\n**Objective:** choose sheep in existing species selection; demonstrated activities on, Culling off; unrelated Milking and Collection off for controlled example.\n\n**Check:** actual species/activity settings, including effective temporary behavior.\n\n**Provides:** teaches Shearing, Breeding, Milking, Collection and Culling. Explain milk needs bucket/supported animal and eggs must actually exist. No extra products granted.\n\n**Hook:** tutorial authority forbids culling regardless of accidental changes; do not assume equal activity scheduling priority."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Shear one sheep",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the Clipboard, point at the sheep that still has its fleece, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing."
+            },
+            {
+              "id": "card_2",
+              "text": "Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Animal Handler, then my named worker row, and open Job Site → Draft → Task."
+            },
+            {
+              "id": "card_3",
+              "text": "Click the action selector until it reads Shear selected sheep. Keep the task in replace mode for this single demonstration, then click Apply. Show me the selected animal and task."
+            }
+          ],
+          "confirmation_guidance": "Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.",
+          "recovery": "If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Shift-use approved sheep; Draft → Task; Shear selected sheep; Apply.",
+      "design_check": "real shearing on approved animal; normal durability and drops.",
+      "design_provisions": "actual wool and targeted-task understanding; no fixed wool count promised.",
+      "design_hook": "one allowance on success; provenance until delivery; no second action after wool regrowth.",
+      "design_notes": "5. Shear one sheep\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the Clipboard, point at the sheep that still has its fleece, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing.”\n2. “Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Animal Handler, then my named worker row, and open Job Site → Draft → Task.”\n3. “Click the action selector until it reads Shear selected sheep. Keep the task in replace mode for this single demonstration, then click Apply. Show me the selected animal and task.”\n\n**Show / confirm:** Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.\n\n**If it goes wrong:** “If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.”\n\n\n**Optional flavour line:** “Mark the sheep with its fleece, then ask me to shear it.”\n\n**Objective:** Shift-use approved sheep; Draft → Task; Shear selected sheep; Apply.\n\n**Check:** real shearing on approved animal; normal durability and drops.\n\n**Provides:** actual wool and targeted-task understanding; no fixed wool count promised.\n\n**Hook:** one allowance on success; provenance until delivery; no second action after wool regrowth."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Breed the pair",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the Clipboard, point at one of our two eligible sheep, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing."
+            },
+            {
+              "id": "card_2",
+              "text": "Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Animal Handler, then my named worker row, and open Job Site → Draft → Task."
+            },
+            {
+              "id": "card_3",
+              "text": "Click the action selector until it reads Breed selected animal. Keep the task in replace mode for this single demonstration, then click Apply. Show me the selected animal and task."
+            }
+          ],
+          "confirmation_guidance": "Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.",
+          "recovery": "If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "select intended sheep and Apply Breed selected animal.",
+      "design_check": "normal eligibility, food consumption and pair interaction; witness breeding outcome rather than only selection/love mode.",
+      "design_provisions": "real breeding outcome, potentially a lamb under normal mechanics, from working inputs; no extra reward animal.",
+      "design_hook": "track parents and operation to prevent duplicate credit. Interruption preserves spent-input history; no invented replacement lamb.",
+      "design_notes": "6. Breed the pair\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the Clipboard, point at one of our two eligible sheep, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing.”\n2. “Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Animal Handler, then my named worker row, and open Job Site → Draft → Task.”\n3. “Click the action selector until it reads Breed selected animal. Keep the task in replace mode for this single demonstration, then click Apply. Show me the selected animal and task.”\n\n**Show / confirm:** Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.\n\n**If it goes wrong:** “If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.”\n\n\n**Optional flavour line:** “Now mark one of the pair for breeding. I’ll need a willing partner nearby and food for both.”\n\n**Objective:** select intended sheep and Apply Breed selected animal.\n\n**Check:** normal eligibility, food consumption and pair interaction; witness breeding outcome rather than only selection/love mode.\n\n**Provides:** real breeding outcome, potentially a lamb under normal mechanics, from working inputs; no extra reward animal.\n\n**Hook:** track parents and operation to prevent duplicate credit. Interruption preserves spent-input history; no invented replacement lamb."
+    },
+    {
+      "id": "step_7",
+      "title": "7. Store wool and review other choices",
+      "sequences": [
+        {
+          "id": "step_7_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Animal Handler, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "verify wool delivery; review remaining activities/current species cap without executing them.",
+      "design_check": "attributable deposit, both action counters accounted, genuine breeding outcome recorded.",
+      "design_provisions": "understanding of milk, product collection and controlled culling; no milk, eggs, meat or extra breeding/shearing granted.",
+      "design_hook": "descriptions reflect current adult/cap/named/tamed protections. Reading does not authorize culling.",
+      "design_notes": "7. Store wool and review other choices\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Animal Handler, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “The wool is yours. Milk needs buckets; eggs must already be laid. Culling is for eligible excess adults, never a shortcut for this lesson.”\n\n**Objective:** verify wool delivery; review remaining activities/current species cap without executing them.\n\n**Check:** attributable deposit, both action counters accounted, genuine breeding outcome recorded.\n\n**Provides:** understanding of milk, product collection and controlled culling; no milk, eggs, meat or extra breeding/shearing granted.\n\n**Hook:** descriptions reflect current adult/cap/named/tamed protections. Reading does not authorize culling."
+    },
+    {
+      "id": "step_8",
+      "title": "8. Finish lesson",
+      "sequences": [],
+      "design_objective": "A, actual normal Animal Handling quote, or B, stop.",
+      "design_check": "completion once, products reconciled, no repeat renewable production under tutorial authority.",
+      "design_provisions": "completion, actual wool and genuine breeding outcome; no arbitrary item/skill bundle.",
+      "design_hook": "",
+      "design_notes": "8. Finish lesson\n\n**NPC:** “Keep the right food supplied, give them room, and let them recover between jobs. Shall I stay?”\n\n**Objective:** A, actual normal Animal Handling quote, or B, stop.\n\n**Check:** completion once, products reconciled, no repeat renewable production under tutorial authority.\n\n**Provides:** completion, actual wool and genuine breeding outcome; no arbitrary item/skill bundle.\n\n**Recovery:** separate wool regrowth, breeding cooldown, missing partner, wrong food, missing shears, blocked pen and full Output. Resume unfinished allowance without new kit.\n\nSources: `interaction/work/AnimalBreedingWorker.java:104-190,733-810,1229-1278`; `interaction/work/HiredAnimalHandlingOptions.java`; `client/inventory/ClipboardAnimalTaskScreen.java`; `interaction/work/HiredTemporaryTask.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "supplies",
+        "item": "minecraft:shears"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "policy"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "task"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "outcome",
+        "parameter": "breed"
+      }
+    ],
+    "step_7_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_animal_handling",
+        "role": "animal_handling",
+        "check": "completed"
+      }
+    ]
+  }
+}

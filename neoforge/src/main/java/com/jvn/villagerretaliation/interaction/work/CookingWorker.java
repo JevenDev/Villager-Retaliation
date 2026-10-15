@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
@@ -58,6 +60,7 @@ public final class CookingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager) && !TutorialWorkService.canTick(villager, role())) return WorkResult.idle("interaction.work.tutorial.paused");
         if (HiredProductionService.access(level, villager, role()).managed()) {
             return new HiredQueuedFurnaceWorker(role()).tick(level, villager, hirer, context);
         }
@@ -82,12 +85,15 @@ public final class CookingWorker extends AbstractBlockWorker {
             }
         }
 
+        var tutorial = TutorialWorkService.run(villager).orElse(null);
+        if (TutorialWorkService.isTrial(villager) && (tutorial == null || tutorial.committedUnits("process") >= 2 && (TutorialFurnacePlan.station(level, villager) == null
+                || !(level.getBlockEntity(TutorialFurnacePlan.station(level, villager)) instanceof AbstractFurnaceBlockEntity boundFurnace) || boundFurnace.getItem(2).isEmpty()))) return WorkResult.idle("interaction.work.tutorial.paused");
         ItemStack foodFilter = VillagerItemFilterService.assignedFilter(villager);
         Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, foodFilter);
         BlockPos station = nearestCookingStation(level, villager, context, foodFilter, desiredFood, finishExisting);
         if (station == null && finishExisting) return null;
         CraftingAssessment crafting = CraftingAssessment.NONE;
-        if (!finishExisting && !stationHasCollectibleOutput(level, station, desiredFood)) {
+        if (!TutorialWorkService.isTrial(villager) && !finishExisting && !stationHasCollectibleOutput(level, station, desiredFood)) {
             crafting = assessCraftingTargets(level, villager, context, foodFilter);
             if (crafting.selection() != null) {
                 return tickCraftingFood(level, villager, context, crafting.selection(), null, null);
@@ -218,6 +224,14 @@ public final class CookingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.cooking.missing_raw_food");
             }
             int count = Math.min(carriedFood.getCount(), Math.min(context.transferLimit(MAX_INPUT_PULL), furnace.getMaxStackSize(carriedFood)));
+            TutorialRun.Permit loadPermit = null;
+            if (TutorialWorkService.isTrial(villager)) {
+                var run = TutorialWorkService.run(villager).orElseThrow();
+                if (!carriedFood.is(TutorialFurnacePlan.input(role()))) return WorkResult.idle("interaction.work.tutorial.paused");
+                count = Math.min(count, 2 - run.committedUnits("load"));
+                loadPermit = TutorialFurnaceService.reserveLoad(villager, furnace, count, false);
+                if (loadPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+            }
             ItemStack loaded = consumeCarriedSupply(context, carriedFood, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_cooking_raw_food", level.getGameTime() + 100L);
@@ -225,6 +239,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.cooking.missing_raw_food");
             }
             furnace.setItem(INPUT_SLOT, loaded);
+            if (loadPermit != null) TutorialWorkService.committed(villager, loadPermit, "", 0, "");
             updateFurnace(level, furnace, station);
             useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.cooking.loaded_input", itemReplacements(loaded));
@@ -238,6 +253,13 @@ public final class CookingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.cooking.missing_fuel");
             }
             int count = Math.min(carriedFuel.getCount(), Math.min(context.transferLimit(MAX_FUEL_PULL), furnace.getMaxStackSize(carriedFuel)));
+            TutorialRun.Permit fuelPermit = null;
+            if (TutorialWorkService.isTrial(villager)) {
+                if (!carriedFuel.is(Items.COAL)) return WorkResult.idle("interaction.work.tutorial.paused");
+                count = 1;
+                fuelPermit = TutorialFurnaceService.reserveLoad(villager, furnace, count, true);
+                if (fuelPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+            }
             ItemStack loaded = consumeCarriedSupply(context, carriedFuel, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_cooking_fuel", level.getGameTime() + 100L);
@@ -245,6 +267,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.cooking.missing_fuel");
             }
             furnace.setItem(FUEL_SLOT, loaded);
+            if (fuelPermit != null) TutorialWorkService.committed(villager, fuelPermit, "", 0, "");
             updateFurnace(level, furnace, station);
             useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.cooking.loaded_fuel", itemReplacements(loaded));
@@ -263,6 +286,8 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack stack,
             String status,
             boolean completed) {
+        if (TutorialWorkService.isTrial(villager) && (!completed || !TutorialOutputService.attributable(villager, stack)))
+            return WorkResult.idle("interaction.work.tutorial.paused");
         ItemStack planned = stack.copyWithCount(Math.min(stack.getCount(), context.transferLimit(MAX_INPUT_PULL)));
         if (!context.canStoreOutputs(List.of(planned))) {
             OutputFullHandling handling = handleOutputFullInventory(
@@ -414,12 +439,13 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack foodFilter) {
         List<MaterialNeed> needs = new ArrayList<>();
         Predicate<ItemStack> rawFoodPredicate = stack -> isCookableFood(level, stack, recipeType, foodFilter);
-        Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType);
+        if (TutorialWorkService.isTrial(villager)) rawFoodPredicate = stack -> stack.is(TutorialFurnacePlan.input(role()));
+        Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType) && (!TutorialWorkService.isTrial(villager) || stack.is(Items.COAL));
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawFoodPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     rawFoodPredicate,
-                    context.transferLimit(MAX_INPUT_PULL),
+                    TutorialWorkService.isTrial(villager) ? 2 : context.transferLimit(MAX_INPUT_PULL),
                     "missing_cooking_raw_food",
                     "interaction.work.cooking.missing_raw_food"));
         }
@@ -430,7 +456,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 && HiredSupplyCrafting.countCarried(context, fuelPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     fuelPredicate,
-                    context.transferLimit(MAX_FUEL_PULL),
+                    TutorialWorkService.isTrial(villager) ? 1 : context.transferLimit(MAX_FUEL_PULL),
                     "missing_cooking_fuel",
                     "interaction.work.cooking.missing_fuel"));
         }
@@ -814,6 +840,10 @@ public final class CookingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             ItemStack foodFilter,
             Predicate<ItemStack> desiredFood, boolean finishExisting) {
+        if (TutorialWorkService.isTrial(villager)) {
+            var bound = TutorialFurnacePlan.station(level, villager);
+            return bound != null && context.isInsideWorkArea(bound) && level.hasChunkAt(bound) ? bound : null;
+        }
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidCookingStation(level, context, cached)

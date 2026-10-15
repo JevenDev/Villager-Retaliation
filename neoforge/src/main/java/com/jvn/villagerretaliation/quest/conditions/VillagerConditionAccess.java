@@ -110,6 +110,10 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof DialogueCondition.WorkState work && work.reference().check().equals("eligible"))
+            return this.live == null ? ConditionOutcome.UNKNOWN : result(com.jvn.villagerretaliation.quest.tutorial.TutorialService.eligible(this.live, work.reference().role()));
+        if (condition instanceof DialogueCondition.WorkState work)
+            return work.reference().evaluate(this.level, this.player).outcome();
         if (condition instanceof DialogueCondition.Health health) {
             var entity = health.subject().equals("player") ? this.player : this.live == null ? null : this.live.villager();
             return entity == null || entity.isRemoved() ? ConditionOutcome.UNKNOWN
@@ -141,6 +145,8 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public String unavailableReason(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof DialogueCondition.WorkState work)
+            return work.reference().evaluate(this.level, this.player).reason();
         if (condition instanceof DialogueCondition.SelectedChoice || condition instanceof DialogueCondition.StageHistory)
             return "quest history is unavailable";
         if (this.live != null) {

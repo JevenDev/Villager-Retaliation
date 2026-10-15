@@ -1,0 +1,158 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_nitwit",
+  "role": "nitwit",
+  "title": "Nitwit  -  A Very Important Inspection",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Nitwit  -  A Very Important Inspection\n\n**Premise and dialogue:** An honest, comic introduction to the personal report role. “Someone has to keep an eye on the sky. I can also supervise the shadows. Give me one demonstration and you'll know exactly what you're hiring.”\n\n**Existing personal behavior:** NITWIT is restricted to Nitwits. It needs no tool or work area and emits one of four novelty reports (sky, supervising, shadows or pointing), with a 1,200-tick notice cooldown and associated practice. These are comic reports, not validated inspections, production, buffs, storage transactions or sales. The supported outcome is successfully receiving and understanding one report. Do not dress it up as a useful economic service.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1 Meet the actual specialist",
+      "sequences": [],
+      "design_objective": "Accept the proposed free demonstration from an eligible Nitwit.",
+      "design_check": "NITWIT player/job record reserved and real eligibility satisfied.",
+      "design_provisions": "one-report free assignment; dialogue explicitly says it produces commentary rather than goods.",
+      "design_hook": "",
+      "design_notes": "1 Meet the actual specialist\n\n**Tutor:** “One demonstration of my expertise, free of charge. There will be commentary.”\n\n**Task:** Accept the proposed free demonstration from an eligible Nitwit.\n\n**Check:** NITWIT player/job record reserved and real eligibility satisfied.\n\n**Provides:** one-report free assignment; dialogue explicitly says it produces commentary rather than goods."
+    },
+    {
+      "id": "step_2",
+      "title": "2 Inspect the assignment",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the Clipboard, look into empty air and press {Use} without sneaking."
+            },
+            {
+              "id": "card_2",
+              "text": "Select the Nitwit role and find my name in its workers. Show me my entry. I need no work area, chest or tool for this report."
+            }
+          ],
+          "confirmation_guidance": "Highlight the bound named Nitwit and confirm the active free lesson/role; never require a fake storage/site assignment.",
+          "recovery": "If I am missing, check the bound trial worker rather than assigning another villager or buying a contract.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Open the worker's clipboard entry and confirm the Nitwit role.",
+      "design_check": "correct bound worker and active free lesson.",
+      "design_provisions": "shared Clipboard if needed and clear “No job area, tool or output chest required for this personal role” guidance. Do not force bogus area creation merely to reuse other lessons' objectives.",
+      "design_hook": "",
+      "design_notes": "2 Inspect the assignment\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the Clipboard, look into empty air and press {Use} without sneaking.”\n2. “Select the Nitwit role and find my name in its workers. Show me my entry. I need no work area, chest or tool for this report.”\n\n**Show / confirm:** Highlight the bound named Nitwit and confirm the active free lesson/role; never require a fake storage/site assignment.\n\n**If it goes wrong:** “If I am missing, check the bound trial worker rather than assigning another villager or buying a contract.”\n\n\n**Optional flavour line:** “Yes, you've found the right specialist. I won't need a workbench or a chest.”\n\n**Task:** Open the worker's clipboard entry and confirm the Nitwit role.\n\n**Check:** correct bound worker and active free lesson.\n\n**Provides:** shared Clipboard if needed and clear “No job area, tool or output chest required for this personal role” guidance. Do not force bogus area creation merely to reuse other lessons' objectives."
+    },
+    {
+      "id": "step_3",
+      "title": "3 Release the worker to demonstrate",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Close conversation and enable Work, with normal follow/rest/threat blockers explained.",
+      "design_check": "real work authority enabled and worker is eligible to tick; talking to the worker must not be treated as completed work.",
+      "design_provisions": "actionable blocker help, no consumables or gear.",
+      "design_hook": "",
+      "design_notes": "3 Release the worker to demonstrate\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “If you'll excuse me for a moment, the sky requires my attention.”\n\n**Task:** Close conversation and enable Work, with normal follow/rest/threat blockers explained.\n\n**Check:** real work authority enabled and worker is eligible to tick; talking to the worker must not be treated as completed work.\n\n**Provides:** actionable blocker help, no consumables or gear."
+    },
+    {
+      "id": "step_4",
+      "title": "4 Hear the report",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Close our conversation and stay where my report can reach you. Let me finish my actual report."
+            },
+            {
+              "id": "card_2",
+              "text": "When the report appears, read it, then speak to me again with an empty-hand {Use}."
+            }
+          ],
+          "confirmation_guidance": "Present the emitted report, with producer and sequence receipt. No fabricated useful inspection result or timer-only success.",
+          "recovery": "If I am resting, following, threatened or waiting on the normal report cooldown, show that reason. Opening my menu repeatedly will not produce the report sooner.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Let the existing NitwitWorker produce its next report.",
+      "design_check": "a new authoritative completed-report event from this bound worker during this assignment, with its actual report key and serial; do not count an old diagnostic line, idle cooldown or fabricated player acknowledgement.",
+      "design_provisions": "display the actual existing report line in the tutorial's report view. Respect an existing cooldown rather than reset it to farm practice. Stop free work immediately after the one report.",
+      "design_hook": "",
+      "design_notes": "4 Hear the report\n\n**Teach and demonstrate (spoken in order):**\n1. “Close our conversation and stay where my report can reach you. Let me finish my actual report.”\n2. “When the report appears, read it, then speak to me again with an empty-hand {Use}.”\n\n**Show / confirm:** Present the emitted report, with producer and sequence receipt. No fabricated useful inspection result or timer-only success.\n\n**If it goes wrong:** “If I am resting, following, threatened or waiting on the normal report cooldown, show that reason. Opening my menu repeatedly will not produce the report sooner.”\n\n\n**Optional flavour line:** “Stand by. I shall report as soon as I have something to say.”\n\n**Task:** Let the existing NitwitWorker produce its next report.\n\n**Check:** a new authoritative completed-report event from this bound worker during this assignment, with its actual report key and serial; do not count an old diagnostic line, idle cooldown or fabricated player acknowledgement.\n\n**Provides:** display the actual existing report line in the tutorial's report view. Respect an existing cooldown rather than reset it to farm practice. Stop free work immediately after the one report."
+    },
+    {
+      "id": "step_5",
+      "title": "5 Decide what that service is worth",
+      "sequences": [],
+      "design_objective": "Return to the NPC.",
+      "design_check": "the report was produced once and its lesson presentation is available; complete the lesson globally for this player.",
+      "design_provisions": "",
+      "design_hook": "",
+      "design_notes": "5 Decide what that service is worth\n\n**Tutor:** “That was my report. Would you care to hear more at my usual rate?”\n\n**Task:** Return to the NPC.\n\n**Check:** the report was produced once and its lesson presentation is available; complete the lesson globally for this player.\n\n**Provides/reward:** a saved comic report/lesson entry and clear explanation of the supported role; any normal practice is only what the real worker event already awards, never duplicate XP or currency. “A thorough report, I'm sure you'll agree. Want more of the same? I'll show you the normal rate. Otherwise, we're done.” Apply shared paid/stop ending.\n\n**A Continue working:** “Show me your normal price.” Present the current role, duration, currency and total. Start ordinary paid work only after the player accepts a still-valid quote.\n\n**B Stop here:** “Thanks. Stop working.” End this tutorial assignment safely, reconcile its output and identifiable loans, and keep the lesson completed. Dismissal leaves work paused.\n\n\n**New hooks:** explicit report-produced event tied to tutorial/worker and its report serial, one-report cap, report presentation and once-only completion. Do not use generic WORKING state, cooldown expiry, walking or an area marker as success. Avoid implying player needs to stay in dialogue while work runs.\n\n**Content-depth caveat:** this is intentionally less productive than the other jobs. It teaches the existing personal role truthfully. If a materially useful personal report is desired (for example, identifying a genuinely blocked worker), that needs new data-backed behavior and revised objectives. Actual Trading Post transactions exist elsewhere through SettlementTradeService with civic gates; a future personal clipboard trading adapter is optional separate development, not part of this lesson or a prerequisite."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_nitwit",
+        "role": "nitwit",
+        "check": "assignment"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_nitwit",
+        "role": "nitwit",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_nitwit",
+        "role": "nitwit",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_nitwit",
+        "role": "nitwit",
+        "check": "completed"
+      }
+    ]
+  }
+}

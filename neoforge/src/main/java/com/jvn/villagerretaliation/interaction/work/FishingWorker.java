@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
@@ -103,6 +105,26 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        var trial = TutorialWorkService.run(villager).orElse(null);
+        if (TutorialWorkService.isTrial(villager)) {
+            if (trial == null || !TutorialWorkService.canTick(villager, role())) return WorkResult.idle("interaction.work.tutorial.paused");
+            if (context.state().contains("TutorialCatchOverflow")) {
+                var leftovers = context.state().getList("TutorialCatchOverflow", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                var remaining = new net.minecraft.nbt.ListTag();
+                for (var entry : leftovers) {
+                    var item = ItemStack.parseOptional(level.registryAccess(), (CompoundTag) entry);
+                    var rest = context.storeOutputAfterDepositIfFull(villager, item);
+                    if (!rest.isEmpty()) remaining.add(rest.save(level.registryAccess()));
+                }
+                context.state().put("TutorialCatchOverflow", remaining);
+                if (remaining.isEmpty()) context.state().remove("TutorialCatchOverflow");
+            }
+            if (trial.committedUnits("catch") >= 1) {
+                var delivered = depositOutputsOrMoveToStorage(level, context, villager, CAST_SPEED);
+                return WorkResult.idle(delivered == DepositResult.STORAGE_FULL ? storageFullStatus(context) : "interaction.work.fishing.depositing_output");
+            }
+            if (!TutorialFishingPlan.matches(villager, trial)) return WorkResult.idle("interaction.work.tutorial.paused");
+        }
         if (SettlementBackgroundFishing.hasPendingCatch(context.state())) {
             WorkResult deposit = depositFullOutputIfNeeded(level, villager, context);
             if (deposit != null) return deposit;
@@ -454,7 +476,19 @@ public final class FishingWorker extends AbstractBlockWorker {
 
     private boolean retrieveHook(ServerLevel level, Villager villager, HiredWorkContext context, VillagerFishingHook hook) {
         ItemStack rod = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
+        var trial = TutorialWorkService.run(villager).orElse(null);
+        TutorialRun.Permit permit = null;
+        if (TutorialWorkService.isTrial(villager)) {
+            if (trial == null || !TutorialFishingPlan.matches(villager, trial)) return false;
+            permit = TutorialWorkService.reserve(villager, "catch", trial.scope().targets().get("catch").iterator().next(), 1);
+            if (permit == null) return false;
+        }
         VillagerFishingHook.CatchResult result = hook.retrieve(rod);
+        if (permit != null && !result.completedCatch()) {
+            TutorialWorkService.failed(villager, permit);
+            permit = null;
+        }
+        var tutorialProducts = new java.util.ArrayList<ItemStack>();
         result.spawnExperience(level, villager, rod);
         boolean overflow = false;
         double practiceUnits = 0.0D;
@@ -463,10 +497,18 @@ public final class FishingWorker extends AbstractBlockWorker {
             var itemPractice = HiredWorkPractice.fishing(item).getFirst();
             practiceUnits += itemPractice.units();
             repetitionKey = 31L * repetitionKey + itemPractice.repetitionKey();
-            ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, item.copy());
+            ItemStack output = item.copy();
+            if (permit != null) TutorialOutputService.stamp(villager, permit, java.util.List.of(output));
+            tutorialProducts.add(output.copy());
+            ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, output);
             if (!remainder.isEmpty()) {
                 overflow = true;
-                villager.spawnAtLocation(remainder);
+                if (permit == null) villager.spawnAtLocation(remainder);
+                else {
+                    var pending = context.state().getList("TutorialCatchOverflow", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                    pending.add(remainder.save(level.registryAccess()));
+                    context.state().put("TutorialCatchOverflow", pending);
+                }
             }
         }
         if (result.rodDamage() > 0 && !rod.isEmpty()) {
@@ -478,6 +520,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
         if (result.completedCatch()) {
+            if (permit != null) TutorialWorkService.committedProducts(villager, permit, tutorialProducts);
             queueCompletedCatch(context);
             if (practiceUnits > 0.0D) {
                 context.state().putDouble(CATCH_PRACTICE_UNITS_TAG, Math.min(3.0D, practiceUnits));

@@ -16,6 +16,12 @@ public final class HireContractLifecycle {
         VillagerRecruitmentService.stopFollowing(villager);
         if (!contract.oneOffBuilderJob()) lockProfession(villager, contract);
         HireContractStore.save(villager, contract);
+        var work = HiredWorkStateStore.state(villager);
+        work.remove("TutorialTrial"); work.remove("TutorialWorker"); work.remove("TutorialAssignment");
+        if (contract.tutorialTrial()) {
+            work.putUUID("TutorialTrial", contract.tutorialId().orElseThrow());
+            work.putUUID("TutorialWorker", villager.getUUID()); work.putUUID("TutorialAssignment", contract.id());
+        }
         HireContractAssignmentAdapter.synchronize(level, villager);
         HiredWorkSession.invalidate(villager);
         HiredVillagerContractService.takeOverJobInventoryOverflow(villager);

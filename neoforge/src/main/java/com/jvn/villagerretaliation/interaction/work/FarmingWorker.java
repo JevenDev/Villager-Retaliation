@@ -5,6 +5,9 @@ import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.quest.tutorial.TutorialFarmingPlan;
+import com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService;
+import com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -111,6 +114,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (hoeResult != null) {
             return hoeResult;
         }
+        if (TutorialWorkService.isTrial(villager)) return tutorialTick(level, villager, context);
 
         HiredWorkPlan.clear(context);
         clearActiveBreakingTarget(level, context, villager);
@@ -206,6 +210,31 @@ public final class FarmingWorker extends AbstractBlockWorker {
         setTaskState(context, HiredWorkerTaskState.IDLE);
         com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishPatch(context.state());
         return WorkResult.idle("interaction.work.farming.waiting_for_growth");
+    }
+
+    private WorkResult tutorialTick(ServerLevel level, Villager villager, HiredWorkContext context) {
+        var run = TutorialWorkService.run(villager).orElse(null);
+        if (run == null || run.scope() == null) return WorkResult.idle("interaction.work.tutorial.paused");
+        if (HiredFarmingOptions.crop(context.state()) != HiredFarmingOptions.Crop.WHEAT
+                || !HiredFarmingOptions.tillSoil(context.state()) || !HiredFarmingOptions.plantCrops(context.state())
+                || !HiredFarmingOptions.harvestCrops(context.state()) || !context.useAssignedStorageForSupplies()
+                || !context.autoDepositOutputs()) return WorkResult.idle("Restore Wheat, Till, Plant, Harvest, assigned supplies and automatic output delivery in Work Settings.");
+        for (String action : List.of("till", "plant", "harvest", "replant")) {
+            if (run.committedUnits(action) > 0) continue;
+            BlockPos target = TutorialFarmingPlan.target(run, action);
+            if (target == null || !level.hasChunkAt(target) || !context.isInsideWorkArea(target)
+                    && !context.isInsideWorkArea(target.below()))
+                return WorkResult.idle("Restore the original small field box and load the lesson's marked squares.");
+            if (!net.neoforged.neoforge.event.EventHooks.canEntityGrief(level, villager))
+                return WorkResult.idle("The world's protection rules do not permit this Farmer to change the field.");
+            if (action.equals("till")) return guideSoilTillTarget(level, villager, context, target);
+            if (action.equals("harvest") && !level.getBlockState(target).is(Blocks.WHEAT))
+                return WorkResult.idle("The approved ripe wheat square changed. Restore it or explicitly abandon the remaining lesson.");
+            return guideFieldTarget(level, villager, context, target, "tutorial_" + action);
+        }
+        var deposit = depositOutputsOrMoveToStorage(level, context, villager, FIELD_GUIDE_WALK_SPEED);
+        return deposit == DepositResult.STORAGE_FULL ? WorkResult.idle(storageFullStatus(context))
+                : WorkResult.progressed("interaction.work.farming.no_target_depositing");
     }
 
     private WorkResult gatherSeeds(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
@@ -320,11 +349,22 @@ public final class FarmingWorker extends AbstractBlockWorker {
             }
         }
 
+        var tutorialPermit = TutorialWorkService.reserve(villager, "harvest", TutorialWorkService.position(level, cropTarget), 1);
+        if (TutorialWorkService.isTrial(villager) && (tutorialPermit == null || !state.is(Blocks.WHEAT)))
+            return WorkResult.idle("interaction.work.tutorial.paused");
+        TutorialOutputService.stamp(villager, tutorialPermit, drops);
+        if (tutorialPermit != null && !context.inventory().canStorePlainOutputs(drops)) {
+            TutorialWorkService.failed(villager, tutorialPermit);
+            return WorkResult.idle("interaction.work.farming.output_full_blocked");
+        }
         faceBlock(villager, cropTarget);
         swingWorkTool(villager);
         EnchantmentHelper.onHitBlock(level, hoe, villager, villager, EquipmentSlot.MAINHAND, cropTarget.getCenter(), state, ignored -> {
         });
-        level.destroyBlock(cropTarget, false, villager);
+        if (!level.destroyBlock(cropTarget, false, villager) && tutorialPermit != null) {
+            TutorialWorkService.failed(villager, tutorialPermit);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
         HiredPathMemory.onBlockChanged(level, cropTarget);
         HiredPathMemory.rememberRecent(level, cropTarget);
 
@@ -335,7 +375,12 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context, cropTarget);
-        boolean replanted = HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
+        TutorialWorkService.committedProducts(villager, tutorialPermit, drops);
+        var replantPermit = tutorialPermit == null ? null : TutorialWorkService.reserve(villager, "replant", TutorialWorkService.position(level, cropTarget), 1);
+        boolean replanted = (tutorialPermit == null || replantPermit != null)
+                && HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
+        if (replanted) TutorialWorkService.committed(villager, replantPermit, "", 0, "");
+        else TutorialWorkService.failed(villager, replantPermit);
         if (replanted) {
             swingWorkItem(level, villager, plantingItem);
         }
@@ -415,9 +460,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.target_changed");
         }
         ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context, cropTarget);
+        var tutorialRun = TutorialWorkService.run(villager).orElse(null);
+        String tutorialAction = tutorialRun != null && tutorialRun.committedUnits("harvest") > 0 ? "replant" : "plant";
+        var tutorialPermit = TutorialWorkService.reserve(villager, tutorialAction, TutorialWorkService.position(level, cropTarget), 1);
+        if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
         if (!HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget)) {
+            TutorialWorkService.failed(villager, tutorialPermit);
             return gatherSeeds(level, villager, context, cropTarget);
         }
+        TutorialWorkService.committed(villager, tutorialPermit, "", 0, "");
 
         faceBlock(villager, cropTarget);
         swingWorkItem(level, villager, plantingItem);
@@ -560,10 +611,16 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.target_changed");
         }
 
+        var tutorialPermit = TutorialWorkService.reserve(villager, "till", TutorialWorkService.position(level, soilTarget), 1);
+        if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
         faceBlock(villager, soilTarget);
         swingWorkTool(villager);
         level.playSound(null, soilTarget, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
-        level.setBlock(soilTarget, tilledState, 11);
+        if (!level.setBlock(soilTarget, tilledState, 11) && tutorialPermit != null) {
+            TutorialWorkService.failed(villager, tutorialPermit);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
+        TutorialWorkService.committed(villager, tutorialPermit, "", 0, "");
         level.gameEvent(GameEvent.BLOCK_CHANGE, soilTarget, GameEvent.Context.of(villager, tilledState));
         HiredPathMemory.onBlockChanged(level, soilTarget);
         damageTool(context, villager, hoe);

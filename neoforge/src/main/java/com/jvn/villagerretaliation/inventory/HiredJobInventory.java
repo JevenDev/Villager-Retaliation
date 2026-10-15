@@ -448,6 +448,7 @@ public final class HiredJobInventory implements Container {
     @Override
     public void setChanged() {
         save();
+        com.jvn.villagerretaliation.quest.tutorial.TutorialSetupObserver.inventory(this.villager,this.items);
     }
 
     @Override
@@ -1905,6 +1906,10 @@ public final class HiredJobInventory implements Container {
 
     private static boolean isJobGridSlot(int slot) {
         return slot >= OFFHAND_SLOT + 1 && slot < FILTER_SLOT;
+    }
+
+    public static ItemStack withoutJobItemMarker(ItemStack stack) {
+        return removeJobItemMarker(stack.copy());
     }
 
     private static ItemStack removeJobItemMarker(ItemStack stack) {

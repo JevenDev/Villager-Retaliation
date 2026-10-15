@@ -40,10 +40,17 @@ public final class CourierWorker implements HiredRoleWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        WorkResult transfer = HiredTransferWorker.tick(level, villager, context);
-        if (transfer != null) return transfer;
-        WorkResult hauling = SettlementHaulingWorker.tryTick(level, villager, context);
-        if (hauling != null) return hauling;
+        boolean tutorial=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager);
+        if(tutorial){
+            if(!com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.canTick(villager,role())
+                    ||!com.jvn.villagerretaliation.quest.tutorial.TutorialCourierPlan.matches(villager,context)
+                    ||com.jvn.villagerretaliation.interaction.work.courier.HiredTransferService.access(level,villager).configured())return WorkResult.idle("interaction.work.tutorial.paused");
+        }else{
+            WorkResult transfer = HiredTransferWorker.tick(level, villager, context);
+            if (transfer != null) return transfer;
+            WorkResult hauling = SettlementHaulingWorker.tryTick(level, villager, context);
+            if (hauling != null) return hauling;
+        }
         HiredRoute route = context.route();
         if (route == null || !route.usableForNavigation()) {
             AssignedStorageService.releaseCourierClaims(villager);

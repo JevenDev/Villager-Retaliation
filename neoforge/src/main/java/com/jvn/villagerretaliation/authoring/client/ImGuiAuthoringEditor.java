@@ -875,6 +875,7 @@ final class ImGuiAuthoringEditor {
                 setPointer("");
                 refresh();
             });
+            tutorialObjectiveCatalog();
             conditionCatalog();
             ImGui.textWrapped("Add an object field or append to an array. JSON values preserve their types.");
             ImGui.inputText("Field name", fieldName);
@@ -991,6 +992,22 @@ final class ImGuiAuthoringEditor {
         } else {
             ImGui.textWrapped("Translation not found: " + key);
             ImGui.textWrapped("Import its locale file, or use Advanced to edit the reference.");
+        }
+    }
+
+    private void tutorialObjectiveCatalog(){
+        if(!ImGui.collapsingHeader("Clipboard job objectives"))return;
+        ImGui.textWrapped("Prepare a complete personal worker objective, then append it to the selected stage's objectives array. Add its id to complete_when. Productive checks read the saved bound run, not UI clicks or inventory matches.");
+        for(var role:com.jvn.villagerretaliation.interaction.HiredVillagerRole.values()){
+            if(ImGui.treeNode(role.label()+"##tutorial_preset")){
+                for(String check:java.util.List.of("assignment","area","storage","policy","selection","task","route","outcome","completed","disposed")){
+                    if(ImGui.selectable(check+"##tutorial_"+role.serializedName())){
+                        fieldValue.set(JSON.toJson(com.jvn.villagerretaliation.quest.tutorial.TutorialAuthoringPresets.objective(role,check)));
+                        status="Prepared "+role.label()+" "+check+" objective. Append to objectives and connect its completion reference.";
+                    }
+                }
+                ImGui.treePop();
+            }
         }
     }
 

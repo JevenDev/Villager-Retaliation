@@ -82,6 +82,8 @@ public final class CombatWorker implements HiredRoleWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager))
+            return com.jvn.villagerretaliation.quest.tutorial.TutorialGuardWork.tick(level, villager, context);
         context.setProgressTicks(0);
         HiredCombatMode mode = com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.resolve(level, villager)
                 .effectiveCombatMode(villager, HiredCombatMode.fromState(context.state()));

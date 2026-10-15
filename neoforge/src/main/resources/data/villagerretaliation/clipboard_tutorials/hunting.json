@@ -1,0 +1,320 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_hunting",
+  "role": "hunting",
+  "title": "Hunter  -  Choose the quarry",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Hunter  -  Choose the quarry\n\n**Outcome:** intentionally select eligible quarry, configure target categories and recover supported loot.\n\n**Trial ceiling:** one approved non-player, non-owned/tamed eligible wild animal, then collection/delivery. No unrestricted hunting, named pet target or generated reward animal.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Establish limits",
+      "sequences": [],
+      "design_objective": "accept lesson and approve an eligible nearby wild animal.",
+      "design_check": "normal target rules, scope and ownership/taming/alliance protections pass.",
+      "design_provisions": "bounded assignment, no loot guarantee or unrelated targets.",
+      "design_hook": "bind target UUID; disappearance/ineligibility requires explicit reselection within remaining allowance.",
+      "design_notes": "1. Establish limits\n\n**NPC:** “You choose the quarry. For this lesson, one wild animal, and no people.”\n\n**Objective:** accept lesson and approve an eligible nearby wild animal.\n\n**Check:** normal target rules, scope and ownership/taming/alliance protections pass.\n\n**Provides:** bounded assignment, no loot guarantee or unrelated targets.\n\n**Hook:** bind target UUID; disappearance/ineligibility requires explicit reselection within remaining allowance."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Equip for hunt",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the approved melee weapon inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Hunter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit Supplies with supported weapon; use simple melee weapon for first example.",
+      "design_check": "`isHuntingWeapon` accepts it; ranged choice also passes current ammo checks.",
+      "design_provisions": "teaches weapon/ammo inputs. Proposed aid: one loaned wooden sword; no unlimited arrows.",
+      "design_hook": "readiness checks equipped ranged weapon’s ammo, not merely any weapon in storage.",
+      "design_notes": "2. Equip for hunt\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the approved melee weapon inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Hunter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “A sword or axe will do nearby. A bow needs ammunition as well.”\n\n**Objective:** commit Supplies with supported weapon; use simple melee weapon for first example.\n\n**Check:** `isHuntingWeapon` accepts it; ranged choice also passes current ammo checks.\n\n**Provides:** teaches weapon/ammo inputs. Proposed aid: one loaned wooden sword; no unlimited arrows.\n\n**Hook:** readiness checks equipped ranged weapon’s ammo, not merely any weapon in storage."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Mark ground and output",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the centre of our approved hunting ground and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Hunter, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the centre of our approved hunting ground, then acknowledge the actual saved area on the bound Hunter. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Hunter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit small work area and reachable Output.",
+      "design_check": "target/approach satisfy actual worker constraints; Output accepts likely supported drops.",
+      "design_provisions": "teaches contained work and storage. Existing routes are optional later help.",
+      "design_hook": "do not promise untested pursuit-bound behavior; independent tutorial target restriction remains hard limit.",
+      "design_notes": "3. Mark ground and output\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the centre of our approved hunting ground and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Hunter, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the centre of our approved hunting ground, then acknowledge the actual saved area on the bound Hunter. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Hunter, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “Keep the hunt inside this ground. The drops come back to that chest.”\n\n**Objective:** commit small work area and reachable Output.\n\n**Check:** target/approach satisfy actual worker constraints; Output accepts likely supported drops.\n\n**Provides:** teaches contained work and storage. Existing routes are optional later help.\n\n**Hook:** do not promise untested pursuit-bound behavior; independent tutorial target restriction remains hard limit."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Choose target policy",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Configure Hunting. Turn Hunt animals on, and Hunt hostiles and Hunt players off. Each option is separate; check the resulting states."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "enable Hunt animals, disable Hunt hostiles and Hunt players in existing configuration.",
+      "design_check": "all three authoritative booleans match; no temporary command expands scope.",
+      "design_provisions": "teaches independent player targeting; animals-and-hostiles combined toggle does not include players.",
+      "design_hook": "tutorial authority always excludes players; accidental mid-lesson change pauses for correction.",
+      "design_notes": "4. Choose target policy\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Configure Hunting. Turn Hunt animals on, and Hunt hostiles and Hunt players off. Each option is separate; check the resulting states.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Animals on. Hostiles off. Players off. Those choices are separate.”\n\n**Objective:** enable Hunt animals, disable Hunt hostiles and Hunt players in existing configuration.\n\n**Check:** all three authoritative booleans match; no temporary command expands scope.\n\n**Provides:** teaches independent player targeting; animals-and-hostiles combined toggle does not include players.\n\n**Hook:** tutorial authority always excludes players; accidental mid-lesson change pauses for correction."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Point out quarry",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Hold the Clipboard, point at the one approved wild animal, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing."
+            },
+            {
+              "id": "card_2",
+              "text": "Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Hunter, then my named worker row, and open Job Site → Draft → Task."
+            },
+            {
+              "id": "card_3",
+              "text": "Click Task without holding {ShiftModifier} to issue the selected-target task. Show me the chosen target; selecting the animal alone is not the order."
+            }
+          ],
+          "confirmation_guidance": "Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.",
+          "recovery": "If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Shift-use Clipboard on approved animal; existing Draft → Task for Pursue selected target.",
+      "design_check": "selection resolves approved UUID; eligibility rechecked on start.",
+      "design_provisions": "teaches selection versus execution; clicking alone is not completion.",
+      "design_hook": "retain task identity; no automatic retargeting after completion.",
+      "design_notes": "5. Point out quarry\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the Clipboard, point at the one approved wild animal, hold {Sneak} and press {Use}. Check the Selected animal notice before continuing.”\n2. “Release {Sneak}, aim into empty air and press {Use} to open the Clipboard dashboard. Select Hunter, then my named worker row, and open Job Site → Draft → Task.”\n3. “Click Task without holding Shift to issue the selected-target task. Show me the chosen target; selecting the animal alone is not the order.”\n\n**Show / confirm:** Identify the selected entity by name/UUID and highlight it distinctly from the area. Confirm this worker’s committed task and the approved target. Keep the animal-specific completion receipt required below.\n\n**If it goes wrong:** “If you selected the wrong animal, close the dashboard and select the correct one with {Sneak}+{Use}, then issue the task again. If no eligible partner or shearing target exists, explain that exact condition instead of marking it complete.”\n\n\n**Optional flavour line:** “Mark that animal with the Clipboard, then give me the task.”\n\n**Objective:** Shift-use Clipboard on approved animal; existing Draft → Task for Pursue selected target.\n\n**Check:** selection resolves approved UUID; eligibility rechecked on start.\n\n**Provides:** teaches selection versus execution; clicking alone is not completion.\n\n**Hook:** retain task identity; no automatic retargeting after completion."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Recover useful drops",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Hunter, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "complete hunt, collect supported drops and deposit.",
+      "design_check": "attributable target completion and real loot recovery. A zero-loot outcome is recorded honestly; no fabricated reward or automatic additional kill.",
+      "design_provisions": "actual eligible loot; examples include meat, leather, wool and feathers, with specific hostile drops supported in other configurations. Arbitrary modded drops not promised.",
+      "design_hook": "stop further acquisition at target cap but permit bounded collection/deposit; unrelated ground loot cannot spoof success.",
+      "design_notes": "6. Recover useful drops\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Hunter, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “The hunt isn’t finished until the useful drops are safely home.”\n\n**Objective:** complete hunt, collect supported drops and deposit.\n\n**Check:** attributable target completion and real loot recovery. A zero-loot outcome is recorded honestly; no fabricated reward or automatic additional kill.\n\n**Provides:** actual eligible loot; examples include meat, leather, wool and feathers, with specific hostile drops supported in other configurations. Arbitrary modded drops not promised.\n\n**Hook:** stop further acquisition at target cap but permit bounded collection/deposit; unrelated ground loot cannot spoof success."
+    },
+    {
+      "id": "step_7",
+      "title": "7. End or hire",
+      "sequences": [],
+      "design_objective": "A, actual normal Hunting quote, or B, stop.",
+      "design_check": "completion once, target/task safely finalized, intentional normal contract for continuation.",
+      "design_provisions": "completion and real loot; normal combat-event practice where applicable.",
+      "design_hook": "",
+      "design_notes": "7. End or hire\n\n**NPC:** “That’s one hunt done. Shall I keep hunting under the rules you set?”\n\n**Objective:** A, actual normal Hunting quote, or B, stop.\n\n**Check:** completion once, target/task safely finalized, intentional normal contract for continuation.\n\n**Provides:** completion and real loot; normal combat-event practice where applicable.\n\n**Recovery:** distinct ammo, invalid quarry, blocked/unsafe approach and full Output states. Explain zero drops without manufacturing items.\n\nSources: `interaction/work/HuntingWorker.java:108-216,330-380,536-575`; `interaction/work/HiredHuntingTargets.java`; `interaction/work/HiredTemporaryTask.java`; `interaction/HiredCombatSkillPracticeService.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "supplies",
+        "item_tag": "minecraft:swords"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "policy"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "task"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_hunting",
+        "role": "hunting",
+        "check": "completed"
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.settlement.SettlementAreaType;
 import com.jvn.villagerretaliation.settlement.SettlementWorkforceService;
@@ -37,10 +38,14 @@ public final class NitwitWorker implements HiredRoleWorker {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE);
             return WorkResult.idle("interaction.work.nitwit.cooldown");
         }
+        var permit = TutorialWorkService.reserve(villager, "report", villager.getUUID().toString(), 1);
+        if (TutorialWorkService.isTrial(villager) && permit == null)
+            return WorkResult.idle("interaction.work.tutorial.paused");
         context.state().putLong(LAST_NOTICE_TICK_TAG, level.getGameTime());
         String line = REPORT_KEYS[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), REPORT_KEYS.length)];
         HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_report_ready");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING);
+        TutorialWorkService.committed(villager, permit, line, 0, "");
         return WorkResult.completedWithPractice(
                 line, HiredWorkPractice.nitwit(Math.floorDiv(level.getGameTime(), NOTICE_COOLDOWN_TICKS)));
     }

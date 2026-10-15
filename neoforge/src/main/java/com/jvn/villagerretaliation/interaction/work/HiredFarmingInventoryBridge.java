@@ -33,6 +33,7 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static Boolean wantsToPickUp(ServerLevel level, Villager villager, ItemStack stack) {
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) return false;
         HiredWorkSession session = activeFarmingSession(level, villager);
         if (session == null) {
             return null;
@@ -50,6 +51,7 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static boolean shouldDiscardWantedItem(ServerLevel level, Villager villager, ItemEntity itemEntity) {
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) return true;
         HiredWorkSession session = activeFarmingSession(level, villager);
         if (session == null || itemEntity == null) {
             return false;
@@ -66,6 +68,7 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static boolean capturePickup(ServerLevel level, Villager villager, ItemEntity itemEntity) {
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) return true;
         HiredWorkSession session = activeFarmingSession(level, villager);
         if (session == null) {
             return false;
@@ -319,6 +322,7 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static boolean permitsVanillaHarvest(ServerLevel level, Villager villager) {
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) return false;
         if (!com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.hasWork(villager)
                 || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
         var state = HiredWorkStateStore.state(villager);

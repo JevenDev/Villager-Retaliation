@@ -257,7 +257,6 @@
   "advancements.villagerretaliation.reputation.war_party.title": "War Party",
   "advancements.villagerretaliation.reputation.you_and_what_army.description": "Win a raid against a defense of 15 or more.",
   "advancements.villagerretaliation.reputation.you_and_what_army.title": "You and What Army?",
-
   "block.villagerretaliation.payment_box": "Payment Box",
   "container.villagerretaliation.job_inventory": "%s's Job Inventory",
   "container.villagerretaliation.party_inventory": "%s's Party Inventory",
@@ -409,8 +408,6 @@
   "villagerretaliation.tooltip.stolen_item": "Stolen item",
   "villagerretaliation.tooltip.traded_by": "traded by %s",
   "villagerretaliation.tooltip.world_generated": "Village property",
-
-
   "text.config.villagerretaliation.enum.containerForcedDialogueTrigger.opening": "Opening",
   "text.config.villagerretaliation.enum.containerForcedDialogueTrigger.theft_only": "Theft Only",
   "text.config.villagerretaliation.enum.containerWatchMode.all_watched_containers": "All Watched Containers",
@@ -456,7 +453,6 @@
   "text.config.villagerretaliation.enum.villagerChatBroadcastMode.dimension": "Current Dimension",
   "text.config.villagerretaliation.enum.villagerChatBroadcastMode.local": "Nearby Players",
   "text.config.villagerretaliation.enum.villagerChatBroadcastMode.off": "Off",
-
   "text.config.villagerretaliation.option.combat.allVillagersUseDownedState": "Include All Villagers",
   "text.config.villagerretaliation.option.combat.allVillagersUseDownedState.tooltip": "Makes every eligible villager use the downed system. When enabled, the raid, hired, and party-specific switches below no longer narrow eligibility.",
   "text.config.villagerretaliation.option.combat.downedMinimumTicks": "Minimum Downed Time",
@@ -1086,14 +1082,12 @@
   "text.config.villagerretaliation.category.wanderer.tooltip": "Choose which extra items wandering traders can drop.",
   "text.config.villagerretaliation.category.debugOverlay": "Debug & Diagnostics",
   "text.config.villagerretaliation.category.debugOverlay.tooltip": "Developer-facing world previews and detailed reputation overlays.",
-
   "text.config.villagerretaliation.section.essentials": "Essentials",
   "text.config.villagerretaliation.section.conversationAndRelationships": "Conversation & Relationships",
   "text.config.villagerretaliation.section.combatAndEvents": "Combat & Events",
   "text.config.villagerretaliation.section.workAndEconomy": "Work & Economy",
   "text.config.villagerretaliation.section.advanced": "Advanced",
   "text.config.villagerretaliation.title": "Villager Retaliation Settings",
-
   "villagerretaliation.clipboard.message.assign_route_owner_only": "Only the hiring player can assign this route.",
   "villagerretaliation.clipboard.message.assign_work_area_owner_only": "Only the hiring player can assign this work area.",
   "villagerretaliation.clipboard.message.assigned_containers": "Assigned containers: %s.",
@@ -1641,7 +1635,6 @@
   "villagerretaliation.trade_refresh.pending": "Refresh requested",
   "villagerretaliation.trade_refresh.refund_delivered": "This villager returned payment from a canceled Special Order.",
   "villagerretaliation.trade_refresh.tooltip": "Ask about refreshing this trade tomorrow.",
-
   "villagerretaliation.breeding.blocked.baby": "Baby villagers cannot breed.",
   "villagerretaliation.breeding.blocked.breeding_disabled": "Vanilla villager breeding is disabled in the config.",
   "villagerretaliation.breeding.blocked.dead": "That villager is unavailable.",
@@ -1873,14 +1866,13 @@
   "villagerretaliation.reputation.tier_value_format": "%s: %s",
   "villagerretaliation.reputation.value_format": "Reputation: %s",
   "villagerretaliation.village_naming.error.insufficient_standing": "You need Revered or Royalty standing with at least %s of this village's living adult residents.",
-  "villagerretaliation.village_naming.error.invalid_name": "Village names must be 1\u201332 characters without formatting or control codes.",
+  "villagerretaliation.village_naming.error.invalid_name": "Village names must be 1–32 characters without formatting or control codes.",
   "villagerretaliation.village_naming.error.name_in_use": "That village name is already in use.",
   "villagerretaliation.village_naming.error.too_far": "Move within eight blocks of the bell and try again.",
   "villagerretaliation.village_naming.error.banner_required": "Hold a banner while naming the village. Your banner is kept.",
   "villagerretaliation.village_naming.error.try_again": "Please wait a moment before saving again.",
   "villagerretaliation.village_naming.error.village_changed": "That bell no longer belongs to the same village.",
   "villagerretaliation.village_naming.renamed": "This village is now named %s.",
-
   "interaction.mount.mounted_travel_disabled": "Mounted travel disabled.",
   "interaction.mount.mounted_travel_enabled": "Mounted travel enabled.",
   "villagerretaliation.gui.party.about_contract": "Extend Party Contract",
@@ -2099,7 +2091,6 @@
   "villagerretaliation.party.villager_recruited": "Villager recruited for %s day(s) at a cost of %s emeralds.",
   "villagerretaliation.party.villager_settings_updated": "Villager party settings updated.",
   "villagerretaliation.party.villager_staying": "Villager set to stay.",
-
   "villagerretaliation.duel.boundary_countdown": "Return to the duel arena within %s seconds or forfeit!",
   "villagerretaliation.duel.countdown": "Duel begins in %s...",
   "villagerretaliation.duel.countdown.fight": "Fight!",
@@ -2194,7 +2185,6 @@
   "villagerretaliation.player_raid.title": "Player Raid - %s",
   "villagerretaliation.player_raid.unavailable": "A raid is already active here or one of its participants is occupied.",
   "villagerretaliation.player_raid.victory": "%s has fallen to the player raid.",
-
   "villagerretaliation.quest.discovery.offer": "Quest discovered: %s. Open your quest journal to accept.",
   "villagerretaliation.quest.discovery.unavailable": "This discovered quest is currently unavailable.",
   "villagerretaliation.quest.follower.follow": "[Follow]",
@@ -2260,7 +2250,6 @@
   "villagerretaliation.gui.quest_journal.view_questline": "Click to view questline map",
   "villagerretaliation.gui.quest_journal.waiting_for": "Waiting for: %s",
   "villagerretaliation.gui.quest_journal.waypoint": "Waypoint: %s, %s, %s in %s%s",
-
   "gui.villagerretaliation.inventory.contract_time_remaining": "Contract time remaining",
   "gui.villagerretaliation.inventory.job_inventory": "Job Inventory",
   "gui.villagerretaliation.inventory.job_tab": "Job",
@@ -2269,7 +2258,6 @@
   "gui.villagerretaliation.inventory.personal_inventory": "Personal Inventory",
   "gui.villagerretaliation.inventory.personal_tab": "Personal",
   "gui.villagerretaliation.inventory.switch_to": "Switch to %s",
-
   "villagerretaliation.gui.back": "Back",
   "villagerretaliation.gui.chat.speaker_prefix": "%s: ",
   "villagerretaliation.gui.chat.tag": "Villager",
@@ -3747,5 +3735,10 @@
   "item.villagerretaliation.storage_key": "Key",
   "item.villagerretaliation.key_mold": "Key Mold",
   "item.villagerretaliation.key_cast": "Unfired Key Cast",
-  "container.villagerretaliation.bank_storage": "Bank Storage"
+  "container.villagerretaliation.bank_storage": "Bank Storage",
+  "tutorial.villagerretaliation.unbound": "[Bind %s in Options > Controls first]",
+  "interaction.work.tutorial.paused": "Tutorial work paused. Review the current lesson and its remaining allowance.",
+  "interaction.work.tutorial.stopped": "Tutorial assignment stopped. No payment was taken.",
+  "tutorial.villagerretaliation.command_modifier": "Command",
+  "tutorial.villagerretaliation.option_modifier": "Option"
 }

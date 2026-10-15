@@ -238,6 +238,8 @@ public final class ConstructionBlueprintItem extends Item {
             blueprintTag.putString(MATERIAL_SUMMARY_TAG, plan.materialSummary(8));
             blueprintTag.put(BLOCKS_TAG, previewBlocks(plan));
             root.put(TAG, blueprintTag);
+            var tutorial=root.getCompound("VillagerRetaliationTutorialBlueprint");
+            if(tutorial.hasUUID("Trial")){tutorial.putBoolean("PreviewApplied",true);root.put("VillagerRetaliationTutorialBlueprint",tutorial);}
         });
     }
 

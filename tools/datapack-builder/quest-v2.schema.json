@@ -6371,11 +6371,196 @@
             "villager_level",
             "villager_mood",
             "visited_stage",
-            "weather"
+            "weather",
+            "work_state"
           ]
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "work_state"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "tutorial",
+              "role",
+              "check"
+            ],
+            "properties": {
+              "type": {
+                "const": "work_state"
+              },
+              "tutorial": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "role": {
+                "enum": [
+                  "farming",
+                  "fishing",
+                  "mining",
+                  "logging",
+                  "hunting",
+                  "animal_handling",
+                  "brewing",
+                  "craftsman",
+                  "cook",
+                  "smelter",
+                  "courier",
+                  "nitwit",
+                  "combat",
+                  "builder"
+                ]
+              },
+              "check": {
+                "enum": [
+                  "eligible",
+                  "assignment",
+                  "area",
+                  "storage",
+                  "equipment",
+                  "supplies",
+                  "settings",
+                  "outcome",
+                  "completed",
+                  "disposed",
+                  "learned",
+                  "task",
+                  "route",
+                  "selection",
+                  "policy",
+                  "quoted",
+                  "blueprint"
+                ]
+              },
+              "parameter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "item": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "item_tag": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65536
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "check": {
+                      "enum": [
+                        "equipment",
+                        "supplies"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "oneOf": [
+                    {
+                      "required": [
+                        "item"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "item_tag"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "check": {
+                      "enum": [
+                        "storage",
+                        "settings",
+                        "outcome",
+                        "learned"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "parameter"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "check": {
+                      "const": "storage"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "parameter": {
+                      "enum": [
+                        "supply",
+                        "output"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "check": {
+                      "const": "settings"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "parameter": {
+                      "enum": [
+                        "work_enabled",
+                        "assigned_supplies",
+                        "auto_deposit",
+                        "farming_wheat"
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -7073,6 +7258,70 @@
             "properties": {
               "type": {
                 "enum": [
+                  "tutorial"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "type",
+              "role",
+              "operation"
+            ],
+            "properties": {
+              "type": {
+                "const": "tutorial"
+              },
+              "role": {
+                "enum": [
+                  "farming",
+                  "fishing",
+                  "mining",
+                  "logging",
+                  "hunting",
+                  "animal_handling",
+                  "brewing",
+                  "craftsman",
+                  "cook",
+                  "smelter",
+                  "courier",
+                  "nitwit",
+                  "combat",
+                  "builder"
+                ]
+              },
+              "step": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "operation": {
+                "enum": [
+                  "start",
+                  "activate",
+                  "quote",
+                  "continue",
+                  "stop",
+                  "replace",
+                  "blueprint",
+                  "supplies",
+                  "learn",
+                  "recover"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
                   "companion_unlock"
                 ]
               }
@@ -7617,6 +7866,7 @@
             "start_scene",
             "tag",
             "tracker",
+            "tutorial",
             "unset_tag",
             "variable",
             "xp"
@@ -7705,6 +7955,7 @@
             "tracker",
             "turn_in",
             "turnin",
+            "tutorial",
             "unset_tag",
             "variable",
             "xp"

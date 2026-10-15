@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
@@ -46,6 +48,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager) && !TutorialWorkService.canTick(villager, role())) return WorkResult.idle("interaction.work.tutorial.paused");
         if (com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.access(level, villager, role()).managed()) {
             return new com.jvn.villagerretaliation.interaction.work.production.HiredQueuedFurnaceWorker(role()).tick(level, villager, hirer, context);
         }
@@ -70,6 +73,9 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             }
         }
 
+        var tutorial = TutorialWorkService.run(villager).orElse(null);
+        if (TutorialWorkService.isTrial(villager) && (tutorial == null || tutorial.committedUnits("process") >= 2 && (TutorialFurnacePlan.station(level, villager) == null
+                || !(level.getBlockEntity(TutorialFurnacePlan.station(level, villager)) instanceof AbstractFurnaceBlockEntity boundFurnace) || boundFurnace.getItem(2).isEmpty()))) return WorkResult.idle("interaction.work.tutorial.paused");
         ItemStack processingFilter = VillagerItemFilterService.assignedFilter(villager);
         Predicate<ItemStack> desiredOutput = stack -> isDesiredSmeltedOutput(level, processingFilter, stack);
         BlockPos station = nearestSmeltingStation(level, villager, context, processingFilter, desiredOutput, finishExisting);
@@ -179,6 +185,14 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.smelting.missing_raw_ore");
             }
             int count = Math.min(carriedOre.getCount(), Math.min(context.transferLimit(MAX_INPUT_PULL), furnace.getMaxStackSize(carriedOre)));
+            TutorialRun.Permit loadPermit = null;
+            if (TutorialWorkService.isTrial(villager)) {
+                var run = TutorialWorkService.run(villager).orElseThrow();
+                if (!carriedOre.is(TutorialFurnacePlan.input(role()))) return WorkResult.idle("interaction.work.tutorial.paused");
+                count = Math.min(count, 2 - run.committedUnits("load"));
+                loadPermit = TutorialFurnaceService.reserveLoad(villager, furnace, count, false);
+                if (loadPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+            }
             ItemStack loaded = consumeCarriedSupply(context, carriedOre, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_smelting_raw_ore", level.getGameTime() + 100L);
@@ -186,6 +200,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.smelting.missing_raw_ore");
             }
             furnace.setItem(INPUT_SLOT, loaded);
+            if (loadPermit != null) TutorialWorkService.committed(villager, loadPermit, "", 0, "");
             updateFurnace(level, furnace, station);
             useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.smelting.loaded_input", itemReplacements(loaded));
@@ -199,6 +214,13 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.smelting.missing_fuel");
             }
             int count = Math.min(carriedFuel.getCount(), Math.min(context.transferLimit(MAX_FUEL_PULL), furnace.getMaxStackSize(carriedFuel)));
+            TutorialRun.Permit fuelPermit = null;
+            if (TutorialWorkService.isTrial(villager)) {
+                if (!carriedFuel.is(Items.COAL)) return WorkResult.idle("interaction.work.tutorial.paused");
+                count = 1;
+                fuelPermit = TutorialFurnaceService.reserveLoad(villager, furnace, count, true);
+                if (fuelPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+            }
             ItemStack loaded = consumeCarriedSupply(context, carriedFuel, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_smelting_fuel", level.getGameTime() + 100L);
@@ -206,6 +228,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.smelting.missing_fuel");
             }
             furnace.setItem(FUEL_SLOT, loaded);
+            if (fuelPermit != null) TutorialWorkService.committed(villager, fuelPermit, "", 0, "");
             updateFurnace(level, furnace, station);
             useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.smelting.loaded_fuel", itemReplacements(loaded));
@@ -224,6 +247,8 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             ItemStack stack,
             String status,
             boolean completed) {
+        if (TutorialWorkService.isTrial(villager) && (!completed || !TutorialOutputService.attributable(villager, stack)))
+            return WorkResult.idle("interaction.work.tutorial.paused");
         ItemStack planned = stack.copyWithCount(Math.min(stack.getCount(), context.transferLimit(MAX_INPUT_PULL)));
         if (!context.canStoreOutputs(List.of(planned))) {
             OutputFullHandling handling = handleOutputFullInventory(
@@ -373,12 +398,13 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         List<MaterialNeed> needs = new ArrayList<>();
         Predicate<ItemStack> rawOrePredicate =
                 stack -> isSmeltableOre(level, stack, recipeType, processingFilter);
-        Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType);
+        if (TutorialWorkService.isTrial(villager)) rawOrePredicate = stack -> stack.is(TutorialFurnacePlan.input(role()));
+        Predicate<ItemStack> fuelPredicate = stack -> isFuel(stack, recipeType) && (!TutorialWorkService.isTrial(villager) || stack.is(Items.COAL));
         ItemStack input = furnace.getItem(INPUT_SLOT);
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawOrePredicate) <= 0) {
             needs.add(new MaterialNeed(
                     rawOrePredicate,
-                    context.transferLimit(MAX_INPUT_PULL),
+                    TutorialWorkService.isTrial(villager) ? 2 : context.transferLimit(MAX_INPUT_PULL),
                     "missing_smelting_raw_ore",
                     "interaction.work.smelting.missing_raw_ore"));
         }
@@ -388,7 +414,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 && HiredSupplyCrafting.countCarried(context, fuelPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     fuelPredicate,
-                    context.transferLimit(MAX_FUEL_PULL),
+                    TutorialWorkService.isTrial(villager) ? 1 : context.transferLimit(MAX_FUEL_PULL),
                     "missing_smelting_fuel",
                     "interaction.work.smelting.missing_fuel"));
         }
@@ -413,6 +439,10 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             ItemStack processingFilter,
             Predicate<ItemStack> desiredOutput, boolean finishExisting) {
+        if (TutorialWorkService.isTrial(villager)) {
+            var bound = TutorialFurnacePlan.station(level, villager);
+            return bound != null && context.isInsideWorkArea(bound) && level.hasChunkAt(bound) ? bound : null;
+        }
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidSmeltingStation(level, context, cached)

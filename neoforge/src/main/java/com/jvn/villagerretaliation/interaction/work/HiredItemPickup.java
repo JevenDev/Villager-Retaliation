@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.villager.VillagerItemPickupReach;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
@@ -68,7 +70,14 @@ public final class HiredItemPickup {
         worker.setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, itemPos);
 
         ItemStack stack = item.getItem();
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, stack.copy());
+        var tutorialPermit = TutorialWorkService.isTrial(villager) ? TutorialPickupService.reserve(villager,item) : null;
+        if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+        ItemStack offered=stack.copy();
+        TutorialOutputService.stamp(villager,tutorialPermit,java.util.List.of(offered));
+        if(tutorialPermit!=null&&!context.canStoreOutputs(java.util.List.of(offered))) {
+            TutorialWorkService.failed(villager,tutorialPermit); return WorkResult.idle(messages.outputFullBlocked());
+        }
+        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, offered);
         int moved = stack.getCount() - remainder.getCount();
         if (moved <= 0) {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
@@ -83,6 +92,8 @@ public final class HiredItemPickup {
         } else {
             item.setItem(remainder);
         }
+        if(tutorialPermit!=null) TutorialWorkService.run(villager).ifPresent(run->run.learn("collected_entity:"+item.getUUID()));
+        if(tutorialPermit!=null) TutorialWorkService.committedProducts(villager,tutorialPermit,java.util.List.of(offered.copyWithCount(moved)));
         worker.swingWorkItem(level, villager, stack);
         if (messages.idleAfterCollected()) {
             worker.setTaskState(context, HiredWorkerTaskState.IDLE);
@@ -128,6 +139,7 @@ public final class HiredItemPickup {
             Predicate<ItemStack> itemFilter) {
         BlockPos pos = item.blockPosition();
         return item.isAlive()
+                && TutorialPickupService.allowed(villager,item)
                 && itemFilter.test(item.getItem())
                 && context.isInsideWorkAreaOrRoute(pos)
                 && context.isLoaded(level, pos)

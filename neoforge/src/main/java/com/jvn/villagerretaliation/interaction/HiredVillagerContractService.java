@@ -56,6 +56,74 @@ public final class HiredVillagerContractService {
     private HiredVillagerContractService() {
     }
 
+    /** Called only after a quest run and its one-time entitlement have been reserved. */
+    public static boolean beginTutorialContract(ServerLevel level, Villager villager, ServerPlayer player,
+            HireContract sponsored) {
+        // No ordinary job can enter sponsorship until its complete action adapter is integrated.
+        if (sponsored == null || !com.jvn.villagerretaliation.quest.tutorial.TutorialService.supported(sponsored.role())) return false;
+        if (sponsored == null || !sponsored.tutorialTrial() || !sponsored.isActive()
+                || player == null || !sponsored.owner().filter(player.getUUID()::equals).isPresent()
+                || villager.isBaby() || !villager.isAlive() || villager.level() != level
+                || hasActiveOrPendingContract(villager) || hasForeignJobInventoryOverflow(level, villager, player)
+                || !RecruitmentPolicy.mayAcceptPaidContract(level, villager, player).allowed()
+                || com.jvn.villagerretaliation.party.PartyVillagerContractService.hasPartyEntityReference(villager)
+                || com.jvn.villagerretaliation.settlement.SettlementWorkforceService.blocksPersonalRecruitment(level, villager)
+                || VillagerQuestHiringRestrictionService.blocksHiring(level, villager, player)
+                || !(sponsored.role()==HiredVillagerRole.BUILDER?HiredVillagerRoles.canOfferBuilderService(level,villager):HiredVillagerRoles.availableContractRoles(level, villager).contains(sponsored.role()))) return false;
+        if (synchronizeAssignment(level, villager).state() != VillagerAssignmentState.UNASSIGNED
+                || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) return false;
+        if (sponsored.role() == HiredVillagerRole.FARMING
+                && villager.getVillagerData().getProfession() != net.minecraft.world.entity.npc.VillagerProfession.FARMER)
+            return false;
+        var run = sponsored.tutorialId()
+                .flatMap(id -> com.jvn.villagerretaliation.quest.tutorial.TutorialSavedData.get(level).trial(id)).orElse(null);
+        if (run == null || !run.binding().assignment().equals(sponsored.id())
+                || !run.binding().worker().equals(villager.getUUID())
+                || !run.binding().player().equals(player.getUUID())
+                || !run.binding().role().equals(sponsored.role().serializedName()) || run.completed()) return false;
+        HireContractLifecycle.begin(level, villager, sponsored);
+        HiredWorkStateStore.state(villager).putBoolean("Enabled", false);
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(
+                villager, player.getUUID(), "work_assignment_committed", Map.of());
+        return true;
+    }
+
+    /** Compare-and-set release. Storage links and player items are retained for explicit recovery. */
+    public static boolean stopTutorialContract(ServerLevel level, Villager villager, UUID owner,
+            UUID assignment, UUID trial) {
+        var contract = HireContractStore.load(villager).orElse(null);
+        if (contract == null || !contract.tutorialTrial() || !contract.isActive()
+                || !contract.id().equals(assignment) || !contract.tutorialId().filter(trial::equals).isPresent()
+                || !contract.owner().filter(owner::equals).isPresent()) return false;
+        HiredWorkStateStore.cancelWork(level, villager, contract.role(), "interaction.work.tutorial.stopped", Map.of());
+        clearContractScopedOrders(level, villager, contract.role());
+        HireContractLifecycle.unlockProfession(villager, contract);
+        contract.status(HireContract.Status.ENDED);
+        HireContractStore.save(villager, contract);
+        HireOverflowClaimService.remember(level, villager, assignment, owner);
+        PaymentBoxChunkLoadingService.releaseLoads(level, villager);
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        HireContractAssignmentAdapter.contractEnded(villager);
+        HiredWorkSession.invalidate(villager);
+        HiredVillagerIndex.remove(villager);
+        return true;
+    }
+
+    static boolean convertTutorialContract(ServerLevel level, Villager villager, UUID owner, UUID assignment,
+            UUID trial, HireContract paid) {
+        var contract = HireContractStore.load(villager).orElse(null);
+        if (contract == null || !contract.isActive() || !contract.tutorialTrial() || !contract.id().equals(assignment)
+                || !contract.tutorialId().filter(trial::equals).isPresent() || !contract.owner().filter(owner::equals).isPresent()
+                || !paid.owner().filter(owner::equals).isPresent() || paid.role() != contract.role() || paid.tutorialTrial()) return false;
+        HiredWorkStateStore.cancelWork(level, villager, contract.role(), "Tutorial completed. Paid continuation accepted.", Map.of());
+        clearContractScopedOrders(level, villager, contract.role());
+        HireContractLifecycle.unlockProfession(villager, contract);
+        paid.autoPayment(false);
+        HireContractLifecycle.begin(level, villager, paid);
+        HiredWorkStateStore.state(villager).putBoolean("Enabled", true);
+        return true;
+    }
+
     public static boolean isHired(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
         return hasActiveOrPendingContract(villager);
@@ -145,6 +213,7 @@ public final class HiredVillagerContractService {
         if (currentOwnerId == null) {
             return Optional.empty();
         }
+        if (contract.tutorialTrial()) return Optional.empty();
         if (!currentOwnerId.equals(newOwnerId)) {
             contract.owner(newOwnerId);
             HireContractStore.save(villager, contract);
@@ -248,7 +317,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .map(tag -> remainingDays(level, tag))
                 .orElse(0);
     }
@@ -257,7 +326,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> activeContract = contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag));
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"));
         return activeContract.isEmpty()
                 ? OptionalLong.empty()
                 : OptionalLong.of(activeContract.get().getLong(END_GAME_TIME_TAG));
@@ -300,7 +369,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActive)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()))
                 .map(tag -> effectiveExtensionDays(level, tag, requestedDays))
                 .orElse(0);
@@ -318,7 +387,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .map(tag -> currentRenewalDailyCost(level, villager, tag))
                 .orElseGet(() -> getDailyCost(level, villager, player));
     }
@@ -327,7 +396,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .map(tag -> tag.getBoolean(AUTO_PAYMENT_TAG))
                 .orElse(false);
     }
@@ -342,7 +411,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> activeContract = contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag));
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"));
         if (activeContract.isEmpty()) {
             return false;
         }
@@ -356,7 +425,7 @@ public final class HiredVillagerContractService {
     public static void setAutoPaymentEnabled(Villager villager, boolean enabled) {
         contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .ifPresent(tag -> {
                     tag.putBoolean(AUTO_PAYMENT_TAG, enabled);
                     villager.setPersistenceRequired();
@@ -367,7 +436,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .map(tag -> !tag.contains(MOUNTED_TRAVEL_TAG) || tag.getBoolean(MOUNTED_TRAVEL_TAG))
                 .orElse(false);
     }
@@ -376,7 +445,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> activeContract = contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> !isOneOffBuilderJob(tag));
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"));
         if (activeContract.isEmpty()) {
             return false;
         }
@@ -388,6 +457,12 @@ public final class HiredVillagerContractService {
     }
 
     public static void onVillagerDeath(ServerLevel level, Villager villager) {
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.interrupted(villager);
+        var tutorial = HireContractStore.load(villager).filter(HireContract::tutorialTrial).orElse(null);
+        if (tutorial != null) {
+            stopTutorialContract(level, villager, tutorial.owner().orElse(null), tutorial.id(), tutorial.tutorialId().orElseThrow());
+            return;
+        }
         contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .ifPresent(tag -> {
@@ -491,7 +566,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> contract = contract(villager)
                 .filter(HiredVillagerContractService::isActive)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()));
         if (contract.isEmpty()) {
             return false;
@@ -520,6 +595,16 @@ public final class HiredVillagerContractService {
             return 0;
         }
         CompoundTag tag = activeContract.get();
+        if (tag.hasUUID("TutorialTrial")) {
+            var trial = com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.run(villager).orElse(null);
+            if (trial != null && !trial.stop(trial.binding())) {
+                com.jvn.villagerretaliation.quest.tutorial.TutorialSavedData.get(level).setDirty();
+                return 0;
+            }
+            stopTutorialContract(level, villager, player.getUUID(), tag.getUUID(CONTRACT_ID_TAG), tag.getUUID("TutorialTrial"));
+            com.jvn.villagerretaliation.quest.tutorial.TutorialSavedData.get(level).setDirty();
+            return 0;
+        }
         int refund = HirePaymentEscrow.earlyEndRefund(level, villager);
         finishContract(level, villager, tag, STATUS_ENDED, "Work stopped. Contract ended.", true, refund);
         return refund;
@@ -528,7 +613,7 @@ public final class HiredVillagerContractService {
     public static void expireHireContractIfNeeded(ServerLevel level, Villager villager) {
         contract(villager)
                 .filter(HiredVillagerContractService::isActive)
-                .filter(tag -> !isOneOffBuilderJob(tag))
+                .filter(tag -> !isOneOffBuilderJob(tag) && !tag.hasUUID("TutorialTrial"))
                 .filter(tag -> level.getGameTime() >= tag.getLong(END_GAME_TIME_TAG))
                 .ifPresent(tag -> {
                     if (canAttemptAutoPaymentRenewal(level, villager, tag)) {
@@ -579,6 +664,7 @@ public final class HiredVillagerContractService {
         }
         CompoundTag tag = contract.get();
         HiredVillagerRole currentRole = roleFromContract(level, villager, tag);
+        if (tag.hasUUID("TutorialTrial") && currentRole != role) return false;
         if (currentRole != role) {
             if (currentRole == HiredVillagerRole.BUILDER
                     && BuilderTaskState.hasTask(HiredWorkStateStore.state(villager))) {
@@ -611,7 +697,7 @@ public final class HiredVillagerContractService {
         }
 
         CompoundTag tag = storedContract.get();
-        if (isOneOffBuilderJob(tag)) {
+        if (isOneOffBuilderJob(tag) || tag.hasUUID("TutorialTrial")) {
             return;
         }
         HirePaymentEscrow.releaseEarned(level, villager);

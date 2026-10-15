@@ -20,7 +20,7 @@ public final class PartyQuestService {
     }
 
     public static boolean isShareable(QuestDefinition definition) {
-        if (definition == null || definition.campaign() != null) {
+        if (definition == null || definition.campaign() != null || (definition.tags().contains("clipboard_tutorial") || definition.tags().contains("group.clipboard"))) {
             return false;
         }
         boolean supported = false;

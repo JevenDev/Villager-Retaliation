@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
@@ -57,6 +59,11 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             }
         }
 
+        if (TutorialWorkService.isTrial(villager)) {
+            var run = TutorialWorkService.run(villager).orElse(null);
+            if (run == null || !TutorialWorkService.canTick(villager, role()) || run.committedUnits("craft") >= 1)
+                return WorkResult.idle("interaction.work.tutorial.paused");
+        }
         var production = HiredProductionService.access(level, villager, role());
         if (production.managed()) return tickProduction(level, villager, context, production);
 
@@ -88,6 +95,8 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
 
     private WorkResult craft(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos table,
             Selection selection, List<Target> targets, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
+        if (TutorialWorkService.isTrial(villager) && (queue != null || !TutorialCraftingPlan.allows(level, villager, table, selection.recipe(), selection.materials())))
+            return WorkResult.idle("interaction.work.tutorial.paused");
         List<HiredProductionMaterials.Need> missing =
                 HiredProductionMaterials.missingItemNeeds(context, selection.materials());
         if (!missing.isEmpty()) {
@@ -136,7 +145,17 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             releaseProduction(villager, context, queue);
             return WorkResult.idle("interaction.work.craftsman.no_filter");
         }
+        TutorialRun.Permit tutorialPermit = null;
+        if (TutorialWorkService.isTrial(villager)) {
+            var run = TutorialWorkService.run(villager).orElseThrow();
+            if (plan.crafts() != 1 || plan.consumedStacks().size() != 1 || !plan.consumedStacks().getFirst().is(net.minecraft.world.item.Items.OAK_LOG)
+                    || plan.consumedStacks().getFirst().getCount() != 1) return WorkResult.idle("interaction.work.tutorial.paused");
+            tutorialPermit = TutorialWorkService.reserve(villager, "craft", run.scope().targets().get("craft").iterator().next(), 1);
+            if (tutorialPermit == null) return WorkResult.idle("interaction.work.tutorial.paused");
+            TutorialOutputService.stamp(villager, tutorialPermit, plan.products());
+        }
         if (!HiredSupplyCrafting.applyCarriedRecipe(context, plan, true, true)) {
+            if (tutorialPermit != null) TutorialWorkService.failed(villager, tutorialPermit);
             if (queue != null) {
                 queue.lost(allocation.id());
                 queue.blocker(allocation.order(), "output_full");
@@ -146,6 +165,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "craftsman_output_full", level.getGameTime() + 100L);
             return WorkResult.idle("interaction.work.craftsman.output_full");
         }
+        if (tutorialPermit != null) TutorialWorkService.committedProducts(villager, tutorialPermit, plan.products());
         ItemStack result = plan.result();
         if (queue == null) advanceCursor(context.state(), targets, selection.target().slot());
         else {

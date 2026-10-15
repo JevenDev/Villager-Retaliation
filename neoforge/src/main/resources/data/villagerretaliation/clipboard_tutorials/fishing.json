@@ -1,0 +1,284 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_fishing",
+  "role": "fishing",
+  "title": "Fisher  -  One cast, one catch",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Fisher  -  One cast, one catch\n\n**Outcome:** a usable shore, supplied rod and one actual recovered fishing catch.\n\n**Trial ceiling:** one completed catch event, its normal loot result and delivery. A catch is not necessarily one fish item. Do not guarantee fish, treasure or a particular stack.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Take the lesson",
+      "sequences": [],
+      "design_objective": "accept the one-time Fishing lesson and identify accessible water.",
+      "design_check": "entitlement available/resumable; NPC can perform the ordinary role.",
+      "design_provisions": "bounded free assignment, no fish or guaranteed treasure.",
+      "design_hook": "establish single-catch ceiling before casting can start.",
+      "design_notes": "1. Take the lesson\n\n**NPC:** “Find me a bank I can stand on, and we’ll try one cast together.”\n\n**Objective:** accept the one-time Fishing lesson and identify accessible water.\n\n**Check:** entitlement available/resumable; NPC can perform the ordinary role.\n\n**Provides:** bounded free assignment, no fish or guaranteed treasure.\n\n**Hook:** establish single-catch ceiling before casting can start."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Supply the rod",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the fishing rod inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Fisher, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "place usable fishing rod in a chest and commit Supplies.",
+      "design_check": "actual rod acquisition possible; inspect durability.",
+      "design_provisions": "teaches resupply. Optional aid: one once-issued loaned ordinary rod, subject to normal durability use.",
+      "design_hook": "use real rod compatibility/collection checks and separate player gear from attributable loans.",
+      "design_notes": "2. Supply the rod\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the fishing rod inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Fisher, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “My rod comes from the supply chest. Point it out to me with your Clipboard.”\n\n**Objective:** place usable fishing rod in a chest and commit Supplies.\n\n**Check:** actual rod acquisition possible; inspect durability.\n\n**Provides:** teaches resupply. Optional aid: one once-issued loaned ordinary rod, subject to normal durability use.\n\n**Hook:** use real rod compatibility/collection checks and separate player gear from attributable loans."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Mark water and standing room",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the shore beside our fishing water and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Fisher, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the shore beside our fishing water, then acknowledge the actual saved area on the bound Fisher. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit Set Work Area around usable water and shore.",
+      "design_check": "actual worker spot logic finds a reachable approach and valid cast target.",
+      "design_provisions": "teaches site suitability; no artificial pond or altered odds.",
+      "design_hook": "expose no usable spot, path and cast-obstruction states. Water intersecting bounds is insufficient.",
+      "design_notes": "3. Mark water and standing room\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the shore beside our fishing water and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Fisher, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the shore beside our fishing water, then acknowledge the actual saved area on the bound Fisher. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Optional flavour line:** “Water alone isn’t enough. I need a clear place to stand and room for the line.”\n\n**Objective:** commit Set Work Area around usable water and shore.\n\n**Check:** actual worker spot logic finds a reachable approach and valid cast target.\n\n**Provides:** teaches site suitability; no artificial pond or altered odds.\n\n**Hook:** expose no usable spot, path and cast-obstruction states. Water intersecting bounds is insufficient."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Set destination and count",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Fisher, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_4_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Our saved fishing site is ready, but applying it cleared the Clipboard draft. Open {Inventory}, right-click the Clipboard slot to Edit Job Site, then close it. Point at the same shore and press {Use}; size the draft around our water and standing place again. Leave this draft on the Clipboard instead of applying it to me."
+            },
+            {
+              "id": "card_2",
+              "text": "With the Clipboard held, aim into empty air and press {Use} without sneaking. Select Fishing, then my worker row to open Job Site."
+            },
+            {
+              "id": "card_3",
+              "text": "In Draft, click Task. Enter 1 in Number of catches, leave this as a single replacement task, then click Apply. Show me that one-catch order."
+            }
+          ],
+          "confirmation_guidance": "Confirm the saved one-catch task bound to this worker and valid draft/site; display 0/1 until a real catch occurs.",
+          "recovery": "If Task reports no usable draft, close the screen, choose Edit Job Site and redraw the water-and-shore bounds, then reopen Task. Do not replace the one-catch cap with unlimited work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "assign Output; Clipboard Job Site → Draft → Task; enter 1 in Number of catches; Apply.",
+      "design_check": "Output capacity; Fishing task for approved draft has quantity one.",
+      "design_provisions": "teaches finite catch orders; no continuous free work.",
+      "design_hook": "reuse `ClipboardFishingTaskScreen`; tutorial cap prevents fallback permanent work after task completion.",
+      "design_notes": "4. Set destination and count\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Fisher, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Our saved fishing site is ready, but applying it cleared the Clipboard draft. Open {Inventory}, right-click the Clipboard slot to Edit Job Site, then close it. Point at the same shore and press {Use}; size the draft around our water and standing place again. Leave this draft on the Clipboard instead of applying it to me.”\n2. “With the Clipboard held, aim into empty air and press {Use} without sneaking. Select Fishing, then my worker row to open Job Site.”\n3. “In Draft, click Task. Enter 1 in Number of catches, leave this as a single replacement task, then click Apply. Show me that one-catch order.”\n\n**Show / confirm:** Confirm the saved one-catch task bound to this worker and valid draft/site; display 0/1 until a real catch occurs.\n\n**If it goes wrong:** “If Task reports no usable draft, close the screen, choose Edit Job Site and redraw the water-and-shore bounds, then reopen Task. Do not replace the one-catch cap with unlimited work.”\n\n\n**Optional flavour line:** “Send the catch to this chest. For the lesson, ask for just one.”\n\n**Objective:** assign Output; Clipboard Job Site → Draft → Task; enter 1 in Number of catches; Apply.\n\n**Check:** Output capacity; Fishing task for approved draft has quantity one.\n\n**Provides:** teaches finite catch orders; no continuous free work.\n\n**Hook:** reuse `ClipboardFishingTaskScreen`; tutorial cap prevents fallback permanent work after task completion."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Let the line work",
+      "sequences": [],
+      "design_objective": "watch approach, real hook cast and retrieval.",
+      "design_check": "authoritative catch completion; normal loot and durability applied.",
+      "design_provisions": "one real catch event and its supported loot; teaches active waiting versus blockage.",
+      "design_hook": "deduplicate hook completion/pending reconciliation; never mint tutorial fish on timer expiry.",
+      "design_notes": "5. Let the line work\n\n**NPC:** “Now we wait for a bite. Moving the chest won’t make the fish hurry.”\n\n**Objective:** watch approach, real hook cast and retrieval.\n\n**Check:** authoritative catch completion; normal loot and durability applied.\n\n**Provides:** one real catch event and its supported loot; teaches active waiting versus blockage.\n\n**Hook:** deduplicate hook completion/pending reconciliation; never mint tutorial fish on timer expiry."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Check delivery and choose",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Fisher, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "inspect deposited catch; A, actual normal Fishing quote, or B, stop.",
+      "design_check": "catch reconciled/deposited once; stopping leaves no active hook or pending production.",
+      "design_provisions": "completion and actual loot, no separate bonus.",
+      "design_hook": "",
+      "design_notes": "6. Check delivery and choose\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Fisher, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “The catch is in. Keep the bank clear and the chest open, and I can carry on.”\n\n**Objective:** inspect deposited catch; A, actual normal Fishing quote, or B, stop.\n\n**Check:** catch reconciled/deposited once; stopping leaves no active hook or pending production.\n\n**Provides:** completion and actual loot, no separate bonus.\n\n**Recovery:** full Output retains catch; repair and resume delivery without another cast allowance. Repair positioning without resetting counters.\n\nSources: `interaction/work/FishingWorker.java:38-170,249-298`; `client/inventory/ClipboardFishingTaskScreen.java`; `entity/VillagerFishingHook.java`; `interaction/work/HiredTemporaryTask.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "supplies",
+        "item": "minecraft:fishing_rod"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "area"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "task"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_5": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "outcome",
+        "parameter": "catch"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_fishing",
+        "role": "fishing",
+        "check": "completed"
+      }
+    ]
+  }
+}

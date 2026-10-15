@@ -10,6 +10,7 @@ public final class MiningTaskRules {
     private MiningTaskRules() { }
 
     public static boolean permits(BlockGetter level, HiredWorkContext context, BlockPos position) {
+        if (!com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.permitsTarget(level, context.state(), "mine", position)) return false;
         var queue = HiredTemporaryWorkService.queue(context.state());
         if (queue == null) return true;
         var task = queue.current();

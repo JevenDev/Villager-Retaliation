@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.logging;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
 import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_SAPLING_SCAN_GAME_TIME_TAG;
 import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_TREE_SCAN_GAME_TIME_TAG;
@@ -143,6 +145,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
         super.maintain(level, villager, context);
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
+        if (TutorialWorkService.isTrial(villager) && (!TutorialWorkService.canTick(villager, role()) || !TutorialLoggingPlan.settings(context.state()))) return;
         if (!context.hasWorkArea()) {
             LoggingHarvestPlan.clear(context);
             LoggingWorkerState.clear(context);
@@ -176,6 +179,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager)) {
+            var run = TutorialWorkService.run(villager).orElse(null);
+            if (run == null || !TutorialWorkService.canTick(villager, role()) || !TutorialLoggingPlan.settings(context.state())) return WorkResult.idle("interaction.work.tutorial.paused");
+            if (run.committedUnits("log") >= run.scope().limits().get("log") && run.committedUnits("replant") >= 1) {
+                var pickup = collectDecayDrops(level, villager, context);
+                if (pickup != null) return pickup;
+                var deposit = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+                return WorkResult.idle(deposit == DepositResult.STORAGE_FULL ? storageFullStatus(context) : "interaction.work.logging.depositing_outputs");
+            }
+        }
         if (!context.hasWorkArea()) {
             LoggingHarvestPlan.clear(context);
             LoggingWorkerState.clear(context);
@@ -894,6 +907,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             ExitObstruction obstruction,
             ItemStack tool) {
+        if (TutorialWorkService.isTrial(villager)) return WorkResult.idle("interaction.work.tutorial.paused");
         BlockPos pos = obstruction.pos();
         BlockState state = level.getBlockState(pos);
         if (obstruction.leaf() ? !state.is(BlockTags.LEAVES) : !state.is(BlockTags.LOGS)) {
@@ -989,6 +1003,19 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager)) {
+            var run = TutorialWorkService.run(villager).orElse(null);
+            if (run == null) return null;
+            var positions = new java.util.ArrayList<BlockPos>();
+            for (String target : run.scope().targets().get("log")) {
+                String[] xyz = target.substring(target.lastIndexOf('/')+1).split(",");
+                var pos = new BlockPos(Integer.parseInt(xyz[0]),Integer.parseInt(xyz[1]),Integer.parseInt(xyz[2]));
+                if (TutorialWorkService.permitsTarget(level,context.state(),"log",pos) && level.getBlockState(pos).is(BlockTags.LOGS)) positions.add(pos);
+            }
+            if (positions.isEmpty() || !LoggingTreeClaims.available(level,villager,positions)) return null;
+            var target = chooseReachableTarget(level,villager,context,positions);
+            return target != null && LoggingTreeClaims.reserve(level,villager,positions) ? target : null;
+        }
         Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
         LoggingTreeGeometry.DiscoveryCache trees = LoggingTreeGeometry.discovery(level, filters);
         HiredPathTarget storedTarget = storedWorkTarget(context.state());
@@ -1839,6 +1866,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return TreeHarvestResult.TARGET_CHANGED;
         }
 
+        if (TutorialWorkService.isTrial(villager)) {
+            var run = TutorialWorkService.run(villager).orElseThrow();
+            var identities = new java.util.HashSet<String>(); logs.forEach(p -> identities.add(TutorialWorkService.position(level,p)));
+            if (!identities.equals(run.scope().targets().get("log"))) return TreeHarvestResult.TARGET_CHANGED;
+        }
         boolean stripLogs = HiredLoggingOptions.stripLogs(context.state());
         List<BlockPos> leaves = naturalTreeLeaves(level, logs);
         ItemStack sapling = HiredLoggingOptions.plantSaplings(context.state())
@@ -1973,7 +2005,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
             swingWorkTool(villager);
             EnchantmentHelper.onHitBlock(level, axe, villager, villager, EquipmentSlot.MAINHAND, log.getCenter(), harvestState, ignored -> {
             });
+            var tutorialPermit = TutorialWorkService.isTrial(villager) ? TutorialWorkService.reserve(villager,"log",TutorialWorkService.position(level,log),1) : null;
+            if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return TreeHarvestResult.TARGET_CHANGED;
+            TutorialOutputService.stamp(villager,tutorialPermit,drops);
+            if (!context.canStoreOutputs(drops)) { TutorialWorkService.failed(villager,tutorialPermit); return TreeHarvestResult.OUTPUT_FULL; }
             boolean destroyed = level.destroyBlock(log, false, villager);
+            if (!destroyed && tutorialPermit != null) TutorialWorkService.failed(villager,tutorialPermit);
             if (!destroyed) {
                 level.destroyBlockProgress(villager.getId(), log, -1);
                 if (isPendingTreeLog(level.getBlockState(log), logFamily)) {
@@ -1992,6 +2029,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             for (ItemStack drop : drops) {
                 context.storeOutputAfterDepositIfFull(villager, drop);
             }
+            if (tutorialPermit != null) TutorialWorkService.committedProducts(villager,tutorialPermit,drops);
             damageTool(context, villager, axe, level, harvestState, log);
             if (stripped && !axe.isEmpty()) {
                 damageTool(context, villager, axe);
@@ -2065,7 +2103,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
         swingWorkTool(villager);
         EnchantmentHelper.onHitBlock(level, leafTool, villager, villager, EquipmentSlot.MAINHAND, leaf.getCenter(), state, ignored -> {
         });
+        var tutorialPermit = TutorialWorkService.isTrial(villager) ? TutorialWorkService.reserve(villager,"leaf",TutorialWorkService.position(level,leaf),1) : null;
+        if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return LeafBreakResult.BLOCKED;
+        TutorialOutputService.stamp(villager,tutorialPermit,drops);
         boolean removed = level.destroyBlock(leaf, false, villager);
+        if (tutorialPermit != null) { if (removed) TutorialWorkService.committedProducts(villager,tutorialPermit,drops); else TutorialWorkService.failed(villager,tutorialPermit); }
         level.destroyBlockProgress(villager.getId(), leaf, -1);
         boolean changed = !isNaturalLeaf(level.getBlockState(leaf));
         if (removed) {
@@ -2138,7 +2180,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 EnchantmentHelper.onHitBlock(level, leafTool, villager, villager, EquipmentSlot.MAINHAND, leaf.getCenter(), state, ignored -> {
                 });
             }
+            var tutorialPermit = TutorialWorkService.isTrial(villager) ? TutorialWorkService.reserve(villager,"leaf",TutorialWorkService.position(level,leaf),1) : null;
+            if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return false;
+            TutorialOutputService.stamp(villager,tutorialPermit,drops);
             boolean removed = level.destroyBlock(leaf, false, villager);
+            if (tutorialPermit != null) { if (removed) TutorialWorkService.committedProducts(villager,tutorialPermit,drops); else TutorialWorkService.failed(villager,tutorialPermit); }
             level.destroyBlockProgress(villager.getId(), leaf, -1);
             boolean changed = !isNaturalLeaf(level.getBlockState(leaf));
             if (removed) {
@@ -2379,7 +2425,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             return;
         }
+        var tutorialPermit = TutorialWorkService.isTrial(villager) ? TutorialWorkService.reserve(villager,"replant",TutorialWorkService.position(level,pos),1) : null;
+        if (TutorialWorkService.isTrial(villager) && tutorialPermit == null) return;
         if (!consumeSapling(villager, context, sapling)) {
+            if (tutorialPermit != null) TutorialWorkService.failed(villager,tutorialPermit);
             LoggingHarvestPlan.clearSaplings(context);
             clearActiveBreakingTarget(level, context, villager);
             return;
@@ -2387,6 +2436,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         facePlacedSapling(villager, pos);
         swingWorkItem(level, villager, sapling);
         if (!level.setBlock(pos, saplingState, Block.UPDATE_ALL)) {
+            if (tutorialPermit != null) TutorialWorkService.failed(villager,tutorialPermit);
             ItemStack remainder = context.inventory().insertSupply(sapling.copyWithCount(1));
             if (!remainder.isEmpty()) {
                 Block.popResource(level, villager.blockPosition(), remainder);
@@ -2394,6 +2444,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             return;
         }
+        if (tutorialPermit != null) TutorialWorkService.committed(villager,tutorialPermit,"",0,"");
         HiredPathMemory.onBlockChanged(level, pos);
         HiredPathMemory.rememberRecent(level, pos);
         LoggingHarvestPlan.removeSapling(context, pos);
@@ -2417,7 +2468,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static boolean consumeSapling(Villager villager, HiredWorkContext context, ItemStack sapling) {
-        if (!context.inventory().consumeOutput(stack -> matchesPlantingItem(stack, sapling), 1).isEmpty()) {
+        if (!TutorialWorkService.isTrial(villager) && !context.inventory().consumeOutput(stack -> matchesPlantingItem(stack, sapling), 1).isEmpty()) {
             return true;
         }
         return context.consumeSupply(villager, stack -> matchesPlantingItem(stack, sapling), 1) > 0;

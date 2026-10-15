@@ -1,0 +1,28 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard/shared",
+  "release_status": "requires_runtime_integration",
+  "sequence": {
+    "id": "supplies_deposit_readiness",
+    "cards": [
+      {
+        "id": "card_1",
+        "text": "Put the Clipboard away and talk to me with an empty-hand {Use}."
+      },
+      {
+        "id": "card_2",
+        "text": "Open Job → Work Settings and Ask for Work Report."
+      },
+      {
+        "id": "card_3",
+        "text": "If assigned supplies are off, click Toggle Assigned Supplies once; if automatic delivery is off, click Toggle Auto-Deposit Outputs once."
+      },
+      {
+        "id": "card_4",
+        "text": "Show me that both are enabled."
+      }
+    ],
+    "repeat_label": "Show me again",
+    "recovery": "Read the actual on/off states. If the work report cannot show them, pause the lesson."
+  }
+}

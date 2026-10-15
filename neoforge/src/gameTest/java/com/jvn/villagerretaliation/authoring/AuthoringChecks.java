@@ -35,6 +35,7 @@ public final class AuthoringChecks {
         }
         count += com.jvn.villagerretaliation.client.interaction.CameraAuthoringChecks.run();
         count += com.jvn.villagerretaliation.authoring.client.EditorClientChecks.run();
+        count += com.jvn.villagerretaliation.quest.tutorial.TutorialPersistenceChecks.run();
         System.out.println("Passed " + count + " standalone authoring checks.");
         if (!failures.isEmpty()) throw new AssertionError("Failed authoring checks: " + failures);
     }

@@ -79,7 +79,7 @@ public record VillagerActionDefinition(
 
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
-        required = required || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT;
+        required = required || kind == Kind.TUTORIAL || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT;
         questAction = questAction == null ? QuestAction.NONE : questAction;
         memoryScope = memoryScope == null ? VillageEventMemory.MemoryScope.BOTH : memoryScope;
         notificationTrigger = notificationTrigger == null ? "" : notificationTrigger;
@@ -315,7 +315,7 @@ public record VillagerActionDefinition(
             ResourceLocation location, String context, JsonObject entry, ResourceLocation defaultQuestId, Kind kind) {
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind == Kind.FOLLOWER || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.TUTORIAL || kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind == Kind.FOLLOWER || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -330,14 +330,14 @@ public record VillagerActionDefinition(
         String notificationTrigger = firstNonBlank(
                 DatapackJsonReader.readString(entry, "notification"),
                 DatapackJsonReader.readString(entry, "trigger"));
-        String text = DatapackJsonReader.readString(entry, "text");
+        String text = kind==Kind.TUTORIAL?DatapackJsonReader.readString(entry,"step"):DatapackJsonReader.readString(entry, "text");
         String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
         QuestFactScope factScope = readFactScope(entry, kind, questId);
         ResourceLocation factTag = readFactTag(location, context, entry, kind);
-        String factKey = kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id")
+        String factKey = kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "role") : kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id")
                 : kind == Kind.COMPANION_SERVICE ? DatapackJsonReader.readString(entry, "service_id") : readFactKey(entry, kind);
-        String factValue = kind == Kind.COMPANION_SERVICE ? Integer.toString(DatapackJsonReader.readInt(entry, "minimum_reputation", 0)) : kind == Kind.COMPANION_UNLOCK
+        String factValue = kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "operation") : kind == Kind.COMPANION_SERVICE ? Integer.toString(DatapackJsonReader.readInt(entry, "minimum_reputation", 0)) : kind == Kind.COMPANION_UNLOCK
                 ? (DatapackJsonReader.readBoolean(entry, "free", false) ? "free" : "paid") : readFactValue(entry, kind);
         CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
                 ? CompiledQuestTransition.read(location, entry, questId)
@@ -736,7 +736,8 @@ public record VillagerActionDefinition(
         COUNTER("counter"),
         DRAW_WEAPON("draw_weapon"),
         START_SCENE("start_scene"),
-        FOLLOWER("follower");
+        FOLLOWER("follower"),
+        TUTORIAL("tutorial");
 
         private final String serializedName;
 

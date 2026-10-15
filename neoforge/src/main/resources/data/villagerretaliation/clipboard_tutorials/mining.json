@@ -1,0 +1,321 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_mining",
+  "role": "mining",
+  "title": "Miner  -  A careful first cut",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Miner  -  A careful first cut\n\n**Outcome:** collect a small exposed deposit with an appropriate pickaxe, learning that work bounds authorize destructive work.\n\n**Trial ceiling:** up to three approved exposed ore blocks plus their real drop delivery. No unlimited tunnel or quarry.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1. Choose a modest job",
+      "sequences": [],
+      "design_objective": "accept the lesson and select a small reachable exposed coal deposit or another compatible ore.",
+      "design_check": "targets pass normal mining, protection, accessibility and tier requirements.",
+      "design_provisions": "bounded assignment; no generated ore or hidden-ore discovery promise.",
+      "design_hook": "capture approved block scope and cap before production; reject expansion outside it.",
+      "design_notes": "1. Choose a modest job\n\n**NPC:** “Start with ore we can see. I won’t promise what’s hidden behind the stone.”\n\n**Objective:** accept the lesson and select a small reachable exposed coal deposit or another compatible ore.\n\n**Check:** targets pass normal mining, protection, accessibility and tier requirements.\n\n**Provides:** bounded assignment; no generated ore or hidden-ore discovery promise.\n\n**Hook:** capture approved block scope and cap before production; reject expansion outside it."
+    },
+    {
+      "id": "step_2",
+      "title": "2. Match pickaxe to material",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the pickaxe suited to this ore inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Miner, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit Supplies with an appropriate pickaxe.",
+      "design_check": "acquisition and actual harvesting capability suffice.",
+      "design_provisions": "teaches tier and durability. Proposed coal-example aid: one loaned wooden pickaxe. Harder material needs a genuinely suitable player tool or separately defined one-time aid.",
+      "design_hook": "actual mining/tool checks, not item-name guesses.",
+      "design_notes": "2. Match pickaxe to material\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the pickaxe suited to this ore inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Miner, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Optional flavour line:** “The pick must suit the rock. Put it in my supplies, and I’ll check it before we begin.”\n\n**Objective:** commit Supplies with an appropriate pickaxe.\n\n**Check:** acquisition and actual harvesting capability suffice.\n\n**Provides:** teaches tier and durability. Proposed coal-example aid: one loaned wooden pickaxe. Harder material needs a genuinely suitable player tool or separately defined one-time aid.\n\n**Hook:** actual mining/tool checks, not item-name guesses."
+    },
+    {
+      "id": "step_3",
+      "title": "3. Draw the boundary",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the approved exposed ore and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Miner, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the approved exposed ore, then acknowledge the actual saved area on the bound Miner. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "commit tight Set Work Area around the deposit and inspect preview.",
+      "design_check": "approved blocks within bounds; worker/storage accessible; no unplanned unsafe excavation or missing return route.",
+      "design_provisions": "teaches destructive scope; nothing broken yet.",
+      "design_hook": "final scope validation; oversized draft does not authorize an expanded tutorial quarry.",
+      "design_notes": "3. Draw the boundary\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the approved exposed ore and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Miner, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the approved exposed ore, then acknowledge the actual saved area on the bound Miner. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Optional flavour line:** “Keep the outline tight. It tells me where I’m allowed to work.”\n\n**Objective:** commit tight Set Work Area around the deposit and inspect preview.\n\n**Check:** approved blocks within bounds; worker/storage accessible; no unplanned unsafe excavation or missing return route.\n\n**Provides:** teaches destructive scope; nothing broken yet.\n\n**Hook:** final scope validation; oversized draft does not authorize an expanded tutorial quarry."
+    },
+    {
+      "id": "step_4",
+      "title": "4. Choose mode and output",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Output Storage."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_3",
+              "text": "Now point at me, your Miner, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_4_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Cycle Mining Mode until the reported mode is Exposed Ores. Stop when it is correct; another click changes it again."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "choose Exposed Ores in existing Mining configuration; assign Output.",
+      "design_check": "effective mode, including temporary overrides, is Exposed Ores; Output accepts real drops.",
+      "design_provisions": "explains Exposed Ores, Horizontal Excavation and Vertical Excavation; executes only the first.",
+      "design_hook": "inspect `HiredMiningMode.fromState`, not only permanent stored mode.",
+      "design_notes": "4. Choose mode and output\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Output Storage.”\n2. “Point at the output chest and press {Use}. That selects the chest; it has not assigned it yet.”\n3. “Now point at me, your Miner, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s output chest and named tutor. Show selection first, then acknowledge only the stored Output link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Cycle Mining Mode until the reported mode is Exposed Ores. Stop when it is correct; another click changes it again.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Choose Exposed Ores for this lesson. Tunnels and vertical excavation are different jobs.”\n\n**Objective:** choose Exposed Ores in existing Mining configuration; assign Output.\n\n**Check:** effective mode, including temporary overrides, is Exposed Ores; Output accepts real drops.\n\n**Provides:** explains Exposed Ores, Horizontal Excavation and Vertical Excavation; executes only the first.\n\n**Hook:** inspect `HiredMiningMode.fromState`, not only permanent stored mode."
+    },
+    {
+      "id": "step_5",
+      "title": "5. Make the first cut",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "authorize previewed demonstration; allow up to three approved block breaks.",
+      "design_check": "successful events consume allowance; normal drops retained; failed/protected attempts do not count.",
+      "design_provisions": "actual tool-dependent loot. Coal is the simple example; not all targets produce raw ore or ingots.",
+      "design_hook": "reserve/decrement allowance atomically with mutation so reloads/ticks cannot exceed scope.",
+      "design_notes": "5. Make the first cut\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Watch the tool and the drop. Mining earns what this block actually yields.”\n\n**Objective:** authorize previewed demonstration; allow up to three approved block breaks.\n\n**Check:** successful events consume allowance; normal drops retained; failed/protected attempts do not count.\n\n**Provides:** actual tool-dependent loot. Coal is the simple example; not all targets produce raw ore or ingots.\n\n**Hook:** reserve/decrement allowance atomically with mutation so reloads/ticks cannot exceed scope."
+    },
+    {
+      "id": "step_6",
+      "title": "6. Bring it home",
+      "sequences": [
+        {
+          "id": "step_6_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived."
+            },
+            {
+              "id": "card_2",
+              "text": "Close the chest, then press {Use} on me, your Miner, with an empty hand. Return to our lesson conversation."
+            }
+          ],
+          "confirmation_guidance": "Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.",
+          "recovery": "If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "permit delivery of trial output.",
+      "design_check": "attributable drops deposited; destructive work stays stopped at ceiling.",
+      "design_provisions": "teaches storage loop and leaves mined output available.",
+      "design_hook": "bounded return/deposit after production cap; full storage preserves real drops.",
+      "design_notes": "6. Bring it home\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on the output chest to open it and look at what arrived.”\n2. “Close the chest, then press {Use} on me, your Miner, with an empty hand. Return to our lesson conversation.”\n\n**Show / confirm:** Show the attributable delivered goods and actual remaining amount. Reopening a chest or saying “done” never substitutes for the delivery receipt.\n\n**If it goes wrong:** “If it is empty, leave room in the output chest and ask me for a Work Report under Job → Work Settings. Follow the missing supplies, blocked path or full-output hint; moving your own matching items into it will not complete my work.”\n\n\n**Optional flavour line:** “A full pack helps nobody down here. Follow the haul back to the output chest.”\n\n**Objective:** permit delivery of trial output.\n\n**Check:** attributable drops deposited; destructive work stays stopped at ceiling.\n\n**Provides:** teaches storage loop and leaves mined output available.\n\n**Hook:** bounded return/deposit after production cap; full storage preserves real drops."
+    },
+    {
+      "id": "step_7",
+      "title": "7. Decide what comes next",
+      "sequences": [],
+      "design_objective": "A, actual normal Mining quote, or B, stop.",
+      "design_check": "completion once; counters persisted; paid continuation has no hidden destructive command.",
+      "design_provisions": "completion. Larger tunnel, quarry, staircase and prospecting tasks are existing optional capabilities, not free rewards.",
+      "design_hook": "",
+      "design_notes": "7. Decide what comes next\n\n**NPC:** “That’s the safe start. A larger excavation needs its own bounds, supplies, and a clear way back.”\n\n**Objective:** A, actual normal Mining quote, or B, stop.\n\n**Check:** completion once; counters persisted; paid continuation has no hidden destructive command.\n\n**Provides:** completion. Larger tunnel, quarry, staircase and prospecting tasks are existing optional capabilities, not free rewards.\n\n**Recovery:** distinguish tool failure, full storage, blocked ore and missing escape. Mode changes cannot expand free scope.\n\nSources: `interaction/HiredMiningMode.java`; `interaction/work/mining/MiningWorker.java:99-382,460-585,1126-1198`; `interaction/work/mining/MiningHorizontalOptions.java`; `interaction/work/HiredTemporaryTask.java`."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "storage",
+        "parameter": "supply"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "supplies",
+        "item_tag": "minecraft:pickaxes"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "area"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "storage",
+        "parameter": "output"
+      }
+    ],
+    "step_4_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "policy"
+      }
+    ],
+    "supplies_deposit_readiness": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "settings",
+        "parameter": "assigned_supplies"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "settings",
+        "parameter": "auto_deposit"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ],
+    "step_6_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "completed"
+      }
+    ]
+  }
+}

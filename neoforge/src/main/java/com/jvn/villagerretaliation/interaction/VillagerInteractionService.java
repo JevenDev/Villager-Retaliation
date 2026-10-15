@@ -1672,8 +1672,10 @@ public final class VillagerInteractionService {
         }
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
-        int jobCost = plan.get().price();
-        int blueprintCost = builderBlueprintCost(jobCost);
+        boolean tutorial=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)
+                &&com.jvn.villagerretaliation.quest.tutorial.TutorialBuilderPlan.TEMPLATE.equals(structureId);
+        int jobCost = tutorial?0:plan.get().price();
+        int blueprintCost = tutorial?0:builderBlueprintCost(jobCost);
         BlockPos initialSite = defaultBlueprintOrigin(level, player, plan.get());
         BuilderTaskState.setPendingStructure(state, entry.get().id());
         sendVillagerNotice(player, villager, "interaction.work.builder.preview", Map.of(
@@ -1713,6 +1715,12 @@ public final class VillagerInteractionService {
         }
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         BuilderWorker.MissingMaterials missing = BuilderWorker.missingMaterials(villager, inventory, plan.get());
+        if(com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)){
+            var run=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.run(villager).orElse(null);
+            if(run!=null&&com.jvn.villagerretaliation.quest.tutorial.TutorialBuilderPlan.TEMPLATE.equals(structureId))
+                com.jvn.villagerretaliation.quest.tutorial.TutorialBuilderPlan.blueprint(player,run);
+            sendVillagerNotice(player,villager,"Use the once-only lesson blueprint for Plains Accessory 1. No purchase fee was charged.");return;
+        }
         int cost = plan.get().price();
         int blueprintCost = builderBlueprintCost(cost);
         if (countCurrency(player) < blueprintCost) {
@@ -1760,7 +1768,10 @@ public final class VillagerInteractionService {
             return;
         }
         ConstructionBlueprintItem.PreviewData preview = optionalPreview.get();
-        if (preview.expired()) {
+        var lesson=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.run(villager).orElse(null);
+        boolean recoveringLesson=lesson!=null&&!lesson.completed()&&lesson.scope()!=null&&lesson.binding().task().equals(preview.jobId())
+                &&com.jvn.villagerretaliation.quest.tutorial.TutorialBuilderPlan.TEMPLATE.equals(preview.structureId());
+        if (preview.expired()&&!recoveringLesson) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_expired");
             return;
         }
@@ -1768,7 +1779,7 @@ public final class VillagerInteractionService {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_completed");
             return;
         }
-        if (preview.started()) {
+        if (preview.started()&&!recoveringLesson) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.blueprint_started");
             return;
         }
@@ -1806,7 +1817,11 @@ public final class VillagerInteractionService {
             return;
         }
 
-        int cost = preview.jobCost() > 0 ? preview.jobCost() : plan.get().price();
+        boolean tutorial=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager);
+        if(tutorial&&!com.jvn.villagerretaliation.quest.tutorial.TutorialBuilderPlan.approve(level,villager,preview,plan.get())){
+            rejectConstructionBlueprintStart(player,villager,"This lesson only authorizes its original Plains Accessory 1 blueprint and site.");return;
+        }
+        int cost = tutorial?0:preview.jobCost() > 0 ? preview.jobCost() : plan.get().price();
         if (countCurrency(player) < cost) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
                     "structure", entry.get().menuLabel(),

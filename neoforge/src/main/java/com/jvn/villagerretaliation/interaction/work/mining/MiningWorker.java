@@ -102,6 +102,16 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         HiredMiningMode mode = HiredMiningMode.fromState(context.state());
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) {
+            var trial = com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.run(villager).orElse(null);
+            if (trial == null || trial.scope() == null || mode != HiredMiningMode.EXPOSED_ORES)
+                return WorkResult.idle("Restore Exposed Ores and the approved small lesson area.");
+            if (trial.committedUnits("mine") >= trial.scope().required().getOrDefault("mine", 1)) {
+                var delivery = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
+                return delivery == DepositResult.STORAGE_FULL ? WorkResult.idle(storageFullStatus(context))
+                        : WorkResult.progressed("interaction.work.mining.output_full_depositing");
+            }
+        }
         MiningWorkerState.Change stateChange = MiningWorkerState.synchronize(context, mode);
         if (stateChange.changed()) {
             resetRuntimeState(level, villager, context);
@@ -1142,9 +1152,17 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (!context.canStoreOutputs(drops)) {
             return false;
         }
+        var tutorialPermit = com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.reserve(villager, "mine",
+                com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.position(level, target.blockPos()), 1);
+        if (com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager) && tutorialPermit == null) return false;
+        com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService.stamp(villager, tutorialPermit, drops);
+        if (tutorialPermit != null && !context.canStoreOutputs(drops)) {
+            com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.failed(villager, tutorialPermit); return false;
+        }
         faceBlock(villager, target);
         swingWorkTool(villager);
         if (!OreNodes.mine(level, target.blockPos(), villager, tool)) {
+            com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.failed(villager, tutorialPermit);
             return false;
         }
         for (ItemStack drop : drops) {
@@ -1153,6 +1171,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 Block.popResource(level, target.blockPos(), remainder);
             }
         }
+        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.committedProducts(villager, tutorialPermit, drops);
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
         if (level.getBlockState(target.blockPos()).getBlock() != state.getBlock()) HiredPathMemory.onBlockChanged(level, target.blockPos());

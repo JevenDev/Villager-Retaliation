@@ -5,6 +5,184 @@
   "registries": {
     "conditions": [
       {
+        "id": "work_state",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "WorkState",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "tutorial",
+            "role",
+            "check"
+          ],
+          "properties": {
+            "type": {
+              "const": "work_state"
+            },
+            "tutorial": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "role": {
+              "enum": [
+                "farming",
+                "fishing",
+                "mining",
+                "logging",
+                "hunting",
+                "animal_handling",
+                "brewing",
+                "craftsman",
+                "cook",
+                "smelter",
+                "courier",
+                "nitwit",
+                "combat",
+                "builder"
+              ]
+            },
+            "check": {
+              "enum": [
+                "eligible",
+                "assignment",
+                "area",
+                "storage",
+                "equipment",
+                "supplies",
+                "settings",
+                "outcome",
+                "completed",
+                "disposed",
+                "learned",
+                "task",
+                "route",
+                "selection",
+                "policy",
+                "quoted",
+                "blueprint"
+              ]
+            },
+            "parameter": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "item_tag": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536
+            },
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "enum": [
+                      "equipment",
+                      "supplies"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "oneOf": [
+                  {
+                    "required": [
+                      "item"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "item_tag"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "enum": [
+                      "storage",
+                      "settings",
+                      "outcome",
+                      "learned"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "parameter"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "const": "storage"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameter": {
+                    "enum": [
+                      "supply",
+                      "output"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "const": "settings"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameter": {
+                    "enum": [
+                      "work_enabled",
+                      "assigned_supplies",
+                      "auto_deposit",
+                      "farming_wheat"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
         "id": "context",
         "aliases": [],
         "capabilities": [],
@@ -853,6 +1031,68 @@
       }
     ],
     "actions": [
+      {
+        "id": "tutorial",
+        "aliases": [],
+        "kind": "tutorial",
+        "schema": {
+          "type": "object",
+          "required": [
+            "type",
+            "role",
+            "operation"
+          ],
+          "properties": {
+            "type": {
+              "const": "tutorial"
+            },
+            "role": {
+              "enum": [
+                "farming",
+                "fishing",
+                "mining",
+                "logging",
+                "hunting",
+                "animal_handling",
+                "brewing",
+                "craftsman",
+                "cook",
+                "smelter",
+                "courier",
+                "nitwit",
+                "combat",
+                "builder"
+              ]
+            },
+            "step": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "operation": {
+              "enum": [
+                "start",
+                "activate",
+                "quote",
+                "continue",
+                "stop",
+                "replace",
+                "blueprint",
+                "supplies",
+                "learn",
+                "recover"
+              ]
+            }
+          }
+        },
+        "recovery": "receipt_required",
+        "reconciles_prepared_operation": true,
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "world_known"
+        ]
+      },
       {
         "id": "companion_unlock",
         "aliases": [],
@@ -4115,6 +4355,72 @@
         "schema": {
           "type": "object"
         }
+      },
+      {
+        "id": "villagerretaliation:tutorial",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Tutorial",
+        "description": "Built-in Tutorial type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "type": {
+              "const": "tutorial"
+            },
+            "role": {
+              "enum": [
+                "farming",
+                "fishing",
+                "mining",
+                "logging",
+                "hunting",
+                "animal_handling",
+                "brewing",
+                "craftsman",
+                "cook",
+                "smelter",
+                "courier",
+                "nitwit",
+                "combat",
+                "builder"
+              ]
+            },
+            "step": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "operation": {
+              "enum": [
+                "start",
+                "activate",
+                "quote",
+                "continue",
+                "stop",
+                "replace",
+                "blueprint",
+                "supplies",
+                "learn",
+                "recover"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "role",
+            "operation"
+          ],
+          "type": "object"
+        }
       }
     ],
     "public_quest_conditions": [
@@ -5290,6 +5596,190 @@
         "schema": {
           "type": "object"
         }
+      },
+      {
+        "id": "villagerretaliation:work_state",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Work state",
+        "description": "Built-in Work state type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "enum": [
+                      "equipment",
+                      "supplies"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "oneOf": [
+                  {
+                    "required": [
+                      "item"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "item_tag"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "enum": [
+                      "storage",
+                      "settings",
+                      "outcome",
+                      "learned"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "parameter"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "const": "storage"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameter": {
+                    "enum": [
+                      "supply",
+                      "output"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "check": {
+                    "const": "settings"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameter": {
+                    "enum": [
+                      "work_enabled",
+                      "assigned_supplies",
+                      "auto_deposit",
+                      "farming_wheat"
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "work_state"
+            },
+            "tutorial": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "role": {
+              "enum": [
+                "farming",
+                "fishing",
+                "mining",
+                "logging",
+                "hunting",
+                "animal_handling",
+                "brewing",
+                "craftsman",
+                "cook",
+                "smelter",
+                "courier",
+                "nitwit",
+                "combat",
+                "builder"
+              ]
+            },
+            "check": {
+              "enum": [
+                "eligible",
+                "assignment",
+                "area",
+                "storage",
+                "equipment",
+                "supplies",
+                "settings",
+                "outcome",
+                "completed",
+                "disposed",
+                "learned",
+                "task",
+                "route",
+                "selection",
+                "policy",
+                "quoted",
+                "blueprint"
+              ]
+            },
+            "parameter": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "item_tag": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536
+            },
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "tutorial",
+            "role",
+            "check"
+          ],
+          "type": "object"
+        }
       }
     ],
     "public_quest_triggers": [
@@ -5687,7 +6177,8 @@
         "villager_level",
         "villager_mood",
         "visited_stage",
-        "weather"
+        "weather",
+        "work_state"
       ]
     },
     "action_type": {
@@ -5751,6 +6242,7 @@
         "start_scene",
         "tag",
         "tracker",
+        "tutorial",
         "unset_tag",
         "variable",
         "xp"

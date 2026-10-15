@@ -937,13 +937,29 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.closeAfterDialogueExchanges = false;
         this.villagerDialogueText = "";
         this.villagerDialogueTextSegments = List.of();
+        this.tutorialRawSegments=List.of();
+    }
+
+    private List<DialogueTextSegment> tutorialRawSegments=List.of();
+    private void refreshTutorialControlHints(){
+        if(tutorialRawSegments.isEmpty())return;
+        var resolved=tutorialRawSegments.stream().map(segment->new DialogueTextSegment(com.jvn.villagerretaliation.client.quest.TutorialControlHints.resolve(segment.text()),segment.effects())).toList();
+        if(!resolved.equals(this.villagerDialogueTextSegments)){
+            this.villagerDialogueTextSegments=resolved;
+            this.villagerDialogueText=DialogueTextSegment.plainText(resolved);
+        }
     }
 
     private void setDialogueText(String text, List<DialogueTextSegment> textSegments) {
         if (text == null || text.isBlank()) {
             return;
         }
-        this.villagerDialogueTextSegments = normalizeDialogueSegments(text, textSegments);
+        var normalized=normalizeDialogueSegments(text,textSegments);
+        this.tutorialRawSegments=normalized.stream().anyMatch(segment->segment.text().contains("{"))?normalized:List.of();
+        this.villagerDialogueTextSegments = normalized.stream()
+                .map(segment -> new DialogueTextSegment(
+                        com.jvn.villagerretaliation.client.quest.TutorialControlHints.resolve(segment.text()), segment.effects()))
+                .toList();
         this.villagerDialogueText = DialogueTextSegment.plainText(this.villagerDialogueTextSegments);
         if (this.villagerDialogueText.isBlank()) {
             return;
@@ -965,7 +981,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 || automatic && target.villagerEntityId != this.villagerEntityId) {
             return;
         }
-        target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
+        target.acceptVillagerDialogue(this.tutorialRawSegments.isEmpty()?this.villagerDialogueText:DialogueTextSegment.plainText(this.tutorialRawSegments),
+                this.tutorialRawSegments.isEmpty()?this.villagerDialogueTextSegments:this.tutorialRawSegments);
         target.dialogueSpeech = this.dialogueSpeech;
         target.awaitingExchangeCompletion = this.awaitingExchangeCompletion;
         target.dialogueCameraRevision = this.dialogueCameraRevision;
@@ -996,6 +1013,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        refreshTutorialControlHints();
         int slideOffset = slideOffsetY();
         int stateOffsetY = interactionStateTransitionOffsetY();
         int contentOffsetX = interactionStateTransitionContentOffsetX();

@@ -1,0 +1,289 @@
+{
+  "schema": "villagerretaliation:clipboard_tutorial_script/v1",
+  "id": "villagerretaliation:clipboard_combat",
+  "role": "combat",
+  "title": "Guard  -  A Quiet Watch Is a Good Watch",
+  "credit_policy": "personal",
+  "setup_policy": "recognize_existing",
+  "outcome_policy": "committed_since_binding",
+  "completion_offer": "normal_contract_or_stop",
+  "release_status": "integrated",
+  "design_overview": "Guard  -  A Quiet Watch Is a Good Watch\n\n**Premise and dialogue:** “The best watch ends with nothing broken. Give me a safe circuit and a post to return to. We'll check the route before you decide whether to hire me.”\n\n**Existing:** COMBAT role, equipment, routes and Guard/Roaming modes. Guard refuses proactive target acquisition; Roaming searches eligible natural hostiles. Combat practice comes from combat events, not idle time. Target a real equipped circuit and return to post, not a forced raid or attack. This demonstrates coverage and navigation, not combat victory.",
+  "source": {
+    "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
+    "version": 1,
+    "sha256": "54954eef6850d1693d6ef07cace9d14600f62a5eec694413ff4b2804b5ee106f",
+    "baseline": "fd35988257b0b95685a9f12e30eece966d6210d4"
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "title": "1 Agree to a practice watch",
+      "sequences": [],
+      "design_objective": "",
+      "design_check": "COMBAT lesson reserved, worker bound.",
+      "design_provisions": "one-circuit free assignment, shared Clipboard and explanation that no raid/hostile is spawned. Existing threats can interrupt safely.",
+      "design_hook": "",
+      "design_notes": "1 Agree to a practice watch\n\n**Tutor:** “We'll walk one quiet watch together before you decide whether to hire me.”\n\n**Check:** COMBAT lesson reserved, worker bound.\n\n**Provides:** one-circuit free assignment, shared Clipboard and explanation that no raid/hostile is spawned. Existing threats can interrupt safely."
+    },
+    {
+      "id": "step_2",
+      "title": "2 Mark the post",
+      "sequences": [
+        {
+          "id": "step_2_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground at our safe return post and press {Use}."
+            },
+            {
+              "id": "card_2",
+              "text": "See the box? Scroll to move it, or hold {ControlModifier} while scrolling to make it wider or narrower. Hold {ShiftModifier} and scroll to change its height position; {ControlModifier} and {AltModifier} together change its height. Include the work and a clear way to reach it."
+            },
+            {
+              "id": "card_3",
+              "text": "When the box fits, point at me, your Guard, and press {Use} without sneaking. Show me the area you chose."
+            }
+          ],
+          "confirmation_guidance": "Preview the ground at our safe return post, then acknowledge the actual saved area on the bound Guard. Do not complete for moving or merely displaying the box.",
+          "recovery": "That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Apply a small job area around a safe entrance/workplace.",
+      "design_check": "persisted area, same dimension, loaded navigable space and accessible return point.",
+      "design_provisions": "location guidance. No invented guard-post block is required.",
+      "design_hook": "",
+      "design_notes": "2 Mark the post\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}. Right-click the Clipboard slot until it reads Edit Job Site, then close the inventory. With it in your hand, point at the ground at our safe return post and press {Use}.”\n2. “See the box? Scroll to move it, or hold Control while scrolling to make it wider or narrower. Hold Shift and scroll to change its height position; Control and Alt together change its height. Include the work and a clear way to reach it.”\n3. “When the box fits, point at me, your Guard, and press {Use} without sneaking. Show me the area you chose.”\n\n**Show / confirm:** Preview the ground at our safe return post, then acknowledge the actual saved area on the bound Guard. Do not complete for moving or merely displaying the box.\n\n**If it goes wrong:** “That is only the draft until you apply it to me. If it is in the wrong place, point at the right centre and use the Clipboard again. To start fresh, hold {Sneak} and press {Attack} on a block in Edit Job Site, then redraw. Keep protected or unrelated work outside.”\n\n\n**Optional flavour line:** “Choose a safe post where you want me to return.”\n\n**Task:** Apply a small job area around a safe entrance/workplace.\n\n**Check:** persisted area, same dimension, loaded navigable space and accessible return point.\n\n**Provides:** location guidance. No invented guard-post block is required."
+    },
+    {
+      "id": "step_3",
+      "title": "3 Check actual equipment",
+      "sequences": [
+        {
+          "id": "step_3_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the loaned sword inside. Close the chest."
+            },
+            {
+              "id": "card_2",
+              "text": "Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold {ControlModifier} and scroll until it says Assign Supplies."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet."
+            },
+            {
+              "id": "card_4",
+              "text": "Now point at me, your Guard, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step."
+            }
+          ],
+          "confirmation_guidance": "Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.",
+          "recovery": "If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_3_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away, use an empty hand on me and choose Job → Job Inventory. Look at the equipped weapon and its condition. Show me that it is usable."
+            }
+          ],
+          "confirmation_guidance": "Verify the worker’s effective equipped weapon; the sword merely sitting in Supplies is insufficient. If automatic supply pickup has not occurred, follow the actual inventory/equipment control and validate its slot; do not treat this as completed combat.",
+          "recovery": "If I have not taken the weapon, check assigned-supplies state and access to that chest. Do not remove or overwrite my existing equipment to force the lesson.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Make supplied melee equipment available through the existing Supplies/job-equipment controls.",
+      "design_check": "actual effective equipped usable weapon, not merely a sword sitting in a chest.",
+      "design_provisions": "provenance-tracked modest sword loan and readiness feedback. Ranged ammo is an optional later lesson, not mandatory here.",
+      "design_hook": "",
+      "design_notes": "3 Check actual equipment\n\n**Teach and demonstrate (spoken in order):**\n1. “Put your Clipboard away for a moment. With an empty hand, press {Use} on the supplies chest and put the loaned sword inside. Close the chest.”\n2. “Open {Inventory} and right-click the Clipboard slot until a storage mode appears. Close the inventory and hold your Clipboard. Hold Control and scroll until it says Assign Supplies.”\n3. “Point at the supplies chest and press {Use}. That selects the chest; it has not assigned it yet.”\n4. “Now point at me, your Guard, and press {Use} without sneaking. Click Assign Clipboard Storage in the menu. Show me that last step.”\n\n**Show / confirm:** Identify this lesson’s supplies chest and named tutor. Show selection first, then acknowledge only the stored Supplies link for this worker. Opening the menu is an intermediate checkpoint.\n\n**If it goes wrong:** “If you selected the wrong chest, close the menu, aim into empty air, hold {Sneak} and press {Use} with the Clipboard to clear the selection. Select the right chest and choose Assign Clipboard Storage again. If you cannot open the chest to load it, put the Clipboard away first.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away, use an empty hand on me and choose Job → Job Inventory. Look at the equipped weapon and its condition. Show me that it is usable.”\n\n**Show / confirm:** Verify the worker’s effective equipped weapon; the sword merely sitting in Supplies is insufficient. If automatic supply pickup has not occurred, follow the actual inventory/equipment control and validate its slot; do not treat this as completed combat.\n\n**If it goes wrong:** “If I have not taken the weapon, check assigned-supplies state and access to that chest. Do not remove or overwrite my existing equipment to force the lesson.”\n\n\n**Optional flavour line:** “A serviceable sword will do. Check that I'm actually carrying it.”\n\n**Task:** Make supplied melee equipment available through the existing Supplies/job-equipment controls.\n\n**Check:** actual effective equipped usable weapon, not merely a sword sitting in a chest.\n\n**Provides:** provenance-tracked modest sword loan and readiness feedback. Ranged ammo is an optional later lesson, not mandatory here."
+    },
+    {
+      "id": "step_4",
+      "title": "4 Set a defensive circuit",
+      "sequences": [
+        {
+          "id": "step_4_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Click Cycle Combat Mode until Guard is reported. We are checking a safe patrol, not asking me to hunt hostiles."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Read back the server-confirmed settings on this tutor; highlight only the next requested option.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "step_4_sequence_2",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Open {Inventory}, right-click the Clipboard slot until Route Mode appears, then close the inventory."
+            },
+            {
+              "id": "card_2",
+              "text": "Point at the ground at our return post and press {Use}. Add the two safe checkpoints in order with {Use}, then use the first node again to close the loop back to the post."
+            },
+            {
+              "id": "card_3",
+              "text": "Point at me and press {Use} without sneaking to apply the route. Show me the route assignment notice."
+            }
+          ],
+          "confirmation_guidance": "Show ordered draft node markers, then the actual assigned route and walkability result. Guard’s tutorial authority stops after one full circuit despite a looping route; Courier’s endpoints must reach their respective containers.",
+          "recovery": "If a node is wrong, hold {Sneak} and press {Use} on that node to remove it. To redraw, use the same input while aiming into air. A route that looks connected still needs a clear walkable path.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Select existing Guard mode and apply a short route with a post and two distinct reachable checkpoints, returning to the post.",
+      "design_check": "actual GUARD mode, persisted traversable route and distinct checkpoint geometry.",
+      "design_provisions": "explanation that Guard is defensive rather than proactive hostile hunting.",
+      "design_hook": "",
+      "design_notes": "4 Set a defensive circuit\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click Cycle Combat Mode until Guard is reported. We are checking a safe patrol, not asking me to hunt hostiles.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Open {Inventory}, right-click the Clipboard slot until Route Mode appears, then close the inventory.”\n2. “Point at the ground at our return post and press {Use}. Add the two safe checkpoints in order with {Use}, then use the first node again to close the loop back to the post.”\n3. “Point at me and press {Use} without sneaking to apply the route. Show me the route assignment notice.”\n\n**Show / confirm:** Show ordered draft node markers, then the actual assigned route and walkability result. Guard’s tutorial authority stops after one full circuit despite a looping route; Courier’s endpoints must reach their respective containers.\n\n**If it goes wrong:** “If a node is wrong, hold {Sneak} and press {Use} on that node to remove it. To redraw, use the same input while aiming into air. A route that looks connected still needs a clear walkable path.”\n\n\n**Optional flavour line:** “Show me two places to check, then a clear way back to this post.”\n\n**Task:** Select existing Guard mode and apply a short route with a post and two distinct reachable checkpoints, returning to the post.\n\n**Check:** actual GUARD mode, persisted traversable route and distinct checkpoint geometry.\n\n**Provides:** explanation that Guard is defensive rather than proactive hostile hunting."
+    },
+    {
+      "id": "step_5",
+      "title": "5 Walk the watch",
+      "sequences": [
+        {
+          "id": "step_5_sequence_1",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings."
+            },
+            {
+              "id": "card_2",
+              "text": "Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work."
+            },
+            {
+              "id": "card_3",
+              "text": "Show me those settings. We will begin once they are right."
+            }
+          ],
+          "confirmation_guidance": "Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.",
+          "recovery": "If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.",
+          "repeat_label": "Show me again"
+        }
+      ],
+      "design_objective": "Enable work and observe.",
+      "design_check": "server navigation records the bound equipped guard arriving at each checkpoint in order while able to work. No credit for creating the route, waiting out a timer, teleporting checkpoints together or an idle status.",
+      "design_provisions": "checkpoint progress and actionable blocked-route/threat/rest guidance. Pause and resume interruptions rather than require fighting.",
+      "design_hook": "",
+      "design_notes": "5 Walk the watch\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Choose Ask for Work Report first. If work is paused, click Start/Pause Work once. Leave it alone if work is already enabled, then close the conversation so I can work.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Confirm work-enabled authority for this finite trial and show the real next worker action. Starting work is not evidence that the harvest, craft or delivery succeeded.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “I'll walk the circuit in order. If the way is blocked, we'll put it right.”\n\n**Task:** Enable work and observe.\n\n**Check:** server navigation records the bound equipped guard arriving at each checkpoint in order while able to work. No credit for creating the route, waiting out a timer, teleporting checkpoints together or an idle status.\n\n**Provides:** checkpoint progress and actionable blocked-route/threat/rest guidance. Pause and resume interruptions rather than require fighting."
+    },
+    {
+      "id": "step_6",
+      "title": "6 Return and report",
+      "sequences": [],
+      "design_objective": "Speak to the guard after arrival back at the post.",
+      "design_check": "ordered circuit complete and genuine return; stop further free duty.",
+      "design_provisions": "",
+      "design_hook": "",
+      "design_notes": "6 Return and report\n\n**Tutor:** “Back at the post, with the whole route checked. Shall we discuss the next watch?”\n\n**Task:** Speak to the guard after arrival back at the post.\n\n**Check:** ordered circuit complete and genuine return; stop further free duty.\n\n**Provides/reward:** reusable route/area and proposed coverage report. No fabricated combat XP, item output or defeated-enemy claim. “I can reach every post. Want me on the next watch? Let's check my normal hiring fee.” Apply shared ending.\n\n**A Continue working:** “Show me your normal price.” Present the current role, duration, currency and total. Start ordinary paid work only after the player accepts a still-valid quote.\n\n**B Stop here:** “Thanks. Stop working.” End this tutorial assignment safely, reconcile its output and identifiable loans, and keep the lesson completed. Dismissal leaves work paused.\n\n\n**New hooks:** mode/area/route commit, equipment readiness, navigation node-arrival order, actual return-to-post and finite-duty authorization. Coverage report is new tutorial presentation; movement follows existing mechanics. An optional nonlethal combat drill would require a separately designed training system and is not assumed to exist."
+    }
+  ],
+  "checkpoints": {
+    "step_2_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "area"
+      }
+    ],
+    "step_3_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "storage",
+        "parameter": "supply"
+      }
+    ],
+    "step_3_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "equipment",
+        "item_tag": "minecraft:swords"
+      }
+    ],
+    "step_4_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "policy"
+      }
+    ],
+    "step_4_sequence_2": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "route"
+      }
+    ],
+    "step_5_sequence_1": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_combat",
+        "role": "combat",
+        "check": "settings",
+        "parameter": "work_enabled"
+      }
+    ]
+  }
+}

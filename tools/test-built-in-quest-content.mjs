@@ -117,11 +117,17 @@ for (const { file, data } of quests.values()) {
   assert(titleWords >= 1 && titleWords <= 4, file, `title must contain 1-4 words; found ${JSON.stringify(title)}`);
 
   const rewards = data.rewards ?? {};
+  if (data.metadata?.tags?.includes("group.clipboard")) {
+    assert(!rewards.loot_table && !Number(rewards.experience) && !Number(rewards.reputation), file,
+      "personal tutorials must reward verified work rather than an invented loot, XP or reputation bundle");
+  } else {
   assert(Number(rewards.experience) > 0, file, "quest experience reward must be positive");
   assert(Number(rewards.reputation) > 0, file, "quest reputation reward must be positive");
   assert(typeof rewards.loot_table === "string", file, "quest reward loot table is missing");
   if (typeof rewards.loot_table === "string") {
     assert(lootIds.has(rewards.loot_table), file, `missing reward loot table ${rewards.loot_table}`);
+  }
+
   }
 
   if (v2) {

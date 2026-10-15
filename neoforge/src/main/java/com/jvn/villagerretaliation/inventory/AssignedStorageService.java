@@ -75,6 +75,20 @@ public final class AssignedStorageService {
         return !liveOutputContainerCandidates(level, villager).isEmpty();
     }
 
+    /** Link and container access only; this does not promise a future navigation path or output capacity. */
+    public static boolean hasLiveAssignedStorageForPurpose(ServerLevel level, Villager villager, String purpose) {
+        if (!SUPPLY_PURPOSE.equals(purpose) && !OUTPUT_PURPOSE.equals(purpose)) return false;
+        var records = AssignedStorageSavedData.get(level).assignedTo(villager.getUUID(), purpose).stream()
+                .filter(record -> record.dimension().equals(level.dimension())).toList();
+        var candidates = OUTPUT_PURPOSE.equals(purpose) ? liveOutputContainerCandidates(level, villager)
+                : liveContainerCandidates(level, villager, StorageUse.INPUT);
+        return candidates.stream().anyMatch(candidate -> records.stream().anyMatch(record -> candidate.matches(record.pos())));
+    }
+    public static BlockPos canonicalContainerPosition(ServerLevel level, BlockPos pos) {
+        var candidate = VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos);
+        return candidate == null ? null : candidate.pos().immutable();
+    }
+
     public static List<AssignedContainerRecord> assignedStorage(ServerLevel level, Villager villager) {
         return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).stream()
                 .filter(record -> !PAYMENT_PURPOSE.equals(normalizePurpose(record.purpose())))
@@ -151,6 +165,10 @@ public final class AssignedStorageService {
             ));
             if (result == AssignmentResult.ASSIGNED) {
                 assigned++;
+                com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.setupCommitted(
+                        villager, player.getUUID(), "work_storage_committed", Map.of(
+                                "purpose", normalizedPurpose, "target",
+                                com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.position(targetLevel, position.pos())));
             } else {
                 alreadyAssigned++;
             }
@@ -372,19 +390,28 @@ public final class AssignedStorageService {
                 continue;
             }
             int allowance = outputAllowance(
-                    level, candidate, target.filters(), remainder, villager.getUUID(), List.of());
+                    level, candidate, target.filters(), com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService.clean(remainder), villager.getUUID(), List.of());
             if (allowance <= 0) {
                 continue;
             }
             int offeredCount = Math.min(remainder.getCount(), allowance);
-            ItemStack offered = remainder.copyWithCount(offeredCount);
+            String tutorialDestination = com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.position(level, candidate.pos());
+            boolean tutorial = com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager);
+            var tutorialPermit = tutorial ? com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService.reserveDeposit(
+                    level, villager, remainder, tutorialDestination, offeredCount) : null;
+            if (tutorial && tutorialPermit == null) continue;
+            if (tutorialPermit != null) offeredCount = Math.min(offeredCount, tutorialPermit.units());
+            ItemStack offered = com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService.clean(remainder.copyWithCount(offeredCount));
             ItemStack uninserted = candidate.container() instanceof SellBoxBlockEntity sellBox
                     ? sellBox.insertForSale(offered, false)
                     : VillagerInventoryOverflowService.insertIntoContainer(candidate.container(), offered);
             int moved = offeredCount - uninserted.getCount();
             if (moved <= 0) {
+                com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.failed(villager, tutorialPermit);
                 continue;
             }
+            com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.committed(villager, tutorialPermit,
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(remainder.getItem()).toString(), moved, tutorialDestination);
             remainder.shrink(moved);
             if (usedContainers.stream().noneMatch(used -> used.matches(candidate.pos()))) {
                 usedContainers.add(candidate);
@@ -1971,6 +1998,11 @@ public final class AssignedStorageService {
             return 0;
         }
 
+        boolean tutorial=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager);
+        var tutorialRun=com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.run(villager).orElse(null);
+        if(tutorial&&(tutorialRun==null||tutorialRun.scope()==null||!tutorialRun.scope().targets().getOrDefault("pickup",java.util.Set.of()).contains(
+                com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.position(level,canonicalContainerPosition(level,storagePos)))))return 0;
+        if(tutorial)maxCount=Math.min(maxCount,4-tutorialRun.committedUnits("pickup"));
         UUID ownerId = villager.getUUID();
         ContainerTransferClaimLedger.release(
                 ownerId, VillagerFilterPolicy.TransferOperation.PROVIDE);
@@ -1991,7 +2023,7 @@ public final class AssignedStorageService {
             Container container = input.container();
             for (int slot = 0; slot < container.getContainerSize() && movedTotal < maxCount; slot++) {
                 ItemStack stack = container.getItem(slot);
-                if (stack.isEmpty() || !mayWithdraw.test(stack)) {
+                if (stack.isEmpty() || !mayWithdraw.test(stack) || tutorial && !stack.is(net.minecraft.world.item.Items.OAK_LOG)) {
                     continue;
                 }
                 int sourceCapacity = sourceAllowance(
@@ -2008,14 +2040,20 @@ public final class AssignedStorageService {
                     continue;
                 }
 
+                var tutorialPermit=tutorial?com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.reserve(villager,"pickup",
+                        com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.position(level,canonicalContainerPosition(level,storagePos)),requested):null;
+                if(tutorial&&tutorialPermit==null)continue;
                 ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
                         villager, container, slot, requested);
                 if (extracted.isEmpty()) {
+                    com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.failed(villager,tutorialPermit);
                     continue;
                 }
                 ItemStack remainder;
                 try {
-                    remainder = receiver.apply(extracted.copy());
+                    ItemStack offered=extracted.copy();
+                    com.jvn.villagerretaliation.quest.tutorial.TutorialOutputService.stamp(villager,tutorialPermit,java.util.List.of(offered));
+                    remainder = receiver.apply(offered);
                 } catch (RuntimeException exception) {
                     VillagerInventoryOverflowService.restoreToContainerOrDrop(
                             villager, container, extracted);
@@ -2028,7 +2066,12 @@ public final class AssignedStorageService {
                             villager, container, extracted.copyWithCount(unaccepted));
                 }
                 if (moved <= 0) {
+                    com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.failed(villager,tutorialPermit);
                     continue;
+                }
+                if(tutorialPermit!=null){
+                    var actual=new com.jvn.villagerretaliation.quest.tutorial.TutorialRun.Permit(tutorialPermit.operation(),tutorialPermit.binding(),tutorialPermit.action(),tutorialPermit.target(),moved);
+                    com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.committedProducts(villager,actual,java.util.List.of(extracted.copyWithCount(moved)));
                 }
                 outputPlanner.commit(proposal, extracted, moved);
                 movedTotal += moved;

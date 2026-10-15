@@ -1,0 +1,4752 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:clipboard_mining",
+  "localization_prefix": "villagerretaliation.quest.clipboard.mining",
+  "metadata": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    },
+    "questline": "clipboard",
+    "tags": [
+      "group.clipboard",
+      "role.tutorial",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "activity.social",
+      "activity.choice",
+      "destination.village",
+      "theme.craftsmanship",
+      "feature.recoverable"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "blocks_hiring": false,
+    "filters": {
+      "professions": [
+        "minecraft:toolsmith"
+      ]
+    }
+  },
+  "availability": {
+    "conditions": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_mining",
+        "role": "mining",
+        "check": "eligible"
+      }
+    ],
+    "repeatable": false,
+    "max_completions": 1,
+    "completion_scope": "player",
+    "abandonment": "allow_repickup",
+    "locked_to_villager": false,
+    "cross_villager_compatible": true
+  },
+  "entry_stage": "accept_lesson",
+  "stages": [
+    {
+      "id": "accept_lesson",
+      "objectives": [
+        {
+          "id": "bound",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "assignment"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.0.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.0.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "bound"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#stages.0.dialogue.offer.label"
+          },
+          "lines": {
+            "key": "#stages.0.dialogue.offer.lines"
+          },
+          "order": -40,
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#stages.0.dialogue.offer.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.offer.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "quest",
+                  "action": "start"
+                },
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#stages.0.dialogue.offer.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.offer.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.0.dialogue.offer.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        "reminder": {
+          "label": {
+            "key": "#stages.0.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.0.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.0.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.0.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.0.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "next": "step_2_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.0.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.0.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_2_sequence_1",
+      "title": {
+        "key": "#stages.1.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_2_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.1.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.1.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.1.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.1.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_2_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.1.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.1.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.1.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.1.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_2_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.1.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.1.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.1.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.1.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_2_sequence_1_card_3",
+          "lines": {
+            "key": "#stages.1.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.1.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_4"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.1.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.1.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_2_sequence_1_card_4",
+          "lines": {
+            "key": "#stages.1.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.1.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_2_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.1.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.1.scenes.3.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.3.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.scenes.3.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.3.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_2_sequence_1_help",
+          "lines": {
+            "key": "#stages.1.scenes.4.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.1.scenes.4.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.4.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_2_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.1.scenes.4.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.1.scenes.4.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.1.scenes.4.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_3_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.1.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.1.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_3_sequence_1",
+      "title": {
+        "key": "#stages.2.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_3_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.2.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.2.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.2.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.2.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.2.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.2.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_3_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.2.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.2.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.2.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.2.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.2.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.2.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_3_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.2.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.2.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.2.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.2.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.2.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.2.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_3_sequence_1_card_3",
+          "lines": {
+            "key": "#stages.2.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.2.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_3_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.2.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.2.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.2.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.2.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_3_sequence_1_help",
+          "lines": {
+            "key": "#stages.2.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.2.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_3_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.2.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.2.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.2.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_4_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.2.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.2.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_4_sequence_1",
+      "title": {
+        "key": "#stages.3.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_4_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.3.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.3.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.3.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.3.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.3.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.3.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_4_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.3.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.3.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.3.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.3.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.3.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.3.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.3.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.3.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.3.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.3.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.3.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.3.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_1_card_3",
+          "lines": {
+            "key": "#stages.3.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.3.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_4_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.3.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.3.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.3.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.3.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_1_help",
+          "lines": {
+            "key": "#stages.3.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.3.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.3.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.3.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.3.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_4_sequence_2",
+      "ui": {
+        "title": {
+          "key": "#stages.3.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.3.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_4_sequence_2",
+      "title": {
+        "key": "#stages.4.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_4_sequence_2"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.4.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.4.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.4.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.4.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.4.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.4.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_4_sequence_2_card_1",
+          "lines": {
+            "key": "#stages.4.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.4.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.4.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.4.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.4.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.4.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_2_card_2",
+          "lines": {
+            "key": "#stages.4.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.4.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.4.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.4.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.4.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.4.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_2_card_3",
+          "lines": {
+            "key": "#stages.4.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.4.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_4_sequence_2"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.4.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.4.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.4.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.4.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_4_sequence_2_help",
+          "lines": {
+            "key": "#stages.4.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.4.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_4_sequence_2_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.4.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.4.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.4.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "supplies_deposit_readiness",
+      "ui": {
+        "title": {
+          "key": "#stages.4.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.4.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "supplies_deposit_readiness",
+      "title": {
+        "key": "#stages.5.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "supplies_deposit_readiness"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.5.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.5.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.5.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.5.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "supplies_deposit_readiness_card_1",
+          "lines": {
+            "key": "#stages.5.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.5.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.5.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.5.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "supplies_deposit_readiness_card_2",
+          "lines": {
+            "key": "#stages.5.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.5.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.5.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.5.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "supplies_deposit_readiness_card_3",
+          "lines": {
+            "key": "#stages.5.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.5.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_4"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.5.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.5.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "supplies_deposit_readiness_card_4",
+          "lines": {
+            "key": "#stages.5.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.5.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "supplies_deposit_readiness"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.5.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.5.scenes.3.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.3.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.scenes.3.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.3.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "supplies_deposit_readiness_help",
+          "lines": {
+            "key": "#stages.5.scenes.4.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.5.scenes.4.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.4.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.5.scenes.4.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.5.scenes.4.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.5.scenes.4.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_5_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.5.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.5.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_5_sequence_1",
+      "title": {
+        "key": "#stages.6.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_5_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.6.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.6.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.6.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.6.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.6.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.6.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_5_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.6.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.6.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.6.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.6.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.6.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.6.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.6.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.6.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.6.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.6.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.6.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.6.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_card_3",
+          "lines": {
+            "key": "#stages.6.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.6.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                },
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_5_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.6.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.6.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.6.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.6.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_help",
+          "lines": {
+            "key": "#stages.6.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.6.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.6.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.6.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.6.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_6_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.6.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.6.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_6_sequence_1",
+      "title": {
+        "key": "#stages.7.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "learned",
+              "parameter": "step_6_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.7.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.7.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.7.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.7.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.7.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.7.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_6_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.7.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.7.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.7.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.7.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.7.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.7.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_6_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.7.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.7.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "learn",
+                  "step": "step_6_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.7.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.7.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.7.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.7.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_6_sequence_1_help",
+          "lines": {
+            "key": "#stages.7.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.7.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.7.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.7.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.7.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "verified_outcome",
+      "ui": {
+        "title": {
+          "key": "#stages.7.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.7.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "verified_outcome",
+      "objectives": [
+        {
+          "id": "earned",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "completed"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.8.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.8.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "earned"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.8.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.8.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.8.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.8.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "next": "choose_next",
+      "ui": {
+        "title": {
+          "key": "#stages.8.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.8.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "choose_next",
+      "objectives": [
+        {
+          "id": "decision",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_mining",
+              "role": "mining",
+              "check": "disposed"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.9.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.9.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "decision"
+      ],
+      "next": {
+        "complete": true
+      },
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.9.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.9.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "quote",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "quote"
+                }
+              ]
+            },
+            {
+              "id": "accept_fee",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "conditions": [
+                {
+                  "type": "work_state",
+                  "tutorial": "villagerretaliation:clipboard_mining",
+                  "role": "mining",
+                  "check": "quoted"
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "continue"
+                }
+              ]
+            },
+            {
+              "id": "stop",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "mining",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [],
+      "ui": {
+        "title": {
+          "key": "#stages.9.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.9.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    }
+  ],
+  "lifecycle": {
+    "on_abandon": {
+      "actions": [
+        {
+          "type": "tutorial",
+          "role": "mining",
+          "operation": "stop"
+        }
+      ]
+    },
+    "on_fail": {
+      "actions": [
+        {
+          "type": "tutorial",
+          "role": "mining",
+          "operation": "stop"
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService;
@@ -102,6 +104,16 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if (TutorialWorkService.isTrial(villager)) {
+            if (!TutorialWorkService.canTick(villager,role()) || !TutorialAnimalPlan.settings(context.state())) return WorkResult.idle("interaction.work.tutorial.paused");
+            if (context.hasOutputToDeposit()) {
+                var deposit=depositOutputsOrMoveToStorage(level,context,villager,0.45D);
+                return WorkResult.idle(deposit==DepositResult.STORAGE_FULL?storageFullStatus(context):"interaction.work.animal_breeding.output_full_depositing");
+            }
+            var queue=HiredTemporaryWorkService.queue(context.state());
+            if(queue==null || queue.tasks().size()!=1 || queue.current().kind()!=Kind.SHEAR && queue.current().kind()!=Kind.BREED)
+                return WorkResult.idle("interaction.work.tutorial.paused");
+        }
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
@@ -223,12 +235,16 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.animal_breeding.pair_changed");
         }
         ItemStack breedingFood = context.inventory().findSupply(pair.foodPredicate()).copyWithCount(1);
+        var tutorialPermit=TutorialWorkService.isTrial(villager)?TutorialWorkService.reserve(villager,"breed",TutorialAnimalPlan.pair(pair.first().getUUID(),pair.second().getUUID()),1):null;
+        if(TutorialWorkService.isTrial(villager)&&tutorialPermit==null)return WorkResult.idle("interaction.work.tutorial.paused");
         if (!context.inventory().consumeSupplyExactly(pair.foodPredicate(), 2)) {
+            if(tutorialPermit!=null)TutorialWorkService.failed(villager,tutorialPermit);
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");
         }
 
+        if(tutorialPermit!=null)TutorialAnimalBirthService.bind(pair.first(),pair.second(),tutorialPermit);
         pair.first().setInLove(hirer);
         pair.second().setInLove(hirer);
         rememberHandledAnimals(context.state(), level.getGameTime(), pair.first(), pair.second());
@@ -404,6 +420,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 Animal first = sameTypeAnimals.get(firstIndex);
                 for (int secondIndex = firstIndex + 1; secondIndex < sameTypeAnimals.size(); secondIndex++) {
                     Animal second = sameTypeAnimals.get(secondIndex);
+                    if(TutorialWorkService.isTrial(villager)&&!TutorialAnimalPlan.allows(villager,"breed",TutorialAnimalPlan.pair(first.getUUID(),second.getUUID())))continue;
                     if ((!HiredTemporaryEntities.matches(context.state(), first) && !HiredTemporaryEntities.matches(context.state(), second))
                             || first.distanceToSqr(second) > MAX_BREEDING_PAIR_DISTANCE_SQR) {
                         continue;
@@ -751,6 +768,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, sheep.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
+        var tutorialPermit=TutorialWorkService.isTrial(villager)?TutorialWorkService.reserve(villager,"shear",sheep.getUUID().toString(),1):null;
+        if(TutorialWorkService.isTrial(villager)&&tutorialPermit==null)return WorkResult.idle("interaction.work.tutorial.paused");
+        TutorialOutputService.stamp(villager,tutorialPermit,List.of(wool));
+        if(tutorialPermit!=null&&!context.canStoreOutputs(List.of(wool))){TutorialWorkService.failed(villager,tutorialPermit);return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");}
         ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, wool);
         if (!remainder.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
@@ -758,6 +779,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
         sheep.setSheared(true);
+        if(tutorialPermit!=null)TutorialWorkService.committedProducts(villager,tutorialPermit,List.of(wool));
         HiredTemporaryWorkService.finishAction(context.state(), Kind.SHEAR);
         level.playSound(null, sheep, SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
         damageTool(context, villager, shears);
@@ -865,7 +887,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         boolean shearSheep = HiredAnimalHandlingOptions.shearSheep(context.state()) && HiredTemporaryEntities.allows(context.state(), Kind.SHEAR);
         List<Animal> animals = new ArrayList<>();
         for (Animal animal : animalsInWorkArea(level, context).animals()) {
-            if (isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)
+            if ((!TutorialWorkService.isTrial(villager)||TutorialAnimalPlan.allows(villager,"shear",animal.getUUID().toString()))
+                    && isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)
                     && HiredTemporaryEntities.matches(context.state(), animal)
                     && HiredEntityClaims.available(level, villager, animal)) {
                 animals.add(animal);

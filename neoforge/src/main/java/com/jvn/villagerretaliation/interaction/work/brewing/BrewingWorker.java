@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.brewing;
 
+import com.jvn.villagerretaliation.quest.tutorial.*;
+
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
@@ -167,6 +169,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+        if(TutorialWorkService.isTrial(villager)&&!TutorialWorkService.canTick(villager,role()))return WorkResult.idle("interaction.work.tutorial.paused");
         if (!context.hasWorkArea()) {
             HiredProductionService.releasePlanned(level, villager, role());
             return waitForWorkAreaAssignment(level, villager, context);
@@ -198,6 +201,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.brewing.recipe_unavailable");
         }
 
+        if(TutorialWorkService.isTrial(villager)&&!TutorialBrewingPlan.matches(level,villager,context,route))return WorkResult.idle("interaction.work.tutorial.paused");
         int batchSize = nextBatchSize(context.state());
         if (batchSize <= 0) {
             clearOrder(context.state());
@@ -210,6 +214,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
     private WorkResult tickRoute(ServerLevel level, Villager villager, HiredWorkContext context,
             HiredBrewingRecipeCatalog.BrewingRoute route, int batchSize, HiredProductionQueue queue, HiredProductionQueue.Allocation allocation) {
         BlockPos stand = allocation == null ? nearestBrewingStand(level, villager, context, route, batchSize) : allocation.station();
+        if(TutorialWorkService.isTrial(villager)){
+            var run=TutorialWorkService.run(villager).orElseThrow();
+            stand=TutorialFarmingPlan.target(run,"station");
+            if(allocation!=null||stand==null||!context.isInsideWorkArea(stand)||!level.hasChunkAt(stand))return WorkResult.idle("interaction.work.tutorial.paused");
+        }
         if (stand == null) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_brewing_stand", level.getGameTime() + 100L);
@@ -270,7 +279,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             return gatheredMaterials;
         }
-        WorkResult preparedInputs = prepareBrewingInputs(level, context, route, standPlan, materials);
+        if(TutorialWorkService.isTrial(villager)&&materials.shouldFillWaterBottles())return WorkResult.idle("interaction.work.brewing.missing_materials");
+        WorkResult preparedInputs = TutorialWorkService.isTrial(villager)?null:prepareBrewingInputs(level, context, route, standPlan, materials);
         if (preparedInputs != null) {
             context.setProgressTicks(0);
             swingWorkTool(villager);
@@ -1219,6 +1229,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return fuelResult;
         }
 
+        if(TutorialWorkService.isTrial(villager)){
+            var run=TutorialWorkService.run(villager).orElseThrow();
+            if(currentStep!=run.committedUnits("brew_stage")||run.committedUnits("load_bottle")!=3)return WorkResult.idle("interaction.work.tutorial.paused");
+        }
+        var ingredientPermit=TutorialWorkService.isTrial(villager)?TutorialBrewingService.load(villager,blockEntity,"ingredient",TutorialWorkService.position(level,stand)+"/stage/"+currentStep):null;
+        if(TutorialWorkService.isTrial(villager)&&ingredientPermit==null)return WorkResult.idle("interaction.work.tutorial.paused");
         int consumed = context.inventory().consumeSupply(stack -> stack.is(nextIngredient), 1);
         if (consumed <= 0) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_ingredient", level.getGameTime() + 100L);
@@ -1226,6 +1242,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         blockEntity.setItem(INGREDIENT_SLOT, new ItemStack(nextIngredient));
+        if(ingredientPermit!=null)TutorialWorkService.committed(villager,ingredientPermit,"",0,"");
         updateBrewingStand(level, blockEntity, stand);
         useWorkItem(level, villager, new ItemStack(nextIngredient));
         return WorkResult.progressed("interaction.work.brewing.loaded_ingredient");
@@ -1254,6 +1271,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
             return WorkResult.idle("interaction.work.brewing.wrong_fuel");
         }
+        var fuelPermit=TutorialWorkService.isTrial(villager)?TutorialBrewingService.load(villager,blockEntity,"fuel",TutorialWorkService.position(level,stand)):null;
+        if(TutorialWorkService.isTrial(villager)&&fuelPermit==null)return WorkResult.idle("interaction.work.tutorial.paused");
         int consumed = context.inventory().consumeSupply(stack -> stack.is(Items.BLAZE_POWDER), 1);
         if (consumed <= 0) {
             HiredWorkerBrain.setFailure(context, "missing_brewing_fuel", level.getGameTime() + 100L);
@@ -1261,6 +1280,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.brewing.missing_materials");
         }
         blockEntity.setItem(FUEL_SLOT, new ItemStack(Items.BLAZE_POWDER));
+        if(fuelPermit!=null)TutorialWorkService.committed(villager,fuelPermit,"",0,"");
         updateBrewingStand(level, blockEntity, stand);
         useWorkItem(level, villager, new ItemStack(Items.BLAZE_POWDER));
         return WorkResult.progressed("interaction.work.brewing.loaded_blaze_powder");
@@ -1277,10 +1297,15 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (!blockEntity.getItem(slot).isEmpty()) {
                 continue;
             }
+            var worker=context.inventory().villager();
+            var bottlePermit=TutorialWorkService.isTrial(worker)?TutorialBrewingService.load(worker,blockEntity,"load_bottle",TutorialWorkService.position(level,stand)+"/"+slot):null;
+            if(TutorialWorkService.isTrial(worker)&&bottlePermit==null)break;
             if (context.inventory().consumeSupply(HiredBrewingRecipeCatalog::isWaterPotion, 1) <= 0) {
+                if(bottlePermit!=null)TutorialWorkService.failed(worker,bottlePermit);
                 break;
             }
             blockEntity.setItem(slot, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+            if(bottlePermit!=null)TutorialWorkService.committed(worker,bottlePermit,"",0,"");
             loaded++;
         }
         if (loaded > 0) {
@@ -1332,7 +1357,13 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (stack.isEmpty() || !samePotionStack(stack, route.output())) {
                 continue;
             }
+            var run=TutorialWorkService.run(villager).orElse(null);
+            if(TutorialWorkService.isTrial(villager)&&(run==null||run.committedUnits("brew_stage")!=route.ingredients().size()))break;
+            var brewPermit=TutorialWorkService.isTrial(villager)?TutorialBrewingService.load(villager,blockEntity,"brew",TutorialWorkService.position(level,stand)+"/"+slot):null;
+            if(TutorialWorkService.isTrial(villager)&&brewPermit==null)break;
             ItemStack output = stack.copyWithCount(1);
+            TutorialOutputService.stamp(villager,brewPermit,List.of(output));
+            if(brewPermit!=null&&!context.canStoreOutputs(List.of(output))){TutorialWorkService.failed(villager,brewPermit);break;}
             if (!context.storeOutputAfterDepositIfFull(villager, output).isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "brewing_output_full_after_brew", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, stand);
@@ -1343,6 +1374,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (stack.isEmpty()) {
                 blockEntity.setItem(slot, ItemStack.EMPTY);
             }
+            if(brewPermit!=null)TutorialWorkService.committedProducts(villager,brewPermit,List.of(output));
             collected++;
         }
         if (collected > 0) {

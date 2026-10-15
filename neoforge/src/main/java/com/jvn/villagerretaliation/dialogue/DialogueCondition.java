@@ -43,7 +43,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
         DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
-        DialogueCondition.PhysicalState, DialogueCondition.CompanionState {
+        DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState {
 
     boolean matches(DialogueContext context);
 
@@ -978,8 +978,30 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         @Override public int specificityScore() { return 1; }
     }
 
+    record WorkState(com.jvn.villagerretaliation.quest.tutorial.WorkStatePredicate reference) implements DialogueCondition {
+        @Override public boolean matches(DialogueContext context) {
+            if (reference.check().equals("eligible")) return com.jvn.villagerretaliation.quest.tutorial.TutorialService.eligible(context, reference.role());
+            return context != null && reference.evaluate(context.level(), context.player()).matches();
+        }
+        @Override public int specificityScore() { return 8; }
+        @Override public String unavailableReason(DialogueContext context) {
+            if (reference.check().equals("eligible")) return context == null || context.villager() == null ? "The tutor is unavailable." : "";
+            var result = reference.evaluate(context == null ? null : context.level(), context == null ? null : context.player());
+            return result.outcome() == ConditionOutcome.UNKNOWN ? result.reason() : "";
+        }
+    }
+
     final class ConditionRegistry {
         private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register("work_state", WorkState.class, Set.of(), capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (location, context, condition, quest) -> {
+                            var value = com.jvn.villagerretaliation.quest.tutorial.WorkStatePredicate.read(condition);
+                            if (value == null) {
+                                warnInvalid(location, context, "work_state condition does not match its registered schema");
+                                return Optional.empty();
+                            }
+                            return Optional.of(new WorkState(value));
+                        }, com.jvn.villagerretaliation.quest.tutorial.WorkStatePredicate.schema()),
                 register("context", ContextRule.class, Set.of(), Set.of(),
                         (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "context"),
                         DialogueContextConditions.schema("context")),
