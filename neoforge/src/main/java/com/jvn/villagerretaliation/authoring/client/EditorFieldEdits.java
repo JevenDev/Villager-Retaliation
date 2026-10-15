@@ -25,22 +25,28 @@ public final class EditorFieldEdits {
     public boolean apply(AuthoringDocument document) {
         if (edits.isEmpty()) return false;
         if (document == null) throw new IllegalStateException("No definition selected for the pending fields.");
-        document.edit("Edit properties", root -> {
-            for (var entry : edits.entrySet()) {
-                Edit edit = entry.getValue();
-                if (!JsonPointers.get(root, entry.getKey()).equals(edit.original()))
-                    throw new IllegalStateException("The field changed since editing began: " + entry.getKey());
-                JsonElement value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
-                if (!edit.string() && !value.isJsonPrimitive() && !value.isJsonNull())
-                    throw new IllegalArgumentException("Use advanced JSON to change a scalar field into an object or array.");
-                if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
-                        && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
-                    throw new IllegalArgumentException("Expected a number at " + entry.getKey());
-                JsonPointers.set(root, entry.getKey(), value);
-            }
-        });
+        document.edit("Edit properties", this::applyTo);
         clear();
         return true;
+    }
+
+    public void validate(AuthoringDocument document) {
+        if (!edits.isEmpty()) applyTo(document.json());
+    }
+
+    private void applyTo(com.google.gson.JsonObject root) {
+        for (var entry : edits.entrySet()) {
+            Edit edit = entry.getValue();
+            if (!JsonPointers.get(root, entry.getKey()).equals(edit.original()))
+                throw new IllegalStateException("The field changed since editing began: " + entry.getKey());
+            JsonElement value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
+            if (!edit.string() && !value.isJsonPrimitive() && !value.isJsonNull())
+                throw new IllegalArgumentException("Use advanced JSON to change a scalar field into an object or array.");
+            if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
+                    && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
+                throw new IllegalArgumentException("Expected a number at " + entry.getKey());
+            JsonPointers.set(root, entry.getKey(), value);
+        }
     }
 
     private record Edit(JsonElement original, String text, boolean string) { }

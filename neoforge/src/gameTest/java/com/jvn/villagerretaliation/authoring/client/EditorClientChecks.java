@@ -8,14 +8,18 @@ import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
 public final class EditorClientChecks {
     private EditorClientChecks() { }
 
-    public static int run() {
+    public static int run() throws java.io.IOException {
         propertyEditsApplyTogether();
         invalidPropertiesDoNotPartiallyApply();
         stalePropertiesAreNotOverwritten();
         questConnectionsUseStageTransitions();
         cameraOwnersFollowRuntimeFormats();
         cameraAppendIsValidatedBeforeCommit();
-        return 6;
+        editorPreferencesSurviveRestart();
+        automaticLayoutKeepsUsablePaneWidths();
+        plainTextAuthoringPreservesLocalizationAndUndo();
+        fieldValidationDoesNotConsumeEdits();
+        return 10;
     }
 
     private static void propertyEditsApplyTogether() {
@@ -96,6 +100,85 @@ public final class EditorClientChecks {
         var invalid = tree();
         rejects(() -> EditorDocumentOperations.appendShot(invalid, "/nodes/start", json("{\"preset\":\"first_person\",\"fov\":999}")));
         check(!invalid.json().getAsJsonObject("nodes").getAsJsonObject("start").has("camera"), "invalid shot must not create a partial camera");
+    }
+
+    private static void editorPreferencesSurviveRestart() throws java.io.IOException {
+        var directory = java.nio.file.Files.createTempDirectory("vr-editor-preferences-");
+        var path = directory.resolve("settings.json");
+        try {
+            check(!EditorPreferences.load(path).guideDismissed(), "first use shows the guide");
+            var skipped = new EditorPreferences(true, EditorPreferences.CURRENT_LAYOUT, "C:/drafts/test");
+            skipped.save(path);
+            check(EditorPreferences.load(path).equals(skipped), "skip and layout state survive restart");
+            java.nio.file.Files.writeString(path, "not json");
+            try {
+                EditorPreferences.load(path);
+                throw new AssertionError("malformed preferences must not be silently accepted");
+            } catch (java.io.IOException expected) { }
+        } finally {
+            java.nio.file.Files.deleteIfExists(path);
+            java.nio.file.Files.deleteIfExists(directory);
+        }
+    }
+
+    private static void automaticLayoutKeepsUsablePaneWidths() {
+        for (float width : new float[] {800, 1024, 1280, 1920, 2560}) {
+            var layout = EditorLayout.forWidth(width);
+            float content = width * layout.contentFraction();
+            float remaining = width - content;
+            float details = remaining * layout.detailsFraction();
+            check(content >= 200 && content <= 250, "content column stays readable");
+            check(layout.compact() == (width < 1200), "small windows use tabbed details");
+            check(layout.compact() || remaining - details >= 600, "wide layout leaves room for the graph");
+        }
+    }
+
+    private static void plainTextAuthoringPreservesLocalizationAndUndo() throws java.io.IOException {
+        var directory = java.nio.file.Files.createTempDirectory("vr-editor-wording-");
+        try {
+            var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(directory);
+            workspace.createDocument(DefinitionKind.QUEST, "test:authored_quest");
+            var conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:wording");
+            com.jvn.villagerretaliation.authoring.core.DialogueGraph.addNode(conversation, "finish");
+            workspace.addDialogueLine(conversation, "finish");
+            var before = conversation.json();
+            workspace.addDialogueResponse(conversation, "start", "continue", "Tell me more.", "finish");
+            var response = conversation.json().getAsJsonArray("nodes").get(0).getAsJsonObject()
+                    .getAsJsonArray("responses").get(0).getAsJsonObject();
+            check(workspace.resolveText(conversation, response.get("label"), "en_us").equals("Tell me more."),
+                    "response wording is localized automatically");
+            var location = workspace.textLocation(conversation, response.getAsJsonObject("label").get("key").getAsString(), "en_us");
+            check(location != null, "direct wording editor finds the locale field");
+            conversation.undo();
+            check(conversation.json().equals(before), "undo restores the node together with its translation");
+            conversation.redo();
+            check(workspace.resolveText(conversation, response.get("label"), "en_us").equals("Tell me more."),
+                    "redo restores both response and wording");
+            workspace.addDialogueLine(conversation, "start");
+            var exchanges = conversation.json().getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("exchanges");
+            check(exchanges.size() == 2 && workspace.resolveText(conversation,
+                    exchanges.get(1).getAsJsonObject().get("text"), "en_us").equals("Hello."), "new spoken line has editable wording");
+            var unchanged = conversation.json();
+            rejects(() -> workspace.addDialogueResponse(conversation, "start", "bad", "Invalid", "missing"));
+            check(conversation.json().equals(unchanged), "invalid destination cannot partially edit a conversation");
+            var errors = workspace.validate().stream().filter(diagnostic ->
+                    diagnostic.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+            check(errors.isEmpty(), "normal text authoring produces exportable conversation content: " + errors);
+        } finally {
+            try (var paths = java.nio.file.Files.walk(directory)) {
+                for (var path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) java.nio.file.Files.deleteIfExists(path);
+            }
+        }
+    }
+
+    private static void fieldValidationDoesNotConsumeEdits() {
+        var document = tree();
+        var edits = new EditorFieldEdits();
+        edits.update("/priority", document.json().get("priority"), "7");
+        edits.validate(document);
+        check(edits.pending() && document.json().get("priority").getAsInt() == 1, "preflight preserves draft buffers and source");
+        edits.apply(document);
+        check(document.json().get("priority").getAsInt() == 7, "validated edits still apply");
     }
 
     private static AuthoringDocument tree() {

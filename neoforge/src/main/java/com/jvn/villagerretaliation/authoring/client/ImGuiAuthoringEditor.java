@@ -22,6 +22,10 @@ import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiKey;
+import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiDir;
+import imgui.flag.ImGuiStyleVar;
+import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -45,6 +49,20 @@ final class ImGuiAuthoringEditor {
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final Minecraft MC = Minecraft.getInstance();
     private static final ImGuiAuthoringEditor INSTANCE = new ImGuiAuthoringEditor();
+    private static final String CONTENT_PANEL = "Content###VR_Content";
+    private static final String WORK_PANEL = "Work area###VR_Work";
+    private static final String DETAIL_PANEL = "Details###VR_Details";
+    private final Path preferencesPath = MC.gameDirectory.toPath().resolve("config/authoring-editor.json");
+    private EditorPreferences preferences = EditorPreferences.defaults();
+    private int guideStep = 0;
+    private int view;
+    private boolean resetLayout;
+    private boolean compactLayout;
+    private boolean showWorkspace;
+    private boolean showCreate;
+    private boolean showResources;
+    private boolean showBranch;
+    private String focusPanel = "";
     private final ImString workspacePath = new ImString(4096);
     private final ImString importPath = new ImString(4096);
     private final ImString exportPath = new ImString(4096);
@@ -52,6 +70,7 @@ final class ImGuiAuthoringEditor {
     private final ImString newId = new ImString("example:new_dialogue", 512);
     private final ImString nodeName = new ImString("new_node", 256);
     private final ImString responseLabel = new ImString("Continue", 1024);
+    private final ImString linkedQuest = new ImString(512);
     private final ImString nextStage = new ImString(256);
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
@@ -59,6 +78,8 @@ final class ImGuiAuthoringEditor {
     private final ImString fieldValue = new ImString("{}", 8192);
     private final Map<String, ImString> fields = new HashMap<>();
     private final EditorFieldEdits pendingFields = new EditorFieldEdits();
+    private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
+    private AuthoringDocument historyDocument;
     private final java.util.ArrayDeque<EditorOperation> operations = new java.util.ArrayDeque<>();
     private boolean rendering;
     private final Map<String, float[]> positions = new HashMap<>();
@@ -88,6 +109,8 @@ final class ImGuiAuthoringEditor {
     static void open() {
         if (MC.player == null || MC.level == null) return;
         if (MC.hitResult instanceof EntityHitResult hit) INSTANCE.target = hit.getEntity();
+        if (INSTANCE.workspace == null && !INSTANCE.preferences.workspace().isBlank())
+            INSTANCE.runOperation(() -> INSTANCE.openWorkspace(false));
         MC.setScreen(INSTANCE.screen);
     }
 
@@ -108,20 +131,24 @@ final class ImGuiAuthoringEditor {
         workspacePath.set(root.resolve("workspaces/default").toAbsolutePath().toString());
         exportPath.set(root.resolve("exports/pack").toAbsolutePath().toString());
         importPath.set(root.toAbsolutePath().toString());
+        try {
+            preferences = EditorPreferences.load(preferencesPath);
+            guideStep = preferences.guideDismissed() ? -1 : 0;
+            if (!preferences.workspace().isBlank()) workspacePath.set(preferences.workspace());
+        } catch (IOException exception) {
+            status = exception.getMessage();
+        }
     }
 
     private void render() {
         if (MC.screen != screen) return;
-        if (!initializedLayout) {
-            ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
-            initializedLayout = true;
-        }
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
-        if (escapeReady && ImGui.isKeyPressed(ImGuiKey.Escape)) {
+        if (escapeReady && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
             screen.onClose();
             return;
         }
         rendering = true;
+        pushEditorStyle();
         try {
             if (ImGui.getIO().getKeyCtrl()) {
                 if (ImGui.isKeyPressed(ImGuiKey.S)) operation(this::save);
@@ -130,88 +157,297 @@ final class ImGuiAuthoringEditor {
                     if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
                 }
             }
-            ImGui.dockSpaceOverViewport();
+            shell();
             browser();
-            graph();
+            if (view == 0) graph();
+            else if (view == 1) preview();
+            else diagnostics();
             inspector();
-            preview();
-            diagnostics();
         } finally {
+            ImGui.popStyleColor(13);
+            ImGui.popStyleVar(5);
             rendering = false;
             while (!operations.isEmpty()) runOperation(operations.removeFirst());
         }
     }
 
-    private void panel(String title, float x, float y, float width, float height) {
-        float scale = Math.min(1, Math.min(ImGui.getIO().getDisplaySizeX() / 1500f, ImGui.getIO().getDisplaySizeY() / 930f));
-        ImGui.setNextWindowPos(x * scale, y * scale, ImGuiCond.FirstUseEver);
-        ImGui.setNextWindowSize(Math.min(width * scale, ImGui.getIO().getDisplaySizeX() - x * scale - 8),
-                Math.max(100, Math.min(height * scale, ImGui.getIO().getDisplaySizeY() - y * scale - 8)), ImGuiCond.FirstUseEver);
-        ImGui.begin(title);
+    private void pushEditorStyle() {
+        ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 14, 14);
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 8, 6);
+        ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 8, 8);
+        ImGui.pushStyleVar(ImGuiStyleVar.FrameRounding, 3);
+        ImGui.pushStyleVar(ImGuiStyleVar.WindowRounding, 0);
+        ImGui.pushStyleColor(ImGuiCol.WindowBg, 0.10F, 0.10F, 0.11F, 1);
+        ImGui.pushStyleColor(ImGuiCol.FrameBg, 0.17F, 0.17F, 0.19F, 1);
+        ImGui.pushStyleColor(ImGuiCol.FrameBgHovered, 0.23F, 0.23F, 0.25F, 1);
+        ImGui.pushStyleColor(ImGuiCol.FrameBgActive, 0.27F, 0.27F, 0.29F, 1);
+        ImGui.pushStyleColor(ImGuiCol.Button, 0.22F, 0.22F, 0.24F, 1);
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0.31F, 0.31F, 0.33F, 1);
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0.37F, 0.37F, 0.39F, 1);
+        ImGui.pushStyleColor(ImGuiCol.Header, 0.21F, 0.24F, 0.22F, 1);
+        ImGui.pushStyleColor(ImGuiCol.HeaderHovered, 0.28F, 0.32F, 0.29F, 1);
+        ImGui.pushStyleColor(ImGuiCol.HeaderActive, 0.32F, 0.38F, 0.34F, 1);
+        ImGui.pushStyleColor(ImGuiCol.Text, 0.93F, 0.93F, 0.91F, 1);
+        ImGui.pushStyleColor(ImGuiCol.TextDisabled, 0.65F, 0.65F, 0.63F, 1);
+        ImGui.pushStyleColor(ImGuiCol.TabSelected, 0.26F, 0.30F, 0.27F, 1);
+    }
+
+    private void shell() {
+        var viewport = ImGui.getMainViewport();
+        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
+        ImGui.setNextWindowPos(viewport.getWorkPosX(), viewport.getWorkPosY());
+        ImGui.setNextWindowSize(viewport.getWorkSizeX(), viewport.getWorkSizeY());
+        ImGui.setNextWindowViewport(viewport.getID());
+        ImGui.begin("Authoring###VR_AuthoringShell", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking
+                | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings);
+        toolbar();
+        guide();
+        ImGui.separator();
+        int dock = ImGui.getID("VR_AuthoringDock");
+        boolean compact = EditorLayout.forWidth(ImGui.getContentRegionAvailX()).compact();
+        if (!initializedLayout || resetLayout || compact != compactLayout) {
+            var existing = imgui.internal.ImGui.dockBuilderGetNode(dock);
+            if (resetLayout || preferences.layoutVersion() != EditorPreferences.CURRENT_LAYOUT
+                    || existing == null || existing.isNotValidPtr() || initializedLayout && compact != compactLayout) {
+                arrangePanels(dock, ImGui.getContentRegionAvailX(), ImGui.getContentRegionAvailY());
+                preferences = new EditorPreferences(preferences.guideDismissed(), EditorPreferences.CURRENT_LAYOUT, preferences.workspace());
+                attempt(this::savePreferences);
+            }
+            initializedLayout = true;
+            compactLayout = compact;
+            resetLayout = false;
+        }
+        ImGui.dockSpace(dock, 0, 0, imgui.flag.ImGuiDockNodeFlags.None);
+        ImGui.end();
+    }
+
+    private void arrangePanels(int dock, float width, float height) {
+        var plan = EditorLayout.forWidth(width);
+        imgui.internal.ImGui.dockBuilderRemoveNode(dock);
+        imgui.internal.ImGui.dockBuilderAddNode(dock, imgui.internal.flag.ImGuiDockNodeFlags.DockSpace);
+        imgui.internal.ImGui.dockBuilderSetNodeSize(dock, width, height);
+        var left = new imgui.type.ImInt();
+        var center = new imgui.type.ImInt();
+        imgui.internal.ImGui.dockBuilderSplitNode(dock, ImGuiDir.Left, plan.contentFraction(), left, center);
+        int details = center.get();
+        if (!plan.compact()) {
+            var right = new imgui.type.ImInt();
+            imgui.internal.ImGui.dockBuilderSplitNode(center.get(), ImGuiDir.Right, plan.detailsFraction(), right, center);
+            details = right.get();
+        }
+        imgui.internal.ImGui.dockBuilderDockWindow(CONTENT_PANEL, left.get());
+        imgui.internal.ImGui.dockBuilderDockWindow(WORK_PANEL, center.get());
+        imgui.internal.ImGui.dockBuilderDockWindow(DETAIL_PANEL, details);
+        imgui.internal.ImGui.dockBuilderFinish(dock);
+    }
+
+    private void toolbar() {
+        if (ImGui.button("Workspace")) showWorkspace = !showWorkspace;
+        ImGui.sameLine();
+        ImGui.beginDisabled(workspace == null);
+        if (ImGui.button("New")) { showCreate = !showCreate; view = 0; }
+        ImGui.sameLine();
+        if (ImGui.button("Save")) operation(this::save);
+        ImGui.endDisabled();
+        ImGui.sameLine();
+        if (viewButton("Edit", 0)) view = 0;
+        ImGui.sameLine();
+        if (viewButton("Preview", 1)) view = 1;
+        ImGui.sameLine();
+        if (viewButton("Check & export", 2)) operation(() -> { validate(); view = 2; });
+        if (ImGui.getWindowWidth() > 1000) ImGui.sameLine();
+        if (ImGui.button(guideStep < 0 ? "Quick guide" : "Hide guide")) {
+            if (guideStep < 0) guideStep = 0;
+            else dismissGuide();
+        }
+        ImGui.sameLine();
+        if (ImGui.button("Reset layout")) resetLayout = true;
+        ImGui.sameLine();
+        if (ImGui.button("Close")) screen.onClose();
+        ImGui.textDisabled(workspace == null ? "No workspace open" : workspace.directory().getFileName()
+                + (document == null ? "" : "  /  " + document.id())
+                + (document != null && (document.dirty() || hasPendingFields() || rawModified) ? "  (unsaved)" : ""));
+    }
+
+    private boolean viewButton(String label, int index) {
+        if (view == index) ImGui.pushStyleColor(ImGuiCol.Button, 0.30F, 0.38F, 0.32F, 1);
+        boolean clicked = ImGui.button(label);
+        if (view == index) ImGui.popStyleColor();
+        return clicked;
+    }
+
+    private void guide() {
+        if (guideStep < 0) return;
+        String[] titles = {"Choose a workspace", "Create or select dialogue", "Write and connect", "Try the conversation", "Check and export"};
+        String[] hints = {
+                "Your workspace holds drafts. Open an existing folder or create a new one in Content.",
+                "Choose New, pick a format, and give it an ID. Your dialogues stay in the Content list.",
+                "Select a node on the graph. Write its lines in Details, then add a response and choose where it leads.",
+                "Choose Preview in the top bar, select a nearby villager, then play. Camera and condition controls are optional.",
+                "Save your drafts, then choose Check & export. Fix any errors before exporting to a new datapack folder."
+        };
+        ImGui.separator();
+        ImGui.textUnformatted("Quick guide  " + (guideStep + 1) + " / " + titles.length + "  |  " + titles[guideStep]);
+        ImGui.textWrapped(hints[guideStep]);
+        ImGui.beginDisabled(guideStep == 0);
+        if (ImGui.smallButton("Back")) guideStep--;
+        ImGui.endDisabled();
+        ImGui.sameLine();
+        if (ImGui.smallButton("Show me")) {
+            if (guideStep == 0) showWorkspace = true;
+            if (guideStep == 1) showCreate = true;
+            view = guideStep < 3 ? 0 : guideStep == 3 ? 1 : 2;
+            focusPanel = guideStep < 2 ? CONTENT_PANEL : guideStep == 2 ? DETAIL_PANEL : WORK_PANEL;
+        }
+        ImGui.sameLine();
+        if (ImGui.smallButton(guideStep == titles.length - 1 ? "Finish" : "Next")) {
+            if (guideStep == titles.length - 1) dismissGuide();
+            else guideStep++;
+        }
+        ImGui.sameLine();
+        if (ImGui.smallButton("Skip tutorial")) dismissGuide();
+    }
+
+    private void dismissGuide() {
+        guideStep = -1;
+        preferences = new EditorPreferences(true, preferences.layoutVersion(), preferences.workspace());
+        attempt(this::savePreferences);
+    }
+
+    private void savePreferences() throws IOException { preferences.save(preferencesPath); }
+
+    private void panel(String title) {
+        if (title.equals(focusPanel)) { ImGui.setNextWindowFocus(); focusPanel = ""; }
+        ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
+    }
+
+    private static void input(String label, ImString value) {
+        ImGui.textUnformatted(label);
+        ImGui.setNextItemWidth(-1);
+        ImGui.inputText("##" + label, value);
+    }
+
+    private static String kindLabel(DefinitionKind kind) {
+        return switch (kind) {
+            case TREE -> "Dialogue tree";
+            case CONVERSATION -> "Conversation";
+            case FORCED -> "Triggered dialogue";
+            case QUEST -> "Quest";
+            case RESOURCE -> "Supporting resource";
+        };
+    }
+
+    private void openWorkspace(boolean create) throws IOException {
+        if (workspace != null) workspace.save();
+        AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
+                : AuthoringWorkspace.open(Path.of(workspacePath.get()));
+        workspace = next;
+        select(null);
+        showWorkspace = false;
+        showCreate = workspace.documents().isEmpty();
+        preferences = new EditorPreferences(preferences.guideDismissed(), preferences.layoutVersion(), workspace.directory().toString());
+        savePreferences();
+        status = create ? "Workspace created. Choose New to add your first dialogue." : "Workspace opened.";
     }
 
     private void browser() {
-        panel("Content browser", 8, 8, 340, 680);
-        ImGui.inputText("Workspace", workspacePath);
-        if (ImGui.button("Create workspace")) operation(() -> {
-            if (workspace != null) workspace.save();
-            workspace = AuthoringWorkspace.create(Path.of(workspacePath.get()));
-            select(null);
-            status = "Workspace created.";
-        });
-        ImGui.sameLine();
-        if (ImGui.button("Open")) operation(() -> {
-            if (workspace != null) workspace.save();
-            workspace = AuthoringWorkspace.open(Path.of(workspacePath.get()));
-            select(null);
-            status = "Workspace opened.";
-        });
-        if (workspace != null) {
-            if (ImGui.button("Save drafts  Ctrl+S")) operation(this::save);
-            ImGui.inputText("Import pack folder", importPath);
-            if (ImGui.button("Import content")) operation(() -> {
+        panel(CONTENT_PANEL);
+        if (workspace == null || showWorkspace) {
+            ImGui.textUnformatted("Workspace");
+            ImGui.textWrapped("Keep drafts in a folder, separate from your active game.");
+            input("Workspace folder", workspacePath);
+            if (ImGui.button("Open folder")) operation(() -> openWorkspace(false));
+            ImGui.sameLine();
+            if (ImGui.button("Create new")) operation(() -> openWorkspace(true));
+            ImGui.textWrapped("Create needs an empty folder. Open loads an existing workspace.");
+            ImGui.separator();
+        }
+        if (workspace == null) {
+            ImGui.textWrapped(status);
+            ImGui.end();
+            return;
+        }
+        if (ImGui.button("New dialogue", -1, 0)) { showCreate = !showCreate; view = 0; }
+        if (showCreate) {
+            ImGui.textUnformatted("Format");
+            ImGui.setNextItemWidth(-1);
+            if (ImGui.beginCombo("##format", kindLabel(createKind))) {
+                for (DefinitionKind kind : DefinitionKind.values()) {
+                    if (kind != DefinitionKind.RESOURCE && ImGui.selectable(kindLabel(kind), kind == createKind)) createKind = kind;
+                }
+                ImGui.endCombo();
+            }
+            ImGui.textWrapped(switch (createKind) {
+                case TREE -> "A branching conversation with plain text. A good place to start.";
+                case CONVERSATION -> "A quest conversation with localized exchanges, speakers and outcomes.";
+                case FORCED -> "Dialogue opened by a game event.";
+                case QUEST -> "Stages, objectives and rewards.";
+                default -> "";
+            });
+            input("ID (namespace:name)", newId);
+            if (createKind == DefinitionKind.CONVERSATION) {
+                ImGui.textUnformatted("Associated quest");
+                ImGui.setNextItemWidth(-1);
+                if (ImGui.beginCombo("##linked_quest", linkedQuest.get().isEmpty() ? "Choose a quest" : linkedQuest.get())) {
+                    for (var candidate : workspace.documents()) {
+                        if (candidate.kind() == DefinitionKind.QUEST && ImGui.selectable(candidate.id(), linkedQuest.get().equals(candidate.id())))
+                            linkedQuest.set(candidate.id());
+                    }
+                    ImGui.endCombo();
+                }
+                if (workspace.documents().stream().noneMatch(candidate -> candidate.kind() == DefinitionKind.QUEST))
+                    ImGui.textWrapped("Create a quest first, or choose Dialogue tree for standalone dialogue.");
+            }
+            boolean questSelected = workspace.documents().stream().anyMatch(candidate ->
+                    candidate.kind() == DefinitionKind.QUEST && candidate.id().equals(linkedQuest.get()));
+            ImGui.beginDisabled(createKind == DefinitionKind.CONVERSATION && !questSelected);
+            if (ImGui.button("Create", -1, 0)) operation(() -> {
+                AuthoringDocument created = workspace.createDocument(createKind, newId.get());
+                if (createKind == DefinitionKind.CONVERSATION) created.edit("Assign quest", root -> root.addProperty("quest", linkedQuest.get()));
+                select(created);
+                showCreate = false;
+                view = 0;
+                status = "Created. Select a node and write its lines in Details.";
+            });
+            ImGui.endDisabled();
+            ImGui.separator();
+        }
+        ImGui.setNextItemWidth(-1);
+        ImGui.inputTextWithHint("##search", "Find dialogue...", filter);
+        if (ImGui.checkbox("Supporting files", showResources)) showResources = !showResources;
+        int visible = 0;
+        for (AuthoringDocument candidate : workspace.documents()) {
+            if (!showResources && candidate.kind() == DefinitionKind.RESOURCE) continue;
+            if (!(candidate.resourcePath() + candidate.id()).toLowerCase(Locale.ROOT).contains(filter.get().toLowerCase(Locale.ROOT))) continue;
+            visible++;
+            String name = candidate.kind() == DefinitionKind.RESOURCE
+                    ? candidate.resourcePath().substring(candidate.resourcePath().lastIndexOf('/') + 1) : candidate.id();
+            if (ImGui.selectable((candidate.dirty() ? "* " : "") + shortText(name, 26) + "##" + candidate.resourcePath(), document == candidate))
+                operation(() -> { select(candidate); view = 0; });
+            if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + candidate.resourcePath());
+        }
+        if (visible == 0) ImGui.textWrapped("No matching dialogue. Choose New or import a pack below.");
+        ImGui.separator();
+        if (ImGui.collapsingHeader("Import existing pack")) {
+            input("Pack folder", importPath);
+            if (ImGui.button("Import")) operation(() -> {
                 int count = workspace.importPack(Path.of(importPath.get()));
                 status = "Imported " + count + " resources.";
                 validate();
             });
-            ImGui.inputText("Export new pack folder", exportPath);
-            if (ImGui.button("Validate and export")) operation(() -> {
-                validate();
-                workspace.exportPack(Path.of(exportPath.get()));
-                status = "Exported to " + exportPath.get();
-            });
-            ImGui.separator();
-            ImGui.inputTextWithHint("##search", "Search IDs and paths", filter);
-            if (ImGui.beginCombo("New kind", createKind.name())) {
-                for (DefinitionKind kind : DefinitionKind.values()) {
-                    if (kind != DefinitionKind.RESOURCE && ImGui.selectable(kind.name(), kind == createKind)) createKind = kind;
-                }
-                ImGui.endCombo();
-            }
-            ImGui.inputText("Resource ID", newId);
-            if (ImGui.button("Create definition")) operation(() -> select(workspace.createDocument(createKind, newId.get())));
-            if (document != null) {
-                if (ImGui.button("Rename to ID")) operation(() -> { workspace.rename(document, newId.get()); refresh(); });
+        }
+        if (document != null && ImGui.collapsingHeader("Manage selected file")) {
+            ImGui.textWrapped(document.resourcePath());
+            input("New resource ID", newId);
+            if (ImGui.button("Rename")) operation(() -> { workspace.rename(document, newId.get()); refresh(); });
+            ImGui.sameLine();
+            if (ImGui.button("Duplicate")) operation(() -> select(workspace.duplicate(document, newId.get())));
+            if (ImGui.button("Delete...")) confirmDelete = true;
+            if (confirmDelete) {
+                ImGui.textWrapped("Delete this draft? Saving makes the removal permanent.");
+                if (ImGui.button("Confirm delete")) operation(() -> { workspace.remove(document); select(null); });
                 ImGui.sameLine();
-                if (ImGui.button("Duplicate to ID")) operation(() -> select(workspace.duplicate(document, newId.get())));
-                if (ImGui.button("Delete definition")) confirmDelete = true;
-                if (confirmDelete) {
-                    ImGui.textWrapped("Delete this draft? Save commits the removal to this workspace.");
-                    if (ImGui.button("Confirm delete")) operation(() -> {
-                        workspace.remove(document);
-                        select(null);
-                        confirmDelete = false;
-                    });
-                    ImGui.sameLine();
-                    if (ImGui.button("Cancel")) confirmDelete = false;
-                }
-            }
-            ImGui.separator();
-            for (AuthoringDocument candidate : workspace.documents()) {
-                if (!(candidate.resourcePath() + candidate.id()).toLowerCase(Locale.ROOT).contains(filter.get().toLowerCase(Locale.ROOT))) continue;
-                if (ImGui.selectable((candidate.dirty() ? "* " : "") + candidate.kind() + " " + candidate.id()
-                        + "##" + candidate.resourcePath(), document == candidate)) operation(() -> select(candidate));
-                if (ImGui.isItemHovered()) ImGui.setTooltip(candidate.resourcePath());
+                if (ImGui.button("Cancel")) confirmDelete = false;
             }
         }
         ImGui.separator();
@@ -220,7 +456,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void graph() {
-        panel("Dialogue graph", 356, 8, 760, 440);
+        panel(WORK_PANEL);
         if (document == null) {
             ImGui.textWrapped("Select a dialogue definition.");
             ImGui.end();
@@ -242,70 +478,88 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        ImGui.inputText(document.kind() == DefinitionKind.QUEST ? "Stage ID" : "Node / option ID", nodeName);
+        ImGui.textUnformatted(document.kind() == DefinitionKind.QUEST ? "Quest stages" : "Dialogue");
         ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
         if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Add stage" : "Add node")) operation(() -> {
-            DialogueGraph.addNode(document, nodeName.get());
-            selectedNode = document.kind() == DefinitionKind.FORCED
-                    ? DialogueGraph.nodes(document).getLast().id() : nodeName.get();
+            String id = nextNodeId();
+            DialogueGraph.addNode(document, id);
+            var added = document.kind() == DefinitionKind.FORCED ? DialogueGraph.nodes(document).getLast()
+                    : DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow();
+            selectedNode = added.id();
+            setPointer(added.pointer());
+            showBranch = false;
             refresh();
+            focusPanel = DETAIL_PANEL;
         });
         ImGui.endDisabled();
-        if (nodes.stream().anyMatch(node -> node.id().equals(selectedNode))) {
+        boolean selected = nodes.stream().anyMatch(node -> node.id().equals(selectedNode));
+        ImGui.sameLine();
+        ImGui.beginDisabled(!selected);
+        if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Add response")) {
+            showBranch = !showBranch;
+            if (nextStage.get().isBlank() && selected) nextStage.set(selectedNode);
+        }
+        ImGui.endDisabled();
+        ImGui.sameLine();
+        if (ImGui.button("Center graph")) { panX = 25; panY = 25; zoom = 1; }
+        if (selected && ImGui.collapsingHeader("Node actions")) {
+            ImGui.textUnformatted("Selected: " + selectedNode);
+            input("Copy ID", nodeName);
+            if (ImGui.button("Duplicate node")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
             ImGui.sameLine();
-            if (ImGui.button("Duplicate")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
-            ImGui.sameLine();
-            if (ImGui.button("Remove")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; refresh(); });
+            if (ImGui.button("Delete node")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; setPointer(""); refresh(); });
             ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
-            if (ImGui.button("Set entry")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
+            if (ImGui.button("Start here")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
             ImGui.endDisabled();
             ImGui.sameLine();
-            if (ImGui.button("Set terminal")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
-            if (document.kind() == DefinitionKind.QUEST) {
-                if (ImGui.beginCombo("Next stage", nextStage.get())) {
-                    for (var destination : DialogueGraph.nodes(document)) {
-                        if (ImGui.selectable(destination.id(), destination.id().equals(nextStage.get()))) nextStage.set(destination.id());
-                    }
-                    ImGui.endCombo();
-                }
-                if (ImGui.button("Connect next stage")) operation(() -> {
-                    EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
-                    refresh();
-                });
-            } else {
-                ImGui.inputText(document.kind() == DefinitionKind.CONVERSATION ? "Response localization key" : "Response text", responseLabel);
-                if (ImGui.button("Add response to selected node")) operation(() -> {
-                    DialogueGraph.addResponse(document, selectedNode, nodeName.get(), responseLabel.get(),
-                            document.kind() == DefinitionKind.FORCED ? null : selectedNode);
-                    refresh();
-                });
-                if (document.kind() == DefinitionKind.FORCED && ImGui.button("Add follow-up branch")) operation(() -> {
-                    String id = nodeName.get();
-                    if (id.isBlank()) throw new IllegalArgumentException("Enter an option ID.");
-                    document.edit("Add follow-up branch", root -> {
-                        JsonObject owner = JsonPointers.get(root, selectedNode).getAsJsonObject();
-                        if (!owner.has("options")) owner.add("options", new JsonArray());
-                        JsonArray options = owner.getAsJsonArray("options");
-                        for (JsonElement value : options) {
-                            if (value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")))
-                                throw new IllegalArgumentException("Duplicate response ID " + id);
-                        }
-                        JsonObject followUp = DialogueGraph.defaultNode(DefinitionKind.FORCED, id);
-                        followUp.remove("id");
-                        followUp.remove("trigger");
-                        followUp.add("options", new JsonArray());
-                        JsonObject response = new JsonObject();
-                        response.addProperty("id", id);
-                        response.addProperty("label", responseLabel.get());
-                        response.addProperty("end_conversation", false);
-                        response.add("follow_up", followUp);
-                        options.add(response);
-                    });
-                    refresh();
-                });
-            }
+            if (ImGui.button("End here")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
         }
-        ImGui.textUnformatted("Drag nodes. Middle-drag to pan. Wheel to zoom. Select an edge below, then click a destination node.");
+        if (selected && showBranch) {
+            if (document.kind() != DefinitionKind.QUEST) input("Player response", responseLabel);
+            ImGui.textUnformatted("Leads to");
+            ImGui.setNextItemWidth(-1);
+            if (ImGui.beginCombo("##destination", nextStage.get().isEmpty() ? "End conversation" : nextStage.get())) {
+                if (document.kind() != DefinitionKind.CONVERSATION && document.kind() != DefinitionKind.QUEST
+                        && ImGui.selectable("End conversation", nextStage.get().isEmpty())) nextStage.set("");
+                for (var destination : nodes) {
+                    if (document.kind() == DefinitionKind.FORCED && (selectedNode.equals(destination.id())
+                            || selectedNode.startsWith(destination.id() + "/") || destination.id().isEmpty())) continue;
+                    if (ImGui.selectable(destination.id(), destination.id().equals(nextStage.get()))) nextStage.set(destination.id());
+                }
+                ImGui.endCombo();
+            }
+            if (document.kind() == DefinitionKind.FORCED && ImGui.button("Create follow-up")) operation(() -> {
+                String id = nextResponseId();
+                document.edit("Add follow-up", root -> {
+                    JsonObject owner = JsonPointers.get(root, selectedNode).getAsJsonObject();
+                    JsonArray options = owner.has("options") ? owner.getAsJsonArray("options") : new JsonArray();
+                    JsonObject followUp = DialogueGraph.defaultNode(DefinitionKind.FORCED, id);
+                    followUp.remove("id");
+                    followUp.remove("trigger");
+                    followUp.add("options", new JsonArray());
+                    JsonObject response = new JsonObject();
+                    response.addProperty("id", id);
+                    response.addProperty("label", responseLabel.get());
+                    response.addProperty("end_conversation", false);
+                    response.add("follow_up", followUp);
+                    options.add(response);
+                    owner.add("options", options);
+                });
+                showBranch = false;
+                refresh();
+            });
+            if (ImGui.button("Add connection")) operation(() -> {
+                if (document.kind() == DefinitionKind.QUEST) EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
+                else workspace.addDialogueResponse(document, selectedNode, nextResponseId(), responseLabel.get(), nextStage.get());
+                showBranch = false;
+                refresh();
+            });
+            ImGui.sameLine();
+            if (ImGui.button("Cancel connection")) showBranch = false;
+        }
+        ImGui.textWrapped(selectedEdge.isEmpty() ? "Select a node to edit its dialogue. Drag to move, middle-drag to pan, scroll to zoom."
+                : "Choose a destination node to reconnect this response.");
+        if (!selectedEdge.isEmpty() && ImGui.smallButton("Cancel reconnect")) selectedEdge = "";
         float canvasX = ImGui.getCursorScreenPosX();
         float canvasY = ImGui.getCursorScreenPosY();
         float canvasWidth = Math.max(100, ImGui.getContentRegionAvailX());
@@ -352,7 +606,7 @@ final class ImGuiAuthoringEditor {
             draw.addRectFilled(x, y, x + w, y + h, selectedNode.equals(node.id()) ? 0xff65513d : 0xff423c34, 4);
             draw.addRect(x, y, x + w, y + h, node.entry() ? 0xff9cc6a2 : 0xff78716b, 4);
             draw.addText(x + 8, y + 7, 0xfff2f0e9, shortText(node.id(), 23));
-            draw.addText(x + 8, y + 28, 0xffcbc7bf, shortText(node.label(), 23));
+            draw.addText(x + 8, y + 28, 0xffcbc7bf, shortText(displayLabel(node.label()), 23));
             draw.addText(x + 8, y + 47, 0xffb4ab9c, node.entry() ? "ENTRY" : node.terminal() ? "END" : "");
             boolean overNode = hover && ImGui.isMouseHoveringRect(x, y, x + w, y + h);
             if (overNode && ImGui.isMouseClicked(0)) {
@@ -360,6 +614,7 @@ final class ImGuiAuthoringEditor {
                 operation(() -> {
                     selectedNode = node.id();
                     setPointer(node.pointer());
+                    showBranch = false;
                     if (!edge.isEmpty()) {
                         DialogueGraph.connect(document, edge, node.id());
                         selectedEdge = "";
@@ -382,7 +637,7 @@ final class ImGuiAuthoringEditor {
         if (nodes.stream().anyMatch(node -> node.id().equals(selectedNode))) {
             for (var edge : edges) {
                 if (!edge.from().equals(selectedNode)) continue;
-                if (ImGui.selectable(edge.label() + " -> " + edge.to() + "##" + edge.pointer(), edge.pointer().equals(selectedEdge))) {
+                if (ImGui.selectable(displayLabel(edge.label()) + " -> " + edge.to() + "##" + edge.pointer(), edge.pointer().equals(selectedEdge))) {
                     operation(() -> {
                         selectedEdge = edge.pointer();
                         setPointer(edge.pointer());
@@ -406,80 +661,193 @@ final class ImGuiAuthoringEditor {
         ImGui.end();
     }
 
+    private String nextNodeId() {
+        var nodes = DialogueGraph.nodes(document);
+        int index = nodes.size() + 1;
+        while (true) {
+            String id = "node_" + index++;
+            if (nodes.stream().noneMatch(node -> node.id().equals(id))
+                    && (!document.json().has("nodes") || !document.json().get("nodes").isJsonObject()
+                        || !document.json().getAsJsonObject("nodes").has(id))) return id;
+        }
+    }
+
+    private String nextResponseId() {
+        var node = DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow();
+        JsonObject owner = JsonPointers.get(document.json(), node.pointer()).getAsJsonObject();
+        JsonArray responses = DialogueGraph.array(owner, document.kind() == DefinitionKind.FORCED ? "options" : "responses");
+        int index = responses.size() + 1;
+        while (true) {
+            String id = "choice_" + index++;
+            if (responses.asList().stream().noneMatch(value -> value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")))) return id;
+        }
+    }
+
+    private String displayLabel(String label) {
+        if (document.kind() != DefinitionKind.CONVERSATION) return label;
+        JsonObject reference = new JsonObject();
+        reference.addProperty("key", label);
+        return workspace.resolveText(document, reference, "en_us");
+    }
+
     private void inspector() {
-        panel("Properties", 1124, 8, 370, 680);
+        panel(DETAIL_PANEL);
         if (document == null) {
             ImGui.textUnformatted("No definition selected.");
             ImGui.end();
             return;
         }
-        ImGui.textWrapped(document.resourcePath());
-        ImGui.beginDisabled(!document.canUndo() || rawModified);
+        ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
+        ImGui.beginDisabled(!(historyDocument == null ? document : historyDocument).canUndo() || rawModified);
         if (ImGui.button("Undo")) operation(() -> changeHistory(false));
         ImGui.endDisabled();
         ImGui.sameLine();
-        ImGui.beginDisabled(!document.canRedo() || rawModified);
+        ImGui.beginDisabled(!(historyDocument == null ? document : historyDocument).canRedo() || rawModified);
         if (ImGui.button("Redo")) operation(() -> changeHistory(true));
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (ImGui.button("Whole definition")) operation(() -> setPointer(""));
-        ImGui.textWrapped("Text and numeric edits apply together on Enter, Save or another editing action. Expand arrays to duplicate, reorder and remove items.");
-        if (pendingFields.pending()) {
+        if (ImGui.button("File settings")) operation(() -> { selectedNode = ""; setPointer(""); });
+        if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
+            if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
+                    && ImGui.button("Add spoken line")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
+        }
+        if (hasPendingFields()) {
             if (ImGui.button("Apply field edits")) operation(() -> { });
             ImGui.sameLine();
-            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); fields.clear(); });
+            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); });
         }
-        ImGui.inputText("JSON pointer", pointer);
-        if (ImGui.button("Inspect pointer")) operation(() -> { });
-        if (!pointer.get().isEmpty() && ImGui.button("Remove selected field")) operation(() -> {
-            document.edit("Remove field", root -> JsonPointers.remove(root, pointer.get()));
-            setPointer("");
-            refresh();
-        });
         try {
-            inspectValue(JsonPointers.get(document.json(), pointer.get()), pointer.get(), "Selected", 0);
+            selectedDetails();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
         }
         ImGui.separator();
-        conditionCatalog();
-        ImGui.textWrapped("Add an object field or append to an array. JSON values preserve their types.");
-        ImGui.inputText("Field name", fieldName);
-        ImGui.inputTextMultiline("Value JSON", fieldValue, -1, 80);
-        if (ImGui.button("Add field / append")) operation(() -> {
-            JsonElement value = JsonParser.parseString(fieldValue.get());
-            document.edit("Add field", root -> {
-                JsonElement parent = JsonPointers.get(root, pointer.get());
-                if (parent != null && parent.isJsonObject()) {
-                    if (fieldName.get().isBlank()) throw new IllegalArgumentException("Enter a field name.");
-                    if (parent.getAsJsonObject().has(fieldName.get()))
-                        throw new IllegalArgumentException("This field already exists. Edit it in Properties instead.");
-                    parent.getAsJsonObject().add(fieldName.get(), value);
-                }
-                else if (parent != null && parent.isJsonArray()) parent.getAsJsonArray().add(value);
-                else throw new IllegalArgumentException("Select an object or array first.");
-            });
-            refresh();
-        });
-        if (ImGui.collapsingHeader("Advanced full JSON")) {
-            ImGui.beginDisabled(pendingFields.pending());
-            if (ImGui.inputTextMultiline("##raw", jsonText, -1, 260)) rawModified = true;
-            ImGui.endDisabled();
-            if (pendingFields.pending()) ImGui.textWrapped("Apply or discard field edits before editing full JSON.");
-            if (ImGui.button("Apply JSON")) attempt(() -> {
-                if (pendingFields.pending()) throw new IllegalStateException("Apply or discard field edits before applying full JSON.");
-                document.replaceJson(jsonText.get());
+        if (ImGui.collapsingHeader("Advanced editing")) {
+            ImGui.inputText("JSON pointer", pointer);
+            if (ImGui.button("Inspect pointer")) operation(() -> { });
+            if (!pointer.get().isEmpty() && ImGui.button("Remove selected field")) operation(() -> {
+                document.edit("Remove field", root -> JsonPointers.remove(root, pointer.get()));
+                setPointer("");
                 refresh();
             });
-            ImGui.sameLine();
-            if (ImGui.button("Discard JSON buffer")) attempt(() -> {
-                if (pendingFields.pending()) throw new IllegalStateException("Apply or discard field edits first.");
+            conditionCatalog();
+            ImGui.textWrapped("Add an object field or append to an array. JSON values preserve their types.");
+            ImGui.inputText("Field name", fieldName);
+            ImGui.inputTextMultiline("Value JSON", fieldValue, -1, 80);
+            if (ImGui.button("Add field / append")) operation(() -> {
+                JsonElement value = JsonParser.parseString(fieldValue.get());
+                document.edit("Add field", root -> {
+                    JsonElement parent = JsonPointers.get(root, pointer.get());
+                    if (parent != null && parent.isJsonObject()) {
+                        if (fieldName.get().isBlank()) throw new IllegalArgumentException("Enter a field name.");
+                        if (parent.getAsJsonObject().has(fieldName.get()))
+                            throw new IllegalArgumentException("This field already exists. Edit it in Properties instead.");
+                        parent.getAsJsonObject().add(fieldName.get(), value);
+                    }
+                    else if (parent != null && parent.isJsonArray()) parent.getAsJsonArray().add(value);
+                    else throw new IllegalArgumentException("Select an object or array first.");
+                });
                 refresh();
             });
-            if (rawModified) ImGui.textWrapped("Unapplied JSON buffer. Apply before saving, previewing or switching definitions.");
+            if (ImGui.collapsingHeader("Advanced full JSON")) {
+                ImGui.beginDisabled(hasPendingFields());
+                if (ImGui.inputTextMultiline("##raw", jsonText, -1, 260)) rawModified = true;
+                ImGui.endDisabled();
+                if (hasPendingFields()) ImGui.textWrapped("Apply or discard field edits before editing full JSON.");
+                if (ImGui.button("Apply JSON")) attempt(() -> {
+                    if (hasPendingFields()) throw new IllegalStateException("Apply or discard field edits before applying full JSON.");
+                    document.replaceJson(jsonText.get());
+                    historyDocument = document;
+                    refresh();
+                });
+                ImGui.sameLine();
+                if (ImGui.button("Discard JSON buffer")) attempt(() -> {
+                    if (hasPendingFields()) throw new IllegalStateException("Apply or discard field edits first.");
+                    refresh();
+                });
+                if (rawModified) ImGui.textWrapped("Unapplied JSON buffer. Apply before saving, previewing or switching definitions.");
+            }
         }
         ImGui.end();
+    }
+
+    private boolean hasPendingFields() {
+        return pendingFields.pending() || translatedFields.values().stream().anyMatch(EditorFieldEdits::pending);
+    }
+
+    private void applyPendingFields() {
+        if (document != null) pendingFields.validate(document);
+        translatedFields.forEach((owner, edits) -> edits.validate(owner));
+        boolean changed = false;
+        if (pendingFields.apply(document)) { historyDocument = document; changed = true; }
+        for (var entry : translatedFields.entrySet()) {
+            if (entry.getValue().apply(entry.getKey())) { historyDocument = entry.getKey(); changed = true; }
+        }
+        if (changed) refresh();
+    }
+
+    private void selectedDetails() {
+        JsonElement selected = JsonPointers.get(document.json(), pointer.get());
+        if (!selected.isJsonObject()) {
+            inspectValue(selected, pointer.get(), "Value", 0);
+            return;
+        }
+        JsonObject object = selected.getAsJsonObject();
+        List<String> main = List.of("title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
+        boolean shown = false;
+        for (String field : main) {
+            if (!object.has(field)) continue;
+            inspectValue(object.get(field), pointer.get() + "/" + escape(field), friendlyLabel(field), 0);
+            shown = true;
+        }
+        if (!shown) ImGui.textWrapped("This selection has no dialogue yet. Add a line or open More properties.");
+        if (ImGui.collapsingHeader("More properties")) {
+            for (var entry : object.entrySet()) {
+                if (main.contains(entry.getKey())) continue;
+                inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
+            }
+        }
+    }
+
+    private static String friendlyLabel(String field) {
+        return switch (field) {
+            case "lines", "variants" -> "Line variations";
+            case "exchanges" -> "Spoken lines";
+            case "responses", "options" -> "Player responses";
+            case "end", "end_conversation" -> "End conversation";
+            case "next" -> "Next node";
+            default -> field.isEmpty() ? "(unnamed field)" : Character.toUpperCase(field.charAt(0)) + field.substring(1).replace('_', ' ');
+        };
+    }
+
+    private void localizedField(JsonObject reference, String label) {
+        String key = reference.get("key").getAsString();
+        var location = workspace.textLocation(document, key, "en_us");
+        ImGui.textUnformatted(label);
+        if (location != null) {
+            JsonElement text = JsonPointers.get(location.document().json(), location.pointer());
+            if (text.isJsonPrimitive() && text.getAsJsonPrimitive().isString()) {
+                String bufferId = location.document().resourcePath() + location.pointer();
+                ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
+                ImGui.beginDisabled(rawModified);
+                ImGui.inputTextMultiline("##wording", buffer, -1, 80);
+                ImGui.endDisabled();
+                translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
+                        .update(location.pointer(), text, buffer.get());
+                if (ImGui.isItemHovered()) ImGui.setTooltip("English wording. The localization reference is preserved.");
+                return;
+            }
+            ImGui.textWrapped(workspace.resolveText(document, reference, "en_us"));
+            if (ImGui.smallButton("Edit text variations")) operation(() -> {
+                select(location.document());
+                setPointer(location.pointer());
+                showResources = true;
+            });
+        } else {
+            ImGui.textWrapped("Translation not found: " + key);
+            ImGui.textWrapped("Import its locale file, or use Advanced to edit the reference.");
+        }
     }
 
     private void conditionCatalog() {
@@ -499,17 +867,23 @@ final class ImGuiAuthoringEditor {
     private void inspectValue(JsonElement value, String path, String label, int depth) {
         if (depth > 16) { ImGui.textUnformatted("Use advanced JSON for deeper nesting."); return; }
         ImGui.pushID(path);
-        if (value.isJsonObject()) {
+        if (value.isJsonObject() && value.getAsJsonObject().has("key")
+                && value.getAsJsonObject().get("key").isJsonPrimitive() && workspace != null
+                && (path.endsWith("/text") || path.endsWith("/label") || path.endsWith("/title"))) {
+            localizedField(value.getAsJsonObject(), label);
+        } else if (value.isJsonObject()) {
+            if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
             if (ImGui.treeNode(label)) {
-                if (ImGui.smallButton("Select object")) operation(() -> setPointer(path));
+                if (ImGui.smallButton("Focus this item")) operation(() -> setPointer(path));
                 for (var entry : value.getAsJsonObject().entrySet()) {
-                    inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), entry.getKey(), depth + 1);
+                    inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), depth + 1);
                 }
                 ImGui.treePop();
             }
         } else if (value.isJsonArray()) {
+            if (depth == 0) ImGui.setNextItemOpen(true, ImGuiCond.Once);
             if (ImGui.treeNode(label + " [" + value.getAsJsonArray().size() + "]")) {
-                if (ImGui.smallButton("Select array")) operation(() -> setPointer(path));
+                if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
                 for (int i = 0; i < array.size(); i++) {
                     final int index = i;
@@ -536,7 +910,13 @@ final class ImGuiAuthoringEditor {
             ImString input = fields.computeIfAbsent(path, key -> new ImString(
                     value.isJsonPrimitive() && value.getAsJsonPrimitive().isString() ? value.getAsString() : value.toString(), 65536));
             ImGui.beginDisabled(rawModified);
-            boolean apply = ImGui.inputText(label, input, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.textUnformatted(label);
+            ImGui.setNextItemWidth(-1);
+            boolean text = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
+            boolean apply = false;
+            if (text && (path.contains("/lines/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+                ImGui.inputTextMultiline("##value", input, -1, 80);
+            else apply = ImGui.inputText("##value", input, ImGuiInputTextFlags.EnterReturnsTrue);
             ImGui.endDisabled();
             pendingFields.update(path, value, input.get());
             if (apply) operation(() -> { });
@@ -545,8 +925,19 @@ final class ImGuiAuthoringEditor {
     }
 
     private void preview() {
-        panel("Preview and cameras", 356, 456, 760, 360);
-        ImGui.textWrapped("Preview runs locally with simulated conditions. Actions and rewards are logged, never applied.");
+        panel(WORK_PANEL);
+        ImGui.textUnformatted("Preview dialogue");
+        if (document == null) {
+            ImGui.textWrapped("Choose a dialogue in Content first.");
+            ImGui.end();
+            return;
+        }
+        if (document.kind() == DefinitionKind.QUEST) {
+            ImGui.textWrapped("Quest progression preview is not available. Select a conversation or dialogue tree to play it.");
+            ImGui.end();
+            return;
+        }
+        ImGui.textWrapped("Choose a villager, then play your dialogue. Actions and rewards are shown in the log.");
         if (ImGui.button("Use crosshair target") && MC.hitResult instanceof EntityHitResult hit) target = hit.getEntity();
         ImGui.sameLine();
         if (ImGui.button("Nearest villager") && MC.player != null && MC.level != null) {
@@ -554,7 +945,9 @@ final class ImGuiAuthoringEditor {
                     MC.player.getBoundingBox().inflate(16)).stream()
                     .min(java.util.Comparator.comparingDouble(entity -> entity.distanceToSqr(MC.player))).orElse(null);
         }
-        if (MC.level != null && MC.player != null && ImGui.beginCombo("Conversation target", target == null ? "Select entity" : target.getName().getString())) {
+        ImGui.textUnformatted("Conversation target");
+        ImGui.setNextItemWidth(-1);
+        if (MC.level != null && MC.player != null && ImGui.beginCombo("##target", target == null ? "Select entity" : target.getName().getString())) {
             for (Entity entity : MC.level.getEntities(MC.player, MC.player.getBoundingBox().inflate(32), Entity::isAlive)) {
                 if (ImGui.selectable(entity.getName().getString() + "##" + entity.getId(), entity == target)) target = entity;
             }
@@ -570,7 +963,8 @@ final class ImGuiAuthoringEditor {
             EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
         }
         EditorPreviewConditions.render(conditions, document == null ? null : document.json());
-        for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
+        if (ImGui.collapsingHeader("Preview log"))
+            for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
         ImGui.end();
     }
 
@@ -600,8 +994,27 @@ final class ImGuiAuthoringEditor {
     }
 
     private void diagnostics() {
-        panel("Diagnostics", 8, 696, 340, 220);
-        if (ImGui.button("Validate workspace")) operation(this::validate);
+        panel(WORK_PANEL);
+        ImGui.textUnformatted("Check and export");
+        if (workspace == null) {
+            ImGui.textWrapped("Open a workspace in Content first.");
+            ImGui.end();
+            return;
+        }
+        ImGui.textWrapped("Check your drafts, fix any errors, then export a new datapack folder.");
+        if (ImGui.button("Check drafts")) operation(this::validate);
+        long errors = diagnostics.stream().filter(value -> value.severity() == AuthoringDiagnostic.Severity.ERROR).count();
+        ImGui.textWrapped(errors == 0 ? "No blocking errors. Ready to export." : errors + " errors need attention. Select an issue below to open its field.");
+        input("New datapack folder", exportPath);
+        ImGui.beginDisabled(errors > 0);
+        if (ImGui.button("Save and export")) operation(() -> {
+            validate();
+            workspace.save();
+            workspace.exportPack(Path.of(exportPath.get()));
+            status = "Exported datapack to " + exportPath.get();
+        });
+        ImGui.endDisabled();
+        ImGui.separator();
         ImGui.textWrapped(status);
         for (var diagnostic : diagnostics) {
             if (ImGui.selectable(diagnostic.severity() + ": " + diagnostic.message() + "##"
@@ -612,6 +1025,8 @@ final class ImGuiAuthoringEditor {
                             operation(() -> {
                                 select(candidate);
                                 setPointer(diagnostic.pointer());
+                                view = 0;
+                                focusPanel = DETAIL_PANEL;
                             });
                             break;
                         }
@@ -641,17 +1056,32 @@ final class ImGuiAuthoringEditor {
         }
         if (document != next) EditorCameraPanel.close();
         document = next;
+        historyDocument = next;
         selectedNode = "";
         selectedEdge = "";
         draggingNode = null;
         pointer.set("");
         positions.clear();
         confirmDelete = false;
+        showBranch = false;
+        if (next != null && next.kind() != DefinitionKind.RESOURCE) {
+            try {
+                var nodes = DialogueGraph.nodes(next);
+                if (!nodes.isEmpty()) {
+                    var first = nodes.stream().filter(DialogueGraph.Node::entry).findFirst().orElse(nodes.getFirst());
+                    selectedNode = first.id();
+                    pointer.set(first.pointer());
+                }
+            } catch (IllegalArgumentException | IllegalStateException | ClassCastException | UnsupportedOperationException exception) {
+                status = "This draft needs repair in Advanced editing: " + exception.getMessage();
+            }
+        }
         refresh();
     }
 
     private void changeHistory(boolean redo) {
-        boolean changed = redo ? document.redo() : document.undo();
+        AuthoringDocument history = historyDocument == null ? document : historyDocument;
+        boolean changed = redo ? history.redo() : history.undo();
         if (!changed) throw new IllegalStateException(redo ? "No change can be redone." : "No change can be undone.");
         refresh();
     }
@@ -659,6 +1089,7 @@ final class ImGuiAuthoringEditor {
     private void refresh() {
         rawModified = false;
         pendingFields.clear();
+        translatedFields.clear();
         fields.clear();
         positions.clear();
         if (document != null) {
@@ -715,8 +1146,12 @@ final class ImGuiAuthoringEditor {
         attempt(() -> {
             if (expected != document) throw new IllegalStateException("Selection changed before the operation could run.");
             if (rawModified) throw new IllegalStateException("Apply or discard the JSON buffer before other operations.");
-            if (pendingFields.apply(document)) refresh();
+            applyPendingFields();
+            JsonObject before = document == null ? null : document.json();
+            JsonObject beforeMetadata = document == null ? null : document.metadata();
             action.run();
+            if (document != null && document == expected
+                    && (!document.json().equals(before) || !document.metadata().equals(beforeMetadata))) historyDocument = document;
         });
     }
 

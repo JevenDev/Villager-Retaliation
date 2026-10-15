@@ -480,6 +480,102 @@ public final class AuthoringWorkspace {
         return AuthoringValidation.validate(documents());
     }
 
+    public record TextLocation(AuthoringDocument document, String pointer) { }
+
+    public TextLocation textLocation(AuthoringDocument owner, String key, String locale) {
+        String bundle = bundleDirectory(owner.resourcePath());
+        if (key.startsWith("#")) {
+            String prefix = documents.stream().filter(candidate -> candidate.resourcePath().equals(bundle + "quest.json"))
+                    .map(candidate -> DialogueGraph.string(candidate.json(), "localization_prefix")).findFirst().orElse("");
+            key = prefix + "." + key.substring(1);
+        }
+        String namespace = owner.resourcePath().split("/", 3)[1];
+        String resolvedKey = key;
+        for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
+            var candidates = documents.stream().filter(candidate -> candidate.resourcePath().endsWith("/locales/" + language + ".json"))
+                    .sorted(Comparator.comparingInt((AuthoringDocument candidate) -> candidate.resourcePath().startsWith(bundle) && !bundle.isEmpty() ? 0
+                            : candidate.resourcePath().startsWith("data/" + namespace + "/quests/_shared/") ? 1
+                            : candidate.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
+                            .thenComparing(AuthoringDocument::resourcePath)).toList();
+            for (var candidate : candidates) {
+                JsonObject root = candidate.json();
+                JsonObject messages = root.has("messages") && root.get("messages").isJsonObject() ? root.getAsJsonObject("messages") : root;
+                if (messages.has(resolvedKey)) return new TextLocation(candidate,
+                        (messages == root ? "" : "/messages") + "/" + JsonPointers.escape(resolvedKey));
+            }
+        }
+        return null;
+    }
+
+    public void addDialogueResponse(AuthoringDocument document, String nodeId, String responseId, String text, String targetId) {
+        if (document.kind() != DefinitionKind.CONVERSATION) {
+            DialogueGraph.addResponse(document, nodeId, responseId, text, targetId);
+            return;
+        }
+        String key = document.id() + "." + nodeId + ".response." + responseId;
+        AuthoringDocument draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+        DialogueGraph.addResponse(draft, nodeId, responseId, key, targetId);
+        commitWithMessage(document, draft.json(), key, text);
+    }
+
+    public void addDialogueLine(AuthoringDocument document, String nodeId) {
+        var node = DialogueGraph.nodes(document).stream().filter(candidate -> candidate.id().equals(nodeId)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Select a dialogue node first."));
+        if (document.kind() == DefinitionKind.QUEST || document.kind() == DefinitionKind.RESOURCE)
+            throw new IllegalArgumentException("Select a dialogue definition.");
+        JsonObject root = document.json();
+        JsonObject selected = JsonPointers.get(root, node.pointer()).getAsJsonObject();
+        String key = "";
+        if (document.kind() == DefinitionKind.CONVERSATION || selected.has("exchanges")) {
+            JsonArray exchanges = selected.has("exchanges") ? selected.getAsJsonArray("exchanges") : new JsonArray();
+            String id = "line_" + (exchanges.size() + 1);
+            while (containsId(exchanges, id)) id += "_new";
+            JsonObject line = JsonParser.parseString("{\"speaker\":{\"type\":\"role\",\"role\":\"provider\"}}").getAsJsonObject();
+            line.addProperty("id", id);
+            if (document.kind() == DefinitionKind.CONVERSATION) {
+                key = document.id() + "." + nodeId + "." + id;
+                line.add("text", localized(key));
+            } else line.addProperty("text", "Hello.");
+            exchanges.add(line);
+            selected.add("exchanges", exchanges);
+        } else {
+            String field = selected.has("variants") ? "variants" : "lines";
+            if (!selected.has(field)) {
+                JsonArray lines = new JsonArray();
+                if (selected.has("line")) lines.add(selected.remove("line"));
+                selected.add(field, lines);
+            }
+            selected.getAsJsonArray(field).add("Hello.");
+        }
+        if (key.isEmpty()) document.replaceJson(AuthoringDocument.JSON.toJson(root));
+        else commitWithMessage(document, root, key, "Hello.");
+    }
+
+    private static boolean containsId(JsonArray values, String id) {
+        for (JsonElement value : values)
+            if (value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id"))) return true;
+        return false;
+    }
+
+    private void commitWithMessage(AuthoringDocument document, JsonObject changed, String key, String text) {
+        if (!documents.contains(document)) throw new IllegalArgumentException("Select a document in this workspace.");
+        String localePath = bundleDirectory(document.resourcePath()) + "locales/en_us.json";
+        AuthoringDocument locale = documents.stream().filter(candidate -> candidate.resourcePath().equals(localePath)).findFirst().orElse(null);
+        if (locale == null && containsPath(localePath)) throw new IllegalArgumentException("Locale is not editable: " + localePath);
+        if (locale == null) locale = new AuthoringDocument(DefinitionKind.RESOURCE, localePath, new JsonObject());
+        JsonObject messages = locale.json();
+        if (messages.has("messages")) messages = messages.getAsJsonObject("messages");
+        if (messages.has(key)) throw new IllegalArgumentException("A translation already uses " + key + ". Choose another ID.");
+        if (text.isBlank()) throw new IllegalArgumentException("Enter some dialogue text.");
+        if (!documents.contains(locale)) add(locale);
+        document.replaceJson(AuthoringDocument.JSON.toJson(changed));
+        locale.edit("Add dialogue wording", root -> {
+            JsonObject values = root.has("messages") ? root.getAsJsonObject("messages") : root;
+            values.addProperty(key, text);
+        });
+        AuthoringDocument.groupLatestChanges(List.of(document, locale), () -> { }, () -> { });
+    }
+
     public String resolveText(AuthoringDocument owner, JsonElement value, String locale) {
         return resolveText(owner, value, locale, 0, ignored -> true);
     }
