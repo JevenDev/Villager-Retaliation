@@ -96,6 +96,25 @@ public final class AuthoringWorkspace {
             throw new IllegalArgumentException("Quest bundle definitions require a single-segment resource ID");
         }
         if (containsPath(path)) throw new IllegalArgumentException("Resource already exists: " + path);
+        if (kind == DefinitionKind.QUEST) {
+            String localePath = path.substring(0, path.lastIndexOf('/')) + "/locales/en_us.json";
+            if (containsPath(localePath)) throw new IllegalArgumentException("Resource already exists: " + localePath);
+        }
+        if (kind == DefinitionKind.CONVERSATION) {
+            String localePath = "data/" + id.substring(0, id.indexOf(':')) + "/quests/_shared/locales/en_us.json";
+            AuthoringDocument locale = documents.stream().filter(document -> document.resourcePath().equalsIgnoreCase(localePath)).findFirst().orElse(null);
+            if (containsPath(localePath) && locale == null) throw new IllegalArgumentException("Locale is not an editable JSON object: " + localePath);
+            if (locale != null) {
+                JsonObject messages = locale.json();
+                if (messages.has("messages")) {
+                    if (!messages.get("messages").isJsonObject()) throw new IllegalArgumentException("Locale messages must be an object: " + localePath);
+                    messages = messages.getAsJsonObject("messages");
+                }
+                for (String suffix : List.of(".title", ".topic", ".greeting", ".done")) {
+                    if (messages.has(id + suffix)) throw new IllegalArgumentException("Conversation message already exists: " + id + suffix);
+                }
+            }
+        }
         JsonObject root = new JsonObject();
         root.addProperty("id", id);
         switch (kind) {
@@ -159,7 +178,7 @@ public final class AuthoringWorkspace {
         }
         if (kind == DefinitionKind.CONVERSATION) {
             String localePath = "data/" + id.substring(0, id.indexOf(':')) + "/quests/_shared/locales/en_us.json";
-            AuthoringDocument locale = documents.stream().filter(document -> document.resourcePath().equals(localePath)).findFirst().orElse(null);
+            AuthoringDocument locale = documents.stream().filter(document -> document.resourcePath().equalsIgnoreCase(localePath)).findFirst().orElse(null);
             if (locale == null) {
                 locale = new AuthoringDocument(DefinitionKind.RESOURCE, localePath, new JsonObject());
                 add(locale);
@@ -183,8 +202,10 @@ public final class AuthoringWorkspace {
 
     public AuthoringDocument duplicate(AuthoringDocument document, String id) {
         if (document.kind() == DefinitionKind.QUEST) return transferQuestBundle(document, id, true);
-        AuthoringDocument result = new AuthoringDocument(document.kind(), document.kind().path(id), document.json());
-        result.rename(result.resourcePath(), id);
+        String path = renamedPath(document, id);
+        JsonObject definition = document.json();
+        if (document.kind() != DefinitionKind.RESOURCE && document.kind() != DefinitionKind.FORCED) definition.addProperty("id", id);
+        AuthoringDocument result = new AuthoringDocument(document.kind(), path, definition);
         result.loadMetadata(document.metadata());
         add(result);
         return result;
@@ -195,13 +216,67 @@ public final class AuthoringWorkspace {
             transferQuestBundle(document, id, false);
             return;
         }
-        String path = document.kind().path(id);
+        if (!documents.contains(document)) throw new IllegalArgumentException("The document does not belong to this workspace");
+        String path = renamedPath(document, id);
         if (!path.equals(document.resourcePath()) && containsPath(path)) throw new IllegalArgumentException("Resource already exists: " + path);
-        String previousPath = document.resourcePath();
+        String previousId = document.id();
+        Map<AuthoringDocument, String> beforePaths = new LinkedHashMap<>();
+        beforePaths.put(document, document.resourcePath());
         document.rename(path, id);
-        AuthoringDocument.groupLatestChanges(List.of(document),
-                () -> restoreBundlePaths(Map.of(document, previousPath), "", "", Map.of()),
-                () -> restoreBundlePaths(Map.of(document, path), "", "", Map.of()));
+        if (document.kind() == DefinitionKind.CONVERSATION && !previousId.equals(id)) {
+            for (AuthoringDocument other : documents) {
+                if (other == document) continue;
+                JsonObject rewritten = rewriteConversationReferences(other.json(), previousId, id).getAsJsonObject();
+                if (!rewritten.equals(other.json())) {
+                    beforePaths.put(other, other.resourcePath());
+                    other.replaceJson(AuthoringDocument.JSON.toJson(rewritten));
+                }
+            }
+        }
+        Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
+        beforePaths.keySet().forEach(changed -> afterPaths.put(changed, changed.resourcePath()));
+        AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+                () -> restoreBundlePaths(beforePaths, "", "", Map.of()),
+                () -> restoreBundlePaths(afterPaths, "", "", Map.of()));
+    }
+
+    private static String renamedPath(AuthoringDocument document, String id) {
+        String defaultPath = document.kind().path(id);
+        String[] identity = id.split(":", 2);
+        if (document.kind() == DefinitionKind.TREE) {
+            String[] source = document.resourcePath().split("/", 5);
+            if (source.length != 5 || !source[2].equals("dialogue_trees")) throw new IllegalArgumentException("Invalid dialogue tree resource path");
+            return safeRelativePath("data/" + identity[0] + "/dialogue_trees/" + source[3] + "/" + identity[1] + ".json");
+        }
+        if (document.kind() == DefinitionKind.CONVERSATION) {
+            String[] source = document.resourcePath().split("/", 3);
+            if (source.length != 3 || !source[1].equals(identity[0])) {
+                throw new IllegalArgumentException("Move the owning quest bundle to change a conversation namespace and retain its localization");
+            }
+            String directory = document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1);
+            return safeRelativePath(directory + identity[1].replace('/', '_') + ".json");
+        }
+        return defaultPath;
+    }
+
+    private static JsonElement rewriteConversationReferences(JsonElement value, String previousId, String id) {
+        if (value.isJsonArray()) {
+            JsonArray result = new JsonArray();
+            value.getAsJsonArray().forEach(child -> result.add(rewriteConversationReferences(child, previousId, id)));
+            return result;
+        }
+        if (value.isJsonObject()) {
+            JsonObject result = new JsonObject();
+            for (var entry : value.getAsJsonObject().entrySet()) {
+                JsonElement child = entry.getValue();
+                if ((entry.getKey().equals("conversation") || entry.getKey().equals("conversation_id"))
+                        && child.isJsonPrimitive() && child.getAsJsonPrimitive().isString() && child.getAsString().equals(previousId)) {
+                    result.addProperty(entry.getKey(), id);
+                } else result.add(entry.getKey(), rewriteConversationReferences(child, previousId, id));
+            }
+            return result;
+        }
+        return value.deepCopy();
     }
 
     public void remove(AuthoringDocument document) {
@@ -375,7 +450,9 @@ public final class AuthoringWorkspace {
                     JsonElement json = JsonParser.parseString(new String(entry.getValue(), StandardCharsets.UTF_8));
                     if (path.equals("pack.mcmeta")) importedPack = json.getAsJsonObject();
                     else if (json.isJsonObject()) imported.add(new AuthoringDocument(DefinitionKind.fromPath(path), path, json.getAsJsonObject()));
-                    else binaries.put(path, entry.getValue());
+                    else if (DefinitionKind.fromPath(path) != DefinitionKind.RESOURCE) {
+                        throw new IllegalArgumentException("Dialogue and quest definitions require an object at the JSON root");
+                    } else binaries.put(path, entry.getValue());
                 } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException ex) {
                     throw new IOException("Invalid JSON in " + path + ": " + ex.getMessage(), ex);
                 }

@@ -153,7 +153,7 @@ public final class DialoguePreviewGameTests {
         }
         helper.assertValueEqual(conditions.evaluate(ID, json("{\"min_reputation\":10}")), ConditionOutcome.UNMET,
                 "legacy reputation uses runtime matcher");
-        conditions.reputation(20);
+        conditions.reputation(20, com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL);
         helper.assertValueEqual(conditions.evaluate(ID, json("{\"min_reputation\":10}")), ConditionOutcome.MATCHED,
                 "simulated legacy reputation");
         helper.succeed();
@@ -179,6 +179,61 @@ public final class DialoguePreviewGameTests {
             session.start("start");
             helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Translated greeting",
                     "bare localized variant key");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring_preview")
+    public static void restartClearsPreviousNodeAndLineContext(GameTestHelper helper) {
+        var source = json("""
+                {"entries":[{"id":"talk","label":"Talk","lines":["Topic"],"start":"start"}],
+                 "nodes":{"start":{"exchanges":[{"text":"First"},{"text":"Second"}],
+                  "camera":{"preset":"behind"},"end":true}}}
+                """);
+        try (var session = new DialoguePreviewSession(source, ID, new PreviewConditions(), key -> null)) {
+            session.start("start");
+            session.advance();
+            session.start("");
+            helper.assertValueEqual(session.nodeId(), "", "entry chooser has no previous node");
+            helper.assertTrue(session.currentLine() == null, "restart clears the previous exchange");
+            session.choose(0);
+            helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Topic", "topic starts at first line");
+            helper.assertTrue(!session.currentLine().has("camera"), "topic does not inherit the previous node camera");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring_preview")
+    public static void forcedLocalizationKeysAndOutcomeEffectsArePreviewed(GameTestHelper helper) {
+        var conditions = new PreviewConditions();
+        conditions.variant(1);
+        var source = json("""
+                {"line_keys":["first","second"],"lines":["Fallback"],
+                 "options":[{"id":"leave","label":"Leave","response_key":"reply","response":"Reply fallback","end_conversation":true}]}
+                """);
+        try (var session = new DialoguePreviewSession(source, ID, conditions, key -> "Localized " + key)) {
+            session.start("");
+            helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Localized second",
+                    "line key variants are selectable without matching inline variants");
+            session.choose(0);
+            helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Localized reply",
+                    "forced response key is resolved");
+        }
+        try (var session = new DialoguePreviewSession(source, ID, conditions, key -> null)) {
+            session.start("");
+            helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Fallback", "missing key retains fallback");
+            session.choose(0);
+            helper.assertValueEqual(session.currentLine().get("resolved_text").getAsString(), "Reply fallback", "missing response key retains fallback");
+        }
+        var conversation = json("""
+                {"nodes":[{"id":"done","exchanges":[{"text":"Finished"}],"outcome":"done"}],
+                 "outcomes":[{"id":"done","label":{"key":"done"},"actions":[{"type":"test:effect"}]}]}
+                """);
+        try (var session = new DialoguePreviewSession(conversation, ID, conditions, key -> key)) {
+            session.start("done");
+            helper.assertTrue(session.log().stream().anyMatch(value -> value.contains("test:effect")), "outcome actions appear in simulation log");
+            helper.assertValueEqual(conversation.getAsJsonArray("outcomes").get(0).getAsJsonObject().getAsJsonArray("actions").size(),
+                    1, "outcome definitions remain untouched");
         }
         helper.succeed();
     }

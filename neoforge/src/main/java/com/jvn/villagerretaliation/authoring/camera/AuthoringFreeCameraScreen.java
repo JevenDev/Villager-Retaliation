@@ -32,7 +32,11 @@ final class AuthoringFreeCameraScreen extends Screen {
             onClose();
             return;
         }
-        var pose = session.pose();
+        if (!minecraft.isWindowActive()) {
+            keys.clear();
+            return;
+        }
+        var pose = session.controlPose();
         var forward = Vec3.directionFromRotation(pose.pitch(), pose.yaw());
         var right = Vec3.directionFromRotation(0, pose.yaw() + 90);
         double speed = keys.contains(GLFW.GLFW_KEY_LEFT_SHIFT) ? 0.3 : 0.1;
@@ -65,8 +69,8 @@ final class AuthoringFreeCameraScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
-        if (button != GLFW.GLFW_MOUSE_BUTTON_RIGHT) return false;
-        var pose = session.pose();
+        if (button != GLFW.GLFW_MOUSE_BUTTON_RIGHT || !session.active()) return false;
+        var pose = session.controlPose();
         session.setPose(new Pose(pose.position(), Mth.wrapDegrees(pose.yaw() + (float) dx * 0.2F),
                 Mth.clamp(pose.pitch() + (float) dy * 0.2F, -90, 90), pose.fov()));
         return true;
@@ -74,7 +78,8 @@ final class AuthoringFreeCameraScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
-        session.setFov(Math.clamp(session.pose().fov() - vertical * 2, DialogueCamera.MIN_FOV, DialogueCamera.MAX_FOV));
+        if (!session.active()) return false;
+        session.setFov(Math.clamp(session.controlPose().fov() - vertical * 2, DialogueCamera.MIN_FOV, DialogueCamera.MAX_FOV));
         return true;
     }
 
@@ -88,13 +93,26 @@ final class AuthoringFreeCameraScreen extends Screen {
     @Override
     public void onClose() {
         keys.clear();
+        if (returning || minecraft.screen != this) return;
+        if (!session.canReturnToEditor()) {
+            session.close();
+            minecraft.setScreen(null);
+            return;
+        }
         returning = true;
-        if (minecraft.level == null || minecraft.player == null || !minecraft.player.isAlive()) minecraft.setScreen(null);
-        else returnToEditor.run();
+        try {
+            returnToEditor.run();
+        } finally {
+            if (minecraft.screen == this) {
+                returning = false;
+                session.close();
+            }
+        }
     }
 
     @Override
     public void removed() {
+        keys.clear();
         if (!returning) session.close();
     }
 }

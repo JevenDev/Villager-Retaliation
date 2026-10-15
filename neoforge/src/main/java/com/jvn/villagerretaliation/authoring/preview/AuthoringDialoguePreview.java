@@ -75,7 +75,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
             minecraft.setScreen(preview.screen);
             preview.tick(preview.screen);
         } catch (RuntimeException exception) {
-            preview.removed();
+            preview.close();
             throw exception;
         }
     }
@@ -167,9 +167,11 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     @Override public void close() {
         if (disposed) return;
         var minecraft = Minecraft.getInstance();
-        if (minecraft.screen == screen) minecraft.setScreen(null);
+        boolean ownedScreen = minecraft.screen == screen;
+        if (ownedScreen) minecraft.setScreen(null);
         removed();
-        if (minecraft.level != null && minecraft.player != null) returnToEditor.run();
+        if (ownedScreen && minecraft.level == level && minecraft.player != null && minecraft.player.isAlive())
+            returnToEditor.run();
     }
 
     @Override public void removed() {

@@ -72,6 +72,9 @@ public final class DialoguePreviewSession implements AutoCloseable {
         lines.clear();
         choices.clear();
         log.clear();
+        node = null;
+        nodeId = "";
+        line = 0;
         pendingNext = null;
         pendingEnd = false;
         log.add("Local simulation. Actions are logged and no gameplay data is changed.");
@@ -237,6 +240,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
         if (!outcome.isBlank()) {
             JsonObject value = find(array(root, "outcomes"), outcome);
             log.add("Outcome: " + (value == null ? outcome : text(value, "label")));
+            if (value != null) effects(value);
         }
         revision++;
     }
@@ -266,7 +270,9 @@ public final class DialoguePreviewSession implements AutoCloseable {
             variants = new JsonArray();
             variants.add(value.get("line"));
         }
-        if (variants.isEmpty() && (value.has("response") || value.has("responses") && !value.has("nodes"))) {
+        boolean responseText = variants.isEmpty() && (value.has("response") || value.has("response_key")
+                || value.has("response_keys") || value.has("responses") && !value.has("nodes"));
+        if (responseText) {
             variants = new JsonArray();
             if (value.has("response")) variants.add(value.get("response"));
             for (JsonElement raw : array(value, "responses")) {
@@ -277,9 +283,30 @@ public final class DialoguePreviewSession implements AutoCloseable {
             variants = new JsonArray();
             variants.add(value.get("text"));
         }
+        JsonArray keys = new JsonArray();
+        for (String keyField : responseText ? new String[] {"response_key", "response_keys"}
+                : new String[] {"line_key", "line_keys", "text_key", "text_keys"}) {
+            if (!value.has(keyField)) continue;
+            JsonElement key = value.get(keyField);
+            if (key.isJsonArray()) key.getAsJsonArray().forEach(keys::add);
+            else if (key.isJsonPrimitive()) keys.add(key);
+        }
+        if (variants.isEmpty() && !keys.isEmpty()) variants.add("");
         List<JsonObject> eligible = new ArrayList<>();
-        for (JsonElement raw : variants) {
+        boolean keyed = !keys.isEmpty() && variants.asList().stream().noneMatch(JsonElement::isJsonObject);
+        int variantCount = keyed ? keys.size() : variants.size();
+        for (int index = 0; index < variantCount; index++) {
+            JsonElement raw = variants.get(keyed ? 0 : index);
+            String fallbackField = responseText ? "response" : "line";
+            if (keyed && value.has(fallbackField) && value.get(fallbackField).isJsonPrimitive()) raw = value.get(fallbackField);
             JsonObject candidate = raw.isJsonObject() ? raw.getAsJsonObject().deepCopy() : lineObject(raw.getAsString(), value);
+            if (keyed) {
+                candidate.remove("line");
+                candidate.remove("line_key");
+                candidate.addProperty("text", raw.getAsString());
+                candidate.add("text_key", keys.get(index).deepCopy());
+            }
+
             if (conditions.evaluate(id, candidate) != ConditionOutcome.MATCHED) continue;
             if (!candidate.has("camera")) {
                 if (value.has("camera")) candidate.add("camera", value.get("camera").deepCopy());

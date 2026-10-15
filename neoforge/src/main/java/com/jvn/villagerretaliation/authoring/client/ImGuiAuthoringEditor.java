@@ -22,7 +22,6 @@ import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiKey;
-import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -53,11 +52,15 @@ final class ImGuiAuthoringEditor {
     private final ImString newId = new ImString("example:new_dialogue", 512);
     private final ImString nodeName = new ImString("new_node", 256);
     private final ImString responseLabel = new ImString("Continue", 1024);
+    private final ImString nextStage = new ImString(256);
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
     private final ImString fieldName = new ImString(256);
     private final ImString fieldValue = new ImString("{}", 8192);
     private final Map<String, ImString> fields = new HashMap<>();
+    private final EditorFieldEdits pendingFields = new EditorFieldEdits();
+    private final java.util.ArrayDeque<EditorOperation> operations = new java.util.ArrayDeque<>();
+    private boolean rendering;
     private final Map<String, float[]> positions = new HashMap<>();
     private final PreviewConditions conditions = new PreviewConditions();
     private final EditorScreen screen = new EditorScreen();
@@ -118,19 +121,25 @@ final class ImGuiAuthoringEditor {
             screen.onClose();
             return;
         }
-        if (ImGui.getIO().getKeyCtrl()) {
-            if (ImGui.isKeyPressed(ImGuiKey.S)) operation(this::save);
-            if (document != null && !ImGui.getIO().getWantTextInput()) {
-                if (ImGui.isKeyPressed(ImGuiKey.Z)) operation(() -> changeHistory(false));
-                if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
+        rendering = true;
+        try {
+            if (ImGui.getIO().getKeyCtrl()) {
+                if (ImGui.isKeyPressed(ImGuiKey.S)) operation(this::save);
+                if (document != null && !ImGui.getIO().getWantTextInput()) {
+                    if (ImGui.isKeyPressed(ImGuiKey.Z)) operation(() -> changeHistory(false));
+                    if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
+                }
             }
+            ImGui.dockSpaceOverViewport();
+            browser();
+            graph();
+            inspector();
+            preview();
+            diagnostics();
+        } finally {
+            rendering = false;
+            while (!operations.isEmpty()) runOperation(operations.removeFirst());
         }
-        ImGui.dockSpaceOverViewport();
-        browser();
-        graph();
-        inspector();
-        preview();
-        diagnostics();
     }
 
     private void panel(String title, float x, float y, float width, float height) {
@@ -201,7 +210,7 @@ final class ImGuiAuthoringEditor {
             for (AuthoringDocument candidate : workspace.documents()) {
                 if (!(candidate.resourcePath() + candidate.id()).toLowerCase(Locale.ROOT).contains(filter.get().toLowerCase(Locale.ROOT))) continue;
                 if (ImGui.selectable((candidate.dirty() ? "* " : "") + candidate.kind() + " " + candidate.id()
-                        + "##" + candidate.resourcePath(), document == candidate)) select(candidate);
+                        + "##" + candidate.resourcePath(), document == candidate)) operation(() -> select(candidate));
                 if (ImGui.isItemHovered()) ImGui.setTooltip(candidate.resourcePath());
             }
         }
@@ -217,63 +226,86 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        ImGui.inputText("Node ID", nodeName);
-        if (ImGui.button("Add node")) operation(() -> {
-            DialogueGraph.addNode(document, nodeName.get());
-            selectedNode = document.kind() == DefinitionKind.FORCED
-                    ? DialogueGraph.nodes(document).getLast().id() : nodeName.get();
-            refresh();
-        });
-        if (hasSelectedNode()) {
-            ImGui.sameLine();
-            if (ImGui.button("Duplicate")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
-            ImGui.sameLine();
-            if (ImGui.button("Remove")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; refresh(); });
-            if (ImGui.button("Set entry")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
-            ImGui.sameLine();
-            if (ImGui.button("Set terminal")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
-            ImGui.inputText(document.kind() == DefinitionKind.CONVERSATION ? "Response localization key" : "Response text", responseLabel);
-            if (ImGui.button("Add response to selected node")) operation(() -> {
-                DialogueGraph.addResponse(document, selectedNode, nodeName.get(), responseLabel.get(),
-                        document.kind() == DefinitionKind.FORCED ? null : selectedNode);
-                refresh();
-            });
-            if (document.kind() == DefinitionKind.FORCED && ImGui.button("Add follow-up branch")) operation(() -> {
-                String id = nodeName.get();
-                if (id.isBlank()) throw new IllegalArgumentException("Enter an option ID.");
-                document.edit("Add follow-up branch", root -> {
-                    JsonObject owner = JsonPointers.get(root, selectedNode).getAsJsonObject();
-                    if (!owner.has("options")) owner.add("options", new JsonArray());
-                    JsonArray options = owner.getAsJsonArray("options");
-                    for (JsonElement value : options) {
-                        if (value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")))
-                            throw new IllegalArgumentException("Duplicate response ID " + id);
-                    }
-                    JsonObject followUp = DialogueGraph.defaultNode(DefinitionKind.FORCED, id);
-                    followUp.remove("id");
-                    followUp.remove("trigger");
-                    followUp.add("options", new JsonArray());
-                    JsonObject response = new JsonObject();
-                    response.addProperty("id", id);
-                    response.addProperty("label", responseLabel.get());
-                    response.addProperty("end_conversation", false);
-                    response.add("follow_up", followUp);
-                    options.add(response);
-                });
-                refresh();
-            });
+        if (document.kind() == DefinitionKind.RESOURCE) {
+            ImGui.textWrapped("Edit resource pools and localization in Properties. Select a dialogue-bearing object to preview it.");
+            ImGui.end();
+            return;
         }
-        ImGui.textUnformatted("Drag nodes. Middle-drag to pan. Wheel to zoom. Select an edge below, then click a destination node.");
         List<DialogueGraph.Node> nodes;
         List<DialogueGraph.Edge> edges;
         try {
             nodes = DialogueGraph.nodes(document);
             edges = DialogueGraph.edges(document);
-        } catch (IllegalArgumentException | IllegalStateException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | ClassCastException
+                | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             ImGui.textWrapped("Repair the definition in Advanced full JSON: " + exception.getMessage());
             ImGui.end();
             return;
         }
+        ImGui.inputText(document.kind() == DefinitionKind.QUEST ? "Stage ID" : "Node / option ID", nodeName);
+        ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
+        if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Add stage" : "Add node")) operation(() -> {
+            DialogueGraph.addNode(document, nodeName.get());
+            selectedNode = document.kind() == DefinitionKind.FORCED
+                    ? DialogueGraph.nodes(document).getLast().id() : nodeName.get();
+            refresh();
+        });
+        ImGui.endDisabled();
+        if (nodes.stream().anyMatch(node -> node.id().equals(selectedNode))) {
+            ImGui.sameLine();
+            if (ImGui.button("Duplicate")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
+            ImGui.sameLine();
+            if (ImGui.button("Remove")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; refresh(); });
+            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
+            if (ImGui.button("Set entry")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
+            ImGui.endDisabled();
+            ImGui.sameLine();
+            if (ImGui.button("Set terminal")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
+            if (document.kind() == DefinitionKind.QUEST) {
+                if (ImGui.beginCombo("Next stage", nextStage.get())) {
+                    for (var destination : DialogueGraph.nodes(document)) {
+                        if (ImGui.selectable(destination.id(), destination.id().equals(nextStage.get()))) nextStage.set(destination.id());
+                    }
+                    ImGui.endCombo();
+                }
+                if (ImGui.button("Connect next stage")) operation(() -> {
+                    EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
+                    refresh();
+                });
+            } else {
+                ImGui.inputText(document.kind() == DefinitionKind.CONVERSATION ? "Response localization key" : "Response text", responseLabel);
+                if (ImGui.button("Add response to selected node")) operation(() -> {
+                    DialogueGraph.addResponse(document, selectedNode, nodeName.get(), responseLabel.get(),
+                            document.kind() == DefinitionKind.FORCED ? null : selectedNode);
+                    refresh();
+                });
+                if (document.kind() == DefinitionKind.FORCED && ImGui.button("Add follow-up branch")) operation(() -> {
+                    String id = nodeName.get();
+                    if (id.isBlank()) throw new IllegalArgumentException("Enter an option ID.");
+                    document.edit("Add follow-up branch", root -> {
+                        JsonObject owner = JsonPointers.get(root, selectedNode).getAsJsonObject();
+                        if (!owner.has("options")) owner.add("options", new JsonArray());
+                        JsonArray options = owner.getAsJsonArray("options");
+                        for (JsonElement value : options) {
+                            if (value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")))
+                                throw new IllegalArgumentException("Duplicate response ID " + id);
+                        }
+                        JsonObject followUp = DialogueGraph.defaultNode(DefinitionKind.FORCED, id);
+                        followUp.remove("id");
+                        followUp.remove("trigger");
+                        followUp.add("options", new JsonArray());
+                        JsonObject response = new JsonObject();
+                        response.addProperty("id", id);
+                        response.addProperty("label", responseLabel.get());
+                        response.addProperty("end_conversation", false);
+                        response.add("follow_up", followUp);
+                        options.add(response);
+                    });
+                    refresh();
+                });
+            }
+        }
+        ImGui.textUnformatted("Drag nodes. Middle-drag to pan. Wheel to zoom. Select an edge below, then click a destination node.");
         float canvasX = ImGui.getCursorScreenPosX();
         float canvasY = ImGui.getCursorScreenPosY();
         float canvasWidth = Math.max(100, ImGui.getContentRegionAvailX());
@@ -324,12 +356,16 @@ final class ImGuiAuthoringEditor {
             draw.addText(x + 8, y + 47, 0xffb4ab9c, node.entry() ? "ENTRY" : node.terminal() ? "END" : "");
             boolean overNode = hover && ImGui.isMouseHoveringRect(x, y, x + w, y + h);
             if (overNode && ImGui.isMouseClicked(0)) {
-                selectedNode = node.id();
-                setPointer(node.pointer());
-                if (!selectedEdge.isEmpty()) {
-                    String destination = node.id();
-                    operation(() -> { DialogueGraph.connect(document, selectedEdge, destination); selectedEdge = ""; refresh(); });
-                } else draggingNode = node.id();
+                String edge = selectedEdge;
+                operation(() -> {
+                    selectedNode = node.id();
+                    setPointer(node.pointer());
+                    if (!edge.isEmpty()) {
+                        DialogueGraph.connect(document, edge, node.id());
+                        selectedEdge = "";
+                        refresh();
+                    } else draggingNode = node.id();
+                });
             }
             if (node.id().equals(draggingNode) && ImGui.isMouseDragging(0)) {
                 position[0] += ImGui.getIO().getMouseDeltaX() / zoom;
@@ -338,19 +374,31 @@ final class ImGuiAuthoringEditor {
         }
         draw.popClipRect();
         if (draggingNode != null && ImGui.isMouseReleased(0)) {
-            persistPositions();
+            Map<String, float[]> movedPositions = new HashMap<>();
+            positions.forEach((id, position) -> movedPositions.put(id, position.clone()));
+            operation(() -> { persistPositions(movedPositions); refresh(); });
             draggingNode = null;
         }
-        if (hasSelectedNode()) {
+        if (nodes.stream().anyMatch(node -> node.id().equals(selectedNode))) {
             for (var edge : edges) {
                 if (!edge.from().equals(selectedNode)) continue;
                 if (ImGui.selectable(edge.label() + " -> " + edge.to() + "##" + edge.pointer(), edge.pointer().equals(selectedEdge))) {
-                    selectedEdge = edge.pointer();
-                    setPointer(edge.pointer());
+                    operation(() -> {
+                        selectedEdge = edge.pointer();
+                        setPointer(edge.pointer());
+                    });
                 }
             }
         }
-        if (!selectedEdge.isEmpty() && ImGui.button("Remove selected response")) operation(() -> {
+        boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
+        if (document.kind() == DefinitionKind.QUEST && !selectedEdge.isEmpty() && ImGui.button("End at selected source stage")) operation(() -> {
+            var source = DialogueGraph.edges(document).stream().filter(edge -> edge.pointer().equals(selectedEdge)).findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Select an existing stage connection."));
+            DialogueGraph.setTerminal(document, source.from(), true);
+            selectedEdge = "";
+            refresh();
+        });
+        if (responseEdge && ImGui.button("Remove selected response")) operation(() -> {
             DialogueGraph.removeResponse(document, selectedEdge);
             selectedEdge = "";
             refresh();
@@ -374,10 +422,15 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Redo")) operation(() -> changeHistory(true));
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (ImGui.button("Whole definition")) setPointer("");
-        ImGui.textWrapped("Press Enter to apply text or numeric fields. Expand arrays to duplicate, reorder and remove items.");
+        if (ImGui.button("Whole definition")) operation(() -> setPointer(""));
+        ImGui.textWrapped("Text and numeric edits apply together on Enter, Save or another editing action. Expand arrays to duplicate, reorder and remove items.");
+        if (pendingFields.pending()) {
+            if (ImGui.button("Apply field edits")) operation(() -> { });
+            ImGui.sameLine();
+            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); fields.clear(); });
+        }
         ImGui.inputText("JSON pointer", pointer);
-        if (ImGui.button("Inspect pointer")) fields.clear();
+        if (ImGui.button("Inspect pointer")) operation(() -> { });
         if (!pointer.get().isEmpty() && ImGui.button("Remove selected field")) operation(() -> {
             document.edit("Remove field", root -> JsonPointers.remove(root, pointer.get()));
             setPointer("");
@@ -385,7 +438,8 @@ final class ImGuiAuthoringEditor {
         });
         try {
             inspectValue(JsonPointers.get(document.json(), pointer.get()), pointer.get(), "Selected", 0);
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
+                | ClassCastException | UnsupportedOperationException exception) {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
         }
         ImGui.separator();
@@ -397,17 +451,32 @@ final class ImGuiAuthoringEditor {
             JsonElement value = JsonParser.parseString(fieldValue.get());
             document.edit("Add field", root -> {
                 JsonElement parent = JsonPointers.get(root, pointer.get());
-                if (parent != null && parent.isJsonObject()) parent.getAsJsonObject().add(fieldName.get(), value);
+                if (parent != null && parent.isJsonObject()) {
+                    if (fieldName.get().isBlank()) throw new IllegalArgumentException("Enter a field name.");
+                    if (parent.getAsJsonObject().has(fieldName.get()))
+                        throw new IllegalArgumentException("This field already exists. Edit it in Properties instead.");
+                    parent.getAsJsonObject().add(fieldName.get(), value);
+                }
                 else if (parent != null && parent.isJsonArray()) parent.getAsJsonArray().add(value);
                 else throw new IllegalArgumentException("Select an object or array first.");
             });
             refresh();
         });
         if (ImGui.collapsingHeader("Advanced full JSON")) {
+            ImGui.beginDisabled(pendingFields.pending());
             if (ImGui.inputTextMultiline("##raw", jsonText, -1, 260)) rawModified = true;
-            if (ImGui.button("Apply JSON")) attempt(() -> { document.replaceJson(jsonText.get()); refresh(); });
+            ImGui.endDisabled();
+            if (pendingFields.pending()) ImGui.textWrapped("Apply or discard field edits before editing full JSON.");
+            if (ImGui.button("Apply JSON")) attempt(() -> {
+                if (pendingFields.pending()) throw new IllegalStateException("Apply or discard field edits before applying full JSON.");
+                document.replaceJson(jsonText.get());
+                refresh();
+            });
             ImGui.sameLine();
-            if (ImGui.button("Discard JSON buffer")) refresh();
+            if (ImGui.button("Discard JSON buffer")) attempt(() -> {
+                if (pendingFields.pending()) throw new IllegalStateException("Apply or discard field edits first.");
+                refresh();
+            });
             if (rawModified) ImGui.textWrapped("Unapplied JSON buffer. Apply before saving, previewing or switching definitions.");
         }
         ImGui.end();
@@ -432,7 +501,7 @@ final class ImGuiAuthoringEditor {
         ImGui.pushID(path);
         if (value.isJsonObject()) {
             if (ImGui.treeNode(label)) {
-                if (ImGui.smallButton("Select object")) setPointer(path);
+                if (ImGui.smallButton("Select object")) operation(() -> setPointer(path));
                 for (var entry : value.getAsJsonObject().entrySet()) {
                     inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), entry.getKey(), depth + 1);
                 }
@@ -440,7 +509,7 @@ final class ImGuiAuthoringEditor {
             }
         } else if (value.isJsonArray()) {
             if (ImGui.treeNode(label + " [" + value.getAsJsonArray().size() + "]")) {
-                if (ImGui.smallButton("Select array")) setPointer(path);
+                if (ImGui.smallButton("Select array")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
                 for (int i = 0; i < array.size(); i++) {
                     final int index = i;
@@ -466,9 +535,11 @@ final class ImGuiAuthoringEditor {
         } else {
             ImString input = fields.computeIfAbsent(path, key -> new ImString(
                     value.isJsonPrimitive() && value.getAsJsonPrimitive().isString() ? value.getAsString() : value.toString(), 65536));
-            if (ImGui.inputText(label, input, ImGuiInputTextFlags.EnterReturnsTrue)) operation(() ->
-                    replaceValue(path, value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
-                            ? new JsonPrimitive(input.get()) : JsonParser.parseString(input.get())));
+            ImGui.beginDisabled(rawModified);
+            boolean apply = ImGui.inputText(label, input, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.endDisabled();
+            pendingFields.update(path, value, input.get());
+            if (apply) operation(() -> { });
         }
         ImGui.popID();
     }
@@ -538,8 +609,10 @@ final class ImGuiAuthoringEditor {
                 if (workspace != null) {
                     for (var candidate : workspace.documents()) {
                         if (candidate.resourcePath().equals(diagnostic.resourcePath())) {
-                            select(candidate);
-                            setPointer(diagnostic.pointer());
+                            operation(() -> {
+                                select(candidate);
+                                setPointer(diagnostic.pointer());
+                            });
                             break;
                         }
                     }
@@ -566,6 +639,7 @@ final class ImGuiAuthoringEditor {
             status = "Apply or discard the JSON buffer before changing selection.";
             return;
         }
+        if (document != next) EditorCameraPanel.close();
         document = next;
         selectedNode = "";
         selectedEdge = "";
@@ -573,15 +647,6 @@ final class ImGuiAuthoringEditor {
         pointer.set("");
         positions.clear();
         confirmDelete = false;
-        if (next != null && next.metadata().has("node_positions")) {
-            for (var entry : next.metadata().getAsJsonObject("node_positions").entrySet()) {
-                if (entry.getValue().isJsonObject()) {
-                    JsonObject position = entry.getValue().getAsJsonObject();
-                    if (position.has("x") && position.has("y")) positions.put(entry.getKey(),
-                            new float[] {position.get("x").getAsFloat(), position.get("y").getAsFloat()});
-                }
-            }
-        }
         refresh();
     }
 
@@ -593,14 +658,22 @@ final class ImGuiAuthoringEditor {
 
     private void refresh() {
         rawModified = false;
+        pendingFields.clear();
         fields.clear();
         positions.clear();
-        if (document != null && document.metadata().has("node_positions")) {
-            for (var entry : document.metadata().getAsJsonObject("node_positions").entrySet()) {
-                if (entry.getValue().isJsonObject()) {
+        if (document != null) {
+            JsonElement savedPositions = document.metadata().get("node_positions");
+            if (savedPositions != null && savedPositions.isJsonObject()) {
+                for (var entry : savedPositions.getAsJsonObject().entrySet()) {
+                    if (!entry.getValue().isJsonObject()) continue;
                     JsonObject point = entry.getValue().getAsJsonObject();
-                    if (point.has("x") && point.has("y")) positions.put(entry.getKey(),
-                            new float[] {point.get("x").getAsFloat(), point.get("y").getAsFloat()});
+                    JsonElement x = point.get("x");
+                    JsonElement y = point.get("y");
+                    if (x == null || y == null || !x.isJsonPrimitive() || !y.isJsonPrimitive()
+                            || !x.getAsJsonPrimitive().isNumber() || !y.getAsJsonPrimitive().isNumber()) continue;
+                    float px = x.getAsFloat();
+                    float py = y.getAsFloat();
+                    if (Float.isFinite(px) && Float.isFinite(py)) positions.put(entry.getKey(), new float[] {px, py});
                 }
             }
         }
@@ -608,20 +681,14 @@ final class ImGuiAuthoringEditor {
         validate();
     }
 
-    private boolean hasSelectedNode() {
-        return !selectedNode.isEmpty() || document != null && document.kind() == DefinitionKind.FORCED
-                && !document.json().has("entries");
-    }
-
     private void setPointer(String path) {
         pointer.set(path);
-        fields.clear();
     }
 
-    private void persistPositions() {
+    private void persistPositions(Map<String, float[]> movedPositions) {
         document.editMetadata("Move node", metadata -> {
             JsonObject values = new JsonObject();
-            positions.forEach((id, position) -> {
+            movedPositions.forEach((id, position) -> {
                 JsonObject point = new JsonObject();
                 point.addProperty("x", position[0]);
                 point.addProperty("y", position[1]);
@@ -644,17 +711,25 @@ final class ImGuiAuthoringEditor {
     }
 
     private void operation(EditorOperation action) {
-        if (rawModified) {
-            status = "Apply or discard the JSON buffer before other operations.";
-            return;
-        }
-        attempt(action);
+        AuthoringDocument expected = document;
+        attempt(() -> {
+            if (expected != document) throw new IllegalStateException("Selection changed before the operation could run.");
+            if (rawModified) throw new IllegalStateException("Apply or discard the JSON buffer before other operations.");
+            if (pendingFields.apply(document)) refresh();
+            action.run();
+        });
     }
 
     private void attempt(EditorOperation action) {
+        if (rendering) operations.addLast(action);
+        else runOperation(action);
+    }
+
+    private void runOperation(EditorOperation action) {
         try {
             action.run();
-        } catch (IOException | IllegalArgumentException | IllegalStateException | JsonParseException exception) {
+        } catch (IOException | IllegalArgumentException | IllegalStateException | JsonParseException
+                | ClassCastException | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             status = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
         }
     }
@@ -678,10 +753,11 @@ final class ImGuiAuthoringEditor {
         @Override public boolean isPauseScreen() { return false; }
         @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
         @Override public void onClose() {
-            if (rawModified) { status = "Apply or discard the JSON buffer before closing."; return; }
-            AuthoringDialoguePreview.stop();
-            EditorCameraPanel.close();
-            MC.setScreen(null);
+            operation(() -> {
+                AuthoringDialoguePreview.stop();
+                EditorCameraPanel.close();
+                MC.setScreen(null);
+            });
         }
     }
 }

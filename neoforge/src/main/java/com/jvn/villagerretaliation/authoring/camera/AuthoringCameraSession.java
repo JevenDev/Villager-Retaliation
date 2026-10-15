@@ -27,6 +27,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
     private final CameraType perspective;
     private final boolean hideGui;
     private final boolean mouseGrabbed;
+    private final net.minecraft.client.gui.screens.Screen initialScreen;
     private final Object level;
     private Pose requested;
     private int sequence;
@@ -45,6 +46,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
         perspective = minecraft.options.getCameraType();
         hideGui = minecraft.options.hideGui;
         mouseGrabbed = minecraft.mouseHandler.isMouseGrabbed();
+        initialScreen = minecraft.screen;
         level = minecraft.level;
         var rendered = DialogueCameraController.renderedPose();
         var camera = minecraft.gameRenderer.getMainCamera();
@@ -67,7 +69,8 @@ public final class AuthoringCameraSession implements AutoCloseable {
         if (closed) return false;
         var minecraft = Minecraft.getInstance();
         if (level != minecraft.level || !speaker.isAlive() || speaker.isRemoved() || !character.isAlive()
-                || character.isRemoved() || minecraft.player == null || !minecraft.player.isAlive()) {
+                || character.isRemoved() || minecraft.player == null || !minecraft.player.isAlive()
+                || minecraft.getCameraEntity() != minecraft.player || !preview.active()) {
             close();
             return false;
         }
@@ -79,6 +82,16 @@ public final class AuthoringCameraSession implements AutoCloseable {
         return active() && rendered != null ? rendered : requested;
     }
 
+    Pose controlPose() {
+        var visible = pose();
+        return new Pose(visible.position(), requested.yaw(), requested.pitch(), requested.fov());
+    }
+
+    boolean canReturnToEditor() {
+        var minecraft = Minecraft.getInstance();
+        return minecraft.level == level && minecraft.player != null && minecraft.player.isAlive();
+    }
+
     public void setPose(Pose value) {
         requireActive();
         preview.pose(value);
@@ -86,7 +99,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
     }
 
     public void setFov(double fov) {
-        var pose = pose();
+        var pose = ownsScreen(Minecraft.getInstance().screen) ? controlPose() : pose();
         setPose(new Pose(pose.position(), pose.yaw(), pose.pitch(), fov));
     }
 
@@ -155,7 +168,9 @@ public final class AuthoringCameraSession implements AutoCloseable {
         var minecraft = Minecraft.getInstance();
         minecraft.options.setCameraType(perspective);
         minecraft.options.hideGui = hideGui;
-        if (mouseGrabbed && minecraft.screen == null && minecraft.level != null) minecraft.mouseHandler.grabMouse();
-        else if (!mouseGrabbed) minecraft.mouseHandler.releaseMouse();
+        if (minecraft.screen == initialScreen && minecraft.level == level) {
+            if (mouseGrabbed && minecraft.screen == null && minecraft.isWindowActive()) minecraft.mouseHandler.grabMouse();
+            else if (!mouseGrabbed) minecraft.mouseHandler.releaseMouse();
+        }
     }
 }

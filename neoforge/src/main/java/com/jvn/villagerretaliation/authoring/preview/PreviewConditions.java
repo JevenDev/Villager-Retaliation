@@ -44,8 +44,11 @@ public final class PreviewConditions {
     }
     public void defaultQuest(ResourceLocation value) { defaultQuest = value; }
     public void reputation(int value) {
+        reputation(value, VillagerReputationLevel.fromReputation(value));
+    }
+    public void reputation(int value, VillagerReputationLevel level) {
         reputation = value;
-        reputationLevel = VillagerReputationLevel.fromReputation(value);
+        reputationLevel = java.util.Objects.requireNonNull(level);
     }
     public void reputationLevel(VillagerReputationLevel value) { reputationLevel = value; }
     public void profession(String value) { profession = value.contains(":") ? value : "minecraft:" + value; }

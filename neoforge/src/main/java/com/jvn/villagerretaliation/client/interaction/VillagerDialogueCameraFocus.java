@@ -21,17 +21,36 @@ public final class VillagerDialogueCameraFocus {
     private static final double CAMERA_DISTANCE_ZOOM_BONUS = 0.10D;
     private static final double CAMERA_MAX_ZOOM_AMOUNT = 0.45D;
 
-    private static final ToucanCameraTurnSmoother TURN_SMOOTHER = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
+    private static ToucanCameraTurnSmoother turnSmoother = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
     private static double lastAuthoredZoom = Double.NaN;
 
     private VillagerDialogueCameraFocus() {
     }
 
+    record State(ToucanCameraTurnSmoother smoother, double authoredZoom) { }
+
+    static State suspend() {
+        var state = new State(turnSmoother, lastAuthoredZoom);
+        turnSmoother = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
+        lastAuthoredZoom = Double.NaN;
+        return state;
+    }
+
+    static void restore(State state) {
+        turnSmoother = state.smoother();
+        lastAuthoredZoom = state.authoredZoom();
+    }
+
+    static void clear() {
+        turnSmoother.reset();
+        lastAuthoredZoom = Double.NaN;
+    }
+
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         DialogueCameraController.onComputeFov(event);
         if (DialogueCameraController.active()) return;
-        if (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
-                || !ClientVillagerConversationState.cameraActive()) {
+        if (!DialogueCameraController.previewing() && !VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
+                || !ClientVillagerConversationState.cameraActive() || !validCamera()) {
             return;
         }
 
@@ -82,7 +101,7 @@ public final class VillagerDialogueCameraFocus {
         if (ClientVillagerConversationState.usesForcedCameraZoom()) {
             return VillagerRetaliationConfig.DIALOGUE_CAMERA_ZOOM_AMOUNT.get();
         }
-        if (!VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get()) {
+        if (!DialogueCameraController.previewing() && !VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get()) {
             return 0.0D;
         }
         return VillagerRetaliationConfig.NORMAL_DIALOGUE_CAMERA_ZOOM_AMOUNT.get();
@@ -98,7 +117,8 @@ public final class VillagerDialogueCameraFocus {
             resetCameraTurn();
             return;
         }
-        if (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get() || !shouldTurnCameraTowardsVillager()) {
+        if (!DialogueCameraController.previewing() && !VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
+                || !shouldTurnCameraTowardsVillager() || !validCamera()) {
             resetCameraTurn();
             return;
         }
@@ -124,7 +144,7 @@ public final class VillagerDialogueCameraFocus {
                 event.getPitch());
         int transitionTicks = Math.max(1, VillagerRetaliationConfig.DIALOGUE_CAMERA_TRANSITION_TICKS.get());
         float turnStrength = cameraTurnStrength();
-        ToucanCameraBasis.Rotation rotation = TURN_SMOOTHER.update(
+        ToucanCameraBasis.Rotation rotation = turnSmoother.update(
                 event.getYaw(),
                 event.getPitch(),
                 targetRotation.yaw(),
@@ -141,12 +161,19 @@ public final class VillagerDialogueCameraFocus {
         }
     }
 
+    private static boolean validCamera() {
+        var minecraft = Minecraft.getInstance();
+        return minecraft.level != null && minecraft.player != null && minecraft.player.isAlive()
+                && minecraft.getCameraEntity() == minecraft.player
+                && (DialogueCameraController.previewing() || !minecraft.player.isSpectator());
+    }
+
     private static boolean shouldTurnCameraTowardsVillager() {
         if (ClientVillagerConversationState.forceCameraTowardsVillager()) {
             return true;
         }
         return ClientVillagerConversationState.active()
-                && VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get();
+                && (DialogueCameraController.previewing() || VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get());
     }
 
     private static float cameraTurnStrength() {
@@ -162,6 +189,6 @@ public final class VillagerDialogueCameraFocus {
     }
 
     private static void resetCameraTurn() {
-        TURN_SMOOTHER.reset();
+        turnSmoother.reset();
     }
 }

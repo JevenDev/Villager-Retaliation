@@ -60,6 +60,10 @@ public final class DialogueCameraController {
 
     public static Preview beginPreview() {
         if (preview != null) throw new IllegalStateException("A dialogue camera preview is already active");
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null || !minecraft.player.isAlive()
+                || minecraft.getCameraEntity() != minecraft.player)
+            throw new IllegalStateException("Camera previews require a living player viewing their own camera");
         var session = new Preview();
         reset();
         preview = session;
@@ -70,6 +74,7 @@ public final class DialogueCameraController {
         private final State saved = new State(timeline, tradeMotion, trading, releaseSeconds, lastRendered,
                 renderedLevel, renderedFov, key, failedKey, frame, pose, prepared, forward, fixed, baseFov, level);
         private final Object previewLevel = Minecraft.getInstance().level;
+        private final VillagerDialogueCameraFocus.State savedFocus = VillagerDialogueCameraFocus.suspend();
         private Frame override;
         private Pose manualPose;
         private boolean closed;
@@ -99,7 +104,11 @@ public final class DialogueCameraController {
             closed = true;
             preview = null;
             reset();
-            if (previewLevel != Minecraft.getInstance().level) return;
+            if (previewLevel != Minecraft.getInstance().level) {
+                VillagerDialogueCameraFocus.clear();
+                return;
+            }
+            VillagerDialogueCameraFocus.restore(savedFocus);
             timeline = saved.timeline(); tradeMotion = saved.tradeMotion(); trading = saved.trading();
             releaseSeconds = saved.releaseSeconds(); lastRendered = saved.lastRendered(); renderedLevel = saved.renderedLevel();
             renderedFov = saved.renderedFov(); key = saved.key(); failedKey = saved.failedKey(); frame = saved.frame();
@@ -126,8 +135,10 @@ public final class DialogueCameraController {
 
     public static boolean synchronize() {
         var minecraft = Minecraft.getInstance();
-        if (preview != null && (preview.previewLevel != minecraft.level || minecraft.player == null
-                || !minecraft.player.isAlive())) {
+        if (minecraft.level == null || minecraft.player == null || !minecraft.player.isAlive()
+                || minecraft.getCameraEntity() != minecraft.player
+                || preview != null && preview.previewLevel != minecraft.level
+                || preview == null && minecraft.player.isSpectator()) {
             clear();
             return false;
         }
@@ -142,12 +153,9 @@ public final class DialogueCameraController {
         var screen = screen();
         var trade = minecraft.screen instanceof AbstractContainerScreen<?> container
                 && VillagerTradeScreenLayout.of(container) != null ? container : null;
-        if (minecraft.player == null
-                || minecraft.level == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
-                || minecraft.getCameraEntity() != minecraft.player
-                || preview == null && (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
-                    || !ClientVillagerConversationState.usesForcedCameraZoom()
-                        && !VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get())) {
+        if (preview == null && (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
+                || !ClientVillagerConversationState.usesForcedCameraZoom()
+                    && !VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get())) {
             clear();
             return false;
         }
@@ -187,7 +195,7 @@ public final class DialogueCameraController {
             return false;
         }
         if (next.hold()) {
-            if (active() && next.cancelSequence()) timeline.hold();
+            if (timeline != null && next.cancelSequence()) timeline.hold();
             return active();
         }
         if (next.key().equals(failedKey)) return false;
@@ -216,7 +224,10 @@ public final class DialogueCameraController {
             var position = DialogueCamera.clamp(requested.position(), minecraft.player.getPosition(partialTick));
             var adjusted = DialogueCameraOcclusion.resolve(position, minecraft.player.getEyePosition(partialTick),
                     List.of(frame.speaker()), validSubjects(), partialTick);
-            if (adjusted == null) return pose;
+            if (adjusted == null) {
+                pose = null;
+                return null;
+            }
             pose = new Pose(DialogueCamera.clamp(adjusted, minecraft.player.getPosition(partialTick)),
                     requested.yaw(), requested.pitch(), requested.fov());
             return pose;
@@ -241,7 +252,8 @@ public final class DialogueCameraController {
         Vec3 adjusted = DialogueCameraOcclusion.resolve(position, minecraft.player.getEyePosition(partialTick), subjects, validSubjects(), partialTick);
         if (adjusted == null) {
             String failed = key;
-            clear();
+            reset();
+            level = minecraft.level;
             failedKey = failed;
             return null;
         }
@@ -333,7 +345,7 @@ public final class DialogueCameraController {
         Vec3 position = shot.position() != null ? shot.position()
                 : DialogueCameraTransforms.position(offset, pivot, forward);
         if (shot.placement() == Placement.FIXED) {
-            if (fixed == null) fixed = DialogueCamera.clamp(position, player.getPosition(partialTick));
+            if (fixed == null) fixed = position;
             position = fixed;
         }
         position = DialogueCamera.clamp(position, player.getPosition(partialTick));
@@ -416,7 +428,10 @@ public final class DialogueCameraController {
     }
 
     public static void clear() {
-        if (preview != null) preview.closed = true;
+        if (preview != null) {
+            preview.closed = true;
+            VillagerDialogueCameraFocus.clear();
+        }
         preview = null;
         reset();
     }

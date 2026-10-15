@@ -383,6 +383,157 @@ public final class AuthoringCoreGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "authoring")
+    public static void renamingAndDuplicatingKeepTreeLocales(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-tree-locale-test-");
+        try {
+            AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            AuthoringDocument source = workspace.createDocument(DefinitionKind.TREE, "test:bonjour");
+            AuthoringDocument french = new AuthoringDocument(DefinitionKind.TREE,
+                    "data/test/dialogue_trees/fr_fr/bonjour.json", source.json());
+            workspace.remove(source);
+            workspace.add(french);
+            workspace.rename(french, "test:renamed");
+            helper.assertValueEqual(french.resourcePath(), "data/test/dialogue_trees/fr_fr/renamed.json",
+                    "renaming preserves the source locale");
+            AuthoringDocument duplicate = workspace.duplicate(french, "test:copy");
+            helper.assertValueEqual(duplicate.resourcePath(), "data/test/dialogue_trees/fr_fr/copy.json",
+                    "duplicating preserves the source locale");
+            helper.assertTrue(!duplicate.canUndo(), "duplicate setup does not expose an undo that restores the original identity");
+            helper.assertTrue(french.undo(), "localized rename remains undoable");
+            helper.assertValueEqual(french.resourcePath(), "data/test/dialogue_trees/fr_fr/bonjour.json",
+                    "undo restores the complete localized path");
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void conversationCopiesAndRenamesRetainTheirOwningBundle(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-conversation-owner-test-");
+        try {
+            AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            workspace.createDocument(DefinitionKind.QUEST, "test:authored_quest");
+            AuthoringDocument shared = workspace.createDocument(DefinitionKind.CONVERSATION, "test:talk");
+            JsonObject definition = shared.json();
+            definition.add("title", json("{\"key\":\"#private_title\"}"));
+            AuthoringDocument privateConversation = new AuthoringDocument(DefinitionKind.CONVERSATION,
+                    "data/test/quests/authored/authored_quest/conversations/talk.json", definition);
+            workspace.remove(shared);
+            workspace.add(privateConversation);
+            AuthoringDocument sharedMessages = workspace.documents().stream().filter(document -> document.resourcePath()
+                    .equals("data/test/quests/_shared/locales/en_us.json")).findFirst().orElseThrow();
+            AuthoringDocument privateMessages = workspace.documents().stream().filter(document -> document.resourcePath()
+                    .equals("data/test/quests/authored/authored_quest/locales/en_us.json")).findFirst().orElseThrow();
+            privateMessages.replaceJson(AuthoringDocument.JSON.toJson(sharedMessages.json()));
+            privateMessages.edit("Private title", messages -> messages.addProperty("test.quest.authored_quest.private_title", "Private conversation"));
+            workspace.remove(sharedMessages);
+            AuthoringDocument references = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/references.json",
+                    json("{\"conversation\":\"test:talk\",\"text\":\"test:talk\"}"));
+            workspace.add(references);
+            AuthoringDocument duplicate = workspace.duplicate(privateConversation, "test:copy");
+            helper.assertValueEqual(duplicate.resourcePath(), "data/test/quests/authored/authored_quest/conversations/copy.json",
+                    "copies stay in the same private bundle");
+            helper.assertValueEqual(workspace.resolveText(duplicate, duplicate.json().get("title"), "en_us"), "Private conversation",
+                    "copies retain relative localization references");
+            workspace.rename(privateConversation, "test:renamed");
+            helper.assertValueEqual(privateConversation.resourcePath(), "data/test/quests/authored/authored_quest/conversations/renamed.json",
+                    "renames retain the owning quest directory");
+            helper.assertValueEqual(references.json().get("conversation").getAsString(), "test:renamed", "rename repairs conversation references");
+            helper.assertValueEqual(references.json().get("text").getAsString(), "test:talk", "rename does not alter ordinary text matching the old ID");
+            helper.assertTrue(privateConversation.undo(), "conversation identity and references undo together");
+            helper.assertValueEqual(references.json().get("conversation").getAsString(), "test:talk", "undo restores conversation references");
+            boolean rejected = false;
+            int documentCount = workspace.documents().size();
+            try {
+                workspace.duplicate(privateConversation, "other:copy");
+            } catch (IllegalArgumentException expected) {
+                rejected = true;
+            }
+            helper.assertTrue(rejected && workspace.documents().size() == documentCount,
+                    "isolated namespace changes cannot orphan private localization or mutate the workspace");
+            var errors = workspace.validate().stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR).toList();
+            helper.assertTrue(errors.isEmpty(), "preserved conversation owners pass runtime validation: " + errors);
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void graphStorageKeysAndNumericPointerPrefixesDoNotCollide(GameTestHelper helper) {
+        AuthoringDocument tree = new AuthoringDocument(DefinitionKind.TREE, "data/test/dialogue_trees/en_us/tree.json", json("""
+                {"id":"test:tree","entries":[{"id":"talk","label":"Talk","start":"public_id"}],
+                 "nodes":{"storage":{"id":"public_id","lines":["Retain me"],"end":true}}}
+                """));
+        JsonObject original = tree.json();
+        for (boolean duplicate : List.of(false, true)) {
+            boolean rejected = false;
+            try {
+                if (duplicate) DialogueGraph.duplicateNode(tree, "public_id", "storage");
+                else DialogueGraph.addNode(tree, "storage");
+            } catch (IllegalArgumentException expected) {
+                rejected = true;
+            }
+            helper.assertTrue(rejected && tree.json().equals(original), "an effective node ID cannot overwrite an existing storage key");
+        }
+        JsonObject forcedRoot = new JsonObject();
+        com.google.gson.JsonArray entries = new com.google.gson.JsonArray();
+        for (int index = 0; index < 11; index++) entries.add(DialogueGraph.defaultNode(DefinitionKind.FORCED, "entry_" + index));
+        forcedRoot.add("entries", entries);
+        AuthoringDocument forced = new AuthoringDocument(DefinitionKind.FORCED, "data/test/forced_dialogue/many.json", forcedRoot);
+        DialogueGraph.addResponse(forced, "/entries/10", "branch", "Continue", "/entries/1");
+        DialogueGraph.connect(forced, "/entries/10/options/0/follow_up", "/entries/1");
+        helper.assertTrue(forced.json().getAsJsonArray("entries").get(10).getAsJsonObject().getAsJsonArray("options").get(0)
+                .getAsJsonObject().has("follow_up"), "entry 1 is not an ancestor of sibling entry 10");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void failedCreationAndMalformedTypedImportsAreAtomic(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-atomic-test-");
+        try {
+            AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            AuthoringDocument existingLocale = new AuthoringDocument(DefinitionKind.RESOURCE,
+                    "data/test/quests/authored/quest/locales/en_us.json", json("{\"existing\":\"Preserve\"}"));
+            workspace.add(existingLocale);
+            boolean rejectedQuest = false;
+            try {
+                workspace.createDocument(DefinitionKind.QUEST, "test:quest");
+            } catch (IllegalArgumentException expected) {
+                rejectedQuest = true;
+            }
+            helper.assertTrue(rejectedQuest && workspace.documents().size() == 1, "companion collisions cannot leave a partially created quest");
+            AuthoringDocument sharedLocale = new AuthoringDocument(DefinitionKind.RESOURCE,
+                    "data/test/quests/_shared/locales/en_us.json", json("{\"test:conversation.title\":\"Preserve title\"}"));
+            workspace.add(sharedLocale);
+            boolean rejectedConversation = false;
+            try {
+                workspace.createDocument(DefinitionKind.CONVERSATION, "test:conversation");
+            } catch (IllegalArgumentException expected) {
+                rejectedConversation = true;
+            }
+            helper.assertTrue(rejectedConversation && workspace.documents().size() == 2, "existing locale messages are not overwritten by a partial conversation creation");
+            helper.assertValueEqual(sharedLocale.json().get("test:conversation.title").getAsString(), "Preserve title",
+                    "existing translation content remains unchanged");
+            Path pack = root.resolve("pack");
+            Path invalid = pack.resolve("data/test/dialogue_trees/en_us/invalid.json");
+            Files.createDirectories(invalid.getParent());
+            Files.writeString(invalid, "[]");
+            boolean rejectedImport = false;
+            try {
+                workspace.importPack(pack);
+            } catch (IOException expected) {
+                rejectedImport = true;
+            }
+            helper.assertTrue(rejectedImport && workspace.documents().size() == 2, "typed non-object JSON cannot bypass validation as an opaque asset");
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
     private static JsonObject json(String value) {
         return JsonParser.parseString(value).getAsJsonObject();
     }

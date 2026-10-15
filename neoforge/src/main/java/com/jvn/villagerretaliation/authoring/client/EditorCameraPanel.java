@@ -1,10 +1,8 @@
 package com.jvn.villagerretaliation.authoring.client;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.authoring.camera.AuthoringCameraSession;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
-import com.jvn.villagerretaliation.authoring.core.JsonPointers;
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline;
 import com.jvn.villagerretaliation.dialogue.DialogueCamera;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera;
@@ -22,6 +20,7 @@ import java.util.function.Consumer;
 final class EditorCameraPanel {
     private static AuthoringCameraSession session;
     private static Entity character;
+    private static Entity sessionSpeaker;
     private static DialogueCamera.Anchor anchor = DialogueCamera.Anchor.SPEAKER;
     private static DialogueCamera.Placement placement = DialogueCamera.Placement.RELATIVE;
     private static Target target = Target.SPEAKER;
@@ -33,6 +32,7 @@ final class EditorCameraPanel {
     private EditorCameraPanel() { }
 
     static void tick(Screen editor) {
+        if (character != null && (!character.isAlive() || character.isRemoved() || character.level() != Minecraft.getInstance().level)) character = null;
         if (session != null && (!session.active() || Minecraft.getInstance().screen != editor
                 && !session.ownsScreen(Minecraft.getInstance().screen))) close();
     }
@@ -41,26 +41,29 @@ final class EditorCameraPanel {
         if (session != null) {
             session.close();
             session = null;
+            sessionSpeaker = null;
         }
     }
 
     static void render(AuthoringDocument document, String pointer, Entity speaker, Screen returnScreen,
             Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation) {
+        if (session != null && (sessionSpeaker != speaker || ownerDocument != document)) close();
         if (!ImGui.collapsingHeader("In-world camera authoring")) return;
         if (ownerDocument != document || !lastPointer.equals(pointer)) {
             CAMERA_OWNER.set(pointer);
             ownerDocument = document;
             lastPointer = pointer;
         }
-        ImGui.textWrapped("Select a node or exchange, then select its presentation object. Camera owner points to the object containing camera.");
+        ImGui.textWrapped("Select a dialogue node, exchange, response or line object. The camera belongs directly on that object, not inside speaker, text keys or metadata.");
         ImGui.inputText("Camera owner pointer", CAMERA_OWNER);
         if (ImGui.button("Use inspector selection")) CAMERA_OWNER.set(pointer);
         var minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.player != null && ImGui.beginCombo("Character target",
                 character == null ? "Use speaker" : character.getName().getString())) {
-            if (ImGui.selectable("Use speaker", character == null)) character = null;
+            if (ImGui.selectable("Use speaker", character == null)) operation.accept(() -> { close(); character = null; });
             for (Entity entity : minecraft.level.getEntities(minecraft.player, minecraft.player.getBoundingBox().inflate(32), Entity::isAlive)) {
-                if (ImGui.selectable(entity.getName().getString() + "##" + entity.getId(), entity == character)) character = entity;
+                if (ImGui.selectable(entity.getName().getString() + "##" + entity.getId(), entity == character))
+                    operation.accept(() -> { close(); character = entity; });
             }
             ImGui.endCombo();
         }
@@ -68,6 +71,7 @@ final class EditorCameraPanel {
             close();
             session = AuthoringCameraSession.begin(speaker, character, () ->
                     minecraft.setScreen(minecraft.level != null && minecraft.player != null ? returnScreen : null));
+            sessionSpeaker = speaker;
         });
         ImGui.sameLine();
         if (ImGui.button("Restore player camera")) close();
@@ -85,18 +89,7 @@ final class EditorCameraPanel {
             var shot = session.capture(anchor, placement, DialogueCamera.Perspective.THIRD_PERSON, target);
             JsonObject shotJson = DialogueCamera.json(new Camera(Target.SPEAKER, null, List.of(shot)))
                     .getAsJsonArray("shots").get(0).getAsJsonObject();
-            document.edit("Capture camera shot", root -> {
-                var selected = JsonPointers.get(root, CAMERA_OWNER.get());
-                if (selected == null || !selected.isJsonObject())
-                    throw new IllegalArgumentException("Camera owner must point to an object.");
-                JsonObject owner = selected.getAsJsonObject();
-                JsonObject camera = owner.has("camera") ? owner.getAsJsonObject("camera") : new JsonObject();
-                if (!camera.has("shots") && !camera.isEmpty())
-                    throw new IllegalArgumentException("Existing camera uses a preset or target. Edit it in properties before replacing it with shots.");
-                if (!camera.has("shots")) camera.add("shots", new JsonArray());
-                camera.getAsJsonArray("shots").add(shotJson);
-                owner.add("camera", camera);
-            });
+            EditorDocumentOperations.appendShot(document, CAMERA_OWNER.get(), shotJson);
             changed.run();
             session.preview(new Camera(Target.SPEAKER, null, List.of(shot)));
         });
@@ -110,9 +103,8 @@ final class EditorCameraPanel {
                 new DialogueCameraTimeline.Pose(pose.position(), rotation[0], rotation[1], pose.fov())));
         if (ImGui.sliderFloat("FOV", fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
         if (ImGui.button("Preview saved sequence")) operation.accept(() -> {
-            var owner = JsonPointers.get(document.json(), CAMERA_OWNER.get());
-            if (owner == null || !owner.isJsonObject()) throw new IllegalArgumentException("Select a camera owner object.");
-            Camera camera = DialogueCamera.read(owner.getAsJsonObject());
+            JsonObject owner = EditorDocumentOperations.cameraOwner(document, CAMERA_OWNER.get());
+            Camera camera = DialogueCamera.read(owner);
             if (camera == null) throw new IllegalArgumentException("Selected object has no camera.");
             session.preview(camera);
         });

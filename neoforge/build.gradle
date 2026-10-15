@@ -552,6 +552,14 @@ tasks.register('gameTest') {
     onlyIf { !skipGameTests.get() }
 }
 
+tasks.register('verifyAuthoring', JavaExec) {
+    group = 'verification'
+    description = 'Runs authoring regressions without launching a Minecraft client or server.'
+    dependsOn tasks.named('gameTestClasses')
+    classpath = sourceSets.gameTest.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.authoring.AuthoringChecks'
+}
+
 tasks.register('generateQuestRegistryMetadata', JavaExec) {
     group = 'datapack tooling'
     description = 'Exports quest registry metadata for Node/browser datapack tooling.'

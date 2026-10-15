@@ -227,7 +227,7 @@ public final class DialogueGraph {
             if (document.kind() == DefinitionKind.FORCED) {
                 response.addProperty("end_conversation", target == null);
                 if (target != null) {
-                    if (selected.pointer().startsWith(target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
+                    if (isWithin(selected.pointer(), target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
                     response.add("follow_up", JsonPointers.get(root, target.pointer()).deepCopy());
                 }
             } else if (target != null) response.addProperty("next", target.id());
@@ -245,7 +245,7 @@ public final class DialogueGraph {
         Node target = find(document, targetId);
         document.edit("Connect branch", root -> {
             if (document.kind() == DefinitionKind.FORCED) {
-                if (edgePointer.startsWith(target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
+                if (isWithin(edgePointer, target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
                 JsonPointers.set(root, edgePointer, JsonPointers.get(root, target.pointer()));
             } else JsonPointers.set(root, edgePointer, new JsonPrimitive(targetId));
         });
@@ -307,9 +307,17 @@ public final class DialogueGraph {
         });
     }
 
+    private static boolean isWithin(String pointer, String ancestor) {
+        return ancestor.isEmpty() || pointer.equals(ancestor) || pointer.startsWith(ancestor + "/");
+    }
+
     private static void requireNewId(AuthoringDocument document, String id) {
         if (id == null || !id.matches("[a-zA-Z0-9_.-]+")) throw new IllegalArgumentException("Use a nonempty node ID with letters, numbers, dots, dashes or underscores");
         if (nodes(document).stream().anyMatch(node -> node.id().equals(id))) throw new IllegalArgumentException("Duplicate node ID " + id);
+        JsonElement nodes = document.json().get("nodes");
+        if (document.kind() == DefinitionKind.TREE && nodes != null && nodes.isJsonObject() && nodes.getAsJsonObject().has(id)) {
+            throw new IllegalArgumentException("A node already uses the storage key " + id);
+        }
     }
 
     private static Node find(AuthoringDocument document, String id) {
