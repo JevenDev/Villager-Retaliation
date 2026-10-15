@@ -80,6 +80,7 @@ final class ImGuiAuthoringEditor {
     private final ImString fieldName = new ImString(256);
     private final ImString fieldValue = new ImString("{}", 8192);
     private final Map<String, ImString> fields = new HashMap<>();
+    private final EditorTextField textFields = new EditorTextField();
     private final EditorFieldEdits pendingFields = new EditorFieldEdits();
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
@@ -200,7 +201,7 @@ final class ImGuiAuthoringEditor {
 
     private void shell() {
         var viewport = ImGui.getMainViewport();
-        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
+        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable | ImGuiConfigFlags.NavEnableKeyboard);
         ImGui.setNextWindowPos(viewport.getWorkPosX(), viewport.getWorkPosY());
         ImGui.setNextWindowSize(viewport.getWorkSizeX(), viewport.getWorkSizeY());
         ImGui.setNextWindowViewport(viewport.getID());
@@ -350,10 +351,12 @@ final class ImGuiAuthoringEditor {
         workspace = next;
         select(null);
         showWorkspace = false;
+        view = 0;
+        filter.set("");
         showCreate = workspace.documents().isEmpty();
         preferences = new EditorPreferences(preferences.guideDismissed(), preferences.layoutVersion(), workspace.directory().toString());
         savePreferences();
-        status = create ? "Workspace created. Choose New to add your first dialogue." : "Workspace opened.";
+        status = create ? "Workspace created." : "Workspace opened.";
     }
 
     private void browser() {
@@ -384,7 +387,7 @@ final class ImGuiAuthoringEditor {
                 ImGui.endCombo();
             }
             ImGui.textWrapped(switch (createKind) {
-                case TREE -> "A branching conversation with plain text. A good place to start.";
+                case TREE -> "Standalone dialogue with branches and player responses.";
                 case CONVERSATION -> "A quest conversation with localized exchanges, speakers and outcomes.";
                 case FORCED -> "Dialogue opened by a game event.";
                 case QUEST -> "Stages, objectives and rewards.";
@@ -413,7 +416,7 @@ final class ImGuiAuthoringEditor {
                 select(created);
                 showCreate = false;
                 view = 0;
-                status = "Created. Select a node and write its lines in Details.";
+                status = "Dialogue created.";
             });
             ImGui.endDisabled();
             ImGui.separator();
@@ -432,7 +435,8 @@ final class ImGuiAuthoringEditor {
                 operation(() -> { select(candidate); view = 0; });
             if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + candidate.resourcePath());
         }
-        if (visible == 0) ImGui.textWrapped("No matching dialogue. Choose New or import a pack below.");
+        if (visible == 0 && !showCreate) ImGui.textWrapped(filter.get().isBlank()
+                ? "No dialogue yet. Create a dialogue or import a pack." : "No matches. Clear the search to see all content.");
         ImGui.separator();
         if (ImGui.collapsingHeader("Import existing pack")) {
             input("Pack folder", importPath);
@@ -457,14 +461,16 @@ final class ImGuiAuthoringEditor {
             }
         }
         ImGui.separator();
-        ImGui.textWrapped(status);
+        ImGui.textWrapped(shortText(status, 100));
+        if (ImGui.isItemHovered()) ImGui.setTooltip(status);
         ImGui.end();
     }
 
     private void graph() {
         panel(WORK_PANEL);
         if (document == null) {
-            ImGui.textWrapped("Select a dialogue definition.");
+            ImGui.textWrapped(workspace == null ? "Create or open a workspace in Content."
+                    : showCreate ? "Create a dialogue in Content." : "Choose a dialogue in Content.");
             ImGui.end();
             return;
         }
@@ -527,7 +533,10 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("End here")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
         }
         if (selected && showBranch) {
-            if (document.kind() != DefinitionKind.QUEST) input("Player response", responseLabel);
+            if (document.kind() != DefinitionKind.QUEST) {
+                ImGui.textUnformatted("Player response");
+                textFields.render("new_response", responseLabel, document.kind(), false);
+            }
             ImGui.textUnformatted("Leads to");
             ImGui.setNextItemWidth(-1);
             boolean needsDestination = document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.QUEST;
@@ -564,7 +573,7 @@ final class ImGuiAuthoringEditor {
             });
             if (needsDestination && nextStage.get().isBlank()) ImGui.textWrapped("Choose a node above. Add another node first if you need a new destination.");
             ImGui.beginDisabled(needsDestination && nextStage.get().isBlank());
-            if (ImGui.button("Add connection")) operation(() -> {
+            if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Create response")) operation(() -> {
                 if (document.kind() == DefinitionKind.QUEST) EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
                 else workspace.addDialogueResponse(document, selectedNode, nextResponseId(), responseLabel.get(), nextStage.get());
                 showBranch = false;
@@ -574,7 +583,7 @@ final class ImGuiAuthoringEditor {
             ImGui.sameLine();
             if (ImGui.button("Cancel connection")) showBranch = false;
         }
-        ImGui.textWrapped("Click a block to edit. Connect a right-hand dot to a left-hand dot. Drag a header to move a node.");
+        ImGui.textWrapped("Select a block to edit. Connect an output dot to an input dot. Drag node headers to arrange.");
         if (!selectedEdge.isEmpty()) {
             if (ImGui.smallButton("Cancel connection")) selectedEdge = "";
             boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
@@ -802,11 +811,6 @@ final class ImGuiAuthoringEditor {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
                     && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
         }
-        if (hasPendingFields()) {
-            if (ImGui.button("Apply field edits")) operation(() -> { });
-            ImGui.sameLine();
-            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); });
-        }
         try {
             var availableBlocks = EditorBlocks.available(document, pointer.get());
             if (!availableBlocks.isEmpty() && ImGui.beginCombo("##add_block", "Add behavior block...")) {
@@ -823,6 +827,11 @@ final class ImGuiAuthoringEditor {
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
+        }
+        if (hasPendingFields()) {
+            if (ImGui.button("Apply field edits")) operation(() -> { });
+            ImGui.sameLine();
+            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); textFields.clear(); });
         }
         ImGui.separator();
         if (ImGui.collapsingHeader("Advanced editing")) {
@@ -923,7 +932,7 @@ final class ImGuiAuthoringEditor {
         };
     }
 
-    private void localizedField(JsonObject reference, String label) {
+    private void localizedField(JsonObject reference, String label, String path) {
         String key = reference.get("key").getAsString();
         var location = workspace.textLocation(document, key, "en_us");
         ImGui.textUnformatted(label);
@@ -933,7 +942,7 @@ final class ImGuiAuthoringEditor {
                 String bufferId = location.document().resourcePath() + location.pointer();
                 ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
                 ImGui.beginDisabled(rawModified);
-                ImGui.inputTextMultiline("##wording", buffer, -1, 80);
+                textFields.render(bufferId, buffer, document.kind(), !path.endsWith("/label") && !path.endsWith("/title"));
                 ImGui.endDisabled();
                 translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
                         .update(location.pointer(), text, buffer.get());
@@ -972,7 +981,7 @@ final class ImGuiAuthoringEditor {
         if (value.isJsonObject() && value.getAsJsonObject().has("key")
                 && value.getAsJsonObject().get("key").isJsonPrimitive() && workspace != null
                 && (path.endsWith("/text") || path.endsWith("/label") || path.endsWith("/title"))) {
-            localizedField(value.getAsJsonObject(), label);
+            localizedField(value.getAsJsonObject(), label, path);
         } else if (value.isJsonObject()) {
             if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
             if (ImGui.treeNode(label)) {
@@ -982,8 +991,32 @@ final class ImGuiAuthoringEditor {
                 }
                 ImGui.treePop();
             }
+        } else if (value.isJsonArray() && path.endsWith("/lines")
+                && value.getAsJsonArray().asList().stream().allMatch(line -> line.isJsonPrimitive() && line.getAsJsonPrimitive().isString())) {
+            var lines = value.getAsJsonArray();
+            if (lines.size() > 1) ImGui.textDisabled("One variation is chosen each time.");
+            for (int i = 0; i < lines.size(); i++) {
+                int index = i;
+                ImGui.pushID(i);
+                inspectValue(lines.get(i), path + "/" + i, lines.size() == 1 ? "Dialogue text" : "Line " + (i + 1), depth + 1);
+                ImGui.beginDisabled(lines.size() == 1);
+                if (ImGui.smallButton("Remove line")) editArray(path, values -> values.remove(index));
+                ImGui.endDisabled();
+                ImGui.sameLine();
+                if (ImGui.smallButton("Duplicate line")) editArray(path, values -> values.add(values.get(index).deepCopy()));
+                if (i > 0) {
+                    ImGui.sameLine();
+                    if (ImGui.smallButton("Move up")) editArray(path, values -> {
+                        JsonElement previous = values.get(index - 1);
+                        values.set(index - 1, values.get(index));
+                        values.set(index, previous);
+                    });
+                }
+                ImGui.popID();
+            }
         } else if (value.isJsonArray()) {
-            if (depth == 0) ImGui.setNextItemOpen(true, ImGuiCond.Once);
+            if (depth == 0 && (!path.endsWith("/responses") && !path.endsWith("/options") || pointer.get().equals(path)))
+                ImGui.setNextItemOpen(true, ImGuiCond.Once);
             if (ImGui.treeNode(label + " [" + value.getAsJsonArray().size() + "]")) {
                 if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
@@ -1017,7 +1050,9 @@ final class ImGuiAuthoringEditor {
             boolean text = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
             boolean apply = false;
             if (text && (path.contains("/lines/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
-                ImGui.inputTextMultiline("##value", input, -1, 80);
+                textFields.render(path, input, document.kind(), true);
+            else if (text && path.endsWith("/label"))
+                textFields.render(path, input, document.kind(), false);
             else apply = ImGui.inputText("##value", input, ImGuiInputTextFlags.EnterReturnsTrue);
             ImGui.endDisabled();
             pendingFields.update(path, value, input.get());
@@ -1056,14 +1091,14 @@ final class ImGuiAuthoringEditor {
             ImGui.endCombo();
         }
         if (target != null && !target.isAlive()) { target = null; status = "Preview target disappeared."; }
-        if (document != null && target != null) {
-            if (ImGui.button("Play from entry")) startPreview("");
-            ImGui.sameLine();
-            if (ImGui.button("Play selected node / object")) startPreview(selectedNode.isEmpty() ? pointer.get() : selectedNode);
-            ImGui.sameLine();
-            if (ImGui.button("Stop preview")) AuthoringDialoguePreview.stop();
-            EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
-        }
+        EditorPreviewConditions.time(conditions);
+        ImGui.beginDisabled(target == null);
+        if (ImGui.button("Play from entry")) startPreview("");
+        ImGui.sameLine();
+        if (ImGui.button("Play selected node")) startPreview(selectedNode.isEmpty() ? pointer.get() : selectedNode);
+        ImGui.endDisabled();
+        if (target == null) ImGui.textDisabled("Select a target to play.");
+        else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
         EditorPreviewConditions.render(conditions, document == null ? null : document.json());
         if (ImGui.collapsingHeader("Preview log"))
             for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
@@ -1084,6 +1119,7 @@ final class ImGuiAuthoringEditor {
             var authoredId = net.minecraft.resources.ResourceLocation.tryParse(document.id());
             var evaluationId = authoredId == null
                     ? net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview") : authoredId;
+            conditions.worldTime(MC.level.getDayTime());
             AuthoringDialoguePreview.start(document, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
                 JsonObject reference = new JsonObject();
                 reference.addProperty("key", key);
@@ -1194,6 +1230,7 @@ final class ImGuiAuthoringEditor {
         pendingFields.clear();
         translatedFields.clear();
         fields.clear();
+        textFields.clear();
         positions.clear();
         if (document != null) {
             JsonElement savedPositions = document.metadata().get("node_positions");

@@ -36,7 +36,8 @@ import org.lwjgl.glfw.GLFW;
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
 public final class AuthoringEditorClientSmoke {
     private static final String OUTPUT = "villagerretaliation.authoringEditorClientSmoke";
-    private static final String GREETING = "Welcome, traveler! Let's plan our next trip.";
+    private static final String GREETING = "<i><b><u><wave><color:gold>Welcome</color></wave></u></b></i>, {player}! It is {time} ({time_of_day}), day {day}.";
+    private static final String RESPONSE = "Where should we meet, {player}?";
     private static final String FOLLOW_UP = "Meet me by the village gate tomorrow.";
     private static final ArrayDeque<Runnable> STEPS = new ArrayDeque<>();
     private static Object editor;
@@ -70,6 +71,8 @@ public final class AuthoringEditorClientSmoke {
             server.execute(() -> {
                 var level = server.overworld();
                 var player = server.getPlayerList().getPlayer(playerId);
+                level.setDayTime(0);
+                level.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_DAYLIGHT).set(false, server);
                 player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
                 var villager = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
                 villager.setNoAi(true);
@@ -191,7 +194,7 @@ public final class AuthoringEditorClientSmoke {
             capture("10-created-dialogue");
         });
         editLine("start", "An initial draft.");
-        editLine("start", GREETING);
+        buildRichTextSteps();
         click(() -> screenPoint(320, 181));
         STEPS.add(() -> {
             require(DialogueGraph.nodes(document).size() == 2, "Add node creates a follow-up.");
@@ -200,15 +203,15 @@ public final class AuthoringEditorClientSmoke {
         editLine("node_2", FOLLOW_UP);
         click(() -> point("start", 80, 18));
         click(() -> screenPoint(430, 181));
-        replaceText(() -> screenPoint(450, 289), () -> "Where should we meet?");
-        click(() -> screenPoint(450, 357));
-        click(() -> screenPoint(320, 455));
-        click(() -> screenPoint(350, 397));
+        replaceText(() -> screenPoint(450, 330), () -> RESPONSE);
+        click(() -> screenPoint(450, 417));
+        click(() -> screenPoint(320, 515));
+        click(() -> screenPoint(350, 457));
         STEPS.add(() -> {
             require(DialogueGraph.edges(document).size() == 1, "Add connection creates a response.");
             require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "The response leads to the chosen node.");
             require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses")
-                    .get(0).getAsJsonObject().get("label").getAsString().equals("Where should we meet?"), "The response keeps the typed wording.");
+                    .get(0).getAsJsonObject().get("label").getAsString().equals(RESPONSE), "The response keeps the typed wording.");
         });
         click(() -> screenPoint(655, 181));
         click(() -> toolbar("Save"));
@@ -220,16 +223,25 @@ public final class AuthoringEditorClientSmoke {
         click(() -> screenPoint(550, 209));
         STEPS.add(() -> require(field(editor, "target") instanceof net.minecraft.world.entity.npc.Villager,
                 "Nearest villager selects a real preview target."));
-        click(() -> screenPoint(350, 317));
+        click(() -> screenPoint(500, 345));
+        click(() -> screenPoint(400, 443));
+        STEPS.add(() -> require(((com.jvn.villagerretaliation.authoring.preview.PreviewConditions) field(editor, "conditions")).dayTime() == 6000,
+                "Preview time menu selects afternoon."));
+        click(() -> screenPoint(350, 385));
         pause(1000);
         STEPS.add(() -> require(AuthoringDialoguePreview.active(), "Play from entry opens the native conversation screen."));
         choosePreview("Talk");
         pause(2500);
         STEPS.add(() -> {
-            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(GREETING), "Preview displays the edited greeting.");
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(previewGreeting("12:00", "afternoon")), "Preview resolves player and time variables.");
+            var segments = (List<?>) field(Minecraft.getInstance().screen, "villagerDialogueTextSegments");
+            var first = (com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment) segments.getFirst();
+            require(first.text().equals("Welcome") && first.effects().italic() && first.effects().bold()
+                    && first.effects().underlined() && first.effects().wavy() && Integer.valueOf(0xffaa00).equals(first.effects().color()),
+                    "Native preview retains italic, bold, underline, wave and gold styling.");
             capture("12-preview-greeting");
         });
-        choosePreview("Where should we meet?");
+        choosePreview(() -> "Where should we meet, " + Minecraft.getInstance().player.getName().getString() + "?");
         pause(2500);
         STEPS.add(() -> {
             require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(FOLLOW_UP), "Preview follows the authored connection.");
@@ -240,6 +252,16 @@ public final class AuthoringEditorClientSmoke {
             require(!AuthoringDialoguePreview.active(), "Return to editor closes the preview.");
             require(Minecraft.getInstance().screen == field(editor, "screen"), "The editor is restored after preview.");
         });
+        click(() -> screenPoint(500, 345));
+        click(() -> screenPoint(400, 499));
+        click(() -> screenPoint(520, 385));
+        pause(2500);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(previewGreeting("00:00", "night")),
+                    "Selected-node preview uses the changed time override.");
+            capture("13b-preview-night");
+        });
+        choosePreview("Return to editor");
         click(() -> toolbar("Check & export"));
         click(() -> screenPoint(340, 209));
         replaceText(() -> screenPoint(600, 305), () -> output().resolve("setup-export").toString());
@@ -275,11 +297,91 @@ public final class AuthoringEditorClientSmoke {
             try {
                 Files.writeString(output().resolve("result.txt"),
                         "Authoring editor client smoke passed\nGraph interactions, automatic layout, onboarding, and full setup through native controls.\n"
-                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft.\n");
+                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews.\n");
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
         });
+    }
+
+    private static void buildRichTextSteps() {
+        editLine("start", "Welcome, ");
+        click(() -> screenPoint(1700, 350));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        expectCaret("Welcome, ");
+        insertVariable(307);
+        expectCaret("Welcome, {player}");
+        type("! It is ");
+        expectCaret("Welcome, {player}! It is ");
+        insertVariable(372);
+        type(" (");
+        insertVariable(400);
+        type("), day ");
+        insertVariable(428);
+        type(".");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Home);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Shift, true));
+        for (int i = 0; i < 7; i++) key(ImGuiKey.RightArrow);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Shift, false));
+        click(() -> textTool("I"));
+        click(() -> textTool("B"));
+        click(() -> textTool("U"));
+        click(() -> textTool("Style"));
+        click(() -> screenPoint(1800, 363));
+        click(() -> textTool("Style"));
+        move(() -> screenPoint(1800, 307), false);
+        pause(500);
+        STEPS.add(() -> capture("10b-color-menu"));
+        click(() -> screenPoint(1600, 363));
+        STEPS.add(() -> capture("10c-formatted-text"));
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines")
+                .get(0).getAsString().equals(GREETING), "Toolbar formatting and variable insertion preserve the selected text."));
+    }
+
+    private static void expectCaret(String expected) {
+        STEPS.add(() -> {
+            var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
+            var selection = selections.values().stream().filter(value ->
+                    ((imgui.type.ImString) field(value, "buffer")).get().contains("Welcome")).findFirst().orElseThrow();
+            String actual = ((imgui.type.ImString) field(selection, "buffer")).get();
+            require(actual.equals(expected) && (int) field(selection, "start") == EditorTextEdit.bytes(expected)
+                    && (int) field(selection, "end") == EditorTextEdit.bytes(expected),
+                    "Text insertion keeps the caret: " + actual + " [" + field(selection, "start") + ", " + field(selection, "end") + "]");
+        });
+    }
+
+    private static void insertVariable(float y) {
+        click(() -> textTool("Insert variable"));
+        STEPS.add(() -> capture("10a-variable-menu"));
+        click(() -> screenPoint(1700, y));
+    }
+
+    private static float[] textTool(String target) {
+        float x = ImGui.getMainViewport().getWorkSizeX() - 380;
+        for (String label : new String[] {"B", "I", "U", "Insert variable", "Style"}) {
+            float width = ImGui.calcTextSize(label).x + 16;
+            if (label.equals(target)) return screenPoint(x + width / 2, 283);
+            x += width + 8;
+        }
+        throw new IllegalArgumentException(target);
+    }
+
+    private static String previewGreeting(String time, String phase) {
+        return "Welcome, " + Minecraft.getInstance().player.getName().getString() + "! It is " + time + " (" + phase + "), day 1.";
+    }
+
+    private static void type(String text) { STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8(text)); }
+
+    private static void key(int key) {
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(key, true));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(key, false));
+    }
+
+    private static void chord(int modifier, int key) {
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(modifier, true));
+        key(key);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(modifier, false));
     }
 
     private static void editLine(String node, String text) {
@@ -308,8 +410,11 @@ public final class AuthoringEditorClientSmoke {
 
     private static void pause(long millis) { STEPS.add(() -> resumeAt = Util.getMillis() + millis); }
 
-    private static void choosePreview(String label) {
+    private static void choosePreview(String label) { choosePreview(() -> label); }
+
+    private static void choosePreview(Supplier<String> labelSupplier) {
         STEPS.add(() -> {
+            String label = labelSupplier.get();
             require(Minecraft.getInstance().screen instanceof VillagerInteractionScreen, "Preview screen is open.");
             var screen = Minecraft.getInstance().screen;
             List<?> options = (List<?>) field(screen, "options");

@@ -21,6 +21,7 @@ public final class PreviewConditions {
     private VillagerReputationLevel reputationLevel = VillagerReputationLevel.NEUTRAL;
     private String profession = "minecraft:none";
     private int variant;
+    private Long dayTime, worldTime;
     private boolean checkSuccess = true;
 
     public void override(String type, ConditionOutcome outcome) {
@@ -42,6 +43,11 @@ public final class PreviewConditions {
         values.putIfAbsent("reputation_level", reputationLevel.name().toLowerCase(java.util.Locale.ROOT));
         return Map.copyOf(values);
     }
+    public void worldTime(long value) { worldTime = value; }
+    public void dayTime(Long value) { dayTime = value; }
+    public Long dayTime() { return dayTime; }
+    public long resolveDayTime(long worldTime) { return dayTime == null ? worldTime : dayTime; }
+
     public void defaultQuest(ResourceLocation value) { defaultQuest = value; }
     public void reputation(int value) {
         reputation(value, VillagerReputationLevel.fromReputation(value));
@@ -66,6 +72,11 @@ public final class PreviewConditions {
                 return outcome((test.levels().isEmpty() || test.levels().contains(reputationLevel))
                         && (test.minReputation() == null || reputation >= test.minReputation())
                         && (test.maxReputation() == null || reputation <= test.maxReputation()));
+            if (condition instanceof DialogueCondition.Time test && (dayTime != null || worldTime != null)) {
+                String phase = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(
+                        dayTime == null ? worldTime : dayTime).get("time_of_day");
+                return outcome(test.times().stream().anyMatch(time -> time.name().equalsIgnoreCase(phase)));
+            }
             if (condition instanceof DialogueCondition.Quest test) {
                 String state = quests.get(test.questId().toString());
                 return state == null ? ConditionOutcome.UNKNOWN : outcome(test.states().contains(state));

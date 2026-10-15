@@ -72,6 +72,37 @@ final class EditorPreviewConditions {
         } else if (element.isJsonArray()) element.getAsJsonArray().forEach(value -> collectRoles(value, roles));
     }
 
+    static void time(PreviewConditions conditions) {
+        String[] names = {"World time", "Morning (06:00)", "Afternoon (12:00)", "Evening (18:00)", "Night (00:00)"};
+        long[] ticks = {0, 0, 6000, 12000, 18000};
+        int selected = 0;
+        if (conditions.dayTime() != null) {
+            long current = Math.floorMod(conditions.dayTime(), 24000L);
+            selected = current < 6000 ? 1 : current < 12000 ? 2 : current < 14000 ? 3 : 4;
+        }
+        ImGui.textUnformatted("Preview time");
+        ImGui.setNextItemWidth(-1);
+        if (ImGui.beginCombo("##preview_time", names[selected])) {
+            for (int i = 0; i < names.length; i++) {
+                if (ImGui.selectable(names[i], selected == i)) {
+                    long world = net.minecraft.client.Minecraft.getInstance().level.getDayTime();
+                    conditions.dayTime(i == 0 ? null : Math.floorDiv(world, 24000L) * 24000L + ticks[i]);
+                }
+            }
+            ImGui.endCombo();
+        }
+    }
+
+    private static void usedConditions(com.google.gson.JsonElement value, java.util.Set<String> types) {
+        if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> usedConditions(child, types));
+        else if (value.isJsonObject()) {
+            var object = value.getAsJsonObject();
+            if (object.has("type") && object.get("type").isJsonPrimitive())
+                types.add(DialogueCondition.canonicalTypeId(object.get("type").getAsString()));
+            object.entrySet().forEach(entry -> usedConditions(entry.getValue(), types));
+        }
+    }
+
     static void render(PreviewConditions conditions, com.google.gson.JsonObject definition) {
         speakers(conditions, definition);
         if (!ImGui.collapsingHeader("Simulated conditions")) return;
@@ -109,7 +140,10 @@ final class EditorPreviewConditions {
                 ImGui.endCombo();
             }
         }
+        var used = new java.util.TreeSet<String>();
+        if (definition != null) usedConditions(definition, used);
         for (var descriptor : DialogueCondition.descriptors()) {
+            if (!used.contains(descriptor.id())) continue;
             ConditionOutcome selected = conditions.overrides().get(descriptor.id());
             if (ImGui.beginCombo(descriptor.id(), selected == null ? "Evaluate simulated context" : selected.name())) {
                 if (ImGui.selectable("Evaluate simulated context", selected == null)) conditions.override(descriptor.id(), null);

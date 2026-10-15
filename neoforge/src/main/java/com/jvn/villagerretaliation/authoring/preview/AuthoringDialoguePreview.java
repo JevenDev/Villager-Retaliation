@@ -108,17 +108,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         }
         String kind = line.has("speaker") ? DialoguePreviewSession.string(line.getAsJsonObject("speaker"), "type") : "role";
         Entity speaker = kind.equals("player") ? minecraft.player : kind.equals("narrator") ? null : resolveSpeaker(line);
-        var replacements = new java.util.LinkedHashMap<>(conditions.placeholders());
-        String name = target.getName().getString();
-        replacements.putIfAbsent("player", minecraft.player.getName().getString());
-        replacements.putIfAbsent("villager", name);
-        replacements.putIfAbsent("villager_name", name);
-        replacements.putIfAbsent("villager_possessive", name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s");
-        replacements.putIfAbsent("x", Integer.toString(target.blockPosition().getX()));
-        replacements.putIfAbsent("y", Integer.toString(target.blockPosition().getY()));
-        replacements.putIfAbsent("z", Integer.toString(target.blockPosition().getZ()));
-        String text = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
-                DialoguePreviewSession.string(line, "resolved_text"), replacements);
+        String text = resolveText(DialoguePreviewSession.string(line, "resolved_text"));
         var presentation = ConversationLinePresentation.read(line);
         var speech = new DialogueSpeech(speaker == null ? null : speaker.getUUID(), speaker == null ? -1 : speaker.getId(),
                 speaker == null ? "" : speaker.getName().getString(),
@@ -130,6 +120,22 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
                     false, 0, SoundInstance.Attenuation.NONE, 0, 0, 0, true);
             minecraft.getSoundManager().play(voice);
         }
+    }
+
+    private String resolveText(String text) {
+        var minecraft = Minecraft.getInstance();
+        var replacements = new java.util.LinkedHashMap<>(conditions.placeholders());
+        String name = target.getName().getString();
+        replacements.putIfAbsent("player", minecraft.player.getName().getString());
+        replacements.putIfAbsent("villager", name);
+        replacements.putIfAbsent("villager_name", name);
+        replacements.putIfAbsent("villager_possessive", name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s");
+        replacements.putIfAbsent("x", Integer.toString(target.blockPosition().getX()));
+        replacements.putIfAbsent("y", Integer.toString(target.blockPosition().getY()));
+        replacements.putIfAbsent("z", Integer.toString(target.blockPosition().getZ()));
+        com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(conditions.resolveDayTime(minecraft.level.getDayTime()))
+                .forEach(replacements::putIfAbsent);
+        return com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(text, replacements);
     }
 
     @Override public List<Entity> cameraSubjects() {
@@ -150,7 +156,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         for (int index = 0; index < choices.size(); index++) {
             int selected = index;
             var choice = choices.get(index);
-            result.add(new VillagerInteractionScreen.LocalOption(choice.label()
+            result.add(new VillagerInteractionScreen.LocalOption(resolveText(choice.label())
                     + (choice.available() ? "" : " [" + choice.reason() + "]"), () -> perform(() -> {
                 session.choose(selected);
                 update(screen);

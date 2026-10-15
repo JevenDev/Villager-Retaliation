@@ -906,6 +906,8 @@ public final class ForcedDialogueResources {
     private static Map<String, String> templateReplacements(ForcedDialogueContext context, Map<String, String> extraReplacements) {
         Map<String, String> replacements = new HashMap<>();
         if (context != null) {
+            if (context.server() != null) replacements.putAll(
+                    com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(context.server().overworld().getDayTime()));
             replacements.put("villager", context.villagerName());
             replacements.put("player", context.playerName());
             replacements.put("target", context.targetName());

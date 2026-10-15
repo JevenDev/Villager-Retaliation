@@ -26,7 +26,49 @@ public final class EditorClientChecks {
         questPortsReplaceTerminalTransitions();
         graphArrangementHandlesCyclesAndLargeCards();
         behaviorBlocksRejectUnsupportedOwners();
-        return 16;
+        textToolsPreserveUnicodeSelectionAndToggleStyles();
+        timeVariablesFollowWorldClockAndPreviewConditions();
+        return 18;
+    }
+
+    private static void textToolsPreserveUnicodeSelectionAndToggleStyles() {
+        String text = "Hello, Zo\u00eb \ud83c\udf3b!";
+        int from = EditorTextEdit.bytes("Hello, "), to = EditorTextEdit.bytes("Hello, Zo\u00eb \ud83c\udf3b");
+        var italic = EditorTextEdit.format(text, from, to, "i");
+        check(italic.text().equals("Hello, <i>Zo\u00eb \ud83c\udf3b</i>!"), "formatting respects UTF-8 selection boundaries");
+        var plain = EditorTextEdit.format(italic.text(), italic.start(), italic.end(), "i");
+        check(plain.text().equals(text), "repeating a format removes the surrounding tag");
+        var variable = EditorTextEdit.insert(plain.text(), plain.start(), plain.end(), "{player}");
+        check(variable.text().equals("Hello, {player}!"), "variable insertion replaces the selection");
+        check(variable.start() == variable.end(), "inserted variables leave a collapsed cursor");
+        var empty = EditorTextEdit.format("", 0, 0, "color:gold");
+        check(empty.text().equals("<color:gold>text</color>") && empty.end() - empty.start() == 4,
+                "formatting an empty field selects an editable text span");
+        check(EditorTextEdit.format(empty.text(), 0, EditorTextEdit.bytes(empty.text()), "color:gold").text().equals("text"),
+                "formatting a selected tagged span toggles off");
+    }
+
+    private static void timeVariablesFollowWorldClockAndPreviewConditions() {
+        var morning = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(0);
+        check(morning.get("time").equals("06:00") && morning.get("day").equals("1"), "day one begins at 06:00");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(6000).get("time").equals("12:00"), "noon is 12:00");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(12000).get("time_of_day").equals("evening"), "sunset uses runtime evening boundary");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(14000).get("time_of_day").equals("night"), "night matches condition boundary");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(18000).get("time").equals("00:00"), "midnight wraps clock");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(24000).get("day").equals("2"), "world day increases at the tick rollover");
+        check(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(-1).get("time").equals("05:59"), "negative ticks use floor modulo");
+        var conditions = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        conditions.worldTime(0);
+        conditions.dayTime(18000L);
+        check(conditions.resolveDayTime(6000) == 18000, "preview time overrides live world time");
+        var id = net.minecraft.resources.ResourceLocation.parse("test:clock");
+        var night = json("{\"conditions\":[{\"type\":\"time\",\"times\":[\"night\"]}]}");
+        check(conditions.evaluate(id, night) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED,
+                "time conditions use the preview override");
+        conditions.dayTime((Long) null);
+        check(conditions.resolveDayTime(6000) == 6000, "clearing the override returns to world time");
+        check(conditions.evaluate(id, night) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNMET,
+                "world-time conditions use the captured world context");
     }
 
     private static void propertyEditsApplyTogether() {
