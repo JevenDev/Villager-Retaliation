@@ -60,7 +60,9 @@ final class EditorGraph {
                 if (List.of("line", "lines", "variants", "exchanges").contains(field)) {
                     if (!field.equals("exchanges") && item.isJsonArray() && item.getAsJsonArray().size() > 1) title = "Say one of";
                     JsonElement first = item.isJsonArray() ? item.getAsJsonArray().get(0) : item;
-                    text = wording.apply(first);
+                    text = com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.plainText(
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(wording.apply(first),
+                                    com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
                     if (item.isJsonArray() && item.getAsJsonArray().size() > 1) text += " (+" + (item.getAsJsonArray().size() - 1) + ")";
                 } else {
                     int count = item.isJsonArray() ? item.getAsJsonArray().size() : 1;

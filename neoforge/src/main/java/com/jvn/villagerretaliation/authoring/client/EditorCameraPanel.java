@@ -8,7 +8,6 @@ import com.jvn.villagerretaliation.dialogue.DialogueCamera;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target;
 import imgui.ImGui;
-import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.entity.Entity;
@@ -25,9 +24,8 @@ final class EditorCameraPanel {
     private static DialogueCamera.Placement placement = DialogueCamera.Placement.RELATIVE;
     private static Target target = Target.SPEAKER;
     private static DialogueCamera.Preset preset = DialogueCamera.Preset.OVER_SHOULDER_LEFT;
-    private static final ImString CAMERA_OWNER = new ImString(4096);
+    private static String cameraOwner;
     private static AuthoringDocument ownerDocument;
-    private static String lastPointer = "";
 
     private EditorCameraPanel() { }
 
@@ -48,15 +46,32 @@ final class EditorCameraPanel {
     static void render(AuthoringDocument document, String pointer, Entity speaker, Screen returnScreen,
             Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation) {
         if (session != null && (sessionSpeaker != speaker || ownerDocument != document)) close();
-        if (!ImGui.collapsingHeader("In-world camera authoring")) return;
-        if (ownerDocument != document || !lastPointer.equals(pointer)) {
-            CAMERA_OWNER.set(pointer);
-            ownerDocument = document;
-            lastPointer = pointer;
+        String nextOwner;
+        try {
+            nextOwner = EditorDocumentOperations.cameraSelection(document, pointer);
+        } catch (IllegalArgumentException | IllegalStateException | ClassCastException
+                | UnsupportedOperationException | IndexOutOfBoundsException exception) {
+            close();
+            if (ImGui.collapsingHeader("Camera"))
+                ImGui.textWrapped("Repair the definition in Check & export before attaching a camera: " + exception.getMessage());
+            return;
         }
-        ImGui.textWrapped("Select a dialogue node, exchange, response or line object. The camera belongs directly on that object, not inside speaker, text keys or metadata.");
-        ImGui.inputText("Camera owner pointer", CAMERA_OWNER);
-        if (ImGui.button("Use inspector selection")) CAMERA_OWNER.set(pointer);
+        if (ownerDocument != document || !java.util.Objects.equals(cameraOwner, nextOwner)) {
+            if (!java.util.Objects.equals(cameraOwner, nextOwner)) close();
+            cameraOwner = nextOwner;
+            ownerDocument = document;
+        }
+        if (!ImGui.collapsingHeader("Camera")) return;
+        if (cameraOwner == null) {
+            ImGui.textWrapped("Select a dialogue node or spoken line in Edit to attach camera shots.");
+            return;
+        }
+        JsonObject owner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
+        String name = com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(owner, "id");
+        if (name.isBlank()) name = com.jvn.villagerretaliation.authoring.core.DialogueGraph.nodes(document).stream()
+                .filter(node -> node.pointer().equals(cameraOwner)).map(node -> node.id()).findFirst().orElse("Selected dialogue");
+        ImGui.textUnformatted("Attach shots to: " + name);
+        if (ImGui.isItemHovered()) ImGui.setTooltip(cameraOwner);
         var minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.player != null && ImGui.beginCombo("Character target",
                 character == null ? "Use speaker" : character.getName().getString())) {
@@ -85,11 +100,11 @@ final class EditorCameraPanel {
                         Vec3.ZERO, target, null, DialogueCamera.Transition.CUT, 0, DialogueCamera.Easing.LINEAR, 0)))));
         if (ImGui.button("Position free camera")) operation.accept(session::freeCamera);
         ImGui.sameLine();
-        if (ImGui.button("Capture and append shot")) operation.accept(() -> {
+        if (ImGui.button("Add shot")) operation.accept(() -> {
             var shot = session.capture(anchor, placement, DialogueCamera.Perspective.THIRD_PERSON, target);
             JsonObject shotJson = DialogueCamera.json(new Camera(Target.SPEAKER, null, List.of(shot)))
                     .getAsJsonArray("shots").get(0).getAsJsonObject();
-            EditorDocumentOperations.appendShot(document, CAMERA_OWNER.get(), shotJson);
+            EditorDocumentOperations.appendShot(document, cameraOwner, shotJson);
             changed.run();
             session.preview(new Camera(Target.SPEAKER, null, List.of(shot)));
         });
@@ -103,21 +118,28 @@ final class EditorCameraPanel {
                 new DialogueCameraTimeline.Pose(pose.position(), rotation[0], rotation[1], pose.fov())));
         if (ImGui.sliderFloat("FOV", fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
         if (ImGui.button("Preview saved sequence")) operation.accept(() -> {
-            JsonObject owner = EditorDocumentOperations.cameraOwner(document, CAMERA_OWNER.get());
-            Camera camera = DialogueCamera.read(owner);
+            JsonObject savedOwner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
+            Camera camera = DialogueCamera.read(savedOwner);
             if (camera == null) throw new IllegalArgumentException("Selected object has no camera.");
             session.preview(camera);
         });
-        ImGui.textWrapped("Use Properties to edit shot offsets, orientation, transition duration/easing and hold time, duplicate, remove or move shots up.");
-        ImGui.textWrapped("Captured shots keep explicit yaw and pitch. Remove orientation to aim at the chosen look-at target. Relative offsets follow the anchor. Fixed captures use world coordinates.");
+        if (ImGui.collapsingHeader("Shot settings")) {
+            ImGui.textWrapped("Select the Camera block in Edit to adjust timing, reorder or remove shots.");
+            ImGui.textWrapped("Relative shots follow the anchor. Fixed shots use world coordinates. Captured shots keep their rotation. Remove orientation to track the look-at target.");
+        }
+    }
+
+    private static String enumLabel(Enum<?> value) {
+        String text = value.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
     private static <E extends Enum<E>> E enumeration(String label, E value) {
         E selected = value;
-        if (ImGui.beginCombo(label, value.name())) {
+        if (ImGui.beginCombo(label, enumLabel(value))) {
             for (E candidate : value.getDeclaringClass().getEnumConstants()) {
                 if (candidate == Target.NONE) continue;
-                if (ImGui.selectable(candidate.name(), candidate == value)) selected = candidate;
+                if (ImGui.selectable(enumLabel(candidate), candidate == value)) selected = candidate;
             }
             ImGui.endCombo();
         }

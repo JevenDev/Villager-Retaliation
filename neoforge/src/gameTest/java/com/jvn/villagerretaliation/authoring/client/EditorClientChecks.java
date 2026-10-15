@@ -28,7 +28,19 @@ public final class EditorClientChecks {
         behaviorBlocksRejectUnsupportedOwners();
         textToolsPreserveUnicodeSelectionAndToggleStyles();
         timeVariablesFollowWorldClockAndPreviewConditions();
-        return 18;
+        graphSummariesKeepFormattingOutOfTheFlow();
+        return 19;
+    }
+
+    private static void graphSummariesKeepFormattingOutOfTheFlow() {
+        var document = tree();
+        document.edit("Format greeting", root -> root.getAsJsonObject("nodes").getAsJsonObject("start")
+                .getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("<b>Hello</b>, {player}!")));
+        var cards = EditorGraph.cards(document, value -> value == null ? "" : value.isJsonPrimitive() ? value.getAsString() : value.toString());
+        check(cards.getFirst().blocks().stream().anyMatch(block -> block.title().equals("Say") && block.text().equals("Hello, {player}!")),
+                "graph wording hides formatting tags and preserves useful variables");
+        check(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0)
+                .getAsString().equals("<b>Hello</b>, {player}!"), "graph summaries never alter authored markup");
     }
 
     private static void textToolsPreserveUnicodeSelectionAndToggleStyles() {
@@ -125,6 +137,9 @@ public final class EditorClientChecks {
     private static void cameraOwnersFollowRuntimeFormats() {
         var tree = tree();
         EditorDocumentOperations.cameraOwner(tree, "/nodes/start");
+        check("/nodes/start".equals(EditorDocumentOperations.cameraSelection(tree, "/nodes/start/lines/0")),
+                "selecting spoken text attaches cameras to its owning node");
+        check(EditorDocumentOperations.cameraSelection(tree, "/metadata") == null, "unrelated metadata has no camera target");
         rejects(() -> EditorDocumentOperations.cameraOwner(tree, "/metadata"));
         rejects(() -> EditorDocumentOperations.cameraOwner(tree, "/nodes/start/speaker"));
         var conversation = new AuthoringDocument(DefinitionKind.CONVERSATION,
@@ -133,6 +148,13 @@ public final class EditorClientChecks {
                 + "\"responses\":[{\"id\":\"continue\",\"label\":{\"key\":\"continue\"},\"next\":\"start\"}]}]}"));
         EditorDocumentOperations.cameraOwner(conversation, "/nodes/0");
         EditorDocumentOperations.cameraOwner(conversation, "/nodes/0/exchanges/0");
+        check("/nodes/0/exchanges/0".equals(EditorDocumentOperations.cameraSelection(conversation, "/nodes/0/exchanges/0/text/key")),
+                "localized text attaches cameras to the nearest exchange");
+        var resource = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue/pools/greet.json",
+                json("{\"entries\":[{\"text\":\"Hello\",\"metadata\":{\"text\":\"Hidden\"}}]}"));
+        check("/entries/0".equals(EditorDocumentOperations.cameraSelection(resource, "/entries/0/text")),
+                "supporting dialogue resources retain camera ownership");
+        rejects(() -> EditorDocumentOperations.cameraOwner(resource, "/entries/0/metadata"));
         rejects(() -> EditorDocumentOperations.cameraOwner(conversation, "/nodes/0/exchanges/0/text"));
         rejects(() -> EditorDocumentOperations.cameraOwner(conversation, "/nodes/0/responses/0"));
     }

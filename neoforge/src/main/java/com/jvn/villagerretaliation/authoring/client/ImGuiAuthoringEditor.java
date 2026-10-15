@@ -103,6 +103,7 @@ final class ImGuiAuthoringEditor {
     private boolean rawModified;
     private boolean initializedLayout;
     private boolean escapeReady;
+    private boolean popupWasOpen;
     private boolean confirmDelete;
     private Entity target;
 
@@ -147,7 +148,7 @@ final class ImGuiAuthoringEditor {
     private void render() {
         if (MC.screen != screen) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
-        if (escapeReady && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
+        if (escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
             if (!selectedEdge.isEmpty()) {
                 selectedEdge = "";
                 wireDragMoved = false;
@@ -170,6 +171,7 @@ final class ImGuiAuthoringEditor {
             else if (view == 1) preview();
             else diagnostics();
             inspector();
+            popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
             ImGui.popStyleColor(13);
             ImGui.popStyleVar(5);
@@ -442,7 +444,15 @@ final class ImGuiAuthoringEditor {
             input("Pack folder", importPath);
             if (ImGui.button("Import")) operation(() -> {
                 int count = workspace.importPack(Path.of(importPath.get()));
-                status = "Imported " + count + " resources.";
+                if (document == null && count > 0) {
+                    select(workspace.documents().stream().filter(candidate -> candidate.kind() != DefinitionKind.RESOURCE)
+                            .findFirst().orElse(workspace.documents().getFirst()));
+                    showResources = document.kind() == DefinitionKind.RESOURCE;
+                    showCreate = false;
+                    filter.set("");
+                    view = 0;
+                }
+                status = count == 0 ? "No supported content found in this pack." : "Imported " + count + " resources.";
                 validate();
             });
         }
@@ -1049,7 +1059,7 @@ final class ImGuiAuthoringEditor {
             ImGui.setNextItemWidth(-1);
             boolean text = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
             boolean apply = false;
-            if (text && (path.contains("/lines/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+            if (text && (path.contains("/lines/") || path.contains("/variants/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true);
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false);
@@ -1171,7 +1181,7 @@ final class ImGuiAuthoringEditor {
                     }
                 }
             }
-            if (ImGui.isItemHovered()) ImGui.setTooltip(diagnostic.resourcePath() + diagnostic.pointer());
+            if (ImGui.isItemHovered()) ImGui.setTooltip(diagnostic.message() + "\n" + diagnostic.resourcePath() + diagnostic.pointer());
         }
         ImGui.end();
     }

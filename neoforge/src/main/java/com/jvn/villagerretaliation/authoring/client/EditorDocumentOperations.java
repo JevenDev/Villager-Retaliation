@@ -25,7 +25,17 @@ public final class EditorDocumentOperations {
 
     public static JsonObject cameraOwner(AuthoringDocument document, String pointer) {
         JsonElement selected = JsonPointers.get(document.json(), pointer);
-        if (!selected.isJsonObject()) throw new IllegalArgumentException("Select a dialogue node, exchange or line object.");
+        if (!selected.isJsonObject() || !cameraOwners(document).contains(pointer))
+            throw new IllegalArgumentException("Select a dialogue node, exchange, response or line that supports cameras.");
+        return selected.getAsJsonObject();
+    }
+
+    public static String cameraSelection(AuthoringDocument document, String pointer) {
+        return cameraOwners(document).stream().filter(path -> pointer.equals(path) || pointer.startsWith(path + "/"))
+                .max(java.util.Comparator.comparingInt(String::length)).orElse(null);
+    }
+
+    private static Set<String> cameraOwners(AuthoringDocument document) {
         Set<String> allowed = new HashSet<>();
         JsonObject root = document.json();
         for (var node : DialogueGraph.nodes(document)) {
@@ -46,17 +56,25 @@ public final class EditorDocumentOperations {
                 }
             }
         }
-        if (document.kind() == DefinitionKind.RESOURCE && document.resourcePath().contains("/dialogue/")) {
-            JsonObject value = selected.getAsJsonObject();
-            boolean presentation = value.keySet().stream().anyMatch(key ->
-                    Set.of("lines", "line", "variants", "response", "responses", "exchanges", "text", "text_key", "line_key").contains(key));
-            boolean metadata = java.util.Arrays.stream(pointer.split("/")).anyMatch(token ->
-                    Set.of("metadata", "conditions", "actions", "rewards", "camera", "speaker", "voices").contains(token));
-            if (presentation && !metadata) allowed.add(pointer);
+        if (document.kind() == DefinitionKind.RESOURCE && document.resourcePath().contains("/dialogue/"))
+            addResourceOwners(root, "", allowed);
+        return allowed;
+    }
+
+    private static void addResourceOwners(JsonElement value, String pointer, Set<String> allowed) {
+        if (value.isJsonObject()) {
+            JsonObject object = value.getAsJsonObject();
+            if (object.keySet().stream().anyMatch(key ->
+                    Set.of("lines", "line", "variants", "response", "responses", "exchanges", "text", "text_key", "line_key").contains(key)))
+                allowed.add(pointer);
+            for (var entry : object.entrySet()) {
+                if (!Set.of("metadata", "conditions", "actions", "rewards", "camera", "speaker", "voices").contains(entry.getKey()))
+                    addResourceOwners(entry.getValue(), pointer + "/" + JsonPointers.escape(entry.getKey()), allowed);
+            }
+        } else if (value.isJsonArray()) {
+            for (int i = 0; i < value.getAsJsonArray().size(); i++)
+                addResourceOwners(value.getAsJsonArray().get(i), pointer + "/" + i, allowed);
         }
-        if (!allowed.contains(pointer))
-            throw new IllegalArgumentException("This object does not support runtime cameras. Select a dialogue node, exchange, response or line.");
-        return selected.getAsJsonObject();
     }
 
     public static void appendShot(AuthoringDocument document, String pointer, JsonObject shot) {

@@ -49,6 +49,7 @@ public final class AuthoringEditorClientSmoke {
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
     private static float[] canvas;
     private static float[] originalPosition;
+    private static com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline.Pose cameraBefore;
 
     private AuthoringEditorClientSmoke() { }
 
@@ -259,9 +260,11 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(previewGreeting("00:00", "night")),
                     "Selected-node preview uses the changed time override.");
+            require(Minecraft.getInstance().level.getDayTime() == 0, "Preview time overrides never change the live world clock.");
             capture("13b-preview-night");
         });
         choosePreview("Return to editor");
+        buildCameraSteps();
         click(() -> toolbar("Check & export"));
         click(() -> screenPoint(340, 209));
         replaceText(() -> screenPoint(600, 305), () -> output().resolve("setup-export").toString());
@@ -272,7 +275,10 @@ public final class AuthoringEditorClientSmoke {
                 Path exported = output().resolve("setup-export");
                 require(Files.isRegularFile(exported.resolve("pack.mcmeta")), "Export writes pack metadata.");
                 var json = JsonParser.parseString(Files.readString(exported.resolve(document.resourcePath()))).getAsJsonObject();
-                require(json.equals(document.json()), "Exported JSON exactly matches the edited document.");
+                require(json.equals(JsonParser.parseString(document.json().toString())), "Exported JSON exactly matches the edited document.");
+                require(com.jvn.villagerretaliation.dialogue.DialogueCamera.read(json.getAsJsonObject("nodes").getAsJsonObject("start"))
+                        .equals(com.jvn.villagerretaliation.dialogue.DialogueCamera.read(document.json().getAsJsonObject("nodes").getAsJsonObject("start"))),
+                        "Export preserves the runtime camera pose and timing.");
                 require(json.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().equals(GREETING),
                         "The exported greeting contains the final edit.");
                 require(Files.isRegularFile(workspace.directory().resolve("workspace.json")), "Export also saves the workspace.");
@@ -294,13 +300,98 @@ public final class AuthoringEditorClientSmoke {
                     "Reopening preserves the final wording.");
             require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "Reopening preserves the connection.");
             capture("15-reopened-draft");
+        });
+        buildImportSteps();
+        STEPS.add(() -> {
             try {
                 Files.writeString(output().resolve("result.txt"),
                         "Authoring editor client smoke passed\nGraph interactions, automatic layout, onboarding, and full setup through native controls.\n"
-                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews.\n");
+                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews, free-camera positioning, shot capture, camera restoration, import protection, and reimport into a new workspace.\n");
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
+        });
+    }
+
+    private static void buildCameraSteps() {
+        click(() -> toolbar("Edit"));
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+        click(() -> point("start", 80, EditorGraph.HEADER + 12));
+        click(() -> toolbar("Preview"));
+        click(() -> screenPoint(400, 425));
+        STEPS.add(() -> {
+            require("/nodes/start".equals(field(EditorCameraPanel.class, "cameraOwner")), "Camera panel resolves the Say block's owner.");
+            capture("13c-camera-controls");
+        });
+        click(() -> screenPoint(365, 533));
+        STEPS.add(() -> require(cameraSession() != null && cameraSession().active(), "Begin camera session starts the native camera."));
+        click(() -> screenPoint(350, 733));
+        click(() -> screenPoint(365, 773));
+        STEPS.add(() -> {
+            require(cameraSession().ownsScreen(Minecraft.getInstance().screen), "Position free camera opens native positioning controls.");
+            cameraBefore = cameraSession().pose();
+            Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
+            Minecraft.getInstance().screen.mouseDragged(320, 180, GLFW.GLFW_MOUSE_BUTTON_RIGHT, 20, -10);
+            Minecraft.getInstance().screen.mouseScrolled(320, 180, 0, 2);
+        });
+        pause(400);
+        STEPS.add(() -> {
+            Minecraft.getInstance().screen.keyReleased(GLFW.GLFW_KEY_E, 0, 0);
+            var pose = cameraSession().pose();
+            require(pose.position().distanceTo(cameraBefore.position()) > 0.1, "Free-camera movement changes the rendered framing.");
+            require(Math.abs(pose.fov() - cameraBefore.fov() + 4) < 0.1, "Mouse wheel adjusts camera FOV.");
+            capture("13d-free-camera");
+            Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+        });
+        click(() -> screenPoint(500, 773));
+        STEPS.add(() -> {
+            var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(document.json().getAsJsonObject("nodes").getAsJsonObject("start"));
+            require(camera != null && camera.shots().size() == 1 && camera.shots().getFirst().orientation() != null,
+                    "Add shot stores the captured pose on the selected node.");
+            capture("13e-captured-shot");
+        });
+        click(() -> screenPoint(375, 933));
+        click(() -> screenPoint(560, 533));
+        STEPS.add(() -> require(cameraSession() == null
+                && !com.jvn.villagerretaliation.client.interaction.DialogueCameraController.active()
+                && !Minecraft.getInstance().mouseHandler.isMouseGrabbed(),
+                "Restore player camera disposes the authoring camera."));
+    }
+
+    private static com.jvn.villagerretaliation.authoring.camera.AuthoringCameraSession cameraSession() {
+        return (com.jvn.villagerretaliation.authoring.camera.AuthoringCameraSession) field(EditorCameraPanel.class, "session");
+    }
+
+    private static void buildImportSteps() {
+        click(() -> screenPoint(140, 310));
+        replaceText(() -> screenPoint(130, 378), () -> output().resolve("setup-export").toString());
+        click(() -> screenPoint(70, 418));
+        STEPS.add(() -> {
+            require(field(editor, "status").toString().startsWith("Import would overwrite "), "Import explains duplicate content without overwriting it.");
+            require(workspace.documents().size() == 1 && document.json().getAsJsonObject("nodes").getAsJsonObject("start")
+                    .getAsJsonArray("lines").get(0).getAsString().equals(GREETING), "Rejected import preserves the authored dialogue.");
+            capture("16-import-protection");
+        });
+        click(() -> screenPoint(140, 310));
+        click(() -> toolbar("Workspace"));
+        replaceText(() -> screenPoint(120, 277), () -> output().resolve("import-drafts").toString());
+        click(() -> screenPoint(200, 317));
+        click(() -> screenPoint(140, 153));
+        STEPS.add(() -> capture("17-empty-import-workspace"));
+        click(() -> screenPoint(140, 350));
+        replaceText(() -> screenPoint(130, 418), () -> output().resolve("setup-export").toString());
+        click(() -> screenPoint(70, 458));
+        STEPS.add(() -> {
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            document = (AuthoringDocument) field(editor, "document");
+            require(document != null && document.id().equals("test:from_scratch"), "Import selects the first editable dialogue.");
+            require(!(boolean) field(editor, "showCreate") && (int) field(editor, "view") == 0,
+                    "Import closes the unused create form and opens the graph.");
+            try {
+                var exported = JsonParser.parseString(Files.readString(output().resolve("setup-export").resolve(document.resourcePath())));
+                require(exported.equals(document.json()), "Reimport preserves wording, formatting, variables, responses and camera shots.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            capture("18-reimported-dialogue");
         });
     }
 
@@ -309,6 +400,10 @@ public final class AuthoringEditorClientSmoke {
         click(() -> screenPoint(1700, 350));
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
         expectCaret("Welcome, ");
+        click(() -> textTool("Insert variable"));
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> require(Minecraft.getInstance().screen == field(editor, "screen")
+                && !ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup), "Escape dismisses the variable menu without closing the editor."));
         insertVariable(307);
         expectCaret("Welcome, {player}");
         type("! It is ");
@@ -489,6 +584,8 @@ public final class AuthoringEditorClientSmoke {
             float[] destination = point.get();
             mouseX = destination[0];
             mouseY = destination[1];
+            // manual frame input already sets this position before queued events reach NewFrame
+            ImGui.getIO().addMousePosEvent(mouseX + 1, mouseY);
             mouseDown = down;
         });
     }
@@ -575,9 +672,9 @@ public final class AuthoringEditorClientSmoke {
 
     private static Object field(Object target, String name) {
         try {
-            var field = (target == null ? ImGuiAuthoringEditor.class : target.getClass()).getDeclaredField(name);
+            var field = (target == null ? ImGuiAuthoringEditor.class : target instanceof Class<?> type ? type : target.getClass()).getDeclaredField(name);
             field.setAccessible(true);
-            return field.get(target);
+            return field.get(target instanceof Class<?> ? null : target);
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 
