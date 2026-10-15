@@ -13,10 +13,22 @@ import java.util.Map;
 final class EditorTextField {
     private final Map<String, Selection> selections = new HashMap<>();
 
-    void clear() { selections.clear(); }
+    void clear() {
+        selections.values().forEach(selection -> selection.preview.retire());
+        selections.clear();
+    }
+
+    void beginFrame(boolean visible) {
+        EditorTextPreview.disposeRetired();
+        if (!visible) selections.values().forEach(selection -> selection.preview.close());
+    }
 
     void render(String id, ImString buffer, DefinitionKind kind, boolean formatting) {
-        Selection selection = selections.compute(id, (key, prior) -> prior != null && prior.buffer == buffer ? prior : new Selection(buffer));
+        Selection selection = selections.compute(id, (key, prior) -> {
+            if (prior != null && prior.buffer == buffer) return prior;
+            if (prior != null) prior.preview.retire();
+            return new Selection(buffer);
+        });
         ImGui.pushID(id);
         if (formatting) {
             formatButton("B", "Bold", "b", selection);
@@ -63,13 +75,25 @@ final class EditorTextField {
                 ImGui.endPopup();
             }
         }
-        if (selection.command != null && selection.focusFrame < 0) {
-            ImGui.setKeyboardFocusHere();
-            selection.focusFrame = ImGui.getFrameCount();
+        if (formatting && !selection.sourceMode && selection.command == null) {
+            if (selection.preview.render(buffer.get())) {
+                selection.sourceMode = true;
+                selection.requestFocus = true;
+            }
+        } else {
+            if (selection.requestFocus || selection.command != null && selection.focusFrame < 0) {
+                ImGui.setKeyboardFocusHere();
+                selection.focusFrame = ImGui.getFrameCount();
+                selection.requestFocus = false;
+                selection.sourceMode = true;
+            }
+            ImGui.setNextItemWidth(-1);
+            ImGui.inputTextMultiline("##text", buffer, -1, formatting ? 112 : 64,
+                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
+            selection.editing = ImGui.isItemActive();
+            if (!selection.editing && selection.command == null && ImGui.getFrameCount() > selection.focusFrame + 1)
+                selection.sourceMode = false;
         }
-        ImGui.setNextItemWidth(-1);
-        ImGui.inputTextMultiline("##text", buffer, -1, formatting ? 112 : 64,
-                ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
         if (formatting) {
             var warnings = DialogueTextSegment.markupWarnings(buffer.get());
             for (String warning : warnings.stream().limit(3).toList()) ImGui.textWrapped(warning);
@@ -90,6 +114,8 @@ final class EditorTextField {
 
     private static final class Selection extends ImGuiInputTextCallback {
         private final ImString buffer;
+        private final EditorTextPreview preview = new EditorTextPreview();
+        private boolean editing, sourceMode, requestFocus;
         private int start, end;
         private Command command;
         private int focusFrame = -1;
@@ -111,8 +137,8 @@ final class EditorTextField {
                 data.setSelectionStart(edit.start());
                 data.setSelectionEnd(edit.end());
                 command = null;
-                focusFrame = -1;
             }
+            focusFrame = -1;
             start = data.hasSelection() ? data.getSelectionStart() : data.getCursorPos();
             end = data.hasSelection() ? data.getSelectionEnd() : data.getCursorPos();
         }

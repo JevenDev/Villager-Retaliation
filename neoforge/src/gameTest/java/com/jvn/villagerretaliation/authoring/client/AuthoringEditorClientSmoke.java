@@ -428,10 +428,55 @@ public final class AuthoringEditorClientSmoke {
         pause(500);
         STEPS.add(() -> capture("10b-color-menu"));
         click(() -> screenPoint(1600, 363));
-        STEPS.add(() -> capture("10c-formatted-text"));
+        STEPS.add(() -> {
+            require(textEditing(), "Formatting keeps the source field active.");
+            require(((imgui.type.ImString) field(greetingSelection(), "buffer")).get().equals(GREETING),
+                    "Toolbar commands produce the exact authored markup before round-trip checks.");
+            capture("10c-formatted-text");
+        });
+        click(() -> screenPoint(1700, 250));
+        STEPS.add(() -> {
+            require(!textEditing(), "Leaving the field displays styled text.");
+            capture("10d-styled-field");
+        });
+        click(() -> screenPoint(1700, 350));
+        STEPS.add(() -> {
+            require(textEditing(), "Clicking the styled field reveals editable tags.");
+            capture("10e-source-field");
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        type("!");
+        key(ImGuiKey.Backspace);
+        key(ImGuiKey.Tab);
+        STEPS.add(() -> require(!textEditing(), "Tab leaves source editing and restores styled text."));
+        chord(ImGuiKey.ImGuiMod_Shift, ImGuiKey.Tab);
+        STEPS.add(() -> require(textEditing(), "Keyboard focus reveals the same editable source."));
+        replaceText(() -> screenPoint(1700, 350), () -> "<b>" + "A longer styled line. ".repeat(45) + "</b>");
+        click(() -> screenPoint(1700, 250));
+        move(() -> screenPoint(1700, 350), false);
+        STEPS.add(() -> ImGui.getIO().addMouseWheelEvent(0, -4));
+        pause(200);
+        STEPS.add(() -> {
+            var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
+            var selection = selections.values().stream().filter(value ->
+                    ((imgui.type.ImString) field(value, "buffer")).get().contains("A longer styled line")).findFirst().orElseThrow();
+            require((float) field(field(selection, "preview"), "scroll") > 0, "Long styled text scrolls inside its field.");
+            capture("10f-scrolled-styled-field");
+        });
+        replaceText(() -> screenPoint(1700, 350), () -> GREETING);
         click(() -> toolbar("Save"));
         STEPS.add(() -> require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines")
                 .get(0).getAsString().equals(GREETING), "Toolbar formatting and variable insertion preserve the selected text."));
+    }
+
+    private static boolean textEditing() {
+        return (boolean) field(greetingSelection(), "editing");
+    }
+
+    private static Object greetingSelection() {
+        var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
+        return selections.values().stream().filter(value ->
+                ((imgui.type.ImString) field(value, "buffer")).get().contains("Welcome")).findFirst().orElseThrow();
     }
 
     private static void expectCaret(String expected) {

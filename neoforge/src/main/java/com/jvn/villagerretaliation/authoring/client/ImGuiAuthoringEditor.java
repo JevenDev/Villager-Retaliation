@@ -146,6 +146,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void render() {
+        textFields.beginFrame(MC.screen == screen);
         if (MC.screen != screen) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
         if (escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {

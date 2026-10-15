@@ -13,10 +13,27 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
-final class VillagerStyledTextRenderer {
+public final class VillagerStyledTextRenderer {
     static final int STATIC_EFFECT_TEXT_COLOR = 0x010101;
 
     private VillagerStyledTextRenderer() {
+    }
+
+    public static int renderWrapped(GuiGraphics graphics, Font font, String text, int width, int height, int scroll, int color, int tickCount) {
+        List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
+        String plain = DialogueTextSegment.plainText(segments);
+        int offset = 0, y = 3 - scroll;
+        for (FormattedCharSequence line : font.split(component(segments, Style.EMPTY, color), width)) {
+            String lineText = plainText(line);
+            int start = plain.indexOf(lineText, offset);
+            if (start < 0) start = offset;
+            int end = Math.min(plain.length(), start + lineText.length());
+            if (y + font.lineHeight >= 0 && y < height)
+                renderLine(graphics, font, line, DialogueTextSegment.slice(segments, start, end), 3, y, color, 255, tickCount);
+            offset = end;
+            y += font.lineHeight + 3;
+        }
+        return y + scroll + 3;
     }
 
     static MutableComponent component(List<DialogueTextSegment> segments, Style baseStyle, Integer fallbackColor) {
