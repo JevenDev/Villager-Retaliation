@@ -47,6 +47,7 @@ public final class AuthoringEditorClientSmoke {
     private static int frames;
     private static boolean finished, installed, mouseDown, previousDown;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
+    private static float mouseWheel;
     private static float[] canvas;
     private static float[] originalPosition;
     private static com.jvn.villagerretaliation.client.interaction.DialogueCameraTimeline.Pose cameraBefore;
@@ -165,6 +166,8 @@ public final class AuthoringEditorClientSmoke {
         click(() -> toolbar("Preview"));
         STEPS.add(() -> {
             require((int) field(editor, "view") == 1, "Preview toolbar control switches the rendered view.");
+            require(((Map<?, ?>) field(field(editor, "graphText"), "previews")).isEmpty(),
+                    "Leaving the graph releases its styled preview textures.");
             capture("07-preview");
         });
         click(() -> toolbar("Check & export"));
@@ -220,6 +223,7 @@ public final class AuthoringEditorClientSmoke {
             require(!document.dirty(), "Save persists the authored dialogue.");
             capture("11-authored-flow");
         });
+        buildStyledGraphSteps();
         click(() -> toolbar("Preview"));
         click(() -> screenPoint(550, 209));
         STEPS.add(() -> require(field(editor, "target") instanceof net.minecraft.world.entity.npc.Villager,
@@ -392,6 +396,56 @@ public final class AuthoringEditorClientSmoke {
                 require(exported.equals(document.json()), "Reimport preserves wording, formatting, variables, responses and camera shots.");
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             capture("18-reimported-dialogue");
+        });
+    }
+
+    private static void buildStyledGraphSteps() {
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+        click(() -> point("start", 80, EditorGraph.HEADER + 12));
+        move(() -> screenPoint(1400, 900), false);
+        STEPS.add(() -> {
+            require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
+                    "Styled blocks retain direct text editing.");
+            var previews = (Map<?, ?>) field(field(editor, "graphText"), "previews");
+            require(field(field(previews.get("/nodes/start/lines"), "preview"), "text").equals(GREETING),
+                    "The visible graph uses the authored formatting source.");
+            try (var image = renderedImage()) {
+                float[] min = point("start", 0, EditorGraph.HEADER);
+                float[] max = point("start", EditorGraph.WIDTH, EditorGraph.HEADER + EditorGraph.ROW);
+                int gold = 0;
+                for (int y = Math.max(0, (int) (min[1] - ImGui.getMainViewport().getPosY()));
+                        y < Math.min(image.getHeight(), max[1] - ImGui.getMainViewport().getPosY()); y++) {
+                    for (int x = Math.max(0, (int) (min[0] - ImGui.getMainViewport().getPosX()));
+                            x < Math.min(image.getWidth(), max[0] - ImGui.getMainViewport().getPosX()); x++) {
+                        int pixel = image.getPixelRGBA(x, y);
+                        if ((pixel & 255) > 200 && (pixel >> 8 & 255) > 100 && (pixel >> 8 & 255) < 210 && (pixel >> 16 & 255) < 80) gold++;
+                    }
+                }
+                require(gold > 5, "The graph framebuffer contains the greeting's gold text.");
+            }
+            capture("11a-styled-graph");
+        });
+        move(() -> point("start", 80, EditorGraph.HEADER + 12), false);
+        STEPS.add(() -> {
+            var previews = (Map<?, ?>) field(field(editor, "graphText"), "previews");
+            require(previews.containsKey("/nodes/start/lines##tooltip"), "Hover opens an expanded styled preview.");
+            var tooltip = field(previews.get("/nodes/start/lines##tooltip"), "preview");
+            require(!(boolean) field(tooltip, "clipped"),
+                    "A complete hover preview does not claim more text is hidden. Content height: " + field(tooltip, "contentHeight")
+                            + ", texture height: " + field(tooltip, "renderedHeight") + ", scale: " + field(tooltip, "renderedScale"));
+            capture("11b-styled-graph-tooltip");
+        });
+        move(() -> screenPoint(1400, 900), false);
+        STEPS.add(() -> mouseWheel = -2);
+        STEPS.add(() -> {
+            require((float) field(editor, "zoom") < 1, "Mouse wheel zooms the graph out.");
+            capture("11c-graph-zoomed");
+        });
+        click(() -> screenPoint(780, 181));
+        STEPS.add(() -> {
+            require((float) field(editor, "zoom") == 1, "The zoom percentage resets to 100%.");
+            require(!document.dirty(), "Graph browsing and zoom do not dirty the dialogue.");
+            capture("11d-graph-zoom-reset");
         });
     }
 
@@ -588,7 +642,8 @@ public final class AuthoringEditorClientSmoke {
         try {
             if (++frames % 12 == 0 && Util.getMillis() >= resumeAt && !STEPS.isEmpty()) STEPS.removeFirst().run();
             var io = ImGui.getIO();
-            io.setMouseWheel(0);
+            io.setMouseWheel(mouseWheel);
+            mouseWheel = 0;
             io.setMouseWheelH(0);
             io.setMousePos(mouseX, mouseY);
             io.setMouseDelta(mouseX - previousX, mouseY - previousY);

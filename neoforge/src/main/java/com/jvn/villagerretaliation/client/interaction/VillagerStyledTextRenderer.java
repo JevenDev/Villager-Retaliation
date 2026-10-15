@@ -19,6 +19,18 @@ public final class VillagerStyledTextRenderer {
     private VillagerStyledTextRenderer() {
     }
 
+    public static int renderSingleLine(GuiGraphics graphics, Font font, String text, int color, int tickCount) {
+        var segments = DialogueTextSegment.parse(text.replace('\n', ' ').replace('\r', ' '), DialogueTextEffects.NONE);
+        var line = component(segments, Style.EMPTY, color).getVisualOrderText();
+        renderLine(graphics, font, line, segments, 3, 3, color, 255, tickCount);
+        return font.width(line);
+    }
+
+    public static int measureWrapped(Font font, String text, int width) {
+        var segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
+        return font.split(component(segments, Style.EMPTY, 0xE3E7EC), width).size() * (font.lineHeight + 3) + 3;
+    }
+
     public static int renderWrapped(GuiGraphics graphics, Font font, String text, int width, int height, int scroll, int color, int tickCount) {
         List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
         String plain = DialogueTextSegment.plainText(segments);
@@ -200,8 +212,9 @@ public final class VillagerStyledTextRenderer {
         EffectCursor effectCursor = new EffectCursor(effectSegments);
         for (Glyph glyph : glyphs) {
             DialogueTextEffects effects = effectCursor.effectsAt(charIndex);
+            int advance = font.width(Component.literal(glyph.text()).withStyle(glyph.style()));
             if (glyph.text().isBlank()) {
-                drawX += font.width(glyph.text());
+                drawX += advance;
                 charIndex += glyph.text().length();
                 continue;
             }
@@ -217,7 +230,7 @@ public final class VillagerStyledTextRenderer {
             graphics.pose().translate(xOffset, yOffset, 0.0F);
             graphics.drawString(font, Component.literal(glyph.text()).withStyle(renderStyle), drawX, y, color, false);
             graphics.pose().popPose();
-            drawX += font.width(glyph.text());
+            drawX += advance;
             charIndex += glyph.text().length();
         }
     }

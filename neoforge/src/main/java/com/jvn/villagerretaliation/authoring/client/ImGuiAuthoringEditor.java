@@ -81,6 +81,7 @@ final class ImGuiAuthoringEditor {
     private final ImString fieldValue = new ImString("{}", 8192);
     private final Map<String, ImString> fields = new HashMap<>();
     private final EditorTextField textFields = new EditorTextField();
+    private final EditorGraphText graphText = new EditorGraphText();
     private final EditorFieldEdits pendingFields = new EditorFieldEdits();
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
@@ -147,6 +148,7 @@ final class ImGuiAuthoringEditor {
 
     private void render() {
         textFields.beginFrame(MC.screen == screen);
+        graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
         if (escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
@@ -531,6 +533,9 @@ final class ImGuiAuthoringEditor {
             fitGraph = true;
             refresh();
         });
+        ImGui.sameLine();
+        boolean resetZoom = ImGui.button(Math.round(zoom * 100) + "%###graph_zoom");
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Reset zoom to 100%. Scroll over the graph to zoom. Middle-drag to pan.");
         if (selected && ImGui.collapsingHeader("Node actions")) {
             ImGui.textUnformatted("Selected: " + selectedNode);
             input("Copy ID", nodeName);
@@ -629,6 +634,11 @@ final class ImGuiAuthoringEditor {
             panY = 25 - minY * zoom;
             fitGraph = false;
         }
+        if (resetZoom) {
+            panX = canvasWidth / 2 - (canvasWidth / 2 - panX) / zoom;
+            panY = canvasHeight / 2 - (canvasHeight / 2 - panY) / zoom;
+            zoom = 1;
+        }
         if (hover && ImGui.isMouseDragging(2)) {
             panX += ImGui.getIO().getMouseDeltaX();
             panY += ImGui.getIO().getMouseDeltaY();
@@ -706,12 +716,24 @@ final class ImGuiAuthoringEditor {
                 boolean outputHover = block.output() != null && hover
                         && ImGui.isMouseHoveringRect(outputX - 12, centerY - 12, outputX + 12, centerY + 12);
                 boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + EditorGraph.ROW * zoom);
-                draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom,
-                        blockHover ? 0xff514a40 : block.output() != null ? 0xff403c32 : 0xff35322e, 3);
-                graphText(draw, x + 12 * zoom, rowY + 9 * zoom, block.output() == null ? 0xffd9d2c7 : 0xffded8ad,
-                        block.title() + ": " + block.text(), EditorGraph.WIDTH - 34);
+                int background = blockHover ? 0xff514a40 : block.output() != null ? 0xff403c32 : 0xff35322e;
+                draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, background, 3);
+                if (selectedNode.equals(node.id()) && pointer.get().equals(block.pointer()))
+                    draw.addRect(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, 0xff9cc6a2, 3);
+                if (block.styledText() == null) {
+                    graphText(draw, x + 12 * zoom, rowY + 9 * zoom, block.output() == null ? 0xffd9d2c7 : 0xffded8ad,
+                            block.title() + ": " + block.text(), EditorGraph.WIDTH - 34);
+                } else if (x + w > canvasX && x < canvasX + canvasWidth && rowY + EditorGraph.ROW * zoom > canvasY
+                        && rowY < canvasY + canvasHeight) {
+                    String label = block.title() + ":";
+                    float labelWidth = ImGui.calcTextSize(label).x + 4;
+                    graphText(draw, x + 12 * zoom, rowY + 9 * zoom, 0xffd9d2c7, label, labelWidth);
+                    graphText.draw(block, x + (12 + labelWidth) * zoom, rowY + 3 * zoom,
+                            (EditorGraph.WIDTH - 26 - labelWidth) * zoom, 28 * zoom, zoom, background);
+                }
                 if (blockHover) {
-                    ImGui.setTooltip(block.title() + ": " + block.text() + "\nClick to edit");
+                    if (block.styledText() == null) ImGui.setTooltip(block.title() + ": " + block.text() + "\nClick to edit");
+                    else graphText.tooltip(block);
                     if (ImGui.isMouseClicked(0)) operation(() -> {
                         selectedNode = node.id();
                         setPointer(block.pointer());
@@ -1242,6 +1264,7 @@ final class ImGuiAuthoringEditor {
         translatedFields.clear();
         fields.clear();
         textFields.clear();
+        graphText.clear();
         positions.clear();
         if (document != null) {
             JsonElement savedPositions = document.metadata().get("node_positions");

@@ -19,7 +19,11 @@ final class EditorGraph {
 
     private EditorGraph() { }
 
-    record Block(String pointer, String title, String text, DialogueGraph.Edge output) { }
+    record Block(String pointer, String title, String text, DialogueGraph.Edge output, String styledText) {
+        Block(String pointer, String title, String text, DialogueGraph.Edge output) {
+            this(pointer, title, text, output, null);
+        }
+    }
     record Card(DialogueGraph.Node node, List<Block> blocks) {
         float height() { return HEADER + blocks.size() * ROW + 34; }
         float outputY(int index) { return HEADER + index * ROW + ROW / 2; }
@@ -57,13 +61,19 @@ final class EditorGraph {
                     continue;
                 }
                 String text;
+                String styledText = null;
                 if (List.of("line", "lines", "variants", "exchanges").contains(field)) {
                     if (!field.equals("exchanges") && item.isJsonArray() && item.getAsJsonArray().size() > 1) title = "Say one of";
                     JsonElement first = item.isJsonArray() ? item.getAsJsonArray().get(0) : item;
+                    styledText = wording.apply(first);
                     text = com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.plainText(
-                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(wording.apply(first),
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(styledText,
                                     com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE));
-                    if (item.isJsonArray() && item.getAsJsonArray().size() > 1) text += " (+" + (item.getAsJsonArray().size() - 1) + ")";
+                    if (item.isJsonArray() && item.getAsJsonArray().size() > 1) {
+                        String more = " (+" + (item.getAsJsonArray().size() - 1) + ")";
+                        text += more;
+                        styledText += more;
+                    }
                 } else {
                     int count = item.isJsonArray() ? item.getAsJsonArray().size() : 1;
                     text = count + (count == 1 ? " block" : " blocks");
@@ -72,7 +82,7 @@ final class EditorGraph {
                         if (!type.isBlank()) text += " - " + type.replace('_', ' ');
                     }
                 }
-                blocks.add(new Block(node.pointer() + "/" + field, title, text, null));
+                blocks.add(new Block(node.pointer() + "/" + field, title, text, null, styledText));
             }
             String responseField = document.kind() == DefinitionKind.FORCED ? "options" : "responses";
             var responses = DialogueGraph.array(value, responseField);

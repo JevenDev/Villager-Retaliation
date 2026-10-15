@@ -29,7 +29,8 @@ public final class EditorClientChecks {
         textToolsPreserveUnicodeSelectionAndToggleStyles();
         timeVariablesFollowWorldClockAndPreviewConditions();
         graphSummariesKeepFormattingOutOfTheFlow();
-        return 19;
+        graphStylesKeepVariantsAndChoicesDistinct();
+        return 20;
     }
 
     private static void graphSummariesKeepFormattingOutOfTheFlow() {
@@ -41,6 +42,22 @@ public final class EditorClientChecks {
                 "graph wording hides formatting tags and preserves useful variables");
         check(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0)
                 .getAsString().equals("<b>Hello</b>, {player}!"), "graph summaries never alter authored markup");
+    }
+
+    private static void graphStylesKeepVariantsAndChoicesDistinct() {
+        var document = tree();
+        DialogueGraph.addResponse(document, "start", "continue", "<b>Literal choice</b>", "");
+        document.edit("Style lines", root -> {
+            var start = root.getAsJsonObject("nodes").getAsJsonObject("start");
+            start.add("lines", JsonParser.parseString("[\"<b>Hello</b>, {player}!\",\"<i>Goodbye</i>\"]"));
+        });
+        var cards = EditorGraph.cards(document, value -> value == null ? "" : value.isJsonPrimitive() ? value.getAsString() : value.toString());
+        var spoken = cards.getFirst().blocks().stream().filter(block -> block.title().equals("Say one of")).findFirst().orElseThrow();
+        check(spoken.styledText().equals("<b>Hello</b>, {player}! (+1)") && spoken.text().equals("Hello, {player}! (+1)"),
+                "styled graph previews preserve tags, variables and variant counts separately from plain summaries");
+        var choice = cards.getFirst().blocks().stream().filter(block -> block.output() != null).findFirst().orElseThrow();
+        check(choice.styledText() == null && choice.text().equals("<b>Literal choice</b>"),
+                "choice labels keep the literal text used by runtime choices");
     }
 
     private static void textToolsPreserveUnicodeSelectionAndToggleStyles() {
