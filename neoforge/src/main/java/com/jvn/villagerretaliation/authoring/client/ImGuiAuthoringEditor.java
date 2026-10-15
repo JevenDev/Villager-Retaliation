@@ -41,7 +41,7 @@ import java.util.Map;
 final class ImGuiAuthoringEditor {
     static final net.minecraft.client.KeyMapping OPEN_EDITOR = new net.minecraft.client.KeyMapping(
             "key.villagerretaliation.open_authoring_editor", com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
-            org.lwjgl.glfw.GLFW.GLFW_KEY_F8, "key.categories.villagerretaliation");
+            org.lwjgl.glfw.GLFW.GLFW_KEY_F9, "key.categories.villagerretaliation");
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final Minecraft MC = Minecraft.getInstance();
     private static final ImGuiAuthoringEditor INSTANCE = new ImGuiAuthoringEditor();
