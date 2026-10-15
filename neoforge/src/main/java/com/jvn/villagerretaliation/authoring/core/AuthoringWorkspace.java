@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.quest.content.bundle.QuestLocaleCatalog;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -692,11 +693,30 @@ public final class AuthoringWorkspace {
                         AuthoringDocument.JSON.toJson(document.json()).getBytes(StandardCharsets.UTF_8));
             }
             for (var attachment : attachments.entrySet()) atomicWrite(staging.resolve(safeRelativePath(attachment.getKey())), attachment.getValue());
-            Files.move(staging, target);
+            moveExportWithRetry(staging, target);
         } finally {
             if (Files.exists(staging)) {
                 try (var files = Files.walk(staging)) {
                     for (Path path : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
+                }
+            }
+        }
+    }
+
+    private static void moveExportWithRetry(Path staging, Path target) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                Files.move(staging, target);
+                return;
+            } catch (AccessDeniedException exception) {
+                if (attempt == 4) throw exception;
+                try {
+                    Thread.sleep(25L << attempt);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    IOException cancelled = new IOException("Interrupted while exporting datapack", interrupted);
+                    cancelled.addSuppressed(exception);
+                    throw cancelled;
                 }
             }
         }

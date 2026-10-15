@@ -1269,6 +1269,7 @@ final class ImGuiAuthoringEditor {
             action.run();
         } catch (IOException | IllegalArgumentException | IllegalStateException | JsonParseException
                 | ClassCastException | UnsupportedOperationException | IndexOutOfBoundsException exception) {
+            com.mojang.logging.LogUtils.getLogger().warn("Authoring operation failed", exception);
             status = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
         }
     }

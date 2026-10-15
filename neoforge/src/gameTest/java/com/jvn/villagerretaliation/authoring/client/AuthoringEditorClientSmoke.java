@@ -1,19 +1,24 @@
 package com.jvn.villagerretaliation.authoring.client;
 
+import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
 import com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace;
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
 import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
+import com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview;
+import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreen;
 import com.mojang.blaze3d.platform.NativeImage;
 import foundry.imgui.api.ImGuiMCEvents;
 import imgui.ImGui;
 import imgui.ImVec2;
+import imgui.flag.ImGuiKey;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.Util;
@@ -31,11 +36,13 @@ import org.lwjgl.glfw.GLFW;
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
 public final class AuthoringEditorClientSmoke {
     private static final String OUTPUT = "villagerretaliation.authoringEditorClientSmoke";
+    private static final String GREETING = "Welcome, traveler! Let's plan our next trip.";
+    private static final String FOLLOW_UP = "Meet me by the village gate tomorrow.";
     private static final ArrayDeque<Runnable> STEPS = new ArrayDeque<>();
     private static Object editor;
     private static AuthoringWorkspace workspace;
     private static AuthoringDocument document;
-    private static long started;
+    private static long started, resumeAt;
     private static int frames;
     private static boolean finished, installed, mouseDown, previousDown;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
@@ -58,6 +65,19 @@ public final class AuthoringEditorClientSmoke {
         minecraft.resizeDisplay();
         GLFW.glfwMaximizeWindow(minecraft.getWindow().getWindow());
         try {
+            var server = minecraft.getSingleplayerServer();
+            var playerId = minecraft.player.getUUID();
+            server.execute(() -> {
+                var level = server.overworld();
+                var player = server.getPlayerList().getPlayer(playerId);
+                player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                var villager = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+                villager.setNoAi(true);
+                villager.setNoGravity(true);
+                villager.setInvulnerable(true);
+                villager.setPos(player.getX() + 2, player.getY(), player.getZ() + 2);
+                level.addFreshEntity(villager);
+            });
             workspace = AuthoringWorkspace.create(output().resolve("drafts"));
             document = workspace.createDocument(DefinitionKind.TREE, "test:editor_smoke");
             DialogueGraph.addNode(document, "finish");
@@ -147,22 +167,181 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require((int) field(editor, "view") == 2, "Check toolbar control switches the rendered view.");
             capture("08-validation");
+        });
+        buildSetupSteps();
+    }
+
+    private static void buildSetupSteps() {
+        click(() -> toolbar("Workspace"));
+        replaceText(() -> screenPoint(120, 277), () -> output().resolve("setup-drafts").toString());
+        click(() -> screenPoint(200, 317));
+        STEPS.add(() -> {
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            require(workspace.directory().equals(output().resolve("setup-drafts")), "Create new opens the typed workspace folder.");
+            require(workspace.documents().isEmpty(), "The new workspace starts empty.");
+            capture("09-empty-workspace");
+        });
+        replaceText(() -> screenPoint(120, 357), () -> "test:from_scratch");
+        click(() -> screenPoint(120, 397));
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document != null && document.id().equals("test:from_scratch"), "Create makes the typed dialogue ID.");
+            require(DialogueGraph.nodes(document).size() == 1, "New dialogue starts with one node.");
+            locateCanvas();
+            capture("10-created-dialogue");
+        });
+        editLine("start", "An initial draft.");
+        editLine("start", GREETING);
+        click(() -> screenPoint(320, 181));
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 2, "Add node creates a follow-up.");
+            locateCanvas();
+        });
+        editLine("node_2", FOLLOW_UP);
+        click(() -> point("start", 80, 18));
+        click(() -> screenPoint(430, 181));
+        replaceText(() -> screenPoint(450, 289), () -> "Where should we meet?");
+        click(() -> screenPoint(450, 357));
+        click(() -> screenPoint(320, 455));
+        click(() -> screenPoint(350, 397));
+        STEPS.add(() -> {
+            require(DialogueGraph.edges(document).size() == 1, "Add connection creates a response.");
+            require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "The response leads to the chosen node.");
+            require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses")
+                    .get(0).getAsJsonObject().get("label").getAsString().equals("Where should we meet?"), "The response keeps the typed wording.");
+        });
+        click(() -> screenPoint(655, 181));
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(!document.dirty(), "Save persists the authored dialogue.");
+            capture("11-authored-flow");
+        });
+        click(() -> toolbar("Preview"));
+        click(() -> screenPoint(550, 209));
+        STEPS.add(() -> require(field(editor, "target") instanceof net.minecraft.world.entity.npc.Villager,
+                "Nearest villager selects a real preview target."));
+        click(() -> screenPoint(350, 317));
+        pause(1000);
+        STEPS.add(() -> require(AuthoringDialoguePreview.active(), "Play from entry opens the native conversation screen."));
+        choosePreview("Talk");
+        pause(2500);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(GREETING), "Preview displays the edited greeting.");
+            capture("12-preview-greeting");
+        });
+        choosePreview("Where should we meet?");
+        pause(2500);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(FOLLOW_UP), "Preview follows the authored connection.");
+            capture("13-preview-follow-up");
+        });
+        choosePreview("Return to editor");
+        STEPS.add(() -> {
+            require(!AuthoringDialoguePreview.active(), "Return to editor closes the preview.");
+            require(Minecraft.getInstance().screen == field(editor, "screen"), "The editor is restored after preview.");
+        });
+        click(() -> toolbar("Check & export"));
+        click(() -> screenPoint(340, 209));
+        replaceText(() -> screenPoint(600, 305), () -> output().resolve("setup-export").toString());
+        click(() -> screenPoint(350, 345));
+        STEPS.add(() -> {
+            require(field(editor, "status").toString().startsWith("Exported datapack to "), "Save and export reports success.");
             try {
-                workspace.save();
-                workspace.exportPack(output().resolve("export"));
-                require(Files.isRegularFile(output().resolve("export/pack.mcmeta")), "The edited workspace exports a datapack.");
+                Path exported = output().resolve("setup-export");
+                require(Files.isRegularFile(exported.resolve("pack.mcmeta")), "Export writes pack metadata.");
+                var json = JsonParser.parseString(Files.readString(exported.resolve(document.resourcePath()))).getAsJsonObject();
+                require(json.equals(document.json()), "Exported JSON exactly matches the edited document.");
+                require(json.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().equals(GREETING),
+                        "The exported greeting contains the final edit.");
+                require(Files.isRegularFile(workspace.directory().resolve("workspace.json")), "Export also saves the workspace.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            capture("14-exported-pack");
+        });
+        click(() -> toolbar("Workspace"));
+        click(() -> screenPoint(85, 317));
+        STEPS.add(() -> {
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            require(workspace.documents().size() == 1, "Open folder reloads the saved workspace.");
+        });
+        click(() -> screenPoint(140, 267));
+        click(() -> toolbar("Edit"));
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document != null && document.id().equals("test:from_scratch"), "Reopened content can be selected.");
+            require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().equals(GREETING),
+                    "Reopening preserves the final wording.");
+            require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "Reopening preserves the connection.");
+            capture("15-reopened-draft");
+            try {
                 Files.writeString(output().resolve("result.txt"),
-                        "Authoring editor client smoke passed\nActual ImGui clicks, block selection, click and drag connections, node drag, undo/redo, automatic layout, guide persistence and replay, preview and validation views, save and export.\n");
+                        "Authoring editor client smoke passed\nGraph interactions, automatic layout, onboarding, and full setup through native controls.\n"
+                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft.\n");
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
         });
     }
 
+    private static void editLine(String node, String text) {
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+        click(() -> point(node, 80, EditorGraph.HEADER + 12));
+        STEPS.add(() -> require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/" + node + "/lines"),
+                "Say selects the line editor for " + node));
+        replaceText(() -> screenPoint(1700, 350), () -> text);
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> require(document.json().getAsJsonObject("nodes").getAsJsonObject(node).getAsJsonArray("lines")
+                .get(0).getAsString().equals(text), "Save applies typed dialogue text for " + node));
+    }
+
+    private static void replaceText(Supplier<float[]> point, Supplier<String> text) {
+        click(point);
+        STEPS.add(() -> {
+            ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true);
+            ImGui.getIO().addKeyEvent(ImGuiKey.A, true);
+        });
+        STEPS.add(() -> {
+            ImGui.getIO().addKeyEvent(ImGuiKey.A, false);
+            ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false);
+        });
+        STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8(text.get()));
+    }
+
+    private static void pause(long millis) { STEPS.add(() -> resumeAt = Util.getMillis() + millis); }
+
+    private static void choosePreview(String label) {
+        STEPS.add(() -> {
+            require(Minecraft.getInstance().screen instanceof VillagerInteractionScreen, "Preview screen is open.");
+            var screen = Minecraft.getInstance().screen;
+            List<?> options = (List<?>) field(screen, "options");
+            int index = -1;
+            for (int i = 0; i < options.size(); i++) if (field(options.get(i), "label").equals(label)) index = i;
+            require(index >= 0, "Preview offers " + label);
+            Object state = field(screen, "state");
+            for (int tries = 0; tries <= options.size(); tries++) {
+                try {
+                    var selected = state.getClass().getDeclaredMethod("selectedOption");
+                    selected.setAccessible(true);
+                    if ((int) selected.invoke(state) == index) {
+                        screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
+                        screen.keyReleased(GLFW.GLFW_KEY_ENTER, 0, 0);
+                        return;
+                    }
+                } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+                screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
+                screen.keyReleased(GLFW.GLFW_KEY_DOWN, 0, 0);
+            }
+            throw new IllegalStateException("Could not select preview option " + label);
+        });
+    }
+
+    private static float[] screenPoint(float x, float y) {
+        return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
+    }
+
     private static void frame() {
         if (finished) return;
         try {
-            if (++frames % 12 == 0 && !STEPS.isEmpty()) STEPS.removeFirst().run();
+            if (++frames % 12 == 0 && Util.getMillis() >= resumeAt && !STEPS.isEmpty()) STEPS.removeFirst().run();
             var io = ImGui.getIO();
             io.setMouseWheel(0);
             io.setMouseWheelH(0);
@@ -291,7 +470,7 @@ public final class AuthoringEditorClientSmoke {
 
     private static Object field(Object target, String name) {
         try {
-            var field = ImGuiAuthoringEditor.class.getDeclaredField(name);
+            var field = (target == null ? ImGuiAuthoringEditor.class : target.getClass()).getDeclaredField(name);
             field.setAccessible(true);
             return field.get(target);
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
