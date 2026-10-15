@@ -38,6 +38,7 @@ def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('
 def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignScenarioPack').orElse('neoforge/src/gameTest/resources/campaign_fixture').get())
 def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
+def authoringEditorClientSmokeDirectory = layout.buildDirectory.dir("authoring-editor-client-smoke/${System.currentTimeMillis()}")
 def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
 def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
@@ -63,6 +64,14 @@ neoForge {
     runs {
         client {
             client()
+        }
+
+        authoringEditorClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(authoringEditorClientSmokeDirectory)
+            systemProperty 'villagerretaliation.authoringEditorClientSmoke', authoringEditorClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'AuthoringEditorSmoke', '--width', '1920', '--height', '1080'
         }
 
         dialogueCameraClientSmoke {
@@ -240,6 +249,31 @@ neoForge {
     }
 
     addModdingDependenciesTo sourceSets.gameTest
+}
+
+tasks.named('runAuthoringEditorClientSmoke') {
+    dependsOn tasks.named('runGameTestServer')
+    doFirst {
+        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+        if (!metadata.isFile()) throw new GradleException('Editor client checks require generated GameTest world metadata.')
+        copy {
+            from metadata
+            into new File(authoringEditorClientSmokeDirectory.get().asFile, 'saves/AuthoringEditorSmoke')
+        }
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Editor client checks require the declared ImGuiMC dependency.')
+        copy {
+            from imgui
+            into new File(authoringEditorClientSmokeDirectory.get().asFile, 'mods')
+        }
+        new File(authoringEditorClientSmokeDirectory.get().asFile, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\nguiScale:2\n'
+    }
+    doLast {
+        def result = new File(authoringEditorClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Authoring editor client smoke passed'))
+            throw new GradleException("Editor client checks did not finish. Inspect ${authoringEditorClientSmokeDirectory.get().asFile}")
+    }
 }
 
 tasks.named('runDialogueCameraClientSmoke') {

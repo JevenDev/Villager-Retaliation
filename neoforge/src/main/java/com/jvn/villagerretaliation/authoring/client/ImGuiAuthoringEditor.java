@@ -574,9 +574,7 @@ final class ImGuiAuthoringEditor {
             ImGui.sameLine();
             if (ImGui.button("Cancel connection")) showBranch = false;
         }
-        ImGui.textWrapped(selectedEdge.isEmpty()
-                ? "Click a block to edit. Connect a right-hand dot to a left-hand dot. Drag a header to move a node."
-                : "Choose an input dot, or drag the wire to one.");
+        ImGui.textWrapped("Click a block to edit. Connect a right-hand dot to a left-hand dot. Drag a header to move a node.");
         if (!selectedEdge.isEmpty()) {
             if (ImGui.smallButton("Cancel connection")) selectedEdge = "";
             boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
@@ -588,7 +586,7 @@ final class ImGuiAuthoringEditor {
                     refresh();
                 });
             }
-        }
+        } else ImGui.dummy(0, ImGui.getTextLineHeight());
         float canvasX = ImGui.getCursorScreenPosX();
         float canvasY = ImGui.getCursorScreenPosY();
         float canvasWidth = Math.max(100, ImGui.getContentRegionAvailX());
