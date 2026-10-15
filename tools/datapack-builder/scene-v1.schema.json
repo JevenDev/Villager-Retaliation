@@ -419,6 +419,38 @@
                                 "third_person"
                               ]
                             },
+                            "orientation": {
+                              "description": "Explicit Minecraft yaw and pitch in degrees. Relative placement stores yaw relative to the player-to-speaker direction. Fixed placement stores world yaw.",
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "yaw",
+                                "pitch"
+                              ],
+                              "properties": {
+                                "yaw": {
+                                  "type": "number",
+                                  "minimum": -360,
+                                  "maximum": 360
+                                },
+                                "pitch": {
+                                  "type": "number",
+                                  "minimum": -90,
+                                  "maximum": 90
+                                }
+                              }
+                            },
+                            "position": {
+                              "description": "Optional absolute world position for fixed placement. Runtime distance and geometry limits still apply.",
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "number",
+                                "minimum": -30000000,
+                                "maximum": 30000000
+                              }
+                            },
                             "offset": {
                               "type": "array",
                               "minItems": 3,
@@ -433,7 +465,8 @@
                               "enum": [
                                 "speaker",
                                 "character",
-                                "group"
+                                "group",
+                                "player"
                               ]
                             },
                             "fov": {
@@ -487,6 +520,25 @@
                               ]
                             }
                           },
+                          "allOf": [
+                            {
+                              "if": {
+                                "required": [
+                                  "position"
+                                ]
+                              },
+                              "then": {
+                                "required": [
+                                  "placement"
+                                ],
+                                "properties": {
+                                  "placement": {
+                                    "const": "fixed"
+                                  }
+                                }
+                              }
+                            }
+                          ],
                           "if": {
                             "properties": {
                               "preset": {
@@ -551,6 +603,38 @@
                                       "third_person"
                                     ]
                                   },
+                                  "orientation": {
+                                    "description": "Explicit Minecraft yaw and pitch in degrees. Relative placement stores yaw relative to the player-to-speaker direction. Fixed placement stores world yaw.",
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                      "yaw",
+                                      "pitch"
+                                    ],
+                                    "properties": {
+                                      "yaw": {
+                                        "type": "number",
+                                        "minimum": -360,
+                                        "maximum": 360
+                                      },
+                                      "pitch": {
+                                        "type": "number",
+                                        "minimum": -90,
+                                        "maximum": 90
+                                      }
+                                    }
+                                  },
+                                  "position": {
+                                    "description": "Optional absolute world position for fixed placement. Runtime distance and geometry limits still apply.",
+                                    "type": "array",
+                                    "minItems": 3,
+                                    "maxItems": 3,
+                                    "items": {
+                                      "type": "number",
+                                      "minimum": -30000000,
+                                      "maximum": 30000000
+                                    }
+                                  },
                                   "offset": {
                                     "type": "array",
                                     "minItems": 3,
@@ -565,7 +649,8 @@
                                     "enum": [
                                       "speaker",
                                       "character",
-                                      "group"
+                                      "group",
+                                      "player"
                                     ]
                                   },
                                   "fov": {
@@ -619,6 +704,25 @@
                                     ]
                                   }
                                 },
+                                "allOf": [
+                                  {
+                                    "if": {
+                                      "required": [
+                                        "position"
+                                      ]
+                                    },
+                                    "then": {
+                                      "required": [
+                                        "placement"
+                                      ],
+                                      "properties": {
+                                        "placement": {
+                                          "const": "fixed"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ],
                                 "if": {
                                   "properties": {
                                     "preset": {

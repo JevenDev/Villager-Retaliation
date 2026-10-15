@@ -52,7 +52,7 @@ public record ConversationLinePresentation(Camera camera, Map<String, ResourceLo
         return schema;
     }
 
-    public enum Target { SPEAKER, CHARACTER, NONE, GROUP }
+    public enum Target { SPEAKER, CHARACTER, NONE, GROUP, PLAYER }
 
     public record Camera(Target target, Double zoom, java.util.List<com.jvn.villagerretaliation.dialogue.DialogueCamera.Shot> shots) {
         public Camera(Target target, Double zoom) { this(target, zoom, java.util.List.of()); }
@@ -60,7 +60,7 @@ public record ConversationLinePresentation(Camera camera, Map<String, ResourceLo
         public Camera {
             shots = java.util.List.copyOf(shots);
             if (shots.size() > com.jvn.villagerretaliation.dialogue.DialogueCamera.MAX_SHOTS
-                    || shots.isEmpty() && target == Target.GROUP || !shots.isEmpty() && (target != Target.SPEAKER || zoom != null))
+                    || shots.isEmpty() && (target == Target.GROUP || target == Target.PLAYER) || !shots.isEmpty() && (target != Target.SPEAKER || zoom != null))
                 throw new IllegalArgumentException("Invalid dialogue camera sequence");
             if (target == null || zoom != null && (target == Target.NONE || !Double.isFinite(zoom) || zoom < 0 || zoom > MAX_ZOOM))
                 throw new IllegalArgumentException("Invalid conversation camera cue.");

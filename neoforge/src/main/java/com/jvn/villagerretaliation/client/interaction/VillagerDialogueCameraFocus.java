@@ -135,8 +135,10 @@ public final class VillagerDialogueCameraFocus {
                 CAMERA_TURN_MAX_TICK_LERP * turnStrength);
         event.setYaw(rotation.yaw());
         event.setPitch(rotation.pitch());
-        minecraft.player.setYRot(rotation.yaw());
-        minecraft.player.setXRot(rotation.pitch());
+        if (!DialogueCameraController.previewing()) {
+            minecraft.player.setYRot(rotation.yaw());
+            minecraft.player.setXRot(rotation.pitch());
+        }
     }
 
     private static boolean shouldTurnCameraTowardsVillager() {

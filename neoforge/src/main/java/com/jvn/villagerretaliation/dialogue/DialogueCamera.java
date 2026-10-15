@@ -31,9 +31,23 @@ public final class DialogueCamera {
     public enum Transition { CUT, LERP }
     public enum Easing { LINEAR, SMOOTHSTEP }
 
+    public record Orientation(float yaw, float pitch) {
+        public Orientation {
+            if (!Float.isFinite(yaw) || !Float.isFinite(pitch) || Math.abs(yaw) > 360 || Math.abs(pitch) > 90)
+                throw new IllegalArgumentException("Invalid dialogue camera orientation");
+        }
+    }
+
     public record Shot(Preset preset, Anchor anchor, Placement placement, Perspective perspective,
             Vec3 offset, Target target, Double fov, Transition transition, double durationSeconds,
-            Easing easing, double holdSeconds) {
+            Easing easing, double holdSeconds, Orientation orientation, Vec3 position) {
+        public Shot(Preset preset, Anchor anchor, Placement placement, Perspective perspective,
+                Vec3 offset, Target target, Double fov, Transition transition, double durationSeconds,
+                Easing easing, double holdSeconds) {
+            this(preset, anchor, placement, perspective, offset, target, fov, transition, durationSeconds,
+                    easing, holdSeconds, null, null);
+        }
+
         public Shot {
             Objects.requireNonNull(preset);
             Objects.requireNonNull(anchor);
@@ -44,6 +58,9 @@ public final class DialogueCamera {
             Objects.requireNonNull(easing);
             if (target == null || target == Target.NONE || !Double.isFinite(offset.lengthSqr())
                     || Math.abs(offset.x) > MAX_DISTANCE || Math.abs(offset.y) > MAX_DISTANCE || Math.abs(offset.z) > MAX_DISTANCE
+                    || position != null && (placement != Placement.FIXED || !Double.isFinite(position.lengthSqr())
+                        || Math.abs(position.x) > 30_000_000 || Math.abs(position.y) > 30_000_000
+                        || Math.abs(position.z) > 30_000_000)
                     || fov != null && (!Double.isFinite(fov) || fov < MIN_FOV || fov > MAX_FOV)
                     || !seconds(holdSeconds) || !seconds(durationSeconds)
                     || (transition == Transition.LERP ? durationSeconds < 0.001 : durationSeconds != 0 || easing != Easing.LINEAR))
@@ -91,7 +108,14 @@ public final class DialogueCamera {
                 enumeration(transition, "type", Transition.class, Transition.CUT),
                 transition.has("duration_seconds") ? transition.get("duration_seconds").getAsDouble() : 0,
                 enumeration(transition, "easing", Easing.class, Easing.LINEAR),
-                value.has("hold_seconds") ? value.get("hold_seconds").getAsDouble() : 0);
+                value.has("hold_seconds") ? value.get("hold_seconds").getAsDouble() : 0,
+                value.has("orientation") ? new Orientation(value.getAsJsonObject("orientation").get("yaw").getAsFloat(),
+                        value.getAsJsonObject("orientation").get("pitch").getAsFloat()) : null,
+                value.has("position") ? vector(value.getAsJsonArray("position")) : null);
+    }
+
+    private static Vec3 vector(JsonArray value) {
+        return new Vec3(value.get(0).getAsDouble(), value.get(1).getAsDouble(), value.get(2).getAsDouble());
     }
 
     private static <T extends Enum<T>> T enumeration(JsonObject value, String key, Class<T> type, T fallback) {
@@ -104,7 +128,8 @@ public final class DialogueCamera {
         buffer.writeEnum(camera.target());
         buffer.writeBoolean(camera.zoom() != null);
         if (camera.zoom() != null) buffer.writeDouble(camera.zoom());
-        buffer.writeVarInt(camera.shots().size());
+        boolean extended = camera.shots().stream().anyMatch(shot -> shot.orientation() != null || shot.position() != null);
+        buffer.writeVarInt(extended ? -camera.shots().size() - 1 : camera.shots().size());
         for (var shot : camera.shots()) {
             buffer.writeEnum(shot.preset()); buffer.writeEnum(shot.anchor()); buffer.writeEnum(shot.placement());
             buffer.writeEnum(shot.perspective());
@@ -113,6 +138,17 @@ public final class DialogueCamera {
             if (shot.fov() != null) buffer.writeDouble(shot.fov());
             buffer.writeEnum(shot.transition()); buffer.writeDouble(shot.durationSeconds());
             buffer.writeEnum(shot.easing()); buffer.writeDouble(shot.holdSeconds());
+            if (extended) {
+                buffer.writeBoolean(shot.orientation() != null);
+                if (shot.orientation() != null) {
+                    buffer.writeFloat(shot.orientation().yaw());
+                    buffer.writeFloat(shot.orientation().pitch());
+                }
+                buffer.writeBoolean(shot.position() != null);
+                if (shot.position() != null) {
+                    buffer.writeDouble(shot.position().x); buffer.writeDouble(shot.position().y); buffer.writeDouble(shot.position().z);
+                }
+            }
         }
     }
 
@@ -121,13 +157,17 @@ public final class DialogueCamera {
         var target = buffer.readEnum(Target.class);
         Double zoom = buffer.readBoolean() ? buffer.readDouble() : null;
         int count = buffer.readVarInt();
+        boolean extended = count <= -2 && count >= -MAX_SHOTS - 1;
+        if (extended) count = -count - 1;
         if (count < 0 || count > MAX_SHOTS) throw new IllegalArgumentException("Invalid camera shot count");
         var shots = new ArrayList<Shot>();
         for (int index = 0; index < count; index++) shots.add(new Shot(
                 buffer.readEnum(Preset.class), buffer.readEnum(Anchor.class), buffer.readEnum(Placement.class),
                 buffer.readEnum(Perspective.class), new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble()),
                 buffer.readEnum(Target.class), buffer.readBoolean() ? buffer.readDouble() : null,
-                buffer.readEnum(Transition.class), buffer.readDouble(), buffer.readEnum(Easing.class), buffer.readDouble()));
+                buffer.readEnum(Transition.class), buffer.readDouble(), buffer.readEnum(Easing.class), buffer.readDouble(),
+                extended && buffer.readBoolean() ? new Orientation(buffer.readFloat(), buffer.readFloat()) : null,
+                extended && buffer.readBoolean() ? new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble()) : null));
         return new Camera(target, zoom, shots);
     }
 
@@ -151,6 +191,17 @@ public final class DialogueCamera {
             offset.add(shot.offset().y);
             offset.add(shot.offset().z);
             entry.add("offset", offset);
+            if (shot.orientation() != null) {
+                var orientation = new JsonObject();
+                orientation.addProperty("yaw", shot.orientation().yaw());
+                orientation.addProperty("pitch", shot.orientation().pitch());
+                entry.add("orientation", orientation);
+            }
+            if (shot.position() != null) {
+                var position = new JsonArray();
+                position.add(shot.position().x); position.add(shot.position().y); position.add(shot.position().z);
+                entry.add("position", position);
+            }
             if (shot.fov() != null) entry.addProperty("fov", shot.fov());
             entry.addProperty("hold_seconds", shot.holdSeconds());
             var transition = new JsonObject();
@@ -189,8 +240,12 @@ public final class DialogueCamera {
                     "birds_eye","behind","telescope","speaker_facing","custom"]},
                   "anchor":{"enum":["player","speaker"]},"placement":{"enum":["relative","fixed"]},
                   "perspective":{"enum":["first_person","third_person"]},
+                  "orientation":{"description":"Explicit Minecraft yaw and pitch in degrees. Relative placement stores yaw relative to the player-to-speaker direction. Fixed placement stores world yaw.","type":"object","additionalProperties":false,"required":["yaw","pitch"],"properties":{
+                    "yaw":{"type":"number","minimum":-360,"maximum":360},
+                    "pitch":{"type":"number","minimum":-90,"maximum":90}}},
+                  "position":{"description":"Optional absolute world position for fixed placement. Runtime distance and geometry limits still apply.","type":"array","minItems":3,"maxItems":3,"items":{"type":"number","minimum":-30000000,"maximum":30000000}},
                   "offset":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number","minimum":-8,"maximum":8}},
-                  "target":{"enum":["speaker","character","group"]},
+                  "target":{"enum":["speaker","character","group","player"]},
                   "fov":{"type":"number","minimum":10,"maximum":110},
                   "hold_seconds":{"type":"number","minimum":0,"maximum":600},
                   "transition":{"oneOf":[
@@ -198,6 +253,7 @@ public final class DialogueCamera {
                     {"type":"object","additionalProperties":false,"required":["type","duration_seconds"],"properties":{
                       "type":{"const":"lerp"},"duration_seconds":{"type":"number","minimum":0.001,"maximum":600},
                       "easing":{"enum":["linear","smoothstep"]}}}]}},
+                  "allOf":[{"if":{"required":["position"]},"then":{"required":["placement"],"properties":{"placement":{"const":"fixed"}}}}],
                   "if":{"properties":{"preset":{"const":"custom"}}},"then":{"required":["anchor","offset","perspective"]}}
                 """).getAsJsonObject();
         schema.getAsJsonArray("oneOf").set(1, shot);

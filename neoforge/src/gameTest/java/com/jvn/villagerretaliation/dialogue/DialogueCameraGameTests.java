@@ -300,6 +300,67 @@ public final class DialogueCameraGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void authoredOrientationAndPositionRoundTrip(GameTestHelper helper) {
+        var camera = DialogueCamera.read(json("""
+                {"camera":{"shots":[
+                  {"preset":"custom","anchor":"speaker","perspective":"third_person","offset":[1,0.2,-2],
+                   "orientation":{"yaw":32.5,"pitch":-12},"fov":51},
+                  {"preset":"custom","anchor":"player","perspective":"third_person","placement":"fixed",
+                   "offset":[0,0,0],"position":[104.25,72,-28],"orientation":{"yaw":-170,"pitch":45}}]}}
+                """));
+        var copy = new JsonObject();
+        copy.add("camera", DialogueCamera.json(camera));
+        helper.assertValueEqual(DialogueCamera.read(copy), camera, "captured orientation and position survive JSON");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            DialogueCamera.write(buffer, camera);
+            helper.assertValueEqual(DialogueCamera.read(buffer), camera, "captured orientation and position survive packets");
+            helper.assertTrue(!buffer.isReadable(), "extended camera packet is fully consumed");
+            buffer.clear();
+            var legacy = DialogueCamera.read(json("{\"camera\":{\"preset\":\"behind\"}}"));
+            DialogueCamera.write(buffer, legacy);
+            helper.assertTrue(buffer.readBoolean(), "legacy camera remains present");
+            buffer.readEnum(com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Target.class);
+            helper.assertTrue(!buffer.readBoolean(), "legacy camera zoom encoding is unchanged");
+            helper.assertValueEqual(buffer.readVarInt(), 1, "legacy shots keep their original wire marker");
+            buffer.readerIndex(0);
+            helper.assertValueEqual(DialogueCamera.read(buffer), legacy, "legacy shots still decode");
+        } finally { buffer.release(); }
+        for (var invalid : List.of(
+                "{\"camera\":{\"preset\":\"behind\",\"orientation\":{\"yaw\":0,\"pitch\":91}}}",
+                "{\"camera\":{\"preset\":\"behind\",\"position\":[0,0,0]}}",
+                "{\"camera\":{\"preset\":\"behind\",\"orientation\":{\"yaw\":361,\"pitch\":0}}}")) {
+            var definition = json(invalid);
+            helper.assertTrue(!QuestJsonSchema.validate(definition.get("camera"), DialogueCamera.schema()).isEmpty(),
+                    "invalid capture must fail schema validation");
+            rejected(helper, () -> DialogueCamera.read(definition));
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void capturedOffsetsReproduceMinecraftCoordinates(GameTestHelper helper) {
+        var pivot = new Vec3(100, 65.62, -200);
+        var expected = new Vec3(1.25, -0.3, -2.5);
+        for (float yaw : new float[] {-180, -90, -15, 0, 45, 90, 179}) {
+            var forward = com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.forward(
+                    pivot.add(Vec3.directionFromRotation(0, yaw).scale(4)), pivot, 0);
+            var position = com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.position(expected, pivot, forward);
+            var restored = com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.offset(position, pivot, forward);
+            helper.assertTrue(restored.distanceTo(expected) < 1.0E-6, "relative capture inverts runtime positioning at every heading");
+            float worldYaw = yaw + 37;
+            float relative = com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.relativeYaw(worldYaw, forward);
+            float replayed = relative + com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.yaw(forward);
+            helper.assertTrue(Math.abs(net.minecraft.util.Mth.wrapDegrees(replayed - worldYaw)) < 0.001,
+                    "relative orientation preserves the visible camera heading");
+        }
+        var fallback = com.jvn.villagerretaliation.client.interaction.DialogueCameraTransforms.forward(pivot, pivot, 90);
+        helper.assertTrue(fallback.distanceTo(Vec3.directionFromRotation(0, 90)) < 1.0E-6,
+                "coincident subjects use the player heading");
+        helper.succeed();
+    }
+
     private static JsonObject fixture(String name) throws IOException {
         try (var stream = DialogueCameraGameTests.class.getResourceAsStream("/dialogue_camera/" + name + ".json")) {
             if (stream == null) throw new IllegalStateException("Missing camera fixture " + name);

@@ -43,6 +43,7 @@ public final class DialogueCameraController {
     private static boolean wasPaused;
     private static double baseFov = 70;
     private static Object level;
+    private static Preview preview;
 
     private DialogueCameraController() { }
 
@@ -53,7 +54,66 @@ public final class DialogueCameraController {
         }
     }
 
-    public static boolean active() { return timeline != null || tradeMotion != null; }
+    public static boolean active() { return timeline != null || tradeMotion != null || preview != null && preview.manualPose != null; }
+
+    public static boolean previewing() { return preview != null; }
+
+    public static Preview beginPreview() {
+        if (preview != null) throw new IllegalStateException("A dialogue camera preview is already active");
+        var session = new Preview();
+        reset();
+        preview = session;
+        return session;
+    }
+
+    public static final class Preview implements AutoCloseable {
+        private final State saved = new State(timeline, tradeMotion, trading, releaseSeconds, lastRendered,
+                renderedLevel, renderedFov, key, failedKey, frame, pose, prepared, forward, fixed, baseFov, level);
+        private final Object previewLevel = Minecraft.getInstance().level;
+        private Frame override;
+        private Pose manualPose;
+        private boolean closed;
+
+        private Preview() { }
+
+        public boolean active() { return !closed && preview == this; }
+
+        public void frame(Frame value) {
+            if (!active()) throw new IllegalStateException("Camera preview is closed");
+            override = value;
+            manualPose = null;
+        }
+
+        public void pose(Pose value) {
+            if (!active()) throw new IllegalStateException("Camera preview is closed");
+            if (value == null || !Double.isFinite(value.position().lengthSqr()) || !Float.isFinite(value.yaw())
+                    || !Float.isFinite(value.pitch()) || Math.abs(value.pitch()) > 90 || !Double.isFinite(value.fov())
+                    || value.fov() < DialogueCamera.MIN_FOV || value.fov() > DialogueCamera.MAX_FOV)
+                throw new IllegalArgumentException("Invalid camera preview pose");
+            manualPose = value;
+        }
+
+        @Override
+        public void close() {
+            if (!active()) return;
+            closed = true;
+            preview = null;
+            reset();
+            if (previewLevel != Minecraft.getInstance().level) return;
+            timeline = saved.timeline(); tradeMotion = saved.tradeMotion(); trading = saved.trading();
+            releaseSeconds = saved.releaseSeconds(); lastRendered = saved.lastRendered(); renderedLevel = saved.renderedLevel();
+            renderedFov = saved.renderedFov(); key = saved.key(); failedKey = saved.failedKey(); frame = saved.frame();
+            pose = saved.pose(); prepared = saved.prepared(); forward = saved.forward(); fixed = saved.fixed();
+            baseFov = saved.baseFov(); level = saved.level();
+            lastNanos = System.nanoTime();
+            wasPaused = Minecraft.getInstance().isPaused();
+        }
+    }
+
+    private record State(DialogueCameraTimeline timeline, TradeCameraMotion tradeMotion, boolean trading,
+            double releaseSeconds, Pose lastRendered, WeakReference<Object> renderedLevel, double renderedFov,
+            String key, String failedKey, Frame frame, Pose pose, Shot prepared, Vec3 forward, Vec3 fixed,
+            double baseFov, Object level) { }
     public static Pose renderedPose() {
         return pose != null ? pose : renderedLevel.get() == Minecraft.getInstance().level ? lastRendered : null;
     }
@@ -66,21 +126,35 @@ public final class DialogueCameraController {
 
     public static boolean synchronize() {
         var minecraft = Minecraft.getInstance();
+        if (preview != null && (preview.previewLevel != minecraft.level || minecraft.player == null
+                || !minecraft.player.isAlive())) {
+            clear();
+            return false;
+        }
+        if (preview != null && preview.manualPose != null) {
+            if (preview.override == null || !subject(preview.override.speaker())) {
+                clear();
+                return false;
+            }
+            frame = preview.override;
+            return true;
+        }
         var screen = screen();
         var trade = minecraft.screen instanceof AbstractContainerScreen<?> container
                 && VillagerTradeScreenLayout.of(container) != null ? container : null;
         if (minecraft.player == null
                 || minecraft.level == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
                 || minecraft.getCameraEntity() != minecraft.player
-                || !VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
-                || !ClientVillagerConversationState.usesForcedCameraZoom()
-                    && !VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get()) {
+                || preview == null && (!VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
+                    || !ClientVillagerConversationState.usesForcedCameraZoom()
+                        && !VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get())) {
             clear();
             return false;
         }
-        if (level != minecraft.level) clear();
+        if (level != minecraft.level) reset();
         level = minecraft.level;
-        var next = trade != null ? VillagerTradeScreenLayout.of(trade).frame(trade)
+        var next = preview != null && preview.override != null ? preview.override
+                : trade != null ? VillagerTradeScreenLayout.of(trade).frame(trade)
                 : screen == null ? null : screen.dialogueCameraFrame();
         if (trade != null && next != null) {
             if (tradeMotion == null || !trading) {
@@ -109,7 +183,7 @@ public final class DialogueCameraController {
             trading = false;
         }
         if (next == null || !next.hold() && (next.camera() == null || next.camera().shots().isEmpty())) {
-            clear();
+            reset();
             return false;
         }
         if (next.hold()) {
@@ -136,6 +210,17 @@ public final class DialogueCameraController {
 
     public static Pose update(net.minecraft.client.Camera camera, float partialTick) {
         if (!synchronize()) return null;
+        if (preview != null && preview.manualPose != null) {
+            var minecraft = Minecraft.getInstance();
+            var requested = preview.manualPose;
+            var position = DialogueCamera.clamp(requested.position(), minecraft.player.getPosition(partialTick));
+            var adjusted = DialogueCameraOcclusion.resolve(position, minecraft.player.getEyePosition(partialTick),
+                    List.of(frame.speaker()), validSubjects(), partialTick);
+            if (adjusted == null) return pose;
+            pose = new Pose(DialogueCamera.clamp(adjusted, minecraft.player.getPosition(partialTick)),
+                    requested.yaw(), requested.pitch(), requested.fov());
+            return pose;
+        }
         long now = System.nanoTime();
         boolean paused = Minecraft.getInstance().isPaused();
         double seconds = paused || wasPaused ? 0 : (now - lastNanos) / 1_000_000_000.0D;
@@ -161,10 +246,10 @@ public final class DialogueCameraController {
             return null;
         }
         adjusted = DialogueCamera.clamp(adjusted, player);
-        if (!adjusted.equals(position)) {
+        if (!adjusted.equals(position) && timeline.shot().orientation() == null) {
             var rotation = ToucanCameraBasis.rotationToTarget(adjusted, focus(target(timeline.shot(), speaker), partialTick), pose.yaw(), pose.pitch());
             pose = new Pose(adjusted, rotation.yaw(), rotation.pitch(), pose.fov());
-        } else pose = new Pose(position, pose.yaw(), pose.pitch(), pose.fov());
+        } else pose = new Pose(adjusted, pose.yaw(), pose.pitch(), pose.fov());
         return pose;
     }
 
@@ -230,12 +315,10 @@ public final class DialogueCameraController {
             Entity other = speaker == player && subject(frame.character()) ? frame.character() : speaker;
             Entity principal = speaker != player && speaker != frame.character() && subject(frame.character())
                     ? frame.character() : player;
-            Vec3 direction = focus(other, partialTick).subtract(principal.getEyePosition(partialTick)).multiply(1, 0, 1);
-            forward = direction.lengthSqr() < 1.0E-8 ? Vec3.directionFromRotation(0, player.getYRot()) : direction.normalize();
+            forward = DialogueCameraTransforms.forward(focus(other, partialTick), principal.getEyePosition(partialTick), player.getYRot());
             prepared = shot;
             fixed = null;
         }
-        Vec3 right = new Vec3(-forward.z, 0, forward.x);
         Vec3 offset = switch (shot.preset()) {
             case FIRST_PERSON, TELESCOPE, CUSTOM -> Vec3.ZERO;
             case THIRD_PERSON -> new Vec3(0, 0, -4);
@@ -247,7 +330,8 @@ public final class DialogueCameraController {
         };
         if (shot.preset() == Preset.SPEAKER_FACING && speaker == player) offset = new Vec3(0, 0, 2);
         offset = offset.add(shot.offset());
-        Vec3 position = pivot.add(right.scale(offset.x)).add(0, offset.y, 0).add(forward.scale(offset.z));
+        Vec3 position = shot.position() != null ? shot.position()
+                : DialogueCameraTransforms.position(offset, pivot, forward);
         if (shot.placement() == Placement.FIXED) {
             if (fixed == null) fixed = DialogueCamera.clamp(position, player.getPosition(partialTick));
             position = fixed;
@@ -255,7 +339,7 @@ public final class DialogueCameraController {
         position = DialogueCamera.clamp(position, player.getPosition(partialTick));
         Vec3 aim = focus(target, partialTick);
         double fov = shot.fov() != null ? shot.fov() : shot.preset() == Preset.TELESCOPE ? 20 : baseFov;
-        if (shot.target() == Target.GROUP && validSubjects().size() > 1) {
+        if (shot.orientation() == null && shot.target() == Target.GROUP && validSubjects().size() > 1) {
             AABB bounds = null;
             for (var entity : validSubjects()) {
                 var box = entity.getBoundingBox().move(entity.getPosition(partialTick).subtract(entity.position()));
@@ -281,11 +365,17 @@ public final class DialogueCameraController {
                 if (shot.fov() == null) fov = Math.min(DialogueCamera.MAX_FOV, Math.max(fov, required));
             }
         }
+        if (shot.orientation() != null) {
+            float yaw = shot.orientation().yaw();
+            if (shot.placement() == Placement.RELATIVE) yaw += DialogueCameraTransforms.yaw(forward);
+            return new Pose(position, yaw, shot.orientation().pitch(), fov);
+        }
         var rotation = ToucanCameraBasis.rotationToTarget(position, aim, player.getYRot(), player.getXRot());
         return new Pose(position, rotation.yaw(), rotation.pitch(), fov);
     }
 
     private static Entity target(Shot shot, Entity speaker) {
+        if (shot.target() == Target.PLAYER) return Minecraft.getInstance().player;
         Entity target = shot.target() == Target.CHARACTER && subject(frame.character()) ? frame.character() : speaker;
         return target == Minecraft.getInstance().player && shot.perspective() == Perspective.FIRST_PERSON
                 && subject(frame.character()) ? frame.character() : target;
@@ -296,6 +386,7 @@ public final class DialogueCameraController {
     private static Vec3 focus(Entity entity, float partialTick) { return ToucanCameraTargetPoints.focusPoint(entity, partialTick); }
 
     public static boolean detached() {
+        if (preview != null && preview.manualPose != null) return true;
         return tradeMotion != null ? !trading && !Minecraft.getInstance().options.getCameraType().isFirstPerson()
                 : timeline != null && timeline.shot().perspective() == Perspective.THIRD_PERSON;
     }
@@ -303,7 +394,8 @@ public final class DialogueCameraController {
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (event.usedConfiguredFov()) baseFov = event.getFOV();
         if (synchronize()) {
-            double fov = pose == null ? timeline.shot().fov() != null ? timeline.shot().fov()
+            double fov = preview != null && preview.manualPose != null ? preview.manualPose.fov()
+                    : pose == null ? timeline.shot().fov() != null ? timeline.shot().fov()
                     : timeline.shot().preset() == Preset.TELESCOPE ? 20 : baseFov : pose.fov();
             event.setFOV(fov);
         }
@@ -324,6 +416,12 @@ public final class DialogueCameraController {
     }
 
     public static void clear() {
+        if (preview != null) preview.closed = true;
+        preview = null;
+        reset();
+    }
+
+    private static void reset() {
         timeline = null;
         tradeMotion = null;
         trading = false;
