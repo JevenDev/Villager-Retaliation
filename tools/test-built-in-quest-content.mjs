@@ -242,7 +242,8 @@ function validateChoiceObjective(file, data, stage, objective, graph, terminalId
 function validateRepeatable(file, data, v2) {
   const availability = v2 ? data.availability ?? {} : data.rules ?? {};
   const cooldown = availability.completion_cooldown_days ?? availability.cooldown_days ?? 0;
-  assert(availability.consume_on_completion === true, file, "repeatable quest must consume hand-in items");
+  assert(availability.consume_on_completion === false, file,
+    "repeatable quest must not permanently consume its availability on completion");
   assert(Number(cooldown) > 0, file, "repeatable quest must have a positive completion cooldown");
 
   const objectives = v2

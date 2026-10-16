@@ -11,6 +11,7 @@ public final class QuestStartRules {
 
     public static boolean canStart(QuestDefinition definition, QuestProgressState progress, UUID providerId,
             long gameTime, IntSupplier scopedCompletionCount) {
+        if (progress != null && (progress.completionPending() || progress.pendingPartyReward())) return false;
         if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
             return withinStartLimit(definition, progress)
                     && withinCompletionLimit(definition, progress, scopedCompletionCount);

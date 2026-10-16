@@ -2,7 +2,7 @@
   "availability": {
     "abandonment": "allow_repickup",
     "completion_cooldown_days": 7,
-    "consume_on_completion": true,
+    "consume_on_completion": false,
     "cross_villager_compatible": false,
     "locked_to_villager": true,
     "max_completions": 0,
