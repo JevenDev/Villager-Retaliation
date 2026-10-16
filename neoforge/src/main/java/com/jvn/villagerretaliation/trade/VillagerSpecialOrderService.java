@@ -25,6 +25,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -50,9 +51,11 @@ public final class VillagerSpecialOrderService {
     private static final String OFFER_SEED_KEY = "OfferSeed";
     private static final String PAID_ITEM_KEY = "PaidItem";
     private static final String PAID_COUNT_KEY = "PaidCount";
+    private static final String PAID_STACKS_KEY = "PaidStacks";
     private static final String REFUNDS_KEY = "VillagerRetaliationSpecialOrderRefunds";
     private static final String REFUND_ITEM_KEY = "Item";
     private static final String REFUND_COUNT_KEY = "Count";
+    private static final String REFUND_STACK_KEY = "Stack";
 
     private VillagerSpecialOrderService() {
     }
@@ -73,6 +76,9 @@ public final class VillagerSpecialOrderService {
             int offerIndex) {
         reconcile(level, villager);
         deliverRefunds(player, villager);
+        if (!availableSlot(villager, offerIndex)) {
+            return List.of();
+        }
         if (!canUseSpecialOrders(level, villager, player)) {
             return List.of();
         }
@@ -161,6 +167,10 @@ public final class VillagerSpecialOrderService {
             ResourceLocation definitionId) {
         reconcile(level, villager);
         deliverRefunds(player, villager);
+        if (!availableSlot(villager, offerIndex)) {
+            return QueueResult.failed(offerIndex < 0 || offerIndex >= villager.getOffers().size()
+                    ? "trade_refresh.special_order_unavailable" : "trade_refresh.special_order_pending", Map.of());
+        }
         if (!canUseSpecialOrders(level, villager, player)) {
             return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
         }
@@ -197,9 +207,7 @@ public final class VillagerSpecialOrderService {
         if (resolvedOffer == null) {
             return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
         }
-        if (!cost.isEmpty()) {
-            removePayment(player, cost);
-        }
+        ListTag paidStacks = removePayment(player, cost);
 
         long readyDay = currentDay + option.waitDays();
         long nextCooldownEndDay = currentDay + option.cooldownDays();
@@ -215,9 +223,7 @@ public final class VillagerSpecialOrderService {
         order.putString(STATUS_KEY, STATUS_PENDING);
         order.putLong(OFFER_SEED_KEY, offerSeed);
         if (!cost.isEmpty()) {
-            ResourceLocation paidItemId = BuiltInRegistries.ITEM.getKey(cost.item());
-            order.putString(PAID_ITEM_KEY, paidItemId.toString());
-            order.putInt(PAID_COUNT_KEY, cost.count());
+            order.put(PAID_STACKS_KEY, paidStacks);
         }
         orders.add(order);
         persistentData.put(ORDERS_KEY, orders);
@@ -411,24 +417,38 @@ public final class VillagerSpecialOrderService {
         ListTag refunds = data.getList(REFUNDS_KEY, Tag.TAG_COMPOUND);
         ListTag remaining = new ListTag();
         boolean delivered = false;
+        boolean blocked = false;
         for (int i = 0; i < refunds.size(); i++) {
             CompoundTag refund = refunds.getCompound(i);
             if (!refund.hasUUID(PLAYER_KEY) || !refund.getUUID(PLAYER_KEY).equals(player.getUUID())) {
                 remaining.add(refund.copy());
                 continue;
             }
-            ResourceLocation itemId = ResourceLocation.tryParse(refund.getString(REFUND_ITEM_KEY));
-            Item item = itemId == null ? null : BuiltInRegistries.ITEM.getOptional(itemId).orElse(null);
-            int count = Math.clamp(refund.getInt(REFUND_COUNT_KEY), 0, 64);
-            if (item == null || count <= 0) continue;
-            ItemStack stack = new ItemStack(item, count);
+            ItemStack stack;
+            if (refund.contains(REFUND_STACK_KEY, Tag.TAG_COMPOUND)) {
+                stack = ItemStack.parseOptional(player.registryAccess(), refund.getCompound(REFUND_STACK_KEY));
+            } else {
+                // Keep refunds written before exact-stack escrow was introduced readable.
+                ResourceLocation itemId = ResourceLocation.tryParse(refund.getString(REFUND_ITEM_KEY));
+                Item item = itemId == null ? null : BuiltInRegistries.ITEM.getOptional(itemId).orElse(null);
+                int legacyCount = Math.clamp(refund.getInt(REFUND_COUNT_KEY), 0, 64);
+                stack = item == null || legacyCount <= 0 ? ItemStack.EMPTY : new ItemStack(item, legacyCount);
+            }
+            if (stack.isEmpty()) {
+                // A temporarily missing item/component must not erase a persisted claim.
+                remaining.add(refund.copy());
+                continue;
+            }
+            int count = stack.getCount();
             player.getInventory().add(stack);
             delivered |= stack.getCount() < count;
             if (!stack.isEmpty()) {
-                if (player.drop(stack.copy(), false) == null) {
+                ItemEntity dropped = player.drop(stack.copy(), false);
+                if (dropped == null || !dropped.isAddedToLevel()) {
                     CompoundTag retry = refund.copy();
-                    retry.putInt(REFUND_COUNT_KEY, stack.getCount());
+                    retry.put(REFUND_STACK_KEY, stack.save(player.registryAccess()));
                     remaining.add(retry);
+                    blocked = true;
                 } else {
                     delivered = true;
                 }
@@ -439,22 +459,35 @@ public final class VillagerSpecialOrderService {
             player.getInventory().setChanged();
             player.sendSystemMessage(Component.translatable("villagerretaliation.trade_refresh.refund_delivered"));
         }
+        if (blocked) player.sendSystemMessage(Component.translatable("villagerretaliation.trade_refresh.refund_pending"));
         return delivered;
     }
 
     private static void recordRefund(Villager villager, CompoundTag order) {
-        if (!order.hasUUID(PLAYER_KEY) || order.getInt(PAID_COUNT_KEY) <= 0) return;
-        ResourceLocation itemId = ResourceLocation.tryParse(order.getString(PAID_ITEM_KEY));
-        if (itemId == null || BuiltInRegistries.ITEM.getOptional(itemId).isEmpty()) return;
+        if (!order.hasUUID(PLAYER_KEY)) return;
         CompoundTag data = villager.getPersistentData();
         ListTag refunds = data.contains(REFUNDS_KEY, Tag.TAG_LIST)
                 ? data.getList(REFUNDS_KEY, Tag.TAG_COMPOUND) : new ListTag();
-        CompoundTag refund = new CompoundTag();
-        refund.putUUID(PLAYER_KEY, order.getUUID(PLAYER_KEY));
-        refund.putString(REFUND_ITEM_KEY, itemId.toString());
-        refund.putInt(REFUND_COUNT_KEY, Math.clamp(order.getInt(PAID_COUNT_KEY), 1, 64));
-        refunds.add(refund);
+        if (order.contains(PAID_STACKS_KEY, Tag.TAG_LIST)) {
+            for (Tag paid : order.getList(PAID_STACKS_KEY, Tag.TAG_COMPOUND)) {
+                CompoundTag refund = new CompoundTag();
+                refund.putUUID(PLAYER_KEY, order.getUUID(PLAYER_KEY));
+                refund.put(REFUND_STACK_KEY, paid.copy());
+                refunds.add(refund);
+            }
+        } else if (order.getInt(PAID_COUNT_KEY) > 0) {
+            CompoundTag refund = new CompoundTag();
+            refund.putUUID(PLAYER_KEY, order.getUUID(PLAYER_KEY));
+            refund.putString(REFUND_ITEM_KEY, order.getString(PAID_ITEM_KEY));
+            refund.putInt(REFUND_COUNT_KEY, Math.clamp(order.getInt(PAID_COUNT_KEY), 1, 64));
+            refunds.add(refund);
+        }
         data.put(REFUNDS_KEY, refunds);
+    }
+
+    private static boolean availableSlot(Villager villager, int offerIndex) {
+        return offerIndex >= 0 && offerIndex < villager.getOffers().size()
+                && !VillagerTradeRefreshService.pendingOfferIndexes(villager).contains(offerIndex);
     }
 
     public static int activeOrderCount(Villager villager, UUID playerId) {
@@ -729,7 +762,8 @@ public final class VillagerSpecialOrderService {
         return count >= cost.count();
     }
 
-    private static void removePayment(ServerPlayer player, SpecialOrderCost cost) {
+    private static ListTag removePayment(ServerPlayer player, SpecialOrderCost cost) {
+        ListTag paid = new ListTag();
         int remaining = cost.count();
         for (ItemStack stack : paymentStacks(player)) {
             if (remaining <= 0) {
@@ -739,10 +773,12 @@ public final class VillagerSpecialOrderService {
                 continue;
             }
             int removed = Math.min(remaining, stack.getCount());
+            paid.add(stack.copyWithCount(removed).save(player.registryAccess()));
             stack.shrink(removed);
             remaining -= removed;
         }
         player.getInventory().setChanged();
+        return paid;
     }
 
     private static List<ItemStack> paymentStacks(ServerPlayer player) {

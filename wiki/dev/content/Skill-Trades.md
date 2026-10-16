@@ -120,7 +120,7 @@ Displayed results, definitions already reserved by another pending slot, entries
 
 On a datapack reload, loaded villagers reconcile lazily the next time their trade state is used. Newly added definitions join the current remainder, removed or invalid definitions leave it, and valid pending requests keep their accepted definition and deterministic offer seed. A malformed or removed pending request is canceled independently so its slot and active-order reservation are cleared.
 
-If a canceled Special Order was prepaid, the villager stores a refund claim for the player who paid. That player receives the items the next time they interact with the same villager. Inventory overflow is dropped safely at the player, and a delivered claim cannot be paid twice.
+If a canceled Special Order was prepaid, the villager stores a refund claim for the player who paid. New payments preserve the exact paid stacks, including names and custom components, through saving and refunds. Older item/count refund claims remain supported. That player receives the items the next time they interact with the same villager. Inventory overflow is dropped at the player; if the drop fails, the exact undelivered remainder stays claimable. A delivered claim cannot be paid twice. Successful orders consume their prepayment without a refund. Invalid slots and slots with a pending refresh or Special Order reject a new request before taking payment.
 
 ## Authoring and Validation
 
