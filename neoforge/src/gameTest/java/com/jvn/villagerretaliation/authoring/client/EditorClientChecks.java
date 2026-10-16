@@ -30,7 +30,77 @@ public final class EditorClientChecks {
         timeVariablesFollowWorldClockAndPreviewConditions();
         graphSummariesKeepFormattingOutOfTheFlow();
         graphStylesKeepVariantsAndChoicesDistinct();
-        return 20;
+        diagnosticsLocateMissingFieldsAndTheirOwningNodes();
+        malformedFieldErrorsKeepLocationsAndPendingContent();
+        endingNodesDoesNotSilentlyDeleteAuthoredChoices();
+        return 23;
+    }
+
+    private static void endingNodesDoesNotSilentlyDeleteAuthoredChoices() {
+        var forced = new AuthoringDocument(DefinitionKind.FORCED, "data/test/forced_dialogue/choices.json",
+                json("{\"lines\":[\"Hello\"],\"options\":[{\"id\":\"story\",\"label\":\"Story\",\"follow_up\":{\"lines\":[\"Keep this narrative\"]}}]}"));
+        var conversation = new AuthoringDocument(DefinitionKind.CONVERSATION, "data/test/quests/_shared/conversations/choices.json",
+                json("{\"nodes\":[{\"id\":\"start\",\"responses\":[{\"id\":\"reply\",\"label\":{\"key\":\"reply\"},\"next\":\"other\",\"extension\":null}]}],\"outcomes\":[{\"id\":\"done\"}]}"));
+        for (var document : java.util.List.of(forced, conversation)) {
+            var before = document.json();
+            String node = document == forced ? "" : "start";
+            try {
+                DialogueGraph.setTerminal(document, node, true);
+                throw new AssertionError("ending must not discard authored choices");
+            } catch (IllegalArgumentException expected) {
+                check(expected.getMessage().contains(document == forced ? "/options" : "/nodes/0/responses"), "ending error locates the player choices");
+            }
+            check(before.equals(document.json()) && !document.canUndo(), "rejected ending preserves choices, nested dialogue, extensions and history");
+            document.edit("Explicitly remove choices", root -> {
+                if (document == forced) root.remove("options");
+                else root.getAsJsonArray("nodes").get(0).getAsJsonObject().remove("responses");
+            });
+            DialogueGraph.setTerminal(document, node, true);
+            check(DialogueGraph.nodes(document).getFirst().terminal(), "authors can still end a node after explicitly removing its choices");
+            while (document.canUndo()) document.undo();
+            check(document.json().equals(before), "undo restores the explicitly removed authored choices");
+        }
+    }
+
+    private static void diagnosticsLocateMissingFieldsAndTheirOwningNodes() {
+        var document = tree();
+        var missing = EditorDiagnosticLocation.resolve(document, "/nodes/start/responses/0/next");
+        check(missing.pointer().equals("/nodes/start") && missing.nodeId().equals("start"),
+                "missing fields open the existing owning node");
+        var existing = EditorDiagnosticLocation.resolve(document, "/nodes/start/lines/0");
+        check(existing.pointer().equals("/nodes/start/lines/0") && existing.nodeId().equals("start"),
+                "existing fields retain their exact location and select their graph node");
+        document.edit("Escaped node", root -> root.getAsJsonObject("nodes").add("a/b~c", json("{\"id\":\"public_id\",\"lines\":[\"Hi\"]}")));
+        var escaped = EditorDiagnosticLocation.resolve(document, "/nodes/a~1b~0c/lines/3");
+        check(escaped.pointer().equals("/nodes/a~1b~0c/lines") && escaped.nodeId().equals("public_id"),
+                "escaped keys and missing array elements resolve without confusing storage keys and IDs");
+        check(EditorDiagnosticLocation.resolve(document, "/entries/0/start").pointer().isEmpty(), "missing root fields fall back to file settings");
+        var malformed = new AuthoringDocument(DefinitionKind.TREE, document.resourcePath(), json("{\"nodes\":null}"));
+        check(EditorDiagnosticLocation.resolve(malformed, "/nodes/start").pointer().equals("/nodes"),
+                "malformed graphs still expose their invalid fields for repair");
+        var forced = new AuthoringDocument(DefinitionKind.FORCED, "data/test/forced_dialogue/test.json",
+                json("{\"entries\":[{\"lines\":[\"Hi\"],\"options\":[{\"follow_up\":{\"lines\":[\"Again\"]}}]}]}"));
+        check(EditorDiagnosticLocation.resolve(forced, "/entries/0/options/0/follow_up/trigger").nodeId()
+                .equals("/entries/0/options/0/follow_up"), "nested forced diagnostics select the nearest follow-up");
+    }
+
+    private static void malformedFieldErrorsKeepLocationsAndPendingContent() {
+        var document = tree();
+        var original = document.json();
+        var edits = new EditorFieldEdits();
+        edits.update("/display/title", original.getAsJsonObject("display").get("title"), "Retain my text");
+        edits.update("/priority", original.get("priority"), "[broken");
+        try {
+            edits.apply(document);
+            throw new AssertionError("malformed field must be rejected");
+        } catch (IllegalArgumentException expected) {
+            check(expected.getMessage().contains("/priority"), "parse errors name the field to repair");
+        }
+        check(edits.pending() && document.json().equals(original), "failed apply keeps all pending edits and leaves the model untouched");
+        edits.update("/priority", original.get("priority"), "2");
+        edits.apply(document);
+        check(document.json().getAsJsonObject("display").get("title").getAsString().equals("Retain my text"),
+                "repairing the invalid field retains the other authored text");
     }
 
     private static void graphSummariesKeepFormattingOutOfTheFlow() {

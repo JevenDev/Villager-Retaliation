@@ -55,23 +55,47 @@ public final class AuthoringWorkspace {
         rejectSymlinks(result.directory.resolve(FILE));
         try {
             JsonObject state = JsonParser.parseString(Files.readString(result.directory.resolve(FILE))).getAsJsonObject();
-            if (!state.has("version") || state.get("version").getAsInt() != 1) throw new IOException("Unsupported workspace version");
+            if (!state.has("version") || !state.get("version").isJsonPrimitive()
+                    || !state.get("version").getAsString().equals("1")) throw new IOException("Unsupported workspace version at /version (expected 1)");
+            if (!state.has("documents") || !state.get("documents").isJsonArray())
+                throw new IOException("Invalid authoring workspace: /documents must be an array");
+            int index = 0;
             for (JsonElement element : state.getAsJsonArray("documents")) {
+                if (!element.isJsonObject()) throw new IOException("Invalid authoring workspace: /documents/" + index + " must be an object");
                 JsonObject value = element.getAsJsonObject();
+                for (String field : List.of("kind", "path", "definition")) {
+                    if (!value.has(field) || value.get(field).isJsonNull())
+                        throw new IOException("Invalid authoring workspace: missing /documents/" + index + "/" + field);
+                }
+                for (String field : List.of("kind", "path")) {
+                    if (!value.get(field).isJsonPrimitive() || !value.getAsJsonPrimitive(field).isString())
+                        throw new IOException("Invalid authoring workspace: /documents/" + index + "/" + field + " must be a string");
+                }
+                if (!value.get("definition").isJsonObject())
+                    throw new IOException("Invalid authoring workspace: /documents/" + index + "/definition must be an object");
+                if (value.has("editor") && !value.get("editor").isJsonObject())
+                    throw new IOException("Invalid authoring workspace: /documents/" + index + "/editor must be an object");
                 AuthoringDocument document = new AuthoringDocument(DefinitionKind.valueOf(value.get("kind").getAsString()),
                         value.get("path").getAsString(), value.getAsJsonObject("definition"));
-                document.loadMetadata(value.getAsJsonObject("editor"));
+                document.loadMetadata(value.has("editor") ? value.getAsJsonObject("editor") : new JsonObject());
                 document.markSaved();
                 result.add(document);
+                index++;
             }
             if (state.has("attachments")) {
+                if (!state.get("attachments").isJsonObject()) throw new IOException("Invalid authoring workspace: /attachments must be an object");
                 for (var entry : state.getAsJsonObject("attachments").entrySet()) {
                     String path = safeRelativePath(entry.getKey());
                     if (result.containsPath(path)) throw new IOException("Duplicate workspace resource " + path);
+                    if (!entry.getValue().isJsonPrimitive() || !entry.getValue().getAsJsonPrimitive().isString())
+                        throw new IOException("Invalid authoring workspace: /attachments/" + JsonPointers.escape(path) + " must be a base64 string");
                     result.attachments.put(path, Base64.getDecoder().decode(entry.getValue().getAsString()));
                 }
             }
-            if (state.has("pack")) result.packMetadata = state.getAsJsonObject("pack").deepCopy();
+            if (state.has("pack")) {
+                if (!state.get("pack").isJsonObject()) throw new IOException("Invalid authoring workspace: /pack must be an object");
+                result.packMetadata = state.getAsJsonObject("pack").deepCopy();
+            }
             return result;
         } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException ex) {
             throw new IOException("Invalid authoring workspace: " + ex.getMessage(), ex);
@@ -680,7 +704,11 @@ public final class AuthoringWorkspace {
 
     public void exportPack(Path destination) throws IOException {
         List<AuthoringDiagnostic> errors = validate().stream().filter(value -> value.severity() == AuthoringDiagnostic.Severity.ERROR).toList();
-        if (!errors.isEmpty()) throw new IOException("Export blocked by " + errors.size() + " validation error(s): " + errors.getFirst().message());
+        if (!errors.isEmpty()) {
+            AuthoringDiagnostic first = errors.getFirst();
+            throw new IOException("Export blocked by " + errors.size() + " validation error(s): "
+                    + first.resourcePath() + first.pointer() + ": " + first.message());
+        }
         Path target = destination.toAbsolutePath().normalize();
         rejectSymlinks(target);
         if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Export destination already exists. Choose a new directory");

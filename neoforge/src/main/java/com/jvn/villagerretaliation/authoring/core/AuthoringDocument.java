@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class AuthoringDocument {
-    public static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    public static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
     private static final int HISTORY_LIMIT = 200;
     private final DefinitionKind kind;
     private String resourcePath;

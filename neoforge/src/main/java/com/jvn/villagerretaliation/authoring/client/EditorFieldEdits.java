@@ -39,9 +39,14 @@ public final class EditorFieldEdits {
             Edit edit = entry.getValue();
             if (!JsonPointers.get(root, entry.getKey()).equals(edit.original()))
                 throw new IllegalStateException("The field changed since editing began: " + entry.getKey());
-            JsonElement value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
+            JsonElement value;
+            try {
+                value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
+            } catch (com.google.gson.JsonParseException exception) {
+                throw new IllegalArgumentException("Invalid JSON at " + entry.getKey() + ": " + exception.getMessage(), exception);
+            }
             if (!edit.string() && !value.isJsonPrimitive() && !value.isJsonNull())
-                throw new IllegalArgumentException("Use advanced JSON to change a scalar field into an object or array.");
+                throw new IllegalArgumentException("Use advanced JSON to change the scalar field at " + entry.getKey() + " into an object or array.");
             if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
                     && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
                 throw new IllegalArgumentException("Expected a number at " + entry.getKey());

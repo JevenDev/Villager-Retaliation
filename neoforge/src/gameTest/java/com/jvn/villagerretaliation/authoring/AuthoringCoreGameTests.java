@@ -534,6 +534,103 @@ public final class AuthoringCoreGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "authoring")
+    public static void explicitNullsAndAdvancedFieldsSurviveEveryRoundTrip(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-nulls-");
+        try {
+            AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            AuthoringDocument document = workspace.createDocument(DefinitionKind.TREE, "test:roundtrip");
+            document.edit("Advanced fields", value -> {
+                value.add("extension", json("{\"optional\":null,\"nested\":[null,{\"future\":null}],\"unicode\":\"Zoë 🌻\",\"number\":1.2500}"));
+                value.getAsJsonObject("nodes").getAsJsonObject("start").add("extension_node", json("{\"optional\":null}"));
+            });
+            document.editMetadata("Layout extension", value -> value.add("future", com.google.gson.JsonNull.INSTANCE));
+            JsonObject expected = document.json();
+            document.replaceJson(AuthoringDocument.JSON.toJson(expected));
+            helper.assertValueEqual(document.json(), expected, "full JSON editing preserves explicit null properties");
+            workspace.addDialogueLine(document, "start");
+            helper.assertValueEqual(document.json().get("extension"), expected.get("extension"), "plain dialogue operations retain advanced fields");
+            expected = document.json();
+            workspace.save();
+            AuthoringWorkspace loaded = AuthoringWorkspace.open(workspace.directory());
+            helper.assertValueEqual(loaded.documents().getFirst().json(), expected, "workspace reload preserves complete runtime JSON");
+            helper.assertTrue(loaded.documents().getFirst().metadata().has("future"), "workspace reload preserves explicit null editor metadata");
+            loaded.exportPack(root.resolve("export"));
+            helper.assertValueEqual(json(Files.readString(root.resolve("export").resolve(document.resourcePath()))), expected,
+                    "export retains explicit nulls, unicode, numeric values and extensions");
+            AuthoringWorkspace imported = AuthoringWorkspace.create(root.resolve("reimport"));
+            imported.importPack(root.resolve("export"));
+            helper.assertValueEqual(imported.documents().getFirst().json(), expected, "exported runtime JSON imports without field loss");
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void failedSaveAndExportKeepDraftsAndExistingFiles(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-failed-save-");
+        try {
+            AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            AuthoringDocument document = workspace.createDocument(DefinitionKind.TREE, "test:save");
+            workspace.save();
+            Path file = workspace.directory().resolve("workspace.json");
+            byte[] saved = Files.readAllBytes(file);
+            Path backup = root.resolve("saved-workspace.json");
+            Files.move(file, backup);
+            Files.createDirectory(file);
+            document.edit("Unsaved wording", value -> value.getAsJsonObject("nodes").getAsJsonObject("start")
+                    .getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Keep this draft")));
+            JsonObject draft = document.json();
+            boolean failed = false;
+            try { workspace.save(); } catch (IOException expected) { failed = true; }
+            helper.assertTrue(failed && document.dirty() && document.canUndo(), "failed save retains dirty state and undo history");
+            helper.assertValueEqual(document.json(), draft, "failed save leaves authored content available for retry");
+            helper.assertTrue(java.util.Arrays.equals(Files.readAllBytes(backup), saved), "existing saved content remains intact");
+            try (var paths = Files.list(workspace.directory())) {
+                helper.assertTrue(paths.noneMatch(path -> path.getFileName().toString().startsWith(".vr-draft-")), "failed save cleans staging files");
+            }
+            Files.delete(file);
+            Files.move(backup, file);
+            Path export = Files.createDirectory(root.resolve("existing-pack"));
+            Files.writeString(export.resolve("keep.txt"), "Existing pack");
+            failed = false;
+            try { workspace.exportPack(export); } catch (IOException expected) { failed = true; }
+            helper.assertTrue(failed && document.dirty() && document.json().equals(draft), "failed export retains unsaved drafts");
+            helper.assertValueEqual(Files.readString(export.resolve("keep.txt")), "Existing pack", "failed export preserves an existing destination");
+            workspace.save();
+            helper.assertTrue(!document.dirty(), "save can be retried after fixing the destination");
+            helper.assertValueEqual(AuthoringWorkspace.open(workspace.directory()).documents().getFirst().json(), draft, "retry saves the original draft");
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void workspaceLoadErrorsLocateMalformedDocuments(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-authoring-load-");
+        try {
+            Path file = root.resolve("workspace.json");
+            Files.writeString(file, "{\"version\":1,\"documents\":[{\"kind\":\"RESOURCE\",\"path\":\"data/test/resource.json\",\"definition\":{\"future\":null}}]}");
+            AuthoringWorkspace loaded = AuthoringWorkspace.open(root);
+            helper.assertTrue(loaded.documents().getFirst().metadata().isEmpty(), "optional editor metadata defaults to empty");
+            for (String broken : List.of("null", "[]", "\"text\"")) {
+                Files.writeString(file, "{\"version\":1,\"documents\":[{\"kind\":\"RESOURCE\",\"path\":\"data/test/resource.json\",\"definition\":{} ,\"editor\":" + broken + "}]}");
+                boolean located = false;
+                try { AuthoringWorkspace.open(root); } catch (IOException expected) { located = expected.getMessage().contains("/documents/0/editor"); }
+                helper.assertTrue(located, "invalid editor metadata gives a document and field location");
+            }
+            Files.writeString(file, "{\"version\":1,\"documents\":[{\"kind\":\"RESOURCE\",\"path\":\"data/test/resource.json\"}]}");
+            boolean located = false;
+            try { AuthoringWorkspace.open(root); } catch (IOException expected) { located = expected.getMessage().contains("/documents/0/definition"); }
+            helper.assertTrue(located, "missing definition is an actionable load error");
+            helper.succeed();
+        } finally {
+            removeTemporaryTree(root);
+        }
+    }
+
     private static JsonObject json(String value) {
         return JsonParser.parseString(value).getAsJsonObject();
     }

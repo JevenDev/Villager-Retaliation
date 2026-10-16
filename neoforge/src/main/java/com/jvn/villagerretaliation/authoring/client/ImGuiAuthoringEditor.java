@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.authoring.client;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -46,7 +45,7 @@ final class ImGuiAuthoringEditor {
     static final net.minecraft.client.KeyMapping OPEN_EDITOR = new net.minecraft.client.KeyMapping(
             "key.villagerretaliation.open_authoring_editor", com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
             org.lwjgl.glfw.GLFW.GLFW_KEY_F9, "key.categories.villagerretaliation");
-    private static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static final Gson JSON = AuthoringDocument.JSON;
     private static final Minecraft MC = Minecraft.getInstance();
     private static final ImGuiAuthoringEditor INSTANCE = new ImGuiAuthoringEditor();
     private static final String CONTENT_PANEL = "Content###VR_Content";
@@ -121,6 +120,7 @@ final class ImGuiAuthoringEditor {
     }
 
     static void tick() {
+        if (INSTANCE.view != 1) EditorCameraPanel.close();
         EditorCameraPanel.tick(INSTANCE.screen);
         if (INSTANCE.target != null && (MC.level != INSTANCE.target.level() || INSTANCE.target.isRemoved())) INSTANCE.target = null;
     }
@@ -544,9 +544,13 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Delete node")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; setPointer(""); refresh(); });
             ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
             if (ImGui.button("Start here")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
+            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.QUEST ? "Start the quest at this stage."
+                    : "Change the first entry or topic to start at this node. Other entries are preserved.");
             ImGui.endDisabled();
             ImGui.sameLine();
             if (ImGui.button("End here")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
+            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.FORCED
+                    ? "End this node. Remove existing player choices first; they will not be discarded automatically." : "End this node.");
         }
         if (selected && showBranch) {
             if (document.kind() != DefinitionKind.QUEST) {
@@ -1145,7 +1149,8 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(target == null);
         if (ImGui.button("Play from entry")) startPreview("");
         ImGui.sameLine();
-        if (ImGui.button("Play selected node")) startPreview(selectedNode.isEmpty() ? pointer.get() : selectedNode);
+        if (ImGui.button(document.kind() == DefinitionKind.RESOURCE ? "Play selected object" : "Play selected node"))
+            startPreview(selectedNode.isEmpty() ? pointer.get() : selectedNode);
         ImGui.endDisabled();
         if (target == null) ImGui.textDisabled("Select a target to play.");
         else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
@@ -1212,7 +1217,11 @@ final class ImGuiAuthoringEditor {
                         if (candidate.resourcePath().equals(diagnostic.resourcePath())) {
                             operation(() -> {
                                 select(candidate);
-                                setPointer(diagnostic.pointer());
+                                var location = EditorDiagnosticLocation.resolve(candidate, diagnostic.pointer());
+                                setPointer(location.pointer());
+                                selectedNode = location.nodeId();
+                                showResources = candidate.kind() == DefinitionKind.RESOURCE || showResources;
+                                status = diagnostic.resourcePath() + diagnostic.pointer() + ": " + diagnostic.message();
                                 view = 0;
                                 focusPanel = DETAIL_PANEL;
                             });

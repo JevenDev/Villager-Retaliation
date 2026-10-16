@@ -322,6 +322,12 @@ public final class DialogueGraph {
         Node selected = find(document, nodeId);
         document.edit("Set terminal", root -> {
             JsonObject node = JsonPointers.get(root, selected.pointer()).getAsJsonObject();
+            if (terminal && (document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.FORCED)) {
+                String choices = document.kind() == DefinitionKind.FORCED ? "options" : "responses";
+                if (node.has(choices) && (!node.get(choices).isJsonArray() || !node.getAsJsonArray(choices).isEmpty()))
+                    throw new IllegalArgumentException("Remove the player choices at " + selected.pointer() + "/" + choices
+                            + " before ending this node. End here would discard their authored dialogue and behavior.");
+            }
             if (document.kind() == DefinitionKind.CONVERSATION) {
                 if (terminal) {
                     JsonArray outcomes = array(root, "outcomes");
