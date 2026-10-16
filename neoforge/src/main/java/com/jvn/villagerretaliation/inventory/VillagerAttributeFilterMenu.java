@@ -39,6 +39,11 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu
         addPlayerSlots(playerInventory);
     }
 
+    /** Snapshot for rule summaries and non-mutating sample previews. */
+    public ItemStack editedFilter() {
+        return this.contentHolder.copy();
+    }
+
     @Override
     public VillagerFilterPolicy.Policy filterPolicy() {
         return VillagerFilterPolicy.read(this.contentHolder);

@@ -396,7 +396,8 @@ public final class VillagerActionRegistry {
         return switch (kind) {
             case TUTORIAL -> registration(descriptor, action -> action.questId() != null
                             && com.jvn.villagerretaliation.interaction.HiredVillagerRole.bySerializedName(action.factKey()) != null
-                            && java.util.Set.of("start", "activate", "quote", "continue", "stop", "replace").contains(action.factValue()),
+                            && java.util.Set.of("start", "activate", "quote", "continue", "stop", "replace",
+                                    "blueprint", "supplies", "learn", "recover").contains(action.factValue()),
                     (context, action, replacements, actor) -> com.jvn.villagerretaliation.quest.tutorial.TutorialService.execute(context, action),
                     com.jvn.villagerretaliation.quest.tutorial.TutorialService::actionSchema, RecoveryMode.RECEIPT_REQUIRED, true);
             case COMPANION_SERVICE -> registration(descriptor, action -> net.minecraft.resources.ResourceLocation.tryParse(action.factKey()) != null

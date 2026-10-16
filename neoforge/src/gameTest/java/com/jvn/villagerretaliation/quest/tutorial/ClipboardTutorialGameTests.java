@@ -44,6 +44,139 @@ public final class ClipboardTutorialGameTests {
     private ClipboardTutorialGameTests() { }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "clipboard")
+    public static void shippedTutorialActionsSurviveRuntimeRegistryParsing(GameTestHelper helper) throws Exception {
+        var authored = authoredTutorialActions("craftsman");
+        var questId = TutorialService.questId(HiredVillagerRole.CRAFTSMAN);
+        var parsed = VillagerActionDefinition.readObjects(questId, "shipped tutorial responses", authored, questId);
+        helper.assertValueEqual(parsed.size(), authored.size(), "no shipped tutorial action is silently dropped");
+        var operations = parsed.stream().map(VillagerActionDefinition::factValue).collect(java.util.stream.Collectors.toSet());
+        helper.assertTrue(operations.containsAll(java.util.Set.of("learn", "supplies", "recover")),
+                "learning, provisions and recovery survive the real runtime parser");
+        for (var operation : TutorialService.actionSchema().getAsJsonObject("properties")
+                .getAsJsonObject("operation").getAsJsonArray("enum")) {
+            var entry = new JsonObject();
+            entry.addProperty("type", "tutorial"); entry.addProperty("role", "builder");
+            entry.addProperty("operation", operation.getAsString()); entry.addProperty("step", "step_2_sequence_1");
+            var builderId = TutorialService.questId(HiredVillagerRole.BUILDER);
+            var result = VillagerActionDefinition.readObjects(builderId, "all supported tutorial operations", List.of(entry), builderId);
+            helper.assertValueEqual(result.size(), 1, "schema-supported operation survives runtime registry: " + operation);
+            helper.assertValueEqual(result.getFirst().factValue(), operation.getAsString(), "operation is retained exactly");
+        }
+        var invalid = JsonParser.parseString("{\"type\":\"tutorial\",\"role\":\"craftsman\",\"operation\":\"invented_operation\"}").getAsJsonObject();
+        helper.assertTrue(VillagerActionDefinition.readObjects(questId, "invalid tutorial operation", List.of(invalid), questId).isEmpty(),
+                "unsupported operations remain rejected");
+        helper.succeed();
+    }
+
+    private static List<JsonObject> authoredTutorialActions(String role) throws java.io.IOException {
+        String resource = "/data/villagerretaliation/quests/clipboard/clipboard_" + role + "/quest.json";
+        try (var stream = java.util.Objects.requireNonNull(ClipboardTutorialGameTests.class.getResourceAsStream(resource), resource);
+                var reader = new java.io.InputStreamReader(stream, java.nio.charset.StandardCharsets.UTF_8)) {
+            var result = new java.util.ArrayList<JsonObject>();
+            collectTutorialActions(JsonParser.parseReader(reader), result);
+            return List.copyOf(result);
+        }
+    }
+
+    private static void collectTutorialActions(com.google.gson.JsonElement element, List<JsonObject> result) {
+        if (element.isJsonObject()) {
+            var object = element.getAsJsonObject();
+            if (object.has("type") && object.get("type").isJsonPrimitive()
+                    && object.get("type").getAsString().equals("tutorial")) result.add(object);
+            else for (var child : object.entrySet()) collectTutorialActions(child.getValue(), result);
+        } else if (element.isJsonArray()) {
+            for (var child : element.getAsJsonArray()) collectTutorialActions(child, result);
+        }
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "clipboard")
+    public static void filterExerciseRequiresAssignmentObservationAndReassignment(GameTestHelper helper) throws Exception {
+        try (var f = fixture(helper)) {
+            var run = rebind(f, HiredVillagerRole.CRAFTSMAN, VillagerProfession.TOOLSMITH);
+            var level = helper.getLevel();
+            var questId = TutorialService.questId(HiredVillagerRole.CRAFTSMAN);
+            com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(level).getOrCreate(f.player.getUUID(), questId)
+                    .start(f.worker.getUUID(), level.dimension(), null, level.getGameTime());
+            var recipe = TutorialCraftingPlan.recipe(level);
+            helper.assertTrue(recipe != null, "runtime oak-planks recipe available");
+            var filter = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.RECIPE_FILTER.get());
+            com.jvn.villagerretaliation.item.VillagerRecipeFilterData.setRecipe(filter, level, recipe.id());
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(filter,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.DENY_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, filter);
+            helper.assertFalse(TutorialFilterExercise.check(level, f.worker, run, "filter_excluded"),
+                    "configured held filter and menu opening cannot count as assignment");
+            helper.assertTrue(com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker).assigned(),
+                    "real server assignment succeeds");
+            helper.assertTrue(TutorialFilterExercise.check(level, f.worker, run, "filter_excluded"), "installed exclusion counts");
+            var corrected = com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignedFilter(f.worker).copyWithCount(1);
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(corrected,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.ALLOW_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, corrected);
+            com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker);
+            helper.assertFalse(TutorialFilterExercise.check(level, f.worker, run, "filter_corrected"),
+                    "correction before observation does not skip the exercise");
+            var excluded = com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignedFilter(f.worker).copyWithCount(1);
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(excluded,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.DENY_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, excluded);
+            com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker);
+            var dialogue = VillagerInteractionService.createDialogueContext(level, f.player, f.worker);
+            var observation = VillagerActionDefinition.readObjects(questId, "authored filter observation",
+                    authoredTutorialActions("craftsman"), questId).stream()
+                    .filter(action -> action.factValue().equals("learn") && action.text().equals(TutorialFilterExercise.OBSERVED))
+                    .findFirst().orElseThrow();
+            helper.assertTrue(com.jvn.villagerretaliation.action.VillagerActionRegistry.execute(dialogue, observation, Map.of()).success(),
+                    "parsed shipped observation executes through the registry and checks the installed exclusion");
+            var finalFilter = com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignedFilter(f.worker).copyWithCount(1);
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(finalFilter,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.ALLOW_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, finalFilter);
+            com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker);
+            helper.assertTrue(TutorialFilterExercise.check(level, f.worker, run, "filter_corrected"),
+                    "correction must be committed after observation");
+            helper.assertValueEqual(run.committedUnits("craft"), 0, "filter setup grants no productive work");
+            helper.assertFalse(run.completed(), "filter exercise cannot complete the finite trial");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "clipboard")
+    public static void personalJobBlockersSeparateEmptyScansStorageAndPaths(GameTestHelper helper) throws Exception {
+        try (var f = fixture(helper)) {
+            var session = HiredWorkSession.create(helper.getLevel(), f.worker, HiredVillagerRole.FARMING);
+            for (String reason : List.of("no_targets", "storage_full_or_unavailable", "target_unreachable")) {
+                var state = reason.equals("storage_full_or_unavailable")
+                        ? com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.PAUSED_STORAGE_FULL
+                        : com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.FAILED_COOLDOWN;
+                var brain = new com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.Snapshot(
+                        state, f.outputPos, null, reason, 100, "field_scan_full_no_targets", 0, "");
+                var facts = com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, brain);
+                String advice = com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.describe(session, brain, facts);
+                helper.assertTrue(reason.equals("no_targets") ? advice.contains("scan alone")
+                                : reason.equals("target_unreachable") ? advice.contains("safe walking route")
+                                : advice.contains("Make room"),
+                        "observed blocker has actionable advice without inventing a filter cause: " + advice);
+            }
+            var missingHoe = new com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.Snapshot(
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.IDLE,
+                    null, null, "missing_hoe", 100, "field_scan_full_no_targets", 0, "");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.describe(session, missingHoe,
+                    com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(session, missingHoe)).contains("hoe"),
+                    "specific role blocker is retained over generic scan advice");
+            rebind(f, HiredVillagerRole.CRAFTSMAN, VillagerProfession.TOOLSMITH);
+            var craftsman = HiredWorkSession.create(helper.getLevel(), f.worker, HiredVillagerRole.CRAFTSMAN);
+            var missing = new com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain.Snapshot(
+                    com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState.WAITING_FOR_MATERIALS,
+                    null, null, "missing_craftsman_materials", 100, "", 0, "");
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.PersonalWorkerDiagnostics.describe(craftsman, missing,
+                    com.jvn.villagerretaliation.interaction.HiredWorkerFacts.observe(craftsman, missing)).contains("Add the recipe ingredients"),
+                    "missing supplies provide the actual inventory or assigned Supplies repair");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "clipboard")
     public static void farmerProvesActualWorkAndDoesNotCountOldWheat(GameTestHelper helper) throws Exception {
         try (var f = fixture(helper)) {
             f.output.setItem(0, new ItemStack(Items.WHEAT, 9));
@@ -236,7 +369,33 @@ public final class ClipboardTutorialGameTests {
             helper.assertValueEqual(run.committedUnits("craft"),1,"one actual recipe operation, no repeat free crafts");
             helper.assertValueEqual(run.deposited("minecraft:oak_planks"),4,"only actual recipe result counts");
             helper.assertValueEqual(inventory.getItem(HiredJobInventory.MAIN_GRID_START).getCount(),2,"two unallocated logs remain untouched");
-            helper.assertTrue(run.completed(),"real craft and delivery finish");helper.succeed();
+            helper.assertTrue(run.completed(),"real craft and delivery finish");
+            // A learner may authorize the bounded craft through common dialogue before reaching these cards.
+            // Finishing that work must not strand the later setup-only exercise or restart free production.
+            var lessonFilter = new ItemStack(com.jvn.villagerretaliation.item.VillagerRetaliationItems.RECIPE_FILTER.get());
+            com.jvn.villagerretaliation.item.VillagerRecipeFilterData.setRecipe(lessonFilter, level, TutorialCraftingPlan.recipe(level).id());
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(lessonFilter,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.DENY_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, lessonFilter);
+            helper.assertTrue(com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker).assigned(),
+                    "completed bound trial still accepts instructional filter assignment");
+            helper.assertTrue(TutorialFilterExercise.check(level, f.worker, run, "filter_excluded"),
+                    "completed trial can demonstrate exclusion without a new allowance");
+            var dialogue = VillagerInteractionService.createDialogueContext(level, f.player, f.worker);
+            helper.assertTrue(TutorialLessonCheckpoints.acknowledge(dialogue, run, TutorialFilterExercise.OBSERVED).isEmpty(),
+                    "completed trial can observe its installed filter");
+            var corrected = com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignedFilter(f.worker).copyWithCount(1);
+            com.jvn.villagerretaliation.item.VillagerFilterPolicy.setListMode(corrected,
+                    com.jvn.villagerretaliation.item.VillagerFilterPolicy.ListMode.ALLOW_MATCHING);
+            f.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, corrected);
+            com.jvn.villagerretaliation.inventory.VillagerItemFilterService.assignHeldFilter(f.player, f.worker);
+            helper.assertTrue(TutorialFilterExercise.check(level, f.worker, run, "filter_corrected"),
+                    "completed trial can finish correction and reach the closing choice");
+            helper.assertTrue(run.completed(), "setup-only exercise retains earned completion");
+            helper.assertValueEqual(run.committedUnits("craft"), 1, "setup does not replenish the spent craft budget");
+            helper.assertFalse(TutorialWorkService.canTick(f.worker, HiredVillagerRole.CRAFTSMAN),
+                    "completed work stays frozen until explicit continuation");
+            helper.succeed();
         }
     }
     @GameTest(template="empty",timeoutTicks=100,batch="clipboard")

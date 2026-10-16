@@ -54,7 +54,13 @@ public final class VillagerFilterPolicy {
         TransferDirection direction = TransferDirection.byId(root.getString(DIRECTION_TAG));
         ListMode listMode = ListMode.byId(root.getString(LIST_MODE_TAG));
         CombinationMode combination = CombinationMode.byId(root.getString(COMBINATION_TAG));
-        if (direction == null || listMode == null || combination == null || !combination.authorable()) {
+        if (direction == null || listMode == null || combination == null) {
+            return Policy.invalid();
+        }
+        // Unrelated policy edits retain a saved item's legacy predicate expression. Legacy
+        // remains unavailable as a new combination choice and applies only to item filters.
+        if (combination == CombinationMode.LEGACY
+                && !VillagerRetaliationItems.isItemFilter(filter)) {
             return Policy.invalid();
         }
 
@@ -137,6 +143,7 @@ public final class VillagerFilterPolicy {
                 if (listMode == null) {
                     yield false;
                 }
+                boolean storedPolicy = hasStoredPolicy(filter);
                 boolean matcherChanged = false;
                 if (VillagerRetaliationItems.isItemFilter(filter)) {
                     VillagerItemFilterData.Mode itemMode = listMode == ListMode.DENY_MATCHING
@@ -146,12 +153,20 @@ public final class VillagerFilterPolicy {
                     if (matcherChanged) {
                         VillagerItemFilterData.setMode(filter, itemMode);
                     }
+                    if (!storedPolicy) {
+                        // Mode edits must not opt legacy per-entry stock limits into a shared target.
+                        yield matcherChanged;
+                    }
                 } else if (VillagerRetaliationItems.isAttributeFilter(filter)) {
                     boolean inverted = listMode == ListMode.DENY_MATCHING;
                     matcherChanged = VillagerAttributeFilterData.read(filter).attribute() != null
                             && VillagerAttributeFilterData.read(filter).inverted() != inverted;
                     if (matcherChanged) {
                         VillagerAttributeFilterData.setInverted(filter, inverted);
+                    }
+                    if (!storedPolicy && (VillagerAttributeFilterData.read(filter).attribute() != null
+                            || !inverted)) {
+                        yield matcherChanged;
                     }
                 }
                 yield setListMode(filter, listMode) || matcherChanged;
@@ -168,6 +183,10 @@ public final class VillagerFilterPolicy {
                                     ? VillagerItemFilterData.EntryCombination.ALL
                                     : VillagerItemFilterData.EntryCombination.ANY;
                     matcherChanged = VillagerItemFilterData.setEntryCombination(filter, itemCombination);
+                    if (!hasStoredPolicy(filter)) {
+                        // The inferred policy already reads this combination; keep entry limits active.
+                        yield matcherChanged;
+                    }
                 }
                 yield setCombinationMode(filter, combination) || matcherChanged;
             }
@@ -303,6 +322,10 @@ public final class VillagerFilterPolicy {
                             "item.villagerretaliation.filter_policy.stock." + policy.direction().id(),
                             amount)
                     .withStyle(ChatFormatting.GRAY));
+        }
+        if (policy.state() == PolicyState.LEGACY) {
+            lines.add(Component.translatable("item.villagerretaliation.filter_policy.legacy")
+                    .withStyle(ChatFormatting.YELLOW));
         }
         lines.add(Component.translatable("item.villagerretaliation.filter_policy.nested_matcher")
                 .withStyle(ChatFormatting.DARK_GRAY));

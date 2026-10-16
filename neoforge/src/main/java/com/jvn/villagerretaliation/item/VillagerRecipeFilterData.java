@@ -292,7 +292,9 @@ public final class VillagerRecipeFilterData {
         List<Component> tooltip = new ArrayList<>(VillagerFilterPolicy.tooltip(filter));
         if (configuration.state() == StoredState.EMPTY) {
             tooltip.add(Component.translatable("item.villagerretaliation.recipe_filter.empty")
-                    .withStyle(ChatFormatting.GRAY));
+                    .withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.translatable("item.villagerretaliation.recipe_filter.empty_effect")
+                    .withStyle(ChatFormatting.YELLOW));
         } else if (configuration.state() == StoredState.MALFORMED) {
             tooltip.add(Component.translatable("item.villagerretaliation.recipe_filter.malformed")
                     .withStyle(ChatFormatting.RED));

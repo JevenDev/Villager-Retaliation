@@ -442,7 +442,8 @@ public final class VillagerItemFilterData {
             Component line = Component.literal("- ")
                     .withStyle(ChatFormatting.DARK_GRAY)
                     .append(description.copy().withStyle(ChatFormatting.GRAY));
-            if (configuredEntry.amount() > UNLIMITED_AMOUNT) {
+            if (configuredEntry.amount() > UNLIMITED_AMOUNT
+                    && VillagerFilterPolicy.read(filter).state() == VillagerFilterPolicy.PolicyState.LEGACY) {
                 line = line.copy().append(Component.literal(" ×" + formatAmount(configuredEntry.amount()))
                         .withStyle(ChatFormatting.GRAY));
             }
@@ -452,6 +453,12 @@ public final class VillagerItemFilterData {
         if (shown == 0) {
             tooltip.add(Component.translatable("item.villagerretaliation.item_filter.empty")
                     .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable(
+                            "item.villagerretaliation.filter_policy.empty."
+                                    + VillagerFilterPolicy.read(filter).listMode().id())
+                    .withStyle(VillagerFilterPolicy.read(filter).listMode()
+                            == VillagerFilterPolicy.ListMode.ALLOW_MATCHING
+                            ? ChatFormatting.YELLOW : ChatFormatting.GRAY));
         }
         tooltip.add(Component.translatable("item.villagerretaliation.item_filter.controls.toggle")
                 .withStyle(ChatFormatting.DARK_GRAY));
