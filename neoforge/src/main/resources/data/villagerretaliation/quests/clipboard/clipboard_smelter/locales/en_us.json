@@ -280,7 +280,7 @@
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.0.responses.3.exchanges.0.text": "Let me demonstrate",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.0.exchanges.0.text": "Hold the lesson’s Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking to open it. Click the < or > arrows until the recipe for iron ingots from the supported raw iron recipe is shown.",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.lines": [
-    "Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it."
+    "Leave the mode button on Allow (Allow Matching). Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it."
   ],
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.responses.0.label": "Show me the next step",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.responses.0.exchanges.0.text": "Show me the next step",
@@ -290,7 +290,7 @@
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.responses.2.exchanges.0.text": "I chose the wrong target",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.responses.3.label": "Let me demonstrate",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.responses.3.exchanges.0.text": "Let me demonstrate",
-  "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.exchanges.0.text": "Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it.",
+  "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.1.exchanges.0.text": "Leave the mode button on Allow (Allow Matching). Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it.",
   "villagerretaliation.quest.clipboard.smelter.stages.4.scenes.2.lines": [
     "Put the filter away, use an empty hand on me, and choose Job → Job Inventory. Pick up the configured Recipe Filter with a left mouse click, then left-click my filter slot to place it. Show me the installed filter."
   ],
