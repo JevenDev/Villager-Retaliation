@@ -117,23 +117,59 @@
           "cards": [
             {
               "id": "card_1",
-              "text": "Hold the lesson’s Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking to open it. Click the < or > arrows until the recipe for oak planks from the approved oak log recipe is shown."
+              "text": "Hold the lesson Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking. Click the < or > arrows until the oak-log-to-oak-planks recipe is shown. Check the ingredient and four-plank result."
             },
             {
               "id": "card_2",
-              "text": "Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it."
+              "text": "Click the recipe filter mode button until it reads Deny (Deny Matching). This deliberately excludes the selected recipe output. Close the editor; do not hold {Sneak} while using the filter, because that clears it."
             },
             {
               "id": "card_3",
-              "text": "Put the filter away, use an empty hand on me, and choose Job → Job Inventory. Pick up the configured Recipe Filter with a left mouse click, then left-click my filter slot to place it. Show me the installed filter."
+              "text": "Keep the configured Recipe Filter in your main hand, point at me, your bound Craftsman, and press {Use}. Choose Assign configured filter. That installs the filter with its saved mode. Opening this menu alone does not assign it. Keep any returned previous filter safely."
             },
             {
               "id": "card_4",
-              "text": "Put the Clipboard away before opening the supply chest. Press {Use} on the chest with an empty hand and place the allocated ingredients and fuel, where required, in it."
+              "text": "Return to this lesson and choose Check my committed result. Work stays within the same finite trial; do not start work while this deliberately wrong mode is installed."
             }
           ],
-          "confirmation_guidance": "Highlight the actual filter slot and selected recipe ID/result. Confirm the installed filter and effective runtime recipe, not just an open filter editor. Supply a Recipe Filter as a once-only lesson loan if needed. The tutorial needs a slot highlight; do not invent a slot number or a keyboard shortcut.",
-          "recovery": "If the recipe is absent, stop and show the missing supported recipe; do not pretend a similar result is the same recipe. If a different filter is already installed, retain it safely and ask before replacing it. Use the arrows again to correct a wrong selection.",
+          "confirmation_guidance": "Verify a real successful filter assignment by this player to the bound Craftsman and the installed recipe/mode. An edited held filter or opened menu is insufficient.",
+          "recovery": "Use the arrows to select the actual one-log, four-plank recipe. Set Deny Matching, then hold the filter, press {Use} on the bound Craftsman and choose Assign configured filter. If that recipe is unavailable, stop and report the missing runtime recipe.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "filter_observe",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "Put the filter and Clipboard away. With an empty hand, press {Use} on me and reopen this Craftsman lesson. Choose Show me exactly how, then Check my committed result on this card. I will evaluate the filter installed on this worker against oak planks."
+            },
+            {
+              "id": "card_2",
+              "text": "Deny Matching excludes our selected oak-plank output; other outputs can still match. Choose Check my committed result to receive the server-confirmed result before changing anything. This is a filter check, not a completed craft."
+            }
+          ],
+          "confirmation_guidance": "Check the installed filter on the server; no menu-open, task-start or old item grants productive credit.",
+          "recovery": "Keep the installed oak-planks Recipe Filter in Deny Matching. Ask me to check it before correcting it; changing only a held copy cannot change the worker.",
+          "repeat_label": "Show me again"
+        },
+        {
+          "id": "filter_adjust",
+          "cards": [
+            {
+              "id": "card_1",
+              "text": "With the Clipboard put away, press {Use} on me with an empty hand. Choose Job > Job Inventory. Left-click the installed Recipe Filter in my filter slot, then an empty player inventory slot to retrieve it. Close the menu and put it in your main hand."
+            },
+            {
+              "id": "card_2",
+              "text": "Aim into empty air and press {Use} without sneaking. Keep the same oak-planks recipe and click the mode button until Allow (Allow Matching) appears. Close the editor, hold that filter, press {Use} on me and choose Assign configured filter again."
+            },
+            {
+              "id": "card_3",
+              "text": "Return to this lesson and choose Check my committed result. I check the correction was assigned after the exclusion was observed, and that oak planks now match. Then put the Clipboard away, press {Use} on the supplies chest with an empty hand, and place the allocated oak log inside. The later work step still requires one real craft and delivery."
+            }
+          ],
+          "confirmation_guidance": "Check the installed filter on the server; no menu-open, task-start or old item grants productive credit.",
+          "recovery": "Retrieve the installed filter through Job > Job Inventory. Correct its mode to Allow Matching and use it on the same Craftsman, then choose Assign configured filter. Supplies, reachable table and output room are still required.",
           "repeat_label": "Show me again"
         },
         {
@@ -157,11 +193,11 @@
           "repeat_label": "Show me again"
         }
       ],
-      "design_objective": "Configure the existing item/recipe filter in the worker's filter slot for the selected planks recipe/output. Use one target with Prefer First; do not teach a mode cycle as an extra production system.",
+      "design_objective": "Configure and assign an excluding Recipe Filter, observe the committed matching result, then correct and reassign it before the finite one-craft trial.",
       "design_check": "server resolves a supported crafting target and exact input alternatives.",
       "design_provisions": "a configured filter loan or guided filter configuration and one matching log once. Explain one recipe operation may produce several items.",
       "design_hook": "",
-      "design_notes": "4 Specify the output\n\n**Teach and demonstrate (spoken in order):**\n1. “Hold the lesson’s Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking to open it. Click the < or > arrows until the recipe for oak planks from the approved oak log recipe is shown.”\n2. “Leave the filter in Allow Matching mode. Check the displayed ingredient and result against the lesson card, then close the filter. Do not sneak-use it: that clears it.”\n3. “Put the filter away, use an empty hand on me, and choose Job → Job Inventory. Pick up the configured Recipe Filter with a left mouse click, then left-click my filter slot to place it. Show me the installed filter.”\n4. “Put the Clipboard away before opening the supply chest. Press {Use} on the chest with an empty hand and place the allocated ingredients and fuel, where required, in it.”\n\n**Show / confirm:** Highlight the actual filter slot and selected recipe ID/result. Confirm the installed filter and effective runtime recipe, not just an open filter editor. Supply a Recipe Filter as a once-only lesson loan if needed. The tutorial needs a slot highlight; do not invent a slot number or a keyboard shortcut.\n\n**If it goes wrong:** “If the recipe is absent, stop and show the missing supported recipe; do not pretend a similar result is the same recipe. If a different filter is already installed, retain it safely and ask before replacing it. Use the arrows again to correct a wrong selection.”\n\n\n**Teach and demonstrate (spoken in order):**\n1. “Put the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.”\n2. “Click the craftsman mode control until Prefer First is reported. For this lesson keep only our one explicit target recipe.”\n3. “Show me those settings. We will begin once they are right.”\n\n**Show / confirm:** Read back the server-confirmed settings on this tutor; highlight only the next requested option.\n\n**If it goes wrong:** “If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial.”\n\n\n**Optional flavour line:** “Tell me which planks you want. One matching log will make our first batch.”\n\n**Task:** Configure the existing item/recipe filter in the worker's filter slot for the selected planks recipe/output. Use one target with Prefer First; do not teach a mode cycle as an extra production system.\n\n**Check:** server resolves a supported crafting target and exact input alternatives.\n\n**Provides:** a configured filter loan or guided filter configuration and one matching log once. Explain one recipe operation may produce several items."
+      "design_notes": "4 Specify the output\n\nThe personal filter follow-up extends the original v1 setup with committed configure, assign, observe and adjust checkpoints.\n\nSequence step_4_sequence_1\nHold the lesson Recipe Filter in your main hand. Aim into empty air and press {Use} without sneaking. Click the < or > arrows until the oak-log-to-oak-planks recipe is shown. Check the ingredient and four-plank result.\nClick the recipe filter mode button until it reads Deny (Deny Matching). This deliberately excludes the selected recipe output. Close the editor; do not hold {Sneak} while using the filter, because that clears it.\nKeep the configured Recipe Filter in your main hand, point at me, your bound Craftsman, and press {Use}. Choose Assign configured filter. That installs the filter with its saved mode. Opening this menu alone does not assign it. Keep any returned previous filter safely.\nReturn to this lesson and choose Check my committed result. Work stays within the same finite trial; do not start work while this deliberately wrong mode is installed.\nRecovery: Use the arrows to select the actual one-log, four-plank recipe. Set Deny Matching, then hold the filter, press {Use} on the bound Craftsman and choose Assign configured filter. If that recipe is unavailable, stop and report the missing runtime recipe.\n\nSequence filter_observe\nPut the filter and Clipboard away. With an empty hand, press {Use} on me and reopen this Craftsman lesson. Choose Show me exactly how, then Check my committed result on this card. I will evaluate the filter installed on this worker against oak planks.\nDeny Matching excludes our selected oak-plank output; other outputs can still match. Choose Check my committed result to receive the server-confirmed result before changing anything. This is a filter check, not a completed craft.\nRecovery: Keep the installed oak-planks Recipe Filter in Deny Matching. Ask me to check it before correcting it; changing only a held copy cannot change the worker.\n\nSequence filter_adjust\nWith the Clipboard put away, press {Use} on me with an empty hand. Choose Job > Job Inventory. Left-click the installed Recipe Filter in my filter slot, then an empty player inventory slot to retrieve it. Close the menu and put it in your main hand.\nAim into empty air and press {Use} without sneaking. Keep the same oak-planks recipe and click the mode button until Allow (Allow Matching) appears. Close the editor, hold that filter, press {Use} on me and choose Assign configured filter again.\nReturn to this lesson and choose Check my committed result. I check the correction was assigned after the exclusion was observed, and that oak planks now match. Then put the Clipboard away, press {Use} on the supplies chest with an empty hand, and place the allocated oak log inside. The later work step still requires one real craft and delivery.\nRecovery: Retrieve the installed filter through Job > Job Inventory. Correct its mode to Allow Matching and use it on the same Craftsman, then choose Assign configured filter. Supplies, reachable table and output room are still required.\n\nSequence step_4_sequence_2\nPut the Clipboard away. With an empty hand, press {Use} on me, then choose Job and Work Settings.\nClick the craftsman mode control until Prefer First is reported. For this lesson keep only our one explicit target recipe.\nShow me those settings. We will begin once they are right.\nRecovery: If you opened the Clipboard storage menu, close it and put the Clipboard away before talking to me again. If Job is unavailable, the lesson must restore your trial assignment; do not buy a paid hire to get past the tutorial."
     },
     {
       "id": "step_5",
@@ -278,7 +314,38 @@
         "type": "work_state",
         "tutorial": "villagerretaliation:clipboard_craftsman",
         "role": "craftsman",
-        "check": "selection"
+        "check": "selection",
+        "parameter": "filter_excluded"
+      }
+    ],
+    "filter_observe": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_craftsman",
+        "role": "craftsman",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_craftsman",
+        "role": "craftsman",
+        "check": "selection",
+        "parameter": "filter_observed"
+      }
+    ],
+    "filter_adjust": [
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_craftsman",
+        "role": "craftsman",
+        "check": "assignment"
+      },
+      {
+        "type": "work_state",
+        "tutorial": "villagerretaliation:clipboard_craftsman",
+        "role": "craftsman",
+        "check": "selection",
+        "parameter": "filter_corrected"
       }
     ],
     "step_4_sequence_2": [

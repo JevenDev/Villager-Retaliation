@@ -35,6 +35,9 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     private Button allowlistButton;
     private Button denylistButton;
     private Button entryCombinationButton;
+    private boolean showingContainerSettings;
+    private Button settingsToggle;
+    private Button summaryButton;
     private Button directionButton;
     private Button decreaseStockButton;
     private Button stockTargetButton;
@@ -50,6 +53,20 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     @Override
     protected void init() {
         super.init();
+        this.settingsToggle = Button.builder(Component.literal("..."), button -> {
+                    this.showingContainerSettings = !this.showingContainerSettings;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 151, this.topPos + 3, 18, 12)
+                .build();
+        this.summaryButton = Button.builder(Component.empty(), button -> {
+                    this.showingContainerSettings = true;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 8, this.topPos + 64, 160, 18)
+                .build();
+        addRenderableWidget(this.settingsToggle);
+        addRenderableWidget(this.summaryButton);
         this.allowlistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.filter_policy.mode.allow_matching"),
                         button -> setListMode(VillagerFilterPolicy.ListMode.ALLOW_MATCHING))
@@ -125,13 +142,15 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.title.getString(), 140),
+                this.titleLabelX, this.titleLabelY, 0x404040, false);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (scrollY != 0.0
                 && this.stockTargetButton != null
+                && this.stockTargetButton.visible
                 && this.stockTargetButton.isMouseOver(mouseX, mouseY)
                 && this.menu.filterPolicy().listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING) {
             int step = ToucanSlotAmounts.step(ToucanInputModifiers.current());
@@ -164,6 +183,9 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     @Override
     protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
         List<Component> tooltip = new ArrayList<>(super.getTooltipFromContainerItem(stack));
+        if (this.hoveredSlot != null && this.hoveredSlot.index >= VillagerItemFilterMenu.GHOST_SLOT_COUNT) {
+            FilterEditorHelp.appendPreview(tooltip, this.minecraft.level, this.menu.editedFilter(), stack);
+        }
         if (this.hoveredSlot == null
                 || this.menu.filterPolicy().state() != VillagerFilterPolicy.PolicyState.LEGACY
                 || this.hoveredSlot.index < 0
@@ -256,7 +278,9 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     }
 
     private void setListMode(VillagerFilterPolicy.ListMode mode) {
-        changePolicy(VillagerFilterPolicy.PolicyField.LIST_MODE, mode.networkId());
+        if (this.menu.filterPolicy().listMode() != mode) {
+            changePolicy(VillagerFilterPolicy.PolicyField.LIST_MODE, mode.networkId());
+        }
     }
 
     private void cycleEntryCombination() {
@@ -292,16 +316,6 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         refreshButtons();
     }
 
-    private static Tooltip entryCombinationTooltip(VillagerFilterPolicy.CombinationMode combination) {
-        String description = "villagerretaliation.gui.filter_policy.combination."
-                + combination.id() + ".description";
-        return modeTooltip(
-                "villagerretaliation.gui.filter_policy.combination.title",
-                combination == VillagerFilterPolicy.CombinationMode.LEGACY
-                        ? ChatFormatting.YELLOW : ChatFormatting.AQUA,
-                description);
-    }
-
     private void refreshButtons() {
         if (this.allowlistButton == null
                 || this.denylistButton == null
@@ -311,25 +325,42 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
             return;
         }
         VillagerFilterPolicy.Policy policy = this.menu.filterPolicy();
+        this.settingsToggle.setMessage(Component.literal(this.showingContainerSettings ? "<" : "..."));
+        this.settingsToggle.setTooltip(FilterEditorHelp.containerToggle(this.showingContainerSettings));
+        this.summaryButton.visible = !this.showingContainerSettings;
+        this.summaryButton.setMessage(FilterEditorHelp.summary(this.menu.editedFilter()));
+        this.summaryButton.setTooltip(FilterEditorHelp.rules(this.menu.editedFilter()));
+        this.directionButton.visible = this.showingContainerSettings;
+        this.stockTargetButton.visible = this.showingContainerSettings;
+        this.decreaseStockButton.visible = this.showingContainerSettings;
+        this.increaseStockButton.visible = this.showingContainerSettings;
         this.allowlistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
         this.denylistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.DENY_MATCHING;
+        this.allowlistButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
+                "villagerretaliation.gui.filter_policy.mode.allow_matching.description")));
+        this.denylistButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
+                "villagerretaliation.gui.filter_policy.mode.deny_matching.description")));
         VillagerFilterPolicy.CombinationMode combination = policy.combinationMode();
         this.entryCombinationButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.filter_policy.combination." + combination.id()));
-        this.entryCombinationButton.setTooltip(entryCombinationTooltip(combination));
+        this.entryCombinationButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(),
+                Component.translatable("villagerretaliation.gui.filter_policy.combination."
+                        + combination.id() + ".description")));
         this.directionButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction." + policy.direction().id()));
-        this.directionButton.setTooltip(Tooltip.create(Component.translatable(
+        this.directionButton.setTooltip(FilterEditorHelp.containerTooltip(this.menu.editedFilter(), Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction.description")));
         Component target = policy.stockTarget().isPresent()
                 ? Component.literal(Integer.toString(policy.stockTarget().getAsInt()))
                 : Component.translatable("villagerretaliation.gui.filter_policy.stock.unlimited");
-        this.stockTargetButton.setMessage(Component.translatable(
-                "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target));
+        this.stockTargetButton.setMessage(target);
+        Component stockSummary = Component.translatable(
+                "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target);
         boolean quantitative = policy.listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
-        Tooltip stockTooltip = Tooltip.create(Component.translatable(quantitative
+        Tooltip stockTooltip = FilterEditorHelp.containerTooltip(this.menu.editedFilter(), stockSummary.copy()
+                .append("\n").append(Component.translatable(quantitative
                 ? "villagerretaliation.gui.filter_policy.stock.description"
-                : "villagerretaliation.gui.filter_policy.stock.inactive_deny"));
+                : "villagerretaliation.gui.filter_policy.stock.inactive_deny")));
         this.stockTargetButton.setTooltip(stockTooltip);
         this.decreaseStockButton.setTooltip(stockTooltip);
         this.increaseStockButton.setTooltip(stockTooltip);

@@ -21,9 +21,40 @@ public final class PersonalWorkerDiagnostics {
     }
 
     public static String describe(HiredWorkSession session, HiredWorkerBrain.Snapshot brain, HiredWorkerFacts facts) {
-        return limitDiagnostic(workerDiagnostic(session.role(), brain, session.context(), session.state(),
+        String detail = workerDiagnostic(session.role(), brain, session.context(), session.state(),
                 facts.inventoryFull(), facts.noStorage(), facts.missingMaterials(), facts.materialStorageUnreachable(),
-                facts.materialInventoryFull(), facts.buildSiteUnreachable()));
+                facts.materialInventoryFull(), facts.buildSiteUnreachable());
+        if (!detail.isBlank()) return limitDiagnostic(detail);
+        String common = commonDiagnostic(brain, facts);
+        if (!common.isBlank()) return common;
+        if (detail.isBlank() && facts.missingMaterials())
+            detail = "Required supplies are missing. Add the recipe ingredients and fuel to Job Inventory or reachable assigned Supplies; check that the installed filter permits them.";
+        return limitDiagnostic(detail);
+    }
+
+    /** Reports observed blockers; a scan with no targets does not prove that a filter caused it. */
+    public static String commonDiagnostic(HiredWorkerBrain.Snapshot brain, HiredWorkerFacts facts) {
+        if (!facts.canBeBlocked()) return "";
+        String reason = lower(brain.failureReason());
+        if (reason.contains("unreachable") || reason.contains("path_failed")) {
+            BlockPos target = diagnosticStoragePos(brain);
+            if (target == null) target = brain.targetPos();
+            return "Cannot reach " + (target == null ? "the required work or storage target" : HiredWorkerBrain.formatPos(target))
+                    + ". Clear a safe walking route and check that the target is inside the assigned area or storage links.";
+        }
+        if (brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL)
+            return "Assigned output storage cannot accept more output. Make room, check its filter and access, or assign another Output chest with the Clipboard.";
+        if (facts.noStorage())
+            return "No usable assigned storage. Select the needed Supplies or Output mode on the Clipboard, use it on a chest, then on this worker and choose Assign Clipboard Storage.";
+        if (facts.inventoryFull())
+            return "Job output has no room. Empty its output slots or make room in assigned Output storage, then enable Auto Deposit Outputs in Job > Work Settings.";
+        if (reason.equals("craftsman_filter_empty"))
+            return "No craft output matches the installed filter. Configure a supported recipe or output, check Allow/Deny, and assign the corrected filter to this worker.";
+        if (reason.equals("no_craftsman_table"))
+            return "No crafting table found in the saved job area. Place a table there or apply a corrected Clipboard job site, leaving a clear path to it.";
+        if (facts.noTargets())
+            return "No eligible target was found in the latest scan. Check the saved job area, target readiness and job settings, then inspect the filter; the scan alone does not identify the cause.";
+        return "";
     }
 
     private static String workerDiagnostic(

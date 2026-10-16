@@ -45,6 +45,8 @@ def build(path):
    elif "job inventory" in lower and role=="combat":checks.append(cond("equipment",item_tag="minecraft:swords"))
    elif any(t in lower for t in ["configure brewing","filter slot","output selection","recipe filter","item filter"]):checks.append(cond("selection"))
    elif "draft" in lower and "task" in lower:checks.append(cond("task"))
+   if role=="craftsman" and seq["id"] in ["step_4_sequence_1","filter_observe","filter_adjust"]:
+    checks=[cond("assignment"),cond("selection",parameter={"step_4_sequence_1":"filter_excluded","filter_observe":"filter_observed","filter_adjust":"filter_corrected"}[seq["id"]])]
    if role=="builder":
     if number==2:checks=[cond("blueprint")]
     elif number==4:checks.append(cond("selection"))

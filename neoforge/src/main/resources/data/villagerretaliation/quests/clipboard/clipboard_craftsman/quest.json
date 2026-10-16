@@ -2653,7 +2653,7 @@
           ]
         }
       ],
-      "next": "step_4_sequence_2",
+      "next": "filter_observe",
       "ui": {
         "title": {
           "key": "#stages.4.ui.title"
@@ -2665,7 +2665,7 @@
       }
     },
     {
-      "id": "step_4_sequence_2",
+      "id": "filter_observe",
       "title": {
         "key": "#stages.5.title"
       },
@@ -2679,7 +2679,7 @@
               "tutorial": "villagerretaliation:clipboard_craftsman",
               "role": "craftsman",
               "check": "learned",
-              "parameter": "step_4_sequence_2"
+              "parameter": "filter_observe"
             }
           ],
           "tracker": {
@@ -2720,7 +2720,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_card_1"
+              "scene": "filter_observe_card_1"
             },
             {
               "id": "supplies",
@@ -2893,7 +2893,7 @@
       },
       "scenes": [
         {
-          "id": "step_4_sequence_2_card_1",
+          "id": "filter_observe_card_1",
           "lines": {
             "key": "#stages.5.scenes.0.lines"
           },
@@ -2913,7 +2913,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_card_2"
+              "scene": "filter_observe_card_2"
             },
             {
               "id": "repeat",
@@ -2930,7 +2930,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_card_1"
+              "scene": "filter_observe_card_1"
             },
             {
               "id": "help",
@@ -2947,7 +2947,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_help"
+              "scene": "filter_observe_help"
             },
             {
               "id": "leave",
@@ -2980,13 +2980,13 @@
           ]
         },
         {
-          "id": "step_4_sequence_2_card_2",
+          "id": "filter_observe_card_2",
           "lines": {
             "key": "#stages.5.scenes.1.lines"
           },
           "responses": [
             {
-              "id": "next",
+              "id": "check",
               "label": {
                 "key": "#stages.5.scenes.1.responses.0.label"
               },
@@ -3000,7 +3000,14 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_card_3"
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "learn",
+                  "step": "filter_observe"
+                }
+              ]
             },
             {
               "id": "repeat",
@@ -3017,7 +3024,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_card_1"
+              "scene": "filter_observe_card_1"
             },
             {
               "id": "help",
@@ -3034,7 +3041,7 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_2_help"
+              "scene": "filter_observe_help"
             },
             {
               "id": "leave",
@@ -3067,13 +3074,13 @@
           ]
         },
         {
-          "id": "step_4_sequence_2_card_3",
+          "id": "filter_observe_help",
           "lines": {
             "key": "#stages.5.scenes.2.lines"
           },
           "responses": [
             {
-              "id": "check",
+              "id": "again",
               "label": {
                 "key": "#stages.5.scenes.2.responses.0.label"
               },
@@ -3087,17 +3094,10 @@
                   }
                 }
               ],
-              "actions": [
-                {
-                  "type": "tutorial",
-                  "role": "craftsman",
-                  "operation": "learn",
-                  "step": "step_4_sequence_2"
-                }
-              ]
+              "scene": "filter_observe_card_1"
             },
             {
-              "id": "repeat",
+              "id": "leave",
               "label": {
                 "key": "#stages.5.scenes.2.responses.1.label"
               },
@@ -3108,40 +3108,6 @@
                   },
                   "text": {
                     "key": "#stages.5.scenes.2.responses.1.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "step_4_sequence_2_card_1"
-            },
-            {
-              "id": "help",
-              "label": {
-                "key": "#stages.5.scenes.2.responses.2.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.5.scenes.2.responses.2.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "step_4_sequence_2_help"
-            },
-            {
-              "id": "leave",
-              "label": {
-                "key": "#stages.5.scenes.2.responses.3.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.5.scenes.2.responses.3.exchanges.0.text"
                   }
                 }
               ],
@@ -3159,62 +3125,9 @@
               }
             }
           ]
-        },
-        {
-          "id": "step_4_sequence_2_help",
-          "lines": {
-            "key": "#stages.5.scenes.3.lines"
-          },
-          "responses": [
-            {
-              "id": "again",
-              "label": {
-                "key": "#stages.5.scenes.3.responses.0.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.5.scenes.3.responses.0.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "step_4_sequence_2_card_1"
-            },
-            {
-              "id": "leave",
-              "label": {
-                "key": "#stages.5.scenes.3.responses.1.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.5.scenes.3.responses.1.exchanges.0.text"
-                  }
-                }
-              ],
-              "end": true
-            }
-          ],
-          "exchanges": [
-            {
-              "speaker": {
-                "type": "role",
-                "role": "provider"
-              },
-              "text": {
-                "key": "#stages.5.scenes.3.exchanges.0.text"
-              }
-            }
-          ]
         }
       ],
-      "next": "supplies_deposit_readiness",
+      "next": "filter_adjust",
       "ui": {
         "title": {
           "key": "#stages.5.ui.title"
@@ -3226,7 +3139,7 @@
       }
     },
     {
-      "id": "supplies_deposit_readiness",
+      "id": "filter_adjust",
       "title": {
         "key": "#stages.6.title"
       },
@@ -3240,7 +3153,7 @@
               "tutorial": "villagerretaliation:clipboard_craftsman",
               "role": "craftsman",
               "check": "learned",
-              "parameter": "supplies_deposit_readiness"
+              "parameter": "filter_adjust"
             }
           ],
           "tracker": {
@@ -3281,7 +3194,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "scene": "filter_adjust_card_1"
             },
             {
               "id": "supplies",
@@ -3454,7 +3367,7 @@
       },
       "scenes": [
         {
-          "id": "supplies_deposit_readiness_card_1",
+          "id": "filter_adjust_card_1",
           "lines": {
             "key": "#stages.6.scenes.0.lines"
           },
@@ -3474,7 +3387,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_2"
+              "scene": "filter_adjust_card_2"
             },
             {
               "id": "repeat",
@@ -3491,7 +3404,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "scene": "filter_adjust_card_1"
             },
             {
               "id": "help",
@@ -3508,7 +3421,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "scene": "filter_adjust_help"
             },
             {
               "id": "leave",
@@ -3541,7 +3454,7 @@
           ]
         },
         {
-          "id": "supplies_deposit_readiness_card_2",
+          "id": "filter_adjust_card_2",
           "lines": {
             "key": "#stages.6.scenes.1.lines"
           },
@@ -3561,7 +3474,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_3"
+              "scene": "filter_adjust_card_3"
             },
             {
               "id": "repeat",
@@ -3578,7 +3491,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "scene": "filter_adjust_card_1"
             },
             {
               "id": "help",
@@ -3595,7 +3508,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "scene": "filter_adjust_help"
             },
             {
               "id": "leave",
@@ -3628,13 +3541,13 @@
           ]
         },
         {
-          "id": "supplies_deposit_readiness_card_3",
+          "id": "filter_adjust_card_3",
           "lines": {
             "key": "#stages.6.scenes.2.lines"
           },
           "responses": [
             {
-              "id": "next",
+              "id": "check",
               "label": {
                 "key": "#stages.6.scenes.2.responses.0.label"
               },
@@ -3648,7 +3561,14 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_4"
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "learn",
+                  "step": "filter_adjust"
+                }
+              ]
             },
             {
               "id": "repeat",
@@ -3665,7 +3585,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "scene": "filter_adjust_card_1"
             },
             {
               "id": "help",
@@ -3682,7 +3602,7 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "scene": "filter_adjust_help"
             },
             {
               "id": "leave",
@@ -3715,13 +3635,13 @@
           ]
         },
         {
-          "id": "supplies_deposit_readiness_card_4",
+          "id": "filter_adjust_help",
           "lines": {
             "key": "#stages.6.scenes.3.lines"
           },
           "responses": [
             {
-              "id": "check",
+              "id": "again",
               "label": {
                 "key": "#stages.6.scenes.3.responses.0.label"
               },
@@ -3735,17 +3655,10 @@
                   }
                 }
               ],
-              "actions": [
-                {
-                  "type": "tutorial",
-                  "role": "craftsman",
-                  "operation": "learn",
-                  "step": "supplies_deposit_readiness"
-                }
-              ]
+              "scene": "filter_adjust_card_1"
             },
             {
-              "id": "repeat",
+              "id": "leave",
               "label": {
                 "key": "#stages.6.scenes.3.responses.1.label"
               },
@@ -3756,40 +3669,6 @@
                   },
                   "text": {
                     "key": "#stages.6.scenes.3.responses.1.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "supplies_deposit_readiness_card_1"
-            },
-            {
-              "id": "help",
-              "label": {
-                "key": "#stages.6.scenes.3.responses.2.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.6.scenes.3.responses.2.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "supplies_deposit_readiness_help"
-            },
-            {
-              "id": "leave",
-              "label": {
-                "key": "#stages.6.scenes.3.responses.3.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.6.scenes.3.responses.3.exchanges.0.text"
                   }
                 }
               ],
@@ -3807,62 +3686,9 @@
               }
             }
           ]
-        },
-        {
-          "id": "supplies_deposit_readiness_help",
-          "lines": {
-            "key": "#stages.6.scenes.4.lines"
-          },
-          "responses": [
-            {
-              "id": "again",
-              "label": {
-                "key": "#stages.6.scenes.4.responses.0.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.6.scenes.4.responses.0.exchanges.0.text"
-                  }
-                }
-              ],
-              "scene": "supplies_deposit_readiness_card_1"
-            },
-            {
-              "id": "leave",
-              "label": {
-                "key": "#stages.6.scenes.4.responses.1.label"
-              },
-              "exchanges": [
-                {
-                  "speaker": {
-                    "type": "player"
-                  },
-                  "text": {
-                    "key": "#stages.6.scenes.4.responses.1.exchanges.0.text"
-                  }
-                }
-              ],
-              "end": true
-            }
-          ],
-          "exchanges": [
-            {
-              "speaker": {
-                "type": "role",
-                "role": "provider"
-              },
-              "text": {
-                "key": "#stages.6.scenes.4.exchanges.0.text"
-              }
-            }
-          ]
         }
       ],
-      "next": "step_5_sequence_1",
+      "next": "step_4_sequence_2",
       "ui": {
         "title": {
           "key": "#stages.6.ui.title"
@@ -3874,7 +3700,7 @@
       }
     },
     {
-      "id": "step_5_sequence_1",
+      "id": "step_4_sequence_2",
       "title": {
         "key": "#stages.7.title"
       },
@@ -3888,7 +3714,7 @@
               "tutorial": "villagerretaliation:clipboard_craftsman",
               "role": "craftsman",
               "check": "learned",
-              "parameter": "step_5_sequence_1"
+              "parameter": "step_4_sequence_2"
             }
           ],
           "tracker": {
@@ -3929,7 +3755,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "scene": "step_4_sequence_2_card_1"
             },
             {
               "id": "supplies",
@@ -4102,7 +3928,7 @@
       },
       "scenes": [
         {
-          "id": "step_5_sequence_1_card_1",
+          "id": "step_4_sequence_2_card_1",
           "lines": {
             "key": "#stages.7.scenes.0.lines"
           },
@@ -4122,7 +3948,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_2"
+              "scene": "step_4_sequence_2_card_2"
             },
             {
               "id": "repeat",
@@ -4139,7 +3965,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "scene": "step_4_sequence_2_card_1"
             },
             {
               "id": "help",
@@ -4156,7 +3982,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "scene": "step_4_sequence_2_help"
             },
             {
               "id": "leave",
@@ -4189,7 +4015,7 @@
           ]
         },
         {
-          "id": "step_5_sequence_1_card_2",
+          "id": "step_4_sequence_2_card_2",
           "lines": {
             "key": "#stages.7.scenes.1.lines"
           },
@@ -4209,7 +4035,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_3"
+              "scene": "step_4_sequence_2_card_3"
             },
             {
               "id": "repeat",
@@ -4226,7 +4052,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "scene": "step_4_sequence_2_card_1"
             },
             {
               "id": "help",
@@ -4243,7 +4069,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "scene": "step_4_sequence_2_help"
             },
             {
               "id": "leave",
@@ -4276,7 +4102,7 @@
           ]
         },
         {
-          "id": "step_5_sequence_1_card_3",
+          "id": "step_4_sequence_2_card_3",
           "lines": {
             "key": "#stages.7.scenes.2.lines"
           },
@@ -4300,13 +4126,8 @@
                 {
                   "type": "tutorial",
                   "role": "craftsman",
-                  "operation": "activate"
-                },
-                {
-                  "type": "tutorial",
-                  "role": "craftsman",
                   "operation": "learn",
-                  "step": "step_5_sequence_1"
+                  "step": "step_4_sequence_2"
                 }
               ]
             },
@@ -4325,7 +4146,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "scene": "step_4_sequence_2_card_1"
             },
             {
               "id": "help",
@@ -4342,7 +4163,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "scene": "step_4_sequence_2_help"
             },
             {
               "id": "leave",
@@ -4375,7 +4196,7 @@
           ]
         },
         {
-          "id": "step_5_sequence_1_help",
+          "id": "step_4_sequence_2_help",
           "lines": {
             "key": "#stages.7.scenes.3.lines"
           },
@@ -4395,7 +4216,7 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "scene": "step_4_sequence_2_card_1"
             },
             {
               "id": "leave",
@@ -4428,7 +4249,7 @@
           ]
         }
       ],
-      "next": "step_6_sequence_1",
+      "next": "supplies_deposit_readiness",
       "ui": {
         "title": {
           "key": "#stages.7.ui.title"
@@ -4440,7 +4261,7 @@
       }
     },
     {
-      "id": "step_6_sequence_1",
+      "id": "supplies_deposit_readiness",
       "title": {
         "key": "#stages.8.title"
       },
@@ -4454,7 +4275,7 @@
               "tutorial": "villagerretaliation:clipboard_craftsman",
               "role": "craftsman",
               "check": "learned",
-              "parameter": "step_6_sequence_1"
+              "parameter": "supplies_deposit_readiness"
             }
           ],
           "tracker": {
@@ -4495,7 +4316,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "scene": "supplies_deposit_readiness_card_1"
             },
             {
               "id": "supplies",
@@ -4668,7 +4489,7 @@
       },
       "scenes": [
         {
-          "id": "step_6_sequence_1_card_1",
+          "id": "supplies_deposit_readiness_card_1",
           "lines": {
             "key": "#stages.8.scenes.0.lines"
           },
@@ -4688,7 +4509,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_2"
+              "scene": "supplies_deposit_readiness_card_2"
             },
             {
               "id": "repeat",
@@ -4705,7 +4526,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "scene": "supplies_deposit_readiness_card_1"
             },
             {
               "id": "help",
@@ -4722,7 +4543,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_help"
+              "scene": "supplies_deposit_readiness_help"
             },
             {
               "id": "leave",
@@ -4755,13 +4576,13 @@
           ]
         },
         {
-          "id": "step_6_sequence_1_card_2",
+          "id": "supplies_deposit_readiness_card_2",
           "lines": {
             "key": "#stages.8.scenes.1.lines"
           },
           "responses": [
             {
-              "id": "check",
+              "id": "next",
               "label": {
                 "key": "#stages.8.scenes.1.responses.0.label"
               },
@@ -4775,14 +4596,7 @@
                   }
                 }
               ],
-              "actions": [
-                {
-                  "type": "tutorial",
-                  "role": "craftsman",
-                  "operation": "learn",
-                  "step": "step_6_sequence_1"
-                }
-              ]
+              "scene": "supplies_deposit_readiness_card_3"
             },
             {
               "id": "repeat",
@@ -4799,7 +4613,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "scene": "supplies_deposit_readiness_card_1"
             },
             {
               "id": "help",
@@ -4816,7 +4630,7 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_help"
+              "scene": "supplies_deposit_readiness_help"
             },
             {
               "id": "leave",
@@ -4849,13 +4663,13 @@
           ]
         },
         {
-          "id": "step_6_sequence_1_help",
+          "id": "supplies_deposit_readiness_card_3",
           "lines": {
             "key": "#stages.8.scenes.2.lines"
           },
           "responses": [
             {
-              "id": "again",
+              "id": "next",
               "label": {
                 "key": "#stages.8.scenes.2.responses.0.label"
               },
@@ -4869,10 +4683,10 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "scene": "supplies_deposit_readiness_card_4"
             },
             {
-              "id": "leave",
+              "id": "repeat",
               "label": {
                 "key": "#stages.8.scenes.2.responses.1.label"
               },
@@ -4883,6 +4697,40 @@
                   },
                   "text": {
                     "key": "#stages.8.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.8.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.8.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.2.responses.3.exchanges.0.text"
                   }
                 }
               ],
@@ -4900,15 +4748,1202 @@
               }
             }
           ]
+        },
+        {
+          "id": "supplies_deposit_readiness_card_4",
+          "lines": {
+            "key": "#stages.8.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.8.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "learn",
+                  "step": "supplies_deposit_readiness"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.8.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.8.scenes.3.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.3.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.8.scenes.3.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.3.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.8.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "supplies_deposit_readiness_help",
+          "lines": {
+            "key": "#stages.8.scenes.4.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.8.scenes.4.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.4.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "supplies_deposit_readiness_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.8.scenes.4.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.8.scenes.4.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.8.scenes.4.exchanges.0.text"
+              }
+            }
+          ]
         }
       ],
-      "next": "verified_outcome",
+      "next": "step_5_sequence_1",
       "ui": {
         "title": {
           "key": "#stages.8.ui.title"
         },
         "tracker_text": {
           "key": "#stages.8.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_5_sequence_1",
+      "title": {
+        "key": "#stages.9.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_craftsman",
+              "role": "craftsman",
+              "check": "learned",
+              "parameter": "step_5_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.9.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.9.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.9.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.9.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_5_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.9.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.9.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.9.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.9.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.9.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.9.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_3"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.9.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.9.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_card_3",
+          "lines": {
+            "key": "#stages.9.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.9.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "activate"
+                },
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "learn",
+                  "step": "step_5_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.9.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.9.scenes.2.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.2.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.scenes.2.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.2.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_5_sequence_1_help",
+          "lines": {
+            "key": "#stages.9.scenes.3.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.9.scenes.3.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.3.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_5_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.9.scenes.3.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.9.scenes.3.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.9.scenes.3.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "step_6_sequence_1",
+      "ui": {
+        "title": {
+          "key": "#stages.9.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.9.ui.tracker_text"
+        },
+        "show_progress": false
+      }
+    },
+    {
+      "id": "step_6_sequence_1",
+      "title": {
+        "key": "#stages.10.title"
+      },
+      "objectives": [
+        {
+          "id": "demonstrated",
+          "type": "condition",
+          "conditions": [
+            {
+              "type": "work_state",
+              "tutorial": "villagerretaliation:clipboard_craftsman",
+              "role": "craftsman",
+              "check": "learned",
+              "parameter": "step_6_sequence_1"
+            }
+          ],
+          "tracker": {
+            "text": {
+              "key": "#stages.10.objectives.0.tracker.text"
+            },
+            "complete_text": {
+              "key": "#stages.10.objectives.0.tracker.complete_text"
+            },
+            "show_progress": false
+          }
+        }
+      ],
+      "complete_when": [
+        "demonstrated"
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#stages.10.dialogue.reminder.label"
+          },
+          "lines": {
+            "key": "#stages.10.dialogue.reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "supplies",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "supplies"
+                }
+              ]
+            },
+            {
+              "id": "resume",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "start"
+                }
+              ]
+            },
+            {
+              "id": "revalidate",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "activate"
+                }
+              ]
+            },
+            {
+              "id": "recover",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.4.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.4.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "recover"
+                }
+              ]
+            },
+            {
+              "id": "replace",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.5.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.5.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "replace"
+                }
+              ]
+            },
+            {
+              "id": "pause",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.6.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.6.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "stop"
+                }
+              ]
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.10.dialogue.reminder.responses.7.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.dialogue.reminder.responses.7.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.10.dialogue.reminder.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "step_6_sequence_1_card_1",
+          "lines": {
+            "key": "#stages.10.scenes.0.lines"
+          },
+          "responses": [
+            {
+              "id": "next",
+              "label": {
+                "key": "#stages.10.scenes.0.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.0.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_2"
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.10.scenes.0.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.0.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.10.scenes.0.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.0.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.10.scenes.0.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.0.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.10.scenes.0.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_6_sequence_1_card_2",
+          "lines": {
+            "key": "#stages.10.scenes.1.lines"
+          },
+          "responses": [
+            {
+              "id": "check",
+              "label": {
+                "key": "#stages.10.scenes.1.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.1.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "tutorial",
+                  "role": "craftsman",
+                  "operation": "learn",
+                  "step": "step_6_sequence_1"
+                }
+              ]
+            },
+            {
+              "id": "repeat",
+              "label": {
+                "key": "#stages.10.scenes.1.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.1.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "help",
+              "label": {
+                "key": "#stages.10.scenes.1.responses.2.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.1.responses.2.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_help"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.10.scenes.1.responses.3.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.1.responses.3.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.10.scenes.1.exchanges.0.text"
+              }
+            }
+          ]
+        },
+        {
+          "id": "step_6_sequence_1_help",
+          "lines": {
+            "key": "#stages.10.scenes.2.lines"
+          },
+          "responses": [
+            {
+              "id": "again",
+              "label": {
+                "key": "#stages.10.scenes.2.responses.0.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.2.responses.0.exchanges.0.text"
+                  }
+                }
+              ],
+              "scene": "step_6_sequence_1_card_1"
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#stages.10.scenes.2.responses.1.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#stages.10.scenes.2.responses.1.exchanges.0.text"
+                  }
+                }
+              ],
+              "end": true
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#stages.10.scenes.2.exchanges.0.text"
+              }
+            }
+          ]
+        }
+      ],
+      "next": "verified_outcome",
+      "ui": {
+        "title": {
+          "key": "#stages.10.ui.title"
+        },
+        "tracker_text": {
+          "key": "#stages.10.ui.tracker_text"
         },
         "show_progress": false
       }
@@ -4929,10 +5964,10 @@
           ],
           "tracker": {
             "text": {
-              "key": "#stages.9.objectives.0.tracker.text"
+              "key": "#stages.11.objectives.0.tracker.text"
             },
             "complete_text": {
-              "key": "#stages.9.objectives.0.tracker.complete_text"
+              "key": "#stages.11.objectives.0.tracker.complete_text"
             },
             "show_progress": false
           }
@@ -4944,16 +5979,16 @@
       "dialogue": {
         "reminder": {
           "label": {
-            "key": "#stages.9.dialogue.reminder.label"
+            "key": "#stages.11.dialogue.reminder.label"
           },
           "lines": {
-            "key": "#stages.9.dialogue.reminder.lines"
+            "key": "#stages.11.dialogue.reminder.lines"
           },
           "responses": [
             {
               "id": "supplies",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.0.label"
+                "key": "#stages.11.dialogue.reminder.responses.0.label"
               },
               "exchanges": [
                 {
@@ -4961,7 +5996,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.0.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.0.exchanges.0.text"
                   }
                 }
               ],
@@ -4976,7 +6011,7 @@
             {
               "id": "resume",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.1.label"
+                "key": "#stages.11.dialogue.reminder.responses.1.label"
               },
               "exchanges": [
                 {
@@ -4984,7 +6019,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.1.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.1.exchanges.0.text"
                   }
                 }
               ],
@@ -4999,7 +6034,7 @@
             {
               "id": "revalidate",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.2.label"
+                "key": "#stages.11.dialogue.reminder.responses.2.label"
               },
               "exchanges": [
                 {
@@ -5007,7 +6042,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.2.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.2.exchanges.0.text"
                   }
                 }
               ],
@@ -5022,7 +6057,7 @@
             {
               "id": "recover",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.3.label"
+                "key": "#stages.11.dialogue.reminder.responses.3.label"
               },
               "exchanges": [
                 {
@@ -5030,7 +6065,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.3.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.3.exchanges.0.text"
                   }
                 }
               ],
@@ -5045,7 +6080,7 @@
             {
               "id": "replace",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.4.label"
+                "key": "#stages.11.dialogue.reminder.responses.4.label"
               },
               "exchanges": [
                 {
@@ -5053,7 +6088,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.4.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.4.exchanges.0.text"
                   }
                 }
               ],
@@ -5068,7 +6103,7 @@
             {
               "id": "pause",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.5.label"
+                "key": "#stages.11.dialogue.reminder.responses.5.label"
               },
               "exchanges": [
                 {
@@ -5076,7 +6111,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.5.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.5.exchanges.0.text"
                   }
                 }
               ],
@@ -5091,7 +6126,7 @@
             {
               "id": "leave",
               "label": {
-                "key": "#stages.9.dialogue.reminder.responses.6.label"
+                "key": "#stages.11.dialogue.reminder.responses.6.label"
               },
               "exchanges": [
                 {
@@ -5099,7 +6134,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.9.dialogue.reminder.responses.6.exchanges.0.text"
+                    "key": "#stages.11.dialogue.reminder.responses.6.exchanges.0.text"
                   }
                 }
               ],
@@ -5113,7 +6148,7 @@
                 "role": "provider"
               },
               "text": {
-                "key": "#stages.9.dialogue.reminder.exchanges.0.text"
+                "key": "#stages.11.dialogue.reminder.exchanges.0.text"
               }
             }
           ]
@@ -5122,10 +6157,10 @@
       "next": "choose_next",
       "ui": {
         "title": {
-          "key": "#stages.9.ui.title"
+          "key": "#stages.11.ui.title"
         },
         "tracker_text": {
-          "key": "#stages.9.ui.tracker_text"
+          "key": "#stages.11.ui.tracker_text"
         },
         "show_progress": false
       }
@@ -5146,10 +6181,10 @@
           ],
           "tracker": {
             "text": {
-              "key": "#stages.10.objectives.0.tracker.text"
+              "key": "#stages.12.objectives.0.tracker.text"
             },
             "complete_text": {
-              "key": "#stages.10.objectives.0.tracker.complete_text"
+              "key": "#stages.12.objectives.0.tracker.complete_text"
             },
             "show_progress": false
           }
@@ -5164,16 +6199,16 @@
       "dialogue": {
         "reminder": {
           "label": {
-            "key": "#stages.10.dialogue.reminder.label"
+            "key": "#stages.12.dialogue.reminder.label"
           },
           "lines": {
-            "key": "#stages.10.dialogue.reminder.lines"
+            "key": "#stages.12.dialogue.reminder.lines"
           },
           "responses": [
             {
               "id": "quote",
               "label": {
-                "key": "#stages.10.dialogue.reminder.responses.0.label"
+                "key": "#stages.12.dialogue.reminder.responses.0.label"
               },
               "exchanges": [
                 {
@@ -5181,7 +6216,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.10.dialogue.reminder.responses.0.exchanges.0.text"
+                    "key": "#stages.12.dialogue.reminder.responses.0.exchanges.0.text"
                   }
                 }
               ],
@@ -5196,7 +6231,7 @@
             {
               "id": "accept_fee",
               "label": {
-                "key": "#stages.10.dialogue.reminder.responses.1.label"
+                "key": "#stages.12.dialogue.reminder.responses.1.label"
               },
               "exchanges": [
                 {
@@ -5204,7 +6239,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.10.dialogue.reminder.responses.1.exchanges.0.text"
+                    "key": "#stages.12.dialogue.reminder.responses.1.exchanges.0.text"
                   }
                 }
               ],
@@ -5227,7 +6262,7 @@
             {
               "id": "stop",
               "label": {
-                "key": "#stages.10.dialogue.reminder.responses.2.label"
+                "key": "#stages.12.dialogue.reminder.responses.2.label"
               },
               "exchanges": [
                 {
@@ -5235,7 +6270,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.10.dialogue.reminder.responses.2.exchanges.0.text"
+                    "key": "#stages.12.dialogue.reminder.responses.2.exchanges.0.text"
                   }
                 }
               ],
@@ -5250,7 +6285,7 @@
             {
               "id": "leave",
               "label": {
-                "key": "#stages.10.dialogue.reminder.responses.3.label"
+                "key": "#stages.12.dialogue.reminder.responses.3.label"
               },
               "exchanges": [
                 {
@@ -5258,7 +6293,7 @@
                     "type": "player"
                   },
                   "text": {
-                    "key": "#stages.10.dialogue.reminder.responses.3.exchanges.0.text"
+                    "key": "#stages.12.dialogue.reminder.responses.3.exchanges.0.text"
                   }
                 }
               ],
@@ -5272,7 +6307,7 @@
                 "role": "provider"
               },
               "text": {
-                "key": "#stages.10.dialogue.reminder.exchanges.0.text"
+                "key": "#stages.12.dialogue.reminder.exchanges.0.text"
               }
             }
           ]
@@ -5281,10 +6316,10 @@
       "scenes": [],
       "ui": {
         "title": {
-          "key": "#stages.10.ui.title"
+          "key": "#stages.12.ui.title"
         },
         "tracker_text": {
-          "key": "#stages.10.ui.tracker_text"
+          "key": "#stages.12.ui.tracker_text"
         },
         "show_progress": false
       }

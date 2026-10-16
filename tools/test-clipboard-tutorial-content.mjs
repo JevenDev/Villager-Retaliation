@@ -43,7 +43,7 @@ const shared = JSON.parse(fs.readFileSync(path.join(directory, "shared.json"), "
 assert.equal(shared.sequence.id, "supplies_deposit_readiness");
 sequences++;
 cards += shared.sequence.cards.length;
-assert.equal(sequences, 82);
+assert.equal(sequences, 84);
 const allCards = [...lessons.values()].flatMap(l => l.steps.flatMap(s => s.sequences.flatMap(q => q.cards.map(c => c.text))));
 assert(allCards.some(text => /Assign Clipboard Storage/.test(text)), "Storage commit menu must be taught");
 assert(allCards.some(text => /right-click the Clipboard slot/.test(text)), "Physical inventory right-click must remain literal");
@@ -76,3 +76,18 @@ for (const role of roles) {
   }
 }
 console.log(`Clipboard tutorials: 14 playable personal quests, ${sequences} teaching sequences, ${cards} source cards and server checkpoints checked`);
+
+const craftsman = lessons.get("craftsman");
+for (const [step, parameter] of [["step_4_sequence_1", "filter_excluded"], ["filter_observe", "filter_observed"], ["filter_adjust", "filter_corrected"]]) {
+  assert(craftsman.checkpoints[step].some(check => check.check === "selection" && check.parameter === parameter));
+}
+const craftText = JSON.stringify(craftsman.steps[3].sequences);
+assert(craftText.includes("Assign configured filter"));
+assert(craftText.includes("Other outputs") || craftText.includes("other outputs"));
+assert(craftText.includes("main hand") && craftText.includes("{Use}") && craftText.includes("{Sneak}"));
+const craftQuest = JSON.parse(fs.readFileSync("neoforge/src/main/resources/data/villagerretaliation/quests/clipboard/clipboard_craftsman/quest.json", "utf8"));
+const stageIndex = id => craftQuest.stages.findIndex(stage => stage.id === id);
+assert(stageIndex("step_4_sequence_1") < stageIndex("filter_observe"));
+assert(stageIndex("filter_observe") < stageIndex("filter_adjust"));
+assert(stageIndex("filter_adjust") < stageIndex("step_5_sequence_1"));
+console.log("Craftsman filter exercise: committed assignment, observation, correction and ordering checked");

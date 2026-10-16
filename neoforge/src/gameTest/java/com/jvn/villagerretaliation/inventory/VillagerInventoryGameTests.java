@@ -1072,6 +1072,7 @@ public final class VillagerInventoryGameTests {
         hirer.getInventory().setItem(1, hirer.getMainHandItem().copy());
         ItemStack replacementStack = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get(), 2);
         VillagerItemFilterData.setEntry(replacementStack, 0, new ItemStack(Items.DIRT));
+        VillagerItemFilterData.setMode(replacementStack, VillagerItemFilterData.Mode.DENYLIST);
         hirer.getInventory().setItem(hirer.getInventory().selected, replacementStack);
         int cobblestoneFiltersBefore = hirer.getInventory().items.stream()
                 .filter(VillagerRetaliationItems::isItemFilter)
@@ -1095,7 +1096,7 @@ public final class VillagerInventoryGameTests {
                         == VillagerItemFilterData.Mode.DENYLIST
                         && VillagerItemFilterData.entry(
                         VillagerItemFilterService.assignedFilter(villager), 0).is(Items.DIRT),
-                "replacement should apply the selected mode only to the assigned copy");
+                "replacement should preserve the held filter's configured mode");
 
         ServerPlayer outsider = fakePlayer(level, "VrFilterAssignmentOutsider");
         outsider.getInventory().setItem(

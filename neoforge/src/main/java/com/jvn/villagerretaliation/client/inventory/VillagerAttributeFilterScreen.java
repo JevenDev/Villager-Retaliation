@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.network.AttributeFilterSelectPayload;
 import com.jvn.villagerretaliation.network.FilterPolicyChangePayload;
 import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
 import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -64,6 +65,9 @@ public final class VillagerAttributeFilterScreen
     private Button allowlistButton;
     private Button denylistButton;
     private Button entryCombinationButton;
+    private boolean showingContainerSettings;
+    private Button settingsToggle;
+    private Button summaryButton;
     private Button directionButton;
     private Button decreaseStockButton;
     private Button stockTargetButton;
@@ -82,6 +86,20 @@ public final class VillagerAttributeFilterScreen
     @Override
     protected void init() {
         super.init();
+        this.settingsToggle = Button.builder(Component.literal("..."), button -> {
+                    this.showingContainerSettings = !this.showingContainerSettings;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 151, this.topPos + 3, 18, 12)
+                .build();
+        this.summaryButton = Button.builder(Component.empty(), button -> {
+                    this.showingContainerSettings = true;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 8, this.topPos + 64, 160, 18)
+                .build();
+        addRenderableWidget(this.settingsToggle);
+        addRenderableWidget(this.summaryButton);
         this.allowlistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.filter_policy.mode.allow_matching"),
                         button -> setListMode(VillagerFilterPolicy.ListMode.ALLOW_MATCHING))
@@ -161,7 +179,8 @@ public final class VillagerAttributeFilterScreen
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.title.getString(), 140),
+                this.titleLabelX, this.titleLabelY, 0x404040, false);
     }
 
     @Override
@@ -186,6 +205,7 @@ public final class VillagerAttributeFilterScreen
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (scrollY != 0.0
                 && this.stockTargetButton != null
+                && this.stockTargetButton.visible
                 && this.stockTargetButton.isMouseOver(mouseX, mouseY)
                 && this.menu.filterPolicy().listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING) {
             int step = ToucanSlotAmounts.step(ToucanInputModifiers.current());
@@ -284,6 +304,9 @@ public final class VillagerAttributeFilterScreen
             }
             int selectorX = this.leftPos + SELECTOR_X;
             int selectorY = selectorY(offset);
+            if (selectorY < SCROLL_ROW_FRAME || selectorY + SELECTOR_HEIGHT + SCROLL_ROW_FRAME > this.height) {
+                continue;
+            }
             SCROLL_ROW_NINE_SLICE.renderAtTextureScale(
                     graphics,
                     selectorX - SCROLL_ROW_FRAME,
@@ -321,7 +344,7 @@ public final class VillagerAttributeFilterScreen
         for (VillagerAttributeFilterData.Attribute attribute : this.attributes) {
             width = Math.max(width, this.font.width(attributeLabel(attribute)) + ATTRIBUTE_TEXT_PADDING);
         }
-        return width;
+        return Math.min(width, Math.max(SELECTOR_WIDTH, this.width - this.leftPos - SELECTOR_X - 8));
     }
 
     private void drawAttribute(
@@ -331,7 +354,7 @@ public final class VillagerAttributeFilterScreen
             int y) {
         graphics.drawString(
                 this.font,
-                attributeLabel(attribute),
+                trimmed(attributeLabel(attribute), selectorWidth() - ATTRIBUTE_TEXT_PADDING),
                 x + 4,
                 y + 5,
                 0xFFFFFFFF,
@@ -362,7 +385,8 @@ public final class VillagerAttributeFilterScreen
             return;
         }
         Component display = this.attributes.get(index).display();
-        if (this.font.width(display) > selectorWidth() - ATTRIBUTE_TEXT_PADDING) {
+        int visibleWidth = this.scrollVisibilityTicks > 0 ? selectorWidth() : SELECTOR_WIDTH;
+        if (this.font.width(attributeLabel(this.attributes.get(index))) > visibleWidth - ATTRIBUTE_TEXT_PADDING) {
             graphics.renderTooltip(this.font, display, mouseX, mouseY);
         }
     }
@@ -378,6 +402,10 @@ public final class VillagerAttributeFilterScreen
         int maxOffset = this.scrollVisibilityTicks > 0 ? NEIGHBOR_COUNT : 0;
         for (int offset = minOffset; offset <= maxOffset; offset++) {
             int rowTop = selectorY(offset);
+            if (offset != 0 && (rowTop < SCROLL_ROW_FRAME
+                    || rowTop + SELECTOR_HEIGHT + SCROLL_ROW_FRAME > this.height)) {
+                continue;
+            }
             if (mouseY >= rowTop && mouseY < rowTop + SELECTOR_HEIGHT) {
                 return offset;
             }
@@ -401,8 +429,19 @@ public final class VillagerAttributeFilterScreen
         this.scrollVisibilityTicks = 0;
     }
 
+    @Override
+    protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
+        List<Component> tooltip = new ArrayList<>(super.getTooltipFromContainerItem(stack));
+        if (this.hoveredSlot != null && this.hoveredSlot.index >= 1) {
+            FilterEditorHelp.appendPreview(tooltip, this.minecraft.level, this.menu.editedFilter(), stack);
+        }
+        return tooltip;
+    }
+
     private void setListMode(VillagerFilterPolicy.ListMode mode) {
-        changePolicy(VillagerFilterPolicy.PolicyField.LIST_MODE, mode.networkId());
+        if (this.menu.filterPolicy().listMode() != mode) {
+            changePolicy(VillagerFilterPolicy.PolicyField.LIST_MODE, mode.networkId());
+        }
     }
 
     private void cycleEntryCombination() {
@@ -455,26 +494,41 @@ public final class VillagerAttributeFilterScreen
             return;
         }
         VillagerFilterPolicy.Policy policy = this.menu.filterPolicy();
+        this.settingsToggle.setMessage(Component.literal(this.showingContainerSettings ? "<" : "..."));
+        this.settingsToggle.setTooltip(FilterEditorHelp.containerToggle(this.showingContainerSettings));
+        this.summaryButton.visible = !this.showingContainerSettings;
+        this.summaryButton.setMessage(FilterEditorHelp.summary(this.menu.editedFilter()));
+        this.summaryButton.setTooltip(FilterEditorHelp.rules(this.menu.editedFilter()));
+        this.directionButton.visible = this.showingContainerSettings;
+        this.stockTargetButton.visible = this.showingContainerSettings;
+        this.decreaseStockButton.visible = this.showingContainerSettings;
+        this.increaseStockButton.visible = this.showingContainerSettings;
         this.allowlistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
         this.denylistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.DENY_MATCHING;
+        this.allowlistButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
+                "villagerretaliation.gui.filter_policy.mode.allow_matching.description")));
+        this.denylistButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
+                "villagerretaliation.gui.filter_policy.mode.deny_matching.description")));
         VillagerFilterPolicy.CombinationMode combination = policy.combinationMode();
         this.entryCombinationButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.filter_policy.combination." + combination.id()));
-        this.entryCombinationButton.setTooltip(Tooltip.create(Component.translatable(
+        this.entryCombinationButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
                 "villagerretaliation.gui.filter_policy.combination." + combination.id() + ".description")));
         this.directionButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction." + policy.direction().id()));
-        this.directionButton.setTooltip(Tooltip.create(Component.translatable(
+        this.directionButton.setTooltip(FilterEditorHelp.containerTooltip(this.menu.editedFilter(), Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction.description")));
         Component target = policy.stockTarget().isPresent()
                 ? Component.literal(Integer.toString(policy.stockTarget().getAsInt()))
                 : Component.translatable("villagerretaliation.gui.filter_policy.stock.unlimited");
-        this.stockTargetButton.setMessage(Component.translatable(
-                "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target));
+        this.stockTargetButton.setMessage(target);
+        Component stockSummary = Component.translatable(
+                "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target);
         boolean quantitative = policy.listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
-        Tooltip stockTooltip = Tooltip.create(Component.translatable(quantitative
+        Tooltip stockTooltip = FilterEditorHelp.containerTooltip(this.menu.editedFilter(), stockSummary.copy()
+                .append("\n").append(Component.translatable(quantitative
                 ? "villagerretaliation.gui.filter_policy.stock.description"
-                : "villagerretaliation.gui.filter_policy.stock.inactive_deny"));
+                : "villagerretaliation.gui.filter_policy.stock.inactive_deny")));
         this.stockTargetButton.setTooltip(stockTooltip);
         this.decreaseStockButton.setTooltip(stockTooltip);
         this.increaseStockButton.setTooltip(stockTooltip);

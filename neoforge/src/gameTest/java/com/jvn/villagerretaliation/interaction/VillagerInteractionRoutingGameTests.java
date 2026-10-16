@@ -26,17 +26,16 @@ public final class VillagerInteractionRoutingGameTests {
     @GameTest(template = EMPTY_TEMPLATE)
     public static void itemFilterHandlerOwnsStableOptionContract(GameTestHelper helper) {
         List<DialogueOptionDefinition> options = VillagerItemFilterInteractionHandler.options();
-        helper.assertValueEqual(options.size(), 3, "item-filter option count");
+        helper.assertValueEqual(options.size(), 2, "item-filter option count");
         helper.assertValueEqual(
                 options.stream().map(DialogueOptionDefinition::id).toList(),
                 List.of(
-                        VillagerItemFilterInteractionHandler.ALLOWLIST_OPTION_ID,
-                        VillagerItemFilterInteractionHandler.DENYLIST_OPTION_ID,
+                        VillagerItemFilterInteractionHandler.ASSIGN_OPTION_ID,
                         VillagerItemFilterInteractionHandler.NEVERMIND_OPTION_ID),
                 "item-filter option ids");
         helper.assertValueEqual(
                 options.stream().map(DialogueOptionDefinition::order).toList(),
-                List.of(0, 1, 2),
+                List.of(0, 1),
                 "item-filter option order");
         helper.assertTrue(
                 options.stream().allMatch(option -> option.requestType() == DialogueRequestType.QUESTION),

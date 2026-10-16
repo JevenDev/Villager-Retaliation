@@ -102,7 +102,10 @@ public record WorkStatePredicate(String tutorial, HiredVillagerRole role, String
         var session = HiredWorkSession.create(workerLevel, worker, role);
         return switch (check) {
             case "policy" -> result(TutorialSetupChecks.policy(worker,role,session.state()),"Inspect the exact role settings requested by this lesson.");
-            case "selection" -> result(TutorialSetupChecks.selection(workerLevel,worker,role),"Configure the requested real recipe, filter or brewing order.");
+            case "selection" -> parameter.startsWith("filter_")
+                    ? result(TutorialFilterExercise.check(workerLevel, worker, run, parameter),
+                            "Hold the configured lesson Recipe Filter, use it on your bound Craftsman and choose Assign configured filter. Check the requested Allow/Deny mode; observe the exclusion before correcting it.")
+                    : result(TutorialSetupChecks.selection(workerLevel,worker,role),"Configure the requested real recipe, filter or brewing order.");
             case "task" -> result(TutorialSetupChecks.task(workerLevel,worker,role),"Apply the requested finite Task to this worker.");
             case "route" -> result(session.context().route()!=null&&session.context().route().nodes().size()>=2,"Apply the ordered route to this worker.");
             case "area" -> result(com.jvn.villagerretaliation.interaction.HiredWorkArea.fromState(session.state(),worker.blockPosition()).explicitlyAssigned(), "Apply the area to the named tutor; a draft is only a preview.");

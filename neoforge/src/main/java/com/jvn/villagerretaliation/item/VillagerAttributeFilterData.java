@@ -287,6 +287,12 @@ public final class VillagerAttributeFilterData {
         } else if (configuration.attributes().isEmpty()) {
             tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.empty")
                     .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable(
+                            "item.villagerretaliation.filter_policy.empty."
+                                    + VillagerFilterPolicy.read(filter).listMode().id())
+                    .withStyle(VillagerFilterPolicy.read(filter).listMode()
+                            == VillagerFilterPolicy.ListMode.ALLOW_MATCHING
+                            ? ChatFormatting.YELLOW : ChatFormatting.GRAY));
         } else {
             for (int index = 0; index < Math.min(4, configuration.attributes().size()); index++) {
                 tooltip.add(Component.literal("- ")

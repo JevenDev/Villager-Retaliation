@@ -33,6 +33,9 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
     private Button clearButton;
     private Button nextButton;
     private Button modeButton;
+    private boolean showingContainerSettings;
+    private Button settingsToggle;
+    private Button summaryButton;
     private Button directionButton;
     private Button stockTargetButton;
 
@@ -49,6 +52,20 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
     @Override
     protected void init() {
         super.init();
+        this.settingsToggle = Button.builder(Component.literal("..."), button -> {
+                    this.showingContainerSettings = !this.showingContainerSettings;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 151, this.topPos + 3, 18, 12)
+                .build();
+        this.summaryButton = Button.builder(Component.empty(), button -> {
+                    this.showingContainerSettings = true;
+                    refreshButtons();
+                })
+                .bounds(this.leftPos + 118, this.topPos + 63, 50, 18)
+                .build();
+        addRenderableWidget(this.settingsToggle);
+        addRenderableWidget(this.summaryButton);
         this.previousButton = Button.builder(
                         Component.literal("<"),
                         button -> moveRecipe(-1))
@@ -111,7 +128,8 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        super.renderLabels(graphics, mouseX, mouseY);
+        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.title.getString(), 140),
+                this.titleLabelX, this.titleLabelY, 0x404040, false);
         ResourceLocation recipeId = this.menu.currentRecipeId();
         Component label = recipeId == null
                 ? Component.translatable("villagerretaliation.gui.recipe_filter.none")
@@ -133,6 +151,7 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (scrollY != 0.0
                 && this.stockTargetButton != null
+                && this.stockTargetButton.visible
                 && this.stockTargetButton.isMouseOver(mouseX, mouseY)
                 && this.menu.filterPolicy().listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING) {
             int step = ToucanSlotAmounts.step(ToucanInputModifiers.current());
@@ -150,6 +169,9 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
     @Override
     protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
         List<Component> tooltip = new ArrayList<>(super.getTooltipFromContainerItem(stack));
+        if (this.hoveredSlot != null && this.hoveredSlot.index >= VillagerRecipeFilterMenu.DISPLAY_SLOT_COUNT) {
+            FilterEditorHelp.appendPreview(tooltip, this.minecraft.level, this.menu.editedFilter(), stack);
+        }
         if (this.hoveredSlot == null
                 || this.hoveredSlot.index < VillagerRecipeFilterMenu.INGREDIENT_SLOT_START
                 || this.hoveredSlot.index >= VillagerRecipeFilterMenu.DISPLAY_SLOT_COUNT) {
@@ -253,13 +275,20 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
         this.nextButton.active = hasRecipes;
         this.clearButton.active = this.menu.currentRecipeId() != null;
         VillagerFilterPolicy.Policy policy = this.menu.filterPolicy();
+        this.settingsToggle.setMessage(Component.literal(this.showingContainerSettings ? "<" : "..."));
+        this.settingsToggle.setTooltip(FilterEditorHelp.containerToggle(this.showingContainerSettings));
+        this.summaryButton.visible = !this.showingContainerSettings;
+        this.summaryButton.setMessage(Component.translatable("villagerretaliation.gui.filter_editor.rules_short"));
+        this.summaryButton.setTooltip(FilterEditorHelp.rules(this.menu.editedFilter()));
+        this.directionButton.visible = this.showingContainerSettings;
+        this.stockTargetButton.visible = this.showingContainerSettings;
         this.modeButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.recipe_filter.mode." + policy.listMode().id()));
-        this.modeButton.setTooltip(Tooltip.create(Component.translatable(
+        this.modeButton.setTooltip(FilterEditorHelp.policyTooltip(this.menu.editedFilter(), Component.translatable(
                 "villagerretaliation.gui.filter_policy.mode." + policy.listMode().id() + ".description")));
         this.directionButton.setMessage(Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction." + policy.direction().id()));
-        this.directionButton.setTooltip(Tooltip.create(Component.translatable(
+        this.directionButton.setTooltip(FilterEditorHelp.containerTooltip(this.menu.editedFilter(), Component.translatable(
                 "villagerretaliation.gui.filter_policy.direction.description")));
         Component target = policy.stockTarget().isPresent()
                 ? Component.literal(Integer.toString(policy.stockTarget().getAsInt()))
@@ -268,7 +297,7 @@ public final class VillagerRecipeFilterScreen extends AbstractContainerScreen<Vi
         Component summary = Component.translatable(
                 "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target);
         boolean quantitative = policy.listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
-        this.stockTargetButton.setTooltip(Tooltip.create(summary.copy()
+        this.stockTargetButton.setTooltip(FilterEditorHelp.containerTooltip(this.menu.editedFilter(), summary.copy()
                 .append("\n")
                 .append(Component.translatable(quantitative
                         ? "villagerretaliation.gui.recipe_filter.stock.description"

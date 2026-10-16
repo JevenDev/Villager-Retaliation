@@ -96,7 +96,10 @@ public final class TutorialService {
         if (run == null) return result(action, false, "The reserved tutorial is unavailable; do not buy a paid hire to bypass it.");
         if(operation.equals("learn")){
             String blocker=TutorialLessonCheckpoints.acknowledge(context,run,action.text());
-            return result(action,blocker.isEmpty(),blocker.isEmpty()?"Server-confirmed. That step is committed on your bound worker.":blocker);
+            String confirmation = action.text().equals(TutorialFilterExercise.OBSERVED)
+                    ? "Server-confirmed: the installed Deny Matching recipe filter excludes oak planks. Other outputs may still match. Change it to Allow Matching and assign it again before starting this lesson's one craft."
+                    : "Server-confirmed. That step is committed on your bound worker.";
+            return result(action,blocker.isEmpty(),blocker.isEmpty()?confirmation:blocker);
         }
         if(operation.equals("recover")){
             var worker=boundWorker(context,run);
