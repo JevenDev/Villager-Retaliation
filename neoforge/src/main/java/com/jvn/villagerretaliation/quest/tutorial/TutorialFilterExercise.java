@@ -24,7 +24,7 @@ public final class TutorialFilterExercise {
         var run = TutorialWorkService.run(worker).orElse(null);
         if (run == null || !run.binding().player().equals(player.getUUID())
                 || !run.binding().role().equals(HiredVillagerRole.CRAFTSMAN.serializedName())
-                || run.completed() || !(worker.level() instanceof ServerLevel level)) return;
+                || !(worker.level() instanceof ServerLevel level)) return;
         String checkpoint = configured(level, worker, false) ? EXCLUDED
                 : configured(level, worker, true) && run.snapshot().learned().contains(OBSERVED) ? CORRECTED : "";
         if (!checkpoint.isEmpty() && run.learn(checkpoint)) {
