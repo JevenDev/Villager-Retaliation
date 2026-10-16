@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
+import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.sell.SellPriceResources;
 import com.jvn.villagerretaliation.sell.VillageSellMarket;
@@ -39,11 +40,29 @@ public final class SettlementTradeService {
     public static boolean withdrawCurrency(ServerPlayer player, VillageAllegianceId id, int amount) {
         SettlementRecord town = manageable(player, id, SettlementPermission.TREASURY);
         if (town == null || !town.leader().equals(player.getUUID()) || amount <= 0 || amount > 4_096
+                || !canReceiveWithdrawal(player, amount)
                 || !town.economy().withdraw(CurrencyAmount.of(amount, 1L))) {
             return false;
         }
         VillagerCurrencyPayment.give(player, amount);
         return true;
+    }
+
+    /** Match the slots vanilla Inventory.add can use, without debiting funds or dropping overflow. */
+    static boolean canReceiveWithdrawal(ServerPlayer player, int amount) {
+        if (player == null || amount <= 0 || amount > 4_096) return false;
+        ItemStack currency = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), 1);
+        int limit = Math.min(currency.getMaxStackSize(), player.getInventory().getMaxStackSize());
+        int remaining = amount;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.isEmpty()) remaining -= limit;
+            else if (ItemStack.isSameItemSameComponents(currency, stack)) remaining -= Math.max(0, limit - stack.getCount());
+            if (remaining <= 0) return true;
+        }
+        // Vanilla merges into an occupied offhand slot, but never fills an empty one.
+        ItemStack offhand = player.getOffhandItem();
+        if (ItemStack.isSameItemSameComponents(currency, offhand)) remaining -= Math.max(0, limit - offhand.getCount());
+        return remaining <= 0;
     }
 
     public static boolean configureBudget(ServerPlayer player, VillageAllegianceId id,

@@ -90,9 +90,11 @@ final class SettlementManagementValidation {
                     : !town.project(project.project()).active() ? "project_finished"
                     : town.project(project.project()).crewRevision() != project.revision() ? "state_changed" : "";
             case Treasury treasury -> treasury.amount() <= 0 || treasury.amount() > 4_096 ? "invalid_amount"
+                    : !treasury.deposit() && !town.leader().equals(player.getUUID()) ? "leader_required"
                     : treasury.deposit() && com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.count(player) < treasury.amount()
                             ? "player_funds" : !treasury.deposit() && town.economy().balance().compareTo(
-                                    com.jvn.villagerretaliation.sell.CurrencyAmount.of(treasury.amount(), 1)) < 0 ? "treasury_funds" : "";
+                                    com.jvn.villagerretaliation.sell.CurrencyAmount.of(treasury.amount(), 1)) < 0 ? "treasury_funds"
+                    : !treasury.deposit() && !SettlementTradeService.canReceiveWithdrawal(player, treasury.amount()) ? "withdrawal_space" : "";
             case Assign assign -> assignment(player, town, assign);
             case AutomaticStaffing automatic -> automatic.resident() == null ? "" : member(player, town, automatic.resident());
             case Inventory inventory -> !(player.serverLevel().getEntity(inventory.resident()) instanceof net.minecraft.world.entity.npc.Villager)

@@ -1,0 +1,36 @@
+{
+  "entries": [
+    {
+      "id": "bank_trade:prepaid_clock",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "novice",
+      "villager_level": 1,
+      "cost": {"item": "minecraft:emerald", "count": 1},
+      "result": {"item": "minecraft:clock", "count": 1},
+      "request": {
+        "targetable": true,
+        "min_reputation": "neutral",
+        "wait_days": 1,
+        "cooldown_days": 1,
+        "extra_cost": {"item": "minecraft:gold_ingot", "count": 3}
+      }
+    },
+    {
+      "id": "bank_trade:prepaid_compass",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "novice",
+      "villager_level": 1,
+      "cost": {"item": "minecraft:emerald", "count": 1},
+      "result": {"item": "minecraft:compass", "count": 1},
+      "request": {
+        "targetable": true,
+        "min_reputation": "neutral",
+        "wait_days": 1,
+        "cooldown_days": 1,
+        "extra_cost": {"item": "minecraft:gold_ingot", "count": 3}
+      }
+    }
+  ]
+}
