@@ -1755,6 +1755,11 @@ public final class HiredJobInventory implements Container {
             // stack can each be returned to personal storage while the job slot keeps
             // its own copy.
             VillagerInventoryContainer.returnBorrowedCombatWeapon(this.villager);
+            if (VillagerInventoryContainer.hasBorrowedCombatWeapon(this.villager)) {
+                // Equipment writes must finish a full-inventory return before
+                // replacing its live owner. Complete the existing retry/drop rule.
+                VillagerInventoryContainer.returnBorrowedCombatWeapon(this.villager);
+            }
         }
         ItemStack previousJobStack = this.items.get(slot).copy();
         ItemStack current = this.villager.getItemBySlot(equipmentSlot);

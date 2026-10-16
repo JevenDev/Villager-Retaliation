@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.util;
 
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
@@ -67,11 +69,30 @@ public final class VillagerEquipmentDurability {
             return;
         }
 
+        ItemStack before = weapon.copy();
         if (weapon.getItem().hurtEnemy(weapon, target, villager)) {
             weapon.getItem().postHurtEnemy(weapon, target, villager);
         }
         if (weapon.isEmpty()) {
             villager.setItemInHand(hand, ItemStack.EMPTY);
+        }
+        synchronizeAfterUse(villager, hand, before, weapon);
+    }
+
+    public static void synchronizeAfterUse(AbstractVillager villager, InteractionHand hand, ItemStack before, ItemStack weapon) {
+        EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+        if (villager instanceof Villager regularVillager) {
+            if (hand == InteractionHand.MAIN_HAND
+                    && VillagerInventoryAccess.synchronizeBorrowedWeaponAfterUse(regularVillager, before, weapon)) {
+                return;
+            }
+            if (HiredJobInventory.hasTemporaryEquipment(regularVillager, slot)) {
+                return;
+            }
+            HiredJobInventory.synchronizeEquipmentDurability(regularVillager, slot);
+        }
+        if (hand == InteractionHand.MAIN_HAND) {
+            VillagerRetaliationVillagerEquipment.synchronizeMainHandAfterUse(villager, before, weapon);
         }
     }
 

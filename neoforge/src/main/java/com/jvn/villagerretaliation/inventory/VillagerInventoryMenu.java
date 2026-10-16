@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -241,8 +242,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        if (!hasCurrentViewAccess(player)) {
+        if (!canInteract(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.displayClientMessage(Component.translatable(
+                        "message.villagerretaliation.inventory_unavailable"), true);
                 serverPlayer.closeContainer();
             }
             return ItemStack.EMPTY;
@@ -255,7 +258,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         // state so one slot change cannot save an older full-inventory snapshot.
         refreshVillagerInventory();
         Slot sourceSlot = this.slots.get(index);
-        if (!sourceSlot.hasItem()) {
+        if (!sourceSlot.hasItem() || !sourceSlot.mayPickup(player)) {
             return ItemStack.EMPTY;
         }
 
@@ -266,9 +269,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
             if (!moveItemStackTo(sourceStack, this.playerInventoryStart, this.playerSlotEnd, true)) {
+                showCapacityMessage(player, "message.villagerretaliation.inventory_player_full");
                 return ItemStack.EMPTY;
             }
         } else if (!movePlayerStackToVillager(sourceStack)) {
+            showCapacityMessage(player, "message.villagerretaliation.inventory_villager_full");
             return ItemStack.EMPTY;
         }
 
@@ -283,10 +288,15 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (!hasCurrentViewAccess(player)) {
+        if (!canInteract(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.displayClientMessage(Component.translatable(
+                        "message.villagerretaliation.inventory_unavailable"), true);
                 serverPlayer.closeContainer();
             }
+            return;
+        }
+        if (slotId >= this.slots.size() || slotId < -1 && slotId != -999) {
             return;
         }
         refreshVillagerInventory();
@@ -516,8 +526,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
         if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
             int armorSlot = armorSlotFor(equipmentSlot);
-            if (armorSlot >= 0 && !moveItemStackTo(stack, armorSlot, armorSlot + 1, false)) {
-                return false;
+            if (armorSlot >= 0) {
+                moveItemStackTo(stack, armorSlot, armorSlot + 1, false);
             }
             if (stack.isEmpty()) {
                 return true;
@@ -767,6 +777,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private static EquipmentSlot equipmentSlotFor(ItemStack stack) {
+        EquipmentSlot moddedSlot = stack.getEquipmentSlot();
+        if (moddedSlot != null) {
+            return moddedSlot;
+        }
         Equipable equipable = Equipable.get(stack);
         return equipable == null ? EquipmentSlot.MAINHAND : equipable.getEquipmentSlot();
     }
@@ -966,6 +980,16 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         return this.viewMode == ViewMode.PERSONAL
                 ? hasPersonalInventoryAccess(player)
                 : hasJobInventoryAccess(player);
+    }
+
+    private boolean canInteract(Player player) {
+        return player == this.player && stillValid(player) && hasCurrentViewAccess(player);
+    }
+
+    private static void showCapacityMessage(Player player, String key) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.displayClientMessage(Component.translatable(key), true);
+        }
     }
 
     private record ClientMenuData(

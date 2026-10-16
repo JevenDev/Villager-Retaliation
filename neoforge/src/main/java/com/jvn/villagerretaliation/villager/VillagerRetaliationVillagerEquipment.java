@@ -244,6 +244,25 @@ public final class VillagerRetaliationVillagerEquipment {
         return true;
     }
 
+    public static void synchronizeMainHandAfterUse(AbstractVillager villager, ItemStack before, ItemStack remaining) {
+        CachedMainHandState state = resolvedMainHandState(villager);
+        if (!ItemStack.isSameItem(state.stack(), before)) {
+            return;
+        }
+        if (remaining.isEmpty()) {
+            clearMainHandState(villager);
+        } else {
+            switch (state.owner()) {
+                case MANUAL -> setManualMainHandState(villager, remaining);
+                case PICKED_UP -> setPickedUpMainHandState(villager, remaining);
+                case ROLE -> setRoleMainHandState(villager,
+                        villager.getPersistentData().getCompound(MAINHAND_STATE_TAG).getString(ROLE_MAINHAND_KEY_TAG),
+                        remaining);
+                case NONE -> { }
+            }
+        }
+    }
+
     public static boolean hasPickedUpMainHand(AbstractVillager villager) {
         return !pickedUpMainHand(villager).isEmpty();
     }

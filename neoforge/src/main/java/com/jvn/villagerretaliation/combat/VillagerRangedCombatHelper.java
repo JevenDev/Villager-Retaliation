@@ -527,6 +527,7 @@ public final class VillagerRangedCombatHelper {
             return false;
         }
 
+        ItemStack previousWeapon = weapon.copy();
         crossbowItem.performShooting(
                 level,
                 villager,
@@ -537,7 +538,7 @@ public final class VillagerRangedCombatHelper {
                         level, villager, (float) (14 - level.getDifficulty().getId() * 4)),
                 target
         );
-        syncRangedWeaponStack(villager, hand, weapon);
+        syncRangedWeaponStack(villager, hand, weapon, previousWeapon);
         return true;
     }
 
@@ -649,6 +650,12 @@ public final class VillagerRangedCombatHelper {
             ItemStack weapon,
             ItemStack previousWeapon) {
         ItemStack updated = weapon.copy();
+        if (villager instanceof Villager regular && hand == InteractionHand.MAIN_HAND
+                && VillagerInventoryAccess.hasBorrowedCombatWeapon(regular)) {
+            VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, updated, 0.0F);
+            VillagerInventoryAccess.synchronizeBorrowedWeaponAfterUse(regular, previousWeapon, updated);
+            return;
+        }
         if (villager instanceof Villager regular
                 && !DuelService.isParticipant(regular)
                 && HiredJobInventory.isJobInventoryAvailable(regular)) {
