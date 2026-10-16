@@ -470,6 +470,13 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 candidates.add(new FacilityCandidate(pos, villager.distanceToSqr(pos.getCenter())));
             }
         }
+        Predicate<FacilityCandidate> usable = candidate -> {
+            var furnace = (AbstractFurnaceBlockEntity) level.getBlockEntity(candidate.pos());
+            return !furnace.getItem(INPUT_SLOT).isEmpty() || !furnace.getItem(RESULT_SLOT).isEmpty()
+                    || HiredSupplyCrafting.countAvailable(villager, context,
+                        stack -> isSmeltableOre(level, stack, recipeType(furnace), processingFilter)) > 0;
+        };
+        if (candidates.stream().anyMatch(usable)) candidates.removeIf(usable.negate());
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
         boolean hasCompatibleStation = candidates.stream()
                 .anyMatch(candidate -> stationContentsCompatible(
@@ -586,37 +593,33 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             ItemStack stack,
             RecipeType<AbstractCookingRecipe> recipeType,
             ItemStack processingFilter) {
-        if (!isRawOre(stack)) {
+        if (stack == null || stack.isEmpty() || (recipeType != (Object) RecipeType.SMELTING && recipeType != (Object) RecipeType.BLASTING)) {
             return false;
         }
         return smeltingRecipe(level, stack, recipeType)
                 .filter(recipe -> {
                     ItemStack result = recipe.value().assemble(
                             new SingleRecipeInput(stack), level.registryAccess());
-                    return isSmeltedOre(result)
+                    return isSmeltingResult(result)
                             && HiredProcessingRecipeFilter.allows(
                                     level, processingFilter, recipe, stack, result);
                 })
                 .isPresent();
     }
 
-    public static boolean isRawOre(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && (stack.is(Items.RAW_COPPER)
-                || stack.is(Items.RAW_GOLD)
-                || stack.is(Items.RAW_IRON));
+    /** Food results belong to Cook, including data-pack food components. */
+    public static boolean isSmeltingResult(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && !CookingWorker.isFood(stack);
     }
 
-    public static boolean isSmeltedOre(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && (stack.is(Items.COPPER_INGOT)
-                || stack.is(Items.GOLD_INGOT)
-                || stack.is(Items.IRON_INGOT));
-    }
     public static boolean isDesiredSmeltedOutput(ServerLevel level, ItemStack filter, ItemStack stack) {
-        return isSmeltedOre(stack)
-                && (filter == null || filter.isEmpty()
-                        || VillagerFilterMatcher.matches(level, filter, stack));
+        return isSmeltingResult(stack)
+                && java.util.stream.Stream.of(RecipeType.SMELTING, RecipeType.BLASTING)
+                    .flatMap(type -> level.getRecipeManager().getAllRecipesFor(type).stream())
+                    .anyMatch(recipe -> ItemStack.isSameItemSameComponents(recipe.value().getResultItem(level.registryAccess()), TutorialOutputService.clean(
+                            com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock.product(stack))))
+                && (filter == null || filter.isEmpty() || VillagerFilterMatcher.matches(level, filter, stack));
     }
-
 
     private static Optional<RecipeHolder<AbstractCookingRecipe>> smeltingRecipe(
             ServerLevel level,

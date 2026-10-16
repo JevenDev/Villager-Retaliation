@@ -426,6 +426,36 @@ public final class ClipboardTutorialGameTests {
         }
     }
     @GameTest(template="empty",timeoutTicks=100,batch="clipboard")
+    public static void cookTrialKeepsTwoMealsEvenWithGuaranteedChefBonus(GameTestHelper helper)throws Exception{
+        int chance=com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_COOK_BONUS_CHANCE_PERCENT.get();
+        com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_COOK_BONUS_CHANCE_PERCENT.set(100);
+        try(var f=fixture(helper)){
+            var run=rebind(f,HiredVillagerRole.COOK,VillagerProfession.BUTCHER);var level=helper.getLevel();
+            var pos=helper.absolutePos(new BlockPos(2,1,3));level.setBlock(pos,Blocks.SMOKER.defaultBlockState(),3);
+            var furnace=(net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity)level.getBlockEntity(pos);
+            HiredVillagerWorkService.setWorkArea(f.player,level,f.worker,pos.offset(-1,-1,-1),pos.offset(1,1,1));
+            var inventory=HiredJobInventory.getJobInventory(f.worker);inventory.setItem(HiredJobInventory.MAIN_GRID_START,new ItemStack(Items.COD,5));inventory.markPlayerPlacedSupply(HiredJobInventory.MAIN_GRID_START);
+            inventory.setItem(HiredJobInventory.MAIN_GRID_START+1,new ItemStack(Items.COAL));inventory.markPlayerPlacedSupply(HiredJobInventory.MAIN_GRID_START+1);
+            filter(f.worker,Items.COOKED_COD);HiredWorkSession.invalidate(f.worker);
+            var plan=TutorialFurnacePlan.inspect(level,f.worker,HiredVillagerRole.COOK);
+            helper.assertTrue(plan.scope()!=null,"actual smoker fixture: "+plan.blocker());run.activate(run.binding(),plan.scope());
+            for(int i=0;i<450&&!run.completed();i++){
+                f.worker.setPos(pos.getX()+0.5,pos.getY(),pos.getZ()+1.5);
+                var context=HiredWorkSession.create(level,f.worker,HiredVillagerRole.COOK).context();
+                new com.jvn.villagerretaliation.interaction.work.CookingWorker().tick(level,f.worker,f.player,context);
+                net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.serverTick(level,pos,level.getBlockState(pos),furnace);
+                f.worker.setPos(f.outputPos.getX()-0.5,f.outputPos.getY(),f.outputPos.getZ()+0.5);inventory.depositOutputToAssignedStorageAt(f.outputPos);
+            }
+            helper.assertValueEqual(run.committedUnits("load"),2,"only two sponsored inputs are loaded");
+            helper.assertValueEqual(run.committedUnits("process"),2,"only two native transitions are committed");
+            helper.assertValueEqual(run.deposited("minecraft:cooked_cod"),2,"trial receives exactly two attributable meals");
+            helper.assertTrue(furnace.getPersistentData().getCompound("VillagerRetaliationCookBatch").isEmpty(),"free trial has no bonus ledger");
+            helper.assertTrue(run.completed(),"finite Cook trial completes and stops");helper.succeed();
+        } finally {
+            com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_COOK_BONUS_CHANCE_PERCENT.set(chance);
+        }
+    }
+    @GameTest(template="empty",timeoutTicks=100,batch="clipboard")
     public static void nitwitReportsOnceWithoutFabricatingItems(GameTestHelper helper)throws Exception{
         try(var f=fixture(helper)){
             var run=rebind(f,HiredVillagerRole.NITWIT,VillagerProfession.NITWIT);

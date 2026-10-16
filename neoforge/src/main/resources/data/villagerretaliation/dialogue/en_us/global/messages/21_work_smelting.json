@@ -12,26 +12,7 @@
     {
       "key": "interaction.work.smelting.depositing_outputs",
       "lines": [
-        "I am putting smelted ore away before tending the furnace again.",
-        "I am putting finished ingots away before tending the furnace again.",
-        "I am putting smelted raw metal away before tending the furnace again.",
-        "I am putting refineed ore away before tending the furnace again.",
-        "I'm putting smelted ore away before tending the furnace again.",
-        "I am storing smelted ore away before tending the furnace again.",
-        "I am putting finished ingots away befraw metal tending the furnace again.",
-        "I'm putting finished ingots away before tending the furnace again.",
-        "I am storing finished ingots away before tending the furnace again.",
-        "I am putting completed ingots away before tending the furnace again.",
-        "I am putting completeed ingots away before tending the furnace again.",
-        "I am putting smelted raw metal away befraw metal tending the furnace again.",
-        "I am putting refineed raw metal away before tending the furnace again.",
-        "I'm putting smelted raw metal away before tending the furnace again.",
-        "I am storing smelted raw metal away before tending the furnace again.",
-        "I'm putting refineed ore away before tending the furnace again.",
-        "I am storing refineed ore away before tending the furnace again.",
-        "I'm storing smelted ore away before tending the furnace again.",
-        "I am putting smelted ore away befraw metal tending the furnace again.",
-        "I'm putting finished ingots away befraw metal tending the furnace again."
+        "I am putting finished smelted products away before tending the furnace again."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.depositing_outputs.000"
     },
@@ -64,52 +45,14 @@
     {
       "key": "interaction.work.smelting.wrong_output",
       "lines": [
-        "The smelting station has something in the output slot that is not a supported metal ingot.",
-        "The ore furnace has something in the output slot that is not a supported metal ingot.",
-        "The metal furnace has something in the output slot that is not a supported metal ingot.",
-        "The smelting station has something in the output slot that is not a supported metal bar.",
-        "The smelting station has something in the ingot slot that is not a supported metal ingot.",
-        "The refining station has something in the output slot that is not a supported metal ingot.",
-        "The metalwork station has something in the output slot that is not a supported metal ingot.",
-        "The smelting station has an item in the output slot that is not a supported metal ingot.",
-        "The ore furnace has something in the output slot that is not a supported metal bar.",
-        "The raw metal furnace has something in the output slot that is not a supported metal ingot.",
-        "The ore furnace has something in the ingot slot that is not a supported metal ingot.",
-        "The ore furnace has an item in the output slot that is not a supported metal ingot.",
-        "The metal furnace has something in the output slot that is not a supported metal bar.",
-        "The metal furnace has something in the ingot slot that is not a supported metal ingot.",
-        "The metal furnace has an item in the output slot that is not a supported metal ingot.",
-        "The smelting station has something in the ingot slot that is not a supported metal bar.",
-        "The refining station has something in the output slot that is not a supported metal bar.",
-        "The metalwork station has something in the output slot that is not a supported metal bar.",
-        "The smelting station has an item in the output slot that is not a supported metal bar.",
-        "The refining station has something in the ingot slot that is not a supported metal ingot."
+        "The output must match a non-food smelting recipe and my assigned filter. Food belongs to Cook."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.wrong_output.002"
     },
     {
       "key": "interaction.work.smelting.wrong_input",
       "lines": [
-        "The smelting station needs raw iron, copper, or gold in its input slot.",
-        "The ore furnace needs raw iron, copper, or gold in its input slot.",
-        "The metal furnace needs raw iron, copper, or gold in its input slot.",
-        "The smelting station needs raw iron, copper, or gold in its ore slot.",
-        "The refining station needs raw iron, copper, or gold in its input slot.",
-        "The metalwork station needs raw iron, copper, or gold in its input slot.",
-        "The raw metal furnace needs raw iron, copper, or gold in its input slot.",
-        "The ore furnace needs raw iron, copper, or gold in its ore slot.",
-        "The metal furnace needs raw iron, copper, or gold in its ore slot.",
-        "The smelting station needs raw iron, copper, or gold in its raw metal slot.",
-        "The refining station needs raw iron, copper, or gold in its ore slot.",
-        "The metalwork station needs raw iron, copper, or gold in its ore slot.",
-        "The raw smelting station needs raw iron, copper, or gold in its input slot.",
-        "The raw metal furnace needs raw iron, copper, or gold in its ore slot.",
-        "The metal furnace needs raw iron, copper, or gold in its raw metal slot.",
-        "The ore furnace needs raw iron, copper, or gold in its raw metal slot.",
-        "The refining station needs raw iron, copper, or gold in its raw metal slot.",
-        "The metalwork station needs raw iron, copper, or gold in its raw metal slot.",
-        "The raw ore furnace needs raw iron, copper, or gold in its input slot.",
-        "The raw smelting station needs raw iron, copper, or gold in its ore slot."
+        "This input has no allowed non-food recipe for this station and filter. Glass and stone need a normal furnace; food belongs to Cook."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.wrong_input.003"
     },
@@ -142,26 +85,7 @@
     {
       "key": "interaction.work.smelting.missing_raw_ore",
       "lines": [
-        "I need raw ore in my job supplies or assigned storage before I can smelt.",
-        "I need unworked ore in my job supplies or assigned storage before I can smelt.",
-        "I need raw raw metal in my job supplies or assigned storage before I can smelt.",
-        "I need raw ore in my job supplies or assigned storage before I can refine.",
-        "I still need raw ore in my job supplies or assigned storage before I can smelt.",
-        "I need raw ore in my job supplies or designated storage before I can smelt.",
-        "I need raw ore in my work supplies or assigned storage before I can smelt.",
-        "I need raw ore in my job supplies or assigned storehouse before I can smelt.",
-        "I need raw ore in my job supplies or assigned storage before I am able to smelt.",
-        "I need unworked raw metal in my job supplies or assigned storage before I can smelt.",
-        "I need unworked ore in my job supplies or assigned storage before I can refine.",
-        "I still need unworked ore in my job supplies or assigned storage before I can smelt.",
-        "I need unworked ore in my job supplies or designated storage before I can smelt.",
-        "I need unworked ore in my work supplies or assigned storage before I can smelt.",
-        "I need unworked ore in my job supplies or assigned storehouse before I can smelt.",
-        "I need unworked ore in my job supplies or assigned storage before I am able to smelt.",
-        "I need raw raw metal in my job supplies or assigned storage befraw metal I can smelt.",
-        "I need raw raw metal in my job supplies or assigned storage before I can refine.",
-        "I still need raw raw metal in my job supplies or assigned storage before I can smelt.",
-        "I need raw raw metal in my job supplies or designated storage before I can smelt."
+        "I need supplies for an allowed non-food recipe that works in this station, such as sand in a normal furnace for glass."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.missing_raw_ore.005"
     },
@@ -402,18 +326,18 @@
     {
       "key": "interaction.work.smelting.output_full",
       "lines": [
-        "I have smelted ore ready, but no room to carry it.",
-        "I have finished ingots ready, but no room to carry it.",
+        "I have smelted products ready, but no room to carry it.",
+        "I have finished products ready, but no room to carry it.",
         "I have smelted raw metal ready, but no room to carry it.",
         "I have refineed ore ready, but no room to carry it.",
-        "I've smelted ore ready, but no room to carry it.",
-        "I have smelted ore ready, but no space to carry it.",
-        "I have smelted ore prepared, but no room to carry it.",
-        "I've finished ingots ready, but no room to carry it.",
-        "I have finished ingots ready, but no space to carry it.",
+        "I've smelted products ready, but no room to carry it.",
+        "I have smelted products ready, but no space to carry it.",
+        "I have smelted products prepared, but no room to carry it.",
+        "I've finished products ready, but no room to carry it.",
+        "I have finished products ready, but no space to carry it.",
         "I have completed ingots ready, but no room to carry it.",
         "I have completeed ingots ready, but no room to carry it.",
-        "I have finished ingots prepared, but no room to carry it.",
+        "I have finished products prepared, but no room to carry it.",
         "I have refineed raw metal ready, but no room to carry it.",
         "I've smelted raw metal ready, but no room to carry it.",
         "I have smelted raw metal ready, but no space to carry it.",
@@ -421,7 +345,7 @@
         "I've refineed ore ready, but no room to carry it.",
         "I have refineed ore ready, but no space to carry it.",
         "I have refineed ore prepared, but no room to carry it.",
-        "I've smelted ore ready, but no space to carry it."
+        "I've smelted products ready, but no space to carry it."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.output_full.015"
     },

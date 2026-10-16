@@ -63,11 +63,8 @@ public record HiredProductionRecipe(ResourceLocation recipe, Map<Integer, Resour
             case CRAFTSMAN -> type == RecipeType.CRAFTING;
             case COOK -> CookingWorker.isFood(result) && (type == RecipeType.CRAFTING
                     || type == RecipeType.SMELTING || type == RecipeType.SMOKING);
-            case SMELTER -> (type == RecipeType.SMELTING || type == RecipeType.BLASTING) && SmeltingWorker.isSmeltedOre(result)
-                    && resolution.recipe().value().getIngredients().size() == 1
-                    && java.util.Arrays.stream(resolution.recipe().value().getIngredients().getFirst().getItems())
-                        .anyMatch(stack -> SmeltingWorker.isRawOre(stack) && (alternatives.get(0) == null
-                            || alternatives.get(0).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()))));
+            case SMELTER -> (type == RecipeType.SMELTING || type == RecipeType.BLASTING)
+                    && SmeltingWorker.isSmeltingResult(result);
             default -> false;
         };
     }

@@ -239,6 +239,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 return WorkResult.idle("interaction.work.cooking.missing_raw_food");
             }
             furnace.setItem(INPUT_SLOT, loaded);
+            CookBonusService.loaded(level, villager, furnace);
             if (loadPermit != null) TutorialWorkService.committed(villager, loadPermit, "", 0, "");
             updateFurnace(level, furnace, station);
             useWorkItem(level, villager, loaded);
@@ -289,7 +290,9 @@ public final class CookingWorker extends AbstractBlockWorker {
         if (TutorialWorkService.isTrial(villager) && (!completed || !TutorialOutputService.attributable(villager, stack)))
             return WorkResult.idle("interaction.work.tutorial.paused");
         ItemStack planned = stack.copyWithCount(Math.min(stack.getCount(), context.transferLimit(MAX_INPUT_PULL)));
-        if (!context.canStoreOutputs(List.of(planned))) {
+        int bonus = completed ? CookBonusService.bonus(level, villager, furnace, planned.getCount()) : 0;
+        ItemStack combined = planned.copyWithCount(planned.getCount() + bonus);
+        if (!context.canStoreOutputs(List.of(combined))) {
             OutputFullHandling handling = handleOutputFullInventory(
                     level,
                     context,
@@ -303,14 +306,16 @@ public final class CookingWorker extends AbstractBlockWorker {
             }
             return WorkResult.idle("interaction.work.cooking.output_full");
         }
+        var snapshot = context.inventory().captureSnapshot();
         ItemStack removed = furnace.removeItem(slot, planned.getCount());
-        if (removed.isEmpty()) {
-            return WorkResult.progressed("interaction.work.cooking.waiting_station");
-        }
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, removed.copy());
+        if (removed.isEmpty()) return WorkResult.progressed("interaction.work.cooking.waiting_station");
+        ItemStack remainder = context.inventory().insertOutput(removed.copyWithCount(removed.getCount() + bonus));
         if (!remainder.isEmpty()) {
-            restoreFurnaceStack(furnace, slot, remainder);
+            context.inventory().restoreSnapshot(snapshot);
+            restoreFurnaceStack(furnace, slot, removed);
+            return WorkResult.idle("interaction.work.cooking.output_full");
         }
+        if (completed) CookBonusService.collected(furnace, removed.getCount(), bonus);
         updateFurnace(level, furnace, station);
         useWorkItem(level, villager, removed);
         if (!completed) {
@@ -318,7 +323,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
         return WorkResult.completedWithPractice(
                 status,
-                itemReplacements(removed),
+                itemReplacements(removed.copyWithCount(removed.getCount() + bonus)),
                 HiredWorkPractice.batch(
                         VillagerSkill.COOKING, "hired:cooking:batch",
                         removed.getCount(), removed.getItem().hashCode()));
@@ -673,9 +678,21 @@ public final class CookingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
         }
         ItemStack crafted = plan.result();
+        boolean eligibleBonus = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_COOK_BONUS_CHANCE_PERCENT.get() > 0
+                && !TutorialWorkService.isTrial(villager)
+                && (queue == null || queue.order(allocation.order()).mode() == HiredProductionOrder.Mode.CONTINUOUS)
+                && CookBonusService.eligibleBread(level, selection.recipe(), plan);
+        List<ItemStack> products = new ArrayList<>(plan.products());
+        if (eligibleBonus) {
+            products.add(crafted.copyWithCount(1));
+            if (!context.inventory().transformSupplyStacks(plan.consumedStacks(), plan.surplus(), products, false))
+                return WorkResult.idle("interaction.work.cooking.output_full");
+            if (!CookBonusService.roll(villager)) products.removeLast();
+        }
+        ItemStack displayed = crafted.copyWithCount(crafted.getCount() + (products.size() > plan.products().size() ? 1 : 0));
         if (queue != null) {
             if (!queue.start(allocation.id())) return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
-            if (!HiredSupplyCrafting.applyCarriedRecipe(context, plan, true, true)) {
+            if (!context.inventory().transformSupplyStacks(plan.consumedStacks(), plan.surplus(), products, true)) {
                 queue.lost(allocation.id());
                 queue.blocker(allocation.order(), "output_full");
                 AssignedStorageService.releaseProductionInputs(villager);
@@ -686,12 +703,12 @@ public final class CookingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.clearFailure(context);
             HiredStorageNavigationGoal.clearStorageTarget(context);
             useWorkItem(level, villager, crafted);
-            return WorkResult.completedWithPractice("interaction.work.cooking.crafted_food", itemReplacements(crafted),
+            return WorkResult.completedWithPractice("interaction.work.cooking.crafted_food", itemReplacements(displayed),
                     HiredWorkPractice.batch(VillagerSkill.COOKING, "hired:cooking:craft", crafted.getCount(), crafted.getItem().hashCode()));
         }
         List<ItemStack> supplies = new ArrayList<>(plan.surplus());
         supplies.addAll(plan.products().subList(0, plan.products().size() - 1));
-        if (!context.inventory().transformSupplyStacks(plan.consumedStacks(), supplies, List.of(crafted), true)) {
+        if (!context.inventory().transformSupplyStacks(plan.consumedStacks(), supplies, products.size() > plan.products().size() ? List.of(crafted, crafted.copyWithCount(1)) : List.of(crafted), true)) {
             HiredWorkerBrain.setFailure(context, "missing_cooking_crafting_materials", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, craftingTable);
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
@@ -701,7 +718,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         useWorkItem(level, villager, crafted);
         return WorkResult.completedWithPractice(
                 "interaction.work.cooking.crafted_food",
-                itemReplacements(crafted),
+                itemReplacements(displayed),
                 HiredWorkPractice.batch(
                         VillagerSkill.COOKING, "hired:cooking:craft", crafted.getCount(), crafted.getItem().hashCode()));
     }

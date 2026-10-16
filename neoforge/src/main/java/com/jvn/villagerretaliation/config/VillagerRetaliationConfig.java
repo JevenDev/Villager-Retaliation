@@ -208,6 +208,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_CRAFTSMAN = bind("balance.hiredWorkSkillGrowth.craftsman", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_FARMING = bind("balance.hiredWorkSkillGrowth.farming", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BREWING = bind("balance.hiredWorkSkillGrowth.brewing", Double.class);
+    public static final ConfigValue<Integer> HIRED_COOK_BONUS_CHANCE_PERCENT = bind("balance.hiredCookBonusChancePercent", Integer.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COOKING = bind("balance.hiredWorkSkillGrowth.cooking", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BUILDER = bind("balance.hiredWorkSkillGrowth.builder", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_NAVIGATION = bind("balance.hiredWorkSkillGrowth.navigation", Double.class);

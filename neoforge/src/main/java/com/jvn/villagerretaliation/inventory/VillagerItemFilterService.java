@@ -154,10 +154,8 @@ public final class VillagerItemFilterService {
             case CRAFTSMAN -> type == RecipeType.CRAFTING;
             case COOK -> CookingWorker.isFood(output)
                     && (type == RecipeType.CRAFTING || type == RecipeType.SMELTING || type == RecipeType.SMOKING);
-            case SMELTER -> SmeltingWorker.isSmeltedOre(output)
-                    && (type == RecipeType.SMELTING || type == RecipeType.BLASTING)
-                    && Stream.of(Items.RAW_IRON, Items.RAW_GOLD, Items.RAW_COPPER)
-                            .anyMatch(item -> VillagerRecipeFilterData.matchesIngredient(level, filter, 0, new ItemStack(item)));
+            case SMELTER -> SmeltingWorker.isSmeltingResult(output)
+                    && (type == RecipeType.SMELTING || type == RecipeType.BLASTING);
             default -> false;
         };
     }
@@ -177,7 +175,7 @@ public final class VillagerItemFilterService {
             case "empty.recipe" -> "An empty recipe filter selects no valid recipe and blocks automatic recipe production in either mode.";
             case "default.craftsman" -> "Without a filter, automatic crafting waits for output instructions; queued orders can still supply them.";
             case "default.cook" -> "Without a filter, automatic cooking uses eligible food recipes.";
-            case "default.smelter" -> "Without a filter, automatic smelting processes raw iron, gold and copper.";
+            case "default.smelter" -> "Without a filter, Smelter uses non-food furnace and blast-furnace recipes, including glass and stone. Food belongs to Cook.";
             case "default.supplies" -> "Without a filter, normal job supply rules apply.";
             case "recipe_invalid.missing_recipe" -> "The saved recipe is missing. Automatic recipe production is blocked until you select an available recipe.";
             case "recipe_invalid.unsupported_recipe" -> "The saved recipe type is unsupported. Automatic recipe production is blocked until you select a supported recipe.";

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work.production;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
+import com.jvn.villagerretaliation.interaction.work.CookBonusService;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
@@ -247,12 +248,19 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
         queue.blocker(order.id(), "");
         if (!output.isEmpty()) {
             int amount = Math.min(allocation.remaining(), Math.min(output.getCount(), context.transferLimit(16)));
-            var planned = output.copyWithCount(amount);
+            int bonus = role() == HiredVillagerRole.COOK ? CookBonusService.bonus(level, villager, furnace, amount) : 0;
+            var planned = output.copyWithCount(amount + bonus);
             if (!context.canStoreOutputs(List.of(planned))) return blocked(level, context, queue, order, "output_full");
             var removed = furnace.removeItem(2, amount);
-            var remainder = context.inventory().insertOutput(removed.copy());
-            int moved = removed.getCount() - remainder.getCount();
-            if (!remainder.isEmpty()) furnace.setItem(2, remainder.copyWithCount(furnace.getItem(2).getCount() + remainder.getCount()));
+            var snapshot = context.inventory().captureSnapshot();
+            var remainder = context.inventory().insertOutput(removed.copyWithCount(removed.getCount() + bonus));
+            if (!remainder.isEmpty()) {
+                context.inventory().restoreSnapshot(snapshot);
+                furnace.setItem(2, removed.copyWithCount(furnace.getItem(2).getCount() + removed.getCount()));
+                return blocked(level, context, queue, order, "output_full");
+            }
+            int moved = removed.getCount();
+            if (role() == HiredVillagerRole.COOK) CookBonusService.collected(furnace, moved, bonus);
             if (moved <= 0) return blocked(level, context, queue, order, "output_full");
             if (!queue.complete(allocation.id(), HiredProductionStock.product(removed.copyWithCount(moved)))) {
                 throw new IllegalStateException("Furnace output did not match its production allocation");
@@ -262,7 +270,7 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             AssignedStorageService.releaseProductionInputs(villager);
             boolean cooking = role() == HiredVillagerRole.COOK;
             return WorkResult.completedWithPractice(status("collected_output"),
-                    Map.of("count", Integer.toString(moved), "item", removed.getHoverName().getString()),
+                    Map.of("count", Integer.toString(moved + bonus), "item", removed.getHoverName().getString()),
                     HiredWorkPractice.batch(cooking ? VillagerSkill.COOKING : VillagerSkill.SMITHING,
                             cooking ? "hired:cooking:batch" : "hired:smelting:batch", moved, removed.getItem().hashCode()));
         }
@@ -292,7 +300,10 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
             context.inventory().restoreSnapshot(snapshot);
             return blocked(level, context, queue, order, "production_changed");
         }
-        if (!loadedInput.isEmpty()) furnace.setItem(0, loadedInput);
+        if (!loadedInput.isEmpty()) {
+            furnace.setItem(0, loadedInput);
+            if (role() == HiredVillagerRole.COOK && order.mode() == HiredProductionOrder.Mode.CONTINUOUS) CookBonusService.loaded(level, villager, furnace);
+        }
         if (!loadedFuel.isEmpty()) furnace.setItem(1, loadedFuel);
         stations.reserve(level, queue, queue.allocation(villager.getUUID()), SettlementFurnaceState.identity(furnace));
         furnace.setChanged();

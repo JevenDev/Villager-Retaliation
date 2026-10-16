@@ -29,8 +29,8 @@ Most roles need a committed work area, reachable tools or stations, supplies, an
 
 :::details{id="processing-jobs" title="Brewing, Cooking, and Smelting"}
 - **Brewing:** Cleric, or Medicine + Scholarship. Uses brewing stands, bottles, ingredients, and blaze powder for supported orders.
-- **Cook:** Butcher, or Cooking + Gathering. Uses a furnace or smoker and, for supported foods, a crafting table.
-- **Smelter:** Armorer, or Smithing + Mining. Uses furnaces or blast furnaces for supported ore processing.
+- **Cook:** Butcher, or Cooking + Gathering. Uses a furnace or smoker and, for supported foods such as bread, a crafting table. For bread, assign a Bread Recipe Filter and provide three wheat. Automatic work and continuous orders have a default 10% chance of one extra plain bread or eligible cooked food per operation. Exact batches, stock targets, and free lessons keep normal counts.
+- **Smelter:** Armorer, or Smithing + Mining. Uses actual non-food furnace and blast-furnace recipes, including glass, stone, charcoal, and metals. Sand and stone processing require a normal furnace; blast furnaces accept only actual blasting recipes. Food remains Cook work. Recipe Filters select exact recipes within those station limits.
 
 These automate supported outputs; they are not unrestricted recipe machines. Skill does not shorten vanilla station processing timers.
 :::

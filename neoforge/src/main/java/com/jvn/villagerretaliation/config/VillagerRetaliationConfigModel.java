@@ -499,6 +499,10 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 1, max = 300)
         public int hiredWorkMaximumEfficiencyPercent = 175;
 
+        /** Percent chance of one extra plain food per eligible Cook operation; trials excluded. */
+        @RangeConstraint(min = 0, max = 100)
+        public int hiredCookBonusChancePercent = 10;
+
         public boolean enableHiredWorkSkillGrowth = true;
 
         @Nest

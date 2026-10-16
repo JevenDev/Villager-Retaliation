@@ -15,12 +15,14 @@ public abstract class AbstractFurnaceSettlementMixin {
     @Inject(method = "serverTick", at = @At("HEAD"), cancellable = true)
     private static void villagerretaliation$boundTutorialBatch(Level level, BlockPos position, BlockState state, AbstractFurnaceBlockEntity furnace, CallbackInfo ci) {
         if (!com.jvn.villagerretaliation.quest.tutorial.TutorialFurnaceService.beforeTick(level, furnace)) ci.cancel();
+        else com.jvn.villagerretaliation.interaction.work.CookBonusService.beforeTick(level, furnace);
     }
 
     @Inject(method = "serverTick", at = @At("RETURN"))
     private static void villagerretaliation$recordSettlementFurnaceTick(
             Level level, BlockPos position, BlockState state, AbstractFurnaceBlockEntity furnace, CallbackInfo ci) {
         com.jvn.villagerretaliation.quest.tutorial.TutorialFurnaceService.afterTick(level, furnace);
+        com.jvn.villagerretaliation.interaction.work.CookBonusService.afterTick(level, furnace);
         SettlementFurnaceState.onVanillaTick(level, furnace);
     }
 }

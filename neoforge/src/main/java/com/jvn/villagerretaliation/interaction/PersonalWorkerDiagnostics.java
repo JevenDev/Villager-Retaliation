@@ -558,10 +558,10 @@ public final class PersonalWorkerDiagnostics {
         if (missingMaterials) {
             return reason.contains("missing_smelting_fuel")
                     ? "Smelter needs furnace fuel in job supplies or assigned input storage."
-                    : "Smelter needs raw iron, copper, or gold in job supplies or assigned input storage.";
+                    : "Smelter needs input for a non-food recipe supported by this station and the assigned filter. Supply sand for glass or cobblestone for stone to a normal furnace.";
         }
         if (noStorage && (reason.contains("missing_smelting_raw_ore") || reason.contains("missing_smelting_fuel"))) {
-            return "Smelter needs assigned input storage or carried supplies for raw ore and fuel.";
+            return "Smelter needs assigned input storage or carried supplies for a compatible non-food recipe and fuel.";
         }
         if (reason.contains("no_smelting_station")) {
             return "Smelter needs a furnace or blast furnace inside the assigned work area.";
@@ -570,16 +570,16 @@ public final class PersonalWorkerDiagnostics {
             return "Smelter cannot path to the furnace or blast furnace inside the assigned work area.";
         }
         if (reason.contains("smelting_wrong_output")) {
-            return "Smelting station output slot contains something other than a supported metal ingot.";
+            return "Smelting output must match an available non-food furnace recipe and the assigned filter; food belongs to Cook.";
         }
         if (reason.contains("smelting_wrong_input")) {
-            return "Smelting station input slot must contain raw iron, copper, or gold.";
+            return "This input has no allowed non-food recipe for this station. Glass and stone require a normal furnace; food belongs to Cook.";
         }
         if (reason.contains("smelting_wrong_fuel")) {
             return "Smelting station fuel slot contains something that will not burn.";
         }
         if (inventoryFull) {
-            return "Smelter inventory is full and output storage cannot take more ingots right now.";
+            return "Smelter inventory is full and output storage cannot take more smelted products right now.";
         }
         return "";
     }

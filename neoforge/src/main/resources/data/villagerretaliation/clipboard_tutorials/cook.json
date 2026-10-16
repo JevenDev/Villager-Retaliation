@@ -8,7 +8,7 @@
   "outcome_policy": "committed_since_binding",
   "completion_offer": "normal_contract_or_stop",
   "release_status": "integrated",
-  "design_overview": "Cook  -  A Hot Meal Before the Next Shift\n\n**Premise and dialogue:** “Nobody works well on an empty stomach. Show me the kitchen and where the meals belong. We'll cook this little batch for free.”\n\n**Existing:** food-producing crafting, smelting and smoking, with actual station timers and output selection. Cook already does more than meat cooking. Choose two portions from a verified smoking recipe, such as default raw cod to cooked cod if available.",
+  "design_overview": "Cook  -  A Hot Meal Before the Next Shift\n\n**Premise and dialogue:** “Nobody works well on an empty stomach. Show me the kitchen and where the meals belong. We'll cook this little batch for free.”\n\n**Existing:** food-producing crafting, smelting and smoking, with actual station timers and output selection. Cook already does more than meat cooking. Choose two portions from a verified smoking recipe, such as default raw cod to cooked cod if available. The chef extra-food perk applies to automatic work and continuous orders after the lesson; this free trial has no bonus and remains exactly two portions.",
   "source": {
     "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
     "version": 1,

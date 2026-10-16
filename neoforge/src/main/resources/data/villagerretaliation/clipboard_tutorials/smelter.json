@@ -8,7 +8,7 @@
   "outcome_policy": "committed_since_binding",
   "completion_offer": "normal_contract_or_stop",
   "release_status": "integrated",
-  "design_overview": "Smelter  -  From Raw Metal to Useful Iron\n\n**Premise and dialogue:** “Raw iron is a beginning, not a finished supply. Mark my furnace and give me a place for the ingots. We'll run one small batch together.”\n\n**Existing scope:** raw iron, raw gold and raw copper to their ingots through supported furnace/blast-furnace recipes. Do not teach glass, charcoal, ore blocks or arbitrary modded metals as existing support. Target two raw iron to two ingots, validated at runtime.",
+  "design_overview": "Smelter  -  From Raw Metal to Useful Iron\n\n**Premise and dialogue:** “Raw iron is a beginning, not a finished supply. Mark my furnace and give me a place for the ingots. We'll run one small batch together.”\n\n**Production scope:** actual non-food furnace and blast-furnace recipes, including glass, stone, charcoal and metals. Glass and stone need a normal furnace. This finite lesson stays limited to two raw iron to two ingots, validated at runtime.",
   "source": {
     "library_file_id": "libfile_653e635c42288191b82fc7baeb8cbf16",
     "version": 1,

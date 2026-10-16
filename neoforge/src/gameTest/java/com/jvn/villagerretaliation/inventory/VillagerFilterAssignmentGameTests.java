@@ -73,8 +73,10 @@ public final class VillagerFilterAssignmentGameTests {
                 "empty deny filter must admit available crafting outputs");
         helper.assertTrue(SmeltingWorker.isDesiredSmeltedOutput(level, empty, iron),
                 "empty deny filter must admit normal smelted outputs");
-        helper.assertFalse(SmeltingWorker.isDesiredSmeltedOutput(level, empty, new ItemStack(Items.GLASS)),
-                "empty deny filter must not expand the smelter's supported output types");
+        helper.assertTrue(SmeltingWorker.isDesiredSmeltedOutput(level, empty, new ItemStack(Items.GLASS)),
+                "empty deny filter admits the newly supported real glass recipe");
+        helper.assertFalse(SmeltingWorker.isDesiredSmeltedOutput(level, empty, new ItemStack(Items.BREAD)),
+                "empty deny does not expand Smelter into food production");
         villager.discard();
         helper.succeed();
     }
