@@ -3740,5 +3740,8 @@
   "interaction.work.tutorial.paused": "Tutorial work paused. Review the current lesson and its remaining allowance.",
   "interaction.work.tutorial.stopped": "Tutorial assignment stopped. No payment was taken.",
   "tutorial.villagerretaliation.command_modifier": "Command",
-  "tutorial.villagerretaliation.option_modifier": "Option"
+  "tutorial.villagerretaliation.option_modifier": "Option",
+  "message.villagerretaliation.inventory_unavailable": "You can no longer use this villager's inventory. Stay nearby and check that you still have access.",
+  "message.villagerretaliation.inventory_player_full": "Your inventory has no room for that item. Free a slot and try again.",
+  "message.villagerretaliation.inventory_villager_full": "There is no available villager slot for that item. Free a compatible slot and try again."
 }

@@ -216,7 +216,9 @@ final class VillagerArmorerCombatTactics {
         EquipmentSlot shieldSlot = shieldHand == InteractionHand.MAIN_HAND
                 ? EquipmentSlot.MAINHAND
                 : EquipmentSlot.OFFHAND;
+        ItemStack before = shield.copy();
         shield.hurtAndBreak(durabilityLoss, villager, shieldSlot);
+        com.jvn.villagerretaliation.util.VillagerEquipmentDurability.synchronizeAfterUse(villager, shieldHand, before, shield);
         return !villager.getItemInHand(shieldHand).is(Items.SHIELD);
     }
 

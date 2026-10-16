@@ -233,6 +233,10 @@ public final class VillagerInventoryAccess {
         VillagerInventoryContainer.clearBorrowedCombatWeapon(villager);
     }
 
+    public static boolean synchronizeBorrowedWeaponAfterUse(Villager villager, ItemStack before, ItemStack remaining) {
+        return VillagerInventoryContainer.synchronizeBorrowedWeaponAfterUse(villager, before, remaining);
+    }
+
     public static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
         VillagerInventoryContainer.dropAllInventoryAndEquipment(villager, event);
     }

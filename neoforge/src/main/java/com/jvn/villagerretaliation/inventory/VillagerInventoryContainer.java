@@ -333,6 +333,11 @@ final class VillagerInventoryContainer implements Container {
                 return maintainBorrowedCombatWeapon(villager);
             }
             returnBorrowedCombatWeapon(villager);
+            // A full inventory retains the first failed return in the live hand.
+            // Do not replace that outstanding loan with a second weapon.
+            if (hasBorrowedCombatWeapon(villager)) {
+                return false;
+            }
         }
         ItemStack displacedMainHand = villager.getMainHandItem().copy();
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
@@ -411,7 +416,7 @@ final class VillagerInventoryContainer implements Container {
             ItemStack returnedStack
     ) {
         ItemStack displacedMainHand = borrowedWeapon.displacedMainHand();
-        if (displacedMainHand.isEmpty() || returnedStack.isEmpty()) {
+        if (displacedMainHand.isEmpty()) {
             return false;
         }
 
@@ -435,6 +440,22 @@ final class VillagerInventoryContainer implements Container {
 
     static void clearBorrowedCombatWeapon(Villager villager) {
         villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
+    }
+
+    static boolean synchronizeBorrowedWeaponAfterUse(Villager villager, ItemStack before, ItemStack remaining) {
+        BorrowedCombatWeapon loan = borrowedCombatWeapon(villager);
+        if (loan == null || !ItemStack.isSameItem(before, loan.stack())) {
+            return false;
+        }
+        if (remaining.isEmpty()) {
+            clearBorrowedCombatWeapon(villager);
+            VillagerRetaliationVillagerEquipment.restoreMainHand(villager, ItemStack.EMPTY);
+            returnBorrowedCombatWeaponBySwap(villager, loan, ItemStack.EMPTY);
+        } else {
+            persistBorrowedCombatWeapon(villager, loan.slot(), remaining.copy(),
+                    loan.displacedMainHand(), loan.returnFailures());
+        }
+        return true;
     }
 
     static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
@@ -536,14 +557,18 @@ final class VillagerInventoryContainer implements Container {
                 : VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager);
         boolean trackedPlayerMainHandInMainHand = !trackedPlayerMainHand.isEmpty()
                 && ItemStack.isSameItem(villager.getMainHandItem(), trackedPlayerMainHand);
+        if (borrowedWeaponInMainHand
+                && HiredJobInventory.hasJobEquipmentForSlot(villager, EquipmentSlot.MAINHAND)) {
+            addTrackedEquipmentDrop(event, villager.getMainHandItem());
+        }
         dropEquipment(villager, event);
         if (borrowedWeapon != null && !borrowedWeaponInMainHand) {
-            com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, borrowedWeapon.stack().copy());
+            addTrackedEquipmentDrop(event, borrowedWeapon.stack());
         }
         if (!trackedPlayerMainHand.isEmpty() && !trackedPlayerMainHandInMainHand) {
-            com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, trackedPlayerMainHand);
-            VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
+            addTrackedEquipmentDrop(event, trackedPlayerMainHand);
         }
+        VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
         for (ItemStack stack : inventory) {
@@ -787,8 +812,9 @@ final class VillagerInventoryContainer implements Container {
         if (preferredSlot >= 0 && preferredSlot < inventory.size()) {
             ItemStack preferredStack = inventory.get(preferredSlot);
             if (preferredStack.isEmpty()) {
-                inventory.set(preferredSlot, remainder.copy());
-                remainder = ItemStack.EMPTY;
+                int moveCount = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+                inventory.set(preferredSlot, remainder.copyWithCount(moveCount));
+                remainder.shrink(moveCount);
             } else if (ItemStack.isSameItemSameComponents(preferredStack, remainder)) {
                 int moveCount = Math.min(remainder.getCount(), preferredStack.getMaxStackSize() - preferredStack.getCount());
                 if (moveCount > 0) {
@@ -919,7 +945,10 @@ final class VillagerInventoryContainer implements Container {
             // Vanilla has commonly moved the equipped copy into LivingDropsEvent and
             // cleared the entity slot before this callback. Reconcile against the
             // authoritative job stack instead of relying on the now-empty live slot.
-            ItemStack equipmentDrop = removeOneMatchingEquipmentDrop(event, jobStack);
+            // A personal loan overlays the job hand; its drop is a separate owner,
+            // even if the two weapons have identical components.
+            boolean loanOverlay = slot == EquipmentSlot.MAINHAND && hasBorrowedCombatWeapon(villager);
+            ItemStack equipmentDrop = loanOverlay ? ItemStack.EMPTY : removeOneMatchingEquipmentDrop(event, jobStack);
             if (!equipmentDrop.isEmpty()) {
                 HiredJobInventory.reconcileEquipmentDrop(villager, slot, equipmentDrop);
             }
@@ -996,12 +1025,24 @@ final class VillagerInventoryContainer implements Container {
         Iterator<ItemEntity> drops = event.getDrops().iterator();
         while (drops.hasNext()) {
             ItemStack droppedStack = drops.next().getItem();
-            if (ItemStack.isSameItem(droppedStack, stack)) {
+            // Durability may have changed since the saved ownership snapshot, but
+            // another named/enchanted item of the same type is a different owner.
+            ItemStack expected = stack.copy();
+            expected.setDamageValue(droppedStack.getDamageValue());
+            if (ItemStack.isSameItemSameComponents(droppedStack, expected)) {
                 drops.remove();
                 return droppedStack.copy();
             }
         }
         return ItemStack.EMPTY;
+    }
+
+    private static void addTrackedEquipmentDrop(LivingDropsEvent event, ItemStack stack) {
+        // Vanilla may already have cleared the live slot into this event. Retain
+        // that actual stack (including current wear) instead of adding its saved copy.
+        ItemStack existing = removeOneMatchingEquipmentDrop(event, stack);
+        com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event,
+                existing.isEmpty() ? stack.copy() : existing);
     }
 
     private static ItemStack removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
