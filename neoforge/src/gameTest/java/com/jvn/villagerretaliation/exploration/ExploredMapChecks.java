@@ -52,6 +52,7 @@ public final class ExploredMapChecks {
         markerAnchors(fixture);
         lighting();
         FlatMapChecks.run();
+        MapCloudChecks.run();
         compactSurfaceDecoding();
         System.out.println("Passed " + passed + " explored-map checks. Fixtures/images: " + output.toAbsolutePath());
     }

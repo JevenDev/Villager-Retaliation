@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.exploration.MapCloudRegions;
 import com.jvn.villagerretaliation.exploration.MapLighting;
 import com.jvn.villagerretaliation.exploration.MapView;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -11,15 +13,28 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
 public final class MapFogRenderer {
     private static final ResourceLocation CLOUDS = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
     private static ShaderInstance shader;
+    private static DynamicTexture cloudRegions;
     private MapFogRenderer() { }
     public static void registerShaders(RegisterShadersEvent event) {
         try {
+            try (var stream = event.getResourceProvider().getResourceOrThrow(CLOUDS).open(); var source = NativeImage.read(stream)) {
+                int width = source.getWidth(), height = source.getHeight();
+                int[] regions = MapCloudRegions.anchors(width, height, index -> source.getPixelRGBA(index % width, index / width) >>> 24 != 0);
+                var image = new NativeImage(width, height * 2, false);
+                try {
+                    for (int y = 0; y < height * 2; y++) for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, regions[y * width + x]);
+                    var replacement = new DynamicTexture(image);
+                    if (cloudRegions != null) cloudRegions.close();
+                    cloudRegions = replacement;
+                } catch (RuntimeException | Error exception) { image.close(); throw exception; }
+            }
             event.registerShader(new ShaderInstance(event.getResourceProvider(), VillagerRetaliation.id("map_fog"),
                     DefaultVertexFormat.POSITION), loaded -> shader = loaded);
         } catch (IOException e) { throw new IllegalStateException("Failed to register map shader", e); }
@@ -42,6 +57,7 @@ public final class MapFogRenderer {
         shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), period * 4), wrap(view.z(), period * 4));
         shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
         RenderSystem.setShaderTexture(1, CLOUDS);
+        RenderSystem.setShaderTexture(4, cloudRegions.getId());
         if (pages == null) {
             RenderSystem.setShaderTexture(0, CLOUDS); RenderSystem.setShaderTexture(2, CLOUDS); RenderSystem.setShaderTexture(3, CLOUDS);
         } else {

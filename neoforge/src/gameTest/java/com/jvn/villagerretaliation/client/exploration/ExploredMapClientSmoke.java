@@ -56,8 +56,8 @@ public final class ExploredMapClientSmoke {
             set(ExploredMapScreen.class, mc.screen, "zoom", .3); phase = 10; ticks = 0;
         }
         if (phase == 10 && ++ticks >= 120) {
-            verifyPixels(); screenshot("flat-map-distant.png");
-            results.add("GPU color channels and partial discovery masks match at near and distant zoom");
+            screenshot("flat-map-distant.png"); verifyPixels();
+            results.add("Minecraft map colors, black unknown terrain and layered white clouds match at near and distant zoom");
             set(ExploredMapScreen.class, mc.screen, "zoom", 1.0);
             pending = mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().overworld().setDayTime(18000));
             phase = 5; ticks = 0;
@@ -139,7 +139,21 @@ public final class ExploredMapClientSmoke {
                     net.minecraft.world.level.material.MapColor.Brightness.HIGH) & 0xffffff), "water pixels match Minecraft's map palette");
             require((land & 0xffffff) == (net.minecraft.world.level.material.MapColor.GRASS.calculateRGBColor(
                     net.minecraft.world.level.material.MapColor.Brightness.NORMAL) & 0xffffff), "grass pixels match Minecraft's map palette");
-            require((unknown & 255) < 64 && (unknown >> 8 & 255) < 64, "unknown cells retain clouds at every zoom");
+            require((unknown & 255) == (unknown >> 8 & 255) && (unknown >> 8 & 255) == (unknown >> 16 & 255), "unknown terrain contains only black and neutral white cloud layers");
+            int black = 0, white = 0, layered = 0;
+            for (int y = 90; y < image.getHeight() - 100; y += 3) for (int x = 20; x < image.getWidth() - 20; x += 3) {
+                boolean markerOverlay = Math.abs(x - image.getWidth() / 2) < 120 && Math.abs(y - image.getHeight() / 2) < 100;
+                if (markerOverlay) continue;
+                double wx = view.worldX((double)x * view.width() / image.getWidth());
+                double wz = view.worldZ((double)y * view.height() / image.getHeight());
+                if (!(wx > 140 || wz > 140 || wx > 55 && wz > 55)) continue;
+                int rgb = image.getPixelRGBA(x, y), red = rgb & 255, green = rgb >> 8 & 255, blue = rgb >> 16 & 255;
+                require(red == green && green == blue, "unexplored terrain never leaks map colors through cloud gaps at " + wx + ", " + wz);
+                if (red == 0) black++;
+                else if (red > 240) white++;
+                else if (red > 20 && red < 230) layered++;
+            }
+            require(black > 10 && white > 10 && layered > 10, "unexplored areas have black gaps, white clouds and soft layered transitions");
         }
     }
     private static int pixel(NativeImage image, MapView view, double x, double z) {
