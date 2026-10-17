@@ -6,7 +6,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
-import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionCrafting;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
 import com.jvn.villagerretaliation.interaction.work.production.HiredQueuedFurnaceWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
@@ -577,27 +577,14 @@ public final class CookingWorker extends AbstractBlockWorker {
             queue.blocker(order.id(), assessment.missingCraftingTable() ? "no_crafting_table" : "missing_materials");
             return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
         }
-        var missing = new LinkedHashMap<Item, Integer>();
-        selection.materials().forEach((item, count) -> {
-            int needed = count - HiredSupplyCrafting.countCarried(context, item);
-            if (needed > 0) missing.put(item, needed);
-        });
-        if (missing.isEmpty() && !context.inventory().canTransformSuppliesToOutputs(selection.materials(), List.of(order.output()))) {
-            queue.blocker(order.id(), "output_full");
-            return WorkResult.idle("interaction.work.cooking.output_full");
+        String inputBlocker = HiredProductionMaterials.reserveCraftingInputs(villager, context, selection.materials(), order);
+        if (!inputBlocker.isEmpty()) {
+            queue.blocker(order.id(), inputBlocker);
+            return WorkResult.idle(inputBlocker.equals("output_full")
+                    ? "interaction.work.cooking.output_full" : "interaction.work.cooking.missing_crafting_materials");
         }
-        if (!AssignedStorageService.reserveProductionInputs(villager, missing, order.id())) {
-            queue.blocker(order.id(), "materials_reserved");
-            return WorkResult.idle("interaction.work.cooking.missing_crafting_materials");
-        }
-        var allocation = queue.allocation(villager.getUUID());
-        if (allocation != null && !allocation.order().equals(order.id())) {
-            HiredProductionStations.get(level).release(allocation.id());
-            queue.release(allocation.id());
-            allocation = null;
-            context.setProgressTicks(0);
-        }
-        if (allocation == null) allocation = queue.reserve(villager.getUUID(), order.id(), order.output().getCount(), 1, stock, null);
+        var allocation = HiredProductionCrafting.reserve(level, queue, villager.getUUID(), order,
+                order.output().getCount(), stock, () -> context.setProgressTicks(0));
         if (allocation == null) {
             AssignedStorageService.releaseProductionInputs(villager);
             queue.blocker(order.id(), "quantity_reserved");

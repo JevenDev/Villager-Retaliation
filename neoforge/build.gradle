@@ -821,43 +821,34 @@ tasks.register('campaignFixturePack', Zip) {
     destinationDirectory = layout.buildDirectory.dir('distributions')
 }
 
-// Isolated smoke world; never copy or alter the user's saves.
-tasks.named('runPairedGreetClientSmoke') {
-    doFirst {
-        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
-        if (!metadata.isFile()) throw new GradleException('Run focused GameTests first to create isolated world metadata.')
-        copy {
-            from metadata
-            into new File(pairedGreetClientSmokeDirectory.get().asFile, 'saves/PairedGreetSmoke')
+def configureIsolatedClientSmoke = { String taskName, runDirectory, String worldName,
+                                     String options, String expectedMarker, String failureMessage ->
+    tasks.named(taskName) {
+        doFirst {
+            def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+            if (!metadata.isFile()) throw new GradleException('Run focused GameTests first to create isolated world metadata.')
+            copy {
+                from metadata
+                into new File(runDirectory.get().asFile, "saves/${worldName}")
+            }
+            new File(runDirectory.get().asFile, 'options.txt').text = options
         }
-        new File(pairedGreetClientSmokeDirectory.get().asFile, 'options.txt').text =
-                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
-    }
-    doLast {
-        def result = new File(pairedGreetClientSmokeDirectory.get().asFile, 'result.txt')
-        if (!result.isFile() || !result.text.contains('Paired Greet client smoke passed'))
-            throw new GradleException('Paired dialogue native checks did not finish. Inspect ' + pairedGreetClientSmokeDirectory.get().asFile)
+        doLast {
+            def result = new File(runDirectory.get().asFile, 'result.txt')
+            if (!result.isFile() || !result.text.contains(expectedMarker))
+                throw new GradleException(failureMessage + ' Inspect ' + runDirectory.get().asFile)
+        }
     }
 }
 
-// Isolated bank GUI acceptance using generated GameTest metadata, never a user save.
-tasks.named('runBankStorageClientSmoke') {
-    doFirst {
-        def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
-        if (!metadata.isFile()) throw new GradleException('Run focused GameTests first to create isolated world metadata.')
-        copy {
-            from metadata
-            into new File(bankStorageClientSmokeDirectory.get().asFile, 'saves/BankStorageSmoke')
-        }
-        new File(bankStorageClientSmokeDirectory.get().asFile, 'options.txt').text =
-                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
-    }
-    doLast {
-        def result = new File(bankStorageClientSmokeDirectory.get().asFile, 'result.txt')
-        if (!result.isFile() || !result.text.contains('Bank storage native smoke passed'))
-            throw new GradleException('Bank storage acceptance did not finish. Inspect ' + bankStorageClientSmokeDirectory.get().asFile)
-    }
-}
+def isolatedClientSmokeOptions =
+        'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
+
+configureIsolatedClientSmoke('runPairedGreetClientSmoke', pairedGreetClientSmokeDirectory, 'PairedGreetSmoke',
+        isolatedClientSmokeOptions, 'Paired Greet client smoke passed', 'Paired dialogue native checks did not finish.')
+
+configureIsolatedClientSmoke('runBankStorageClientSmoke', bankStorageClientSmokeDirectory, 'BankStorageSmoke',
+        isolatedClientSmokeOptions, 'Bank storage native smoke passed', 'Bank storage acceptance did not finish.')
 
 tasks.named('runAnimationClientSmoke') {
     doFirst {

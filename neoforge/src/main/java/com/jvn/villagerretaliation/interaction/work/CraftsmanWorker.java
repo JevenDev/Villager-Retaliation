@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.quest.tutorial.*;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionEligibility;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionCrafting;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
@@ -33,7 +35,6 @@ import net.minecraft.world.level.block.Blocks;
 public final class CraftsmanWorker extends AbstractBlockWorker {
     private static final String MODE_TAG = "CraftsmanMode";
     private static final String CURSOR_TAG = "CraftsmanCursor";
-    private static final String ALLOCATION_TAG = "CraftsmanProductionAllocation";
     private static final int CRAFT_TICKS = 20;
     private static final int MAX_MATERIAL_PULL = 32;
 
@@ -195,26 +196,12 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             for (var order : queue.executionOrders()) queue.blocker(order.id(), "no_crafting_table");
             return WorkResult.idle("interaction.work.craftsman.no_table").withBlocker(WorkBlocker.MISSING_CRAFTING_TABLE);
         }
-        var current = queue.allocation(villager.getUUID());
         for (var order : queue.executionOrders()) {
             long stock = HiredProductionStock.count(level, villager, queue, order);
-            if (stock < 0L) {
-                queue.blocker(order.id(), "output_storage_unavailable");
-                continue;
-            }
-            long available = queue.available(order.id(), stock);
-            if (current != null && current.order().equals(order.id())) available += current.remaining();
-            if (available <= 0L) {
-                queue.blocker(order.id(), "quantity_reserved_or_stock_met");
-                continue;
-            }
-            if (context.inventory().hasOutput(ignored -> true)
-                    && !java.util.Objects.equals(HiredProductionStock.destination(context.state()), order.storage())) {
-                queue.blocker(order.id(), "awaiting_output_delivery");
-                continue;
-            }
-            if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
-                queue.blocker(order.id(), "recipe_unavailable");
+            String blocker = HiredProductionEligibility.blocker(level, role(), queue, order, villager.getUUID(),
+                    stock, context.inventory().hasOutput(ignored -> true), HiredProductionStock.destination(context.state()));
+            if (!blocker.isEmpty()) {
+                queue.blocker(order.id(), blocker);
                 continue;
             }
             var selection = select(level, villager, context, List.of(new Target(0, order.output())), order.recipe().filter(level));
@@ -222,33 +209,19 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 queue.blocker(order.id(), "missing_materials");
                 continue;
             }
-            var missing = new LinkedHashMap<Item, Integer>();
-            selection.materials().forEach((item, count) -> {
-                int needed = count - HiredSupplyCrafting.countCarried(context, item);
-                if (needed > 0) missing.put(item, needed);
-            });
-            if (missing.isEmpty() && !context.inventory().canTransformSuppliesToOutputs(selection.materials(), List.of(order.output()))) {
-                queue.blocker(order.id(), "output_full");
+            String inputBlocker = HiredProductionMaterials.reserveCraftingInputs(villager, context, selection.materials(), order);
+            if (!inputBlocker.isEmpty()) {
+                queue.blocker(order.id(), inputBlocker);
                 continue;
             }
-            if (!AssignedStorageService.reserveProductionInputs(villager, missing, order.id())) {
-                queue.blocker(order.id(), "materials_reserved");
-                continue;
-            }
-            if (current != null && !current.order().equals(order.id())) {
-                queue.release(current.id());
-                current = null;
-            }
-            if (current == null) current = queue.reserve(villager.getUUID(), order.id(), order.output().getCount(), 1, stock, null);
+            var current = HiredProductionCrafting.reserve(level, queue, villager.getUUID(), order,
+                    order.output().getCount(), stock, () -> context.setProgressTicks(0));
             if (current == null) {
                 AssignedStorageService.releaseProductionInputs(villager);
                 queue.blocker(order.id(), "quantity_reserved");
                 continue;
             }
-            if (!context.state().hasUUID(ALLOCATION_TAG) || !context.state().getUUID(ALLOCATION_TAG).equals(current.id())) {
-                context.setProgressTicks(0);
-                context.state().putUUID(ALLOCATION_TAG, current.id());
-            }
+            HiredProductionCrafting.trackProgress(context.state(), current, () -> context.setProgressTicks(0));
             HiredProductionStock.prepareDestination(context.state(), context.inventory().hasOutput(ignored -> true), order);
             queue.blocker(order.id(), "");
             return craft(level, villager, context, table, selection, List.of(), queue, current);
@@ -260,10 +233,9 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
 
     private static void releaseProduction(Villager villager, HiredWorkContext context, HiredProductionQueue queue) {
         var allocation = queue.allocation(villager.getUUID());
-        if (allocation != null) queue.release(allocation.id());
+        HiredProductionCrafting.releasePlanned((ServerLevel) villager.level(), queue, allocation);
         AssignedStorageService.releaseProductionInputs(villager);
-        context.state().remove(ALLOCATION_TAG);
-        context.setProgressTicks(0);
+        HiredProductionCrafting.clearProgress(context.state(), () -> context.setProgressTicks(0));
     }
 
     private static Selection select(
