@@ -13,6 +13,44 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class WorkerStateContractGameTests {
     @GameTest(template = "empty")
+    public static void roleHandoffsKeepIndependentSnapshotsAndRestoreProgressOnce(GameTestHelper helper) {
+        var level = helper.getLevel();
+        for (var role : com.jvn.villagerretaliation.interaction.HiredVillagerRole.values()) {
+            var villager = net.minecraft.world.entity.EntityType.VILLAGER.create(level);
+            var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager);
+            state.putBoolean("AutoDepositOutputs", false);
+            state.putInt("CraftsmanCursor", 4);
+            state.putLong("SettlementConstructionPosition", 42L);
+            state.putString("MiningState", "find_target");
+            var handoff = SettlementWorkerHandoff.forRole(role);
+            var snapshot = handoff.capture(level, villager);
+            helper.assertFalse(snapshot == state, role + " captures an independent snapshot");
+            helper.assertFalse(snapshot.getBoolean("AutoDepositOutputs"), role + " preserves configuration");
+            helper.assertValueEqual(snapshot.contains("SettlementConstructionPosition"),
+                    role != com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER, "only builders discard their transient construction position");
+            state.putInt("CraftsmanCursor", 9);
+            helper.assertValueEqual(snapshot.getInt("CraftsmanCursor"), 4, "later native edits do not mutate the snapshot");
+            var saved = new CompoundTag();
+            saved.putUUID("Id", villager.getUUID());
+            saved.putUUID("Area", UUID.randomUUID());
+            saved.putString("Role", role.name());
+            saved.putLong("Version", 1);
+            saved.put("Settings", snapshot);
+            var worker = SettlementWorkerState.load(saved);
+            helper.assertTrue(worker.restore(villager), role + " restores a newer snapshot");
+            helper.assertValueEqual(state.getInt("CraftsmanCursor"), 4, "legacy shared cursors still restore");
+            if (role == com.jvn.villagerretaliation.interaction.HiredVillagerRole.MINING) {
+                helper.assertValueEqual(state.getString("MiningState"), "find_target", "mining progress restores through its contract");
+            }
+            state.putInt("CraftsmanCursor", 12);
+            helper.assertFalse(worker.restore(villager), role + " does not replay the same version");
+            helper.assertValueEqual(state.getInt("CraftsmanCursor"), 12, "repeated activation retains native progress");
+            com.jvn.villagerretaliation.interaction.HiredWorkSession.invalidate(villager);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void blockersSurviveMessageChangesAndLegacySaves(GameTestHelper helper) {
         var state = new CompoundTag();
         state.putString("Status", "interaction.work.craftsman.no_filter");

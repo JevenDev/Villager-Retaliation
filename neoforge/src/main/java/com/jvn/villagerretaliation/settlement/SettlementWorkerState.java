@@ -198,15 +198,10 @@ public final class SettlementWorkerState {
                 ? SettlementMiningAccess.observe(this.miningAccess, duty.town().mines().get(this.area), duty.area(), this.position) : null;
         this.inventory = HiredJobInventory.getJobInventory(villager).captureSnapshot();
         HiredWorkSkillGrowthService.onPractice(level, villager, null, this.role, HiredWorkStateStore.state(villager), List.of());
-        this.settings = HiredWorkStateStore.state(villager).copy();
-        if (this.role == HiredVillagerRole.BUILDER) this.settings.remove("SettlementConstructionPosition");
-        if (this.role == HiredVillagerRole.FARMING || this.role == HiredVillagerRole.FISHING || this.role == HiredVillagerRole.LOGGING
-                || this.role == HiredVillagerRole.MINING || this.role == HiredVillagerRole.ANIMAL_HANDLING
-                || this.role == HiredVillagerRole.HUNTING || this.role == HiredVillagerRole.BUILDER || this.role == HiredVillagerRole.COMBAT) {
+        var handoff = SettlementWorkerHandoff.forRole(this.role);
+        this.settings = handoff.capture(level, villager);
+        if (handoff.capturesEntity()) {
             this.entityContext = villager.saveWithoutId(new CompoundTag());
-        }
-        if (this.role == HiredVillagerRole.FISHING) {
-            SettlementBackgroundFishing.capture(level, villager, this.settings);
         }
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
@@ -240,10 +235,8 @@ public final class SettlementWorkerState {
     boolean restore(Villager villager) {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Worker handoff has a different identity");
         if (this.huntingBody != null) this.huntingBody.restore(villager, villager.level().getGameTime());
-        if (this.role == HiredVillagerRole.HUNTING) {
-            com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.restoreMeleeAttackTick(villager, this.huntingAttackAt);
-        }
-        SettlementBrewingService.restore(this, villager);
+        var handoff = SettlementWorkerHandoff.forRole(this.role);
+        handoff.reconcile(this, villager);
         if (villager.getPersistentData().getLong(VERSION_TAG) >= this.version) {
             return false;
         }
@@ -261,13 +254,7 @@ public final class SettlementWorkerState {
             HiredWorkStateStore.state(villager).putInt("CraftsmanCursor", this.settings.getInt("CraftsmanCursor"));
         }
         SettlementBackgroundFishing.restore(this, villager);
-        if (this.role == HiredVillagerRole.LOGGING) {
-            com.jvn.villagerretaliation.interaction.work.logging.LoggingHarvestPlan.copyState(this.settings, HiredWorkStateStore.state(villager));
-        }
-        if (this.role == HiredVillagerRole.MINING) {
-            com.jvn.villagerretaliation.interaction.work.mining.MiningWorkerState.copyState(this.settings, HiredWorkStateStore.state(villager));
-        }
-        if (this.role == HiredVillagerRole.HUNTING) SettlementGuardService.copyProgress(this.settings, HiredWorkStateStore.state(villager));
+        handoff.restoreProgress(this, villager);
         HiredWorkSession.invalidate(villager);
         return true;
     }
