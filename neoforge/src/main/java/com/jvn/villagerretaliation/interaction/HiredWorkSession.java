@@ -87,7 +87,7 @@ public record HiredWorkSession(
         if (!cached.signature.equals(signature) || level.getGameTime() >= cached.refreshGameTime) {
             return Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
         }
-        return HiredVillagerWorkService.effectiveWorkTickInterval(cached.efficiency);
+        return HiredWorkParameters.effectiveWorkTickInterval(cached.efficiency);
     }
 
     public static void invalidate(Villager villager) {
@@ -116,9 +116,9 @@ public record HiredWorkSession(
             return cached;
         }
         int roleScore = HiredVillagerRoles.roleScore(level, villager, role);
-        int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, role, roleScore);
-        HiredJobSite jobSite = HiredVillagerWorkService.jobSite(level, villager, role, state, maxRadius);
-        int efficiency = HiredVillagerWorkService.efficiencyPercent(
+        int maxRadius = HiredWorkParameters.maxWorkRadius(level, villager, role, roleScore);
+        HiredJobSite jobSite = HiredWorkParameters.jobSite(level, villager, role, state, maxRadius);
+        int efficiency = HiredWorkParameters.efficiencyPercent(
                 level, villager, role, state, inventory, roleScore);
         CachedMetadata refreshed = new CachedMetadata(
                 signature,
