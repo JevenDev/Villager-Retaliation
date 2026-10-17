@@ -114,6 +114,7 @@
     "client.SettlementBlockEntityRendererMixin",
     "client.SettlementLevelRendererMixin",
     "client.SettlementViewProjectionMixin",
+    "client.ExploredMapWorldRenderMixin",
     "client.SlotAccessor",
     "client.TradeEmiOverlayMixin",
     "client.TradeJeiOverlayMixin",

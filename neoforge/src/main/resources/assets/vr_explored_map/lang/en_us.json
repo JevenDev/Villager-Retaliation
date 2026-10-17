@@ -1,0 +1,10 @@
+{
+  "key.villagerretaliation.explored_map": "Explored terrain map",
+  "map.villagerretaliation.title": "Explored terrain",
+  "map.villagerretaliation.center": "Center player",
+  "map.villagerretaliation.village": "Village",
+  "map.villagerretaliation.connecting": "Waiting for world identity…",
+  "map.villagerretaliation.loading": "Explore outdoors to chart visible terrain. Loading…",
+  "map.villagerretaliation.storage_error": "Map storage error; recent exploration may not save.",
+  "map.villagerretaliation.key_conflict": "Map key %s is also bound to %s. Choose separate keys in Options → Controls → Key Binds; the existing action is preserved."
+}

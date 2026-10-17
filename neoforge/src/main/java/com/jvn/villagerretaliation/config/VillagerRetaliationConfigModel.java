@@ -775,6 +775,14 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class DebugOverlay {
+        public boolean showExploredMapMinimap = false;
+
+        @RangeConstraint(min = 80, max = 320)
+        public int exploredMapMinimapSize = 160;
+
+        @RangeConstraint(min = 0.75D, max = 4.0D, decimalPlaces = 2)
+        public double exploredMapMinimapZoom = 1.0D;
+
         public boolean showVillageBounds = false;
 
         public boolean showQuestJournalTags = false;

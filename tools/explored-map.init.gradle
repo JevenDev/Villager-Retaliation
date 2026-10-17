@@ -1,0 +1,62 @@
+// Opt-in checks keep shared build configuration untouched.
+gradle.projectsEvaluated {
+    def mod = gradle.rootProject.project(':neoforge')
+    mod.tasks.register('verifyExploredMap', JavaExec) {
+        group = 'verification'
+        dependsOn mod.tasks.named('gameTestClasses')
+        classpath = mod.sourceSets.gameTest.runtimeClasspath
+        mainClass = 'com.jvn.villagerretaliation.exploration.ExploredMapChecks'
+        args mod.layout.buildDirectory.dir('explored-map-checks').get().asFile.absolutePath
+    }
+}
+
+allprojects { project ->
+    afterEvaluate {
+        if (project.path != ':neoforge') return
+        def output = layout.buildDirectory.dir("explored-map-client-smoke/${System.currentTimeMillis()}")
+        neoForge.runs {
+            exploredMapClientSmoke {
+                client()
+                sourceSet = sourceSets.gameTest
+                gameDirectory.set(output)
+                systemProperty 'villagerretaliation.exploredMapClientSmoke', output.get().asFile.absolutePath
+                if (providers.gradleProperty('mapPerformanceSource').isPresent()) {
+                    systemProperty 'villagerretaliation.mapPerformanceSource', rootProject.file(providers.gradleProperty('mapPerformanceSource').get()).absolutePath
+                }
+                systemProperty 'villagerretaliation.mapPerformanceMinimap', providers.gradleProperty('mapPerformanceMinimap').orElse('false').get()
+                jvmArguments.add '-Xmx2G'
+                systemProperty 'villagerretaliation.mapPerformanceFps', providers.gradleProperty('mapPerformanceFps').orElse('260').get()
+                programArguments.addAll '--quickPlaySingleplayer', 'ExploredMapSmoke', '--width', '1920', '--height', '1080'
+            }
+        }
+        def prepareTerrain = tasks.register('prepareRecordedMapTerrain', JavaExec) {
+            dependsOn tasks.named('gameTestClasses')
+            onlyIf { providers.gradleProperty('mapPerformanceSource').isPresent() }
+            classpath = sourceSets.gameTest.runtimeClasspath
+            mainClass = 'com.jvn.villagerretaliation.exploration.MapRecordedTerrainFixture'
+            doFirst {
+                args rootProject.file(providers.gradleProperty('mapPerformanceSource').get()).absolutePath, output.get().asFile.absolutePath
+            }
+        }
+        tasks.named('runExploredMapClientSmoke') {
+            dependsOn prepareTerrain
+            doFirst {
+                def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+                if (!metadata.isFile()) throw new GradleException('Run explored-map GameTests first to create isolated world metadata.')
+                copy {
+                    from metadata
+                    into new File(output.get().asFile, 'saves/ExploredMapSmoke')
+                }
+                new File(output.get().asFile, 'options.txt').text =
+                        'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:2\nsimulationDistance:2\nguiScale:3\n'
+                if (providers.gradleProperty('mapPerformanceSource').isPresent())
+                    new File(output.get().asFile, 'options.txt').append('enableVsync:false\nmaxFps:260\n')
+            }
+            doLast {
+                def result = new File(output.get().asFile, 'result.txt')
+                if (!result.isFile() || !result.text.contains('Explored map client checks passed'))
+                    throw new GradleException('Explored map client checks did not finish. Inspect ' + output.get().asFile)
+            }
+        }
+    }
+}
