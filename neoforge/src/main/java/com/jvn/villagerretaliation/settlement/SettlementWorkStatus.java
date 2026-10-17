@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredWorkerFacts;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import java.util.Locale;
 import net.minecraft.server.level.ServerLevel;
@@ -13,8 +14,8 @@ record SettlementWorkStatus(String status, String diagnostic) {
     static SettlementWorkStatus observe(ServerLevel level, Villager villager) {
         var session = HiredWorkSession.active(level, villager);
         var brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
-        if (villager.isSleeping() || brain.status().equals("interaction.work.status.sleeping")
-                || brain.status().equals("interaction.work.status.tired")) return new SettlementWorkStatus("resting", "");
+        var blocker = WorkBlocker.read(session.state());
+        if (villager.isSleeping() || blocker == WorkBlocker.RESTING) return new SettlementWorkStatus("resting", "");
         if (session.role() == com.jvn.villagerretaliation.interaction.HiredVillagerRole.FARMING
                 && brain.status().startsWith("interaction.work.farming.planting_"))
             return new SettlementWorkStatus(brain.status().endsWith("_missing") ? "missing_planting_item"
@@ -27,10 +28,10 @@ record SettlementWorkStatus(String status, String diagnostic) {
         if (brain.status().equals("interaction.work.status.returning_bounds")) return new SettlementWorkStatus("workforce.pathing", "");
         if (brain.status().equals("interaction.work.hauling.no_demand")) return new SettlementWorkStatus("no_demand", "");
         if (brain.status().equals("interaction.work.builder.choose_structure")) return new SettlementWorkStatus("no_construction_project", "");
-        if (brain.status().endsWith(".no_filter")) return new SettlementWorkStatus("no_filter", "");
-        if (brain.status().endsWith(".no_crafting_table") || brain.status().equals("interaction.work.craftsman.no_table")) return new SettlementWorkStatus("no_crafting_table", "");
-        if (brain.status().equals("interaction.work.cooking.no_station")) return new SettlementWorkStatus("no_furnace", "");
-        if (brain.failureReason().endsWith("_profession_required")) return new SettlementWorkStatus("profession_required", "");
+        if (blocker == WorkBlocker.MISSING_FILTER) return new SettlementWorkStatus("no_filter", "");
+        if (blocker == WorkBlocker.MISSING_CRAFTING_TABLE) return new SettlementWorkStatus("no_crafting_table", "");
+        if (blocker == WorkBlocker.MISSING_FURNACE) return new SettlementWorkStatus("no_furnace", "");
+        if (blocker == WorkBlocker.PROFESSION_REQUIRED) return new SettlementWorkStatus("profession_required", "");
         var facts = HiredWorkerFacts.observe(session, brain);
         String diagnostic = SettlementWorkerDiagnostics.describe(facts);
         if (facts.canBeBlocked() && (facts.blocker().startsWith("temporary_task_")

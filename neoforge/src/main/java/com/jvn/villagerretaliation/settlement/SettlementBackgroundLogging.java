@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan;
@@ -57,7 +59,7 @@ final class SettlementBackgroundLogging {
         var area = town.areas().get(worker.area());
         var forest = town.forests().get(worker.area());
         if (forest == null || area == null || !forest.matches(area)) {
-            worker.status("no_observed_forest");
+            worker.status("no_observed_forest", WorkBlocker.NO_OBSERVED_WORK);
             return;
         }
         if (forest.conflict()) {
@@ -147,7 +149,7 @@ final class SettlementBackgroundLogging {
             if (plan.hasLogs()) {
                 var position = BlockPos.of(plan.logs()[0]);
                 if (!forest.observed(position)) {
-                    worker.status("no_observed_forest");
+                    worker.status("no_observed_forest", WorkBlocker.NO_OBSERVED_WORK);
                     return;
                 }
                 var block = forest.getBlockState(position);
@@ -173,7 +175,7 @@ final class SettlementBackgroundLogging {
             } else if (plan.hasLeaves()) {
                 var position = BlockPos.of(plan.leaves()[0]);
                 if (!forest.observed(position)) {
-                    worker.status("no_observed_forest");
+                    worker.status("no_observed_forest", WorkBlocker.NO_OBSERVED_WORK);
                     return;
                 }
                 var block = forest.getBlockState(position);
@@ -192,7 +194,7 @@ final class SettlementBackgroundLogging {
             } else if (!plan.sapling().isEmpty() && plan.saplings().length > 0) {
                 var position = BlockPos.of(plan.saplings()[0]);
                 if (!forest.observed(position) || !forest.observed(position.below())) {
-                    worker.status("no_observed_forest");
+                    worker.status("no_observed_forest", WorkBlocker.NO_OBSERVED_WORK);
                     return;
                 }
                 if (!(plan.sapling().getItem() instanceof BlockItem item) || !canPlant(forest, position, item.getBlock().defaultBlockState())) {

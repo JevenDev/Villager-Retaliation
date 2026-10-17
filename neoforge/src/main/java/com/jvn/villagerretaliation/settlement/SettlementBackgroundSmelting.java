@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.CookingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
@@ -163,7 +165,8 @@ final class SettlementBackgroundSmelting {
             worker.status("supplied_furnace");
             return true;
         }
-        worker.status(machines.isEmpty() ? "no_furnace" : "waiting_for_furnace");
+        worker.status(machines.isEmpty() ? "no_furnace" : "waiting_for_furnace",
+                machines.isEmpty() ? WorkBlocker.MISSING_FURNACE : WorkBlocker.NONE);
         return finishExisting ? processing : worker.role() == HiredVillagerRole.SMELTER;
     }
 

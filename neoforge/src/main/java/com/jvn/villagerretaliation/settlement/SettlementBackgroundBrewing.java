@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
@@ -197,7 +199,8 @@ final class SettlementBackgroundBrewing {
             worker.status("supplied_brewing_stand");
             return true;
         }
-        worker.status(machines.isEmpty() ? "no_brewing_stand" : "waiting_for_brewing_stand");
+        worker.status(machines.isEmpty() ? "no_brewing_stand" : "waiting_for_brewing_stand",
+                machines.isEmpty() ? WorkBlocker.MISSING_BREWING_STAND : WorkBlocker.NONE);
         return allocation != null && allocation.started();
     }
 

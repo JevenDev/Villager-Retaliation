@@ -9,10 +9,21 @@ public record WorkResult(
         Map<String, String> replacements,
         boolean progressed,
         boolean completed,
-        List<VillagerSkillPractice> practice) {
+        List<VillagerSkillPractice> practice,
+        WorkBlocker blocker) {
+    public WorkResult(String status, Map<String, String> replacements, boolean progressed, boolean completed,
+                      List<VillagerSkillPractice> practice) {
+        this(status, replacements, progressed, completed, practice, WorkBlocker.NONE);
+    }
+
+    public WorkResult withBlocker(WorkBlocker blocker) {
+        return new WorkResult(status, replacements, progressed, completed, practice, blocker);
+    }
+
     public WorkResult {
         replacements = replacements == null ? Map.of() : Map.copyOf(replacements);
         practice = practice == null ? List.of() : List.copyOf(practice);
+        blocker = java.util.Objects.requireNonNull(blocker);
     }
 
     public static WorkResult idle(String status) {

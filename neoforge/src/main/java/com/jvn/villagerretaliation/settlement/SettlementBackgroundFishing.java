@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
@@ -167,7 +169,8 @@ public final class SettlementBackgroundFishing {
                 state.remove(CAST);
                 worker.changed();
             }
-            worker.status(preferences.positions().isEmpty() ? "no_observed_fishery" : "fishing_selected_unavailable");
+            worker.status(preferences.positions().isEmpty() ? "no_observed_fishery" : "fishing_selected_unavailable",
+                    preferences.positions().isEmpty() ? WorkBlocker.NO_OBSERVED_WORK : WorkBlocker.NONE);
             return;
         }
         var owner = worker.context(level, town);

@@ -240,6 +240,7 @@ public final class HiredVillagerWorkService {
                 ? worker.supplyQuota(level, villager, session.context()) : null;
         if (result == null) result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
+        result.blocker().save(session.state());
         if (hirer != null) {
             maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
         }
@@ -311,6 +312,7 @@ public final class HiredVillagerWorkService {
             session.state().putBoolean(VANILLA_REST_PAUSED_TAG, true);
         }
         setStatus(session.state(), villager.isSleeping() ? SLEEPING_STATUS : TIRED_STATUS);
+        com.jvn.villagerretaliation.interaction.work.WorkBlocker.RESTING.save(session.state());
     }
 
     private static boolean isNavigatingToHome(ServerLevel level, Villager villager) {

@@ -113,18 +113,19 @@ public final class CookingWorker extends AbstractBlockWorker {
                 setTaskState(context, crafting.missingCraftingTable()
                         ? HiredWorkerTaskState.SELECTING_TARGET
                         : HiredWorkerTaskState.WAITING_FOR_MATERIALS);
-                return WorkResult.idle(status);
+                return WorkResult.idle(status).withBlocker(crafting.missingCraftingTable()
+                        ? WorkBlocker.MISSING_CRAFTING_TABLE : WorkBlocker.NONE);
             }
             HiredWorkerBrain.setFailure(context, "no_cooking_station", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("interaction.work.cooking.no_station");
+            return WorkResult.idle("interaction.work.cooking.no_station").withBlocker(WorkBlocker.MISSING_FURNACE);
         }
         if (!(level.getBlockEntity(station) instanceof AbstractFurnaceBlockEntity furnace)) {
             clearCachedStation(context.state());
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_cooking_station", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("interaction.work.cooking.no_station");
+            return WorkResult.idle("interaction.work.cooking.no_station").withBlocker(WorkBlocker.MISSING_FURNACE);
         }
 
         RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
@@ -620,7 +621,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         if (HiredSupplyCrafting.requiresCraftingTable(selection.recipe()) && craftingTable == null) {
             HiredWorkerBrain.setFailure(context, "no_cooking_crafting_table", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("interaction.work.cooking.no_crafting_table");
+            return WorkResult.idle("interaction.work.cooking.no_crafting_table").withBlocker(WorkBlocker.MISSING_CRAFTING_TABLE);
         }
 
         WorkResult gathering = gatherCraftingMaterials(level, villager, context, selection, craftingTable);

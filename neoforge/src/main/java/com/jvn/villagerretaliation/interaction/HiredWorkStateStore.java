@@ -209,6 +209,7 @@ public final class HiredWorkStateStore {
     }
 
     static void setStatus(CompoundTag state, String status, Map<String, String> replacements) {
+        com.jvn.villagerretaliation.interaction.work.WorkBlocker.NONE.save(state);
         String safeStatus = status == null ? "" : status;
         boolean statusMatches = state.contains("Status", Tag.TAG_STRING)
                 && safeStatus.equals(state.getString("Status"));

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.CraftsmanWorker;
 import com.jvn.villagerretaliation.interaction.work.WorkCraftingPlan;
@@ -50,7 +52,7 @@ final class SettlementBackgroundCrafting {
         if (table == null && worker.role() != HiredVillagerRole.COOK) {
             releaseProduction(level, queue, worker, selected);
             if (queue != null) for (var order : queue.executionOrders()) queue.blocker(order.id(), "no_crafting_table");
-            worker.status("no_crafting_table");
+            worker.status("no_crafting_table", WorkBlocker.MISSING_CRAFTING_TABLE);
             return false;
         }
         BlockPos craftingPosition = table == null ? worker.position() : table;
@@ -64,7 +66,7 @@ final class SettlementBackgroundCrafting {
         }
         if (targets.isEmpty()) {
             releaseProduction(level, queue, worker, selected);
-            worker.status("no_filter");
+            worker.status("no_filter", WorkBlocker.MISSING_FILTER);
             return false;
         }
         List<SettlementProductionInventory.Supply> supplies = SettlementProductionInventory.supplies(level, town, worker, items, depots);

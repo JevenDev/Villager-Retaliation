@@ -69,7 +69,7 @@ public final class SettlementManagementGameTests {
         worker.status("missing_materials");
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, equipment.id().toString()).total(), 1,
                 "an unrelated worker blocker does not hide the equipment shortage");
-        worker.status("resting");
+        worker.status("resting", com.jvn.villagerretaliation.interaction.work.WorkBlocker.RESTING);
         helper.assertValueEqual(snapshot(fixture, Page.ISSUES, 0, equipment.id().toString()).total(), 1,
                 "resting workers retain their independent equipment supply issue");
         worker.status("missing_hoe");
@@ -241,7 +241,7 @@ public final class SettlementManagementGameTests {
         helper.assertValueEqual(worker.status(), "workforce.pathing", "a later unload replaces the old blocker");
         helper.assertValueEqual(worker.diagnostic(), "", "successful travel clears stale diagnostics");
         worker.status("missing_hoe");
-        worker.status("resting");
+        worker.status("resting", com.jvn.villagerretaliation.interaction.work.WorkBlocker.RESTING);
         helper.assertValueEqual(worker.diagnostic(), "", "background rest carries no stale diagnostic");
         helper.assertValueEqual(worker.elapsed(level.getGameTime() + 100_000L), 200, "catch-up remains bounded to 200 ticks");
         helper.assertValueEqual(worker.elapsed(level.getGameTime() + 100_000L), 0, "the same interval cannot replay");
@@ -413,6 +413,7 @@ public final class SettlementManagementGameTests {
                     .contains(SettlementProgressionService.Requirement.FOOD_PRODUCTION), "missing equipment prevents a nonfunctional farm from counting toward advancement");
             state.putString("WorkerTaskState", "awaiting_instruction");
             state.putString("Status", "interaction.work.status.sleeping");
+            com.jvn.villagerretaliation.interaction.work.WorkBlocker.RESTING.save(state);
             var sleeping = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
             helper.assertValueEqual(sleeping.status(), "resting", "rest takes precedence over a retained failure");
             helper.assertTrue(sleeping.diagnostic().isEmpty(), "rest does not repeat a stale equipment warning");
@@ -421,13 +422,14 @@ public final class SettlementManagementGameTests {
             helper.assertFalse(SettlementWorkerState.load(worker.save()).supportsService(), "service readiness survives save loading");
             state.putString("WorkerTaskState", "returning_to_work_area");
             state.putString("Status", "interaction.work.status.returning_bounds");
+            com.jvn.villagerretaliation.interaction.work.WorkBlocker.NONE.save(state);
             var walking = (SettlementManagementPayload.Resident) snapshot(fixture, Page.RESIDENTS, 0, resident.getUUID().toString()).entries().getFirst();
             helper.assertValueEqual(walking.status(), "workforce.pathing", "ordinary travel is shown as travel");
             helper.assertTrue(walking.diagnostic().isEmpty(), "old tool failures are hidden while travel succeeds");
             worker.observe(level, resident, new SettlementWorkforceService.Duty(fixture.town(), area), level.getGameTime());
             helper.assertTrue(worker.supportsService(), "resumed work restores service availability");
-            worker.status("no_filter");
-            worker.status("resting");
+            worker.status("no_filter", com.jvn.villagerretaliation.interaction.work.WorkBlocker.MISSING_FILTER);
+            worker.status("resting", com.jvn.villagerretaliation.interaction.work.WorkBlocker.RESTING);
             helper.assertFalse(worker.supportsService(), "background rest also retains unresolved setup problems");
             worker.status("missing_materials");
             helper.assertTrue(worker.supportsService(), "a supply gap does not disable an otherwise configured service");

@@ -85,7 +85,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "farmer_profession_required", 0L);
             HiredWorkerBrain.setLastTargetScanResult(context, "farmer_profession_required");
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("interaction.work.farming.needs_farmer_profession");
+            return WorkResult.idle("interaction.work.farming.needs_farmer_profession").withBlocker(WorkBlocker.PROFESSION_REQUIRED);
         }
         if (!context.hasWorkArea() && !HiredVillagerWorkService.hasClaimedJobSiteInLevel(level, villager)) {
             HiredWorkerBrain.setFailure(context, "farmer_job_site_required", 0L);

@@ -4,8 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
-import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
-import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
@@ -220,14 +219,9 @@ public final class SettlementWorkerState {
         var work = SettlementWorkStatus.observe(level, villager);
         this.status = this.unsafe ? "unsafe" : work.status();
         this.diagnostic = this.unsafe ? "" : work.diagnostic();
-        var brain = HiredWorkerBrain.snapshot(this.settings, now);
-        if (!villager.isSleeping() && !brain.status().equals("interaction.work.status.sleeping")
-                && !brain.status().equals("interaction.work.status.tired")) {
-            this.serviceBlocked = brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL
-                    || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA
-                    || brain.status().endsWith(".no_filter") || brain.status().endsWith(".no_crafting_table")
-                    || brain.status().equals("interaction.work.craftsman.no_table") || brain.status().equals("interaction.work.cooking.no_station")
-                    || brain.failureReason().endsWith("_profession_required");
+        var blocker = WorkBlocker.read(this.settings);
+        if (!villager.isSleeping() && !blocker.preservesService()) {
+            this.serviceBlocked = blocker.blocksService();
         }
     }
 
@@ -363,16 +357,13 @@ public final class SettlementWorkerState {
     }
 
     void status(String status) {
+        status(status, WorkBlocker.NONE);
+    }
+
+    void status(String status, WorkBlocker blocker) {
         this.status = status;
         this.diagnostic = "";
-        if (!status.equals("resting") && !status.equals("unsafe")) {
-            this.serviceBlocked = switch (status) {
-                case "missing_hoe", "missing_rod", "missing_axe", "missing_hunting_weapon",
-                        "no_crafting_table", "no_furnace", "no_brewing_stand", "no_filter",
-                        "no_observed_field", "no_observed_fishery", "no_observed_forest" -> true;
-                default -> false;
-            };
-        }
+        if (!blocker.preservesService()) this.serviceBlocked = blocker.blocksService();
     }
 
     void plantingStatus(String status, SettlementPlanting.Decision decision, String blocker) {

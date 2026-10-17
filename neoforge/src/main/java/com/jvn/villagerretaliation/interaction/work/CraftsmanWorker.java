@@ -73,14 +73,14 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "craftsman_filter_empty", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("interaction.work.craftsman.no_filter");
+            return WorkResult.idle("interaction.work.craftsman.no_filter").withBlocker(WorkBlocker.MISSING_FILTER);
         }
         BlockPos table = nearestCraftingTable(level, villager, context);
         if (table == null) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "no_craftsman_table", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.idle("interaction.work.craftsman.no_table");
+            return WorkResult.idle("interaction.work.craftsman.no_table").withBlocker(WorkBlocker.MISSING_CRAFTING_TABLE);
         }
 
         Selection selection = select(level, villager, context, targets, filter);
@@ -143,7 +143,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         }
         if (queue != null && !queue.start(allocation.id())) {
             releaseProduction(villager, context, queue);
-            return WorkResult.idle("interaction.work.craftsman.no_filter");
+            return WorkResult.idle("interaction.work.craftsman.no_filter").withBlocker(WorkBlocker.MISSING_FILTER);
         }
         TutorialRun.Permit tutorialPermit = null;
         if (TutorialWorkService.isTrial(villager)) {
@@ -187,13 +187,13 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             AssignedStorageService.releaseProductionInputs(villager);
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, access.blocker(), level.getGameTime() + 100L);
-            return WorkResult.idle("interaction.work.craftsman.no_filter");
+            return WorkResult.idle("interaction.work.craftsman.no_filter").withBlocker(WorkBlocker.MISSING_FILTER);
         }
         var table = nearestCraftingTable(level, villager, context);
         if (table == null) {
             releaseProduction(villager, context, queue);
             for (var order : queue.executionOrders()) queue.blocker(order.id(), "no_crafting_table");
-            return WorkResult.idle("interaction.work.craftsman.no_table");
+            return WorkResult.idle("interaction.work.craftsman.no_table").withBlocker(WorkBlocker.MISSING_CRAFTING_TABLE);
         }
         var current = queue.allocation(villager.getUUID());
         for (var order : queue.executionOrders()) {
@@ -255,7 +255,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         }
         releaseProduction(villager, context, queue);
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-        return WorkResult.idle("interaction.work.craftsman.no_filter");
+        return WorkResult.idle("interaction.work.craftsman.no_filter").withBlocker(WorkBlocker.MISSING_FILTER);
     }
 
     private static void releaseProduction(Villager villager, HiredWorkContext context, HiredProductionQueue queue) {

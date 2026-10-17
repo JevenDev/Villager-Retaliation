@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +79,10 @@ final class SettlementBackgroundTools {
             }
         }
         if (selected < 0) {
-            worker.status("missing_" + kind);
+            worker.status("missing_" + kind, switch (kind) {
+                case "hoe", "rod", "axe", "hunting_weapon" -> WorkBlocker.MISSING_TOOL;
+                default -> WorkBlocker.NONE;
+            });
             return false;
         }
         var source = supplies.get(selected);

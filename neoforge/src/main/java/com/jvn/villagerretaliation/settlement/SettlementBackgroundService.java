@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
@@ -67,11 +69,11 @@ public final class SettlementBackgroundService {
                 || care == null || !care.availableForWork()
                 || worker.settings().contains("Enabled") && !worker.settings().getBoolean("Enabled")
                 || !SettlementWorkforceService.workingHours(level.getDayTime(), worker.id(), worker.role())) {
-            worker.status("resting");
+            worker.status("resting", WorkBlocker.RESTING);
             return;
         }
         if (worker.unsafe()) {
-            worker.status("unsafe");
+            worker.status("unsafe", WorkBlocker.UNSAFE);
             return;
         }
         if (worker.settings().contains(com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue.STATE_TAG)

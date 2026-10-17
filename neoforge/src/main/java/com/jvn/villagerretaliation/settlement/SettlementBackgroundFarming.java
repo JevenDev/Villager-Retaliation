@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.settlement;
 
+import com.jvn.villagerretaliation.interaction.work.WorkBlocker;
+
 import com.jvn.villagerretaliation.interaction.work.FarmerHoeRequirement;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed;
@@ -159,7 +161,8 @@ final class SettlementBackgroundFarming {
         if (configured && missingSeeds && blocked != null) {
             String blocker = SettlementPlanting.blocker(worker.settings(), blocked);
             worker.plantingStatus(blocker.equals("restricted") ? "planting_restricted" : "missing_planting_item", blocked, blocker);
-        } else worker.status(missingSeeds ? "missing_planting_item" : plots.isEmpty() ? "no_observed_field" : "waiting_for_crops");
+        } else worker.status(missingSeeds ? "missing_planting_item" : plots.isEmpty() ? "no_observed_field" : "waiting_for_crops",
+                !missingSeeds && plots.isEmpty() ? WorkBlocker.NO_OBSERVED_WORK : WorkBlocker.NONE);
     }
 
     private static boolean depositBatch(ServerLevel level, SettlementRecord town, SettlementWorkerState worker,
