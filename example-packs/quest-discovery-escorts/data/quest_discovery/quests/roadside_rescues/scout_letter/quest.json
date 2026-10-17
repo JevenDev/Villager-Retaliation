@@ -1,9 +1,8 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "quest_discovery:scout_letter",
   "localization_prefix": "quest_discovery.quest.scout_letter",
   "metadata": {
-    "title": "A Scout in Trouble",
     "questline": "roadside_rescues"
   },
   "provider": {
@@ -23,7 +22,6 @@
   "stages": [
     {
       "id": "road",
-      "title": "Escort the scout",
       "followers": [
         {
           "command": "follow",
@@ -51,11 +49,15 @@
           }
         }
       ],
-      "next": "ambush"
+      "display": {
+        "title": "Escort the scout"
+      },
+      "transition": {
+        "stage": "ambush"
+      }
     },
     {
       "id": "ambush",
-      "title": "Clear the ambush",
       "followers": [
         {
           "command": "wait",
@@ -91,11 +93,15 @@
           "tag": "road_cleared"
         }
       ],
-      "next": "home"
+      "display": {
+        "title": "Clear the ambush"
+      },
+      "transition": {
+        "stage": "home"
+      }
     },
     {
       "id": "home",
-      "title": "Reunite the scouts",
       "followers": [
         {
           "command": "follow",
@@ -125,12 +131,18 @@
           }
         }
       ],
-      "next": {
+      "display": {
+        "title": "Reunite the scouts"
+      },
+      "transition": {
         "complete": true
       }
     }
   ],
   "rewards": {
     "experience": 25
+  },
+  "display": {
+    "title": "A Scout in Trouble"
   }
 }

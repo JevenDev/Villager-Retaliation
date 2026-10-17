@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:watch_arrows",
+  "from_fingerprint": "85080703a027de4e6a8b0e7d7584a748dd71c6bd8ea198243133e72922006b94",
+  "to_fingerprint": "095616131a8436c8ba756de9a055946607e81a1cc693d16d6d45674f273b22b7"
+}

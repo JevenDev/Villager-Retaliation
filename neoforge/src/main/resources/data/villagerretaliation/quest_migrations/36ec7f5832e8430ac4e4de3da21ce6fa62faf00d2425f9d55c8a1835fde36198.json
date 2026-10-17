@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:torch_bundle",
+  "from_fingerprint": "238a02f22b78df6bbe4e4cda2632b2268b05768cefd0d8f0560c91c633af160b",
+  "to_fingerprint": "966cd897d257bffe5772a823c0cd3868f08c3042a8f4f0f42e909b3e6c845f71"
+}

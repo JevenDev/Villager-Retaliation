@@ -3807,5 +3807,10 @@
   "villagerretaliation.gui.item_filter.assignment.recipe_invalid.unsupported_recipe": "The saved recipe type is unsupported. Automatic recipe production is blocked until you select a supported recipe.",
   "villagerretaliation.gui.item_filter.assignment.recipe_invalid.invalid_alternative": "A saved ingredient choice is no longer valid. Automatic recipe production is blocked until you edit the recipe filter.",
   "villagerretaliation.gui.item_filter.assignment.recipe_invalid.malformed": "The saved recipe configuration is invalid. Automatic recipe production is blocked until you edit the recipe filter.",
-  "villagerretaliation.gui.item_filter.assignment.recipe_incompatible": "The selected recipe cannot be produced by a %s. Review this recipe filter for the current job."
+  "villagerretaliation.gui.item_filter.assignment.recipe_incompatible": "The selected recipe cannot be produced by a %s. Review this recipe filter for the current job.",
+  "screen.villagerretaliation.campaign.title": "Select a campaign",
+  "screen.villagerretaliation.campaign.permanent": "Your campaign cannot be changed after creation.",
+  "screen.villagerretaliation.campaign.empty": "No campaigns are available in the selected datapacks.",
+  "screen.villagerretaliation.campaign.coming_soon": "Coming soon",
+  "screen.villagerretaliation.campaign.error": "Campaigns could not be loaded"
 }

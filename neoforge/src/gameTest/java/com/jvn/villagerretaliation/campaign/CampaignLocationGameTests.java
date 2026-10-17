@@ -103,7 +103,7 @@ public final class CampaignLocationGameTests {
 
     @GameTest(template = "empty", batch = "campaign_locations")
     public static void locationObjectivesRejectOverridesAndRequireTheirCampaign(GameTestHelper helper) throws IOException {
-        var raw = resource("quests/campaign_fixture/locations/quest.json");
+        var raw = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(resource("quests/campaign_fixture/locations/quest.json"));
         var parsed = QuestV2Parser.parse(CAMPAIGN, raw).orElseThrow();
         var compiled = QuestV2Compiler.compile(parsed, QuestResourceEnvelope.read(CAMPAIGN, raw).orElseThrow()).orElseThrow();
         helper.assertValueEqual(compiled.objectives().getFirst().definition().campaignLocation(), "home", "compiled quest retains its location alias");

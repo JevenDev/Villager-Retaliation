@@ -68,7 +68,7 @@ try {
   await mutate(campaignPath, value => { delete value.milestones[0].catch_up; return value; }, result => rejected(result, /\/milestones\/0\/catch_up/));
   await mutate(campaignPath, value => { value.milestones[0].catch_up.stage = "missing"; return value; }, result => rejected(result, /catch-up stage does not exist/));
   const questPath = data + "quests/campaign_fixture/decision/quest.json";
-  await mutate(questPath, value => { value.metadata.campaign = "campaign_fixture:wrong"; return value; }, result => rejected(result, /metadata.campaign must identify/));
+  await mutate(questPath, value => { value.story_arc = "campaign_fixture:wrong"; return value; }, result => rejected(result, /story_arc must identify/));
   await mutate(questPath, value => { value.stages = null; return value; }, result => rejected(result, /expected array/));
   const english = data + "campaigns/reconciliation/locales/en_us.json";
   await mutate(english, value => { delete value.messages["campaign_fixture.reconciliation.title"]; return value; }, result => rejected(result, /English localization is missing/));
@@ -133,7 +133,7 @@ try {
   await rm(temporary, { recursive: true, force: true });
 }
 const standingCases = await readJson(path.join(fixture, "standing_cases.json"));
-const questSchema = await readJson(path.join(root, "tools/datapack-builder/quest-v2.schema.json"));
+const questSchema = await readJson(path.join(root, "tools/datapack-builder/quest-v3.schema.json"));
 for (const test of standingCases) {
   const quest = await readJson(path.join(fixture, data, "quests/campaign_fixture/standing/quest.json"));
   if (test.kind === "action") quest.stages[0].on_enter = [test.input];

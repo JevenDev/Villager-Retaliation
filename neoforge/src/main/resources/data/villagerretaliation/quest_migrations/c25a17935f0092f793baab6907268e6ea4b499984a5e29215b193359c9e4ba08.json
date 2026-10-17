@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:first_far_marker",
+  "from_fingerprint": "f54e9b1d81e77f3acd968484934eedc6070242e8d54fd62f38500bb189e4b2d1",
+  "to_fingerprint": "5f8c712e150da2cf1647c05c3e2358aa9411d7e8795b103f4ed5013c6664cdf7"
+}

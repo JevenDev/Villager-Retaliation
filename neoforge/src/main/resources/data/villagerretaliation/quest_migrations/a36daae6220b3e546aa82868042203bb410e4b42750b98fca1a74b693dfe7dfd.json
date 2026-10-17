@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:village_lanterns",
+  "from_fingerprint": "cdec50fa1e1ddb8fac902e52c594047804e985b12a0de00cca7fa1b757e2e53a",
+  "to_fingerprint": "c9448ba3bca41d49c5c6e1c1db61a069b3b1dc2bd3e6aa3601acbb7349d16eb8"
+}

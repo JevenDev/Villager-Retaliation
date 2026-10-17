@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:market_day",
+  "from_fingerprint": "068727655104a63379a0d7e7319e772764b763da2360ae0b25f9d11c3927428f",
+  "to_fingerprint": "f12b3c358a6728d488efba3f033791e62cb587eef4a78b9ac703fb62190a4c11"
+}

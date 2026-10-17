@@ -199,7 +199,7 @@ public final class OrdinaryConversationGameTests {
 
     private static void install(CampaignConversationGameTests.Fixture fixture, boolean effects) throws IOException {
         var quest = CampaignCharacterTestFixture.resource("quests/campaign_fixture/characters/quest.json");
-        quest.getAsJsonObject("metadata").remove("campaign");
+        quest.remove("story_arc");
         quest.getAsJsonObject("provider").remove("campaign_role");
         quest.add("stages", JsonParser.parseString("[{\"id\":\"visit\",\"objectives\":[]}]"));
         var graph = fixture.graph.deepCopy();

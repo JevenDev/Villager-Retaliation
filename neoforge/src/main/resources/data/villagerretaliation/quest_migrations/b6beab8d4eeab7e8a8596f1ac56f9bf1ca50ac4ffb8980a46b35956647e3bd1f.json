@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:honed_handles",
+  "from_fingerprint": "8646911167416c4666c40bf890283efc04ea06d0880be6c4b584ffd4a7898029",
+  "to_fingerprint": "34db53fb9a9868955dd7ceb55ae5224d5a985ca2aac147fab86f1bc242e029cb"
+}

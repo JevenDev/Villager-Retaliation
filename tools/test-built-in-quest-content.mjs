@@ -787,7 +787,7 @@ async function jsonFiles(directory) {
 
 async function readJson(file) {
   try {
-    return JSON.parse(await readFile(file, "utf8"));
+    return questModel.editableQuest(JSON.parse(await readFile(file, "utf8")));
   } catch (error) {
     errors.push(`${relative(file)}: invalid JSON (${error.message}).`);
     return null;

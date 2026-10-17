@@ -5,7 +5,8 @@ import java.util.Optional;
 
 public enum QuestSchemaVersion {
     V1(""),
-    V2("villagerretaliation:quest/v2");
+    V2("villagerretaliation:quest/v2"),
+    V3("villagerretaliation:quest/v3");
 
     private final String schemaId;
 

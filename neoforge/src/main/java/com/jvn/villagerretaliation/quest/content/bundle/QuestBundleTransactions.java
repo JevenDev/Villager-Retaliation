@@ -182,8 +182,12 @@ public final class QuestBundleTransactions {
                 return errors;
             }
             String schema = string(candidate.quest, "schema");
-            if (!"villagerretaliation:quest/v2".equals(schema)) {
-                errors.add("quest.json must retain schema villagerretaliation:quest/v2");
+            if (!"villagerretaliation:quest/v3".equals(schema)) {
+                errors.add("Quest V3 is required. Run tools/migrate-quest-v2-to-v3.mjs on this pack.");
+            } else {
+                com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(candidate.quest,
+                        com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export())
+                        .forEach(issue -> errors.add(issue.pointer() + " " + issue.message()));
             }
             candidate.prefix = string(candidate.quest, "localization_prefix");
             if (candidate.prefix.isBlank()) {

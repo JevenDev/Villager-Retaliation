@@ -478,7 +478,7 @@
     const message = summary.error ? `${summary.error} error${summary.error === 1 ? "" : "s"} must be fixed before safe export.` : summary.warning ? `${summary.warning} warning${summary.warning === 1 ? "" : "s"} should be reviewed.` : "This quest passes all browser checks.";
     const json = rawJsonDraft || JSON.stringify(model.stripBuilderFields(quest), null, 2);
     els.editor.innerHTML = `<div class="editor-content">
-      ${pageHeader("Review", "Inspect the generated Quest v2 file or make an advanced JSON edit.", `<button class="button button-secondary" type="button" data-action="copy-json"><i data-lucide="copy"></i>Copy JSON</button><button class="button button-primary" type="button" data-action="download-json"><i data-lucide="download"></i>Download JSON</button>`)}
+      ${pageHeader("Review", "Inspect the generated Quest V3 file or make an advanced JSON edit.", `<button class="button button-secondary" type="button" data-action="copy-json"><i data-lucide="copy"></i>Copy JSON</button><button class="button button-primary" type="button" data-action="download-json"><i data-lucide="download"></i>Download JSON</button>`)}
       <div class="status-strip ${statusClass}"><i data-lucide="${icon}"></i><div><strong>${summary.error ? "Not ready to export" : summary.warning ? "Ready with warnings" : "Ready to export"}</strong><span>${escapeHtml(message)}</span></div></div>
       <section class="section-card code-panel" style="margin-top:16px">
         <div class="path-display"><code>${escapeHtml(model.questFilePath(quest))}</code><button class="button button-secondary" type="button" data-action="format-json">Format</button></div>
@@ -1210,7 +1210,7 @@
           const jsonByPath = new Map(jsonFiles.map(entry => [entry.path, entry.value]));
           const questFiles = jsonFiles.filter(entry => new RegExp("^data/[a-z0-9_.-]+/quests/[^/]+/[^/]+/quest\\.json$", "i").test(entry.path));
           for (const entry of questFiles) {
-            if (entry.value?.schema !== model.SCHEMA_ID) continue;
+            if (![model.SCHEMA_ID, model.EXPORT_SCHEMA_ID].includes(entry.value?.schema)) continue;
             const localePath = entry.path.slice(0, -"quest.json".length) + "locales/en_us.json";
             const locale = jsonByPath.get(localePath);
             if (!locale?.messages) throw new Error(`${entry.path} is missing its exhaustive locales/en_us.json.`);
@@ -1223,19 +1223,20 @@
             const locale = jsonByPath.get(`${ownerRoot}/locales/en_us.json`);
             importedScenes.push(model.materializeLocalizedDefinition(entry.value, "", locale?.messages || {}));
           }
-          if (!questFiles.length && !sceneFiles.length) throw new Error("No bundled Quest v2 or scene v1 files were found in the datapack.");
+          if (!questFiles.length && !sceneFiles.length) throw new Error("No bundled Quest V3 or scene v1 files were found in the datapack.");
         } else {
           const parsed = JSON.parse(await file.text());
           if (parsed?.version && Array.isArray(parsed.quests)) { imported.push(...parsed.quests); importedScenes.push(...(parsed.scenes || [])); }
-          else if (parsed?.schema === model.SCHEMA_ID) imported.push(parsed);
+          else if ([model.SCHEMA_ID, model.EXPORT_SCHEMA_ID].includes(parsed?.schema)) imported.push(parsed);
           else if (parsed?.schema === model.SCENE_SCHEMA_ID) importedScenes.push(parsed);
-          else throw new Error("This is not a Quest v2, scene v1, or Quest Builder project backup.");
+          else throw new Error("This is not a Quest V3, scene v1, or Quest Builder project backup.");
         }
       } catch (error) { failures.push(`${file.name}: ${error.message}`); }
     }
     if (imported.length || importedScenes.length) {
       commitMutation(() => {
-        for (const quest of imported) {
+        for (const source of imported) {
+          const quest = model.editableQuest(source);
           const index = project.quests.findIndex((existing) => existing.id === quest.id);
           if (index >= 0) project.quests[index] = quest;
           else project.quests.push(quest);

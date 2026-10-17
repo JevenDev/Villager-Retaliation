@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:mark_the_shaft",
+  "from_fingerprint": "85a23c810c03a61c23d117b085bddc8da412e5cca8a4a8ff7192c4b2ec74d08b",
+  "to_fingerprint": "9975aac970804d554e89ed059bfb4d35faddc3ac3683d2cec11db957152c7be5"
+}

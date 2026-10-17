@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:wax_sealed_route",
+  "from_fingerprint": "2ba3b65e2edd987da976a673a67652bf2922322e000b13ed89a92a8d6f1382cf",
+  "to_fingerprint": "dbafbbaa38978199dcd07ab210858525010b95dd1d8cf9286354f2e8ce843e92"
+}

@@ -20,7 +20,11 @@ public final class EditorDocumentOperations {
         var source = nodes.stream().filter(node -> node.id().equals(from)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Select an existing source stage."));
         if (nodes.stream().noneMatch(node -> node.id().equals(to))) throw new IllegalArgumentException("Select an existing destination stage.");
-        document.edit("Connect quest stages", root -> JsonPointers.get(root, source.pointer()).getAsJsonObject().addProperty("next", to));
+        document.edit("Connect quest stages", root -> {
+            JsonObject transition = new JsonObject();
+            transition.addProperty("stage", to);
+            JsonPointers.get(root, source.pointer()).getAsJsonObject().add("transition", transition);
+        });
     }
 
     public static JsonObject cameraOwner(AuthoringDocument document, String pointer) {

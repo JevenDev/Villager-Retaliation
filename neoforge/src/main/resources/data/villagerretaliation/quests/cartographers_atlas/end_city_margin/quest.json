@@ -33,10 +33,6 @@
   ],
   "id": "villagerretaliation:end_city_margin",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.cartographers_atlas.end_city_margin.description",
     "parent": "villagerretaliation:eye_of_the_last_room",
     "questline": "cartographers_atlas",
     "tags": [
@@ -53,11 +49,7 @@
       "commitment.expedition",
       "theme.exploration",
       "party.recommended"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.cartographers_atlas.end_city_margin.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -77,10 +69,10 @@
     "experience": 900,
     "gossip_reputation": 18,
     "loot_table": "villagerretaliation:quest/end_city_margin",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 38
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -105,7 +97,6 @@
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -115,14 +106,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -132,7 +125,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -164,7 +160,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -174,7 +169,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -182,7 +180,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -192,7 +189,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -210,7 +210,6 @@
         }
       },
       "id": "survey",
-      "next": "return",
       "objectives": [
         {
           "dimension": "minecraft:the_end",
@@ -355,7 +354,7 @@
           "id": "start_quest"
         }
       ],
-      "ui": {
+      "display": {
         "placeholders": {
           "target_dimension": "target.dimension",
           "target_x": "target.x",
@@ -366,6 +365,9 @@
         "tracker_text": {
           "key": "#stage.survey.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -385,7 +387,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -395,14 +396,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -412,7 +415,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -476,7 +482,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -485,11 +491,16 @@
       }
     }
   ],
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.cartographers_atlas.end_city_margin",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.cartographers_atlas.end_city_margin.tracker.title"
-  },
-  "localization_prefix": "quest.cartographers_atlas.end_city_margin"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

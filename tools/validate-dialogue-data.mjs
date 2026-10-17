@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { validateContentSchema } from "./content-schema-validation.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
@@ -7,6 +9,9 @@ import { validateConversation, validateConversationSchema, materializeConversati
 import { campaignDataRoot, validateCampaignPack } from "./campaign-pack-validation.mjs";
 import { scenarioPath, scenarioContext, validateCampaignScenario } from "./campaign-scenario-validation.mjs";
 import { socialProgressionPath, validateSocialProgression, collectSocialProgressions } from "./social-progression-validation.mjs";
+
+const questV3Format = createRequire(import.meta.url)("./quest-v3-format.js");
+const questV3Schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -1927,6 +1932,7 @@ function collectQuestLocalizedReferences(file, value, prefix, location = "root")
 }
 
 function indexQuestResource(file, data) {
+  if (data?.schema === questV3Format.V3) data = { ...questV3Format.runtime(data), schema: questV3Format.V2 };
   if (isQuestModuleV2(data)) {
     indexQuestV2(file, data);
   } else {
@@ -1935,6 +1941,10 @@ function indexQuestResource(file, data) {
 }
 
 function checkQuestResource(file, data) {
+  if (data?.schema === questV3Format.V3) {
+    for (const issue of validateContentSchema(data, questV3Schema)) errors.push(`${relative(file)}${issue.pointer}: ${issue.message}`);
+    data = { ...questV3Format.runtime(data), schema: questV3Format.V2 };
+  }
   if (isQuestModuleV2(data)) {
     checkQuestV2(file, data);
   } else {
@@ -1946,7 +1956,7 @@ function isQuestModuleV2(data) {
   return data
     && typeof data === "object"
     && !Array.isArray(data)
-    && stringValue(data.schema) === questV2SchemaId;
+    && [questV2SchemaId, questV3Format.V3].includes(stringValue(data.schema));
 }
 
 function indexQuestV2(file, data) {
@@ -2905,6 +2915,8 @@ function checkRegisteredFields(file, action, location, type, pointer = "", regis
   for (const [field, rule] of Object.entries(schema.properties ?? {})) {
     if (!Object.hasOwn(action, field)) continue;
     const value = action[field];
+    if (registry === "actions" && ["text", "title", "description", "label", "tracker_text", "tracker_complete_text"].includes(field)
+        && isLocalizedReference(value)) continue;
     const matchesType = rule.type === "array" ? Array.isArray(value)
       : rule.type === "object" ? value !== null && typeof value === "object" && !Array.isArray(value)
       : rule.type === "integer" ? Number.isInteger(value)

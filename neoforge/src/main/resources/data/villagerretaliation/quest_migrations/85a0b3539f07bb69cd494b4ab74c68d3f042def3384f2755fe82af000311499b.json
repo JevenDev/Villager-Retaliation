@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:power_the_gate",
+  "from_fingerprint": "0ea761ebaee664657e33d569a8b2d5d928a89db46921119e761e1a48ae5cbed4",
+  "to_fingerprint": "5bcd0b1170b01465ee7d5a6d5782dd6454ff547f21d26266fa259aa43bf26ce7"
+}

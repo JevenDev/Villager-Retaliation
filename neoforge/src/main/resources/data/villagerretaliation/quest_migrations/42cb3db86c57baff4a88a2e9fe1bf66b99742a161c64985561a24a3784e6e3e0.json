@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:nether_candle",
+  "from_fingerprint": "90850d825937262db4aea4a66e0150d5ce08a9dd648be57deddb4b998a3f4f3d",
+  "to_fingerprint": "da7eeba7d2fe0397190ec18140fe62bee81ee1531ffe8379a8ea4c4918f9f61b"
+}

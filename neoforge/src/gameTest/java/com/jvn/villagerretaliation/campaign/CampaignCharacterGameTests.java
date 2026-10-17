@@ -85,7 +85,7 @@ public final class CampaignCharacterGameTests {
 
     @GameTest(template = "empty", batch = "campaign_characters")
     public static void providerAndSceneReferencesRequireValidCampaignRoles(GameTestHelper helper) throws IOException {
-        var raw = resource("quests/campaign_fixture/characters/quest.json");
+        var raw = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(resource("quests/campaign_fixture/characters/quest.json"));
         var parsed = QuestV2Parser.parse(CAMPAIGN, raw).orElseThrow();
         var compiled = QuestV2Compiler.compile(parsed, QuestResourceEnvelope.read(CAMPAIGN, raw).orElseThrow()).orElseThrow();
         helper.assertValueEqual(compiled.provider().campaignRole(), "mentor", "provider retains typed role");

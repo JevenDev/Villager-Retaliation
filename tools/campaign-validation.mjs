@@ -46,7 +46,7 @@ export function validateCampaign(root, schema, context = {}) {
     if (!context.quests) return;
     const quest = context.quests.get(id);
     if (!quest) issue(pointer, "quest bundle is unavailable: " + id);
-    else if (requireOwner && quest.metadata?.campaign !== root.id) issue(pointer, "quest metadata.campaign must identify the owning campaign " + root.id + ": " + id);
+    else if (requireOwner && (quest.story_arc ?? quest.metadata?.campaign) !== root.id) issue(pointer, "quest story_arc must identify the owning campaign " + root.id + ": " + id);
   };
   unique(root.quest_bundles, "/quest_bundles");
   root.quest_bundles.forEach((id, at) => bundle(id, "/quest_bundles/" + at));

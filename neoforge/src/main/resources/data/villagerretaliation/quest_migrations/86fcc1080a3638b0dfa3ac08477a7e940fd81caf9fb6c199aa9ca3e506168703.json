@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:breath_after_the_roar",
+  "from_fingerprint": "14c841e443851e3fd6a2271ef035446e738a6dc25eb15857a31007f088cc209e",
+  "to_fingerprint": "3b0e4125fdef87293d1d591c6669be97e8bfee74c6e95306d2099ac094a3b371"
+}

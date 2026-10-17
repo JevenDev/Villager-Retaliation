@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:berry_picking",
+  "from_fingerprint": "b404259c066dbe4c0a59c34758a016b558b2ec741e1cea763fe6d5040e622d99",
+  "to_fingerprint": "637d3d01d3a1fee917f08a80f42be7e37099190421fa661cdf201cb021cfb553"
+}

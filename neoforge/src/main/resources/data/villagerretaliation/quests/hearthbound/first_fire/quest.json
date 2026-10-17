@@ -11,9 +11,6 @@
   "entry_stage": "kindle",
   "id": "villagerretaliation:first_fire",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "questline": "hearthbound",
     "tags": [
       "group.hearthbound",
@@ -25,10 +22,7 @@
       "difficulty.easy",
       "commitment.standard",
       "theme.community"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -50,10 +44,10 @@
     "experience": 80,
     "gossip_reputation": 3,
     "loot_table": "villagerretaliation:quest/first_fire",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 7
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -78,7 +72,6 @@
               "label": {
                 "key": "#stage.kindle.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -88,14 +81,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.kindle.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -105,7 +100,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -136,7 +134,6 @@
               "label": {
                 "key": "#stage.kindle.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -146,14 +143,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.kindle.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -163,7 +162,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -181,7 +183,6 @@
         }
       },
       "id": "kindle",
-      "next": "return",
       "objectives": [
         {
           "count": 1,
@@ -321,12 +322,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.85,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.kindle.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -346,7 +350,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -356,14 +359,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -373,7 +378,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -434,7 +442,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -443,12 +451,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.hearthbound.first_fire",
+  "display": {
     "color": "#E08A3E",
     "icon": "minecraft:campfire",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.hearthbound.first_fire"
+  }
 }

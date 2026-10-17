@@ -230,11 +230,11 @@ public final class AuthoringCoreGameTests {
             AuthoringWorkspace workspace = AuthoringWorkspace.create(root.resolve("workspace"));
             AuthoringDocument quest = workspace.createDocument(DefinitionKind.QUEST, "test:authored_quest");
             AuthoringDocument conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:conversation");
-            quest.edit("Title", definition -> definition.getAsJsonObject("metadata").add("title", json("{\"key\":\"#title\"}")));
+            quest.edit("Title", definition -> definition.add("display", json("{\"title\":{\"key\":\"#title\"}}")));
             workspace.documents().stream().filter(document -> document.resourcePath().equals("data/test/quests/authored/authored_quest/locales/en_us.json"))
                     .findFirst().orElseThrow().edit("Title message", messages -> messages.addProperty("test.quest.authored_quest.title", "Original"));
             AuthoringDocument copy = workspace.duplicate(quest, "test:copied_quest");
-            helper.assertValueEqual(workspace.resolveText(copy, copy.json().getAsJsonObject("metadata").get("title"), "en_us"),
+            helper.assertValueEqual(workspace.resolveText(copy, copy.json().getAsJsonObject("display").get("title"), "en_us"),
                     "Original", "duplicating a quest keeps and remaps its localized messages");
             workspace.rename(quest, "test:renamed_quest");
             helper.assertValueEqual(conversation.json().get("quest").getAsString(), "test:renamed_quest",
@@ -264,7 +264,7 @@ public final class AuthoringCoreGameTests {
             helper.assertValueEqual(conversation.json().get("revision").getAsInt(), 2, "blocked undo retains newer edits");
             helper.assertTrue(conversation.undo() && quest.undo(), "undoing the newer edit permits the grouped undo");
             helper.assertTrue(quest.undo(), "history from before the rename remains available");
-            helper.assertTrue(!quest.json().getAsJsonObject("metadata").has("title"), "the earlier title edit remains undoable");
+            helper.assertTrue(!quest.json().has("display"), "the earlier title edit remains undoable");
             helper.succeed();
         } finally {
             removeTemporaryTree(root);

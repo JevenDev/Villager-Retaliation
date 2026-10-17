@@ -119,7 +119,7 @@ final class EditorGraph {
                 }
             }
             for (var edge : outputs) {
-                if (edge.from().equals(node.id()) && edge.pointer().startsWith(node.pointer() + "/next"))
+                if (edge.from().equals(node.id()) && (edge.pointer().startsWith(node.pointer() + "/next") || edge.pointer().startsWith(node.pointer() + "/transition")))
                     blocks.add(new Block(node.pointer(), "Then", edge.to().isEmpty() ? terminalLabel(value) : edge.to(), edge));
             }
             if (blocks.stream().noneMatch(block -> block.output() != null))
@@ -141,8 +141,9 @@ final class EditorGraph {
 
     private static String terminalLabel(JsonObject value) {
         if (value.has("outcome")) return "Outcome: " + DialogueGraph.string(value, "outcome");
-        if (value.has("next") && value.get("next").isJsonObject()) {
-            JsonObject next = value.getAsJsonObject("next");
+        String fieldName = value.has("transition") ? "transition" : "next";
+        if (value.has(fieldName) && value.get(fieldName).isJsonObject()) {
+            JsonObject next = value.getAsJsonObject(fieldName);
             for (String field : List.of("complete", "fail", "abandon"))
                 if (next.has(field) && next.get(field).isJsonPrimitive() && next.get(field).getAsBoolean())
                     return Character.toUpperCase(field.charAt(0)) + field.substring(1) + " quest";

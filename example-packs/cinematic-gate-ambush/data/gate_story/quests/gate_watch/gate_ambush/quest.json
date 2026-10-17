@@ -1,13 +1,7 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "gate_story:gate_ambush",
   "metadata": {
-    "title": {
-      "key": "#metadata.title"
-    },
-    "description": {
-      "key": "#metadata.description"
-    },
     "questline": "gate_watch",
     "tags": [
       "example",
@@ -33,12 +27,6 @@
   "stages": [
     {
       "id": "briefing",
-      "title": {
-        "key": "#stage.briefing.title"
-      },
-      "description": {
-        "key": "#stage.briefing.description"
-      },
       "objectives": [],
       "dialogue": {
         "offer": {
@@ -55,7 +43,9 @@
               "label": {
                 "key": "#stage.briefing.dialogue.offer.response.decide.label"
               },
-              "scene": "decision"
+              "transition": {
+                "scene": "decision"
+              }
             }
           ]
         }
@@ -72,26 +62,30 @@
               "label": {
                 "key": "#stage.briefing.scene.decision.response.bold.label"
               },
-              "scene": "bold_confirm",
               "actions": [
                 {
                   "type": "quest",
                   "action": "start"
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "bold_confirm"
+              }
             },
             {
               "id": "cautious",
               "label": {
                 "key": "#stage.briefing.scene.decision.response.cautious.label"
               },
-              "scene": "cautious_confirm",
               "actions": [
                 {
                   "type": "quest",
                   "action": "start"
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "cautious_confirm"
+              }
             }
           ]
         },
@@ -106,7 +100,6 @@
               "label": {
                 "key": "#stage.briefing.scene.bold_confirm.response.bold.label"
               },
-              "stage": "defending",
               "actions": [
                 {
                   "type": "start_scene",
@@ -114,7 +107,10 @@
                   "operation_id": "gate_ambush_v1",
                   "wait_for_result": true
                 }
-              ]
+              ],
+              "transition": {
+                "stage": "defending"
+              }
             }
           ]
         },
@@ -129,7 +125,6 @@
               "label": {
                 "key": "#stage.briefing.scene.cautious_confirm.response.cautious.label"
               },
-              "stage": "defending",
               "actions": [
                 {
                   "type": "start_scene",
@@ -137,20 +132,25 @@
                   "operation_id": "gate_ambush_v1",
                   "wait_for_result": true
                 }
-              ]
+              ],
+              "transition": {
+                "stage": "defending"
+              }
             }
           ]
         }
-      ]
+      ],
+      "display": {
+        "title": {
+          "key": "#stage.briefing.title"
+        },
+        "description": {
+          "key": "#stage.briefing.description"
+        }
+      }
     },
     {
       "id": "defending",
-      "title": {
-        "key": "#stage.defending.title"
-      },
-      "description": {
-        "key": "#stage.defending.description"
-      },
       "objectives": [],
       "dialogue": {
         "reminder": {
@@ -163,18 +163,32 @@
             "key": "#stage.defending.dialogue.turn_in.lines"
           }
         }
+      },
+      "display": {
+        "title": {
+          "key": "#stage.defending.title"
+        },
+        "description": {
+          "key": "#stage.defending.description"
+        }
       }
     }
   ],
-  "ui": {
-    "title": {
-      "key": "#ui.title"
-    },
+  "localization_prefix": "gate_story.quest.gate_ambush",
+  "display": {
     "tracker_text": {
       "key": "#ui.tracker_text"
     },
     "icon": "minecraft:iron_sword",
-    "color": "#9b4f3f"
-  },
-  "localization_prefix": "gate_story.quest.gate_ambush"
+    "color": "#9b4f3f",
+    "tracker_title": {
+      "key": "#ui.title"
+    },
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    }
+  }
 }

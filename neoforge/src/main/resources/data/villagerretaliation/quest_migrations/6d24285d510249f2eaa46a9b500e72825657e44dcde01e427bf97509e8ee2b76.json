@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:nether_meridian",
+  "from_fingerprint": "c0b6b2d54219f57afa7cf3c1e1f389937d2be5db754315eaf4573ed2b0bd917b",
+  "to_fingerprint": "9ff2ae406213acb4f1be829a5e797dccd1c77d75ab6d09ac0ed7a4dd8cae583a"
+}

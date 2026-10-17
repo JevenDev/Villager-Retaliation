@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:nether_wart_warranty",
+  "from_fingerprint": "a0ecaed752deef44c5f9cac0352b726b000c07cc4121bf74cf5b29115efa781e",
+  "to_fingerprint": "590f71cfa2e72e18a5624e9043a35f5cd31d3d725a9d23e19aaaec26a2b69341"
+}

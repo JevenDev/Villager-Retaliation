@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:night_run",
+  "from_fingerprint": "318f562af05fecde9d53fbd19de50ee0dffa9a7c9cc70a590d046c32a8e14311",
+  "to_fingerprint": "4329fb45f8237c66925a43eee2fa2526c4e01b8001735420eaf4bd74b1f15a29"
+}

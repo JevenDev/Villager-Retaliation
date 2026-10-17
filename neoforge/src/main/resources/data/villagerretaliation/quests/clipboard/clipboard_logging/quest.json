@@ -1,14 +1,8 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "villagerretaliation:clipboard_logging",
   "localization_prefix": "villagerretaliation.quest.clipboard.logging",
   "metadata": {
-    "title": {
-      "key": "#metadata.title"
-    },
-    "description": {
-      "key": "#metadata.description"
-    },
     "questline": "clipboard",
     "tags": [
       "group.clipboard",
@@ -317,22 +311,21 @@
           ]
         }
       },
-      "next": "step_2_sequence_1",
-      "ui": {
-        "title": {
-          "key": "#stages.0.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.0.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.0.ui.title"
+        }
+      },
+      "transition": {
+        "stage": "step_2_sequence_1"
       }
     },
     {
       "id": "step_2_sequence_1",
-      "title": {
-        "key": "#stages.1.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -384,7 +377,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -577,7 +572,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_2"
+              "transition": {
+                "scene": "step_2_sequence_1_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -594,7 +591,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -611,7 +610,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_help"
+              "transition": {
+                "scene": "step_2_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -664,7 +665,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_3"
+              "transition": {
+                "scene": "step_2_sequence_1_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -681,7 +684,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -698,7 +703,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_help"
+              "transition": {
+                "scene": "step_2_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -751,7 +758,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_4"
+              "transition": {
+                "scene": "step_2_sequence_1_card_4"
+              }
             },
             {
               "id": "repeat",
@@ -768,7 +777,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -785,7 +796,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_help"
+              "transition": {
+                "scene": "step_2_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -862,7 +875,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -879,7 +894,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_help"
+              "transition": {
+                "scene": "step_2_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -932,7 +949,9 @@
                   }
                 }
               ],
-              "scene": "step_2_sequence_1_card_1"
+              "transition": {
+                "scene": "step_2_sequence_1_card_1"
+              }
             },
             {
               "id": "leave",
@@ -965,22 +984,24 @@
           ]
         }
       ],
-      "next": "step_3_sequence_1",
-      "ui": {
-        "title": {
-          "key": "#stages.1.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.1.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.1.ui.title"
+        },
+        "title": {
+          "key": "#stages.1.title"
+        }
+      },
+      "transition": {
+        "stage": "step_3_sequence_1"
       }
     },
     {
       "id": "step_3_sequence_1",
-      "title": {
-        "key": "#stages.2.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -1032,7 +1053,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_1"
+              "transition": {
+                "scene": "step_3_sequence_1_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -1225,7 +1248,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_2"
+              "transition": {
+                "scene": "step_3_sequence_1_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -1242,7 +1267,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_1"
+              "transition": {
+                "scene": "step_3_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -1259,7 +1286,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_help"
+              "transition": {
+                "scene": "step_3_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -1312,7 +1341,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_3"
+              "transition": {
+                "scene": "step_3_sequence_1_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -1329,7 +1360,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_1"
+              "transition": {
+                "scene": "step_3_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -1346,7 +1379,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_help"
+              "transition": {
+                "scene": "step_3_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -1423,7 +1458,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_1"
+              "transition": {
+                "scene": "step_3_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -1440,7 +1477,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_help"
+              "transition": {
+                "scene": "step_3_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -1493,7 +1532,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_1_card_1"
+              "transition": {
+                "scene": "step_3_sequence_1_card_1"
+              }
             },
             {
               "id": "leave",
@@ -1526,22 +1567,24 @@
           ]
         }
       ],
-      "next": "step_3_sequence_2",
-      "ui": {
-        "title": {
-          "key": "#stages.2.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.2.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.2.ui.title"
+        },
+        "title": {
+          "key": "#stages.2.title"
+        }
+      },
+      "transition": {
+        "stage": "step_3_sequence_2"
       }
     },
     {
       "id": "step_3_sequence_2",
-      "title": {
-        "key": "#stages.3.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -1593,7 +1636,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_1"
+              "transition": {
+                "scene": "step_3_sequence_2_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -1786,7 +1831,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_2"
+              "transition": {
+                "scene": "step_3_sequence_2_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -1803,7 +1850,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_1"
+              "transition": {
+                "scene": "step_3_sequence_2_card_1"
+              }
             },
             {
               "id": "help",
@@ -1820,7 +1869,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_help"
+              "transition": {
+                "scene": "step_3_sequence_2_help"
+              }
             },
             {
               "id": "leave",
@@ -1873,7 +1924,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_3"
+              "transition": {
+                "scene": "step_3_sequence_2_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -1890,7 +1943,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_1"
+              "transition": {
+                "scene": "step_3_sequence_2_card_1"
+              }
             },
             {
               "id": "help",
@@ -1907,7 +1962,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_help"
+              "transition": {
+                "scene": "step_3_sequence_2_help"
+              }
             },
             {
               "id": "leave",
@@ -1984,7 +2041,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_1"
+              "transition": {
+                "scene": "step_3_sequence_2_card_1"
+              }
             },
             {
               "id": "help",
@@ -2001,7 +2060,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_help"
+              "transition": {
+                "scene": "step_3_sequence_2_help"
+              }
             },
             {
               "id": "leave",
@@ -2054,7 +2115,9 @@
                   }
                 }
               ],
-              "scene": "step_3_sequence_2_card_1"
+              "transition": {
+                "scene": "step_3_sequence_2_card_1"
+              }
             },
             {
               "id": "leave",
@@ -2087,22 +2150,24 @@
           ]
         }
       ],
-      "next": "step_4_sequence_1",
-      "ui": {
-        "title": {
-          "key": "#stages.3.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.3.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.3.ui.title"
+        },
+        "title": {
+          "key": "#stages.3.title"
+        }
+      },
+      "transition": {
+        "stage": "step_4_sequence_1"
       }
     },
     {
       "id": "step_4_sequence_1",
-      "title": {
-        "key": "#stages.4.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -2154,7 +2219,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_1"
+              "transition": {
+                "scene": "step_4_sequence_1_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -2347,7 +2414,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_2"
+              "transition": {
+                "scene": "step_4_sequence_1_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -2364,7 +2433,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_1"
+              "transition": {
+                "scene": "step_4_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -2381,7 +2452,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_help"
+              "transition": {
+                "scene": "step_4_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -2434,7 +2507,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_3"
+              "transition": {
+                "scene": "step_4_sequence_1_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -2451,7 +2526,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_1"
+              "transition": {
+                "scene": "step_4_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -2468,7 +2545,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_help"
+              "transition": {
+                "scene": "step_4_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -2545,7 +2624,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_1"
+              "transition": {
+                "scene": "step_4_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -2562,7 +2643,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_help"
+              "transition": {
+                "scene": "step_4_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -2615,7 +2698,9 @@
                   }
                 }
               ],
-              "scene": "step_4_sequence_1_card_1"
+              "transition": {
+                "scene": "step_4_sequence_1_card_1"
+              }
             },
             {
               "id": "leave",
@@ -2648,22 +2733,24 @@
           ]
         }
       ],
-      "next": "supplies_deposit_readiness",
-      "ui": {
-        "title": {
-          "key": "#stages.4.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.4.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.4.ui.title"
+        },
+        "title": {
+          "key": "#stages.4.title"
+        }
+      },
+      "transition": {
+        "stage": "supplies_deposit_readiness"
       }
     },
     {
       "id": "supplies_deposit_readiness",
-      "title": {
-        "key": "#stages.5.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -2715,7 +2802,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -2908,7 +2997,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_2"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -2925,7 +3016,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "help",
@@ -2942,7 +3035,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "transition": {
+                "scene": "supplies_deposit_readiness_help"
+              }
             },
             {
               "id": "leave",
@@ -2995,7 +3090,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_3"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -3012,7 +3109,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "help",
@@ -3029,7 +3128,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "transition": {
+                "scene": "supplies_deposit_readiness_help"
+              }
             },
             {
               "id": "leave",
@@ -3082,7 +3183,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_4"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_4"
+              }
             },
             {
               "id": "repeat",
@@ -3099,7 +3202,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "help",
@@ -3116,7 +3221,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "transition": {
+                "scene": "supplies_deposit_readiness_help"
+              }
             },
             {
               "id": "leave",
@@ -3193,7 +3300,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "help",
@@ -3210,7 +3319,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_help"
+              "transition": {
+                "scene": "supplies_deposit_readiness_help"
+              }
             },
             {
               "id": "leave",
@@ -3263,7 +3374,9 @@
                   }
                 }
               ],
-              "scene": "supplies_deposit_readiness_card_1"
+              "transition": {
+                "scene": "supplies_deposit_readiness_card_1"
+              }
             },
             {
               "id": "leave",
@@ -3296,22 +3409,24 @@
           ]
         }
       ],
-      "next": "step_5_sequence_1",
-      "ui": {
-        "title": {
-          "key": "#stages.5.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.5.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.5.ui.title"
+        },
+        "title": {
+          "key": "#stages.5.title"
+        }
+      },
+      "transition": {
+        "stage": "step_5_sequence_1"
       }
     },
     {
       "id": "step_5_sequence_1",
-      "title": {
-        "key": "#stages.6.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -3363,7 +3478,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "transition": {
+                "scene": "step_5_sequence_1_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -3556,7 +3673,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_2"
+              "transition": {
+                "scene": "step_5_sequence_1_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -3573,7 +3692,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "transition": {
+                "scene": "step_5_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -3590,7 +3711,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "transition": {
+                "scene": "step_5_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -3643,7 +3766,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_3"
+              "transition": {
+                "scene": "step_5_sequence_1_card_3"
+              }
             },
             {
               "id": "repeat",
@@ -3660,7 +3785,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "transition": {
+                "scene": "step_5_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -3677,7 +3804,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "transition": {
+                "scene": "step_5_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -3759,7 +3888,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "transition": {
+                "scene": "step_5_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -3776,7 +3907,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_help"
+              "transition": {
+                "scene": "step_5_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -3829,7 +3962,9 @@
                   }
                 }
               ],
-              "scene": "step_5_sequence_1_card_1"
+              "transition": {
+                "scene": "step_5_sequence_1_card_1"
+              }
             },
             {
               "id": "leave",
@@ -3862,22 +3997,24 @@
           ]
         }
       ],
-      "next": "step_6_sequence_1",
-      "ui": {
-        "title": {
-          "key": "#stages.6.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.6.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.6.ui.title"
+        },
+        "title": {
+          "key": "#stages.6.title"
+        }
+      },
+      "transition": {
+        "stage": "step_6_sequence_1"
       }
     },
     {
       "id": "step_6_sequence_1",
-      "title": {
-        "key": "#stages.7.title"
-      },
       "objectives": [
         {
           "id": "demonstrated",
@@ -3929,7 +4066,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "transition": {
+                "scene": "step_6_sequence_1_card_1"
+              }
             },
             {
               "id": "supplies",
@@ -4122,7 +4261,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_2"
+              "transition": {
+                "scene": "step_6_sequence_1_card_2"
+              }
             },
             {
               "id": "repeat",
@@ -4139,7 +4280,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "transition": {
+                "scene": "step_6_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -4156,7 +4299,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_help"
+              "transition": {
+                "scene": "step_6_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -4233,7 +4378,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "transition": {
+                "scene": "step_6_sequence_1_card_1"
+              }
             },
             {
               "id": "help",
@@ -4250,7 +4397,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_help"
+              "transition": {
+                "scene": "step_6_sequence_1_help"
+              }
             },
             {
               "id": "leave",
@@ -4303,7 +4452,9 @@
                   }
                 }
               ],
-              "scene": "step_6_sequence_1_card_1"
+              "transition": {
+                "scene": "step_6_sequence_1_card_1"
+              }
             },
             {
               "id": "leave",
@@ -4336,15 +4487,20 @@
           ]
         }
       ],
-      "next": "verified_outcome",
-      "ui": {
-        "title": {
-          "key": "#stages.7.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.7.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.7.ui.title"
+        },
+        "title": {
+          "key": "#stages.7.title"
+        }
+      },
+      "transition": {
+        "stage": "verified_outcome"
       }
     },
     {
@@ -4553,15 +4709,17 @@
           ]
         }
       },
-      "next": "choose_next",
-      "ui": {
-        "title": {
-          "key": "#stages.8.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.8.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.8.ui.title"
+        }
+      },
+      "transition": {
+        "stage": "choose_next"
       }
     },
     {
@@ -4592,9 +4750,6 @@
       "complete_when": [
         "decision"
       ],
-      "next": {
-        "complete": true
-      },
       "dialogue": {
         "reminder": {
           "label": {
@@ -4713,14 +4868,17 @@
         }
       },
       "scenes": [],
-      "ui": {
-        "title": {
-          "key": "#stages.9.ui.title"
-        },
+      "display": {
         "tracker_text": {
           "key": "#stages.9.ui.tracker_text"
         },
-        "show_progress": false
+        "show_progress": false,
+        "tracker_title": {
+          "key": "#stages.9.ui.title"
+        }
+      },
+      "transition": {
+        "complete": true
       }
     }
   ],
@@ -4742,6 +4900,14 @@
           "operation": "stop"
         }
       ]
+    }
+  },
+  "display": {
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
     }
   }
 }

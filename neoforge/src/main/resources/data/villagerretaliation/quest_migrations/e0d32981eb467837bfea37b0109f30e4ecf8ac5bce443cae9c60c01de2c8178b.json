@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:egg_baskets",
+  "from_fingerprint": "75ca1f91c9f8ddc0d32e35aff066d26dd67edd34b52912f32e876850d7f114c1",
+  "to_fingerprint": "04554b680c11d513be226ce2804481b2fa6ef6489db4b428254732744b848a80"
+}

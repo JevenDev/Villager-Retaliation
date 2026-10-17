@@ -110,6 +110,36 @@ public final class AuthoringWorkspace {
         documents.add(document);
     }
 
+    public void importCampaignImage(AuthoringDocument campaign, Path source) throws IOException {
+        if (campaign.kind() != DefinitionKind.WORLD_CAMPAIGN) throw new IllegalArgumentException("Select a campaign first");
+        if (!Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS) || Files.size(source) > 4 * 1024 * 1024) {
+            throw new IOException("Choose a PNG image no larger than 4 MiB");
+        }
+        byte[] bytes = Files.readAllBytes(source);
+        if (bytes.length < 24 || !java.util.Arrays.equals(java.util.Arrays.copyOf(bytes, 8), new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10})) {
+            throw new IOException("Campaign images must be PNG files");
+        }
+        String directory = campaign.resourcePath().substring(0, campaign.resourcePath().lastIndexOf('/') + 1);
+        String target = directory + "image-" + com.google.common.hash.Hashing.sha256().hashBytes(bytes) + ".png";
+        if (documents.stream().anyMatch(document -> document.resourcePath().equals(target))) throw new IOException("Image path is already occupied");
+        attachments.put(target, bytes);
+        String[] path = target.split("/", 3);
+        campaign.edit("Set campaign image", root -> root.addProperty("image", path[1] + ":" + path[2]));
+    }
+
+    public byte[] campaignImage(AuthoringDocument campaign) throws IOException {
+        String id = DialogueGraph.string(campaign.json(), "image");
+        if (id.isBlank() || id.equals("villagerretaliation:mod_icon")) {
+            try (var stream = AuthoringWorkspace.class.getResourceAsStream("/villager_retaliation_cover.png")) {
+                return stream == null ? new byte[0] : stream.readAllBytes();
+            }
+        }
+        String[] parts = id.split(":", 2);
+        if (parts.length != 2) return new byte[0];
+        byte[] bytes = attachments.get("data/" + parts[0] + "/" + parts[1]);
+        return bytes == null ? new byte[0] : bytes.clone();
+    }
+
     private boolean containsPath(String path) {
         return attachments.keySet().stream().anyMatch(key -> key.equalsIgnoreCase(path))
                 || documents.stream().anyMatch(document -> document.resourcePath().equalsIgnoreCase(path));
@@ -117,8 +147,8 @@ public final class AuthoringWorkspace {
 
     public AuthoringDocument createDocument(DefinitionKind kind, String id) {
         String path = kind.path(id);
-        if ((kind == DefinitionKind.QUEST || kind == DefinitionKind.CONVERSATION) && id.substring(id.indexOf(':') + 1).contains("/")) {
-            throw new IllegalArgumentException("Quest bundle definitions require a single-segment resource ID");
+        if ((kind == DefinitionKind.QUEST || kind == DefinitionKind.CONVERSATION || kind == DefinitionKind.WORLD_CAMPAIGN) && id.substring(id.indexOf(':') + 1).contains("/")) {
+            throw new IllegalArgumentException("Quest bundles and world campaigns require a single-segment resource ID");
         }
         if (containsPath(path)) throw new IllegalArgumentException("Resource already exists: " + path);
         if (kind == DefinitionKind.QUEST) {
@@ -158,7 +188,7 @@ public final class AuthoringWorkspace {
                 root.add("options", JsonParser.parseString("[{\"id\":\"leave\",\"label\":\"Goodbye\",\"end_conversation\":true}]"));
             }
             case QUEST -> {
-                root.addProperty("schema", "villagerretaliation:quest/v2");
+                root.addProperty("schema", "villagerretaliation:quest/v3");
                 root.addProperty("localization_prefix", id.substring(0, id.indexOf(':')) + ".quest." + id.substring(id.indexOf(':') + 1));
                 root.add("metadata", JsonParser.parseString("{\"questline\":\"authored\"}"));
                 root.add("provider", JsonParser.parseString("{\"type\":\"villagerretaliation:villager\"}"));
@@ -193,6 +223,15 @@ public final class AuthoringWorkspace {
                 JsonArray outcomes = new JsonArray();
                 outcomes.add(outcome);
                 root.add("outcomes", outcomes);
+            }
+            case WORLD_CAMPAIGN -> {
+                root.addProperty("schema", com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.ID);
+                root.addProperty("name", "New campaign");
+                root.addProperty("description", "");
+                root.add("authors", new JsonArray());
+                root.addProperty("image", "villagerretaliation:mod_icon");
+                root.addProperty("locked", true);
+                root.addProperty("include_default_content", false);
             }
             case RESOURCE -> { }
         }
@@ -318,7 +357,10 @@ public final class AuthoringWorkspace {
         if (identity[1].contains("/")) throw new IllegalArgumentException("Quest IDs require a single path segment");
         String source = quest.resourcePath().substring(0, quest.resourcePath().lastIndexOf('/') + 1);
         String[] originalPath = source.split("/");
-        String destination = "data/" + identity[0] + "/quests/" + originalPath[3] + "/" + identity[1] + "/";
+        boolean bundled = originalPath[2].equals("world_campaigns");
+        if (bundled && !identity[0].equals(originalPath[1])) throw new IllegalArgumentException("Keep a bundled quest in its campaign namespace");
+        String destination = "data/" + identity[0] + (bundled ? "/world_campaigns/" + originalPath[3] : "")
+                + "/quests/" + originalPath[bundled ? 5 : 3] + "/" + identity[1] + "/";
         List<AuthoringDocument> members = documents.stream().filter(value -> value.resourcePath().startsWith(source)).toList();
         List<String> binaryMembers = attachments.keySet().stream().filter(path -> path.startsWith(source)).toList();
         for (AuthoringDocument member : members) {
@@ -677,8 +719,9 @@ public final class AuthoringWorkspace {
 
     private static String bundleDirectory(String path) {
         String[] parts = path.split("/");
-        if (parts.length < 5 || !parts[0].equals("data") || !parts[2].equals("quests")) return "";
-        return String.join("/", java.util.Arrays.copyOf(parts, parts[3].equals("_shared") ? 4 : 5)) + "/";
+        int index = parts.length > 4 && parts[2].equals("world_campaigns") ? 4 : 2;
+        if (parts.length < index + 3 || !parts[0].equals("data") || !parts[index].equals("quests")) return "";
+        return String.join("/", java.util.Arrays.copyOf(parts, parts[index + 1].equals("_shared") ? index + 2 : index + 3)) + "/";
     }
 
     public void save() throws IOException {

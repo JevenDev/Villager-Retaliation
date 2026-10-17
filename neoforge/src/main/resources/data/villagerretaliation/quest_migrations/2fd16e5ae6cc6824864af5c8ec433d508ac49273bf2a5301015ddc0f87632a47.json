@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:eye_of_the_last_room",
+  "from_fingerprint": "65a14d5972a52e7c255e7db2c6eed2cc3a2b03d301cf2b3a6b892b8b95fcb70c",
+  "to_fingerprint": "759145db0723931b9d927704f5192283f95f8b2e6d0b10248cdd099f16c7da12"
+}

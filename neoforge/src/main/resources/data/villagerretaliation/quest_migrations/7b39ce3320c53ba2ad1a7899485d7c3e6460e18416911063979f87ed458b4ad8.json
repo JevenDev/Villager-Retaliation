@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:new_furrows",
+  "from_fingerprint": "54d0adae13a117373d00b5a98eee4808268aff56ca546ebde1fad6800988ed6f",
+  "to_fingerprint": "391daf9b13e066fb477eb3d5ba7b6bcb7f634ef9a9a2a188aa3711f41c75b2e4"
+}

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:powder_run",
+  "from_fingerprint": "23dc620094d90fd833847c24a5c6aff6167d113acbc9e263fa76972574f47bd4",
+  "to_fingerprint": "bb77448be7cee07622fd9e14622796b27d4022172c6101842c7b9d55fa553f1c"
+}

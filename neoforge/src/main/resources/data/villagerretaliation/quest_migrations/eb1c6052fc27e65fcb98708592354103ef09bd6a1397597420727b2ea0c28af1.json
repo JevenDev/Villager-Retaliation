@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:night_ward",
+  "from_fingerprint": "74cf40ebba5821c3828fe079fbbe49d23995df35a107c307875352e1556ffade",
+  "to_fingerprint": "1a3e1dfcea32a2ee76cf1a395fc714e792b9db961e7f7f33f9202754c48ad660"
+}

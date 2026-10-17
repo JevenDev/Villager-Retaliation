@@ -46,10 +46,6 @@
   ],
   "id": "villagerretaliation:tales_of_a_lost_civilization",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
     "questline": "lost_civilization",
     "tags": [
       "group.lost_civilization",
@@ -64,11 +60,7 @@
       "commitment.expedition",
       "theme.exploration",
       "theme.mystery"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -88,10 +80,10 @@
     "experience": 430,
     "gossip_reputation": 10,
     "loot_table": "villagerretaliation:quest/tales_of_a_lost_civilization",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 22
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -114,7 +106,6 @@
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -124,14 +115,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -141,7 +134,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -173,7 +169,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.directions.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -183,7 +178,10 @@
                     "key": "#dialogue.player.directions"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "abandon",
@@ -191,7 +189,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.abandon.label"
               },
               "order": 90,
-              "scene": "abandon_confirm",
               "exchanges": [
                 {
                   "speaker": {
@@ -201,7 +198,10 @@
                     "key": "#dialogue.player.abandon"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_confirm"
+              }
             },
             {
               "id": "never_mind",
@@ -209,7 +209,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.never_mind.label"
               },
               "order": 100,
-              "scene": "active_cancel",
               "exchanges": [
                 {
                   "speaker": {
@@ -219,7 +218,10 @@
                     "key": "#dialogue.player.never_mind"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "active_cancel"
+              }
             }
           ],
           "show_for_babies": false,
@@ -237,7 +239,6 @@
         }
       },
       "id": "survey",
-      "next": "return",
       "objectives": [
         {
           "discovery_radius": 128,
@@ -307,7 +308,6 @@
               "label": {
                 "key": "#stage.survey.scene.abandon_confirm.response.confirm.label"
               },
-              "scene": "abandon_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -317,14 +317,16 @@
                     "key": "#dialogue.player.confirm"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_quest"
+              }
             },
             {
               "id": "cancel",
               "label": {
                 "key": "#stage.survey.scene.abandon_confirm.response.cancel.label"
               },
-              "scene": "abandon_cancel",
               "exchanges": [
                 {
                   "speaker": {
@@ -334,7 +336,10 @@
                     "key": "#dialogue.player.cancel"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_cancel"
+              }
             }
           ],
           "exchanges": [
@@ -447,7 +452,7 @@
           "id": "start_quest"
         }
       ],
-      "ui": {
+      "display": {
         "placeholders": {
           "target_x": "target.x",
           "target_z": "target.z"
@@ -456,8 +461,10 @@
         "show_progress": true,
         "tracker_text": {
           "key": "#tracker.travel.text"
-        },
-        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.travel.text"
+        }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -478,7 +485,6 @@
                 "key": "#stage.return.dialogue.reminder.response.directions.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -488,7 +494,10 @@
                     "key": "#dialogue.player.directions"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "abandon",
@@ -496,7 +505,6 @@
                 "key": "#stage.return.dialogue.reminder.response.abandon.label"
               },
               "order": 90,
-              "scene": "abandon_confirm",
               "exchanges": [
                 {
                   "speaker": {
@@ -506,7 +514,10 @@
                     "key": "#dialogue.player.abandon"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_confirm"
+              }
             },
             {
               "id": "never_mind",
@@ -514,7 +525,6 @@
                 "key": "#stage.return.dialogue.reminder.response.never_mind.label"
               },
               "order": 100,
-              "scene": "active_cancel",
               "exchanges": [
                 {
                   "speaker": {
@@ -524,7 +534,10 @@
                     "key": "#dialogue.player.never_mind"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "active_cancel"
+              }
             }
           ],
           "show_for_babies": false,
@@ -556,7 +569,6 @@
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
               "order": 0,
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -566,7 +578,10 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "abandon",
@@ -574,7 +589,6 @@
                 "key": "#stage.return.dialogue.turn_in.response.abandon.label"
               },
               "order": 90,
-              "scene": "abandon_confirm",
               "exchanges": [
                 {
                   "speaker": {
@@ -584,7 +598,10 @@
                     "key": "#dialogue.player.abandon"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_confirm"
+              }
             },
             {
               "id": "never_mind",
@@ -592,7 +609,6 @@
                 "key": "#stage.return.dialogue.turn_in.response.never_mind.label"
               },
               "order": 100,
-              "scene": "turn_in_wait",
               "exchanges": [
                 {
                   "speaker": {
@@ -602,7 +618,10 @@
                     "key": "#dialogue.player.never_mind"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "turn_in_wait"
+              }
             }
           ],
           "show_for_babies": false,
@@ -650,7 +669,6 @@
               "label": {
                 "key": "#stage.return.scene.abandon_confirm.response.confirm.label"
               },
-              "scene": "abandon_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -660,14 +678,16 @@
                     "key": "#dialogue.player.confirm"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_quest"
+              }
             },
             {
               "id": "cancel",
               "label": {
                 "key": "#stage.return.scene.abandon_confirm.response.cancel.label"
               },
-              "scene": "abandon_cancel",
               "exchanges": [
                 {
                   "speaker": {
@@ -677,7 +697,10 @@
                     "key": "#dialogue.player.cancel"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_cancel"
+              }
             }
           ],
           "exchanges": [
@@ -790,7 +813,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "placeholders": {
           "proof_item": "target.proof_item"
         },
@@ -798,8 +821,7 @@
         "show_progress": true,
         "tracker_text": {
           "key": "#tracker.return.text"
-        },
-        "tracker_text_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.return.text"
+        }
       }
     }
   ],
@@ -814,11 +836,16 @@
     "search_radius": 256,
     "structure": "minecraft:ancient_city"
   },
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.lost_civilization.tales_of_a_lost_civilization",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
-  },
-  "localization_prefix": "quest.lost_civilization.tales_of_a_lost_civilization"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

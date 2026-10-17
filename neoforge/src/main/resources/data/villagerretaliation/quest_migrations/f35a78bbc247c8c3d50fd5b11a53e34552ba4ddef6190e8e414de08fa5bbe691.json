@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:eye_before_dawn",
+  "from_fingerprint": "f8950b5196e50d94745775c028651596081c7384e57799be54d2336a7c680472",
+  "to_fingerprint": "d4401c637959cc3fd45a809df14bf254aad11ffd2bbdd608fe525175b2845787"
+}

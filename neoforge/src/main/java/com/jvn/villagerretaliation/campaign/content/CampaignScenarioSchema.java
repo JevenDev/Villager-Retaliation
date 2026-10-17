@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.campaign.content;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
+import com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +15,7 @@ public final class CampaignScenarioSchema {
     private CampaignScenarioSchema() { }
 
     public static JsonObject export() {
-        var questSymbol = QuestV2Schema.export().getAsJsonObject("properties").getAsJsonObject("entry_stage");
+        var questSymbol = ContentSchemaDefinitions.idString();
         var steps = new JsonArray();
         steps.add(step("player", "player action", "player", local(), "action", choices("connect", "disconnect")));
         steps.add(step("spawn_evidence", "evidence position", "evidence", local(), "position", position()));

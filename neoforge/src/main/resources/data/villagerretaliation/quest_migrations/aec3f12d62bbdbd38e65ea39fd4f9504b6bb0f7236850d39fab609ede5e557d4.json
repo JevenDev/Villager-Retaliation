@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:kiln_fuel",
+  "from_fingerprint": "a927a18fb2061ab4fb0927cfce56221663b8268632b916928cc3cdbf451b3aaf",
+  "to_fingerprint": "15294dbf0221e1bac81bec4122bc5d71aabfb25a2d96565706df630b1c3fc844"
+}

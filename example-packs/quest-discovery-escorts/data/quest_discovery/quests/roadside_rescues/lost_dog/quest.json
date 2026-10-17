@@ -1,9 +1,8 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "quest_discovery:lost_dog",
   "localization_prefix": "quest_discovery.quest.lost_dog",
   "metadata": {
-    "title": "A Lost Dog",
     "questline": "roadside_rescues"
   },
   "provider": {
@@ -23,7 +22,6 @@
   "stages": [
     {
       "id": "home",
-      "title": "Bring the dog home",
       "followers": [
         {
           "command": "follow",
@@ -53,12 +51,18 @@
           }
         }
       ],
-      "next": {
+      "display": {
+        "title": "Bring the dog home"
+      },
+      "transition": {
         "complete": true
       }
     }
   ],
   "rewards": {
     "experience": 25
+  },
+  "display": {
+    "title": "A Lost Dog"
   }
 }

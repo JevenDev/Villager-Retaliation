@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:leather_repairs",
+  "from_fingerprint": "9741bbad24692f8ea463237d71405022f99a2156ae73001380cf15bfc2220b1f",
+  "to_fingerprint": "1ac2ccdb6d00a16417f766cf300d92798070c3a9ab20994c1e6ce755f294e832"
+}

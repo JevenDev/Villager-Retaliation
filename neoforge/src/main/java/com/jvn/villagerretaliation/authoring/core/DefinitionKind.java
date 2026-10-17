@@ -1,13 +1,18 @@
 package com.jvn.villagerretaliation.authoring.core;
 
 public enum DefinitionKind {
-    TREE, CONVERSATION, FORCED, QUEST, RESOURCE;
+    TREE, CONVERSATION, FORCED, QUEST, WORLD_CAMPAIGN, RESOURCE;
 
     public static DefinitionKind fromPath(String path) {
         if (!path.startsWith("data/")) return RESOURCE;
         int namespaceEnd = path.indexOf('/', 5);
         if (namespaceEnd < 0) return RESOURCE;
         String resource = path.substring(namespaceEnd + 1);
+        if (resource.startsWith("world_campaigns/")) {
+            String[] parts = resource.split("/", 3);
+            if (parts.length == 3 && parts[2].equals("campaign.json")) return WORLD_CAMPAIGN;
+            if (parts.length == 3) resource = parts[2];
+        }
         if (resource.startsWith("dialogue_trees/")) return TREE;
         if (resource.startsWith("forced_dialogue/")) return FORCED;
         if (resource.startsWith("quests/") && resource.contains("/conversations/")) return CONVERSATION;
@@ -27,6 +32,7 @@ public enum DefinitionKind {
             case FORCED -> "forced_dialogue/" + name + ".json";
             case CONVERSATION -> "quests/_shared/conversations/" + name.replace('/', '_') + ".json";
             case QUEST -> "quests/authored/" + name.replace('/', '_') + "/quest.json";
+            case WORLD_CAMPAIGN -> "world_campaigns/" + name + "/campaign.json";
             case RESOURCE -> name + ".json";
         };
     }

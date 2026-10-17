@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:choose_the_horizon",
+  "from_fingerprint": "248acbcefaf183c7d1d2a99689a8671cc888baf718da72206bfb2a979d8aa2f3",
+  "to_fingerprint": "e170317fde38615878d16d771a483616303e8f6df1bb5087c7bbffaddf97f592"
+}

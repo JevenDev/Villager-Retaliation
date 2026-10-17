@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
-import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
+import com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions;
 import java.util.List;
 
 public final class ConversationSchema {
@@ -15,7 +15,7 @@ public final class ConversationSchema {
     }
 
     public static JsonObject export() {
-        JsonObject shared = QuestV2Schema.export().getAsJsonObject("$defs");
+        JsonObject shared = ContentSchemaDefinitions.definitions();
         JsonObject definitions = new JsonObject();
         for (String name : List.of("condition", "action", "localized_reference")) definitions.add(name, shared.get(name));
         definitions.add("effect", object(List.of("id", "action"), "id", id(), "action", ref("action")));

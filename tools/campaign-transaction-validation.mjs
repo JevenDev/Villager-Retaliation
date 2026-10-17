@@ -13,11 +13,11 @@ export function validateTransactionReferences(root, context) {
         const payment = type === "campaign_payment";
         const questId = value.quest ?? value.quest_id ?? context.quest;
         const quest = context.quests?.get(questId);
-        const campaignId = payment ? quest?.metadata?.campaign ?? (questId === context.quest ? context.campaign?.id : undefined) : value.campaign;
+        const campaignId = payment ? (quest?.story_arc ?? quest?.metadata?.campaign) ?? (questId === context.quest ? context.campaign?.id : undefined) : value.campaign;
         const campaign = campaigns.get(campaignId);
         const issue = (field, message) => issues.push({ pointer: child(pointer, field), message });
         if (!campaign || !Array.isArray(campaign.quest_bundles) || !campaign.quest_bundles.includes(questId)
-            || quest && quest.metadata?.campaign !== campaignId) {
+            || quest && (quest.story_arc ?? quest.metadata?.campaign) !== campaignId) {
           issue("quest", "transaction requires a quest declared by its campaign");
         } else {
           const transaction = (Array.isArray(campaign.transactions) ? campaign.transactions : []).find(entry => entry?.id === value.transaction);

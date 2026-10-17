@@ -25,10 +25,6 @@
   ],
   "id": "villagerretaliation:roads_that_remember",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.cartographers_atlas.roads_that_remember.description",
     "parent": "villagerretaliation:first_far_marker",
     "questline": "cartographers_atlas",
     "tags": [
@@ -42,11 +38,7 @@
       "difficulty.normal",
       "commitment.standard",
       "theme.exploration"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.cartographers_atlas.roads_that_remember.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -66,10 +58,10 @@
     "experience": 185,
     "gossip_reputation": 5,
     "loot_table": "villagerretaliation:quest/roads_that_remember",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 12
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -91,7 +83,6 @@
               "label": {
                 "key": "#stage.hear_story.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -101,14 +92,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.hear_story.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -118,7 +111,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -150,7 +146,6 @@
                 "key": "#stage.hear_story.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -160,7 +155,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "abandon",
@@ -168,7 +166,6 @@
                 "key": "#stage.hear_story.dialogue.reminder.response.abandon.label"
               },
               "order": 90,
-              "scene": "abandon_confirm",
               "exchanges": [
                 {
                   "speaker": {
@@ -178,7 +175,10 @@
                     "key": "#dialogue.player.abandon"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_confirm"
+              }
             },
             {
               "id": "leave",
@@ -186,7 +186,6 @@
                 "key": "#stage.hear_story.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -196,7 +195,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -214,7 +216,6 @@
         }
       },
       "id": "hear_story",
-      "next": "write_account",
       "objectives": [
         {
           "count": 1,
@@ -245,7 +246,6 @@
               "label": {
                 "key": "#stage.hear_story.scene.abandon_confirm.response.confirm.label"
               },
-              "scene": "abandon_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -255,14 +255,16 @@
                     "key": "#dialogue.player.confirm"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_quest"
+              }
             },
             {
               "id": "cancel",
               "label": {
                 "key": "#stage.hear_story.scene.abandon_confirm.response.cancel.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -272,7 +274,10 @@
                     "key": "#dialogue.player.cancel"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "exchanges": [
@@ -376,12 +381,15 @@
           "id": "start_quest"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.55,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.hear_story.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "write_account"
       }
     },
     {
@@ -405,7 +413,6 @@
                 "key": "#stage.write_account.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -415,7 +422,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -423,7 +433,6 @@
                 "key": "#stage.write_account.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -433,7 +442,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -451,7 +463,6 @@
         }
       },
       "id": "write_account",
-      "next": "return",
       "objectives": [
         {
           "count": 1,
@@ -506,12 +517,15 @@
           "id": "reminder_details"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.85,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.write_account.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -531,7 +545,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.record.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -541,14 +554,16 @@
                     "key": "#dialogue.player.record"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -558,7 +573,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -619,7 +637,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -628,11 +646,16 @@
       }
     }
   ],
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.cartographers_atlas.roads_that_remember",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.cartographers_atlas.roads_that_remember.tracker.title"
-  },
-  "localization_prefix": "quest.cartographers_atlas.roads_that_remember"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

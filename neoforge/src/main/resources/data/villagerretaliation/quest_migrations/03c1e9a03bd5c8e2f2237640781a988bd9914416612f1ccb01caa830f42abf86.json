@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:tales_of_a_lost_civilization",
+  "from_fingerprint": "1833067ad6ca2dbe346b541bb8d939595112a4d4c759d2509549af676de37695",
+  "to_fingerprint": "8372f308cc1af5c51871ffdafec23cf8fb29c989206339398e243e1d09f8dc57"
+}

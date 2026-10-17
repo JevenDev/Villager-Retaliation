@@ -39,7 +39,9 @@ public final class CampaignRewardRecovery {
         if (continuation.campaignRecovery() && (continuation.questId() == null || continuation.campaignId() == null)) {
             return "Campaign reward recovery is missing its saved quest ownership. Restore matching scene and quest saves.";
         }
-        if (continuation.questId() != null && !continuation.recoveryFingerprint().equals(fingerprint(server, continuation.questId()))) {
+        if (continuation.questId() != null && !continuation.recoveryFingerprint().equals(fingerprint(server, continuation.questId()))
+                && !com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(server, continuation.questId(),
+                        continuation.recoveryFingerprint(), fingerprint(server, continuation.questId()))) {
             return "The quest bundle changed during reward recovery. Restore its original content before continuing.";
         }
         int prepared = continuation.preparedRecoveryAction();

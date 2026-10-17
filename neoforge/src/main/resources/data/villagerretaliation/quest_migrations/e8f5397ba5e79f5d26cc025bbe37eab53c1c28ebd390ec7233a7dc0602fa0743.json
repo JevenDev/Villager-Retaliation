@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:feather_fletching",
+  "from_fingerprint": "6b96d63d6496f0c00e7c2cd8e8fa8e893df8fb88067dbf5d5359e9b037bb4210",
+  "to_fingerprint": "c591d73bf8457e46bdb2b3c592f6b1ed178edf91bc21e86b959389447d9d269e"
+}

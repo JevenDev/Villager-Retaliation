@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:shared_table",
+  "from_fingerprint": "5bbc9e8d0b4491bd6bf01398da9b037b8838ef20af03339b65954dfe1a1feb36",
+  "to_fingerprint": "9bbbe13938ae0bc8f17c3dea7b513e823a248d990723990417f9ce79568d4d98"
+}

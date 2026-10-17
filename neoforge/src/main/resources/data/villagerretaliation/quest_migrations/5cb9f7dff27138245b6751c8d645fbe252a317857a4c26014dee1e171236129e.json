@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:ink_and_bearings",
+  "from_fingerprint": "f6fe6a95c98e5d112e3e6ff7d0244313121487048fc8365b7e908c1baed690a1",
+  "to_fingerprint": "772ce77fb9dff20e9c078a2708eab94e8e86f7c4fcf9e5c99fad4eccca0ea574"
+}

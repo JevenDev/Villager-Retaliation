@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:locations",
   "localization_prefix": "campaign_fixture.quest.locations",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:locations"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager"
@@ -46,9 +39,6 @@
           "required": true
         }
       ],
-      "next": {
-        "stage": "report"
-      },
       "dialogue": {
         "offer": {
           "request": "question",
@@ -82,6 +72,9 @@
             "key": "#reminder.lines"
           }
         }
+      },
+      "transition": {
+        "stage": "report"
       }
     },
     {
@@ -113,5 +106,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:locations",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

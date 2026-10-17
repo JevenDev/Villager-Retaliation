@@ -86,6 +86,7 @@
     "WorkAtPoiMixin"
   ],
   "client": [
+    "client.CreateWorldCampaignMixin",
     "client.DialogueCameraMixin",
     "client.DialogueCameraGuiMixin",
     "client.DialogueCameraRegionMixin",

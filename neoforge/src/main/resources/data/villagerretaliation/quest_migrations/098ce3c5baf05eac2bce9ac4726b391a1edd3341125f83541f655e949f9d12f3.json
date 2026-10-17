@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:pearl_lessons",
+  "from_fingerprint": "98c70c2d07aad8d19d8d130393b3298ddcc1b3c8c31f0e26b85578bc822f08cb",
+  "to_fingerprint": "ad7595015445cf212e44d7464fb3da44a84731ad7188f9eb7edf0edee8a9391e"
+}

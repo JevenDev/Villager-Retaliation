@@ -31,7 +31,7 @@ function testLinearTemplate() {
   assert.equal(model.questFilePath(quest), "data/example_pack/quests/village_errands/a_helping_hand/quest.json");
   assert.deepEqual(model.validateQuest(quest, registryMetadata), []);
   const bundle = model.questBundleFiles(quest);
-  assert.equal(bundle.quest.metadata.title.key, "#metadata.title");
+  assert.equal(bundle.quest.display.title.key, "#metadata.title");
   assert.equal(bundle.locale.messages["example_pack.quest.a_helping_hand.metadata.title"].lines[0], "A Helping Hand");
 }
 

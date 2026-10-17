@@ -11,9 +11,6 @@
   "entry_stage": "answer_the_eye",
   "id": "villagerretaliation:eye_before_dawn",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "parent": "villagerretaliation:nether_candle",
     "questline": "last_ember",
     "tags": [
@@ -28,10 +25,7 @@
       "commitment.standard",
       "theme.exploration",
       "theme.mystery"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -55,10 +49,10 @@
     "experience": 320,
     "gossip_reputation": 6,
     "loot_table": "villagerretaliation:quest/eye_before_dawn",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 16
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -81,7 +75,6 @@
               "label": {
                 "key": "#stage.answer_the_eye.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -91,14 +84,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.answer_the_eye.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -108,7 +103,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -139,7 +137,6 @@
               "label": {
                 "key": "#stage.answer_the_eye.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -149,14 +146,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.answer_the_eye.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -166,7 +165,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -184,7 +186,6 @@
         }
       },
       "id": "answer_the_eye",
-      "next": "steady_hands",
       "objectives": [
         {
           "count": 3,
@@ -292,12 +293,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.answer_the_eye.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "steady_hands"
       }
     },
     {
@@ -320,7 +324,6 @@
               "label": {
                 "key": "#stage.steady_hands.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -330,14 +333,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.steady_hands.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -347,7 +352,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -365,7 +373,6 @@
         }
       },
       "id": "steady_hands",
-      "next": "return",
       "objectives": [
         {
           "count": 1,
@@ -420,12 +427,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.9,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.steady_hands.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -445,7 +455,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -455,14 +464,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -472,7 +483,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -533,7 +547,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -542,12 +556,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.last_ember.eye_before_dawn",
+  "display": {
     "color": "#7B4AB0",
     "icon": "minecraft:ender_eye",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.last_ember.eye_before_dawn"
+  }
 }

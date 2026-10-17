@@ -12,10 +12,6 @@
   "entry_stage": "survey",
   "id": "villagerretaliation:eye_of_the_last_room",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.cartographers_atlas.eye_of_the_last_room.description",
     "parent": "villagerretaliation:nether_meridian",
     "questline": "cartographers_atlas",
     "tags": [
@@ -30,11 +26,7 @@
       "difficulty.hard",
       "commitment.expedition",
       "theme.exploration"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.cartographers_atlas.eye_of_the_last_room.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -54,10 +46,10 @@
     "experience": 620,
     "gossip_reputation": 14,
     "loot_table": "villagerretaliation:quest/eye_of_the_last_room",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 28
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -81,7 +73,6 @@
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -91,14 +82,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.survey.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -108,7 +101,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -140,7 +136,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -150,7 +145,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -158,7 +156,6 @@
                 "key": "#stage.survey.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -168,7 +165,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -186,7 +186,6 @@
         }
       },
       "id": "survey",
-      "next": "return",
       "objectives": [
         {
           "discovery_radius": 192,
@@ -315,7 +314,7 @@
           "id": "start_quest"
         }
       ],
-      "ui": {
+      "display": {
         "placeholders": {
           "target_x": "target.x",
           "target_z": "target.z"
@@ -325,6 +324,9 @@
         "tracker_text": {
           "key": "#stage.survey.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -344,7 +346,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -354,14 +355,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -371,7 +374,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -435,7 +441,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -444,11 +450,16 @@
       }
     }
   ],
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.cartographers_atlas.eye_of_the_last_room",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title"
-  },
-  "localization_prefix": "quest.cartographers_atlas.eye_of_the_last_room"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

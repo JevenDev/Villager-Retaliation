@@ -69,7 +69,7 @@ public final class QuestBundleArchitectureGameTests {
         helper.assertValueEqual(absolute.expand(PREFIX), "examplemod.shared.title", "absolute ID changed");
 
         JsonObject inline = quest(NS, LINE, SLUG, PREFIX);
-        inline.getAsJsonObject("metadata").addProperty("title", "Inline title");
+        inline.getAsJsonObject("display").addProperty("title", "Inline title");
         helper.assertTrue(!QuestBundleLocalization.validateQuest(inline, PREFIX).valid(),
                 "inline player-facing title accepted");
         JsonObject codec = quest(NS, LINE, SLUG, PREFIX);
@@ -166,7 +166,7 @@ public final class QuestBundleArchitectureGameTests {
         QuestBundleRuntimeMaterializer.Result materializedQuest =
                 QuestBundleRuntimeMaterializer.materialize(localizedBundle);
         helper.assertValueEqual(
-                materializedQuest.quest().getAsJsonObject("metadata").get("title_key").getAsString(),
+                materializedQuest.quest().getAsJsonObject("display").get("title_key").getAsString(),
                 PREFIX + ".title",
                 "quest title reference was not retained as a runtime key");
 
@@ -336,7 +336,7 @@ public final class QuestBundleArchitectureGameTests {
                 "English", "rejected locale lost English fallback");
 
         JsonObject localizedQuest = quest(NS, LINE, SLUG, PREFIX);
-        localizedQuest.getAsJsonObject("metadata").add("description", element("{\"key\":\"#description\"}"));
+        localizedQuest.getAsJsonObject("display").add("description", element("{\"key\":\"#description\"}"));
         List<QuestBundleTransactions.RawResource> localePatch = new ArrayList<>(introduce(
                 0, "base", NS, LINE, SLUG, localizedQuest,
                 locale(Map.of(
@@ -412,7 +412,8 @@ public final class QuestBundleArchitectureGameTests {
         crossOwner.add(raw(0, "base", NS, scenePath("road", "alpha", "private"),
                 definition("examplemod:private_scene")));
         JsonObject beta = quest(NS, "road", "beta", "examplemod.quest.beta");
-        beta.addProperty("scene", "examplemod:private_scene");
+        beta.getAsJsonArray("stages").get(0).getAsJsonObject().add("on_enter",
+                element("[{\"type\":\"start_scene\",\"scene\":\"examplemod:private_scene\"}]"));
         crossOwner.addAll(introduce(0, "base", NS, "road", "beta", beta,
                 locale("examplemod.quest.beta.title", "Beta")));
         QuestBundleTransactions.Result privateReference = compile(crossOwner);
@@ -430,7 +431,8 @@ public final class QuestBundleArchitectureGameTests {
                 0, "base", NS, "road", "beta", quest(NS, "road", "beta", "examplemod.quest.beta"),
                 locale("examplemod.quest.beta.title", "Lower Beta")));
         JsonObject invalidBetaOverride = quest(NS, "road", "beta", "examplemod.quest.beta");
-        invalidBetaOverride.addProperty("scene", "examplemod:private_scene");
+        invalidBetaOverride.getAsJsonArray("stages").get(0).getAsJsonObject().add("on_enter",
+                element("[{\"type\":\"start_scene\",\"scene\":\"examplemod:private_scene\"}]"));
         layeredCrossOwner.add(raw(
                 1, "patch", NS, questPath("road", "beta"), invalidBetaOverride));
         QuestBundleTransactions.Result layeredPrivateReference = compile(layeredCrossOwner);
@@ -438,7 +440,7 @@ public final class QuestBundleArchitectureGameTests {
                 layeredPrivateReference.bundles().get(owner("road", "beta"));
         helper.assertTrue(retainedBeta != null
                         && !retainedBeta.definitions().get(QuestBundlePath.Kind.QUEST)
-                                .get(id("examplemod:beta")).has("scene"),
+                                .get(id("examplemod:beta")).getAsJsonArray("stages").get(0).getAsJsonObject().has("on_enter"),
                 "cross-owner override did not retain the lower structural bundle");
         helper.assertValueEqual(
                 retainedBeta.locales().plainText("en_us", "examplemod.quest.beta.title").orElse(""),
@@ -482,7 +484,8 @@ public final class QuestBundleArchitectureGameTests {
         shared.add(raw(0, "base", NS, "quests/_shared/scenes/shared.json",
                 definition("examplemod:shared_scene")));
         JsonObject consumer = quest(NS, LINE, SLUG, PREFIX);
-        consumer.addProperty("scene", "examplemod:shared_scene");
+        consumer.getAsJsonArray("stages").get(0).getAsJsonObject().add("on_enter",
+                element("[{\"type\":\"start_scene\",\"scene\":\"examplemod:shared_scene\"}]"));
         shared.addAll(introduce(0, "base", NS, LINE, SLUG, consumer,
                 locale(PREFIX + ".title", "Alpha")));
         helper.assertTrue(compile(shared).bundles().containsKey(owner(LINE, SLUG)),
@@ -492,23 +495,14 @@ public final class QuestBundleArchitectureGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_bundle_architecture")
     public static void fingerprintsAndSnapshotsPreserveSemanticIdentity(GameTestHelper helper) {
-        JsonObject first = object("""
-                {"schema":"villagerretaliation:quest/v2","id":"examplemod:alpha",
-                 "localization_prefix":"examplemod.quest.alpha",
-                 "metadata":{"questline":"road","title":{"key":"#title"}},
-                 "events":[{"id":"first"},{"id":"second"}]}
-                """);
-        JsonObject objectReordered = object("""
-                {"events":[{"id":"first"},{"id":"second"}],
-                 "metadata":{"title":{"key":"#title"},"questline":"road"},
-                 "localization_prefix":"examplemod.quest.alpha","id":"examplemod:alpha",
-                 "schema":"villagerretaliation:quest/v2"}
-                """);
+        JsonObject first = quest(NS, LINE, SLUG, PREFIX);
+        first.getAsJsonObject("metadata").add("tags", element("[\"first\",\"second\"]"));
+        JsonObject objectReordered = new JsonObject();
+        var keys = new ArrayList<>(first.keySet());
+        java.util.Collections.reverse(keys);
+        keys.forEach(key -> objectReordered.add(key, first.get(key).deepCopy()));
         JsonObject arrayReordered = objectReordered.deepCopy();
-        JsonArray reversed = new JsonArray();
-        reversed.add(object("{\"id\":\"second\"}"));
-        reversed.add(object("{\"id\":\"first\"}"));
-        arrayReordered.add("events", reversed);
+        arrayReordered.getAsJsonObject("metadata").add("tags", element("[\"second\",\"first\"]"));
         QuestBundleTransactions.EffectiveBundle original =
                 compiledBundle(first, locale(PREFIX + ".title", variants("One", "Two")), "first_pack");
         QuestBundleTransactions.EffectiveBundle reordered =
@@ -651,12 +645,15 @@ public final class QuestBundleArchitectureGameTests {
 
     private static JsonObject quest(String namespace, String questline, String slug, String prefix) {
         JsonObject root = new JsonObject();
-        root.addProperty("schema", "villagerretaliation:quest/v2");
+        root.addProperty("schema", "villagerretaliation:quest/v3");
         root.addProperty("id", namespace + ":" + slug);
         root.addProperty("localization_prefix", prefix);
         JsonObject metadata = new JsonObject();
         metadata.addProperty("questline", questline);
-        metadata.add("title", element("{\"key\":\"#title\"}"));
+        root.add("display", object("{\"title\":{\"key\":\"#title\"}}"));
+        root.add("provider", object("{\"type\":\"villagerretaliation:villager\"}"));
+        root.addProperty("entry_stage", "start");
+        root.add("stages", element("[{\"id\":\"start\",\"objectives\":[],\"transition\":{\"complete\":true}}]"));
         root.add("metadata", metadata);
         return root;
     }

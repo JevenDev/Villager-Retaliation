@@ -25,10 +25,6 @@
   ],
   "id": "villagerretaliation:choose_the_horizon",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.cartographers_atlas.choose_the_horizon.description",
     "parent": "villagerretaliation:the_atlas_test",
     "questline": "cartographers_atlas",
     "tags": [
@@ -44,11 +40,7 @@
       "theme.exploration",
       "feature.branching",
       "feature.scene"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.cartographers_atlas.choose_the_horizon.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -68,10 +60,10 @@
     "experience": 220,
     "gossip_reputation": 6,
     "loot_table": "villagerretaliation:quest/choose_the_horizon",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 14
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -207,7 +199,6 @@
               "label": {
                 "key": "#stage.started.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -217,7 +208,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -249,7 +243,6 @@
                 "key": "#stage.started.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -259,7 +252,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -267,7 +263,6 @@
                 "key": "#stage.started.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -277,7 +272,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -369,7 +367,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.45,
         "show_progress": true,
         "tracker_text": {
@@ -400,7 +398,6 @@
                 "key": "#stage.coast_final.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -410,7 +407,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -418,7 +418,6 @@
                 "key": "#stage.coast_final.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -428,7 +427,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -446,7 +448,6 @@
         }
       },
       "id": "coast_final",
-      "next": "coast_chosen",
       "objectives": [
         {
           "consume": false,
@@ -535,12 +536,15 @@
           "id": "reminder_details"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.85,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.coast_final.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "coast_chosen"
       }
     },
     {
@@ -566,7 +570,6 @@
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -576,7 +579,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -584,7 +590,6 @@
                 "key": "#stage.dark_roof_final.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -594,7 +599,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -612,7 +620,6 @@
         }
       },
       "id": "dark_roof_final",
-      "next": "dark_roof_chosen",
       "objectives": [
         {
           "consume": false,
@@ -701,12 +708,15 @@
           "id": "reminder_details"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.9,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.dark_roof_final.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "dark_roof_chosen"
       }
     },
     {
@@ -726,7 +736,6 @@
               "label": {
                 "key": "#stage.coast_chosen.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_coast",
               "exchanges": [
                 {
                   "speaker": {
@@ -736,14 +745,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_coast"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.coast_chosen.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -753,7 +764,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -815,7 +829,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -840,7 +854,6 @@
               "label": {
                 "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_dark_roof",
               "exchanges": [
                 {
                   "speaker": {
@@ -850,14 +863,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_dark_roof"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.dark_roof_chosen.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -867,7 +882,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -929,7 +947,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -938,11 +956,16 @@
       }
     }
   ],
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.cartographers_atlas.choose_the_horizon",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.cartographers_atlas.choose_the_horizon.tracker.title"
-  },
-  "localization_prefix": "quest.cartographers_atlas.choose_the_horizon"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

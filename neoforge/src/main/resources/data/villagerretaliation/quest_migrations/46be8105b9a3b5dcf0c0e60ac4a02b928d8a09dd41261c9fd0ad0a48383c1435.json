@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:iron_road",
+  "from_fingerprint": "bd8994963b94ab253c36e6e7e23b0e71713a132faffb50939d97285470be0f85",
+  "to_fingerprint": "b22c43e08fa7a4b0383666a910349f091b2b7f51a5c2e13ceace447d4a9c3033"
+}

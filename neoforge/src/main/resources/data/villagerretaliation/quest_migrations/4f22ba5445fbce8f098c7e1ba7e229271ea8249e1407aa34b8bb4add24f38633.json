@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:bottle_stock",
+  "from_fingerprint": "ef9cceb6ed952c127fc253705538433b9eef20c48c769dc3d1f4c4a6744c3314",
+  "to_fingerprint": "1c664aa0e0aa48da675cafb9c821c196febd217685391189f6075bdbf26fc007"
+}

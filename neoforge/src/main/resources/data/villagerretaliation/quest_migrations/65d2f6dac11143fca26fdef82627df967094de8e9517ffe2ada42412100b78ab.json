@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:apiary_smoke",
+  "from_fingerprint": "47a2aa5a049048af43bf6995fa7df7bb6196c2ee14930a61adc5f068d5c3e0d2",
+  "to_fingerprint": "41e8aef6b4dab3f159c58f104fbe4e34ed53a323410ac3bbb81a5278177ca51a"
+}

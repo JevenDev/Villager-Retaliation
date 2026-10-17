@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:copper_weather",
+  "from_fingerprint": "c9ae0e5648fa92d4d324ce1e11d6d32c7a94adfc41cd951b6b8b9ceb130088ce",
+  "to_fingerprint": "8aaa67ec4141d71b71f49cb5cf0574f5d2eb204c4cb2aaebd69330fc2398950e"
+}

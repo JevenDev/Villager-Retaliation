@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_courier",
+  "from_fingerprint": "c77cd8a0dad0af62bec2505ca484b28cb2a2ae936b6b3b5de5aa4a5346ded3ef",
+  "to_fingerprint": "5b0063011e396bd1602b603f75e5e3e200fa0c69e52262271a13002a8aed6d53"
+}

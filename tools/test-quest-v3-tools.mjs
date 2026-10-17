@@ -1,0 +1,76 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { readFile, readdir, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import { validateContentSchema } from "./content-schema-validation.mjs";
+const { V2, V3, migrate, runtime } = createRequire(import.meta.url)("./quest-v3-format.js");
+const schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const original = {
+  schema: V2, id: "test:delivery", localization_prefix: "test.quest.delivery",
+  metadata: { questline: "village", title: { key: "#title" }, title_key: "test.quest.delivery.title", campaign: "test:story", revision: 4 },
+  ui: { title: { key: "#tracker" } }, provider: { type: "villagerretaliation:villager", capabilities: ["inventory"] },
+  entry_stage: "first", stages: [{ id: "first", objectives: [{ id: "paper", type: "item_check", item: "minecraft:paper", count: 2 }],
+    completion_mode: "all", entry_actions: [{ type: "experience", amount: 1 }], next: { complete: true } }]
+};
+const sourceCopy = structuredClone(original);
+const converted = migrate(original);
+assert.deepEqual(original, sourceCopy, "migration must not mutate input");
+assert.equal(converted.id, original.id);
+assert.equal(converted.localization_prefix, original.localization_prefix);
+assert.equal(converted.revision, 4);
+assert.equal(converted.story_arc, "test:story");
+assert.equal(converted.stages[0].objectives[0].id, "paper");
+assert.deepEqual(converted.display, { tracker_title: { key: "#tracker" }, title: { key: "#title" } });
+assert.deepEqual(converted.stages[0].transition, { complete: true });
+assert.deepEqual(runtime(converted).metadata.campaign, "test:story");
+assert.deepEqual(runtime(converted).ui.title, { key: "#tracker" });
+assert.throws(() => migrate({ ...original, stages: [{ ...original.stages[0], on_enter: [] }] }), /Conflicting/);
+assert.throws(() => migrate({ ...original, schema: V3 }), /Expected/);
+assert(validateContentSchema({ ...converted, ui: {} }, schema).some(issue => issue.pointer === "/ui"));
+assert(validateContentSchema({ ...converted, world_campaign: "bad id" }, schema).length > 0);
+let count = 0;
+async function scan(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) await scan(file);
+    else if (entry.name === "quest.json") {
+      const quest = JSON.parse(await readFile(file, "utf8"));
+      if (quest.schema !== V3) continue;
+      assert.deepEqual(validateContentSchema(quest, schema), [], file);
+      count++;
+    }
+  }
+}
+await scan(fileURLToPath(new URL("../neoforge/src/main/resources/data", import.meta.url)));
+assert(count >= 99);
+const directory = await mkdtemp(path.join(tmpdir(), "quest-v3-"));
+try {
+  const input = path.join(directory, "input");
+  const output = path.join(directory, "output");
+  await mkdir(input);
+  const valid = structuredClone(original);
+  delete valid.provider.capabilities;
+  const content = JSON.stringify(valid);
+  const questPath = path.join("data", "test", "quests", "village", "delivery", "quest.json");
+  await mkdir(path.dirname(path.join(input, questPath)), { recursive: true });
+  await writeFile(path.join(input, questPath), content);
+  await writeFile(path.join(input, "icon.png"), new Uint8Array([1, 2, 3]));
+  const command = path.resolve("tools/migrate-quest-v2-to-v3.mjs");
+  const check = spawnSync(process.execPath, [command, input, "--check"], { encoding: "utf8" });
+  assert.equal(check.status, 0, check.stderr);
+  const run = spawnSync(process.execPath, [command, input, "--out-dir", output], { encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(await readFile(path.join(input, questPath), "utf8"), content);
+  assert.equal(JSON.parse(await readFile(path.join(output, questPath), "utf8")).schema, V3);
+  const receipts = await readdir(path.join(output, "data", "test", "quest_migrations"));
+  assert.equal(receipts.length, 1, "migration writes a reward recovery receipt");
+  const receipt = JSON.parse(await readFile(path.join(output, "data", "test", "quest_migrations", receipts[0]), "utf8"));
+  assert.equal(receipt.quest, valid.id);
+  assert.notEqual(receipt.from_fingerprint, receipt.to_fingerprint);
+  assert.deepEqual(await readFile(path.join(output, "icon.png")), Buffer.from([1, 2, 3]));
+  assert.notEqual(spawnSync(process.execPath, [command, input, "--out-dir", output]).status, 0);
+} finally { await rm(directory, { recursive: true, force: true }); }
+console.log(`Quest V3 migration checks and ${count} built-in schema checks passed.`);

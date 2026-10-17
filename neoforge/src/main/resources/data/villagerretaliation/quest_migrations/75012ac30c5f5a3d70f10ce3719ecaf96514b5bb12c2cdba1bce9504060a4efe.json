@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:pond_restock",
+  "from_fingerprint": "a87e281552e630a5c4581b052f814ca24b6f739eb29fb361dcc6828aa8a82dec",
+  "to_fingerprint": "17e62203cb384e9f4d73915936d94958b1425016367d95323b2d101ace5592df"
+}

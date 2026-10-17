@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:empty_sky",
+  "from_fingerprint": "c6aacda2fb435cdac76d6160118e852b9676a08f216d55931211f5cbf6b89a90",
+  "to_fingerprint": "24c1bd3c1cebbd703dc51d5309c238f8d6581658a35b3b56c553c7fbd13366dd"
+}

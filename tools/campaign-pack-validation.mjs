@@ -1,4 +1,6 @@
 import path from "node:path";
+import { readFileSync } from "node:fs";
+const questV3Schema = JSON.parse(readFileSync(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
 import { validateContentSchema } from "./content-schema-validation.mjs";
 import { validateCampaign } from "./campaign-validation.mjs";
 import { validateStandingReferences } from "./campaign-standing-validation.mjs";
@@ -41,7 +43,7 @@ export function validateCampaignPack(file, root, resources, schemas) {
   for (const resource of resources) {
     const local = namespacePath(resource);
     const kind = resource.data?.schema;
-    if (kind === "villagerretaliation:quest/v2" && /^[a-z0-9_.-]+\/quests\/[a-z0-9_.-]+\/[a-z0-9_.-]+\/quest\.json$/.test(local)) {
+    if (["villagerretaliation:quest/v2", "villagerretaliation:quest/v3"].includes(kind) && /^[a-z0-9_.-]+\/quests\/[a-z0-9_.-]+\/[a-z0-9_.-]+\/quest\.json$/.test(local)) {
       const prior = quests.get(resource.data.id);
       if (prior) issue(resource.file, "/id", "duplicate quest id also defined in " + prior.file);
       else quests.set(resource.data.id, resource);
@@ -95,7 +97,7 @@ export function validateCampaignPack(file, root, resources, schemas) {
   const selectedQuests = root.quest_bundles.map(id => quests.get(id)).filter(Boolean);
   const validQuests = new Map();
   for (const resource of selectedQuests) {
-    const problems = validateContentSchema(resource.data, schemas.quest);
+    const problems = validateContentSchema(resource.data, resource.data.schema === "villagerretaliation:quest/v3" ? questV3Schema : schemas.quest);
     problems.forEach(problem => issue(resource.file, problem.pointer, problem.message));
     if (!problems.length) validQuests.set(resource.data.id, resource.data);
   }

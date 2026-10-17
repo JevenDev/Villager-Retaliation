@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_fishing",
+  "from_fingerprint": "72130d88b837c32cad121e3bdc77b4a0b49112da5ffb4c3b88a3bc7bffe80f9c",
+  "to_fingerprint": "3e35125aa2cf64780ab173e5684440fce5e612cfcbe2d8bf195306542cc19f79"
+}

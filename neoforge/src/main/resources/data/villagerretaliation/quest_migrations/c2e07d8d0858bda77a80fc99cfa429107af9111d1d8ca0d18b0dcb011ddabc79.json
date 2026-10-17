@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:canal_beds",
+  "from_fingerprint": "54f080ce4a7e9fdf3d4463d2f48777fad3ae77c54ab72c8b5f5d0ff9b2a20409",
+  "to_fingerprint": "6ea7bdd2dfdc3965444ce8372968c012783030d840dee615fcd545de9ee3cd10"
+}

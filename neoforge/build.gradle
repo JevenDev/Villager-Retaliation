@@ -38,6 +38,7 @@ def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse('
 def campaignScenarioPack = rootProject.file(providers.gradleProperty('campaignScenarioPack').orElse('neoforge/src/gameTest/resources/campaign_fixture').get())
 def campaignScenarioReports = layout.buildDirectory.dir("campaign-scenario-reports/${System.currentTimeMillis()}")
 def campaignConversationMultiplayerDirectory = layout.buildDirectory.dir("campaign-conversation-multiplayer/${System.currentTimeMillis()}")
+def campaignSelectionClientSmokeDirectory = layout.buildDirectory.dir("campaign-selection-client-smoke/${System.currentTimeMillis()}")
 def authoringEditorClientSmokeDirectory = layout.buildDirectory.dir("authoring-editor-client-smoke/${System.currentTimeMillis()}")
 def animationClientSmokeDirectory = layout.buildDirectory.dir("animation-client-smoke/${System.currentTimeMillis()}")
 def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
@@ -65,6 +66,14 @@ neoForge {
     runs {
         client {
             client()
+        }
+
+        campaignSelectionClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(campaignSelectionClientSmokeDirectory)
+            systemProperty 'villagerretaliation.campaignSelectionClientSmoke', campaignSelectionClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--width', '1280', '--height', '800'
         }
 
         animationClientSmoke {
@@ -595,6 +604,20 @@ tasks.register('gameTest') {
     onlyIf { !skipGameTests.get() }
 }
 
+tasks.named('runCampaignSelectionClientSmoke') {
+    doFirst {
+        def directory = campaignSelectionClientSmokeDirectory.get().asFile
+        directory.mkdirs()
+        new File(directory, 'options.txt').text =
+                'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
+    }
+    doLast {
+        def result = new File(campaignSelectionClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Campaign selection client smoke passed'))
+            throw new GradleException("Campaign selection checks did not finish. Inspect ${campaignSelectionClientSmokeDirectory.get().asFile}")
+    }
+}
+
 tasks.register('verifyAuthoring', JavaExec) {
     group = 'verification'
     description = 'Runs authoring regressions without launching a Minecraft client or server.'
@@ -619,6 +642,15 @@ tasks.register('generateQuestV2Schema', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.quest.schema.v2.QuestV2SchemaTool'
     args rootProject.file('tools/datapack-builder/quest-v2.schema.json').absolutePath
+}
+
+tasks.register('generateQuestV3Schema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the Quest V3 JSON Schema.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema'
+    args rootProject.file('tools/datapack-builder/quest-v3.schema.json').absolutePath
 }
 
 tasks.register('generateCampaignSchema', JavaExec) {

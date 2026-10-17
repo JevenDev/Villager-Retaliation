@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:bread_delivery",
+  "from_fingerprint": "5662fca963c43eefb00e7f2e8c46dec510ecad73c5522d94a75ea31d067b0885",
+  "to_fingerprint": "b16182e3698ec80205709086d634c90e82964bf54ab92737d8c204a6fc79f24a"
+}

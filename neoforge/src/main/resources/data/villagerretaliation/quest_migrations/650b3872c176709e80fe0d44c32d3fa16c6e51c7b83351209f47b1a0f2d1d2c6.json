@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:below_the_bell",
+  "from_fingerprint": "62cadc6674eb653a2832a0c7473c103b5d64c69aeda26bce12d96f91802dc539",
+  "to_fingerprint": "525d468c2287d11412fa7bb53141423bbe734ab7e1f9c28ac37b27bc869c3d0d"
+}

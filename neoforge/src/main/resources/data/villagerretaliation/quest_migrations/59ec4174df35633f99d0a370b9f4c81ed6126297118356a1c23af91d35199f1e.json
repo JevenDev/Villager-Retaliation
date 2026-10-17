@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:bell_rope",
+  "from_fingerprint": "cb07be1e133fecbcbc58ebcc0d10d4e84f8d74df32e40725deecb737915974d4",
+  "to_fingerprint": "644e01986a642a75757e51b71555899ae7e9af788d267c5f3e31d2b7176cbf1e"
+}

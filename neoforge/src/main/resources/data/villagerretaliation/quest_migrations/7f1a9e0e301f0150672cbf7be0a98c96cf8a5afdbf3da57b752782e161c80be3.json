@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:echo_trade",
+  "from_fingerprint": "05cf14cb8c573b2db4c749b802332f841c2604e2b5c249e78d2f8fd3fddc8e9a",
+  "to_fingerprint": "d5992af836341669115e4a1eaf2a0545de8c17d86272b1169f082cdc0b23fd6d"
+}

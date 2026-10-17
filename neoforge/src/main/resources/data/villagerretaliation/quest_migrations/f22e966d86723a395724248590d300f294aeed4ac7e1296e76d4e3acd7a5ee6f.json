@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:ink_supply",
+  "from_fingerprint": "5757212f23083e141de939fa695e854b7acbd3c1552e54c531dd119eff670faf",
+  "to_fingerprint": "9d993c1cc9bb442f01d190f30fe034e22428f148666df2aef1ae93db41663384"
+}

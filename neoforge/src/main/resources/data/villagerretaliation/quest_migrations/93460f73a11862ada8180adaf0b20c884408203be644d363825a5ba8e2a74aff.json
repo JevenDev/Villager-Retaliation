@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:chorus_trail",
+  "from_fingerprint": "98fae282dca7f9440cc75e6d7f97d43475efabe91ef2ea00852e10aa68229134",
+  "to_fingerprint": "f68d40c5ccda98a3bb4bff98b5dab3054ffe06a48c105e7a545a2ed1135178bb"
+}

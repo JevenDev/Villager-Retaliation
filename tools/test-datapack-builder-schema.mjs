@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import { createRequire } from "node:module";
+const questV3Format = createRequire(import.meta.url)("./quest-v3-format.js");
 
 function stubElement() {
   return {
@@ -118,7 +120,8 @@ function createAppHarness() {
   };
   context.globalThis = context;
 
-  const source = `${fs.readFileSync("tools/quest-builder/quest-model.js", "utf8")}
+  const source = `${fs.readFileSync("tools/quest-v3-format.js", "utf8")}
+${fs.readFileSync("tools/quest-builder/quest-model.js", "utf8")}
 ${fs.readFileSync("tools/datapack-builder/backend.js", "utf8")}
 ${fs.readFileSync("tools/datapack-builder/app.js", "utf8")}
 globalThis.__test = {
@@ -474,10 +477,14 @@ function testAdvancedQuestRoundTrip(app) {
   const exportedQuest = jsonFile(files, questPath);
   const locale = jsonFile(files, localePath);
   const materialized = app.questModel.materializeLocalizedDefinition(exportedQuest, exportedQuest.localization_prefix, locale.messages);
-  assert(JSON.stringify(canonicalJson(materialized)) === JSON.stringify(canonicalJson(quest)), "Advanced quest fields changed during builder round trip.");
+  assert(JSON.stringify(canonicalJson(materialized)) === JSON.stringify(canonicalJson(questV3Format.migrate(quest))), "Advanced quest fields changed during builder round trip.");
   assert(JSON.stringify(canonicalJson(jsonFile(files, poolPath))) === JSON.stringify(canonicalJson(pool)), "Quest pool fields changed during builder round trip.");
+  app.state = app.createInitialState();
+  app.backend.ingestFiles(app.state, { [questPath]: files[questPath], [localePath]: files[localePath] });
+  assert(app.state.quests.modules[0].metadata.revision === 3, "V3 import must preserve revision in the editing model.");
+  assert(app.state.quests.modules[0].metadata.title === quest.metadata.title, "V3 import must preserve the editable title.");
   assert(app.applyEditedFile(questPath, JSON.stringify({ ...quest, metadata: { ...quest.metadata, revision: 4 } })), "Advanced quest edit failed.");
-  assert(jsonFile(app.generatedFiles(), questPath).metadata.revision === 4, "Edited quest revision was not exported.");
+  assert(jsonFile(app.generatedFiles(), questPath).revision === 4, "Edited quest revision was not exported.");
 }
 
 function testCanonicalQuestBundleImport(app) {
@@ -526,8 +533,8 @@ function testCanonicalQuestBundleImport(app) {
     exportedQuest.localization_prefix,
     exportedLocale.messages
   );
-  assert(materialized.metadata.title === imported.metadata.title, "Canonical quest title changed during import/export.");
-  assert(materialized.stages[0].ui.tracker_text === imported.stages[0].ui.tracker_text,
+  assert(materialized.display.title === imported.metadata.title, "Canonical quest title changed during import/export.");
+  assert(materialized.stages[0].display.tracker_text === imported.stages[0].ui.tracker_text,
     "Canonical quest tracker changed during import/export.");
 }
 

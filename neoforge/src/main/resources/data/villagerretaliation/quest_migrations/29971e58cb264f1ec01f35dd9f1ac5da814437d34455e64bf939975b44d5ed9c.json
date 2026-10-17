@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:map_paper",
+  "from_fingerprint": "a79ee7ee936aaf1ed381fddaa59c9a05feca78379cdc4f5cbd5db0beedeed48a",
+  "to_fingerprint": "aad2f8d029cae48dbd6796e58ac1932e8c85341031a7a4f75a62954bcea249e4"
+}

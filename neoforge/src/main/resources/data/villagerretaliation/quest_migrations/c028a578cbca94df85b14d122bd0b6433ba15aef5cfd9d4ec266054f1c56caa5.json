@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:through_fire",
+  "from_fingerprint": "9933af1b75c3a0b060e0d9a2be89061a99cc279d491bcf50794cdf6c2d7d83f7",
+  "to_fingerprint": "70af25f361bc5dc4740837ad0afe3ec020645c50d2dabfa619af46f3f22d4056"
+}

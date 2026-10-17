@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:trial_chamber_recall",
+  "from_fingerprint": "b4c20ffe18f887f2954a866c75f05671706ed403450fb38e79f251ff469829ef",
+  "to_fingerprint": "d92f79c8bdda36ecfe5284af8b70b1b23bfec62d4e75c2d4c604b1107f8597fa"
+}

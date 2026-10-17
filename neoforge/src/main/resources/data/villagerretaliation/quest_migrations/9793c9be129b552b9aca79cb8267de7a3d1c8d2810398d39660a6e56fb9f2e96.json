@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clay_repairs",
+  "from_fingerprint": "d9860fcef476aa748b71bca1f389ce2df19826c49cc2aec134e0589d92d43e25",
+  "to_fingerprint": "bccaae2842c7d6abd252a62c297e6b89f3097c1daeed61f71c35fcdfd8073d26"
+}

@@ -11,9 +11,6 @@
   "entry_stage": "choose",
   "id": "villagerretaliation:choose_the_soil",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "parent": "villagerretaliation:new_furrows",
     "questline": "green_thumb",
     "tags": [
@@ -29,10 +26,7 @@
       "commitment.standard",
       "theme.community",
       "feature.branching"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -52,10 +46,10 @@
     "experience": 125,
     "gossip_reputation": 4,
     "loot_table": "villagerretaliation:quest/choose_the_soil",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 10
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -169,7 +163,6 @@
               "label": {
                 "key": "#stage.choose.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -179,7 +172,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -211,7 +207,6 @@
                 "key": "#stage.choose.dialogue.reminder.response.details.label"
               },
               "order": -10,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -221,7 +216,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "actions": [
@@ -320,7 +318,6 @@
               "label": {
                 "key": "#stage.choose.dialogue.reminder.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -330,7 +327,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -405,7 +405,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.2,
         "show_progress": true,
         "tracker_text": {
@@ -434,7 +434,6 @@
               "label": {
                 "key": "#stage.canal_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -444,14 +443,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.canal_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -461,7 +462,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -479,7 +483,6 @@
         }
       },
       "id": "canal_work",
-      "next": "canal_return",
       "objectives": [
         {
           "block": "minecraft:stone_bricks",
@@ -551,12 +554,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.canal_work.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "canal_return"
       }
     },
     {
@@ -576,7 +582,6 @@
               "label": {
                 "key": "#stage.canal_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route",
               "exchanges": [
                 {
                   "speaker": {
@@ -586,14 +591,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_route"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.canal_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -603,7 +610,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -664,7 +674,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -693,7 +703,6 @@
               "label": {
                 "key": "#stage.compost_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -703,14 +712,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.compost_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -720,7 +731,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -738,7 +752,6 @@
         }
       },
       "id": "compost_work",
-      "next": "compost_return",
       "objectives": [
         {
           "block": "minecraft:composter",
@@ -809,12 +822,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.compost_work.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "compost_return"
       }
     },
     {
@@ -834,7 +850,6 @@
               "label": {
                 "key": "#stage.compost_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route",
               "exchanges": [
                 {
                   "speaker": {
@@ -844,14 +859,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_route"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.compost_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -861,7 +878,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -922,7 +942,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -931,12 +951,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.green_thumb.choose_the_soil",
+  "display": {
     "color": "#B884E8",
     "icon": "minecraft:farmland",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.green_thumb.choose_the_soil"
+  }
 }

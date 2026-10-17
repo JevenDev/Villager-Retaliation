@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:variants",
   "localization_prefix": "campaign_fixture.quest.variants",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:variants"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -206,5 +199,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:variants",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

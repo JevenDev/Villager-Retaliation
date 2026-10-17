@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:sun_switch",
+  "from_fingerprint": "f60aa4a9f177e110030ccf764185e1b9f1d83e9ca728e56ae88bf63705ad0915",
+  "to_fingerprint": "34b778f6b60f74017d385f74316f89ac680c5f11a4266f34b50e80420b8d68ed"
+}

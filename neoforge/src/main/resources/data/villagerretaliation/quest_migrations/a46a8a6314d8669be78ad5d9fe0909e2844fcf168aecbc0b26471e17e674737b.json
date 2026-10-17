@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clean_bandages",
+  "from_fingerprint": "745c157ae599f0fd359927422677e06dba8e44495535577d30bbf7c4b8b60f89",
+  "to_fingerprint": "bef512d6a03741e6c2eb3411fead348fe71633f3e1342c5a78b319f6f1b20929"
+}

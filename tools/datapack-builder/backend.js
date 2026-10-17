@@ -529,7 +529,7 @@
     }
 
     function isQuestV2Module(json) {
-      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:quest/v2");
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && ["villagerretaliation:quest/v2", "villagerretaliation:quest/v3"].includes(json.schema));
     }
 
     function isQuestV1Resource(json) {
@@ -552,7 +552,7 @@
     }
 
     function normalizeQuestModuleEntry(json, path) {
-      const entry = stripBuilderFields(json);
+      const entry = stripBuilderFields(questModel.editableQuest(json));
       if (path) entry.__sourcePath = path;
       return entry;
     }

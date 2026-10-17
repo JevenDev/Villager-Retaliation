@@ -12,7 +12,7 @@ export function validateStandingReferences(root, context) {
         const action = Object.hasOwn(value, "amount") || Object.hasOwn(value, "operation_id");
         const questId = value.quest ?? value.quest_id ?? context.quest;
         const quest = context.quests?.get(questId);
-        const campaignId = action ? quest?.metadata?.campaign ?? (questId === context.quest ? context.campaign?.id : undefined) : value.campaign;
+        const campaignId = action ? (quest?.story_arc ?? quest?.metadata?.campaign) ?? (questId === context.quest ? context.campaign?.id : undefined) : value.campaign;
         const campaign = campaigns.get(campaignId);
         if (!campaign || action && (!Array.isArray(campaign.quest_bundles) || !campaign.quest_bundles.includes(questId))) {
           issue(child(pointer, action ? "quest" : "campaign"), action ? "standing action requires a quest declared by its campaign" : "campaign standing content is unavailable");

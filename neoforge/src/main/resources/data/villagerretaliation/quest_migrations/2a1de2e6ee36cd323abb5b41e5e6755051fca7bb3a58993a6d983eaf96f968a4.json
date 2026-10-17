@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_brewing",
+  "from_fingerprint": "04c3a7010644ce8e4edc38e64a463ce278561e4d45c5ff88c5079c994d2fd9a8",
+  "to_fingerprint": "4b258a15a6bbd432fd7ba8549121b92f07b53de01123f33d8e2ea3efe0d71902"
+}

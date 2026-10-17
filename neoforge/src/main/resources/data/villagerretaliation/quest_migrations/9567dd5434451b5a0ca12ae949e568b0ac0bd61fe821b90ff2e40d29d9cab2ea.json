@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:rich_earth",
+  "from_fingerprint": "6bf8aa2856bd3d17eefb55919fe35abaff839092c2119b58687794080b8eee6a",
+  "to_fingerprint": "45d62eab6829ec9383e17c3f85c52afa7c3b43ba031e38d6fc8a47b96ae06a06"
+}

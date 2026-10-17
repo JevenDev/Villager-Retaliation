@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:compost_turn",
+  "from_fingerprint": "32c449b56875934839254c142bb0f9e131c6f57612ee7a91aca051e5f0678a96",
+  "to_fingerprint": "a1ee5ab8e3afe69400e60598c5ce54397b98e9f7131a3fa37fa2116765669ad5"
+}

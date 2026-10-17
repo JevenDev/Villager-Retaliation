@@ -172,7 +172,7 @@ function validateReferences(root, context, issue) {
 
 export function scenarioContext(resources) {
   const context = { campaigns: new Map(), quests: new Map(), conversations: new Map() };
-  const fields = { "villagerretaliation:campaign/v1": "campaigns", "villagerretaliation:quest/v2": "quests", "villagerretaliation:conversation/v1": "conversations" };
+  const fields = { "villagerretaliation:campaign/v1": "campaigns", "villagerretaliation:quest/v2": "quests", "villagerretaliation:quest/v3": "quests", "villagerretaliation:conversation/v1": "conversations" };
   for (const resource of resources) {
     const field = fields[resource.data?.schema];
     if (field) context[field].set(resource.data.id, resource.data);

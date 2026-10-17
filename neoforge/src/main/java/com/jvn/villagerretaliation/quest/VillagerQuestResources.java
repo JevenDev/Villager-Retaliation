@@ -426,7 +426,7 @@ public final class VillagerQuestResources {
                             source,
                             materialized.quest(),
                             new QuestResourceSource(source, "quest_bundle"))
-                    .ifPresent(envelope -> readV2File(
+                    .ifPresent(envelope -> readV3File(
                             registries, envelope, quests, compiledQuests, sources, dialogueCatalogs));
         }
     }
@@ -435,7 +435,7 @@ public final class VillagerQuestResources {
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, CompiledQuest> compiledQuests) {
         for (CompiledQuest quest : compiledQuests.values()) {
-            if (quest.schemaVersion() != QuestSchemaVersion.V2) {
+            if (quest.schemaVersion() != QuestSchemaVersion.V3) {
                 continue;
             }
             for (int index = 0; index < quest.prerequisites().size(); index++) {
@@ -452,14 +452,20 @@ public final class VillagerQuestResources {
         }
     }
 
-    private static void readV2File(
+    private static void readV3File(
             HolderLookup.Provider registries,
             QuestResourceEnvelope resource,
             Map<ResourceLocation, QuestDefinition> quests,
             Map<ResourceLocation, CompiledQuest> compiledQuests,
             Map<ResourceLocation, ResourceLocation> sources,
             List<QuestDialogueCatalog> dialogueCatalogs) {
-        Optional<QuestV2Resource> parsed = QuestV2Parser.parse(resource);
+        if (resource.schemaVersion() != QuestSchemaVersion.V3) {
+            DatapackDiagnostics.warnSkippedEntry(resource.location(), "quest", "schema",
+                    "Quest V3 is required. Run tools/migrate-quest-v2-to-v3.mjs on this pack.");
+            return;
+        }
+        JsonObject runtime = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(resource.root());
+        Optional<QuestV2Resource> parsed = QuestV2Parser.parse(resource.location(), resource.source(), runtime);
         if (parsed.isEmpty()) {
             return;
         }

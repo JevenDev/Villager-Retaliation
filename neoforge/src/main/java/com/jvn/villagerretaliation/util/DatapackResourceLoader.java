@@ -44,6 +44,11 @@ public final class DatapackResourceLoader {
             MinecraftServer server,
             String root,
             Predicate<ResourceLocation> locationFilter) {
+        if (com.jvn.villagerretaliation.campaign.selection.WorldCampaignResources.supports(root)) {
+            return jsonResourceStacks(server, root).stream().filter(stack -> locationFilter.test(stack.location()))
+                    .filter(stack -> !stack.layersLowToHigh().isEmpty())
+                    .map(stack -> stack.layersLowToHigh().getLast()).toList();
+        }
         return server.getResourceManager()
                 .listResources(root, location -> location.getPath().endsWith(".json") && locationFilter.test(location))
                 .entrySet()
@@ -58,6 +63,9 @@ public final class DatapackResourceLoader {
      * low-to-high priority order; the returned layer index preserves that order.
      */
     public static List<JsonResourceStack> jsonResourceStacks(MinecraftServer server, String root) {
+        if (com.jvn.villagerretaliation.campaign.selection.WorldCampaignResources.supports(root)) {
+            return com.jvn.villagerretaliation.campaign.selection.WorldCampaignResources.stacks(server, root);
+        }
         Map<ResourceLocation, List<Resource>> stacks = server.getResourceManager()
                 .listResourceStacks(root, location -> location.getPath().endsWith(".json"));
         List<JsonResourceStack> result = new ArrayList<>();

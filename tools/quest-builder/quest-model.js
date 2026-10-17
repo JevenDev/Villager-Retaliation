@@ -5,6 +5,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createQuestModel() {
   "use strict";
 
+  const questFormat = typeof module === "object" && module.exports ? require("../quest-v3-format.js") : globalThis.QuestV3Format;
+  const EXPORT_SCHEMA_ID = questFormat.V3;
   const SCHEMA_ID = "villagerretaliation:quest/v2";
   const SCENE_SCHEMA_ID = "villagerretaliation:scene/v1";
   const RESOURCE_LOCATION = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
@@ -12,7 +14,7 @@
   const STORAGE_VERSION = 1;
   const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
   const ALLOWED_FIELDS = {
-    quest: new Set(["schema", "id", "localization_prefix", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "discovery"]),
+    quest: new Set(["schema", "id", "localization_prefix", "world_campaign", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "discovery"]),
     metadata: new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version"]),
     provider: new Set(["type", "required_capabilities", "capabilities", "filters", "data"]),
     availability: new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "prerequisite_cooldown", "prerequisite_cooldown_ticks", "prerequisite_cooldown_days", "prerequisite_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]),
@@ -314,11 +316,19 @@
     const messages = {};
     localizeDefinition(clean, { namespace, prefix, messages, segments: [] });
     return {
-      quest: clean,
+      quest: clean.schema === questFormat.V3 ? clean : questFormat.migrate(clean),
       locale: { schema: "villagerretaliation:quest_locale/v1", messages },
       questPath: questFilePath(clean),
       localePath: questLocaleFilePath(clean)
     };
+  }
+
+  function editableQuest(source) {
+    if (source.schema !== questFormat.V3) return clone(source);
+    const result = questFormat.runtime(source);
+    result.schema = SCHEMA_ID;
+    if (source.world_campaign) result.world_campaign = source.world_campaign;
+    return result;
   }
 
   function sceneBundleFile(scene, namespace = "my_pack") {
@@ -737,6 +747,8 @@
 
   return {
     SCHEMA_ID,
+    EXPORT_SCHEMA_ID,
+    editableQuest,
     SCENE_SCHEMA_ID,
     STORAGE_VERSION,
     OBJECTIVE_LABELS,

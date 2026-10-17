@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:house_of_ill_omens",
+  "from_fingerprint": "cbc9d2a486bfa2c744dc0a4b36cdf8452a77095ecfaa831c2dc8d580b7d0567d",
+  "to_fingerprint": "0c4ffaaeb1b4fe0d17ea5b36326e0131829caf45ccb87e227dc76f1f5ff560be"
+}

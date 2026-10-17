@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:investigation",
   "localization_prefix": "campaign_fixture.quest.investigation",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:investigation"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -40,9 +33,6 @@
           }
         }
       ],
-      "next": {
-        "stage": "report"
-      },
       "dialogue": {
         "offer": {
           "request": "question",
@@ -76,6 +66,9 @@
             "key": "#reminder.lines"
           }
         }
+      },
+      "transition": {
+        "stage": "report"
       }
     },
     {
@@ -107,5 +100,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:investigation",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

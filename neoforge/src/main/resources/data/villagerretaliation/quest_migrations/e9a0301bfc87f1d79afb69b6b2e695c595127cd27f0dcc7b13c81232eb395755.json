@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:spider_silk",
+  "from_fingerprint": "ad41f2541e3099124c706c58418089277edce566e56cbd49e179b9aee9e190e6",
+  "to_fingerprint": "003e73e10afec7c8ca9775a262392b9ccc7cad81ae671ca2fbd5ba0974807bb7"
+}

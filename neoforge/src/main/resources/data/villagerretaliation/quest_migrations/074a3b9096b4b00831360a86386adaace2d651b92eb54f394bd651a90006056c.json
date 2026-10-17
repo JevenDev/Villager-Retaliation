@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:the_broken_milestone",
+  "from_fingerprint": "572aaa954cc1f7fada7ea89cdefda5540bae72977089a7876f7fa3b50341f56e",
+  "to_fingerprint": "3be313e10da6400cec00ac7976be327d917df5976028f072ea8e1788f9277a33"
+}

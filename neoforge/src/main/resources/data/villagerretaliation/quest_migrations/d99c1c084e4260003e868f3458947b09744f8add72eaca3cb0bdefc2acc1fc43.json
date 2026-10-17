@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:end_city_margin",
+  "from_fingerprint": "0ecc6e21d7f6d41030fd72752092260c421d961e8557521c54aa193b825d7180",
+  "to_fingerprint": "044bf5e46cdd94c39348a66fde623a96673f9e45c98e275ae647bea22fb192a1"
+}

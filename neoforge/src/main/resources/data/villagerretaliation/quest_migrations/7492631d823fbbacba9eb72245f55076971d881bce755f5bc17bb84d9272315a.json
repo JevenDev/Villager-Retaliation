@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:seed_stockpile",
+  "from_fingerprint": "17bf7cc7ad63038cbc37d3c9cfc49f8badd5af9c0f024b7bde42544602f6505c",
+  "to_fingerprint": "e83bb48507114b39d4455494e46c8cfe547adbb5dcf43721ed445ca5086f38a1"
+}

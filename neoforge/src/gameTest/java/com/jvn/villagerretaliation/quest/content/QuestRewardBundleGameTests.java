@@ -245,9 +245,11 @@ public final class QuestRewardBundleGameTests {
 
     private static JsonObject quest(String slug, String line, String prefix) {
         return object("""
-                {"schema":"villagerretaliation:quest/v2","id":"villagerretaliation:%s",
+                {"schema":"villagerretaliation:quest/v3","id":"villagerretaliation:%s",
                  "localization_prefix":"%s",
-                 "metadata":{"questline":"%s","title":{"key":"#title"}}}
+                 "metadata":{"questline":"%s"},"display":{"title":{"key":"#title"}},
+                 "provider":{"type":"villagerretaliation:villager"},"entry_stage":"start",
+                 "stages":[{"id":"start","objectives":[],"transition":{"complete":true}}]}
                 """.formatted(slug, prefix, line));
     }
 

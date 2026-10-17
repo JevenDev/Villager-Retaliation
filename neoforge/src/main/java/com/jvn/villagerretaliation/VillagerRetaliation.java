@@ -61,6 +61,7 @@ public class VillagerRetaliation {
         VillagerRetaliationRegistries.registerBuiltIns();
         VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();
+        com.jvn.villagerretaliation.campaign.selection.WorldCampaignConfig.register(modContainer);
         com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
         com.jvn.villagerretaliation.interaction.work.mining.OreNodes.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
@@ -91,6 +92,8 @@ public class VillagerRetaliation {
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterLossService::onServerStopped)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterActivation::onServerTickPost)
                 .listener(com.jvn.villagerretaliation.campaign.CampaignCharacterService::onConversion)
+                .listener(com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection::onServerAboutToStart)
+                .listener(com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection::onServerStopped)
                 .listener(CampaignWorldModeService::onLevelLoad)
                 .listener(CampaignWorldModeService::onServerStarted)
                 .listener(CampaignWorldEventService::onServerTickPost)

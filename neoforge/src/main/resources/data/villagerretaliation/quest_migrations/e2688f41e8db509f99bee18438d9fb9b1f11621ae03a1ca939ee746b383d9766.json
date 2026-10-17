@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:sunken_ledger",
+  "from_fingerprint": "d262393c07cf68a9aac14302429d8c489e6fdee10eeea8575dad85fc8f4073cc",
+  "to_fingerprint": "80fc232f34e44a4b7fb4fec076d11a33783952ab5573536f5bafbbc8deffbee3"
+}

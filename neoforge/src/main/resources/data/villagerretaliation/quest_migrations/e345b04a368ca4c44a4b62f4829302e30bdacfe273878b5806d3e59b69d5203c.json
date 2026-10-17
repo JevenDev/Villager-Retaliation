@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:gilded_debt",
+  "from_fingerprint": "7647057daab0dd1846fceabf9b1f84436ea35698f567d95d0954bca94fbec656",
+  "to_fingerprint": "2c2549ecc59a26869826103b1cd844f3321d08c14faec93e4a5434753cf4a95c"
+}

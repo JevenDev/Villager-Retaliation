@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_farming",
+  "from_fingerprint": "a3209529dc4a477638d6c00fc3b2df107a849aaf6d0801e79f918a114d84a27d",
+  "to_fingerprint": "a79a214e5da4f7a5860caabe5d61f41bcb7dd755d0e8aa9778af6d55183091ce"
+}

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:fortress_line",
+  "from_fingerprint": "43ab00322f42589970ef1a6b0ac6e2950695c0ec038a08b8a96132435a3923f2",
+  "to_fingerprint": "daddffa971aa981eeb16d287de939a2ebe1167e61eb4d543331b8800451694b8"
+}

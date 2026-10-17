@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:ender_freight",
+  "from_fingerprint": "a5b0e238fa476124dacb0f2fb541025ed42ac75d40fac06cbe0fe645665b7f59",
+  "to_fingerprint": "9223a64949731305879322e1136ef4d945028eb86c5c59f160bb5ffce560f02c"
+}

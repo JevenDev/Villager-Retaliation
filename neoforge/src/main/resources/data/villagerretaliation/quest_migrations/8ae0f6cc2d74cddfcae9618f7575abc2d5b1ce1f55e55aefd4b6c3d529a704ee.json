@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:timber_brace",
+  "from_fingerprint": "137ff7513764d7c34003e8d73c0090dcb48051b68153fd9d0c62b65692abacf6",
+  "to_fingerprint": "fd152b8103e8b16772a5864a9bf759b88587cc0ef87848f2e341029d79904305"
+}

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:ocean_glass",
+  "from_fingerprint": "fa739798b609b763ebe138f71acf39094ef0ce458712b46cc9f6490ac3312d37",
+  "to_fingerprint": "47e4b33c059de473b9eacf98e8f6809e11f43dd9138dcc5235dd55c3dd19f4b7"
+}

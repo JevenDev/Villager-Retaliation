@@ -21,6 +21,9 @@ public final class QuestBundleLocalization {
             return new Validation(Set.of(), List.of("quest.json is missing"));
         }
 
+        if (com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.isV3(quest)) {
+            quest = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(quest);
+        }
         rejectExternalStructuralDialogue(quest, errors);
 
         JsonObject metadata = object(quest, "metadata");

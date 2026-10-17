@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:fletchers_countermark",
+  "from_fingerprint": "ef4561423deebd0c482fab2f732cfcb77c85ee5018890867c42a96f48bdb1e62",
+  "to_fingerprint": "bf70d6ae6853b3fec2c820d14ce67ede117aa74b5a3dd0fb06c29b6594d46ec0"
+}

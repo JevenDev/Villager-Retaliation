@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:choose_a_star",
+  "from_fingerprint": "f95b3b547e8b6a765ce7c8b007da0d8a9b358780c0bb24a1df0cea2c07b90ed8",
+  "to_fingerprint": "7fbf7fbc183589c4ec2df73cc60eb82aff733fd04d066a41e8f320899c6112ac"
+}

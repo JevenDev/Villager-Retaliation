@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:roads_that_remember",
+  "from_fingerprint": "b06226131d77b8cb4ee94c9ada044fa866419748f056c97837b5cda0f49bec66",
+  "to_fingerprint": "3682ec868c49f353428dc05521361c17770e61c3fe8908adf3302cf7e33586fd"
+}

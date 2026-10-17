@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:road_mending",
+  "from_fingerprint": "447dc4c48d9b3c9ac197a3705b820e1ef65f5aa9472be73924e7cdeb6675665d",
+  "to_fingerprint": "ce33568d44094fa85b819bfc17698f1936c46fd56338d2bae9137b25f3eafcac"
+}

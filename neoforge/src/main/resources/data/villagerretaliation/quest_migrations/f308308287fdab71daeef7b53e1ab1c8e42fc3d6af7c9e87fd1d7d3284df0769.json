@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:ink_in_the_dark_roof",
+  "from_fingerprint": "d03202f6d4b3f80f991bbe5c42e4de1e50d0d4d903355e0c438bc834e59f7be5",
+  "to_fingerprint": "1d2a467f69a13644dc921ce451bb4f09c0a9dec5260e794e2ba79f14b973ee2c"
+}

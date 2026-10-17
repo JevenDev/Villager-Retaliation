@@ -40,7 +40,7 @@ public final class CampaignCompanionAuthoringGameTests {
                 var parsed = DialogueCondition.readList(ID, name, data);
                 helper.assertValueEqual(parsed.size() == 1 && parsed.getFirst() instanceof DialogueCondition.CampaignCompanion, valid, name + " runtime condition");
                 helper.assertValueEqual(CampaignCompanionFields.issues(data).isEmpty(), valid, name + " scene fields");
-                var quest = CampaignCharacterTestFixture.resource("quests/campaign_fixture/investigation/quest.json");
+                var quest = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(CampaignCharacterTestFixture.resource("quests/campaign_fixture/investigation/quest.json"));
                 quest.getAsJsonObject("availability").add("conditions", conditions);
                 helper.assertValueEqual(QuestJsonSchema.validate(condition, conditionSchema()).isEmpty(), valid, name + " quest condition schema");
                 helper.assertValueEqual(QuestV2Parser.parse(ID, quest).isPresent(), valid, name + " quest parser");

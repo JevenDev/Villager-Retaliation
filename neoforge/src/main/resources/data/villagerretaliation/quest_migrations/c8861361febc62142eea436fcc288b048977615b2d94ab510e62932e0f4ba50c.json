@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:beacon_polish",
+  "from_fingerprint": "52e66363c827c4505adbd3f4883b88908b353c8665eb6a2fba8f85c09d5f5c41",
+  "to_fingerprint": "c39e5fb8cd48a4ab5532c95a2e037167217b200b892927264cd9de729f90a322"
+}

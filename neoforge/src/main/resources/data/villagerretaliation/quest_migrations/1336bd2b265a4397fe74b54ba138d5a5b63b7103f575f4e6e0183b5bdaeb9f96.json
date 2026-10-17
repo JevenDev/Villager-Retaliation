@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:first_fire",
+  "from_fingerprint": "a4a3b02fb726bd5d6d0ed3fe8410207b3db2f41511c90b6e33794b66b2e075d0",
+  "to_fingerprint": "0f0187cf0b63d9eecda2d3c1f17d7ace3e86a25a8798194dfdb0829e71746d58"
+}

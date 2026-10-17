@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:standing",
   "localization_prefix": "campaign_fixture.quest.standing",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:standing"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -25,9 +18,6 @@
   "stages": [
     {
       "id": "talk",
-      "next": {
-        "stage": "report"
-      },
       "objectives": [
         {
           "id": "decision",
@@ -67,6 +57,9 @@
             "key": "#reminder.lines"
           }
         }
+      },
+      "transition": {
+        "stage": "report"
       }
     },
     {
@@ -98,5 +91,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:standing",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

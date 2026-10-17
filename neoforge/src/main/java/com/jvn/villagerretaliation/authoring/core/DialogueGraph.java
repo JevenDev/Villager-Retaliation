@@ -62,8 +62,8 @@ public final class DialogueGraph {
         String label = text(value.get("lines"));
         if (label.isEmpty()) label = text(value.get("exchanges"));
         return new Node(id, pointer, label.isEmpty() ? id : label, entries.contains(id),
-                bool(value, "end") || value.has("outcome") || terminalTransition(value.get("next"))
-                        || (!value.has("responses") && !value.has("next")));
+                bool(value, "end") || value.has("outcome") || terminalTransition(value.get("next")) || terminalTransition(value.get("transition"))
+                        || (!value.has("responses") && !value.has("next") && !value.has("transition")));
     }
 
     private static boolean terminalTransition(JsonElement value) {
@@ -100,11 +100,15 @@ public final class DialogueGraph {
                 }
                 continue;
             }
+            if (document.kind() == DefinitionKind.QUEST && value.has("transition"))
+                addNext(result, node.id(), value.get("transition"), node.pointer() + "/transition", "Next");
             if (value.has("next")) addNext(result, node.id(), value.get("next"), node.pointer() + "/next", "Next");
             JsonArray responses = array(value, "responses");
             for (int i = 0; i < responses.size(); i++) {
                 if (!responses.get(i).isJsonObject()) continue;
                 JsonObject response = responses.get(i).getAsJsonObject();
+                if (document.kind() == DefinitionKind.QUEST && response.has("transition"))
+                    addNext(result, node.id(), response.get("transition"), node.pointer() + "/responses/" + i + "/transition", text(response.get("label")));
                 if (response.has("next")) addNext(result, node.id(), response.get("next"),
                         node.pointer() + "/responses/" + i + "/next", text(response.get("label")));
                 if (response.has("check")) {
@@ -133,15 +137,16 @@ public final class DialogueGraph {
             for (int i = 0; i < responses.size(); i++) {
                 if (!responses.get(i).isJsonObject()) continue;
                 JsonObject response = responses.get(i).getAsJsonObject();
-                String destination = document.kind() == DefinitionKind.FORCED ? "follow_up" : "next";
+                String destination = document.kind() == DefinitionKind.FORCED ? "follow_up" : document.kind() == DefinitionKind.QUEST ? "transition" : "next";
                 if (!response.has(destination) && !response.has("check"))
                     result.add(new Edge(node.id(), "", node.pointer() + "/" + field + "/" + i + "/" + destination,
                             text(response.get("label"))));
             }
             if (document.kind() == DefinitionKind.QUEST
                     || document.kind() == DefinitionKind.CONVERSATION && responses.isEmpty()) {
-                if (result.stream().noneMatch(edge -> edge.from().equals(node.id()) && edge.pointer().startsWith(node.pointer() + "/next")))
-                    result.add(new Edge(node.id(), "", node.pointer() + "/next", "Continue"));
+                String fieldName = document.kind() == DefinitionKind.QUEST ? "transition" : "next";
+                if (result.stream().noneMatch(edge -> edge.from().equals(node.id()) && edge.pointer().startsWith(node.pointer() + "/" + fieldName)))
+                    result.add(new Edge(node.id(), "", node.pointer() + "/" + fieldName, "Continue"));
             }
         }
         return List.copyOf(result);
@@ -277,8 +282,14 @@ public final class DialogueGraph {
                 response.add("follow_up", followUp);
                 response.addProperty("end_conversation", false);
             } else {
-                JsonPointers.set(root, edgePointer, new JsonPrimitive(targetId));
-                if (edgePointer.endsWith("/next")) {
+                JsonElement destination = new JsonPrimitive(targetId);
+                if (document.kind() == DefinitionKind.QUEST && edgePointer.endsWith("/transition")) {
+                    JsonObject transition = new JsonObject();
+                    transition.addProperty("stage", targetId);
+                    destination = transition;
+                }
+                JsonPointers.set(root, edgePointer, destination);
+                if ((edgePointer.endsWith("/next") || edgePointer.endsWith("/transition"))) {
                     JsonObject owner = JsonPointers.get(root, edgePointer.substring(0, edgePointer.lastIndexOf('/'))).getAsJsonObject();
                     owner.remove("end");
                     owner.remove("outcome");
@@ -291,7 +302,7 @@ public final class DialogueGraph {
         if (!edgePointer.contains("/responses/") && !edgePointer.contains("/options/")) {
             throw new IllegalArgumentException("Select a response branch to remove it");
         }
-        String pointer = edgePointer.replaceFirst("/(next|follow_up)(/stage)?$", "");
+        String pointer = edgePointer.replaceFirst("/(next|transition|follow_up)(/stage)?$", "");
         document.edit("Remove response", root -> JsonPointers.remove(root, pointer));
     }
 
@@ -340,9 +351,9 @@ public final class DialogueGraph {
                 if (terminal) {
                     JsonObject next = new JsonObject();
                     next.addProperty("complete", true);
-                    node.add("next", next);
+                    node.add("transition", next);
                 }
-                else node.remove("next");
+                else node.remove("transition");
             } else if (document.kind() == DefinitionKind.FORCED) {
                 if (terminal) node.remove("options");
             } else node.addProperty("end", terminal);
@@ -374,7 +385,7 @@ public final class DialogueGraph {
             node.add("objectives", new JsonArray());
             JsonObject next = new JsonObject();
             next.addProperty("complete", true);
-            node.add("next", next);
+            node.add("transition", next);
         } else if (kind == DefinitionKind.CONVERSATION) {
             node.add("exchanges", new JsonArray());
             node.addProperty("outcome", "done");

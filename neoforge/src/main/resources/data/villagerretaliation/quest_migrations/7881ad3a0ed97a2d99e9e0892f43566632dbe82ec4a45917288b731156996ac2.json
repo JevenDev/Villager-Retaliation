@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:small_spark",
+  "from_fingerprint": "633241fa34079e02c9c6356ad14f44c3c545c74ef5150728a2b38d3bfc79e9bd",
+  "to_fingerprint": "a35f7111d8791bf84d10d2fa84f6c82644bca2f071d5a409640bb0b47e708bff"
+}

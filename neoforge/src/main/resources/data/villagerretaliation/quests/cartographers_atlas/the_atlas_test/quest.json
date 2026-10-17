@@ -11,10 +11,6 @@
   "entry_stage": "choose_test",
   "id": "villagerretaliation:the_atlas_test",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
-    "description_key": "quest.cartographers_atlas.the_atlas_test.description",
     "parent": "villagerretaliation:roads_that_remember",
     "questline": "cartographers_atlas",
     "tags": [
@@ -33,11 +29,7 @@
       "feature.encounter",
       "feature.scene",
       "party.challenge"
-    ],
-    "title": {
-      "key": "#title"
-    },
-    "title_key": "quest.cartographers_atlas.the_atlas_test.title"
+    ]
   },
   "provider": {
     "filters": {
@@ -57,10 +49,10 @@
     "experience": 240,
     "gossip_reputation": 6,
     "loot_table": "villagerretaliation:quest/the_atlas_test",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 15
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -190,7 +182,6 @@
               "label": {
                 "key": "#stage.choose_test.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -200,7 +191,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -232,7 +226,6 @@
                 "key": "#stage.choose_test.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -242,7 +235,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -250,7 +246,6 @@
                 "key": "#stage.choose_test.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -260,7 +255,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -352,7 +350,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.35,
         "show_progress": true,
         "tracker_text": {
@@ -382,7 +380,6 @@
                 "key": "#stage.safe_supplies.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -392,7 +389,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -400,7 +400,6 @@
                 "key": "#stage.safe_supplies.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -410,7 +409,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -428,7 +430,6 @@
         }
       },
       "id": "safe_supplies",
-      "next": "safe_return",
       "objectives": [
         {
           "count": 4,
@@ -499,12 +500,15 @@
           "id": "reminder_details"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.safe_supplies.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "safe_return"
       }
     },
     {
@@ -529,7 +533,6 @@
                 "key": "#stage.risky_patrol.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -539,7 +542,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
@@ -547,7 +553,6 @@
                 "key": "#stage.risky_patrol.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -557,7 +562,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -575,7 +583,6 @@
         }
       },
       "id": "risky_patrol",
-      "next": "risky_return",
       "objectives": [
         {
           "count": 3,
@@ -647,12 +654,15 @@
           "id": "reminder_details"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.8,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.risky_patrol.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "risky_return"
       }
     },
     {
@@ -672,7 +682,6 @@
               "label": {
                 "key": "#stage.safe_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_safe",
               "exchanges": [
                 {
                   "speaker": {
@@ -682,14 +691,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_safe"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.safe_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -699,7 +710,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -761,7 +775,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -786,7 +800,6 @@
               "label": {
                 "key": "#stage.risky_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_risky",
               "exchanges": [
                 {
                   "speaker": {
@@ -796,14 +809,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_risky"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.risky_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -813,7 +828,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -875,7 +893,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -884,11 +902,16 @@
       }
     }
   ],
-  "ui": {
-    "title": {
+  "localization_prefix": "quest.cartographers_atlas.the_atlas_test",
+  "display": {
+    "tracker_title": {
       "key": "#tracker.title"
     },
-    "title_key": "quest.cartographers_atlas.the_atlas_test.tracker.title"
-  },
-  "localization_prefix": "quest.cartographers_atlas.the_atlas_test"
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

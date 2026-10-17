@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:choose_the_soil",
+  "from_fingerprint": "54903835f9d0f0678251cf2047ddc93782e21429bfc3aa4e6e90a7cbb7874a84",
+  "to_fingerprint": "d47766fc30f487de788dbb3d3a8245c07732df167e324eada08868287312d8e6"
+}

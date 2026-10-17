@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:quiet_trigger",
+  "from_fingerprint": "5da3f4a20fa47ba0b109d5beca55c7ac5a8072ff6def2a53b1d12398e56971e7",
+  "to_fingerprint": "d9e2366a750c2a7df20292a870c98f85dc279ee7666d10b9203bb04a0dfc50ee"
+}

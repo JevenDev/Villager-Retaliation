@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:wither_ash",
+  "from_fingerprint": "6de6fc956edf73b39bfbf587d1cc575e9ec7eef438ec66a1d222b4c21977c003",
+  "to_fingerprint": "d28c82af3576e22b473e829a4478417e8a217b89c2717543010435460411c8c6"
+}

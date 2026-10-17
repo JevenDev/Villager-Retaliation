@@ -211,10 +211,10 @@ public final class EditorClientChecks {
 
     private static void questConnectionsUseStageTransitions() {
         var document = new AuthoringDocument(DefinitionKind.QUEST, "data/test/quests/line/quest/quest.json",
-                json("{\"id\":\"test:quest\",\"stages\":[{\"id\":\"first\",\"next\":{\"complete\":true},\"objectives\":[]},{\"id\":\"second\",\"next\":{\"complete\":true}}]}"));
+                json("{\"id\":\"test:quest\",\"stages\":[{\"id\":\"first\",\"transition\":{\"complete\":true},\"objectives\":[]},{\"id\":\"second\",\"transition\":{\"complete\":true}}]}"));
         EditorDocumentOperations.nextStage(document, "first", "second");
         JsonObject first = document.json().getAsJsonArray("stages").get(0).getAsJsonObject();
-        check(first.get("next").getAsString().equals("second"), "quest next must use a supported stage reference");
+        check(first.getAsJsonObject("transition").get("stage").getAsString().equals("second"), "quest transition must use a supported stage reference");
         check(!first.has("responses") && first.has("objectives"), "stage connection must not invent dialogue responses or remove objectives");
         JsonObject before = document.json();
         rejects(() -> EditorDocumentOperations.nextStage(document, "first", "missing"));
@@ -424,16 +424,16 @@ public final class EditorClientChecks {
     private static void questPortsReplaceTerminalTransitions() {
         var document = new AuthoringDocument(DefinitionKind.QUEST, "data/test/quests/line/quest/quest.json",
                 json("""
-                        {"entry_stage":"first","stages":[{"id":"first","next":{"complete":true},"objectives":[]},
-                                                       {"id":"second","next":{"fail":true}}]}
+                        {"entry_stage":"first","stages":[{"id":"first","transition":{"complete":true},"objectives":[]},
+                                                       {"id":"second","transition":{"fail":true}}]}
                         """));
         var cards = EditorGraph.cards(document, value -> value.toString());
         check(cards.getFirst().blocks().getFirst().text().equals("Complete quest"), "terminal quest result is visible on the output");
-        DialogueGraph.connect(document, "/stages/0/next", "second");
-        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().get("next").getAsString().equals("second"),
+        DialogueGraph.connect(document, "/stages/0/transition", "second");
+        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonObject("transition").get("stage").getAsString().equals("second"),
                 "quest output replaces the terminal transition with a supported stage reference");
         document.undo();
-        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonObject("next").get("complete").getAsBoolean(),
+        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonObject("transition").get("complete").getAsBoolean(),
                 "undo restores quest completion");
     }
 

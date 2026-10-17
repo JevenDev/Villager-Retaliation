@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:dragon_sample",
+  "from_fingerprint": "85ee812a3c9c96da065d7a96a697a5da95346216dc6b8c51ef87bba3f816e5f9",
+  "to_fingerprint": "333d94053057fa2c1f1331c76e2cc2ed79be00e9a311f7f48c805b022198f6aa"
+}

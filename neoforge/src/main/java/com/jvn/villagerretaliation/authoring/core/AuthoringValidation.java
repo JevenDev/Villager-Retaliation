@@ -11,7 +11,7 @@ import com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions;
 import com.jvn.villagerretaliation.quest.debug.QuestDiagnostic;
 import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
-import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
+import com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,7 +30,8 @@ public final class AuthoringValidation {
         Set<String> paths = new HashSet<>();
         Map<String, AuthoringDocument> ids = new LinkedHashMap<>();
         List<QuestBundleTransactions.RawResource> bundleResources = new ArrayList<>();
-        JsonObject questSchema = QuestV2Schema.export();
+        Map<ResourceLocation, String> bundlePaths = new LinkedHashMap<>();
+        JsonObject questSchema = QuestV3Schema.export();
         for (AuthoringDocument document : documents) {
             if (!paths.add(document.resourcePath().toLowerCase(java.util.Locale.ROOT))) {
                 error(result, document, "", "Duplicate resource path");
@@ -49,7 +50,27 @@ public final class AuthoringValidation {
                 error(result, document, "", "Invalid data resource location");
                 continue;
             }
+            if (root.has("world_campaign")) {
+                JsonElement owner = root.get("world_campaign");
+                if (!owner.isJsonPrimitive() || !owner.getAsJsonPrimitive().isString()
+                        || !owner.getAsString().contains(":") || ResourceLocation.tryParse(owner.getAsString()) == null) {
+                    error(result, document, "/world_campaign", "Use a namespaced campaign ID");
+                }
+            }
+            if (resource.getPath().startsWith("world_campaigns/")) {
+                String[] parts = resource.getPath().split("/", 3);
+                if (parts.length == 3 && !parts[2].equals("campaign.json")) {
+                    String owner = resource.getNamespace() + ":" + parts[1];
+                    if (root.has("world_campaign") && (!root.get("world_campaign").isJsonPrimitive()
+                            || !root.get("world_campaign").getAsJsonPrimitive().isString() || !owner.equals(root.get("world_campaign").getAsString())))
+                        error(result, document, "/world_campaign", "Ownership conflicts with the campaign folder");
+                    resource = ResourceLocation.fromNamespaceAndPath(resource.getNamespace(), parts[2]);
+                }
+            }
+            if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.WORLD_CAMPAIGN) root.remove("world_campaign");
             if (resource.getPath().startsWith("quests/")) {
+                if (bundlePaths.putIfAbsent(resource, document.resourcePath()) != null)
+                    error(result, document, "", "Multiple campaign files map to the same quest bundle path");
                 bundleResources.add(QuestBundleTransactions.RawResource.valid(0, "authoring", resource, root));
             }
             try {
@@ -99,34 +120,36 @@ public final class AuthoringValidation {
                             }
                         }
                     }
+                    case WORLD_CAMPAIGN -> issues(result, document, "", QuestJsonSchema.validate(root,
+                            com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.export()));
                     case RESOURCE -> { }
                 }
-                if (document.kind() != DefinitionKind.RESOURCE) validateGraph(result, document);
+                if (document.kind() != DefinitionKind.RESOURCE && document.kind() != DefinitionKind.WORLD_CAMPAIGN) validateGraph(result, document);
             } catch (IllegalArgumentException | IllegalStateException ex) {
                 error(result, document, "", "Invalid structure: " + ex.getMessage());
             }
         }
-        if (!bundleResources.isEmpty()) validateBundles(result, bundleResources, documents);
+        if (!bundleResources.isEmpty()) validateBundles(result, bundleResources, documents, bundlePaths);
         return List.copyOf(result);
     }
 
     private static void validateBundles(List<AuthoringDiagnostic> result, List<QuestBundleTransactions.RawResource> resources,
-            List<AuthoringDocument> documents) {
+            List<AuthoringDocument> documents, Map<ResourceLocation, String> bundlePaths) {
         try {
             var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
             for (var issue : bundles.diagnostics()) {
                 result.add(new AuthoringDiagnostic(issue.rejected() ? AuthoringDiagnostic.Severity.ERROR : AuthoringDiagnostic.Severity.WARNING,
-                        path(issue.location()), "", issue.message()));
+                        bundlePath(bundlePaths, issue.location()), "", issue.message()));
             }
             Set<String> questIds = new HashSet<>();
             documents.stream().filter(document -> document.kind() == DefinitionKind.QUEST).forEach(document -> questIds.add(document.id()));
             for (var bundle : bundles.bundles().values()) {
                 if (bundle.questId() != null) {
                     var materialized = QuestBundleRuntimeMaterializer.materialize(bundle);
-                    String source = path(bundle.source(QuestBundlePath.Kind.QUEST, bundle.questId()).resource());
+                    String source = bundlePath(bundlePaths, bundle.source(QuestBundlePath.Kind.QUEST, bundle.questId()).resource());
                     for (String error : materialized.errors()) result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, source, "", error));
                     if (materialized.errors().isEmpty() && QuestV2Parser.parse(bundle.source(QuestBundlePath.Kind.QUEST, bundle.questId()).resource(),
-                            materialized.quest()).isEmpty()) {
+                            com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(materialized.quest())).isEmpty()) {
                         result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, source, "", "Quest runtime structural validation rejected the definition"));
                     }
                 }
@@ -135,12 +158,12 @@ public final class AuthoringValidation {
                     for (var issue : compiled.diagnostics()) {
                         result.add(new AuthoringDiagnostic(issue.severity() == QuestDiagnostic.Severity.ERROR
                                 ? AuthoringDiagnostic.Severity.ERROR : AuthoringDiagnostic.Severity.WARNING,
-                                path(bundle.source(QuestBundlePath.Kind.CONVERSATION, entry.getKey()).resource()), issue.jsonPointer(), issue.message()));
+                                bundlePath(bundlePaths, bundle.source(QuestBundlePath.Kind.CONVERSATION, entry.getKey()).resource()), issue.jsonPointer(), issue.message()));
                     }
                     String quest = DialogueGraph.string(entry.getValue(), "quest");
                     if (!quest.isBlank() && !questIds.contains(quest)) {
                         result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.WARNING,
-                                path(bundle.source(QuestBundlePath.Kind.CONVERSATION, entry.getKey()).resource()), "/quest",
+                                bundlePath(bundlePaths, bundle.source(QuestBundlePath.Kind.CONVERSATION, entry.getKey()).resource()), "/quest",
                                 "Quest reference is external to this workspace and must exist in the target pack: " + quest));
                     }
                 }
@@ -148,6 +171,10 @@ public final class AuthoringValidation {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, "", "", "Bundle compilation failed: " + ex.getMessage()));
         }
+    }
+
+    private static String bundlePath(Map<ResourceLocation, String> paths, ResourceLocation resource) {
+        return paths.getOrDefault(resource, path(resource));
     }
 
     private static void validateRuntimeFields(List<AuthoringDiagnostic> result, AuthoringDocument document,

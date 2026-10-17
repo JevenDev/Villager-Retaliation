@@ -31,7 +31,7 @@ final class EditorBlocks {
     private EditorBlocks() { }
 
     static List<Kind> available(AuthoringDocument document, String pointer) {
-        if (document.kind() == DefinitionKind.RESOURCE) return List.of();
+        if ((document.kind() == DefinitionKind.RESOURCE || document.kind() == DefinitionKind.WORLD_CAMPAIGN)) return List.of();
         JsonObject root = document.json();
         boolean nodeOwner = false, responseOwner = false, exchangeOwner = false;
         for (var node : DialogueGraph.nodes(document)) {

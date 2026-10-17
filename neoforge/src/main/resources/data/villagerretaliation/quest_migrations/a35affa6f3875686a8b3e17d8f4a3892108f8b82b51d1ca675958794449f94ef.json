@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:bastion_line",
+  "from_fingerprint": "c703f0199223fc62f7cccb21e41f6ca4e8ade1cdc23d853e6b90d780c512d0b0",
+  "to_fingerprint": "d708798d6da5d4b41cd861150ed17830c2957dc8b6b088670828ff04bef06610"
+}

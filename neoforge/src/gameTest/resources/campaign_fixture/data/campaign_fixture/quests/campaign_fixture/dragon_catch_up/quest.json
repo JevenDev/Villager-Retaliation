@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:dragon_catch_up",
   "localization_prefix": "campaign_fixture.quest.dragon_catch_up",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:reconciliation"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager"
@@ -136,5 +129,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:reconciliation",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

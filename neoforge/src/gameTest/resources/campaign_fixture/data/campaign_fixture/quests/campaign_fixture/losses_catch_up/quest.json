@@ -1,16 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:losses_catch_up",
   "localization_prefix": "campaign_fixture.quest.losses_catch_up",
   "metadata": {
-    "title": {
-      "key": "#title"
-    },
-    "description": {
-      "key": "#description"
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:losses"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -137,5 +130,14 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:losses",
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
 }

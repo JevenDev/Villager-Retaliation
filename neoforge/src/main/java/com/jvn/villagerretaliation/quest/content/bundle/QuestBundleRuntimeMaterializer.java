@@ -120,6 +120,7 @@ public final class QuestBundleRuntimeMaterializer {
     private static String runtimeKeyField(String field, boolean localizedContext) {
         return switch (field) {
             case "title" -> "title_key";
+            case "tracker_title" -> "tracker_title_key";
             case "description" -> "description_key";
             case "label" -> "label_key";
             case "text", "lines" -> "text_key";
@@ -191,7 +192,7 @@ public final class QuestBundleRuntimeMaterializer {
 
     private static boolean isPlayerFacingField(String field) {
         return switch (field) {
-            case "title", "description", "label", "text", "lines",
+            case "tracker_title", "title", "description", "label", "text", "lines",
                     "tracker_text", "tracker_complete_text", "complete_text",
                     "custom_name", "trophy_name", "boss_bar_title",
                     "location_message" -> true;

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:temper_and_tally",
+  "from_fingerprint": "399c39dc24bcef280c1e0dea880a54859b1b09a63afb33de3facb88893e536ff",
+  "to_fingerprint": "b90c4005d77ee11b74b200e9b80a9173dd227fc5fad31e1e3f02bc2faeff0494"
+}

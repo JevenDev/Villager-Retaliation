@@ -12,9 +12,6 @@
   "entry_stage": "work",
   "id": "villagerretaliation:road_mending",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "questline": "village_commissions",
     "tags": [
       "group.village_commissions",
@@ -30,10 +27,7 @@
       "theme.craftsmanship",
       "pool.commission",
       "pool.quest_board"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -56,10 +50,10 @@
     "experience": 170,
     "gossip_reputation": 5,
     "loot_table": "villagerretaliation:quest/road_mending",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 11
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -82,7 +76,6 @@
               "label": {
                 "key": "#stage.work.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -92,14 +85,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.work.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -109,7 +104,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -141,7 +139,6 @@
                 "key": "#stage.work.dialogue.reminder.response.details.label"
               },
               "order": 0,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -151,7 +148,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "abandon",
@@ -159,7 +159,6 @@
                 "key": "#stage.work.dialogue.reminder.response.abandon.label"
               },
               "order": 90,
-              "scene": "abandon_confirm",
               "exchanges": [
                 {
                   "speaker": {
@@ -169,7 +168,10 @@
                     "key": "#dialogue.player.abandon"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_confirm"
+              }
             },
             {
               "id": "leave",
@@ -177,7 +179,6 @@
                 "key": "#stage.work.dialogue.reminder.response.leave.label"
               },
               "order": 100,
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -187,7 +188,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -205,7 +209,6 @@
         }
       },
       "id": "work",
-      "next": "return",
       "objectives": [
         {
           "block": "minecraft:gravel",
@@ -326,7 +329,6 @@
               "label": {
                 "key": "#stage.work.scene.abandon_confirm.response.confirm.label"
               },
-              "scene": "abandon_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -336,14 +338,16 @@
                     "key": "#dialogue.player.confirm"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "abandon_quest"
+              }
             },
             {
               "id": "cancel",
               "label": {
                 "key": "#stage.work.scene.abandon_confirm.response.cancel.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -353,7 +357,10 @@
                     "key": "#dialogue.player.cancel"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "exchanges": [
@@ -389,12 +396,15 @@
           "id": "abandon_quest"
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.work.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -414,7 +424,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -424,14 +433,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "turn_in_wait",
               "exchanges": [
                 {
                   "speaker": {
@@ -441,7 +452,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "turn_in_wait"
+              }
             }
           ],
           "show_for_babies": false,
@@ -505,7 +519,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -514,12 +528,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.village_commissions.road_mending",
+  "display": {
     "color": "#D19A4A",
     "icon": "minecraft:gravel",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.village_commissions.road_mending"
+  }
 }

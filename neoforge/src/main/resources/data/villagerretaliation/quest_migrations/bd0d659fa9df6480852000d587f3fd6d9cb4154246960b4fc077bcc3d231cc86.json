@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:choose_a_road",
+  "from_fingerprint": "12bbfb2723eee75eb6a7615ff3ee141482d785b790f2b83290ca13abb7421e33",
+  "to_fingerprint": "e7c9105ec422020bd0dea54a3ef80a7cb440da1726bb1e4a7ecbadea17e1ea97"
+}

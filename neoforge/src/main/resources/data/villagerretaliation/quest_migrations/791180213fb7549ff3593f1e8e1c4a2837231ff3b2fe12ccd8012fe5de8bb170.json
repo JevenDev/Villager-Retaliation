@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:chart_the_drowned_coast",
+  "from_fingerprint": "810be55628bc638f94b4a03338306b61a76eda61b13840f0552d0b2bfef6a9b2",
+  "to_fingerprint": "e06ba7fbf3f645c19a07f0bfe522302c05f957253d97d85a62937a56a7b698fe"
+}

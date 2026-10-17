@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:the_atlas_test",
+  "from_fingerprint": "12eadf410c7e2dc40ed439f5c3dc5075a452bffdbaa870a852e5ee72275cfe18",
+  "to_fingerprint": "73204b6be3fbfd99c969b9216cb8e85943176b22f051ebdb38962aefd58a80b6"
+}

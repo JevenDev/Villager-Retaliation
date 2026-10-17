@@ -66,6 +66,9 @@ final class ImGuiAuthoringEditor {
     private boolean nodeDragMoved;
     private String focusPanel = "";
     private final ImString workspacePath = new ImString(4096);
+    private final ImString campaignImagePath = new ImString(4096);
+    private net.minecraft.client.renderer.texture.DynamicTexture campaignPreview;
+    private String campaignPreviewKey = "";
     private final ImString importPath = new ImString(4096);
     private final ImString exportPath = new ImString(4096);
     private final ImString filter = new ImString(256);
@@ -128,6 +131,7 @@ final class ImGuiAuthoringEditor {
     static void disconnect() {
         AuthoringDialoguePreview.stop();
         EditorCameraPanel.close();
+        INSTANCE.clearCampaignPreview();
         INSTANCE.target = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
     }
@@ -345,6 +349,7 @@ final class ImGuiAuthoringEditor {
             case CONVERSATION -> "Conversation";
             case FORCED -> "Triggered dialogue";
             case QUEST -> "Quest";
+            case WORLD_CAMPAIGN -> "World campaign";
             case RESOURCE -> "Supporting resource";
         };
     }
@@ -396,6 +401,7 @@ final class ImGuiAuthoringEditor {
                 case CONVERSATION -> "A quest conversation with localized exchanges, speakers and outcomes.";
                 case FORCED -> "Dialogue opened by a game event.";
                 case QUEST -> "Stages, objectives and rewards.";
+                case WORLD_CAMPAIGN -> "Campaign card and content settings for world creation.";
                 default -> "";
             });
             input("ID (namespace:name)", newId);
@@ -484,6 +490,11 @@ final class ImGuiAuthoringEditor {
         if (document == null) {
             ImGui.textWrapped(workspace == null ? "Create or open a workspace in Content."
                     : showCreate ? "Create a dialogue in Content." : "Choose a dialogue in Content.");
+            ImGui.end();
+            return;
+        }
+        if (document.kind() == DefinitionKind.WORLD_CAMPAIGN) {
+            campaignCard();
             ImGui.end();
             return;
         }
@@ -860,6 +871,7 @@ final class ImGuiAuthoringEditor {
                 }
                 ImGui.endCombo();
             }
+            if (pointer.get().isEmpty()) campaignOwnership();
             selectedDetails();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
@@ -921,6 +933,77 @@ final class ImGuiAuthoringEditor {
         ImGui.end();
     }
 
+    private void campaignOwnership() {
+        if (document.kind() == DefinitionKind.WORLD_CAMPAIGN || document.kind() == DefinitionKind.RESOURCE) return;
+        String[] path = document.resourcePath().split("/", 5);
+        if (path.length == 5 && path[2].equals("world_campaigns")) {
+            ImGui.textWrapped("World campaign: " + path[1] + ":" + path[3] + " (from folder)");
+            return;
+        }
+        String owner = DialogueGraph.string(document.json(), "world_campaign");
+        if (ImGui.beginCombo("World campaign", owner.isBlank() ? "Default VR" : owner)) {
+            if (ImGui.selectable("Default VR", owner.isBlank())) operation(() -> {
+                document.edit("Set campaign", root -> root.remove("world_campaign"));
+                refresh();
+            });
+            if (ImGui.selectable("Shared by all campaigns", owner.equals("villagerretaliation:shared"))) operation(() -> {
+                document.edit("Set campaign", root -> root.addProperty("world_campaign", "villagerretaliation:shared"));
+                refresh();
+            });
+            for (AuthoringDocument campaign : workspace.documents()) {
+                if (campaign.kind() == DefinitionKind.WORLD_CAMPAIGN && ImGui.selectable(campaign.id(), owner.equals(campaign.id()))) operation(() -> {
+                    document.edit("Set campaign", root -> root.addProperty("world_campaign", campaign.id()));
+                    refresh();
+                });
+            }
+            ImGui.endCombo();
+        }
+        if (document.kind() == DefinitionKind.QUEST) {
+            ImString arc = new ImString(DialogueGraph.string(document.json(), "story_arc"), 512);
+            if (ImGui.inputText("Story arc (optional)", arc)) document.edit("Set story arc", root -> {
+                if (arc.get().isBlank()) root.remove("story_arc");
+                else root.addProperty("story_arc", arc.get());
+            });
+        }
+    }
+
+    private void campaignCard() {
+        JsonObject value = document.json();
+        ImGui.textUnformatted(DialogueGraph.string(value, "name"));
+        ImGui.textWrapped(DialogueGraph.string(value, "description"));
+        if (value.has("locked") && value.get("locked").getAsBoolean()) ImGui.textUnformatted("Coming soon");
+        String key = document.id() + ":" + DialogueGraph.string(value, "image");
+        if (!key.equals(campaignPreviewKey)) {
+            clearCampaignPreview();
+            campaignPreviewKey = key;
+            try {
+                byte[] bytes = workspace.campaignImage(document);
+                if (bytes.length > 0) campaignPreview = new net.minecraft.client.renderer.texture.DynamicTexture(
+                        com.mojang.blaze3d.platform.NativeImage.read(new java.io.ByteArrayInputStream(bytes)));
+            } catch (IOException exception) {
+                status = "Could not preview campaign image: " + exception.getMessage();
+            }
+        }
+        if (campaignPreview != null && campaignPreview.getPixels() != null) {
+            var pixels = campaignPreview.getPixels();
+            float scale = Math.min(240.0F / pixels.getWidth(), 160.0F / pixels.getHeight());
+            ImGui.image(campaignPreview.getId(), pixels.getWidth() * scale, pixels.getHeight() * scale);
+        }
+        input("PNG image path", campaignImagePath);
+        if (ImGui.button("Import campaign image")) operation(() -> {
+            workspace.importCampaignImage(document, Path.of(campaignImagePath.get()));
+            clearCampaignPreview();
+            refresh();
+        });
+        ImGui.textWrapped("Edit the card details and content settings in Properties. The selected campaign is permanent once a world is created.");
+    }
+
+    private void clearCampaignPreview() {
+        if (campaignPreview != null) campaignPreview.close();
+        campaignPreview = null;
+        campaignPreviewKey = "";
+    }
+
     private boolean hasPendingFields() {
         return pendingFields.pending() || translatedFields.values().stream().anyMatch(EditorFieldEdits::pending);
     }
@@ -943,7 +1026,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         JsonObject object = selected.getAsJsonObject();
-        List<String> main = List.of("title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
+        List<String> main = List.of("name", "description", "authors", "image", "locked", "include_default_content", "display", "title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
         boolean shown = false;
         for (String field : main) {
             if (!object.has(field)) continue;
@@ -1251,7 +1334,10 @@ final class ImGuiAuthoringEditor {
             status = "Apply or discard the JSON buffer before changing selection.";
             return;
         }
-        if (document != next) EditorCameraPanel.close();
+        if (document != next) {
+            EditorCameraPanel.close();
+            clearCampaignPreview();
+        }
         document = next;
         fitGraph = true;
         historyDocument = next;

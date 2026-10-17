@@ -11,9 +11,6 @@
   "entry_stage": "bright_heat",
   "id": "villagerretaliation:nether_candle",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "parent": "villagerretaliation:pearl_lessons",
     "questline": "last_ember",
     "tags": [
@@ -30,10 +27,7 @@
       "theme.exploration",
       "theme.mystery",
       "party.recommended"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -57,10 +51,10 @@
     "experience": 240,
     "gossip_reputation": 5,
     "loot_table": "villagerretaliation:quest/nether_candle",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 14
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -83,7 +77,6 @@
               "label": {
                 "key": "#stage.bright_heat.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -93,14 +86,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.bright_heat.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -110,7 +105,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -141,7 +139,6 @@
               "label": {
                 "key": "#stage.bright_heat.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -151,14 +148,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.bright_heat.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -168,7 +167,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -186,7 +188,6 @@
         }
       },
       "id": "bright_heat",
-      "next": "bottle_heat",
       "objectives": [
         {
           "count": 3,
@@ -294,12 +295,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.7,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.bright_heat.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "bottle_heat"
       }
     },
     {
@@ -323,7 +327,6 @@
               "label": {
                 "key": "#stage.bottle_heat.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -333,14 +336,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.bottle_heat.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -350,7 +355,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -368,7 +376,6 @@
         }
       },
       "id": "bottle_heat",
-      "next": "return",
       "objectives": [
         {
           "count": 4,
@@ -439,12 +446,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.9,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.bottle_heat.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -464,7 +474,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -474,14 +483,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -491,7 +502,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -552,7 +566,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -561,12 +575,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.last_ember.nether_candle",
+  "display": {
     "color": "#F07F3C",
     "icon": "minecraft:blaze_rod",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.last_ember.nether_candle"
+  }
 }

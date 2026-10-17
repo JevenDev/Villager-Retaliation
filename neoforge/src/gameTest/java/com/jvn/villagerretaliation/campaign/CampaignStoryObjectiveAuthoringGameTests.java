@@ -148,7 +148,7 @@ public final class CampaignStoryObjectiveAuthoringGameTests {
     }
 
     private static JsonObject quest(JsonObject objective) throws IOException {
-        var root = CampaignCharacterTestFixture.resource("quests/campaign_fixture/characters/quest.json");
+        var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.runtime(CampaignCharacterTestFixture.resource("quests/campaign_fixture/characters/quest.json"));
         var objectives = new com.google.gson.JsonArray();
         objectives.add(objective);
         root.getAsJsonArray("stages").get(0).getAsJsonObject().add("objectives", objectives);

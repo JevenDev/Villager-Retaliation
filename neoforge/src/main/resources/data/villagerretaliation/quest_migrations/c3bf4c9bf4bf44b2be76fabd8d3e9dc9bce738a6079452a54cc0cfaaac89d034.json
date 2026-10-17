@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:beetroot_bundle",
+  "from_fingerprint": "cc2ac6adda4e0cf58f4e8d55f64796c2969d7186aa51bef7c4edc4143e883b43",
+  "to_fingerprint": "cdc6c2fffe578541c5163c4500a0116b45a1113afe9d1f21ab5c1134ef4fc2e6"
+}

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_animal_handling",
+  "from_fingerprint": "e59be91ad5b8e0178b4ed7550b182cc28c022f6fa8ca6eb2a81c6feab770ecb8",
+  "to_fingerprint": "6324d8cef86ca8491ffd7094a24aa66ffacfc69d960f8a5104e7ba160d1ad05c"
+}

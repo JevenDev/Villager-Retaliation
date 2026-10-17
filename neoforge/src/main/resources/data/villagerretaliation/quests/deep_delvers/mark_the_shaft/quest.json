@@ -11,9 +11,6 @@
   "entry_stage": "choose",
   "id": "villagerretaliation:mark_the_shaft",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "parent": "villagerretaliation:below_the_bell",
     "questline": "deep_delvers",
     "tags": [
@@ -30,10 +27,7 @@
       "theme.craftsmanship",
       "theme.exploration",
       "feature.branching"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -57,10 +51,10 @@
     "experience": 210,
     "gossip_reputation": 6,
     "loot_table": "villagerretaliation:quest/mark_the_shaft",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 14
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -174,7 +168,6 @@
               "label": {
                 "key": "#stage.choose.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -184,7 +177,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -216,7 +212,6 @@
                 "key": "#stage.choose.dialogue.reminder.response.details.label"
               },
               "order": -10,
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -226,7 +221,10 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "actions": [
@@ -325,7 +323,6 @@
               "label": {
                 "key": "#stage.choose.dialogue.reminder.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -335,7 +332,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -410,7 +410,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.2,
         "show_progress": true,
         "tracker_text": {
@@ -439,7 +439,6 @@
               "label": {
                 "key": "#stage.rail_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -449,14 +448,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.rail_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -466,7 +467,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -484,7 +488,6 @@
         }
       },
       "id": "rail_work",
-      "next": "rail_return",
       "objectives": [
         {
           "block": "minecraft:rail",
@@ -556,12 +559,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.rail_work.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "rail_return"
       }
     },
     {
@@ -581,7 +587,6 @@
               "label": {
                 "key": "#stage.rail_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route",
               "exchanges": [
                 {
                   "speaker": {
@@ -591,14 +596,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_route"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.rail_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -608,7 +615,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -669,7 +679,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -698,7 +708,6 @@
               "label": {
                 "key": "#stage.timber_work.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -708,14 +717,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.timber_work.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -725,7 +736,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -743,7 +757,6 @@
         }
       },
       "id": "timber_work",
-      "next": "timber_return",
       "objectives": [
         {
           "blocks": [
@@ -817,12 +830,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.75,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.timber_work.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "timber_return"
       }
     },
     {
@@ -842,7 +858,6 @@
               "label": {
                 "key": "#stage.timber_return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_route",
               "exchanges": [
                 {
                   "speaker": {
@@ -852,14 +867,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_route"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.timber_return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -869,7 +886,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -930,7 +950,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -939,12 +959,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.deep_delvers.mark_the_shaft",
+  "display": {
     "color": "#B884E8",
     "icon": "minecraft:minecart",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.deep_delvers.mark_the_shaft"
+  }
 }

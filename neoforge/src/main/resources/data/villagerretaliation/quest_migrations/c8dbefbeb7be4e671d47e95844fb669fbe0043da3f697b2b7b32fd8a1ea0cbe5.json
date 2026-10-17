@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:wool_blankets",
+  "from_fingerprint": "1481b77694389bb9d9a323856606528d70a55af75d1b0210572609d8be321e4f",
+  "to_fingerprint": "6216ed82e4499b1cfe618dd62424f0fb36537c93b76cfcc2d8cd59e622b318de"
+}

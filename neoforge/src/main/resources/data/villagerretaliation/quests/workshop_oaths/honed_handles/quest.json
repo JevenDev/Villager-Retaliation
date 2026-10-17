@@ -11,9 +11,6 @@
   "entry_stage": "raw_handles",
   "id": "villagerretaliation:honed_handles",
   "metadata": {
-    "description": {
-      "key": "#description"
-    },
     "questline": "workshop_oaths",
     "tags": [
       "group.workshop_oaths",
@@ -26,10 +23,7 @@
       "commitment.standard",
       "theme.community",
       "theme.craftsmanship"
-    ],
-    "title": {
-      "key": "#title"
-    }
+    ]
   },
   "provider": {
     "filters": {
@@ -51,10 +45,10 @@
     "experience": 85,
     "gossip_reputation": 3,
     "loot_table": "villagerretaliation:quest/honed_handles",
-    "memory_event": "player_completed_quest",
+    "memory_event": "villagerretaliation:player_completed_quest",
     "reputation": 8
   },
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "stages": [
     {
       "complete_when": [
@@ -77,7 +71,6 @@
               "label": {
                 "key": "#stage.raw_handles.dialogue.offer.response.accept.label"
               },
-              "scene": "start_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -87,14 +80,16 @@
                     "key": "#dialogue.player.accept"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
             },
             {
               "id": "decline",
               "label": {
                 "key": "#stage.raw_handles.dialogue.offer.response.decline.label"
               },
-              "scene": "decline",
               "exchanges": [
                 {
                   "speaker": {
@@ -104,7 +99,10 @@
                     "key": "#dialogue.player.decline"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "decline"
+              }
             }
           ],
           "show_for_babies": false,
@@ -135,7 +133,6 @@
               "label": {
                 "key": "#stage.raw_handles.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -145,14 +142,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.raw_handles.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -162,7 +161,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -180,7 +182,6 @@
         }
       },
       "id": "raw_handles",
-      "next": "edge_bits",
       "objectives": [
         {
           "count": 24,
@@ -288,12 +289,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.6,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.raw_handles.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "edge_bits"
       }
     },
     {
@@ -317,7 +321,6 @@
               "label": {
                 "key": "#stage.edge_bits.dialogue.reminder.response.details.label"
               },
-              "scene": "reminder_details",
               "exchanges": [
                 {
                   "speaker": {
@@ -327,14 +330,16 @@
                     "key": "#dialogue.player.details"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.edge_bits.dialogue.reminder.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -344,7 +349,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -362,7 +370,6 @@
         }
       },
       "id": "edge_bits",
-      "next": "return",
       "objectives": [
         {
           "count": 6,
@@ -433,12 +440,15 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 0.9,
         "show_progress": true,
         "tracker_text": {
           "key": "#stage.edge_bits.ui.tracker_text"
         }
+      },
+      "transition": {
+        "stage": "return"
       }
     },
     {
@@ -458,7 +468,6 @@
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.complete.label"
               },
-              "scene": "complete_quest",
               "exchanges": [
                 {
                   "speaker": {
@@ -468,14 +477,16 @@
                     "key": "#dialogue.player.complete"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
             },
             {
               "id": "leave",
               "label": {
                 "key": "#stage.return.dialogue.turn_in.response.leave.label"
               },
-              "scene": "leave",
               "exchanges": [
                 {
                   "speaker": {
@@ -485,7 +496,10 @@
                     "key": "#dialogue.player.leave"
                   }
                 }
-              ]
+              ],
+              "transition": {
+                "scene": "leave"
+              }
             }
           ],
           "show_for_babies": false,
@@ -546,7 +560,7 @@
           ]
         }
       ],
-      "ui": {
+      "display": {
         "progress": 1,
         "show_progress": true,
         "tracker_text": {
@@ -555,12 +569,18 @@
       }
     }
   ],
-  "ui": {
+  "localization_prefix": "quest.workshop_oaths.honed_handles",
+  "display": {
     "color": "#9AA3A8",
     "icon": "minecraft:flint",
+    "tracker_title": {
+      "key": "#title"
+    },
     "title": {
       "key": "#title"
+    },
+    "description": {
+      "key": "#description"
     }
-  },
-  "localization_prefix": "quest.workshop_oaths.honed_handles"
+  }
 }

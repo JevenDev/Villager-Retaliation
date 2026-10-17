@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:clipboard_craftsman",
+  "from_fingerprint": "c4cfb06ac3dc81c97a3e51ad09994d0100b72dc600635bf247ec3bd6e74e8c78",
+  "to_fingerprint": "ef66883398a50731fbcc950705cea1ea4cb3f5211624a2cf526d1cb1937a2d9c"
+}

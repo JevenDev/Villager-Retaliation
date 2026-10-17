@@ -1,13 +1,7 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "run_identity:bell_again",
   "metadata": {
-    "title": {
-      "key": "#metadata.title"
-    },
-    "description": {
-      "key": "#metadata.description"
-    },
     "questline": "runtime_regressions",
     "tags": [
       "example",
@@ -36,12 +30,6 @@
   "stages": [
     {
       "id": "ring",
-      "title": {
-        "key": "#stage.ring.title"
-      },
-      "description": {
-        "key": "#stage.ring.description"
-      },
       "objectives": [],
       "dialogue": {
         "offer": {
@@ -84,18 +72,32 @@
             "key": "#stage.ring.dialogue.turn_in.lines"
           }
         }
+      },
+      "display": {
+        "title": {
+          "key": "#stage.ring.title"
+        },
+        "description": {
+          "key": "#stage.ring.description"
+        }
       }
     }
   ],
-  "ui": {
-    "title": {
-      "key": "#ui.title"
-    },
+  "localization_prefix": "run_identity.quest.bell_again",
+  "display": {
     "tracker_text": {
       "key": "#ui.tracker_text"
     },
     "icon": "minecraft:bell",
-    "color": "#d6a84f"
-  },
-  "localization_prefix": "run_identity.quest.bell_again"
+    "color": "#d6a84f",
+    "tracker_title": {
+      "key": "#ui.title"
+    },
+    "title": {
+      "key": "#metadata.title"
+    },
+    "description": {
+      "key": "#metadata.description"
+    }
+  }
 }
