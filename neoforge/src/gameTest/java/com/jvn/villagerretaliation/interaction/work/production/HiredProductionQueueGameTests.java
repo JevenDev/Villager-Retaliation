@@ -22,6 +22,26 @@ public final class HiredProductionQueueGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "production_queue")
+    public static void eligibilityRetainsOwnReservationAndDeliveryPriority(GameTestHelper helper) {
+        var queue = queue(HiredVillagerRole.CRAFTSMAN);
+        var order = sticks(helper, HiredProductionOrder.Mode.BATCH, 4, BlockPos.ZERO);
+        queue.append(order);
+        var worker = UUID.randomUUID();
+        queue.reserve(worker, order.id(), 4, 1, 0L, null);
+        helper.assertValueEqual(HiredProductionEligibility.blocker(helper.getLevel(), HiredVillagerRole.CRAFTSMAN,
+                queue, order, worker, 0L, false, null), "", "the worker can continue its own reserved batch");
+        helper.assertValueEqual(HiredProductionEligibility.blocker(helper.getLevel(), HiredVillagerRole.CRAFTSMAN,
+                queue, order, UUID.randomUUID(), 0L, false, null), "quantity_reserved_or_stock_met", "other workers cannot duplicate the batch");
+        helper.assertValueEqual(HiredProductionEligibility.blocker(helper.getLevel(), HiredVillagerRole.CRAFTSMAN,
+                queue, order, worker, -1L, true, null), "output_storage_unavailable", "unavailable storage takes precedence");
+        helper.assertValueEqual(HiredProductionEligibility.blocker(helper.getLevel(), HiredVillagerRole.CRAFTSMAN,
+                queue, order, worker, 0L, true, null), "awaiting_output_delivery", "carried goods keep their destination");
+        helper.assertValueEqual(HiredProductionEligibility.blocker(helper.getLevel(), HiredVillagerRole.COOK,
+                queue, order, worker, 0L, true, BlockPos.ZERO), "recipe_unavailable", "the worker role must support the recipe");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "production_queue")
     public static void sharedBatchAllocationsFinishIndivisibleRecipesExactlyOnce(GameTestHelper helper) {
         var queue = queue(HiredVillagerRole.CRAFTSMAN);
         var order = sticks(helper, HiredProductionOrder.Mode.BATCH, 5, null);

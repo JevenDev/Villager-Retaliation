@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.interaction.work.CraftsmanWorker;
 import com.jvn.villagerretaliation.interaction.work.WorkCraftingPlan;
 import com.jvn.villagerretaliation.interaction.work.CookingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionEligibility;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
@@ -80,19 +81,11 @@ final class SettlementBackgroundCrafting {
             long stock = 0L;
             if (order != null) {
                 stock = SettlementProductionStock.count(level, town, queue, order);
-                var existing = queue.allocation(worker.id());
-                long pending = existing != null && existing.order().equals(order.id()) ? existing.remaining() : 0L;
-                if (stock < 0L || queue.available(order.id(), stock) + pending <= 0L) {
-                    queue.blocker(order.id(), stock < 0L ? "output_storage_unavailable" : "quantity_reserved_or_stock_met");
-                    continue;
-                }
                 boolean carrying = worker.outputSlots().stream().anyMatch(slot -> !items.get(slot).isEmpty());
-                if (carrying && !java.util.Objects.equals(HiredProductionStock.destination(worker.settings()), order.storage())) {
-                    queue.blocker(order.id(), "awaiting_output_delivery");
-                    continue;
-                }
-                if (!order.recipe().supports(level, worker.role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
-                    queue.blocker(order.id(), "recipe_unavailable");
+                String blocker = HiredProductionEligibility.blocker(level, worker.role(), queue, order, worker.id(),
+                        stock, carrying, HiredProductionStock.destination(worker.settings()));
+                if (!blocker.isEmpty()) {
+                    queue.blocker(order.id(), blocker);
                     continue;
                 }
                 filter = order.recipe().filter(level);

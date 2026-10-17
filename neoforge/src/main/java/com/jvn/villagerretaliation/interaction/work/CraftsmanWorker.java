@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.quest.tutorial.*;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionEligibility;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionService;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
@@ -198,23 +199,10 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         var current = queue.allocation(villager.getUUID());
         for (var order : queue.executionOrders()) {
             long stock = HiredProductionStock.count(level, villager, queue, order);
-            if (stock < 0L) {
-                queue.blocker(order.id(), "output_storage_unavailable");
-                continue;
-            }
-            long available = queue.available(order.id(), stock);
-            if (current != null && current.order().equals(order.id())) available += current.remaining();
-            if (available <= 0L) {
-                queue.blocker(order.id(), "quantity_reserved_or_stock_met");
-                continue;
-            }
-            if (context.inventory().hasOutput(ignored -> true)
-                    && !java.util.Objects.equals(HiredProductionStock.destination(context.state()), order.storage())) {
-                queue.blocker(order.id(), "awaiting_output_delivery");
-                continue;
-            }
-            if (!order.recipe().supports(level, role()) || !ItemStack.matches(order.output(), order.recipe().output(level))) {
-                queue.blocker(order.id(), "recipe_unavailable");
+            String blocker = HiredProductionEligibility.blocker(level, role(), queue, order, villager.getUUID(),
+                    stock, context.inventory().hasOutput(ignored -> true), HiredProductionStock.destination(context.state()));
+            if (!blocker.isEmpty()) {
+                queue.blocker(order.id(), blocker);
                 continue;
             }
             var selection = select(level, villager, context, List.of(new Target(0, order.output())), order.recipe().filter(level));
