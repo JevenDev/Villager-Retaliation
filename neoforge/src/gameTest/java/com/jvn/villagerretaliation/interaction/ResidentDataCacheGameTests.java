@@ -63,6 +63,40 @@ public final class ResidentDataCacheGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 200, batch = "worker_ticking_eligibility")
+    public static void loadedWorkersWaitForEntityTickingBeforeRequestingDecisions(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var activePosition = helper.absolutePos(new BlockPos(1, 2, 1));
+        var inactivePosition = activePosition.offset(8192, 0, 8192);
+        var chunk = new net.minecraft.world.level.ChunkPos(inactivePosition);
+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, chunk, 0, chunk);
+        level.getChunk(chunk.x, chunk.z);
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(level.areEntitiesLoaded(chunk.toLong()), "the worker's chunk is loaded");
+            helper.assertFalse(level.isPositionEntityTicking(inactivePosition), "the loaded chunk does not tick entities");
+            helper.assertTrue(level.isPositionEntityTicking(activePosition), "the active worker's chunk ticks entities");
+        }).thenExecute(() -> {
+            var villager = EntityType.VILLAGER.create(level);
+            try {
+                villager.setUUID(new UUID(17, -level.getGameTime()));
+                villager.setPos(inactivePosition.getCenter());
+                villager.setNoAi(true);
+                HireContractStore.save(villager, HireContract.regular(UUID.randomUUID(), level.getGameTime(), 1, 0, 0, HiredVillagerRole.MINING));
+                HiredWorkStateStore.initializeDefaults(HiredWorkStateStore.state(villager), villager);
+                level.addFreshEntity(villager);
+                helper.assertTrue(level.getEntity(villager.getUUID()) == villager, "the inactive worker remains loaded");
+                helper.assertFalse(HiredWorkDecisionScheduler.isDecisionOpportunity(level, villager), "background workers cannot enter the decision budget");
+                helper.assertFalse(HiredWorkDecisionScheduler.tryAcquire(level, villager), "background workers cannot claim a decision slot");
+                villager.setPos(activePosition.getCenter());
+                helper.assertTrue(HiredWorkDecisionScheduler.isDecisionOpportunity(level, villager), "returning workers can request decisions without rejoining the level");
+            } finally {
+                HiredWorkSession.invalidate(villager);
+                villager.discard();
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, chunk, 0, chunk);
+            }
+        }).thenSucceed();
+    }
+
     @GameTest(template = "empty")
     public static void workerNameLookupsRetainLegacyAliases(GameTestHelper helper) {
         for (var role : HiredVillagerRole.values()) {

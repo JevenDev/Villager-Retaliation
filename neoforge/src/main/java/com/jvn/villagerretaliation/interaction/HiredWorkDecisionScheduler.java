@@ -31,7 +31,7 @@ public final class HiredWorkDecisionScheduler {
     }
 
     public static boolean isDecisionOpportunity(ServerLevel level, Villager villager) {
-        if (level == null || villager == null) {
+        if (level == null || villager == null || !level.isPositionEntityTicking(villager.blockPosition())) {
             return false;
         }
         HiredVillagerRole role = VillagerWorkAuthority.activeRole(level, villager);
@@ -40,7 +40,7 @@ public final class HiredWorkDecisionScheduler {
     }
 
     public static boolean tryAcquire(ServerLevel level, Villager villager) {
-        if (level == null || villager == null) {
+        if (level == null || villager == null || !level.isPositionEntityTicking(villager.blockPosition())) {
             return false;
         }
         TickBudget current = LEVEL_BUDGETS.get(level);
