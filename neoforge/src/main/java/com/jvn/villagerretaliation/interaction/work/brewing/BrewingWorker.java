@@ -171,7 +171,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if(TutorialWorkService.isTrial(villager)&&!TutorialWorkService.canTick(villager,role()))return WorkResult.idle("interaction.work.tutorial.paused");
         if (!context.hasWorkArea()) {
-            HiredProductionService.releasePlanned(level, villager, role());
+            context.services(villager).releaseProduction(role());
             return waitForWorkAreaAssignment(level, villager, context);
         }
         boolean hasAssignedStorage = AssignedStorageService.hasAssignedStorage(level, villager);
@@ -181,11 +181,11 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.brewing.depositing_outputs");
             }
             if (depositResult == DepositResult.STORAGE_FULL) {
-                HiredProductionService.releasePlanned(level, villager, role());
+                context.services(villager).releaseProduction(role());
                 return WorkResult.idle(storageFullStatus(context));
             }
         }
-        var production = HiredProductionService.access(level, villager, role());
+        var production = context.services(villager).production(role());
         if (production.managed()) return tickProduction(level, villager, context, production);
         if (!hasOrder(context.state())) {
             context.setProgressTicks(0);

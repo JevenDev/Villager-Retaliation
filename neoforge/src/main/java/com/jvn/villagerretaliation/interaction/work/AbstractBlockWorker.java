@@ -79,7 +79,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     public WorkResult supplyQuota(ServerLevel level, Villager villager, HiredWorkContext context) {
-        var decision = com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager);
+        var decision = context.services(villager).gathering();
         if (decision.allowed()) return null;
         if (context.inventory().hasOutputItems()) {
             if (!context.autoDepositOutputs()) return WorkResult.idle("interaction.work.supply.policy_deposit_disabled");

@@ -69,8 +69,8 @@ public record HiredWorkSession(
                 metadata.efficiency,
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"),
-                jobSite,
-                route);
+                com.jvn.villagerretaliation.interaction.work.HiredWorkAssignment.of(jobSite, route),
+                HiredWorkEnvironment.resolve(villager));
         return new HiredWorkSession(state, safeRole, worker, inventory, metadata.maxRadius, area, route,
                 jobSite, metadata.efficiency, context);
     }

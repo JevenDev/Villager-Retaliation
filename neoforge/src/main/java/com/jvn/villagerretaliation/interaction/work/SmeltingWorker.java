@@ -49,7 +49,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (TutorialWorkService.isTrial(villager) && !TutorialWorkService.canTick(villager, role())) return WorkResult.idle("interaction.work.tutorial.paused");
-        if (com.jvn.villagerretaliation.interaction.work.production.HiredProductionService.access(level, villager, role()).managed()) {
+        if (context.services(villager).production(role()).managed()) {
             return new com.jvn.villagerretaliation.interaction.work.production.HiredQueuedFurnaceWorker(role()).tick(level, villager, hirer, context);
         }
         return tickLegacy(level, villager, hirer, context, false);

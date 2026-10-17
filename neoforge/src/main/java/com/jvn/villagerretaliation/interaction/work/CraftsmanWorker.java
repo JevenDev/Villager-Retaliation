@@ -45,7 +45,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
-            HiredProductionService.releasePlanned(level, villager, role());
+            context.services(villager).releaseProduction(role());
             return waitForWorkAreaAssignment(level, villager, context);
         }
         if (AssignedStorageService.hasAssignedStorage(level, villager)) {
@@ -54,7 +54,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.craftsman.depositing_outputs");
             }
             if (deposit == DepositResult.STORAGE_FULL) {
-                HiredProductionService.releasePlanned(level, villager, role());
+                context.services(villager).releaseProduction(role());
                 return WorkResult.idle(storageFullStatus(context));
             }
         }
@@ -64,7 +64,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             if (run == null || !TutorialWorkService.canTick(villager, role()) || run.committedUnits("craft") >= 1)
                 return WorkResult.idle("interaction.work.tutorial.paused");
         }
-        var production = HiredProductionService.access(level, villager, role());
+        var production = context.services(villager).production(role());
         if (production.managed()) return tickProduction(level, villager, context, production);
 
         ItemStack filter = VillagerItemFilterService.assignedFilter(villager);

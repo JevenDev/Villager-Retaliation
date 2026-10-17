@@ -48,7 +48,7 @@ public final class HiredQueuedFurnaceWorker extends AbstractBlockWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        var access = HiredProductionService.access(level, villager, role());
+        var access = context.services(villager).production(role());
         if (!access.managed() || access.queue() == null || !access.blocker().isEmpty()) {
             return waiting(level, context, access.blocker().isEmpty() ? "production_unavailable" : access.blocker());
         }

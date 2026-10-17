@@ -88,7 +88,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
-        if (!com.jvn.villagerretaliation.settlement.SettlementGatheringPolicy.inspect(level, villager).allowed()) return;
+        if (!context.services(villager).gathering().allowed()) return;
         if (!hasHuntingWeaponReadyForTarget(villager, context)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
             return;
@@ -179,7 +179,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
     }
 
     private static boolean maintainRoute(ServerLevel level, Villager villager, HiredWorkContext context) {
-        return com.jvn.villagerretaliation.settlement.SettlementGuardService.maintain(level, villager, context)
+        return context.services(villager).maintainGuard(context)
                 || HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED);
     }
 
@@ -350,7 +350,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
             boolean requireLineOfSight) {
         return isEligibleTarget(villager, target, targets)
                 && HiredTemporaryEntities.matches(context.state(), target)
-                && com.jvn.villagerretaliation.settlement.SettlementGuardService.allowsTarget(villager, target.blockPosition())
+                && context.services(villager).allowsGuardTarget(target.blockPosition())
                 && context.isInsideWorkAreaOrRoute(target.blockPosition())
                 && (!(villager.level() instanceof ServerLevel level) || HiredEntityClaims.available(level, villager, target))
                 && (!requireLineOfSight || VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target));

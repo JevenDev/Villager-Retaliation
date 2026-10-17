@@ -29,7 +29,8 @@ public record HiredWorkContext(
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies,
-        HiredWorkAssignment assignment) {
+        HiredWorkAssignment assignment,
+        HiredWorkServices services) {
     public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
 
     public HiredWorkContext(
@@ -174,6 +175,21 @@ public record HiredWorkContext(
                 autoDepositOutputs,
                 useAssignedStorageForSupplies,
                 HiredWorkAssignment.of(jobSite, route));
+    }
+
+    public HiredWorkContext(
+            HiredJobInventory inventory, CompoundTag state, BlockPos workCenter, BlockPos workMin, BlockPos workMax,
+            int radius, int verticalRadius, boolean hasWorkArea, int aptitude, int skillWorkSpeedPercent,
+            int transferCapacityPercent, int efficiency, boolean autoDepositOutputs,
+            boolean useAssignedStorageForSupplies, HiredWorkAssignment assignment) {
+        this(inventory, state, workCenter, workMin, workMax, radius, verticalRadius, hasWorkArea, aptitude,
+                skillWorkSpeedPercent, transferCapacityPercent, efficiency, autoDepositOutputs,
+                useAssignedStorageForSupplies, assignment, null);
+    }
+
+    public HiredWorkServices services(Villager villager) {
+        return this.services == null
+                ? com.jvn.villagerretaliation.interaction.HiredWorkEnvironment.resolve(villager) : this.services;
     }
 
     public HiredWorkContext {

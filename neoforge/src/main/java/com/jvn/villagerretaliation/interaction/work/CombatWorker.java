@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.HiredCombatMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.settlement.SettlementGuardService;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
@@ -63,7 +62,7 @@ public final class CombatWorker implements HiredRoleWorker {
             return;
         }
 
-        if (SettlementGuardService.maintain(level, villager, context)
+        if (context.services(villager).maintainGuard(context)
                 || context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
             return;
         }
@@ -91,7 +90,7 @@ public final class CombatWorker implements HiredRoleWorker {
             VillagerRetaliationHandler.clearCustomTarget(villager);
         }
         if (!hasActiveTarget(villager)) {
-            var equipment = com.jvn.villagerretaliation.settlement.SettlementEquipmentService.tick(level, villager, context, PATROL_SPEED);
+            var equipment = context.services(villager).equipGuard(context, PATROL_SPEED);
             if (equipment != null) return equipment;
             WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
             if (ammoResult != null) {
@@ -109,7 +108,7 @@ public final class CombatWorker implements HiredRoleWorker {
             return WorkResult.progressed(activeStatusKey(mode), activeStatusReplacements(villager));
         }
 
-        if (SettlementGuardService.maintain(level, villager, context)
+        if (context.services(villager).maintainGuard(context)
                 || context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "route_patrol");
             return WorkResult.idle(passiveStatusKey(mode));
@@ -153,7 +152,7 @@ public final class CombatWorker implements HiredRoleWorker {
     }
 
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredCombatMode mode) {
-        double horizontalRadius = SettlementGuardService.order(villager).isPresent() ? 16.0D
+        double horizontalRadius = context.services(villager).hasGuardOrder() ? 16.0D
                 : Math.max(6.0D, context.horizontalSearchRadius() + TARGET_SCAN_RADIUS_PADDING);
         double verticalRadius = Math.max(4.0D, context.verticalRadius() + 2.0D);
         LivingEntity target = HiredEntitySearch.nearest(
@@ -171,7 +170,7 @@ public final class CombatWorker implements HiredRoleWorker {
                 || !villager.canAttack(target)
                 || !villager.hasLineOfSight(target)
                 || !context.isInsideWorkAreaOrRoute(target.blockPosition())
-                || !SettlementGuardService.allowsTarget(villager, target.blockPosition())
+                || !context.services(villager).allowsGuardTarget(target.blockPosition())
                 || target.isAlliedTo(villager)
                 || target instanceof AbstractVillager
                 || target instanceof IronGolem
