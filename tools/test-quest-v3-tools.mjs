@@ -5,9 +5,22 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { fingerprintJson, migrationReceipts } from "./quest-v3-compatibility.mjs";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 const { V2, V3, migrate, runtime } = createRequire(import.meta.url)("./quest-v3-format.js");
 const schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const fingerprints = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resources/quest_v3/migration_fingerprints.json", import.meta.url), "utf8"));
+for (const example of fingerprints.values) assert.equal(fingerprintJson(example.source), example.fingerprint, example.name);
+assert.throws(() => fingerprintJson('{"number":1.}'), SyntaxError);
+const bundleFixture = fingerprints.bundle;
+const numericQuestPath = "data/test/quests/line/example/quest.json";
+const numericRewardPath = "data/test/quests/line/example/rewards/reward.json";
+const numericSources = new Map([[numericQuestPath, bundleFixture.quest], [numericRewardPath, bundleFixture.reward]]);
+const numericFiles = new Map([...numericSources].map(([file, text]) => [file, JSON.parse(text)]));
+const numericReceipt = [...migrationReceipts(numericFiles, numericSources).values()][0];
+assert.equal(numericReceipt.from_fingerprint, bundleFixture.before, "old fingerprint keeps original number spellings");
+assert.equal(numericReceipt.to_fingerprint, bundleFixture.after, "new fingerprint keeps unchanged companion number spellings");
+assert.deepEqual(migrate(JSON.parse(bundleFixture.quest)), JSON.parse(bundleFixture.converted_quest));
 const original = {
   schema: V2, id: "test:delivery", localization_prefix: "test.quest.delivery",
   metadata: { questline: "village", title: { key: "#title" }, title_key: "test.quest.delivery.title", campaign: "test:story", revision: 4 },
@@ -72,5 +85,21 @@ try {
   assert.notEqual(receipt.from_fingerprint, receipt.to_fingerprint);
   assert.deepEqual(await readFile(path.join(output, "icon.png")), Buffer.from([1, 2, 3]));
   assert.notEqual(spawnSync(process.execPath, [command, input, "--out-dir", output]).status, 0);
+  const numericInput = path.join(directory, "numeric-input");
+  const numericOutput = path.join(directory, "numeric-output");
+  for (const [relative, sourceText] of numericSources) {
+    const file = path.join(numericInput, relative);
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, sourceText);
+  }
+  const numericRun = spawnSync(process.execPath, [command, numericInput, "--out-dir", numericOutput], { encoding: "utf8" });
+  assert.equal(numericRun.status, 0, numericRun.stderr);
+  const numericReceiptFiles = await readdir(path.join(numericOutput, "data/test/quest_migrations"));
+  const actualReceipt = JSON.parse(await readFile(path.join(numericOutput, "data/test/quest_migrations", numericReceiptFiles[0]), "utf8"));
+  assert.equal(actualReceipt.from_fingerprint, bundleFixture.before);
+  assert.equal(actualReceipt.to_fingerprint, bundleFixture.after);
+  assert.equal(await readFile(path.join(numericInput, numericQuestPath), "utf8"), bundleFixture.quest);
+  assert.equal(await readFile(path.join(numericOutput, numericRewardPath), "utf8"), bundleFixture.reward);
+
 } finally { await rm(directory, { recursive: true, force: true }); }
 console.log(`Quest V3 migration checks and ${count} built-in schema checks passed.`);

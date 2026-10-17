@@ -131,7 +131,7 @@ public final class WorldCampaignChecks {
         quest.add("ui", new JsonObject());
         check(!QuestJsonSchema.validate(quest, QuestV3Schema.export()).isEmpty(), "V2 aliases are rejected in V3");
         System.out.println("PASS campaign ownership, permanent selection, and V3 lowering checks");
-        return 25 + malformedLayers() + migrationReceipts();
+        return 25 + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
     }
 
 
@@ -220,6 +220,45 @@ public final class WorldCampaignChecks {
         check(count == 99, "every built-in quest has a verified migration receipt");
         System.out.println("PASS " + count + " built-in V3 bundles and reward migration fingerprints");
         return count;
+    }
+
+    private static int migrationFingerprintFixtures() throws Exception {
+        JsonObject fixtures;
+        try (var input = WorldCampaignChecks.class.getResourceAsStream("/quest_v3/migration_fingerprints.json")) {
+            fixtures = JsonParser.parseString(new String(Objects.requireNonNull(input).readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+        }
+        for (var value : fixtures.getAsJsonArray("values")) {
+            var example = value.getAsJsonObject();
+            String actual = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(
+                    JsonParser.parseString(example.get("source").getAsString()));
+            check(actual.equals(example.get("fingerprint").getAsString()), "migration fingerprint matches Java: " + example.get("name"));
+        }
+        JsonObject fixture = fixtures.getAsJsonObject("bundle");
+        JsonObject definitions = new JsonObject();
+        for (String kind : List.of("quest", "reward")) {
+            JsonObject value = JsonParser.parseString(fixture.get(kind).getAsString()).getAsJsonObject();
+            JsonObject entries = new JsonObject();
+            entries.add(value.get("id").getAsString(), value);
+            definitions.add(kind, entries);
+        }
+        String before = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(definitions);
+        check(before.equals(fixture.get("before").getAsString()), "old bundle receipt preserves decimal spellings");
+        definitions.getAsJsonObject("quest").add("test:example", JsonParser.parseString(fixture.get("converted_quest").getAsString()));
+        String after = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(definitions);
+        check(after.equals(fixture.get("after").getAsString()), "new bundle receipt preserves unchanged companion decimals");
+        JsonObject receipt = new JsonObject();
+        receipt.addProperty("schema", "villagerretaliation:quest_migration/v1");
+        receipt.addProperty("quest", "test:example");
+        receipt.addProperty("from_fingerprint", before);
+        receipt.addProperty("to_fingerprint", after);
+        check(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, id("test:example"), before, after),
+                "pending rewards accept the format-only migration");
+        definitions.getAsJsonObject("reward").getAsJsonObject("test:reward").addProperty("changed", true);
+        check(!com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, id("test:example"), before,
+                        com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(definitions)),
+                "migration receipts still reject a later reward edit");
+        System.out.println("PASS migration number, string, and reward receipt compatibility fixtures");
+        return fixtures.getAsJsonArray("values").size() + 1;
     }
 
     private static String manifest(String name, boolean locked) {

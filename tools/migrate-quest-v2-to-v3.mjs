@@ -29,9 +29,13 @@ async function scan(directory) {
 await scan(source);
 const converted = new Map();
 const definitions = new Map();
+const sourceTexts = new Map();
 for (const file of files.filter(file => file.endsWith(".json"))) {
-  const value = JSON.parse((await readFile(file, "utf8")).replace(/^\uFEFF/, ""));
-  definitions.set(path.relative(source, file).split(path.sep).join("/"), value);
+  const sourceText = (await readFile(file, "utf8")).replace(/^\uFEFF/, "");
+  const value = JSON.parse(sourceText);
+  const relative = path.relative(source, file).split(path.sep).join("/");
+  definitions.set(relative, value);
+  sourceTexts.set(relative, sourceText);
   if (value.schema === V2) {
     try {
       const quest = migrate(value);
@@ -42,7 +46,7 @@ for (const file of files.filter(file => file.endsWith(".json"))) {
     catch (error) { throw new Error(`${path.relative(source, file)}: ${error.message}`); }
   }
 }
-const receipts = migrationReceipts(definitions);
+const receipts = migrationReceipts(definitions, sourceTexts);
 if (!check) {
   await mkdir(output, { recursive: false });
   for (const file of files) {

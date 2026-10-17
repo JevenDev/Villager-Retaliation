@@ -1,0 +1,31 @@
+{
+  "values": [
+    {
+      "name": "numeric spellings",
+      "source": "{\"values\":[1.0,1e0,1E+0,-0,0.00010,9007199254740993]}",
+      "fingerprint": "28dca5aa4b4b732d651f20ea9f7fa40cb90c79f62088a9da36879513cbfd2126"
+    },
+    {
+      "name": "numeric object keys",
+      "source": "{\"2\":0,\"10\":1,\"1\":2}",
+      "fingerprint": "cbbc69514be4de7566f79bc05ecbef201096b4dd8113aad936debecd0825ad11"
+    },
+    {
+      "name": "string escaping",
+      "source": "{\"text\":\"quote\\\" backslash\\\\ newline\\n separators\\u2028\\u2029 é\"}",
+      "fingerprint": "6acbc4b0aec6e7f8630b9d00a79a7287208507575bd3168a88667cc1288f85ae"
+    },
+    {
+      "name": "nested and reserved keys",
+      "source": "{\"__proto__\":{\"number\":1.50},\"nested\":[{},[],null,false],\"numberText\":\"1e2\"}",
+      "fingerprint": "20eef7890a5609507f394f85eea0d3533dbc0ae9224b4033a51359eaac7d8149"
+    }
+  ],
+  "bundle": {
+    "quest": "{\"schema\":\"villagerretaliation:quest/v2\",\"id\":\"test:example\",\"localization_prefix\":\"test.quest.example\",\"metadata\":{\"questline\":\"line\"},\"provider\":{\"type\":\"villagerretaliation:villager\"},\"entry_stage\":\"start\",\"stages\":[{\"id\":\"start\",\"objectives\":[{\"id\":\"paper\",\"type\":\"item_check\",\"item\":\"minecraft:paper\",\"count\":1.0}],\"next\":{\"complete\":true}}]}",
+    "reward": "{\"schema\":\"villagerretaliation:quest_reward/v1\",\"id\":\"test:reward\",\"table\":{\"pools\":[{\"bonus_rolls\":1e-1,\"rolls\":1.0,\"entries\":[{\"type\":\"minecraft:item\",\"name\":\"minecraft:paper\"}]}]}}",
+    "converted_quest": "{\"schema\":\"villagerretaliation:quest/v3\",\"id\":\"test:example\",\"localization_prefix\":\"test.quest.example\",\"metadata\":{\"questline\":\"line\"},\"provider\":{\"type\":\"villagerretaliation:villager\"},\"entry_stage\":\"start\",\"stages\":[{\"id\":\"start\",\"objectives\":[{\"id\":\"paper\",\"type\":\"item_check\",\"item\":\"minecraft:paper\",\"count\":1}],\"transition\":{\"complete\":true}}]}",
+    "before": "3ad718710ae8db6bdf7a0b6c59c2fc172f1fc41b86709e1c96c942ce535df2e1",
+    "after": "117c1ed7087f7e489f8f6eda5d2d84ec8c9c7226b522db4d2ee9bc3e2429d9e8"
+  }
+}
