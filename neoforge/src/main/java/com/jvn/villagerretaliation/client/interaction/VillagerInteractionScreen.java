@@ -17,13 +17,9 @@ import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerCombatSkillBehavior;
-import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
-import com.jvn.villagerretaliation.duel.DuelKit;
-import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
-import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
@@ -36,7 +32,6 @@ import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
-import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
@@ -71,7 +66,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.GiftPreferenceResolver;
 import com.jvn.villagerretaliation.interaction.GiftPreferenceView;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
-import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
@@ -294,7 +288,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_TEXT_COLOR = 0xFFFFFFFF;
     private static final int INTERACTION_REPUTATION_TEXT_COLOR = 0xFFFFFF55;
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
-    private static final int[] DUEL_STAKES = {0, 8, 16, 32, 64, Integer.MAX_VALUE};
     private static final Runnable NO_ACTION = () -> {
     };
 
@@ -304,6 +297,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final VillagerGender gender;
     private final boolean baby;
     private final boolean canTrade;
+    private final BrewingWorkScreenController brewingWork = new BrewingWorkScreenController(new BrewingWorkHost());
+    private final ContractScreenController contract = new ContractScreenController(new ContractHost());
+    private final DuelScreenController duel = new DuelScreenController(new DuelHost());
     private final boolean duelVisible;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
@@ -340,7 +336,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final int walletCurrencyTextColor;
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
     private HiredVillagerRole activeHiredRole;
-    private boolean activeBrewingOrder;
     private boolean activeBuilderTask;
     private boolean oneOffBuilderJob;
     private boolean farmingTillSoil;
@@ -364,10 +359,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean animalCollection;
     private boolean animalCulling;
     private boolean forceCameraTowardsVillager;
-    private OpenVillagerDuelPayload duelStatus;
-    private ResourceLocation duelKitId = DuelLoadout.BARE_HANDED.id();
-    private int duelStakeIndex;
-    private boolean duelStartPending;
     private final List<DialogueOption> options = new ArrayList<>();
     private OptionListContext outgoingDialogueOptions;
     private boolean dialogueOptionsHidden;
@@ -413,13 +404,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredVillagerRole selectedJobDetails;
     private SkillsProfilePanel skillsProfilePanel = SkillsProfilePanel.SKILLS;
     private long lastProfileRequestMillis = -1L;
-    private HiredBrewingRecipeCatalog.BrewingPotionChoice selectedBrewingPotionChoice;
-    private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
-    private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
-    private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
-    private HiredVillagerRole pendingHireRole;
-    private boolean confirmingPartyRecruit;
-    private boolean confirmingPartyDismiss;
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
@@ -646,7 +630,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 ? EnumSet.noneOf(HiredVillagerRole.class)
                 : EnumSet.copyOf(availableHiredRoles);
         this.activeHiredRole = activeHiredRole;
-        this.activeBrewingOrder = activeBrewingOrder;
+        this.brewingWork.active(activeBrewingOrder);
         this.activeBuilderTask = activeBuilderTask;
         this.oneOffBuilderJob = oneOffBuilderJob;
         this.farmingTillSoil = farmingTillSoil;
@@ -782,25 +766,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     public void updateDuelStatus(OpenVillagerDuelPayload status) {
-        if (status == null || !matchesVillager(status.entityId())) {
-            return;
-        }
-        boolean started = this.duelStartPending && status.reason() == DuelAvailabilityReason.PLAYER_BUSY;
-        this.duelStartPending = false;
-        this.duelStatus = status;
-        if (status.duelKits().stream().noneMatch(kit -> kit.id().equals(this.duelKitId))) {
-            this.duelKitId = status.duelKits().isEmpty()
-                    ? DuelLoadout.BARE_HANDED.id()
-                    : status.duelKits().getFirst().id();
-        }
-        if (started) {
-            leaveConversation();
-            return;
-        }
-        if (isDuelSetupPage(this.page)) {
-            refreshDuelDialogue();
-            rebuildOptionsKeepingListPosition();
-        }
+        this.duel.updateDuelStatus(status);
     }
 
     public void replaceFromServer() {
@@ -1510,13 +1476,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.ADVENTURES) {
             addDialogueOptions(true);
         } else if (this.page == DialoguePage.DUEL) {
-            addDuelOptions();
+            this.duel.addDuelOptions();
         } else if (this.page == DialoguePage.DUEL_LOADOUT) {
-            addDuelLoadoutOptions();
+            this.duel.addDuelLoadoutOptions();
         } else if (this.page == DialoguePage.DUEL_WAGER) {
-            addDuelWagerOptions();
+            this.duel.addDuelWagerOptions();
         } else if (this.page == DialoguePage.DUEL_CONFIRM) {
-            addDuelConfirmOptions();
+            this.duel.addDuelConfirmOptions();
         } else if (this.page == DialoguePage.PROFILE) {
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
@@ -1544,13 +1510,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.HIRE) {
             addHireOptions();
         } else if (this.page == DialoguePage.HIRE_DURATION) {
-            addHireDurationOptions();
+            this.contract.addHireDurationOptions();
         } else if (this.page == DialoguePage.CONTRACT) {
-            addContractOptions();
+            this.contract.addContractOptions();
         } else if (this.page == DialoguePage.END_CONTRACT_CONFIRMATION) {
-            addEndContractConfirmationOptions();
+            this.contract.addEndContractConfirmationOptions();
         } else if (this.page == DialoguePage.CONTRACT_EXTENSION) {
-            addContractExtensionOptions();
+            this.contract.addContractExtensionOptions();
         } else if (this.page == DialoguePage.ROLE) {
             addRoleOptions();
         } else if (this.page == DialoguePage.ROLE_CHANGE) {
@@ -1576,15 +1542,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.BUILDER_CONFIRM) {
             addBuilderConfirmOptions();
         } else if (this.page == DialoguePage.BREWING_POTION) {
-            addBrewingPotionOptions();
+            this.brewingWork.addBrewingPotionOptions();
         } else if (this.page == DialoguePage.BREWING_LEVEL) {
-            addBrewingLevelOptions();
+            this.brewingWork.addBrewingLevelOptions();
         } else if (this.page == DialoguePage.BREWING_DURATION) {
-            addBrewingDurationOptions();
+            this.brewingWork.addBrewingDurationOptions();
         } else if (this.page == DialoguePage.BREWING_TYPE) {
-            addBrewingTypeOptions();
+            this.brewingWork.addBrewingTypeOptions();
         } else if (this.page == DialoguePage.BREWING_AMOUNT) {
-            addBrewingAmountOptions();
+            this.brewingWork.addBrewingAmountOptions();
         } else if (this.page == DialoguePage.ROOT) {
             if (this.clipboardMenu) {
                 addClipboardMenuOptions();
@@ -1645,200 +1611,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addProfileOptions() {
     }
 
-    private void addDuelOptions() {
-        if (this.duelStatus == null) {
-            addPassiveOption("duel.loading");
-            return;
-        }
-        if (!this.duelStatus.available()) {
-            addOption("duel.leave", this::navigateToRootPage);
-            return;
-        }
-        this.options.add(DialogueOption.enabled(
-                translate("duel.choose_loadout", selectedDuelLoadoutLabel()),
-                () -> openPage(DialoguePage.DUEL_LOADOUT)));
-        this.options.add(DialogueOption.enabled(
-                translate("duel.choose_wager", selectedDuelStakeLabel()),
-                () -> openPage(DialoguePage.DUEL_WAGER)));
-        addOption("duel.issue_challenge", () -> openPage(DialoguePage.DUEL_CONFIRM));
-        addOption("duel.nevermind", this::navigateToRootPage);
-    }
-
-    private void addDuelLoadoutOptions() {
-        if (!canConfigureDuel()) {
-            addDuelSetupUnavailableOption();
-            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
-            return;
-        }
-        for (DuelKit.Summary kit : this.duelStatus.duelKits()) {
-            this.options.add(DialogueOption.checkbox(
-                    kit.description(),
-                    this.duelKitId.equals(kit.id()),
-                    () -> {
-                        this.duelKitId = kit.id();
-                        openPage(DialoguePage.DUEL);
-                    },
-                    false));
-        }
-        addOption("duel.back", () -> openPage(DialoguePage.DUEL));
-    }
-
-    private void addDuelWagerOptions() {
-        if (!canConfigureDuel()) {
-            addDuelSetupUnavailableOption();
-            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
-            return;
-        }
-        int maximumStake = duelMaximumStake();
-        Set<Integer> offeredStakes = new LinkedHashSet<>();
-        for (int index = 0; index < DUEL_STAKES.length; index++) {
-            int optionIndex = index;
-            int stake = duelStakeForIndex(optionIndex);
-            if (!offeredStakes.add(stake)) {
-                continue;
-            }
-            boolean affordable = stake <= maximumStake;
-            this.options.add(DialogueOption.checkbox(
-                    duelStakeOptionLabel(stake, DUEL_STAKES[optionIndex] == Integer.MAX_VALUE),
-                    selectedDuelStake() == stake,
-                    affordable
-                            ? () -> {
-                                this.duelStakeIndex = optionIndex;
-                                openPage(DialoguePage.DUEL);
-                            }
-                            : NO_ACTION,
-                    !affordable));
-        }
-        addOption("duel.back", () -> openPage(DialoguePage.DUEL));
-    }
-
-    private void addDuelConfirmOptions() {
-        if (this.duelStartPending) {
-            addPassiveOption("duel.starting");
-            return;
-        }
-        if (!canConfigureDuel()) {
-            addDuelSetupUnavailableOption();
-            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
-            return;
-        }
-        int stake = selectedDuelStake();
-        if (stake > duelMaximumStake()) {
-            addPassiveOption("duel.wager_unavailable");
-            addOption("duel.back", () -> openPage(DialoguePage.DUEL_WAGER));
-            return;
-        }
-        addOption("duel.confirm", this::startDuel);
-        addOption("duel.change_terms", () -> openPage(DialoguePage.DUEL));
-    }
-
-    private void addDuelSetupUnavailableOption() {
-        this.options.add(DialogueOption.enabled(
-                this.duelStatus == null ? translate("duel.loading") : duelUnavailableText(),
-                NO_ACTION,
-                true));
-    }
-
-    private boolean canConfigureDuel() {
-        return this.duelStatus != null && this.duelStatus.available();
-    }
-
-    private int duelMaximumStake() {
-        return this.duelStatus == null ? 0 : this.duelStatus.maximumStake();
-    }
-
-    private int selectedDuelStake() {
-        return duelStakeForIndex(this.duelStakeIndex);
-    }
-
-    private int duelStakeForIndex(int index) {
-        int resolvedIndex = Math.max(0, Math.min(index, DUEL_STAKES.length - 1));
-        int configuredStake = DUEL_STAKES[resolvedIndex];
-        return configuredStake == Integer.MAX_VALUE ? duelMaximumStake() : configuredStake;
-    }
-
-    private int selectedDuelWireStake() {
-        int resolvedIndex = Math.max(0, Math.min(this.duelStakeIndex, DUEL_STAKES.length - 1));
-        return DUEL_STAKES[resolvedIndex];
-    }
-
-    private String selectedDuelLoadoutLabel() {
-        if (this.duelStatus != null) {
-            for (DuelKit.Summary kit : this.duelStatus.duelKits()) {
-                if (kit.id().equals(this.duelKitId)) return kit.name();
-            }
-        }
-        return this.duelKitId.toString();
-    }
-
-    private String selectedDuelStakeLabel() {
-        int stake = selectedDuelStake();
-        return stake == 0
-                ? translate("duel.stake.none")
-                : translate("duel.stake.summary", stake, duelCurrencyName());
-    }
-
-    private String duelStakeOptionLabel(int stake, boolean maximum) {
-        if (stake == 0) {
-            return translate("duel.stake_option.none");
-        }
-        return translate(maximum ? "duel.stake_option.maximum" : "duel.stake_option.amount",
-                stake, duelCurrencyName());
-    }
-
-    private String duelCurrencyName() {
-        return this.duelStatus == null ? "" : this.duelStatus.currencyName();
-    }
-
-    private String duelUnavailableText() {
-        if (this.duelStatus == null) {
-            return translate("duel.loading");
-        }
-        if (this.duelStatus.reason() == DuelAvailabilityReason.COOLDOWN) {
-            return I18n.get("villagerretaliation.duel.unavailable.cooldown_remaining",
-                    formatDuelTicks(this.duelStatus.cooldownTicks()));
-        }
-        return I18n.get("villagerretaliation.duel.unavailable."
-                + this.duelStatus.reason().name().toLowerCase(Locale.ROOT));
-    }
-
-    private void refreshDuelDialogue() {
-        if (this.duelStatus == null) {
-            return;
-        }
-        String dialogue = this.duelStartPending
-                ? this.duelStatus.startingDialogue()
-                : switch (this.page) {
-                    case DUEL_LOADOUT -> this.duelStatus.loadoutDialogue();
-                    case DUEL_WAGER -> this.duelStatus.wagerDialogue();
-                    case DUEL_CONFIRM -> this.duelStatus.confirmationDialogue();
-                    default -> this.duelStatus.openingDialogue();
-                };
-        acceptVillagerDialogue(dialogue, List.of());
-    }
-
-    private void startDuel() {
-        if (!canConfigureDuel() || selectedDuelStake() > duelMaximumStake()) {
-            return;
-        }
-        this.duelStartPending = true;
-        refreshDuelDialogue();
-        rebuildOptionsKeepingListPosition();
-        sendToServer(new VillagerDuelRequestPayload(
-                this.villagerEntityId,
-                VillagerDuelRequestPayload.Action.START,
-                this.duelKitId,
-                selectedDuelWireStake()));
-    }
-
-    private static String formatDuelTicks(long ticks) {
-        long seconds = Math.max(0L, (ticks + 19L) / 20L);
-        if (seconds >= 60L && seconds % 60L == 0L) {
-            return (seconds / 60L) + "m";
-        }
-        return seconds + "s";
-    }
-
     private void addSkillsOptions() {
     }
 
@@ -1871,7 +1643,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addPassiveOption("party.leader_only");
                 return;
             }
-            addOption("party.about_contract", this::openContractPage);
+            addOption("party.about_contract", this.contract::openContractPage);
             if (canRequestPartyVillagerInventory()) {
                 addOption("party.inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
             }
@@ -1911,12 +1683,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                                     ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
                                     : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
                 }
-                addOption("party.dismiss", this::openPartyDismissConfirmationPage);
+                addOption("party.dismiss", this.contract::openPartyDismissConfirmationPage);
             }
             return;
         }
         if (this.partyRecruitAvailable) {
-            addOption("party.recruit", this::openPartyRecruitConfirmationPage);
+            addOption("party.recruit", this.contract::openPartyRecruitConfirmationPage);
         }
         if (this.hiredByPlayer) {
             addOption("recruit.work", this::openWorkPage);
@@ -1929,7 +1701,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("recruit.storage", this::openStoragePage);
             if (!this.oneOffBuilderJob) {
                 addOption("recruit.payment", this::openPaymentPage);
-                addOption("recruit.about_contract", this::openContractPage);
+                addOption("recruit.about_contract", this.contract::openContractPage);
             } else if (this.mountFeatureAvailable) {
                 addMountAssignmentOption();
             }
@@ -1938,7 +1710,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.hiredByOtherPlayer) {
             addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
         } else if (canHireVillager()) {
-            addOption("recruit.hire", this::openHirePage);
+            addOption("recruit.hire", this.contract::openHirePage);
         }
         if (this.jobInventoryAvailable) {
             addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
@@ -1968,109 +1740,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addHireOptions() {
         addPassiveOption("recruit.hire_services_intro");
-        addHireRoleOption(HiredVillagerRole.COMBAT, "recruit.role_combat");
-        addHireRoleOption(HiredVillagerRole.HUNTING, "recruit.role_hunting");
-        addHireRoleOption(HiredVillagerRole.MINING, "recruit.role_mining");
-        addHireRoleOption(HiredVillagerRole.LOGGING, "recruit.role_logging");
-        addHireRoleOption(HiredVillagerRole.FARMING, "recruit.role_farming");
-        addHireRoleOption(HiredVillagerRole.FISHING, "recruit.role_fishing");
-        addHireRoleOption(HiredVillagerRole.BREWING, "recruit.role_brewing");
-        addHireRoleOption(HiredVillagerRole.CRAFTSMAN, "recruit.role_craftsman");
-        addHireRoleOption(HiredVillagerRole.COOK, "recruit.role_cook");
-        addHireRoleOption(HiredVillagerRole.SMELTER, "recruit.role_smelter");
-        addHireRoleOption(HiredVillagerRole.COURIER, "recruit.role_courier");
-        addHireRoleOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling");
-        addHireRoleOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit");
+        this.contract.addHireRoleOption(HiredVillagerRole.COMBAT, "recruit.role_combat");
+        this.contract.addHireRoleOption(HiredVillagerRole.HUNTING, "recruit.role_hunting");
+        this.contract.addHireRoleOption(HiredVillagerRole.MINING, "recruit.role_mining");
+        this.contract.addHireRoleOption(HiredVillagerRole.LOGGING, "recruit.role_logging");
+        this.contract.addHireRoleOption(HiredVillagerRole.FARMING, "recruit.role_farming");
+        this.contract.addHireRoleOption(HiredVillagerRole.FISHING, "recruit.role_fishing");
+        this.contract.addHireRoleOption(HiredVillagerRole.BREWING, "recruit.role_brewing");
+        this.contract.addHireRoleOption(HiredVillagerRole.CRAFTSMAN, "recruit.role_craftsman");
+        this.contract.addHireRoleOption(HiredVillagerRole.COOK, "recruit.role_cook");
+        this.contract.addHireRoleOption(HiredVillagerRole.SMELTER, "recruit.role_smelter");
+        this.contract.addHireRoleOption(HiredVillagerRole.COURIER, "recruit.role_courier");
+        this.contract.addHireRoleOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling");
+        this.contract.addHireRoleOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit");
         if (canOfferBuilderService()) {
             addOption("recruit.buy_blueprints", this::openBuilderStructuresPage);
         }
         addOption("recruit.nevermind", this::openRecruitPage);
-    }
-
-    private void addHireDurationOptions() {
-        if (this.pendingHireRole == null || !canOfferContractRole(this.pendingHireRole)) {
-            addOption("recruit.nevermind", this::openRecruitPage);
-            return;
-        }
-        this.options.add(DialogueOption.enabled(translate("recruit.hire_selected_role", this.pendingHireRole.label()), NO_ACTION));
-        addPassiveOption("recruit.hire_releases_civic_duty");
-        addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
-        addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
-        addOption("recruit.hire_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_FIVE_DAYS));
-        addOption("recruit.hire_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS));
-        addOption("recruit.hire_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS));
-        addOption("recruit.hire_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THIRTY_DAYS));
-        addOption("recruit.nevermind", this::openHirePage);
-    }
-
-    private void addContractOptions() {
-        if (this.recruitedPartyVillager) {
-            this.options.add(DialogueOption.enabled(
-                    translate("party.companion_permanent"),
-                    NO_ACTION));
-        }
-        addOption(this.recruitedPartyVillager ? "party.contract_days_left" : "recruit.contract_days_left",
-                () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
-        if (!this.recruitedPartyVillager) addOption("recruit.extend_contract", this::openContractExtensionPage);
-        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
-            addOption("recruit.end_hire", () -> {
-                openEndContractConfirmationPage();
-                requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
-            });
-        }
-        addOption("recruit.nevermind", this::openRecruitPage);
-    }
-
-    private void addEndContractConfirmationOptions() {
-        if (this.confirmingPartyRecruit) {
-            addOption("party.recruit_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.PARTY_RECRUIT));
-            addOption("recruit.nevermind", () -> {
-                requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION);
-                openRecruitPage();
-            });
-            return;
-        }
-        if (this.confirmingPartyDismiss) {
-            addOption("party.dismiss_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.PARTY_DISMISS));
-            addOption("recruit.nevermind", () -> {
-                requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_PARTY_DISMISS_CONFIRMATION);
-                openRecruitPage();
-            });
-            return;
-        }
-        addOption("recruit.end_hire_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
-        addOption("recruit.nevermind", () -> {
-            requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_END_HIRE_CONFIRMATION);
-            openRecruitPage();
-        });
-    }
-
-    private void addContractExtensionOptions() {
-        if (this.recruitedPartyVillager) {
-            addOption("party.extend_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_ONE_DAY));
-            addOption("party.extend_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THREE_DAYS));
-            addOption("party.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
-            addOption("party.extend_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_SEVEN_DAYS));
-            addOption("party.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
-            addPartyMaxExtensionOption();
-            addOption("recruit.nevermind", this::openContractPage);
-            return;
-        }
-        addOption("recruit.extend_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_ONE_DAY));
-        addOption("recruit.extend_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THREE_DAYS));
-        addOption("recruit.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
-        addOption("recruit.extend_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_SEVEN_DAYS));
-        addOption("recruit.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
-        addOption("recruit.extend_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS));
-        addOption("recruit.nevermind", this::openContractPage);
-    }
-
-    private void addPartyMaxExtensionOption() {
-        int maxExtensionDays = Math.max(0, VillagerContractTime.MAX_PREPAID_DAYS - this.partyRemainingDays);
-        int cost = maxExtensionDays * PartyVillagerContractService.DAILY_EMERALD_COST;
-        this.options.add(DialogueOption.enabled(
-                translate("party.extend_max_days", maxExtensionDays, cost),
-                () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_MAX_DAYS)));
     }
 
     private void addRoleOptions() {
@@ -2150,10 +1836,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("recruit.work_config_farming", this::openFarmingOptionsPage);
         }
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
-            if (this.activeBrewingOrder) {
+            if (this.brewingWork.active()) {
                 addOption("recruit.stop_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BREWING));
             } else {
-                addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
+                addOption("recruit.work_config_brewing", this.brewingWork::openBrewingPotionPage);
             }
         }
         if (isActiveHiredRole(HiredVillagerRole.CRAFTSMAN)) {
@@ -2266,102 +1952,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
     }
 
-    private void addBrewingPotionOptions() {
-        if (this.minecraft == null || this.minecraft.level == null) {
-            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_recipes"), NO_ACTION));
-        } else {
-            List<HiredBrewingRecipeCatalog.BrewingPotionChoice> choices = HiredBrewingRecipeCatalog.potionChoices(this.minecraft.level);
-            if (choices.isEmpty()) {
-                this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_recipes"), NO_ACTION));
-            }
-            for (HiredBrewingRecipeCatalog.BrewingPotionChoice choice : choices) {
-                this.options.add(DialogueOption.enabled(choice.label(), () -> {
-                    this.selectedBrewingPotionChoice = choice;
-                    this.selectedBrewingDurationChoice = null;
-                    this.selectedBrewingLevelChoice = null;
-                    this.selectedBrewingRoute = null;
-                    openPage(DialoguePage.BREWING_LEVEL);
-                }));
-            }
-        }
-        addOption("recruit.nevermind", this::openWorkPage);
-    }
-
-    private void addBrewingLevelOptions() {
-        if (this.selectedBrewingPotionChoice == null) {
-            openBrewingPotionPage();
-            return;
-        }
-        List<HiredBrewingRecipeCatalog.BrewingLevelChoice> choices = HiredBrewingRecipeCatalog.levelChoices(this.selectedBrewingPotionChoice);
-        if (choices.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
-        }
-        for (HiredBrewingRecipeCatalog.BrewingLevelChoice choice : choices) {
-            this.options.add(DialogueOption.enabled(levelLabel(choice.level()), () -> {
-                this.selectedBrewingLevelChoice = choice;
-                this.selectedBrewingDurationChoice = null;
-                this.selectedBrewingRoute = null;
-                openPage(DialoguePage.BREWING_DURATION);
-            }));
-        }
-        addOption("recruit.nevermind", this::openBrewingPotionPage);
-    }
-
-    private void addBrewingDurationOptions() {
-        if (this.selectedBrewingLevelChoice == null) {
-            openPage(DialoguePage.BREWING_LEVEL);
-            return;
-        }
-        List<HiredBrewingRecipeCatalog.BrewingDurationChoice> choices = HiredBrewingRecipeCatalog.durationChoices(this.selectedBrewingLevelChoice);
-        if (choices.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
-        }
-        for (HiredBrewingRecipeCatalog.BrewingDurationChoice choice : choices) {
-            this.options.add(DialogueOption.enabled(durationLabel(choice.durationTicks()), () -> {
-                this.selectedBrewingDurationChoice = choice;
-                this.selectedBrewingRoute = null;
-                openPage(DialoguePage.BREWING_TYPE);
-            }));
-        }
-        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_LEVEL));
-    }
-
-    private void addBrewingTypeOptions() {
-        if (this.selectedBrewingDurationChoice == null) {
-            openPage(DialoguePage.BREWING_DURATION);
-            return;
-        }
-        List<HiredBrewingRecipeCatalog.BrewingTypeChoice> choices = HiredBrewingRecipeCatalog.typeChoices(this.selectedBrewingDurationChoice);
-        if (choices.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("recruit.brewing_no_variants"), NO_ACTION));
-        }
-        for (HiredBrewingRecipeCatalog.BrewingTypeChoice choice : choices) {
-            this.options.add(DialogueOption.enabled(typeLabel(choice), () -> {
-                this.selectedBrewingRoute = choice.route();
-                openPage(DialoguePage.BREWING_AMOUNT);
-            }));
-        }
-        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_DURATION));
-    }
-
-    private void addBrewingAmountOptions() {
-        if (this.selectedBrewingRoute == null) {
-            openPage(DialoguePage.BREWING_TYPE);
-            return;
-        }
-        addBrewingAmountOption("recruit.brewing_amount_1", 1, false);
-        addBrewingAmountOption("recruit.brewing_amount_3", 3, false);
-        addBrewingAmountOption("recruit.brewing_amount_6", 6, false);
-        addBrewingAmountOption("recruit.brewing_amount_9", 9, false);
-        addBrewingAmountOption("recruit.brewing_amount_27", 27, false);
-        addBrewingAmountOption("recruit.brewing_amount_continuous", 0, true);
-        addOption("recruit.nevermind", () -> openPage(DialoguePage.BREWING_TYPE));
-    }
-
-    private void addBrewingAmountOption(String labelKey, int amount, boolean continuous) {
-        addOption(labelKey, () -> requestBrewingOrder(this.selectedBrewingRoute, amount, continuous));
-    }
-
     private void addBuilderCategoryOptions() {
         Set<String> categories = new LinkedHashSet<>();
         for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
@@ -2433,51 +2023,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.nevermind", this::openBuilderReturnPage);
     }
 
-    private String durationLabel(int durationTicks) {
-        if (durationTicks <= 0) {
-            return translate("recruit.brewing_duration_instant");
-        }
-        int totalSeconds = Math.max(1, durationTicks / 20);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return translate("recruit.brewing_duration", String.format(Locale.ROOT, "%d:%02d", minutes, seconds));
-    }
-
-    private String levelLabel(int level) {
-        return translate("recruit.brewing_level", romanNumeral(Math.max(1, level)));
-    }
-
-    private String typeLabel(HiredBrewingRecipeCatalog.BrewingTypeChoice choice) {
-        String labelKey = choice.type().labelKey();
-        if (!labelKey.isBlank()) {
-            return translate(labelKey);
-        }
-        return choice.route().output().getHoverName().getString();
-    }
-
-    private static String romanNumeral(int number) {
-        return switch (number) {
-            case 1 -> "I";
-            case 2 -> "II";
-            case 3 -> "III";
-            case 4 -> "IV";
-            case 5 -> "V";
-            default -> Integer.toString(number);
-        };
-    }
-
     private void addRoleChangeOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
         if (canOfferContractRole(role)) {
             addOption(labelKey, () -> requestRecruit(action));
-        }
-    }
-
-    private void addHireRoleOption(HiredVillagerRole role, String labelKey) {
-        if (canOfferContractRole(role)) {
-            addOption(labelKey, () -> {
-                this.pendingHireRole = role;
-                openHireDurationPage();
-            });
         }
     }
 
@@ -2809,12 +2357,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.PAYMENT);
     }
 
-    private void openHirePage() {
-        this.pendingHireRole = null;
-        requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT);
-        openPage(DialoguePage.HIRE);
-    }
-
     private void addPartySettingOption(
             String labelKey,
             String valueKey,
@@ -2822,38 +2364,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.options.add(DialogueOption.enabled(
                 translate("party.setting", translate(labelKey), translate(valueKey)),
                 () -> requestRecruit(action)));
-    }
-
-    private void openHireDurationPage() {
-        openPage(DialoguePage.HIRE_DURATION);
-    }
-
-    private void openContractPage() {
-        openPage(DialoguePage.CONTRACT);
-    }
-
-    private void openEndContractConfirmationPage() {
-        this.confirmingPartyRecruit = false;
-        this.confirmingPartyDismiss = false;
-        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
-    }
-
-    private void openPartyRecruitConfirmationPage() {
-        this.confirmingPartyRecruit = true;
-        this.confirmingPartyDismiss = false;
-        requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION);
-        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
-    }
-
-    private void openPartyDismissConfirmationPage() {
-        this.confirmingPartyRecruit = false;
-        this.confirmingPartyDismiss = true;
-        requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION);
-        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
-    }
-
-    private void openContractExtensionPage() {
-        openPage(DialoguePage.CONTRACT_EXTENSION);
     }
 
     private void openRolePage() {
@@ -2892,14 +2402,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.ANIMAL_CULL_CAPS);
     }
 
-    private void openBrewingPotionPage() {
-        this.selectedBrewingPotionChoice = null;
-        this.selectedBrewingDurationChoice = null;
-        this.selectedBrewingLevelChoice = null;
-        this.selectedBrewingRoute = null;
-        openPage(DialoguePage.BREWING_POTION);
-    }
-
     private void openBuilderStructuresPage() {
         this.selectedBuilderCategory = null;
         this.selectedBuilderStructure = null;
@@ -2913,16 +2415,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
 
-
-    private void openDuelPage() {
-        this.duelStartPending = false;
-        openPage(DialoguePage.DUEL);
-        requestDuelStatus();
-    }
-
-    private void requestDuelStatus() {
-        sendToServer(new VillagerDuelRequestPayload(this.villagerEntityId, VillagerDuelRequestPayload.Action.OPEN));
-    }
 
     private void openAncestryPage() {
         openPage(DialoguePage.ANCESTRY);
@@ -3353,11 +2845,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
-        HiredVillagerRole selectedRole = isHireDurationAction(action) ? this.pendingHireRole : null;
+        HiredVillagerRole selectedRole = this.contract.roleFor(action);
         sendToServer(new VillagerRecruitRequestPayload(
                 this.villagerEntityId, action, selectedRole, this.assignmentRevision));
         if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
-            this.activeBrewingOrder = false;
+            this.brewingWork.active(false);
             openWorkPage();
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
             boolean wasOneOffBuilderJob = this.oneOffBuilderJob;
@@ -3457,15 +2949,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         rebuildOptionsKeepingListPosition();
     }
 
-    private static boolean isHireDurationAction(VillagerRecruitRequestPayload.Action action) {
-        return action == VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY
-                || action == VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS
-                || action == VillagerRecruitRequestPayload.Action.HIRE_FIVE_DAYS
-                || action == VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS
-                || action == VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS
-                || action == VillagerRecruitRequestPayload.Action.HIRE_THIRTY_DAYS;
-    }
-
     private void requestAnimalHandlingOption(String optionId) {
         switch (optionId) {
             case HiredAnimalHandlingOptions.SHEAR_SHEEP -> this.animalShearing = !this.animalShearing;
@@ -3496,20 +2979,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         sendToServer(new HiredAnimalCullCapPayload(this.villagerEntityId, cap));
         this.animalCullCap = cap;
         rebuildOptionsKeepingListPosition();
-    }
-
-    private void requestBrewingOrder(HiredBrewingRecipeCatalog.BrewingRoute route, int amount, boolean continuous) {
-        if (route == null) {
-            return;
-        }
-        sendToServer(new HiredBrewingOrderPayload(
-                this.villagerEntityId,
-                route.itemId(),
-                route.potionId(),
-                amount,
-                continuous));
-        this.activeBrewingOrder = true;
-        openWorkPage();
     }
 
     private void requestBuilderOrder(HiredBuilderOrderPayload.Action action, BuilderStructureCatalog.Entry entry) {
@@ -3557,8 +3026,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
         this.page = page;
-        if (isDuelSetupPage(page)) {
-            refreshDuelDialogue();
+        if (DuelScreenController.isDuelSetupPage(page)) {
+            this.duel.refreshDuelDialogue();
         }
         rebuildOptions();
         restoreRememberedPageOptionListPosition(page);
@@ -4425,7 +3894,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_DUEL_TEXTURE,
                     translate("root.duel"),
                     translate("interaction_button.duel.description"),
-                    this::openDuelPage,
+                    this.duel::openDuelPage,
                     true));
         }
         if (VillagerRetaliationServerConfigClient.villagerGiftsEnabled()) {
@@ -6630,13 +6099,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         };
     }
 
-    private static boolean isDuelSetupPage(DialoguePage page) {
-        return page == DialoguePage.DUEL
-                || page == DialoguePage.DUEL_LOADOUT
-                || page == DialoguePage.DUEL_WAGER
-                || page == DialoguePage.DUEL_CONFIRM;
-    }
-
     private com.jvn.villagerretaliation.network.CampaignConversationViewPayload.Line campaignPresentationLine() {
         return this.page == DialoguePage.CAMPAIGN_CONVERSATION && !this.forcedDialogue && !this.closingWithAnimation
                 ? this.campaignConversation.presentationLine() : null;
@@ -6734,6 +6196,42 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return session.line() == null || session.line().name().isBlank() ? session.title() : session.line().name();
     }
 
+    private final class BrewingWorkHost implements BrewingWorkScreenController.Host {
+        @Override public int entityId() { return villagerEntityId; }
+        @Override public net.minecraft.client.multiplayer.ClientLevel level() { return minecraft == null ? null : minecraft.level; }
+        @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
+        @Override public void option(DialogueOption option) { options.add(option); }
+        @Override public void openPage(DialoguePage target) { VillagerInteractionScreen.this.openPage(target); }
+        @Override public void sendToServer(HiredBrewingOrderPayload payload) { VillagerInteractionScreen.this.sendToServer(payload); }
+    }
+
+    private final class ContractHost implements ContractScreenController.Host {
+        @Override public boolean recruitedPartyVillager() { return recruitedPartyVillager; }
+        @Override public boolean hiredByPlayer() { return hiredByPlayer; }
+        @Override public boolean oneOffBuilderJob() { return oneOffBuilderJob; }
+        @Override public int partyRemainingDays() { return partyRemainingDays; }
+        @Override public boolean canOfferContractRole(HiredVillagerRole role) { return VillagerInteractionScreen.this.canOfferContractRole(role); }
+        @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
+        @Override public void option(DialogueOption option) { options.add(option); }
+        @Override public void openPage(DialoguePage target) { VillagerInteractionScreen.this.openPage(target); }
+        @Override public void openRecruitPage() { VillagerInteractionScreen.this.openRecruitPage(); }
+        @Override public void requestRecruit(VillagerRecruitRequestPayload.Action action) { VillagerInteractionScreen.this.requestRecruit(action); }
+    }
+
+    private final class DuelHost implements DuelScreenController.Host {
+        @Override public int entityId() { return villagerEntityId; }
+        @Override public boolean matchesVillager(int id) { return VillagerInteractionScreen.this.matchesVillager(id); }
+        @Override public DialoguePage page() { return page; }
+        @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
+        @Override public void option(DialogueOption option) { options.add(option); }
+        @Override public void openPage(DialoguePage target) { VillagerInteractionScreen.this.openPage(target); }
+        @Override public void navigateToRootPage() { VillagerInteractionScreen.this.navigateToRootPage(); }
+        @Override public void leaveConversation() { VillagerInteractionScreen.this.leaveConversation(); }
+        @Override public void rebuildOptionsKeepingListPosition() { VillagerInteractionScreen.this.rebuildOptionsKeepingListPosition(); }
+        @Override public void dialogue(String text) { acceptVillagerDialogue(text, List.of()); }
+        @Override public void sendToServer(VillagerDuelRequestPayload payload) { VillagerInteractionScreen.this.sendToServer(payload); }
+    }
+
     private final class CampaignConversationHost implements CampaignConversationScreenController.Host {
         @Override public int entityId() { return villagerEntityId; }
         @Override public java.util.UUID character() {
@@ -6781,7 +6279,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override public void close() { leaveConversation(); }
     }
 
-    private enum DialoguePage {
+    enum DialoguePage {
         ROOT,
         CAMPAIGN_CONFIRMATION,
         CAMPAIGN_CONVERSATION,
@@ -6854,7 +6352,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked, String reason) {
+    record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked, String reason) {
         private DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
             this(label, action, locked, checkbox, checked, "");
         }
