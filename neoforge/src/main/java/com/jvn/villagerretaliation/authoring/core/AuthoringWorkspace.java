@@ -575,11 +575,14 @@ public final class AuthoringWorkspace {
     }
 
     public void addDialogueResponse(AuthoringDocument document, String nodeId, String responseId, String text, String targetId) {
-        if (document.kind() != DefinitionKind.CONVERSATION) {
+        if (document.kind() != DefinitionKind.CONVERSATION && document.kind() != DefinitionKind.QUEST) {
             DialogueGraph.addResponse(document, nodeId, responseId, text, targetId);
             return;
         }
-        String key = document.id() + "." + nodeId + ".response." + responseId;
+        String prefix = document.kind() == DefinitionKind.QUEST
+                ? DialogueGraph.string(document.json(), "localization_prefix") : document.id();
+        if (prefix.isBlank()) throw new IllegalArgumentException("Set the quest localization prefix before adding responses.");
+        String key = prefix + "." + nodeId + ".response." + responseId;
         AuthoringDocument draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
         DialogueGraph.addResponse(draft, nodeId, responseId, key, targetId);
         commitWithMessage(document, draft.json(), key, text);

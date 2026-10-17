@@ -189,6 +189,7 @@ public final class QuestBundleTransactions {
                         com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export())
                         .forEach(issue -> errors.add(issue.pointer() + " " + issue.message()));
             }
+            if (!errors.isEmpty()) return errors;
             candidate.prefix = string(candidate.quest, "localization_prefix");
             if (candidate.prefix.isBlank()) {
                 errors.add("quest.json requires an explicit localization_prefix");

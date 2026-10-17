@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.quest.content;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.campaign.selection.WorldCampaign;
+import com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationResources;
 import com.jvn.villagerretaliation.skill.player.SocialProgressionResources;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
@@ -135,6 +137,11 @@ public final class QuestContentCatalogs {
     }
 
     static BuildResult build(MinecraftServer server, List<QuestBundleTransactions.RawResource> resources) {
+        return build(server, resources, WorldCampaignSelection.get(server));
+    }
+
+    static BuildResult build(MinecraftServer server, List<QuestBundleTransactions.RawResource> resources,
+            WorldCampaignSelection.Selection selection) {
         long generation = GENERATIONS.incrementAndGet();
         List<QuestBundleTransactions.RawResource> remaining = new ArrayList<>(resources);
         List<ManualDiagnostic> manualDiagnostics = new ArrayList<>();
@@ -196,7 +203,7 @@ public final class QuestContentCatalogs {
         }
 
         Set<ResourceLocation> missingBuiltIns =
-                compiled.questOverride()
+                compiled.questOverride() || !selection.allows(WorldCampaign.DEFAULT)
                         ? new LinkedHashSet<>()
                         : new LinkedHashSet<>(BuiltInQuestBundleCompatibility.rules().frozenQuestIds());
         missingBuiltIns.removeAll(compiled.catalog().quests().keySet());

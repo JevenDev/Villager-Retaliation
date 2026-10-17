@@ -248,7 +248,7 @@ public final class DialogueGraph {
             }
             JsonObject response = new JsonObject();
             response.addProperty("id", responseId);
-            if (document.kind() == DefinitionKind.CONVERSATION) {
+            if (document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.QUEST) {
                 JsonObject localized = new JsonObject();
                 localized.addProperty("key", label);
                 response.add("label", localized);
@@ -259,6 +259,12 @@ public final class DialogueGraph {
                     if (isWithin(selected.pointer(), target.pointer())) throw new IllegalArgumentException("Forced follow-ups cannot contain their own ancestor");
                     response.add("follow_up", JsonPointers.get(root, target.pointer()).deepCopy());
                 }
+            } else if (document.kind() == DefinitionKind.QUEST) {
+                JsonObject transition = new JsonObject();
+                if (target == null) transition.addProperty("complete", true);
+                else transition.addProperty("stage", target.id());
+                response.add("transition", transition);
+                node.remove("transition");
             } else if (target != null) response.addProperty("next", target.id());
             else if (document.kind() == DefinitionKind.CONVERSATION) {
                 throw new IllegalArgumentException("Conversation responses require a target node");

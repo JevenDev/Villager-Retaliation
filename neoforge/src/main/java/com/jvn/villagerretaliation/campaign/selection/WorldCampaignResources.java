@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.campaign.selection;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.io.ByteArrayInputStream;
@@ -60,9 +61,18 @@ public final class WorldCampaignResources {
     private static void append(net.minecraft.server.packs.resources.ResourceManager manager, Map<ResourceLocation, List<Resource>> mapped,
             ResourceLocation location, Resource resource, ResourceLocation folderOwner,
             WorldCampaignSelection.Selection selection, WorldCampaignCatalog catalog) {
+        JsonObject root;
+        ResourceLocation inherited;
         try (var reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            ResourceLocation inherited = folderOwner == null ? bundleOwner(manager, location, resource) : folderOwner;
+            root = JsonParser.parseReader(reader).getAsJsonObject();
+            inherited = folderOwner == null ? bundleOwner(manager, location, resource) : folderOwner;
+        } catch (IOException | JsonParseException | IllegalStateException exception) {
+            appendLayer(mapped, location, new Resource(resource.source(), () -> {
+                throw new IOException("Cannot read campaign content " + location + " from " + resource.sourcePackId(), exception);
+            }));
+            return;
+        }
+        try {
             ResourceLocation owner = owner(root, inherited, folderOwner != null, catalog);
             JsonObject filtered = root.deepCopy();
             if (root.has("entries") && root.get("entries").isJsonArray()) {
@@ -82,14 +92,18 @@ public final class WorldCampaignResources {
             } else if (!selection.allows(owner)) return;
             if (!com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.isV3(filtered)) filtered.remove("world_campaign");
             byte[] bytes = filtered.toString().getBytes(StandardCharsets.UTF_8);
-            List<Resource> layers = mapped.computeIfAbsent(location, ignored -> new ArrayList<>());
-            if (layers.stream().anyMatch(layer -> layer.sourcePackId().equals(resource.sourcePackId()))) {
-                throw new IllegalArgumentException("Multiple campaign files map to " + location + " in the same pack");
-            }
-            layers.add(new Resource(resource.source(), () -> new ByteArrayInputStream(bytes)));
-        } catch (IOException | IllegalArgumentException | IllegalStateException exception) {
+            appendLayer(mapped, location, new Resource(resource.source(), () -> new ByteArrayInputStream(bytes)));
+        } catch (IllegalArgumentException | IllegalStateException exception) {
             throw new IllegalStateException("Invalid campaign content " + location + " from " + resource.sourcePackId() + ": " + exception.getMessage(), exception);
         }
+    }
+
+    private static void appendLayer(Map<ResourceLocation, List<Resource>> mapped, ResourceLocation location, Resource resource) {
+        List<Resource> layers = mapped.computeIfAbsent(location, ignored -> new ArrayList<>());
+        if (layers.stream().anyMatch(layer -> layer.sourcePackId().equals(resource.sourcePackId()))) {
+            throw new IllegalArgumentException("Multiple campaign files map to " + location + " in the same pack");
+        }
+        layers.add(resource);
     }
 
     private static ResourceLocation owner(JsonObject root, ResourceLocation inherited, boolean folder, WorldCampaignCatalog catalog) {

@@ -131,9 +131,56 @@ public final class WorldCampaignChecks {
         quest.add("ui", new JsonObject());
         check(!QuestJsonSchema.validate(quest, QuestV3Schema.export()).isEmpty(), "V2 aliases are rejected in V3");
         System.out.println("PASS campaign ownership, permanent selection, and V3 lowering checks");
-        return 25 + migrationReceipts();
+        return 25 + malformedLayers() + migrationReceipts();
     }
 
+
+    private static int malformedLayers() throws Exception {
+        var resources = new MemoryResources();
+        resources.add("test:world_campaigns/alpha/campaign.json", manifest("alpha", false));
+        resources.add("test:world_campaigns/beta/campaign.json", manifest("beta", false));
+        String quest = """
+                {"schema":"villagerretaliation:quest/v3","id":"test:quest","localization_prefix":"test.quest.quest",
+                 "world_campaign":"test:alpha","metadata":{"questline":"line"},"provider":{"type":"villagerretaliation:villager"},
+                 "entry_stage":"start","stages":[{"id":"start","objectives":[],"transition":{"complete":true}}]}
+                """;
+        resources.add("base", "test:quests/line/quest/quest.json", quest);
+        resources.add("base", "test:quests/line/quest/locales/en_us.json", "{}");
+        resources.add("patch", "test:quests/line/quest/quest.json", "{broken JSON");
+        resources.add("patch", "test:quests/line/quest/locales/en_us.json", "{}");
+        resources.add("test:world_campaigns/beta/quests/line/unselected/quest.json", "{broken unselected JSON");
+        resources.add("test:world_campaigns/alpha/dialogue/en_us/broken.json", "[1, 2]");
+        resources.add("test:world_campaigns/alpha/dialogue/en_us/valid.json", "{\"entries\":[{\"id\":\"valid\"}]}");
+        var selection = new WorldCampaignSelection.Selection(id("test:alpha"), false);
+        var stacks = WorldCampaignResources.stacks(resources, selection, "quests");
+        check(stacks.size() == 2, "malformed selected layers do not interrupt discovery or expose unselected folders");
+        var raw = new ArrayList<com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource>();
+        for (var stack : stacks) for (var layer : stack.layersLowToHigh()) {
+            int priority = layer.resource().sourcePackId().equals("patch") ? 1 : 0;
+            try (var reader = layer.resource().openAsReader()) {
+                raw.add(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.valid(
+                        priority, layer.resource().sourcePackId(), layer.location(), JsonParser.parseReader(reader).getAsJsonObject()));
+            } catch (java.io.IOException exception) {
+                raw.add(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.malformed(
+                        priority, layer.resource().sourcePackId(), layer.location(), exception.getMessage()));
+            }
+        }
+        check(raw.stream().filter(value -> !value.valid()).count() == 2,
+                "a malformed quest and its companion retain rejected-layer provenance");
+        var compiled = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.compile(raw, null);
+        check(compiled.bundles().size() == 1 && !compiled.diagnostics().isEmpty(), "malformed override retains its valid lower quest");
+        var bundle = compiled.bundles().values().iterator().next();
+        check(bundle.source(com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.Kind.QUEST, id("test:quest")).pack().equals("base"),
+                "lower quest stays effective after malformed override rejection");
+        var dialogue = WorldCampaignResources.stacks(resources, selection, "dialogue/en_us");
+        int accepted = 0;
+        for (var stack : dialogue) {
+            var layer = stack.layersLowToHigh().getLast();
+            if (com.jvn.villagerretaliation.util.DatapackResourceLoader.readObject(layer.location(), "dialogue", layer.resource()).isPresent()) accepted++;
+        }
+        check(accepted == 1, "one malformed dialogue file does not block independent valid dialogue");
+        return 5;
+    }
 
     private static int migrationReceipts() throws Exception {
         var root = java.nio.file.Path.of(WorldCampaignChecks.class.getResource("/data/villagerretaliation/quests").toURI());

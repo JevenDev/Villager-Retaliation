@@ -76,7 +76,11 @@ public final class AuthoringValidation {
             try {
                 switch (document.kind()) {
                     case CONVERSATION -> issues(result, document, "", ConversationSchema.validate(root));
-                    case QUEST -> issues(result, document, "", QuestJsonSchema.validate(root, questSchema));
+                    case QUEST -> {
+                        var schemaIssues = QuestJsonSchema.validate(root, questSchema);
+                        issues(result, document, "", schemaIssues);
+                        if (!schemaIssues.isEmpty()) continue;
+                    }
                     case TREE -> {
                         if (!root.has("nodes") || !root.get("nodes").isJsonObject()) error(result, document, "/nodes", "Dialogue trees require an object of nodes");
                         if (!root.has("entries") || !root.get("entries").isJsonArray() || root.getAsJsonArray("entries").isEmpty()) {

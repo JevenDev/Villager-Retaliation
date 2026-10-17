@@ -25,6 +25,75 @@ public final class AuthoringCoreGameTests {
     }
 
     @GameTest(template = "empty", batch = "authoring")
+    public static void malformedQuestOverridesKeepTheirLowerBundle(GameTestHelper helper) {
+        var quest = json("""
+                {"schema":"villagerretaliation:quest/v3","id":"test:quest","localization_prefix":"test.quest.quest",
+                 "metadata":{"questline":"line"},"provider":{"type":"villagerretaliation:villager"},
+                 "entry_stage":"start","stages":[{"id":"start","objectives":[],"transition":{"complete":true}}]}
+                """);
+        var path = net.minecraft.resources.ResourceLocation.parse("test:quests/line/quest/quest.json");
+        var locale = net.minecraft.resources.ResourceLocation.parse("test:quests/line/quest/locales/en_us.json");
+        var base = List.of(
+                com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.valid(0, "base", path, quest),
+                com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.valid(0, "base", locale, new JsonObject()));
+        var baseline = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.compile(base, null);
+        helper.assertValueEqual(baseline.bundles().size(), 1, "baseline quest compiles");
+        var mutations = json("""
+                {"/stages":"typo","/metadata":[],"/display":42,"/stages/0/objectives":{},
+                 "/stages/0/display":null,"/stages/0/responses":{},"/stages/0":null}
+                """);
+        for (var mutation : mutations.entrySet()) {
+            var invalid = quest.deepCopy();
+            com.jvn.villagerretaliation.authoring.core.JsonPointers.set(invalid, mutation.getKey(), mutation.getValue());
+            var resources = new java.util.ArrayList<>(base);
+            resources.add(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.valid(1, "patch", path, invalid));
+            var result = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.compile(resources, null);
+            helper.assertTrue(!result.diagnostics().isEmpty(), "invalid override reports errors at " + mutation.getKey());
+            helper.assertValueEqual(result.bundles().size(), 1, "invalid override retains the lower bundle at " + mutation.getKey());
+            helper.assertValueEqual(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.structural(result.bundles().values().iterator().next()),
+                    com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.structural(baseline.bundles().values().iterator().next()),
+                    "invalid override leaves the original quest unchanged");
+            var document = new AuthoringDocument(DefinitionKind.QUEST, "data/test/quests/line/quest/quest.json", invalid);
+            helper.assertTrue(AuthoringValidation.validate(List.of(document)).stream()
+                    .anyMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR),
+                    "invalid editor input produces diagnostics at " + mutation.getKey());
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void questResponsesUseV3TransitionsAndLocalizedWording(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-quest-response-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:response");
+            DialogueGraph.addNode(quest, "finish");
+            var before = quest.json();
+            workspace.addDialogueResponse(quest, "start", "continue", "Continue", "finish");
+            var first = quest.json().getAsJsonArray("stages").get(0).getAsJsonObject();
+            helper.assertFalse(first.has("transition"), "adding a choice removes automatic completion");
+            var response = first.getAsJsonArray("responses").get(0).getAsJsonObject();
+            helper.assertValueEqual(response.getAsJsonObject("transition").get("stage").getAsString(), "finish", "choice targets the next stage");
+            helper.assertValueEqual(workspace.resolveText(quest, response.get("label"), "en_us"), "Continue", "choice label resolves through its locale");
+            helper.assertTrue(quest.undo() && quest.json().equals(before), "undo restores the terminal stage");
+            helper.assertTrue(quest.redo(), "redo restores the response and wording");
+            workspace.addDialogueResponse(quest, "finish", "done", "Finish", null);
+            helper.assertTrue(AuthoringValidation.validate(workspace.documents()).stream()
+                    .noneMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR), "branched quest passes runtime authoring validation");
+            workspace.exportPack(root.resolve("pack"));
+            var imported = AuthoringWorkspace.create(root.resolve("imported"));
+            imported.importPack(root.resolve("pack"));
+            helper.assertTrue(AuthoringValidation.validate(imported.documents()).stream()
+                    .noneMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR), "exported responses remain valid after import");
+        } finally {
+            try (var paths = Files.walk(root)) {
+                for (var path : paths.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
     public static void editsPreserveUnknownFieldsAndUndoBothDefinitionAndLayout(GameTestHelper helper) {
         JsonObject original = json("""
                 {"id":"test:dialogue","extension":{"number":1.2500,"nested":[true,{"future":"value"}]},
