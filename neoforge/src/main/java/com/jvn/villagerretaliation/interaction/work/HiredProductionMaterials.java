@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,19 @@ import net.minecraft.world.item.ItemStack;
 /** Shared material-deficit and assigned-storage acquisition logic for production jobs. */
 public final class HiredProductionMaterials {
     private HiredProductionMaterials() {
+    }
+
+    public static String reserveCraftingInputs(Villager villager, HiredWorkContext context,
+            Map<Item, Integer> materials, HiredProductionOrder order) {
+        var missing = new LinkedHashMap<Item, Integer>();
+        materials.forEach((item, count) -> {
+            int needed = count - HiredSupplyCrafting.countCarried(context, item);
+            if (needed > 0) missing.put(item, needed);
+        });
+        if (missing.isEmpty() && !context.inventory().canTransformSuppliesToOutputs(materials, List.of(order.output()))) {
+            return "output_full";
+        }
+        return AssignedStorageService.reserveProductionInputs(villager, missing, order.id()) ? "" : "materials_reserved";
     }
 
     public static List<Need> missingItemNeeds(HiredWorkContext context, Map<Item, Integer> requiredItems) {

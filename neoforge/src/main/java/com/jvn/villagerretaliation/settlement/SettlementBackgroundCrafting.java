@@ -10,7 +10,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredProcessingRecipeFilter;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionEligibility;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue;
-import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStations;
+import com.jvn.villagerretaliation.interaction.work.production.HiredProductionCrafting;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionStock;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
@@ -137,22 +137,13 @@ final class SettlementBackgroundCrafting {
                 }
                 HiredProductionQueue.Allocation allocation = null;
                 if (order != null) {
-                    allocation = queue.allocation(worker.id());
-                    if (allocation != null && !allocation.order().equals(order.id())) {
-                        HiredProductionStations.get(level).release(allocation.id());
-                        queue.release(allocation.id());
-                        allocation = null;
-                    }
-                    if (allocation == null) allocation = queue.reserve(worker.id(), order.id(), output.getCount(), 1, stock, null);
+                    allocation = HiredProductionCrafting.reserve(level, queue, worker.id(), order,
+                            output.getCount(), stock, worker::resetWork);
                     if (allocation == null) {
                         queue.blocker(order.id(), "quantity_reserved");
                         continue;
                     }
-                    if (!worker.settings().hasUUID("CraftsmanProductionAllocation")
-                            || !worker.settings().getUUID("CraftsmanProductionAllocation").equals(allocation.id())) {
-                        worker.resetWork();
-                        worker.settings().putUUID("CraftsmanProductionAllocation", allocation.id());
-                    }
+                    HiredProductionCrafting.trackProgress(worker.settings(), allocation, worker::resetWork);
                     HiredProductionStock.prepareDestination(worker.settings(), false, order);
                     queue.blocker(order.id(), "");
                 }
@@ -197,11 +188,7 @@ final class SettlementBackgroundCrafting {
         if (queue == null) return;
         var allocation = queue.allocation(worker.id());
         if (allocation != null && selected != null && !allocation.order().equals(selected.id())) return;
-        if (allocation != null && !allocation.started()) {
-            HiredProductionStations.get(level).release(allocation.id());
-            queue.release(allocation.id());
-        }
-        worker.settings().remove("CraftsmanProductionAllocation");
-        worker.resetWork();
+        HiredProductionCrafting.releasePlanned(level, queue, allocation);
+        HiredProductionCrafting.clearProgress(worker.settings(), worker::resetWork);
     }
 }
