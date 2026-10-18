@@ -306,16 +306,19 @@ public final class SettlementRemoteStaffingGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_remote_staffing_construction")
-    public static void remotelyReassigningBuildersCancelsOnlyUnfinishedConstruction(GameTestHelper helper) {
+    public static void unfinishedConstructionMustBeCancelledBeforeRemotelyReassigningItsBuilder(GameTestHelper helper) {
         SettlementBackgroundConstructionGameTests.capacityFixture(helper, 50, Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState(),
                 BlockPos.ZERO.east(), Blocks.OAK_PLANKS.defaultBlockState()), fixture -> {
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS));
             SettlementBackgroundConstructionGameTests.work(helper, fixture, 50);
             helper.assertTrue(fixture.project().active() && fixture.site().pending(), "the partly funded project retains a completed placement");
             var leader = FakePlayerFactory.get(helper.getLevel(), new GameProfile(fixture.town().leader(), "BuildLeader"));
-            helper.assertTrue(SettlementManagementService.execute(leader, new SettlementManagementActionPayload(fixture.town().id().value(),
-                    new SettlementManagementActionPayload.Assign(fixture.builder().getUUID(), fixture.depot().area()))), "an unloaded builder can transfer to hauling");
-            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.CANCELLED, "changing the job cancels unfinished construction");
+            var assignment = new SettlementManagementActionPayload(fixture.town().id().value(),
+                    new SettlementManagementActionPayload.Assign(fixture.builder().getUUID(), fixture.depot().area()));
+            helper.assertFalse(SettlementManagementService.execute(leader, assignment), "active construction protects its unloaded builder assignment");
+            helper.assertTrue(SettlementConstructionService.cancel(leader, fixture.town(), fixture.project().id()), "unfinished construction is explicitly cancelled");
+            helper.assertTrue(SettlementManagementService.execute(leader, assignment), "the released unloaded builder can transfer to hauling");
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.CANCELLED, "the cancelled project retains its receipt");
             helper.assertTrue(fixture.site().pending(), "already funded world changes remain queued for delivery");
             var worker = fixture.town().workers().get(fixture.builder().getUUID());
             helper.assertValueEqual(worker.role(), HiredVillagerRole.COURIER, "the authoritative worker ledger takes the new job");

@@ -224,6 +224,7 @@ public final class SettlementRemoteConstructionGameTests {
         var firstId = hold(helper, fixture);
         var oldBlueprint = fixture.leader().getMainHandItem().copy();
         helper.assertTrue(start(fixture.leader(), fixture, firstId), "the first remote project starts");
+        fundAndDispatch(helper, fixture, firstId);
         var oldContext = fixture.town().residents().get(fixture.builder().getUUID()).context(helper.getLevel()).saveWithoutId(new CompoundTag());
         helper.assertTrue(SettlementManagementService.execute(fixture.leader(), new SettlementManagementActionPayload(
                 fixture.town().id().value(), new SettlementManagementActionPayload.CancelProject(firstId))), "the first project is cancelled remotely");
@@ -268,38 +269,34 @@ public final class SettlementRemoteConstructionGameTests {
     public static void newlyCommissionedRemoteProjectsUseFiniteMaterialsDuringBackgroundWork(GameTestHelper helper) {
         var fixture = fixture(helper);
         var level = helper.getLevel();
+        var id = hold(helper, fixture);
+        helper.assertTrue(start(fixture.leader(), fixture, id), "the unloaded builder receives a queued real blueprint");
+        var project = fixture.town().projects().get(id);
+        helper.assertTrue(project.pending() && !SettlementConstructionMaterials.reserved(project) && !project.missingMaterials().isEmpty(),
+                "the remote request waits for a complete finite material quote: " + project.blocker());
+        helper.assertTrue(project.site() == null && project.placed() == 0, "waiting for materials cannot invent construction");
+        var worker = fixture.town().workers().get(fixture.builder().getUUID());
+        fundAndDispatch(helper, fixture, id);
         var target = fixture.plan().blocks().stream().filter(block -> block.state().is(Blocks.OAK_PLANKS))
                 .min(java.util.Comparator.comparingDouble(block -> fixture.plan().worldPos(fixture.origin(), block)
                         .distSqr(fixture.builder().blockPosition()))).orElseThrow();
-        for (var block : fixture.plan().blocks()) level.setBlock(fixture.plan().worldPos(fixture.origin(), block), block.state(), 2);
         var position = fixture.plan().worldPos(fixture.origin(), target);
+        for (var block : fixture.plan().blocks()) level.setBlock(fixture.plan().worldPos(fixture.origin(), block), block.state(), 2);
         level.setBlock(position, Blocks.AIR.defaultBlockState(), 2);
-        var worker = fixture.town().workers().get(fixture.builder().getUUID());
-        var items = worker.items(level.registryAccess());
-        items.set(HiredJobInventory.HOTBAR_START, ItemStack.EMPTY);
-        worker.updateInventory(level.registryAccess(), items);
-        worker.changed();
-        var project = begin(helper, fixture);
-        for (int index = 0; index < 10; index++) {
-            SettlementBuildingService.refresh(level, fixture.town(), fixture.area());
-            SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
-        }
-        helper.assertTrue(project.active() && level.getBlockState(position).isAir(), "the remote project cannot build without an actual supply");
-        items = worker.items(level.registryAccess());
-        items.set(HiredJobInventory.HOTBAR_START, new ItemStack(Items.OAK_PLANKS));
-        worker.updateInventory(level.registryAccess(), items);
-        worker.changed();
         for (int index = 0; index < 40 && project.active(); index++) {
             SettlementBuildingService.refresh(level, fixture.town(), fixture.area());
             SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
         }
         helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED,
                 "the commissioned project completes through the background worker: " + worker.status() + " / " + project.blocker());
-        SettlementConstructionSiteService.update(level, fixture.town());
-        helper.assertValueEqual(level.getBlockState(position), target.state(), "the funded construction reaches the real world");
-        helper.assertValueEqual(count(helper, worker), 0, "the real block consumes the only supplied plank");
+        for (int retry = 0; retry < 32 && project.site().pending(); retry++) SettlementConstructionSiteService.update(level, fixture.town());
+        helper.assertValueEqual(level.getBlockState(position), target.state(), "the reserved material reaches the missing blueprint block");
+        helper.assertValueEqual(project.materialEscrow().getList("Paid", net.minecraft.nbt.Tag.TAG_COMPOUND).size(), 1,
+                "the already built blueprint requires exactly one new funded placement");
+        helper.assertValueEqual(count(helper, worker), 3, "project escrow preserves the worker's separate finite inventory");
+        var receipt = project.materialEscrow().copy();
         SettlementBackgroundConstruction.tick(level, fixture.town(), worker, 200, 1.0D);
-        helper.assertValueEqual(count(helper, worker), 0, "completed work cannot duplicate or refund its material");
+        helper.assertValueEqual(project.materialEscrow(), receipt, "completed work cannot spend or refund its material quote twice");
         helper.assertTrue(level.getEntity(fixture.builder().getUUID()) == null, "production does not need to spawn the worker");
         helper.succeed();
     }
@@ -307,7 +304,12 @@ public final class SettlementRemoteConstructionGameTests {
     private static SettlementProject begin(GameTestHelper helper, Fixture fixture) {
         var id = hold(helper, fixture);
         helper.assertTrue(start(fixture.leader(), fixture, id), "the unloaded builder receives a valid real blueprint");
+        fundAndDispatch(helper, fixture, id);
         return fixture.town().projects().get(id);
+    }
+
+    private static void fundAndDispatch(GameTestHelper helper, Fixture fixture, UUID id) {
+        SettlementConstructionGameTests.fundAndDispatch(helper, fixture.town(), fixture.plan(), fixture.origin(), id);
     }
 
     private static UUID hold(GameTestHelper helper, Fixture fixture) {

@@ -162,8 +162,9 @@ public final class SettlementConstructionGameTests {
             helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), first.id()), "cancellation releases capacity");
             helper.assertTrue(fixture.town().startProject(fixture.leader().getUUID(), second), "cancelled history does not consume active capacity");
             fixture.town().removeDuty(secondBuilder);
-            helper.assertValueEqual(second.status(), SettlementProject.Status.CANCELLED, "releasing an unloaded builder cancels the project");
-            helper.assertTrue(fixture.town().activeProject(secondBuilder) == null, "released builders have no active project");
+            helper.assertTrue(second.active() && second.blocker().equals("builder"), "losing a worker pauses the settlement order");
+            helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), second.id()), "explicit cancellation releases the remaining project");
+            helper.assertTrue(fixture.town().activeProject(secondBuilder) == null, "cancelled builders have no active project");
         } finally {
             fixture.builder().discard();
         }
@@ -232,15 +233,17 @@ public final class SettlementConstructionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
-    public static void removingConstructionAreaCancelsWorkWithoutConsumingSupplies(GameTestHelper helper) {
+    public static void constructionMustBeCancelledBeforeRemovingItsAreaWithoutConsumingSupplies(GameTestHelper helper) {
         var fixture = fixture(helper);
         try {
             fixture.town().advance();
             var project = begin(helper, fixture);
             var inventory = HiredJobInventory.getJobInventory(fixture.builder());
             inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.OAK_PLANKS, 17));
+            helper.assertFalse(fixture.town().removeArea(fixture.leader().getUUID(), fixture.area().id()), "active construction protects its work designation");
+            helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), project.id()), "the project is explicitly cancelled");
             helper.assertTrue(fixture.town().removeArea(fixture.leader().getUUID(), fixture.area().id()), "the construction area can be removed");
-            helper.assertValueEqual(project.status(), SettlementProject.Status.CANCELLED, "removal cancels its project");
+            helper.assertValueEqual(project.status(), SettlementProject.Status.CANCELLED, "explicit cancellation preserves the project receipt");
             SettlementConstructionService.reconcile(fixture.builder());
             SettlementWorkforceService.reconcile(helper.getLevel(), fixture.builder());
             helper.assertFalse(BuilderTaskState.hasTask(HiredWorkStateStore.state(fixture.builder())), "cancelled authority cannot resume a live task");
@@ -254,11 +257,16 @@ public final class SettlementConstructionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
-    public static void nativeBuilderConsumesOneRealMaterialThenCompletesTheProject(GameTestHelper helper) {
+    public static void legacyNativeBuilderConsumesOneRealMaterialThenCompletesTheProject(GameTestHelper helper) {
         var fixture = fixture(helper);
         try {
             fixture.town().advance();
-            var project = begin(helper, fixture);
+            var project = SettlementProject.create(fixture.town(), fixture.area().id(), fixture.builder().getUUID(), fixture.plan(),
+                    fixture.origin(), UUID.randomUUID(), helper.getLevel().getGameTime());
+            project.reservePayment(fixture.plan().price());
+            helper.assertTrue(fixture.town().startProject(fixture.town().leader(), project), "legacy construction retains its original worker-inventory task");
+            project.restore(HiredWorkStateStore.state(fixture.builder()));
+            fixture.town().recordEvent(helper.getLevel().getGameTime(), SettlementEvent.Type.PROJECT_STARTED, project.label());
             var level = helper.getLevel();
             var plan = fixture.plan();
             int targetIndex = -1;
@@ -442,7 +450,44 @@ public final class SettlementConstructionGameTests {
         UUID id = UUID.randomUUID();
         fixture.leader().setItemInHand(InteractionHand.MAIN_HAND, blueprint(helper, fixture, fixture.origin(), id));
         helper.assertTrue(start(fixture.leader(), fixture, id), "a valid blueprint can be commissioned");
+        fundAndDispatch(helper, fixture, id);
         return fixture.town().projects().get(id);
+    }
+
+    static void fundAndDispatch(GameTestHelper helper, Fixture fixture, UUID projectId) {
+        fundAndDispatch(helper, fixture.town(), fixture.plan(), fixture.origin(), projectId);
+    }
+
+    static void fundAndDispatch(GameTestHelper helper, SettlementRecord town, BuilderStructureScanner.StructurePlan plan,
+                                BlockPos origin, UUID projectId) {
+        var level = helper.getLevel();
+        var position = origin.offset(-3, 0, -3);
+        var depot = town.depots().values().stream().filter(candidate -> candidate.position().equals(position)).findFirst().orElse(null);
+        if (depot == null) {
+            var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Construction supplies", position, position.above(2), 5, true);
+            helper.assertTrue(town.putArea(town.leader(), area), "construction supplies have a separate depot");
+            depot = town.registerDepot(town.leader(), area.id(), position, SettlementDepotPurpose.MATERIALS);
+            level.setBlockAndUpdate(position, com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(position)).bind(town.id(), depot.id());
+        }
+        depot.observeRules(java.util.List.of());
+        int slot = 0;
+        for (var requirement : com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost.requirements(plan)) {
+            var sample = net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().map(ItemStack::new)
+                    .filter(requirement::matches).findFirst().orElseThrow();
+            int count = requirement.count();
+            while (count > 0) {
+                int amount = Math.min(count, sample.getMaxStackSize());
+                depot.setItem(slot++, sample.copyWithCount(amount));
+                count -= amount;
+            }
+        }
+        var project = town.projects().get(projectId);
+        for (int retry = 0; retry < 3 && project.pending(); retry++) {
+            SettlementTestPlots.planSupplies(level, town);
+            SettlementConstructionService.tickQueue(level, town);
+        }
+        helper.assertTrue(project.active(), "funded eligible construction activates: " + project.blocker());
     }
 
     private static ItemStack blueprint(GameTestHelper helper, Fixture fixture, BlockPos origin, UUID id) {

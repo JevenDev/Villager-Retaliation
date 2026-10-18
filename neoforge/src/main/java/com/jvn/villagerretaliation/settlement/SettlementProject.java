@@ -53,8 +53,8 @@ public final class SettlementProject {
     void activate(SettlementRecord town, UUID worker) {
         if (!pending()) throw new IllegalStateException("Project already started");
         this.builder = Objects.requireNonNull(worker);
-        this.previousArea = town.duties().get(worker);
-        this.previousSettings = town.workerSettings().get(worker);
+        this.previousArea = this.workplace == null ? null : town.duties().get(worker);
+        this.previousSettings = this.workplace == null ? null : town.workerSettings().get(worker);
         this.status = Status.ACTIVE;
         this.paymentReserved = true;
         this.task.remove("BlockedReason");

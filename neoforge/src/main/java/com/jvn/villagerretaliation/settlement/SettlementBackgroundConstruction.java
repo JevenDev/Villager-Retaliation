@@ -91,7 +91,6 @@ final class SettlementBackgroundConstruction {
                     worker.status("fetching_construction_materials");
                     if (budget.spend(40.0D + 16.0D * Math.sqrt(worker.position().distSqr(pickup)))) {
                         SettlementConstructionMaterials.collect(town, project, worker.id(), pickup);
-                        state.putLong(POSITION, pickup.asLong());
                     }
                     return;
                 }

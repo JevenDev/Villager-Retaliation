@@ -513,12 +513,14 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_background_construction")
-    public static void disablingTheConstructionAreaStopsUnloadedWork(GameTestHelper helper) {
+    public static void cancellingConstructionAllowsDisablingItsAreaAndStopsUnloadedWork(GameTestHelper helper) {
         fixture(helper, false, planks(), fixture -> {
             fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS));
-            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), new SettlementArea(fixture.area().id(),
-                    SettlementAreaType.CONSTRUCTION, fixture.area().name(), fixture.area().min(), fixture.area().max(), 5, false)),
-                    "the construction area can be disabled");
+            var disabled = new SettlementArea(fixture.area().id(), SettlementAreaType.CONSTRUCTION,
+                    fixture.area().name(), fixture.area().min(), fixture.area().max(), 5, false);
+            helper.assertFalse(fixture.town().putArea(fixture.town().leader(), disabled), "active construction protects its work designation");
+            fixture.town().finishProject(fixture.project().id(), SettlementProject.Status.CANCELLED);
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), disabled), "cancelled construction releases its work designation");
             work(helper, fixture, 20);
             helper.assertValueEqual(count(helper, fixture, Items.OAK_PLANKS), 1, "disabled work preserves supplies");
             helper.assertFalse(fixture.site().pending(), "disabled work cannot queue more blocks");
@@ -784,6 +786,13 @@ public final class SettlementBackgroundConstructionGameTests {
             var head = fixture.origin().east();
             var level = helper.getLevel();
             var chunk = level.getChunk(head.getX() >> 4, head.getZ() >> 4);
+            for (var section : fixture.site().sections().values()) {
+                if (!chunk.getPos().equals(new net.minecraft.world.level.ChunkPos(section.min()))) continue;
+                for (var pos : BlockPos.betweenClosed(section.min(), section.max())) {
+                    var before = section.changedFrom(pos);
+                    chunk.setBlockState(pos, before == null ? section.state(pos) : before, false);
+                }
+            }
             chunk.setBlockState(head, Blocks.GOLD_BLOCK.defaultBlockState(), false);
             SettlementBuildingService.refresh(level, fixture.town(), home);
             helper.assertValueEqual(fixture.town().housingCapacity(), 0, "a later loaded conflict invalidates housing even while the first chunk is absent");
@@ -806,7 +815,7 @@ public final class SettlementBackgroundConstructionGameTests {
             helper.assertTrue(fixture.project().active() && fixture.site().pending(), "the unfunded upper bed leaves a partly built project");
             helper.assertValueEqual(count(helper, fixture, Items.RED_BED), 0, "the only supplied item funds the completed lower bed");
             var home = designate(helper, fixture, SettlementAreaType.HOME);
-            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.CANCELLED, "removing the work designation cancels the unfinished project");
+            helper.assertValueEqual(fixture.project().status(), SettlementProject.Status.CANCELLED, "the unfinished project is cancelled before replacing its designation");
             SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), home);
             helper.assertValueEqual(fixture.town().housingCapacity(), 1, "cancelled work retains the actual lower bed without inventing the upper one");
         });
@@ -931,6 +940,10 @@ public final class SettlementBackgroundConstructionGameTests {
     }
 
     static SettlementArea designate(GameTestHelper helper, Fixture fixture, SettlementAreaType type) {
+        if (fixture.project().active()) {
+            helper.assertFalse(fixture.town().removeArea(fixture.town().leader(), fixture.area().id()), "active construction protects its work designation");
+            fixture.town().finishProject(fixture.project().id(), SettlementProject.Status.CANCELLED);
+        }
         helper.assertTrue(fixture.town().removeArea(fixture.town().leader(), fixture.area().id()), "the old construction designation is removed");
         var area = new SettlementArea(UUID.randomUUID(), type, "Completed building", fixture.area().min(), fixture.area().max(), 5, true);
         helper.assertTrue(fixture.town().putArea(fixture.town().leader(), area), "the building receives its intended function");

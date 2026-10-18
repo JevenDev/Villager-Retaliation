@@ -24,7 +24,7 @@ public final class SettlementBuildingPlanningGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
-    public static void directRequestNeedsNeitherPaperNorRegisteredAreaAndRefundsBeforeWork(GameTestHelper helper) {
+    public static void directRequestNeedsNoPaperAndWaitsForRegisteredBuilderAssignment(GameTestHelper helper) {
         var fixture = SettlementConstructionGameTests.fixture(helper);
         try {
             fixture.town().advance();
@@ -36,8 +36,13 @@ public final class SettlementBuildingPlanningGameTests {
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command), "an unassigned builder accepts a prefab directly");
             var project = fixture.town().projects().get(id);
             helper.assertTrue(fixture.town().areas().isEmpty(), "the project does not register a manual area");
+            helper.assertTrue(project.pending() && project.blocker().equals("builder"), "unassigned builders wait without taking another duty");
+            helper.assertValueEqual(fixture.town().economy().balance(), balance, "pending requests reserve no fee");
             helper.assertFalse(fixture.town().putArea(fixture.town().leader(), project.workplace()), "manual areas cannot reuse a project-owned identity");
             helper.assertFalse(fixture.town().putArea(fixture.town().leader(), new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Conflicting field", project.min(), project.max(), 5, true)), "terrain work cannot claim an active building footprint");
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), fixture.area()), "the builder receives a dedicated construction worksite");
+            helper.assertTrue(fixture.town().assignDuty(fixture.builder().getUUID(), fixture.area().id()), "the builder is assigned before dispatch");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, id);
             helper.assertTrue(project.workplace() != null && fixture.town().workplace(project.area()) != null, "the worker has a project-owned site");
             helper.assertValueEqual(fixture.leader().getInventory().countItem(Items.PAPER), 0, "no paper is needed");
             helper.assertValueEqual(fixture.town().economy().balance(), balance.subtract(CurrencyAmount.of(fixture.plan().price(), 1)), "the fee is reserved exactly once");
@@ -48,7 +53,7 @@ public final class SettlementBuildingPlanningGameTests {
             helper.assertTrue(restored.workplace(project.area()) != null, "project-owned duties survive reload");
             helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), id), "an unstarted project can be cancelled");
             helper.assertValueEqual(fixture.town().economy().balance(), balance, "cancellation refunds the reservation");
-            helper.assertFalse(fixture.town().duties().containsKey(fixture.builder().getUUID()), "an originally unassigned builder is released");
+            helper.assertValueEqual(fixture.town().duties().get(fixture.builder().getUUID()), fixture.area().id(), "cancellation restores the dedicated construction assignment");
             helper.assertFalse(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), id), "cancellation cannot refund twice");
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command), "a cancelled request remains acknowledged without restarting");
             helper.assertFalse(project.active(), "replays cannot restart cancelled work");
@@ -65,7 +70,12 @@ public final class SettlementBuildingPlanningGameTests {
             fixture.town().advance();
             var balance = fixture.town().economy().balance();
             fixture.town().economy().configureBudget(balance, CurrencyAmount.ZERO);
-            helper.assertFalse(SettlementManagementService.execute(fixture.leader(), command(fixture, UUID.randomUUID())), "the treasury reserve cannot fund construction");
+            UUID waitingId = UUID.randomUUID();
+            helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, waitingId)), "unfunded requests wait in the queue");
+            var waiting = fixture.town().projects().get(waitingId);
+            helper.assertTrue(waiting.pending() && waiting.blocker().equals("funds"), "the treasury reserve blocks activation");
+            helper.assertValueEqual(fixture.town().economy().balance(), balance, "waiting cannot spend the treasury reserve");
+            helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), waitingId), "the unfunded request can be cancelled");
             helper.assertValueEqual(fixture.town().duties().get(fixture.builder().getUUID()), fixture.area().id(), "denied requests preserve the existing duty");
             fixture.town().economy().configureBudget(CurrencyAmount.ZERO, CurrencyAmount.ZERO);
             var target = fixture.plan().worldPos(fixture.origin(), fixture.plan().blocks().getFirst());
@@ -74,8 +84,12 @@ public final class SettlementBuildingPlanningGameTests {
             helper.assertValueEqual(fixture.town().economy().balance(), balance, "failed placement does not reserve money");
             fixture.builder().setAge(-24_000);
             helper.getLevel().setBlockAndUpdate(target, Blocks.AIR.defaultBlockState());
-            helper.assertFalse(SettlementManagementService.execute(fixture.leader(), command(fixture, UUID.randomUUID())), "children are not eligible builders");
-            helper.assertTrue(fixture.town().projects().isEmpty(), "rejected requests create no projects");
+            UUID childId = UUID.randomUUID();
+            helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, childId)), "a requested builder can wait for eligibility");
+            var childRequest = fixture.town().projects().get(childId);
+            helper.assertTrue(childRequest.pending() && childRequest.blocker().equals("builder"), "children cannot activate construction");
+            helper.assertValueEqual(fixture.town().economy().balance(), balance, "ineligible builders cannot spend funds");
+            helper.assertValueEqual(fixture.town().projects().size(), 2, "protected placement adds no project between the two accepted requests");
         } finally {
             fixture.builder().discard();
         }
@@ -94,6 +108,7 @@ public final class SettlementBuildingPlanningGameTests {
             var balance = fixture.town().economy().balance();
             UUID id = UUID.randomUUID();
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, id)), "the idle construction builder accepts a new site");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, id);
             SettlementConstructionService.worked(fixture.builder(), HiredWorkStateStore.state(fixture.builder()));
             SettlementConstructionService.worked(fixture.builder(), HiredWorkStateStore.state(fixture.builder()));
             helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(fixture.builder()), wallet + fixture.plan().price(), "payment is credited once");
@@ -160,16 +175,24 @@ public final class SettlementBuildingPlanningGameTests {
             var storage = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Other duty", fixture.area().min().above(24), fixture.area().max().above(24), 5, true);
             helper.assertTrue(fixture.town().putArea(fixture.town().leader(), storage), "a second working duty exists");
             helper.assertTrue(fixture.town().assignDuty(build.builder(), storage.id()), "the builder takes another duty");
-            helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()), "builder", "another working duty prevents commissioning");
+            helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()), "", "another duty delays an accepted request");
+            helper.assertTrue(fixture.town().projects().get(build.request()).pending(), "a working resident is not reassigned behind the player's back");
             fixture.town().assignDuty(build.builder(), fixture.area().id());
             helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()), "", "BUILD alone authorizes the temporary assignment and its fee");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, build.request());
             helper.assertValueEqual(SettlementConstructionService.placementFailure(delegate, fixture.town(), fixture.plan(), fixture.origin()), "overlap", "active footprints remain reserved");
             while (fixture.town().projects().values().stream().filter(SettlementProject::active).count() < fixture.town().stage().projects()) {
                 UUID other = UUID.randomUUID();
                 fixture.town().assignDuty(other, fixture.area().id());
                 helper.assertTrue(fixture.town().startProject(fixture.town().leader(), SettlementProject.create(fixture.town(), fixture.area().id(), other, fixture.plan(), fixture.origin().east(12), UUID.randomUUID(), 0)), "the remaining project slot is filled");
             }
-            helper.assertValueEqual(SettlementConstructionService.placementFailure(delegate, fixture.town(), fixture.plan(), fixture.origin()), "capacity", "exhausted project capacity has a specific failure");
+            var waitingOrigin = fixture.origin().east(24);
+            SettlementTestPlots.claim(helper.getLevel(), fixture.town(), fixture.plan().worldMin(waitingOrigin), fixture.plan().worldMax(waitingOrigin));
+            UUID waitingId = UUID.randomUUID();
+            var balance = fixture.town().economy().balance();
+            helper.assertValueEqual(SettlementConstructionService.commission(delegate, fixture.town(), waitingId, build.structure(), build.anchor().east(24), build.rotation(), build.builder()), "", "full active capacity still accepts bounded queued work");
+            helper.assertTrue(fixture.town().projects().get(waitingId).pending(), "full capacity prevents the next request from activating");
+            helper.assertValueEqual(fixture.town().economy().balance(), balance, "waiting for capacity reserves no extra fee");
         } finally {
             fixture.builder().discard();
         }
@@ -193,6 +216,7 @@ public final class SettlementBuildingPlanningGameTests {
             fixture.town().finishProject(legacy.id(), SettlementProject.Status.CANCELLED);
             UUID id = UUID.randomUUID();
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, id)), "a new project reserves its fee");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, id);
             var project = fixture.town().projects().get(id);
             SettlementBuildingService.refresh(helper.getLevel(), fixture.town(), project.workplace());
             helper.assertTrue(SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {}).surveys().containsKey(project.area()), "owned-site surveys survive saving");
@@ -255,11 +279,15 @@ public final class SettlementBuildingPlanningGameTests {
             SettlementWorkforceService.reconcile(helper.getLevel(), fixture.builder());
             UUID first = UUID.randomUUID();
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, first)), "the unassigned resident accepts the first site");
+            helper.assertTrue(fixture.town().putArea(fixture.town().leader(), fixture.area()), "a dedicated worksite allows the waiting request to activate");
+            helper.assertTrue(fixture.town().assignDuty(fixture.builder().getUUID(), fixture.area().id()), "the resident is assigned before dispatch");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, first);
             SettlementCareService.onUnloaded(fixture.builder());
             fixture.builder().remove(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
             helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), first), "the owned site can be cancelled while the resident is unloaded");
             UUID second = UUID.randomUUID();
             helper.assertTrue(SettlementManagementService.execute(fixture.leader(), command(fixture, second)), "stale resident task data cannot prevent the next request");
+            SettlementConstructionGameTests.fundAndDispatch(helper, fixture, second);
             helper.assertValueEqual(fixture.town().activeProject(fixture.builder().getUUID()).id(), second, "the builder receives only the new project");
             helper.assertValueEqual(fixture.town().economy().spent(), CurrencyAmount.ZERO, "construction does not consume trading's daily budget");
             helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), fixture.town(), second), "the second reservation can be refunded");
