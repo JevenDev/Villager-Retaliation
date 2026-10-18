@@ -328,7 +328,7 @@ public final class SettlementConstructionService {
                 || SettlementSavedData.get(player.serverLevel()).get(town.id()).orElse(null) != town
                 || assistants == null || assistants.size() >= SettlementConstructionCrew.MAX_MEMBERS) return false;
         var project = town.projects().get(projectId);
-        if (project == null || !project.active() || project.crewRevision() != revision || project.priority() != priority
+        if (project == null || !project.active() || project.crewRevision() != revision
                 || project.workplace() == null && !town.worksitePlans().containsKey(project.area())) return false;
         for (var id : assistants) {
             if (id == null) return false;
