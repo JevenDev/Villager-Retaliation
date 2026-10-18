@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -80,13 +81,13 @@ public final class ManagedPackExport {
             Files.writeString(generated.resolve(MANIFEST), AuthoringDocument.JSON.toJson(manifest));
             if (existing) {
                 backup = target.resolveSibling(target.getFileName() + ".backup-" + System.currentTimeMillis() + "-" + java.util.UUID.randomUUID().toString().substring(0, 8));
-                Files.move(target, backup);
+                move(target, backup);
             }
             try {
-                Files.move(generated, target);
+                move(generated, target);
             } catch (IOException exception) {
                 if (backup != null && !Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
-                    try { Files.move(backup, target); }
+                    try { move(backup, target); }
                     catch (IOException restore) { exception.addSuppressed(restore); }
                 }
                 throw exception;
@@ -95,6 +96,22 @@ public final class ManagedPackExport {
         } finally {
             if (Files.exists(staging)) try (var entries = Files.walk(staging)) {
                 for (Path file : entries.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
+            }
+        }
+    }
+
+    private static void move(Path source, Path destination) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                Files.move(source, destination);
+                return;
+            } catch (AccessDeniedException exception) {
+                if (attempt == 5) throw exception;
+                try { Thread.sleep(100L * (attempt + 1)); }
+                catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while waiting to move the export folder", interrupted);
+                }
             }
         }
     }
