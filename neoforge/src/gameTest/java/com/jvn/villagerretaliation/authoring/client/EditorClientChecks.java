@@ -10,6 +10,7 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        schemaFormsResolveNestedVariantsAndRequiredFields();
         stageReferencesAndTriggeredDeletionStaySafe();
         cameraSequenceEditsKeepThumbnailsAndUndoTogether();
         graphClipboardPreservesBranchesAndUndo();
@@ -45,7 +46,31 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 35;
+        return 36;
+    }
+
+    private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-schema-forms"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:guided");
+        var schema = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+        var forms = new EditorSchema(schema);
+        JsonObject objective = new JsonObject(); objective.addProperty("type", "block_break");
+        JsonObject fields = forms.effective(schema.getAsJsonObject("$defs").getAsJsonObject("objective"), objective);
+        check(fields.getAsJsonObject("properties").has("block"), "objective variants expose subtype fields");
+        check(forms.seed(fields).getAsJsonObject().has("id"), "required objective values are seeded");
+        JsonObject transition = forms.at(quest.json(), "/stages/0/transition");
+        check(!forms.choices(transition).isEmpty(), "nested transition forms resolve references");
+        JsonObject node = forms.at(quest.json(), "/stages/0");
+        check(node.getAsJsonObject("properties").has("on_enter"), "optional stage actions are available");
+        JsonObject action = schema.getAsJsonObject("$defs").getAsJsonObject("action");
+        check(forms.choices(action).containsKey("experience"), "runtime actions appear as typed choices");
+        JsonObject experience = new JsonObject(); experience.addProperty("type", "experience");
+        check(forms.effective(action, experience).getAsJsonObject("properties").has("amount"), "action forms use runtime field declarations");
+        JsonObject original = quest.json();
+        var template = new JsonObject(); template.addProperty("type", "trade");
+        String added = EditorContentTools.appendObjective(quest, "start", template);
+        check(added.endsWith("/objectives/0") && quest.json().getAsJsonArray("stages").get(0).getAsJsonObject().has("complete_when"), "advanced objectives connect completion automatically");
+        quest.undo(); check(quest.json().equals(original), "guided objective creation undoes atomically");
     }
 
     private static void stageReferencesAndTriggeredDeletionStaySafe() throws java.io.IOException {

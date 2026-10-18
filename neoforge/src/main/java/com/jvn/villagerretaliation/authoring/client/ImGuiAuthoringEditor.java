@@ -92,6 +92,7 @@ final class ImGuiAuthoringEditor {
     private final Map<String, float[]> positions = new HashMap<>();
     private final PreviewConditions conditions = new PreviewConditions();
     private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
+    private EditorSchema propertySchema;
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
@@ -1291,7 +1292,7 @@ final class ImGuiAuthoringEditor {
     private void guidedObjective() {
         if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !ImGui.collapsingHeader("Add quest objective")) return;
         if (ImGui.beginCombo("Objective", objectiveType.replace('_', ' '))) {
-            for (String type : List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade"))
+            for (String type : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry.descriptors().stream().map(value -> value.id()).sorted().toList())
                 if (ImGui.selectable(type.replace('_', ' '), objectiveType.equals(type))) objectiveType = type;
             ImGui.endCombo();
         }
@@ -1306,7 +1307,19 @@ final class ImGuiAuthoringEditor {
         ImGui.inputInt("Required count", objectiveCount);
         ImGui.textWrapped("The objective is added to this stage's completion requirements.");
         if (ImGui.button("Add objective")) operation(() -> {
-            String added = EditorContentTools.appendObjective(document, selectedNode, objectiveType, objectiveResource.get(), objectiveCount.get());
+            String added;
+            if (List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade").contains(objectiveType)) {
+                added = EditorContentTools.appendObjective(document, selectedNode, objectiveType, objectiveResource.get(), objectiveCount.get());
+            } else {
+                JsonObject template = new JsonObject();
+                template.addProperty("type", objectiveType);
+                var schema = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+                var model = new EditorSchema(schema);
+                JsonObject objectiveSchema = model.effective(schema.getAsJsonObject("$defs").getAsJsonObject("objective"), template);
+                JsonObject seeded = model.seed(objectiveSchema).getAsJsonObject();
+                seeded.addProperty("type", objectiveType);
+                added = EditorContentTools.appendObjective(document, selectedNode, seeded);
+            }
             refresh(); setPointer(added);
         });
     }
@@ -1330,6 +1343,49 @@ final class ImGuiAuthoringEditor {
             for (var entry : object.entrySet()) {
                 if (main.contains(entry.getKey())) continue;
                 inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
+            }
+        }
+        if (ImGui.treeNode("Guided properties")) { schemaObjectTools(object, pointer.get()); ImGui.treePop(); }
+    }
+
+    private void schemaObjectTools(JsonObject value, String path) {
+        if (propertySchema == null) return;
+        JsonObject rule = propertySchema.at(document.json(), path);
+        JsonObject properties = EditorSchema.object(rule.get("properties"));
+        var required = propertySchema.required(rule);
+        if (ImGui.beginCombo("Add property##" + path, "Choose a field...")) {
+            for (var entry : properties.entrySet()) {
+                if (value.has(entry.getKey())) continue;
+                if (ImGui.beginMenu(friendlyLabel(entry.getKey()) + (required.contains(entry.getKey()) ? " (required)" : ""))) {
+                    for (var choice : propertySchema.choices(EditorSchema.object(entry.getValue())).entrySet()) {
+                        if (ImGui.menuItem(choice.getKey())) operation(() -> replaceValue(path + "/" + escape(entry.getKey()), choice.getValue()));
+                    }
+                    ImGui.endMenu();
+                }
+            }
+            ImGui.endCombo();
+        }
+        if (ImGui.beginCombo("Remove property##" + path, "Choose an optional field...")) {
+            for (String name : value.keySet()) if (!required.contains(name) && ImGui.selectable(friendlyLabel(name)))
+                operation(() -> { document.edit("Remove property", root -> JsonPointers.remove(root, path + "/" + escape(name))); refresh(); });
+            ImGui.endCombo();
+        }
+        if (!rule.has("additionalProperties") || !rule.get("additionalProperties").isJsonPrimitive()
+                || rule.get("additionalProperties").getAsBoolean()) {
+            if (ImGui.treeNode("Named fields##" + path)) {
+                ImString name = fields.computeIfAbsent("schema_name:" + path, ignored -> new ImString(256));
+                input("Field name", name);
+                if (ImGui.beginCombo("Field value", "Choose a type...")) {
+                    JsonObject additional = EditorSchema.object(rule.get("additionalProperties"));
+                    var options = additional.isEmpty() ? Map.<String, JsonElement>of("Text", new JsonPrimitive(""), "Number", new JsonPrimitive(0),
+                            "Toggle", new JsonPrimitive(false), "Object", new JsonObject(), "List", new JsonArray()) : propertySchema.choices(additional);
+                    for (var choice : options.entrySet()) if (ImGui.selectable(choice.getKey())) operation(() -> {
+                        if (name.get().isBlank() || value.has(name.get())) throw new IllegalArgumentException("Enter a new, nonempty field name");
+                        replaceValue(path + "/" + escape(name.get()), choice.getValue());
+                    });
+                    ImGui.endCombo();
+                }
+                ImGui.treePop();
             }
         }
     }
@@ -1396,13 +1452,16 @@ final class ImGuiAuthoringEditor {
 
     private void tutorialObjectiveCatalog(){
         if(!ImGui.collapsingHeader("Clipboard job objectives"))return;
-        ImGui.textWrapped("Prepare a complete personal worker objective, then append it to the selected stage's objectives array. Add its id to complete_when. Productive checks read the saved bound run, not UI clicks or inventory matches.");
+        ImGui.textWrapped("Add a personal worker objective to the selected stage. Completion requirements are connected automatically. Productive checks read the saved bound run.");
         for(var role:com.jvn.villagerretaliation.interaction.HiredVillagerRole.values()){
             if(ImGui.treeNode(role.label()+"##tutorial_preset")){
                 for(String check:java.util.List.of("assignment","area","storage","policy","selection","task","route","outcome","completed","disposed")){
                     if(ImGui.selectable(check+"##tutorial_"+role.serializedName())){
-                        fieldValue.set(JSON.toJson(com.jvn.villagerretaliation.quest.tutorial.TutorialAuthoringPresets.objective(role,check)));
-                        status="Prepared "+role.label()+" "+check+" objective. Append to objectives and connect its completion reference.";
+                        operation(() -> {
+                            String added = EditorContentTools.appendObjective(document, selectedNode,
+                                    com.jvn.villagerretaliation.quest.tutorial.TutorialAuthoringPresets.objective(role,check));
+                            refresh(); setPointer(added);
+                        });
                     }
                 }
                 ImGui.treePop();
@@ -1412,13 +1471,20 @@ final class ImGuiAuthoringEditor {
 
     private void conditionCatalog() {
         if (!ImGui.collapsingHeader("Runtime condition catalog")) return;
-        ImGui.textWrapped("Select a runtime condition type to prepare a JSON value. Add it to a selected conditions array, or add a conditions field to an object.");
+        ImGui.textWrapped("Select a conditions list, then choose a runtime condition. Guided properties supplies its declared fields.");
         for (var descriptor : com.jvn.villagerretaliation.dialogue.DialogueCondition.descriptors()) {
             if (ImGui.selectable(descriptor.id())) {
                 JsonObject condition = new JsonObject();
                 condition.addProperty("type", descriptor.id());
-                fieldValue.set(JSON.toJson(condition));
-                status = "Prepared " + descriptor.id() + ". Fill required values using its schema, then append to a conditions array.";
+                operation(() -> {
+                    if (!pointer.get().endsWith("/conditions") || !JsonPointers.get(document.json(), pointer.get()).isJsonArray())
+                        throw new IllegalArgumentException("Focus a conditions list first");
+                    var schema = new EditorSchema(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
+                    JsonObject rule = schema.effective(com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions().getAsJsonObject("condition"), condition);
+                    JsonObject seeded = schema.seed(rule).getAsJsonObject();
+                    seeded.addProperty("type", descriptor.id());
+                    editArray(pointer.get(), values -> values.add(seeded));
+                });
             }
             if (ImGui.isItemHovered()) ImGui.setTooltip(JSON.toJson(descriptor.schema()));
         }
@@ -1438,6 +1504,7 @@ final class ImGuiAuthoringEditor {
                 for (var entry : value.getAsJsonObject().entrySet()) {
                     inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), depth + 1);
                 }
+                schemaObjectTools(value.getAsJsonObject(), path);
                 ImGui.treePop();
             }
         } else if (value.isJsonArray() && path.endsWith("/lines")
@@ -1469,6 +1536,12 @@ final class ImGuiAuthoringEditor {
             if (ImGui.treeNode(label + " [" + value.getAsJsonArray().size() + "]")) {
                 if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
+                JsonObject rule = propertySchema.at(document.json(), path);
+                if (ImGui.beginCombo("Add entry", "Choose an entry type...")) {
+                    for (var choice : propertySchema.choices(EditorSchema.object(rule.get("items"))).entrySet())
+                        if (ImGui.selectable(choice.getKey())) editArray(path, values -> values.add(choice.getValue().deepCopy()));
+                    ImGui.endCombo();
+                }
                 for (int i = 0; i < array.size(); i++) {
                     final int index = i;
                     ImGui.pushID(i);
@@ -1526,6 +1599,9 @@ final class ImGuiAuthoringEditor {
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
             default -> List.of();
         };
+        JsonObject rule = propertySchema.at(document.json(), path);
+        if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
+        if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         ImGui.setNextItemWidth(-1);
         if (!choices.isEmpty() && ImGui.beginCombo("##choose_" + field, "Choose " + field + "...")) {
             for (String choice : choices) if (ImGui.selectable(choice, input.get().equals(choice))) input.set(choice);
@@ -1834,6 +1910,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void refresh() {
+        propertySchema = document == null ? null : EditorSchema.forDocument(document);
         rawModified = false;
         pendingFields.clear();
         translatedFields.clear();

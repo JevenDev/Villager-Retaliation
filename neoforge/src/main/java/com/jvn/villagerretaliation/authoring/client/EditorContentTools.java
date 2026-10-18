@@ -145,6 +145,13 @@ final class EditorContentTools {
             if (net.minecraft.resources.ResourceLocation.tryParse(resource) == null) throw new IllegalArgumentException("Choose a valid " + field + " ID");
             objective.addProperty(field, resource);
         }
+        return appendObjective(document, stageId, objective);
+    }
+
+    static String appendObjective(AuthoringDocument document, String stageId, JsonObject template) {
+        if (document.kind() != DefinitionKind.QUEST) throw new IllegalArgumentException("Choose a quest stage");
+        var node = DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(stageId)).findFirst().orElseThrow();
+        JsonObject objective = template.deepCopy();
         JsonObject stage = JsonPointers.get(document.json(), node.pointer()).getAsJsonObject();
         var ids = DialogueGraph.array(stage, "objectives").asList().stream().filter(JsonElement::isJsonObject)
                 .map(value -> DialogueGraph.string(value.getAsJsonObject(), "id")).toList();
