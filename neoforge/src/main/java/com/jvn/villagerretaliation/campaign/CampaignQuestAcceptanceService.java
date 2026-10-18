@@ -76,7 +76,8 @@ public final class CampaignQuestAcceptanceService {
         return beforeSelection(context, option.id(), starts, referenced, actions,
                 () -> {
                     var fresh = VillagerInteractionService.createDialogueContext(context.player().serverLevel(), context.player(), context.villager());
-                    return VillagerDialogueResources.dialogueOption(fresh, option.id()).filter(option::equals).isPresent()
+                    return VillagerDialogueResources.dialogueOption(fresh, option.id())
+                            .filter(current -> option.equals(current.withSelectionToken(option.selectionToken()))).isPresent()
                             && preview.equals(DialogueTreeService.previewSelection(fresh, option));
                 },
                 () -> VillagerDialogueRequestHandler.handle(context.player(), context.villager().getId(), option.id()));
