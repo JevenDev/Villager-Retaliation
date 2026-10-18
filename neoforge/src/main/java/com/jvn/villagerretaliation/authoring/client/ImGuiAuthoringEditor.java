@@ -201,7 +201,7 @@ final class ImGuiAuthoringEditor {
             }
             if (document != null && view == 0 && !ImGui.getIO().getWantTextInput() && !showRecovery && !confirmClose) {
                 if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
-                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.C)) operation(() -> graphClipboard.copy(document, selectedNodes()));
+                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.C)) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
                 if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.V)) operation(this::pasteNodes);
                 if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
                 if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
@@ -1249,7 +1249,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void pasteNodes() {
-        var added = graphClipboard.paste(document);
+        var added = graphClipboard.paste(workspace, document);
         refresh(); nodeSelection.clear(); nodeSelection.addAll(added);
         selectedNode = added.getFirst(); graphFocus = selectedNode;
         setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
@@ -1269,7 +1269,7 @@ final class ImGuiAuthoringEditor {
         if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind() == DefinitionKind.WORLD_CAMPAIGN) return;
         if (ImGui.checkbox("Show minimap", showMinimap)) showMinimap = !showMinimap;
         ImGui.textWrapped("Ctrl-click headers to select nodes. Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
-        if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(document, selectedNodes()));
+        if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
         if (ImGui.button("Paste nodes")) operation(this::pasteNodes);
         if (!ImGui.collapsingHeader("Graph outline and bookmarks")) return;
         input("Find node or wording", nodeFilter);

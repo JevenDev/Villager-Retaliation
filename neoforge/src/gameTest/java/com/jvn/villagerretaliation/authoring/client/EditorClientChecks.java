@@ -14,6 +14,7 @@ public final class EditorClientChecks {
         stageReferencesAndTriggeredDeletionStaySafe();
         cameraSequenceEditsKeepThumbnailsAndUndoTogether();
         graphClipboardPreservesBranchesAndUndo();
+        graphClipboardTransfersLocalizedDependencies();
         connectedNodeCreationIsAtomic();
         managedExportsPreserveExternalFilesAndBackups();
         previewScenariosRestoreIndependentChecks();
@@ -46,7 +47,7 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 36;
+        return 37;
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
@@ -129,6 +130,37 @@ public final class EditorClientChecks {
         check(pasted.size() == 2 && DialogueGraph.edges(document).stream().anyMatch(edge -> edge.from().equals("start_copy") && edge.to().equals("follow_up_copy")), "pasting a selection remaps its internal branches");
         document.undo();
         check(document.json().equals(original), "pasting multiple nodes undoes as one change");
+    }
+
+    private static void graphClipboardTransfersLocalizedDependencies() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-cross-clipboard"));
+        var source = workspace.createDocument(DefinitionKind.CONVERSATION, "test:source");
+        var target = workspace.createDocument(DefinitionKind.CONVERSATION, "test:target");
+        DialogueGraph.addNode(source, "finish");
+        workspace.addDialogueResponse(source, "start", "continue", "Choose this branch", "finish");
+        var locale = workspace.textLocation(source, "test:source.greeting", "en_us").document();
+        var french = new com.google.gson.JsonObject();
+        french.addProperty("test:source.greeting", "Bonjour");
+        workspace.add(new AuthoringDocument(DefinitionKind.RESOURCE, locale.resourcePath().replace("en_us.json", "fr_fr.json"), french));
+        var clipboard = new EditorGraphClipboard();
+        clipboard.copy(workspace, source, java.util.Set.of("start"));
+        JsonObject before = target.json();
+        var pasted = clipboard.paste(workspace, target);
+        check(pasted.size() == 2, "cross-file paste includes connected nodes");
+        check(DialogueGraph.edges(target).stream().anyMatch(edge -> edge.from().equals("start_copy") && edge.to().equals("finish_copy")), "cross-file branches point at copied destinations");
+        var node = target.json().getAsJsonArray("nodes").asList().stream().map(value -> value.getAsJsonObject())
+                .filter(value -> DialogueGraph.string(value, "id").equals("start_copy")).findFirst().orElseThrow();
+        var text = node.getAsJsonArray("exchanges").get(0).getAsJsonObject().get("text");
+        check(workspace.resolveText(target, text, "fr_fr").equals("Bonjour"), "cross-file paste preserves translated wording");
+        check(workspace.resolveText(target, text, "en_us").equals("Hello."), "cross-file paste preserves English wording");
+        check(!text.getAsJsonObject().get("key").getAsString().equals("test:source.greeting"), "pasted localization references are independent");
+        check(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR), "pasted localized graph passes bundle validation: " + workspace.validate());
+        var pastedJson = target.json();
+        target.undo(); check(target.json().equals(before), "cross-file paste undoes graph and wording together");
+        target.redo(); check(target.json().equals(pastedJson) && workspace.resolveText(target, text, "fr_fr").equals("Bonjour"), "cross-file paste redoes graph and wording together");
+        var tree = workspace.createDocument(DefinitionKind.TREE, "test:incompatible");
+        try { clipboard.paste(workspace, tree); throw new AssertionError("incompatible graph paste accepted"); }
+        catch (IllegalArgumentException expected) { check(DialogueGraph.nodes(tree).size() == 1, "incompatible paste is atomic"); }
     }
 
     private static void connectedNodeCreationIsAtomic() throws java.io.IOException {

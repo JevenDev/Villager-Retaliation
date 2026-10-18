@@ -607,6 +607,38 @@ public final class AuthoringWorkspace {
         return AuthoringValidation.validate(documents());
     }
 
+    public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
+        if (!documents.contains(document)) throw new IllegalArgumentException("Choose a document in this workspace");
+        Map<AuthoringDocument, JsonObject> updates = new LinkedHashMap<>();
+        List<AuthoringDocument> created = new ArrayList<>();
+        for (var entry : locales.entrySet()) {
+            String path = safeRelativePath(entry.getKey());
+            if (!path.contains("/locales/") || !path.endsWith(".json")) throw new IllegalArgumentException("Expected a locale resource");
+            AuthoringDocument locale = documents.stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElse(null);
+            if (locale == null) {
+                if (containsPath(path)) throw new IllegalArgumentException("Locale is not editable: " + path);
+                locale = new AuthoringDocument(DefinitionKind.RESOURCE, path, new JsonObject());
+                created.add(locale);
+            }
+            updates.put(locale, entry.getValue().deepCopy());
+        }
+        created.forEach(this::add);
+        document.edit("Paste nodes", root -> replaceObject(root, definition), editor -> replaceObject(editor, metadata));
+        updates.forEach((locale, value) -> locale.edit("Paste wording", root -> replaceObject(root, value)));
+        List<AuthoringDocument> changed = new ArrayList<>();
+        changed.add(document); changed.addAll(updates.keySet());
+        AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
+            for (var locale : created) if (containsPath(locale.resourcePath()))
+                throw new IllegalStateException("Another resource now occupies " + locale.resourcePath());
+            documents.addAll(created);
+        });
+    }
+
+    private static void replaceObject(JsonObject target, JsonObject source) {
+        for (String key : List.copyOf(target.keySet())) target.remove(key);
+        source.entrySet().forEach(entry -> target.add(entry.getKey(), entry.getValue().deepCopy()));
+    }
+
     public record TextLocation(AuthoringDocument document, String pointer) { }
 
     public TextLocation textLocation(AuthoringDocument owner, String key, String locale) {
