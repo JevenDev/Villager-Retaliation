@@ -154,6 +154,7 @@ public final class QuestStageTransitionCoordinator {
                     definition,
                     progress,
                     objective -> access.objectiveComplete(context.player(), context, context.level(), definition, progress, objective));
+            if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.held(context.player(), definition.id(), progress.currentStage())) break;
             if (!readiness.ready()) {
                 break;
             }
@@ -240,6 +241,7 @@ public final class QuestStageTransitionCoordinator {
                 || com.jvn.villagerretaliation.scene.SceneContinuationService.hasPendingQuestOperation(level, player.getUUID(), definition.id())) return false;
         boolean changed = false;
         for (int index = 0; index < MAX_STAGE_ADVANCES_PER_CHECK; index++) {
+            if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.held(player, definition.id(), progress.currentStage())) break;
             if (!QuestProgressionService.advanceSaved(definition, progress, level.getGameTime(),
                     objective -> access.objectiveComplete(player, null, level, definition, progress, objective),
                     conditions -> access.conditionsMet(player, level, definition, progress, conditions))) break;

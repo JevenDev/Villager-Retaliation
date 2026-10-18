@@ -80,6 +80,17 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         }
     }
 
+    public static DialoguePreviewSession.Cursor cursor() { return active == null ? null : active.session.cursor(); }
+    public static List<DialoguePreviewSession.Choice> choices() { return active == null ? List.of() : active.session.choices(); }
+    public static void next() { command(() -> active.session.advance()); }
+    public static void previous() { command(() -> active.session.previous()); }
+    public static void exchange(int index) { command(() -> active.session.exchange(index)); }
+    public static void choose(int index) { command(() -> active.session.choose(index)); }
+    private static void command(Runnable action) {
+        var preview = active;
+        if (preview != null) preview.perform(() -> { action.run(); preview.update(preview.screen); });
+    }
+
     public static boolean active() { return active != null; }
     public static List<String> log() { return active == null ? lastLog : active.session.log(); }
     public static void stop() { if (active != null) active.close(); }

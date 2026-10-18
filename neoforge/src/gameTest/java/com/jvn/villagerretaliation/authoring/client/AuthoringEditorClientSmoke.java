@@ -338,6 +338,7 @@ public final class AuthoringEditorClientSmoke {
             require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "Reopening preserves the connection.");
             capture("15-reopened-draft");
         });
+        buildPlaytestDialogueSteps();
         buildImportSteps();
         buildCreatorToolsSteps();
         STEPS.add(() -> {
@@ -348,6 +349,24 @@ public final class AuthoringEditorClientSmoke {
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
+        });
+    }
+
+    private static void buildPlaytestDialogueSteps() {
+        STEPS.add(() -> invoke("enterPlaytest", new Class<?>[0]));
+        STEPS.add(() -> invoke("startPreview", new Class<?>[] {String.class}, "start"));
+        pause(500);
+        STEPS.add(() -> {
+            require(AuthoringDialoguePreview.active() && EditorPlaytestViewport.active(), "Native dialogue keeps the editor beside it.");
+            require(Minecraft.getInstance().screen.width == EditorPlaytestViewport.layout().guiWidth(), "Dialogue reflows inside the game viewport.");
+            capture("15a-playtest-dialogue");
+            AuthoringDialoguePreview.choose(0);
+        });
+        STEPS.add(() -> {
+            require(AuthoringDialoguePreview.cursor().previous(), "Dialogue navigation records the previous exchange.");
+            AuthoringDialoguePreview.previous();
+            require(AuthoringDialoguePreview.cursor().node().equals("start"), "Dialogue can return to the previous node.");
+            invoke("leavePlaytest", new Class<?>[] {int.class}, 0);
         });
     }
 
@@ -519,6 +538,42 @@ public final class AuthoringEditorClientSmoke {
             catch (IllegalArgumentException expected) { }
             document.undo();
             require(EditorTestWorld.currentSnapshot(workspace), "Undo restores the exported test snapshot.");
+        });
+        buildPlaytestQuestSteps();
+    }
+
+    private static void buildPlaytestQuestSteps() {
+        STEPS.add(() -> {
+            invoke("enterPlaytest", new Class<?>[0]);
+            EditorLiveQuestTest.start(workspace, document, true);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("start"));
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().hold(), "Quest playtesting waits for Next.");
+            String objective = EditorLiveQuestTest.snapshot().objectives().getFirst().id();
+            EditorLiveQuestTest.prepare(workspace, document, objective, "");
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1500);
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().stage().equals("start") && EditorLiveQuestTest.snapshot().ready(),
+                    "Real inventory requirements become ready while the stage stays held: " + EditorLiveQuestTest.snapshot());
+            capture("29-playtest-quest-ready");
+            EditorLiveQuestTest.replay(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> EditorLiveQuestTest.force(workspace, document, ""));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().log().stream().anyMatch(line -> line.contains("Test bypass")), "Quest shortcuts are recorded.");
+            EditorLiveQuestTest.next(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1000);
+        STEPS.add(() -> {
+            require(!EditorLiveQuestTest.snapshot().stage().equals("start"), "Next advances through the real stage runtime.");
+            capture("30-playtest-quest-next");
+            invoke("leavePlaytest", new Class<?>[] {int.class}, 1);
         });
     }
 

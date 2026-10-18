@@ -19,7 +19,10 @@ public final class QuestProgressionService {
     public static boolean advanceSaved(ServerLevel level, ServerPlayer player, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<List<DialogueCondition>> conditionsMet) {
-        if (!advanceSaved(definition, progress, level.getGameTime(), objectiveComplete, conditionsMet)) return false;
+        if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.held(player, definition.id(), progress.currentStage())) return false;
+        if (!advanceSaved(definition, progress, level.getGameTime(), objectiveComplete,
+                conditions -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(player, definition.id(), progress.currentStage())
+                        || conditionsMet.test(conditions))) return false;
         VillagerQuestFacts.get(level).setVariable(QuestScopeKey.quest(player.getUUID(), definition.id()).asString(),
                 "stage", progress.currentStage());
         VillagerQuestSavedData.get(level).setDirty();

@@ -95,6 +95,9 @@ final class ImGuiAuthoringEditor {
     private EditorSchema propertySchema;
     private boolean liveQuestMode = true;
     private float playtestFraction = 2F / 3;
+    private boolean playtestHold = true;
+    private long nextPlaytestRefresh;
+    private final ImString playtestValue = new ImString(256);
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
@@ -149,6 +152,12 @@ final class ImGuiAuthoringEditor {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
             INSTANCE.attempt(INSTANCE::writeRecovery);
         }
+        if (INSTANCE.view == 3 && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
+                && EditorTestWorld.active(INSTANCE.workspace) && !EditorLiveQuestTest.view().busy()
+                && net.minecraft.Util.getMillis() >= INSTANCE.nextPlaytestRefresh) {
+            INSTANCE.nextPlaytestRefresh = net.minecraft.Util.getMillis() + 250;
+            INSTANCE.attempt(() -> EditorLiveQuestTest.inspect(INSTANCE.workspace, INSTANCE.document));
+        }
         if (INSTANCE.view != 1) EditorCameraPanel.close();
         EditorCameraPanel.tick(INSTANCE.screen);
         if (INSTANCE.target != null && (MC.level != INSTANCE.target.level() || INSTANCE.target.isRemoved())) INSTANCE.target = null;
@@ -159,6 +168,7 @@ final class ImGuiAuthoringEditor {
         AuthoringDialoguePreview.stop();
         EditorPlaytestViewport.close();
         EditorCameraPanel.close();
+        EditorLiveQuestTest.stop();
         INSTANCE.clearCampaignPreview();
         INSTANCE.target = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
@@ -1633,6 +1643,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void leavePlaytest(int next) {
+        EditorLiveQuestTest.stop();
         AuthoringDialoguePreview.stop();
         EditorPlaytestViewport.close();
         view = next;
@@ -1695,13 +1706,20 @@ final class ImGuiAuthoringEditor {
             if (document != null) {
                 ImGui.separatorText("Steps");
                 for (var node : DialogueGraph.nodes(document)) {
-                    if (ImGui.selectable(node.id(), node.id().equals(selectedNode))) operation(() -> {
+                    String running = document.kind() == DefinitionKind.QUEST ? EditorLiveQuestTest.snapshot().stage()
+                            : AuthoringDialoguePreview.cursor() == null ? "" : AuthoringDialoguePreview.cursor().node();
+                    if (ImGui.selectable((node.id().equals(running) ? "> " : "") + node.id(), node.id().equals(selectedNode))) operation(() -> {
                         selectedNode = node.id(); setPointer(node.pointer()); fields.clear(); textFields.clear();
                     });
                 }
-                if (document.kind() == DefinitionKind.QUEST) liveQuestTest();
-                else if (ImGui.button("Play selected step")) startPreview(selectedNode);
-                if (ImGui.collapsingHeader("Step properties", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) selectedDetails();
+                if (document.kind() == DefinitionKind.QUEST) playtestQuest();
+                else playtestDialogue();
+                if (ImGui.collapsingHeader("Step properties", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+                    try { selectedDetails(); }
+                    catch (IllegalArgumentException | IllegalStateException | ClassCastException | IndexOutOfBoundsException exception) {
+                        ImGui.textWrapped("Choose an existing step: " + exception.getMessage());
+                    }
+                }
                 if (hasPendingFields() && ImGui.button("Apply field edits")) operation(() -> { });
             }
         }
@@ -1710,6 +1728,107 @@ final class ImGuiAuthoringEditor {
         ImGui.end();
         if (MC.screen == screen && ImGui.getMousePosX() < viewport.getWorkPosX() + split - 3
                 && ImGui.isMouseClicked(0) && !confirmClose && !showRecovery) MC.setScreen(null);
+    }
+
+    private void playtestDialogue() {
+        if (ImGui.button("Nearest villager") && MC.level != null && MC.player != null)
+            target = MC.level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, MC.player.getBoundingBox().inflate(24))
+                    .stream().min(java.util.Comparator.comparingDouble(entity -> entity.distanceToSqr(MC.player))).orElse(null);
+        ImGui.textWrapped(target == null ? "Choose a nearby villager to play dialogue." : "Speaker: " + target.getName().getString());
+        ImGui.beginDisabled(target == null);
+        if (ImGui.button("Play from entry")) startPreview("");
+        if (ImGui.button("Jump / replay selected step")) startPreview(selectedNode);
+        ImGui.endDisabled();
+        var cursor = AuthoringDialoguePreview.cursor();
+        if (cursor != null) {
+            ImGui.textWrapped("Playing " + cursor.node() + " | Exchange " + (cursor.exchange() + 1) + "/" + cursor.exchanges());
+            ImGui.beginDisabled(!cursor.previous());
+            if (ImGui.button("Previous exchange")) operation(AuthoringDialoguePreview::previous);
+            ImGui.endDisabled();
+            ImGui.beginDisabled(!cursor.next());
+            if (ImGui.button("Next exchange")) operation(AuthoringDialoguePreview::next);
+            ImGui.endDisabled();
+            if (cursor.exchanges() > 1 && ImGui.beginCombo("Exchange", Integer.toString(cursor.exchange() + 1))) {
+                for (int i = 0; i < cursor.exchanges(); i++) {
+                    int index = i;
+                    if (ImGui.selectable("Exchange " + (i + 1), i == cursor.exchange())) operation(() -> AuthoringDialoguePreview.exchange(index));
+                }
+                ImGui.endCombo();
+            }
+            var choices = AuthoringDialoguePreview.choices();
+            for (int i = 0; i < choices.size(); i++) {
+                int index = i;
+                var choice = choices.get(i);
+                ImGui.beginDisabled(!choice.available());
+                if (ImGui.button(choice.label() + "##playtest_choice" + i)) operation(() -> AuthoringDialoguePreview.choose(index));
+                ImGui.endDisabled();
+                if (!choice.available()) ImGui.textWrapped(choice.reason());
+            }
+            if (ImGui.button("Stop dialogue")) operation(AuthoringDialoguePreview::stop);
+        }
+        if (ImGui.collapsingHeader("Dialogue context")) {
+            EditorPreviewConditions.time(conditions);
+            EditorPreviewConditions.render(conditions, document.json());
+        }
+        if (ImGui.collapsingHeader("Dialogue log")) for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
+    }
+
+    private void playtestQuest() {
+        if (!EditorTestWorld.active(workspace)) {
+            ImGui.textWrapped("Create a separate test world for quest playtesting.");
+            if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+            return;
+        }
+        var state = EditorLiveQuestTest.snapshot();
+        ImGui.textWrapped("Live stage: " + state.stage() + " | " + state.state());
+        if (ImGui.checkbox("Wait for Next", playtestHold)) {
+            playtestHold = !playtestHold;
+            if (!state.stage().isBlank()) operation(() -> EditorLiveQuestTest.hold(workspace, document, playtestHold));
+        }
+        if (!EditorTestWorld.currentSnapshot(workspace)) ImGui.textWrapped("Draft changes are pending. Apply the latest draft before changing live state.");
+        ImGui.beginDisabled(!EditorTestWorld.currentSnapshot(workspace) || EditorLiveQuestTest.view().busy());
+        if (ImGui.button("Start / restart quest")) operation(() -> EditorLiveQuestTest.start(workspace, document, playtestHold));
+        ImGui.beginDisabled(state.stage().isBlank());
+        if (ImGui.button("Jump to selected stage")) operation(() -> EditorLiveQuestTest.stage(workspace, document, selectedNode));
+        if (ImGui.button("Replay current stage")) operation(() -> EditorLiveQuestTest.replay(workspace, document));
+        ImGui.beginDisabled(!state.ready());
+        if (ImGui.button("Next stage")) operation(() -> EditorLiveQuestTest.next(workspace, document));
+        ImGui.endDisabled();
+        if (!state.ready()) ImGui.textWrapped(state.blocker());
+        for (var transition : state.transitions()) {
+            ImGui.beginDisabled(!transition.available());
+            if (ImGui.button(transition.label() + "##quest_transition" + transition.id()))
+                operation(() -> EditorLiveQuestTest.transition(workspace, document, transition.id()));
+            ImGui.endDisabled();
+            if (!transition.available()) ImGui.textWrapped(transition.reason());
+        }
+        if (ImGui.button("Turn in quest")) operation(() -> EditorLiveQuestTest.turnIn(workspace, document));
+        if (ImGui.button("Open quest dialogue") && MC.player != null && MC.gameMode != null && MC.level != null) {
+            var provider = MC.level.getEntity(state.provider());
+            if (provider == null) status = "The quest provider is not loaded.";
+            else MC.gameMode.interact(MC.player, provider, net.minecraft.world.InteractionHand.MAIN_HAND);
+        }
+        if (ImGui.button("Open quest journal")) MC.setScreen(new com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen());
+        ImGui.separatorText("Current requirements");
+        ImGui.inputText("Fact / reputation value", playtestValue);
+        for (var objective : state.objectives()) {
+            ImGui.pushID(objective.id());
+            ImGui.textWrapped((objective.complete() ? "Complete: " : "Pending: ") + objective.id() + " (" + objective.type() + ")");
+            ImGui.progressBar(objective.progress(), -1, 0);
+            ImGui.textWrapped(objective.reason());
+            if (!objective.setup().isBlank()) {
+                if (ImGui.button(objective.setup())) operation(() -> EditorLiveQuestTest.prepare(workspace, document, objective.id(), playtestValue.get()));
+            } else ImGui.textWrapped("Requires gameplay or configured campaign bindings. A test bypass is available.");
+            if (ImGui.button("Force complete objective")) operation(() -> EditorLiveQuestTest.force(workspace, document, objective.id()));
+            ImGui.popID();
+        }
+        if (ImGui.button("Force stage ready")) operation(() -> EditorLiveQuestTest.force(workspace, document, ""));
+        if (ImGui.button("Clear quest progress")) operation(() -> EditorLiveQuestTest.clear(workspace, document));
+        ImGui.endDisabled();
+        ImGui.endDisabled();
+        ImGui.textWrapped(EditorLiveQuestTest.view().message());
+        if (ImGui.collapsingHeader("Test shortcuts and actions")) for (String line : state.log()) ImGui.textWrapped(line);
+        if (ImGui.collapsingHeader("Runtime diagnostics")) for (String line : EditorLiveQuestTest.view().lines()) ImGui.textWrapped(line);
     }
 
     private void preview() {
@@ -1849,6 +1968,7 @@ final class ImGuiAuthoringEditor {
                 }
             }
             EditorCameraPanel.close();
+            if (view == 3) AuthoringDialoguePreview.stop();
             var authoredId = net.minecraft.resources.ResourceLocation.tryParse(document.id());
             var evaluationId = authoredId == null
                     ? net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview") : authoredId;
@@ -1986,6 +2106,7 @@ final class ImGuiAuthoringEditor {
 
     private void closeEditor() {
         confirmClose = false;
+        EditorLiveQuestTest.stop();
         EditorPlaytestViewport.close();
         AuthoringDialoguePreview.stop();
         EditorCameraPanel.close();
@@ -2009,6 +2130,8 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (document != next) {
+            EditorLiveQuestTest.stop();
+            AuthoringDialoguePreview.stop();
             EditorCameraPanel.close();
             clearCampaignPreview();
         }

@@ -1602,6 +1602,69 @@ public final class VillagerQuestService {
         return DEBUG.debugTraceSetEnabled(player, enabled);
     }
 
+    public static com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvaluationContext debugPlaytestContext(ServerPlayer player, ResourceLocation quest) {
+        var definition = VillagerQuestResources.quest(player.server, quest).orElseThrow(() -> new IllegalArgumentException("Unknown quest " + quest));
+        var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
+        if (progress == null) throw new IllegalStateException("Start the quest first");
+        var context = contextForStartedVillager(player.serverLevel(), player, progress).orElseThrow(() -> new IllegalStateException("The quest provider is not loaded"));
+        return objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress);
+    }
+
+    public static com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView debugPlaytestView(ServerPlayer player, ResourceLocation quest) {
+        var definition = VillagerQuestResources.quest(player.server, quest).orElse(null);
+        var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
+        if (definition == null || progress == null) return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
+        var context = contextForStartedVillager(player.serverLevel(), player, progress).orElse(null);
+        var evaluation = objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress);
+        var rows = new java.util.ArrayList<com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective>();
+        for (var objective : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.stageObjectives(definition, progress.currentStage())) {
+            var result = QuestObjectiveRegistry.evaluate(evaluation, objective).orElse(com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult.incomplete(0, "No evaluator"));
+            boolean complete = objectiveComplete(player, context, player.serverLevel(), definition, progress, objective);
+            rows.add(new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective(objective.id(),
+                    QuestObjectiveRegistry.canonicalTypeId(objective), complete, complete ? 1 : result.progress(), result.message(),
+                    com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.label(objective)));
+        }
+        var readiness = com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness.forCurrentStage(definition, progress,
+                objective -> objectiveComplete(player, context, player.serverLevel(), definition, progress, objective),
+                conditions -> context != null && (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(player, quest, progress.currentStage())
+                        || com.jvn.villagerretaliation.dialogue.DialogueCondition.matchesAll(context, conditions)));
+        var transitions = context == null ? java.util.List.<com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Transition>of()
+                : java.util.stream.Stream.concat(stageBranchOptions(context).stream(), embeddedDialogueOptions(context, com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition.NEUTRAL).stream())
+                    .filter(option -> com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds.parse(option.id()).map(key -> key.questId().equals(quest)).orElse(false)
+                            || option.treeReference() != null && VillagerQuestResources.questDialogueCatalog(player.server).bindings(quest).stream().anyMatch(binding -> binding.treeId().equals(option.treeReference().treeId())))
+                    .map(option -> new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Transition(option.id(), option.label(), option.available(), option.unavailableReason())).toList();
+        var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
+        var provider = progress.startedVillagerId() == null ? null : player.serverLevel().getEntity(progress.startedVillagerId());
+        return new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView(progress.currentStage(), progress.state().name().toLowerCase(java.util.Locale.ROOT),
+                provider == null ? -1 : provider.getId(), controls == null || controls.hold(), readiness.ready(), readiness.reason(), rows,
+                definition.stages().keySet().stream().toList(), transitions, controls == null ? List.of() : controls.log());
+    }
+
+    public static void debugPlaytestAdvance(ServerPlayer player, ResourceLocation quest) {
+        var evaluation = debugPlaytestContext(player, quest);
+        var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest);
+        controls.advance(evaluation.progress().currentStage(), () -> {
+            advanceStageIfComplete(evaluation.dialogueContext(), evaluation.definition(), evaluation.progress());
+            VillagerQuestSavedData.get(player.serverLevel()).setDirty();
+            sendTrackerSync(player, true);
+        });
+    }
+
+    public static void debugPlaytestReplay(ServerPlayer player, ResourceLocation quest) {
+        var evaluation = debugPlaytestContext(player, quest);
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).clear();
+        var progress = evaluation.progress();
+        if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) throw new IllegalStateException("Restart the completed quest before replaying a stage");
+        var stage = evaluation.definition().stages().get(progress.currentStage());
+        progress.resetObjectiveProgress(new java.util.HashSet<>(stage.objectives()));
+        progress.resetBonusesForStage(stage.id());
+        if (!QuestStageActionService.ready(evaluation.dialogueContext(), progress)) throw new IllegalStateException("Resolve pending stage actions before replaying");
+        progress.requestStageEntry(stage.id());
+        STAGES.resumePendingStageEntry(evaluation.dialogueContext(), evaluation.definition(), progress);
+        VillagerQuestSavedData.get(player.serverLevel()).setDirty();
+        sendTrackerSync(player, true);
+    }
+
     public static DebugInspectResult debugObjectives(ServerPlayer player, ResourceLocation questId) {
         return DEBUG.debugObjectives(player, questId);
     }
@@ -3043,6 +3106,7 @@ public final class VillagerQuestService {
         List<QuestDefinition.Objective> objectives = requiredObjectivesForReadiness(definition, progress);
         List<QuestDefinition.Objective> requiredItemHandIns = objectives.stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
+                .filter(objective -> !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.forced(player, definition.id(), progress.currentStage(), objective.id()))
                 .toList();
         for (QuestDefinition.Objective objective : objectives) {
             if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
@@ -3229,6 +3293,7 @@ public final class VillagerQuestService {
         List<QuestDefinition.Objective> objectives = requiredObjectivesForReadiness(definition, progress);
         List<QuestDefinition.Objective> requiredItemHandIns = objectives.stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
+                .filter(objective -> !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.forced(player, definition.id(), progress.currentStage(), objective.id()))
                 .toList();
         for (QuestDefinition.Objective objective : objectives) {
             if (QuestObjectiveRegistry.requiresItemHandIn(objective)) {
@@ -3315,6 +3380,7 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
+        if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.forced(player, definition.id(), progress.currentStage(), objective.id())) return true;
         if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK
                 && progress.objectiveComplete(objective.id())) {
             return true;
@@ -3487,6 +3553,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         List<QuestDefinition.Objective> requiredItemHandIns = requiredObjectivesForReadiness(definition, progress).stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
+                .filter(objective -> !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.forced(context.player(), definition.id(), progress.currentStage(), objective.id()))
                 .toList();
         if (requiredItemHandIns.isEmpty()) {
             return ItemHandInResult.SUCCESS;

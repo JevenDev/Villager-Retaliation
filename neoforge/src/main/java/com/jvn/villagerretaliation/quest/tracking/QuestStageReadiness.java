@@ -32,7 +32,9 @@ public record QuestStageReadiness(
             QuestDefinition definition,
             QuestProgressState progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
-        return forCurrentStage(definition, progress, objectiveComplete, conditions -> DialogueCondition.matchesAll(context, conditions));
+        return forCurrentStage(definition, progress, objectiveComplete, conditions ->
+                context != null && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(context.player(), definition.id(), progress.currentStage())
+                        || DialogueCondition.matchesAll(context, conditions));
     }
 
     public static QuestStageReadiness forCurrentStage(QuestDefinition definition,

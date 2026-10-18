@@ -28,6 +28,35 @@ public final class DialoguePreviewSession implements AutoCloseable {
     private int line;
     private int revision;
     private boolean closed;
+    private final java.util.ArrayDeque<Position> history = new java.util.ArrayDeque<>();
+
+    public record Cursor(String node, int exchange, int exchanges, boolean previous, boolean next) { }
+    private record Position(JsonObject node, String nodeId, String pendingNext, boolean pendingEnd, int line,
+            List<JsonObject> lines, List<Choice> choices) { }
+
+    public Cursor cursor() { return new Cursor(nodeId, line, lines.size(), !history.isEmpty(), hasNextLine()); }
+    private void remember() {
+        history.addLast(new Position(node, nodeId, pendingNext, pendingEnd, line, List.copyOf(lines), List.copyOf(choices)));
+        if (history.size() > 256) history.removeFirst();
+    }
+    public void previous() {
+        requireOpen();
+        if (history.isEmpty()) return;
+        var position = history.removeLast();
+        node = position.node(); nodeId = position.nodeId(); pendingNext = position.pendingNext(); pendingEnd = position.pendingEnd();
+        line = position.line(); lines.clear(); lines.addAll(position.lines()); choices.clear(); choices.addAll(position.choices());
+        revision++;
+    }
+
+    public void exchange(int index) {
+        requireOpen();
+        if (index < 0 || index >= lines.size()) throw new IllegalArgumentException("Unknown exchange " + index);
+        remember();
+        line = index;
+        choices.clear();
+        if (line + 1 == lines.size() && pendingNext == null && !pendingEnd) finishNode();
+        revision++;
+    }
 
     public DialoguePreviewSession(JsonObject definition, ResourceLocation id, PreviewConditions conditions,
             Function<String, String> localization) {
@@ -69,6 +98,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
 
     public void start(String selected) {
         requireOpen();
+        history.clear();
         lines.clear();
         choices.clear();
         log.clear();
@@ -119,6 +149,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
         requireOpen();
         Choice choice = choices.get(index);
         if (!choice.available()) throw new IllegalStateException("Preview condition is " + choice.reason());
+        remember();
         choices.clear();
         log.add("Choice: " + choice.label());
         effects(choice.source());
@@ -146,6 +177,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
 
     public void advance() {
         requireOpen();
+        remember();
         if (line + 1 < lines.size()) {
             line++;
             if (line + 1 == lines.size() && pendingNext == null && !pendingEnd) finishNode();
