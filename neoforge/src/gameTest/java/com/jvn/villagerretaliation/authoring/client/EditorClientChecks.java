@@ -10,6 +10,9 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        recipesAndObjectivesValidate();
+        nodeRenamingAndDeletionPreserveReferences();
+        namesAndSearchFollowCreatorWording();
         recoveryPreservesSavedDraftsAndDeletedBundles();
         connectorTargetsStaySeparateAtMinimumZoom();
         pendingFieldsSurviveRecovery();
@@ -36,7 +39,46 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 26;
+        return 29;
+    }
+
+    private static void recipesAndObjectivesValidate() throws java.io.IOException {
+        for (String recipe : java.util.List.of("Branching dialogue", "Fetch quest", "Triggered encounter", "Reputation choice")) {
+            var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-recipe"));
+            var kind = recipe.equals("Fetch quest") ? DefinitionKind.QUEST : recipe.equals("Triggered encounter") ? DefinitionKind.FORCED : DefinitionKind.TREE;
+            var document = workspace.createDocument(kind, "test:recipe");
+            EditorContentTools.recipe(workspace, document, recipe);
+            var errors = workspace.validate().stream().filter(value -> value.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+            check(errors.isEmpty(), recipe + " passes runtime validation: " + errors);
+            if (kind == DefinitionKind.QUEST) {
+                var stage = document.json().getAsJsonArray("stages").get(0).getAsJsonObject();
+                check(stage.getAsJsonArray("complete_when").get(0).getAsString().equals("objective_1"), "guided objectives connect their completion requirements");
+            }
+        }
+    }
+
+    private static void nodeRenamingAndDeletionPreserveReferences() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-references"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:references");
+        EditorContentTools.recipe(workspace, document, "Branching dialogue");
+        var original = document.json();
+        EditorContentTools.renameNode(document, "follow_up", "renamed");
+        check(DialogueGraph.edges(document).getFirst().to().equals("renamed"), "renaming updates incoming references");
+        document.undo();
+        check(document.json().equals(original), "renaming and its references undo together");
+        DialogueGraph.addNode(document, "replacement");
+        rejects(() -> EditorContentTools.deleteNode(document, "follow_up", ""));
+        EditorContentTools.deleteNode(document, "follow_up", "replacement");
+        check(DialogueGraph.edges(document).getFirst().to().equals("replacement"), "deletion redirects incoming references");
+        document.undo();
+        check(DialogueGraph.edges(document).getFirst().to().equals("follow_up"), "deletion and redirection undo together");
+    }
+
+    private static void namesAndSearchFollowCreatorWording() {
+        check(EditorContentTools.resourceId("Village Welcome").equals("example:village_welcome"), "readable names generate resource IDs");
+        check(EditorContentTools.resourceId("test:welcome").equals("test:welcome"), "explicit namespaces are preserved");
+        check(EditorContentTools.matches(tree(), "hello"), "search finds authored dialogue wording");
+        check(!EditorContentTools.matches(tree(), "missing phrase"), "search rejects unrelated content");
     }
 
     private static void recoveryPreservesSavedDraftsAndDeletedBundles() throws java.io.IOException {

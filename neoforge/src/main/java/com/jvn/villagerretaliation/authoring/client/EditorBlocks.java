@@ -13,6 +13,10 @@ import java.util.List;
 final class EditorBlocks {
     enum Kind {
         REPUTATION_GATE("Require reputation", true, "{\"type\":\"reputation\",\"min\":0}"),
+        ITEM_GATE("Require an item", true, "{\"type\":\"player_item\",\"item\":\"minecraft:emerald\"}"),
+        TIME_GATE("Require time of day", true, "{\"type\":\"time\",\"time\":\"morning\"}"),
+        QUEST_GATE("Require quest state", true, "{\"type\":\"quest\",\"quest\":\"example:quest\",\"state\":\"completed\"}"),
+        WEATHER_GATE("Require weather", true, "{\"type\":\"weather\",\"weather\":\"clear\"}"),
         MESSAGE("Show a message", false, "{\"type\":\"notification\",\"text\":\"Hello.\"}"),
         EXPERIENCE("Give experience", false, "{\"type\":\"experience\",\"amount\":1}"),
         REPUTATION("Change reputation", false, "{\"type\":\"reputation\",\"amount\":1}");
@@ -47,7 +51,7 @@ final class EditorBlocks {
         }
         List<Kind> result = new ArrayList<>();
         if (document.kind() == DefinitionKind.CONVERSATION) {
-            if (responseOwner || exchangeOwner) result.add(Kind.REPUTATION_GATE);
+            if (responseOwner || exchangeOwner) result.addAll(java.util.Arrays.stream(Kind.values()).filter(value -> value.condition).toList());
             if (nodeOwner || responseOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION));
         } else if (document.kind() == DefinitionKind.QUEST) {
             if (nodeOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION));

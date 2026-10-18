@@ -108,6 +108,13 @@ final class ImGuiAuthoringEditor {
     private boolean escapeReady;
     private boolean popupWasOpen;
     private boolean confirmDelete;
+    private final ImString locale = new ImString("en_us", 32);
+    private final ImString objectiveResource = new ImString("minecraft:emerald", 256);
+    private final imgui.type.ImInt objectiveCount = new imgui.type.ImInt(1);
+    private String objectiveType = "item_check";
+    private String contentKind = "All";
+    private boolean groupContent;
+    private final ImString replaceText = new ImString(1024);
     private boolean showRecovery;
     private boolean confirmClose;
     private long nextRecovery;
@@ -153,6 +160,8 @@ final class ImGuiAuthoringEditor {
             preferences = EditorPreferences.load(preferencesPath);
             guideStep = preferences.guideDismissed() ? -1 : 0;
             if (!preferences.workspace().isBlank()) workspacePath.set(preferences.workspace());
+            if (!preferences.exportFolder().isBlank()) exportPath.set(preferences.exportFolder());
+            locale.set(preferences.locale());
         } catch (IOException exception) {
             status = exception.getMessage();
         }
@@ -237,7 +246,7 @@ final class ImGuiAuthoringEditor {
             if (resetLayout || preferences.layoutVersion() != EditorPreferences.CURRENT_LAYOUT
                     || existing == null || existing.isNotValidPtr() || initializedLayout && compact != compactLayout) {
                 arrangePanels(dock, ImGui.getContentRegionAvailX(), ImGui.getContentRegionAvailY());
-                preferences = new EditorPreferences(preferences.guideDismissed(), EditorPreferences.CURRENT_LAYOUT, preferences.workspace());
+                preferences = preferences.withLayout(EditorPreferences.CURRENT_LAYOUT);
                 attempt(this::savePreferences);
             }
             initializedLayout = true;
@@ -339,7 +348,7 @@ final class ImGuiAuthoringEditor {
 
     private void dismissGuide() {
         guideStep = -1;
-        preferences = new EditorPreferences(true, preferences.layoutVersion(), preferences.workspace());
+        preferences = preferences.withGuide(true);
         attempt(this::savePreferences);
     }
 
@@ -352,8 +361,13 @@ final class ImGuiAuthoringEditor {
 
     private static void input(String label, ImString value) {
         ImGui.textUnformatted(label);
-        ImGui.setNextItemWidth(-1);
+        boolean browse = label.toLowerCase(Locale.ROOT).contains("folder") || label.toLowerCase(Locale.ROOT).contains("path");
+        ImGui.setNextItemWidth(browse ? Math.max(60, ImGui.getContentRegionAvailX() - 86) : -1);
         ImGui.inputText("##" + label, value);
+        if (browse) {
+            ImGui.sameLine();
+            if (ImGui.button("Browse##" + label)) EditorFileDialog.choose(label, value.get(), selected -> MC.execute(() -> value.set(selected)));
+        }
     }
 
     private static String kindLabel(DefinitionKind kind) {
@@ -377,7 +391,7 @@ final class ImGuiAuthoringEditor {
         view = 0;
         filter.set("");
         showCreate = workspace.documents().isEmpty();
-        preferences = new EditorPreferences(preferences.guideDismissed(), preferences.layoutVersion(), workspace.directory().toString());
+        preferences = preferences.withWorkspace(workspace.directory().toString());
         savePreferences();
         showRecovery = !create && workspace.recoveryAvailable();
         status = create ? "Workspace created." : "Workspace opened.";
@@ -393,6 +407,10 @@ final class ImGuiAuthoringEditor {
             ImGui.sameLine();
             if (ImGui.button("Create new")) operation(() -> openWorkspace(true));
             ImGui.textWrapped("Create needs an empty folder. Open loads an existing workspace.");
+            if (!preferences.recentWorkspaces().isEmpty() && ImGui.beginCombo("Recent workspaces", "Choose a workspace")) {
+                for (String recent : preferences.recentWorkspaces()) if (ImGui.selectable(recent)) operation(() -> { workspacePath.set(recent); openWorkspace(false); });
+                ImGui.endCombo();
+            }
             ImGui.separator();
         }
         if (workspace == null) {
@@ -400,7 +418,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        if (ImGui.button("New dialogue", -1, 0)) { showCreate = !showCreate; view = 0; }
+        if (ImGui.button("New content", -1, 0)) { showCreate = !showCreate; view = 0; }
         if (showCreate) {
             ImGui.textUnformatted("Format");
             ImGui.setNextItemWidth(-1);
@@ -418,7 +436,7 @@ final class ImGuiAuthoringEditor {
                 case WORLD_CAMPAIGN -> "Campaign card and content settings for world creation.";
                 default -> "";
             });
-            input("ID (namespace:name)", newId);
+            input("Name or namespace:id", newId);
             if (createKind == DefinitionKind.CONVERSATION) {
                 ImGui.textUnformatted("Associated quest");
                 ImGui.setNextItemWidth(-1);
@@ -436,27 +454,39 @@ final class ImGuiAuthoringEditor {
                     candidate.kind() == DefinitionKind.QUEST && candidate.id().equals(linkedQuest.get()));
             ImGui.beginDisabled(createKind == DefinitionKind.CONVERSATION && !questSelected);
             if (ImGui.button("Create", -1, 0)) operation(() -> {
-                AuthoringDocument created = workspace.createDocument(createKind, newId.get());
+                AuthoringDocument created = workspace.createDocument(createKind, EditorContentTools.resourceId(newId.get()));
                 if (createKind == DefinitionKind.CONVERSATION) created.edit("Assign quest", root -> root.addProperty("quest", linkedQuest.get()));
+                if (!newId.get().contains(":")) created.edit("Set content name", root -> {
+                    if (createKind == DefinitionKind.WORLD_CAMPAIGN) root.addProperty("name", newId.get());
+                    else if (createKind == DefinitionKind.TREE || createKind == DefinitionKind.QUEST) {
+                        if (!root.has("display")) root.add("display", new JsonObject());
+                        root.getAsJsonObject("display").addProperty("title", newId.get());
+                    }
+                });
                 select(created);
                 showCreate = false;
                 view = 0;
-                status = "Dialogue created.";
+                status = "Content created.";
             });
             ImGui.endDisabled();
             ImGui.separator();
         }
         ImGui.setNextItemWidth(-1);
-        ImGui.inputTextWithHint("##search", "Find dialogue...", filter);
+        ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
         if (ImGui.checkbox("Supporting files", showResources)) showResources = !showResources;
         int visible = 0;
-        for (AuthoringDocument candidate : workspace.documents()) {
+        String previousGroup = "";
+        var listed = groupContent ? workspace.documents().stream().sorted(java.util.Comparator.comparing(this::contentGroup).thenComparing(AuthoringDocument::id)).toList() : workspace.documents();
+        for (AuthoringDocument candidate : listed) {
             if (!showResources && candidate.kind() == DefinitionKind.RESOURCE) continue;
-            if (!(candidate.resourcePath() + candidate.id()).toLowerCase(Locale.ROOT).contains(filter.get().toLowerCase(Locale.ROOT))) continue;
+            if (!EditorContentTools.matches(candidate, filter.get())) continue;
+            if (!contentKind.equals("All") && !kindLabel(candidate.kind()).equals(contentKind)) continue;
             visible++;
+            String group = contentGroup(candidate);
+            if (groupContent && !group.equals(previousGroup)) { ImGui.textDisabled(group); previousGroup = group; }
             String name = candidate.kind() == DefinitionKind.RESOURCE
                     ? candidate.resourcePath().substring(candidate.resourcePath().lastIndexOf('/') + 1) : candidate.id();
-            if (ImGui.selectable((candidate.dirty() ? "* " : "") + shortText(name, 26) + "##" + candidate.resourcePath(), document == candidate))
+            if (ImGui.selectable((candidate.dirty() ? "* " : "") + shortText(name, Math.max(15, (int) (ImGui.getContentRegionAvailX() / ImGui.calcTextSize("M").x) - 3)) + "##" + candidate.resourcePath(), document == candidate))
                 operation(() -> { select(candidate); view = 0; });
             if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + candidate.resourcePath());
         }
@@ -493,6 +523,7 @@ final class ImGuiAuthoringEditor {
                 if (ImGui.button("Cancel")) confirmDelete = false;
             }
         }
+        contentTools();
         if (!workspace.deletedNames().isEmpty() && ImGui.collapsingHeader("Deleted files")) {
             var names = workspace.deletedNames();
             for (int i = 0; i < names.size(); i++) {
@@ -508,6 +539,60 @@ final class ImGuiAuthoringEditor {
         ImGui.textWrapped(shortText(status, 100));
         if (ImGui.isItemHovered()) ImGui.setTooltip(status);
         ImGui.end();
+    }
+
+    private String contentGroup(AuthoringDocument value) {
+        String[] parts = value.resourcePath().split("/");
+        String campaign = parts.length > 3 && parts[2].equals("world_campaigns") ? parts[1] + ":" + parts[3]
+                : DialogueGraph.string(value.json(), "world_campaign");
+        return (campaign.isBlank() ? "Default content" : campaign) + " / " + kindLabel(value.kind());
+    }
+
+    private void contentTools() {
+        if (!ImGui.collapsingHeader("Content tools")) return;
+        if (ImGui.checkbox("Group by campaign and type", groupContent)) groupContent = !groupContent;
+        input("Editing language", locale);
+        if (ImGui.button("Use language")) operation(() -> {
+            if (!locale.get().matches("[a-z]{2,3}_[a-z]{2,3}")) throw new IllegalArgumentException("Use a language code such as en_us");
+            preferences = preferences.withLocale(locale.get()); savePreferences(); refresh();
+        });
+        if (ImGui.beginCombo("Content type", contentKind)) {
+            if (ImGui.selectable("All", contentKind.equals("All"))) contentKind = "All";
+            for (var kind : DefinitionKind.values()) if (ImGui.selectable(kindLabel(kind), contentKind.equals(kindLabel(kind)))) contentKind = kindLabel(kind);
+            ImGui.endCombo();
+        }
+        if (ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.directory().toFile());
+        ImGui.textWrapped("Starter recipes use the name above and create editable content.");
+        for (String recipe : List.of("Branching dialogue", "Fetch quest", "Triggered encounter", "Reputation choice")) {
+            if (ImGui.button(recipe)) operation(() -> {
+                var kind = recipe.equals("Fetch quest") ? DefinitionKind.QUEST : recipe.equals("Triggered encounter") ? DefinitionKind.FORCED : DefinitionKind.TREE;
+                var created = workspace.createDocument(kind, EditorContentTools.resourceId(newId.get()));
+                EditorContentTools.recipe(workspace, created, recipe);
+                select(created); showCreate = false; view = 0;
+            });
+        }
+        input("Replace matching wording with", replaceText);
+        if (ImGui.button("Replace in selected file")) operation(() -> {
+            if (document == null || filter.get().isBlank()) throw new IllegalArgumentException("Select a file and enter search text first");
+            document.edit("Replace wording", root -> replaceWording(root, filter.get(), replaceText.get()));
+            refresh();
+        });
+    }
+
+    private static void replaceWording(JsonElement value, String find, String replacement) {
+        if (value.isJsonObject()) for (var entry : value.getAsJsonObject().entrySet()) {
+            String field = entry.getKey();
+            if (List.of("text", "line", "label", "title", "description", "lines", "variants").contains(field)) {
+                JsonElement wording = entry.getValue();
+                if (wording.isJsonPrimitive() && wording.getAsJsonPrimitive().isString()) entry.setValue(new JsonPrimitive(wording.getAsString().replace(find, replacement)));
+                else if (wording.isJsonArray()) for (int i = 0; i < wording.getAsJsonArray().size(); i++) {
+                    var line = wording.getAsJsonArray().get(i);
+                    if (line.isJsonPrimitive() && line.getAsJsonPrimitive().isString()) wording.getAsJsonArray().set(i, new JsonPrimitive(line.getAsString().replace(find, replacement)));
+                    else replaceWording(line, find, replacement);
+                }
+            } else if (!List.of("metadata", "conditions", "actions", "effects").contains(field)) replaceWording(entry.getValue(), find, replacement);
+        }
+        else if (value.isJsonArray()) for (var child : value.getAsJsonArray()) replaceWording(child, find, replacement);
     }
 
     private void graph() {
@@ -532,7 +617,7 @@ final class ImGuiAuthoringEditor {
         List<EditorGraph.Card> cards;
         try {
             nodes = DialogueGraph.nodes(document);
-            cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, "en_us"));
+            cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, locale.get()));
         } catch (IllegalArgumentException | IllegalStateException | ClassCastException
                 | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             ImGui.textWrapped("Repair the definition in Advanced full JSON: " + exception.getMessage());
@@ -574,10 +659,22 @@ final class ImGuiAuthoringEditor {
         if (ImGui.isItemHovered()) ImGui.setTooltip("Reset zoom to 100%. Scroll over the graph to zoom. Middle-drag to pan.");
         if (selected && ImGui.collapsingHeader("Node actions")) {
             ImGui.textUnformatted("Selected: " + selectedNode);
-            input("Copy ID", nodeName);
+            input("Node name / copy ID", nodeName);
+            if (document.kind() != DefinitionKind.FORCED && ImGui.button("Rename node and references")) operation(() -> {
+                EditorContentTools.renameNode(document, selectedNode, nodeName.get());
+                selectedNode = nodeName.get();
+                refresh();
+                setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+            });
+            var incoming = EditorContentTools.usages(document, selectedNode);
+            ImGui.textWrapped(incoming.size() + " incoming connections");
+            for (var edge : incoming) if (ImGui.selectable("From " + edge.from() + "##usage" + edge.pointer())) operation(() -> {
+                selectedNode = edge.from(); setPointer(edge.pointer());
+            });
+            input("Redirect deleted node to", nextStage);
             if (ImGui.button("Duplicate node")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
             ImGui.sameLine();
-            if (ImGui.button("Delete node")) operation(() -> { DialogueGraph.removeNode(document, selectedNode); selectedNode = ""; setPointer(""); refresh(); });
+            if (ImGui.button("Delete node")) operation(() -> { EditorContentTools.deleteNode(document, selectedNode, nextStage.get()); selectedNode = ""; setPointer(""); refresh(); });
             ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
             if (ImGui.button("Start here")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
             if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.QUEST ? "Start the quest at this stage."
@@ -898,6 +995,7 @@ final class ImGuiAuthoringEditor {
             }
             if (pointer.get().isEmpty()) campaignOwnership();
             selectedDetails();
+            guidedObjective();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
@@ -1044,6 +1142,29 @@ final class ImGuiAuthoringEditor {
         if (changed) refresh();
     }
 
+    private void guidedObjective() {
+        if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !ImGui.collapsingHeader("Add quest objective")) return;
+        if (ImGui.beginCombo("Objective", objectiveType.replace('_', ' '))) {
+            for (String type : List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade"))
+                if (ImGui.selectable(type.replace('_', ' '), objectiveType.equals(type))) objectiveType = type;
+            ImGui.endCombo();
+        }
+        input("Resource ID", objectiveResource);
+        ImGui.setNextItemWidth(-1);
+        if (ImGui.beginCombo("Choose resource", objectiveResource.get())) {
+            var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                    : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
+            for (var id : registry.keySet().stream().sorted().toList()) if (ImGui.selectable(id.toString(), objectiveResource.get().equals(id.toString()))) objectiveResource.set(id.toString());
+            ImGui.endCombo();
+        }
+        ImGui.inputInt("Required count", objectiveCount);
+        ImGui.textWrapped("The objective is added to this stage's completion requirements.");
+        if (ImGui.button("Add objective")) operation(() -> {
+            String added = EditorContentTools.appendObjective(document, selectedNode, objectiveType, objectiveResource.get(), objectiveCount.get());
+            refresh(); setPointer(added);
+        });
+    }
+
     private void selectedDetails() {
         JsonElement selected = JsonPointers.get(document.json(), pointer.get());
         if (!selected.isJsonObject()) {
@@ -1080,7 +1201,7 @@ final class ImGuiAuthoringEditor {
 
     private void localizedField(JsonObject reference, String label, String path) {
         String key = reference.get("key").getAsString();
-        var location = workspace.textLocation(document, key, "en_us");
+        var location = workspace.textLocation(document, key, locale.get());
         ImGui.textUnformatted(label);
         if (location != null) {
             JsonElement text = JsonPointers.get(location.document().json(), location.pointer());
@@ -1092,10 +1213,10 @@ final class ImGuiAuthoringEditor {
                 ImGui.endDisabled();
                 translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
                         .update(location.pointer(), text, buffer.get());
-                if (ImGui.isItemHovered()) ImGui.setTooltip("English wording. The localization reference is preserved.");
+                if (ImGui.isItemHovered()) ImGui.setTooltip(locale.get() + " wording. The localization reference is preserved.");
                 return;
             }
-            ImGui.textWrapped(workspace.resolveText(document, reference, "en_us"));
+            ImGui.textWrapped(workspace.resolveText(document, reference, locale.get()));
             if (ImGui.smallButton("Edit text variations")) operation(() -> {
                 select(location.document());
                 setPointer(location.pointer());
@@ -1215,12 +1336,34 @@ final class ImGuiAuthoringEditor {
                 textFields.render(path, input, document.kind(), true);
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false);
-            else apply = ImGui.inputText("##value", input, ImGuiInputTextFlags.EnterReturnsTrue);
+            else {
+                apply = ImGui.inputText("##value", input, ImGuiInputTextFlags.EnterReturnsTrue);
+                if (text) propertyPicker(path, input);
+            }
             ImGui.endDisabled();
             pendingFields.update(path, value, input.get());
             if (apply) operation(() -> { });
         }
         ImGui.popID();
+    }
+
+    private void propertyPicker(String path, ImString input) {
+        String field = path.substring(path.lastIndexOf('/') + 1);
+        List<String> choices = switch (field) {
+            case "time" -> List.of("morning", "afternoon", "evening", "night");
+            case "weather" -> List.of("clear", "rain", "thunder");
+            case "state" -> List.of("available", "active", "completed", "failed", "abandoned");
+            case "item" -> net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList();
+            case "entity" -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(Object::toString).sorted().toList();
+            case "block" -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.keySet().stream().map(Object::toString).sorted().toList();
+            case "quest", "quest_id" -> workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList();
+            case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
+            default -> List.of();
+        };
+        if (!choices.isEmpty() && ImGui.beginCombo("Choose " + field, input.get())) {
+            for (String choice : choices) if (ImGui.selectable(choice, input.get().equals(choice))) input.set(choice);
+            ImGui.endCombo();
+        }
     }
 
     private void preview() {
@@ -1286,7 +1429,7 @@ final class ImGuiAuthoringEditor {
             AuthoringDialoguePreview.start(document, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
                 JsonObject reference = new JsonObject();
                 reference.addProperty("key", key);
-                String resolved = workspace.resolveText(document, reference, MC.getLanguageManager().getSelected(),
+                String resolved = workspace.resolveText(document, reference, locale.get(),
                         conditions.variant(), candidate -> conditions.evaluate(evaluationId, candidate)
                                 == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
                 return resolved.equals(key) ? null : resolved;
