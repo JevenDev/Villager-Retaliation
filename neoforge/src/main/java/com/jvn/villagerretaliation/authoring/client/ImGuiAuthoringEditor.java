@@ -94,6 +94,7 @@ final class ImGuiAuthoringEditor {
     private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
     private EditorSchema propertySchema;
     private boolean liveQuestMode = true;
+    private float playtestFraction = 2F / 3;
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
@@ -156,6 +157,7 @@ final class ImGuiAuthoringEditor {
     static void disconnect() {
         if (!INSTANCE.showRecovery) INSTANCE.attempt(INSTANCE::writeRecovery);
         AuthoringDialoguePreview.stop();
+        EditorPlaytestViewport.close();
         EditorCameraPanel.close();
         INSTANCE.clearCampaignPreview();
         INSTANCE.target = null;
@@ -173,17 +175,19 @@ final class ImGuiAuthoringEditor {
             if (!preferences.workspace().isBlank()) workspacePath.set(preferences.workspace());
             if (!preferences.exportFolder().isBlank()) exportPath.set(preferences.exportFolder());
             locale.set(preferences.locale());
+            playtestFraction = preferences.playtestFraction();
         } catch (IOException exception) {
             status = exception.getMessage();
         }
     }
 
     private void render() {
-        textFields.beginFrame(MC.screen == screen);
+        boolean playtesting = view == 3 && EditorPlaytestViewport.active();
+        textFields.beginFrame(MC.screen == screen || playtesting);
         graphText.beginFrame(MC.screen == screen && view == 0);
-        if (MC.screen != screen) return;
+        if (MC.screen != screen && !playtesting) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
-        if (escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
+        if (!playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
             if (!selectedEdge.isEmpty()) {
                 selectedEdge = "";
                 wireDragMoved = false;
@@ -207,6 +211,7 @@ final class ImGuiAuthoringEditor {
                 if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
                 if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
             }
+            if (view == 3) { playtest(); return; }
             shell();
             ImGui.beginDisabled(showRecovery || confirmClose);
             browser();
@@ -309,6 +314,8 @@ final class ImGuiAuthoringEditor {
         if (viewButton("Edit", 0)) { view = 0; focusPanel = WORK_PANEL; }
         ImGui.sameLine();
         if (viewButton("Preview", 1)) { view = 1; focusPanel = WORK_PANEL; }
+        ImGui.sameLine();
+        if (viewButton("Playtest", 3)) enterPlaytest();
         ImGui.sameLine();
         if (viewButton("Check & export", 2)) operation(() -> { validate(); view = 2; focusPanel = WORK_PANEL; });
         if (ImGui.getWindowWidth() > 1000) ImGui.sameLine();
@@ -1615,6 +1622,96 @@ final class ImGuiAuthoringEditor {
         }
     }
 
+    private void enterPlaytest() {
+        view = 3;
+        EditorCameraPanel.close();
+        EditorPlaytestViewport.open(playtestFraction, () -> {
+            if (MC.screen == null) MC.setScreen(screen);
+            MC.mouseHandler.releaseMouse();
+            focusPanel = "Playtest###VR_Playtest";
+        });
+    }
+
+    private void leavePlaytest(int next) {
+        AuthoringDialoguePreview.stop();
+        EditorPlaytestViewport.close();
+        view = next;
+        MC.setScreen(screen);
+        focusPanel = WORK_PANEL;
+    }
+
+    private void playtest() {
+        var viewport = ImGui.getMainViewport();
+        float width = viewport.getWorkSizeX();
+        float height = viewport.getWorkSizeY();
+        float fraction = PlaytestLayout.clampFraction(playtestFraction, width, preferences.textScale());
+        EditorPlaytestViewport.fraction(fraction);
+        float split = Math.round(width * fraction);
+        ImGui.setNextWindowPos(viewport.getWorkPosX() + split - 3, viewport.getWorkPosY());
+        ImGui.setNextWindowSize(6, height);
+        ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
+        ImGui.pushStyleVar(ImGuiStyleVar.WindowMinSize, 1, 1);
+        ImGui.begin("##VR_PlaytestDivider", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove
+                | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDocking);
+        ImGui.getWindowDrawList().addRectFilled(ImGui.getWindowPosX(), ImGui.getWindowPosY(),
+                ImGui.getWindowPosX() + 6, ImGui.getWindowPosY() + height, 0xff505050);
+        ImGui.invisibleButton("##resize_playtest", 6, Math.max(1, ImGui.getContentRegionAvailY()));
+        if (ImGui.isItemHovered() || ImGui.isItemActive()) ImGui.setMouseCursor(imgui.flag.ImGuiMouseCursor.ResizeEW);
+        if (ImGui.isItemActive()) {
+            playtestFraction = Math.clamp(PlaytestLayout.clampFraction((ImGui.getMousePosX() - viewport.getWorkPosX()) / width,
+                    width, preferences.textScale()), .2F, .9F);
+        }
+        if (ImGui.isItemDeactivated()) operation(() -> {
+            preferences = preferences.withPlaytestFraction(playtestFraction);
+            savePreferences();
+        });
+        ImGui.end();
+        ImGui.popStyleVar(2);
+        ImGui.setNextWindowPos(viewport.getWorkPosX() + split + 3, viewport.getWorkPosY());
+        ImGui.setNextWindowSize(Math.max(1, width - split - 3), height);
+        ImGui.begin("Playtest###VR_Playtest", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove
+                | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking);
+        ImGui.setWindowFontScale(preferences.textScale());
+        if (focusPanel.equals("Playtest###VR_Playtest")) { ImGui.setWindowFocus(); focusPanel = ""; }
+        if (ImGui.button("Edit")) operation(() -> leavePlaytest(0));
+        ImGui.sameLine();
+        if (ImGui.button("Preview")) operation(() -> leavePlaytest(1));
+        ImGui.sameLine();
+        if (ImGui.button("Check & export")) operation(() -> { leavePlaytest(2); validate(); });
+        if (ImGui.button("Save")) operation(this::save);
+        ImGui.sameLine();
+        if (ImGui.button("Stop playtest")) operation(() -> leavePlaytest(0));
+        ImGui.textWrapped("Click the game to play. F9 returns control to this panel.");
+        recoveryControls();
+        if (workspace == null) {
+            ImGui.textWrapped("Open a workspace in Edit first.");
+        } else {
+            ImGui.setNextItemWidth(-1);
+            if (ImGui.beginCombo("##playtest_content", document == null ? "Choose content" : document.id())) {
+                for (var candidate : workspace.documents()) if (candidate.kind() != DefinitionKind.RESOURCE
+                        && ImGui.selectable(candidate.id(), document == candidate)) operation(() -> select(candidate));
+                ImGui.endCombo();
+            }
+            if (document != null) {
+                ImGui.separatorText("Steps");
+                for (var node : DialogueGraph.nodes(document)) {
+                    if (ImGui.selectable(node.id(), node.id().equals(selectedNode))) operation(() -> {
+                        selectedNode = node.id(); setPointer(node.pointer()); fields.clear(); textFields.clear();
+                    });
+                }
+                if (document.kind() == DefinitionKind.QUEST) liveQuestTest();
+                else if (ImGui.button("Play selected step")) startPreview(selectedNode);
+                if (ImGui.collapsingHeader("Step properties", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) selectedDetails();
+                if (hasPendingFields() && ImGui.button("Apply field edits")) operation(() -> { });
+            }
+        }
+        ImGui.separator();
+        ImGui.textWrapped(status);
+        ImGui.end();
+        if (MC.screen == screen && ImGui.getMousePosX() < viewport.getWorkPosX() + split - 3
+                && ImGui.isMouseClicked(0) && !confirmClose && !showRecovery) MC.setScreen(null);
+    }
+
     private void preview() {
         panel(WORK_PANEL);
         ImGui.textUnformatted("Preview dialogue");
@@ -1889,6 +1986,7 @@ final class ImGuiAuthoringEditor {
 
     private void closeEditor() {
         confirmClose = false;
+        EditorPlaytestViewport.close();
         AuthoringDialoguePreview.stop();
         EditorCameraPanel.close();
         MC.setScreen(null);

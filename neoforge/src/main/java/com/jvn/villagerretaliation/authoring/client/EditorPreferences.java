@@ -9,7 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 public record EditorPreferences(boolean guideDismissed, int layoutVersion, String workspace,
-        java.util.List<String> recentWorkspaces, String exportFolder, String locale, float textScale) {
+        java.util.List<String> recentWorkspaces, String exportFolder, String locale, float textScale, float playtestFraction) {
+    public EditorPreferences(boolean guideDismissed, int layoutVersion, String workspace,
+            java.util.List<String> recentWorkspaces, String exportFolder, String locale, float textScale) {
+        this(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, textScale, 2F / 3);
+    }
     public EditorPreferences(boolean guideDismissed, int layoutVersion, String workspace) {
         this(guideDismissed, layoutVersion, workspace, workspace.isBlank() ? java.util.List.of() : java.util.List.of(workspace), "", "en_us", 1);
     }
@@ -18,15 +22,17 @@ public record EditorPreferences(boolean guideDismissed, int layoutVersion, Strin
         var recent = new java.util.ArrayList<>(recentWorkspaces);
         recent.remove(value);
         recent.addFirst(value);
-        return new EditorPreferences(guideDismissed, layoutVersion, value, recent.stream().limit(8).toList(), exportFolder, locale, textScale);
+        return new EditorPreferences(guideDismissed, layoutVersion, value, recent.stream().limit(8).toList(), exportFolder, locale, textScale, playtestFraction);
     }
 
-    public EditorPreferences withGuide(boolean value) { return new EditorPreferences(value, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, textScale); }
-    public EditorPreferences withLayout(int value) { return new EditorPreferences(guideDismissed, value, workspace, recentWorkspaces, exportFolder, locale, textScale); }
-    public EditorPreferences withExport(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, value, locale, textScale); }
-    public EditorPreferences withLocale(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, value, textScale); }
-    public EditorPreferences withScale(float value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, Math.clamp(value, .8f, 2f)); }
+    public EditorPreferences withGuide(boolean value) { return new EditorPreferences(value, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, textScale, playtestFraction); }
+    public EditorPreferences withLayout(int value) { return new EditorPreferences(guideDismissed, value, workspace, recentWorkspaces, exportFolder, locale, textScale, playtestFraction); }
+    public EditorPreferences withExport(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, value, locale, textScale, playtestFraction); }
+    public EditorPreferences withLocale(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, value, textScale, playtestFraction); }
+    public EditorPreferences withScale(float value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, Math.clamp(value, .8f, 2f), playtestFraction); }
+    public EditorPreferences withPlaytestFraction(float value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, textScale, value); }
     public EditorPreferences {
+        if (!Float.isFinite(playtestFraction) || playtestFraction < .2F || playtestFraction > .9F) throw new IllegalArgumentException("Invalid playtest split");
         recentWorkspaces = java.util.List.copyOf(recentWorkspaces);
         if (!Float.isFinite(textScale) || textScale < .8f || textScale > 2) throw new IllegalArgumentException("Invalid editor text scale");
     }
@@ -45,7 +51,8 @@ public record EditorPreferences(boolean guideDismissed, int layoutVersion, Strin
                     json.has("recent_workspaces") ? json.getAsJsonArray("recent_workspaces").asList().stream().map(com.google.gson.JsonElement::getAsString).limit(8).toList() : java.util.List.of(),
                     json.has("export_folder") ? json.get("export_folder").getAsString() : "",
                     json.has("locale") ? json.get("locale").getAsString() : "en_us",
-                    json.has("text_scale") ? Math.clamp(json.get("text_scale").getAsFloat(), .8f, 2f) : 1);
+                    json.has("text_scale") ? Math.clamp(json.get("text_scale").getAsFloat(), .8f, 2f) : 1,
+                    json.has("playtest_fraction") ? json.get("playtest_fraction").getAsFloat() : 2F / 3);
         } catch (IllegalArgumentException | IllegalStateException | com.google.gson.JsonParseException exception) {
             throw new IOException("Cannot read editor preferences: " + exception.getMessage(), exception);
         }
@@ -62,6 +69,7 @@ public record EditorPreferences(boolean guideDismissed, int layoutVersion, Strin
         json.addProperty("export_folder", exportFolder);
         json.addProperty("locale", locale);
         json.addProperty("text_scale", textScale);
+        json.addProperty("playtest_fraction", playtestFraction);
         Files.createDirectories(path.toAbsolutePath().getParent());
         Path temporary = Files.createTempFile(path.toAbsolutePath().getParent(), "authoring-editor-", ".tmp");
         try {

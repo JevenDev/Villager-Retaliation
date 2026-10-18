@@ -182,7 +182,33 @@ public final class AuthoringEditorClientSmoke {
             require((int) field(editor, "view") == 2, "Check toolbar control switches the rendered view.");
             capture("08-validation");
         });
+        buildViewportSteps();
         buildSetupSteps();
+    }
+
+    private static void buildViewportSteps() {
+        STEPS.add(() -> invoke("enterPlaytest", new Class<?>[0]));
+        STEPS.add(() -> {
+            var mc = Minecraft.getInstance();
+            var layout = EditorPlaytestViewport.layout();
+            require(layout != null && layout.width() < mc.getWindow().getWidth(), "Playtest renders at the left pane size.");
+            require(mc.screen.width == layout.guiWidth(), "Native screens use the game pane GUI width.");
+            require(mc.getMainRenderTarget().width == mc.getWindow().getWidth(), "ImGui retains the physical framebuffer.");
+            capture("08a-playtest-split");
+            set("playtestFraction", .55F);
+        });
+        STEPS.add(() -> capture("08b-playtest-resized"));
+        STEPS.add(() -> {
+            Minecraft.getInstance().setScreen(new com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen());
+        });
+        STEPS.add(() -> {
+            require(EditorPlaytestViewport.active(), "Opening the quest journal retains Playtest.");
+            capture("08c-playtest-journal");
+            invoke("leavePlaytest", new Class<?>[] {int.class}, 2);
+        });
+        STEPS.add(() -> require(!EditorPlaytestViewport.active()
+                && Minecraft.getInstance().screen.width == Minecraft.getInstance().getWindow().getGuiScaledWidth(),
+                "Leaving Playtest restores native screen dimensions."));
     }
 
     private static void buildSetupSteps() {
@@ -938,7 +964,7 @@ public final class AuthoringEditorClientSmoke {
     private static float[] toolbar(String target) {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
-        for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Check & export",
+        for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Check & export",
                 (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Close"}) {
             float width = ImGui.calcTextSize(label).x * scale + 16;
             if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};

@@ -32,6 +32,7 @@ public final class EditorClientChecks {
         cameraAppendIsValidatedBeforeCommit();
         editorPreferencesSurviveRestart();
         automaticLayoutKeepsUsablePaneWidths();
+        playtestLayoutPreservesGameCoordinates();
         plainTextAuthoringPreservesLocalizationAndUndo();
         fieldValidationDoesNotConsumeEdits();
         terminalResponsePortsReconnectAndUndo();
@@ -47,7 +48,7 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 37;
+        return 38;
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
@@ -570,6 +571,18 @@ public final class EditorClientChecks {
             java.nio.file.Files.deleteIfExists(path);
             java.nio.file.Files.deleteIfExists(directory);
         }
+    }
+
+    private static void playtestLayoutPreservesGameCoordinates() throws java.io.IOException {
+        var layout = PlaytestLayout.calculate(1920, 1080, 1280, 720, 2F / 3, 3, false);
+        check(layout.width() == 1280 && layout.screenWidth() == 853, "game dimensions preserve framebuffer scaling");
+        check(layout.scale() == 3 && layout.guiWidth() == 427, "game GUI dimensions use the reduced viewport");
+        var small = PlaytestLayout.calculate(960, 600, 960, 600, .625F, 3, false);
+        check(small.scale() == 1 && small.guiWidth() == 600, "small game panes retain a usable GUI scale");
+        check(PlaytestLayout.clampFraction(.9F, 1200, 1) <= .7F, "the editor keeps its minimum width");
+        var path = java.nio.file.Files.createTempDirectory("vr-playtest-prefs").resolve("preferences.json");
+        EditorPreferences.defaults().withPlaytestFraction(.6F).withScale(1.2F).save(path);
+        check(EditorPreferences.load(path).playtestFraction() == .6F, "the split survives preference updates and restart");
     }
 
     private static void automaticLayoutKeepsUsablePaneWidths() {

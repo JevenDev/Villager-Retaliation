@@ -86,6 +86,10 @@
     "WorkAtPoiMixin"
   ],
   "client": [
+    "client.AuthoringPlaytestRenderMixin",
+    "client.AuthoringPlaytestWindowMixin",
+    "client.AuthoringPlaytestMouseMixin",
+    "client.AuthoringPlaytestKeyMixin",
     "client.CreateWorldCampaignMixin",
     "client.DialogueCameraMixin",
     "client.DialogueCameraGuiMixin",
