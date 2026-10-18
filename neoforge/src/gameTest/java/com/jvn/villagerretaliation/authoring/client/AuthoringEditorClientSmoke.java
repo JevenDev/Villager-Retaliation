@@ -47,7 +47,7 @@ public final class AuthoringEditorClientSmoke {
     private static java.util.concurrent.CompletableFuture<?> liveCheck;
     private static Path originalWorld;
     private static int frames;
-    private static boolean finished, installed, mouseDown, previousDown, stepping;
+    private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
     private static boolean cameraGuiBefore;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
     private static float mouseWheel;
@@ -648,6 +648,9 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildRichTextSteps() {
+        var originalHeight = new int[1];
+        var originalWidth = new int[1];
+        var beforeResize = new com.google.gson.JsonObject[1];
         editLine("start", "Welcome, ");
         click(() -> screenPoint(1700, 350));
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
@@ -690,7 +693,47 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(!textEditing(), "Leaving the field displays styled text.");
             capture("10d-styled-field");
+            originalHeight[0] = (int) field(field(greetingSelection(), "preview"), "renderedHeight");
+            originalWidth[0] = (int) field(field(greetingSelection(), "preview"), "renderedWidth");
+            beforeResize[0] = document.json();
         });
+        move(() -> screenPoint(1886, 407), false);
+        move(() -> screenPoint(1886, 407), true);
+        STEPS.add(() -> { mouseX -= 64; mouseY += 96; });
+        STEPS.add(() -> mouseDown = false);
+        STEPS.add(() -> {
+            require((int) field(field(greetingSelection(), "preview"), "renderedHeight") >= originalHeight[0] + 90,
+                    "Dragging the corner grows the styled text box.");
+            require((int) field(field(greetingSelection(), "preview"), "renderedWidth") <= originalWidth[0] - 64 + ImGui.getStyle().getScrollbarSize() + 1,
+                    "Dragging the corner also adjusts text box width.");
+            require(document.json().equals(beforeResize[0]) && ((imgui.type.ImString) field(greetingSelection(), "buffer")).get().equals(GREETING),
+                    "Resizing preserves the draft and pending wording.");
+            capture("10g-resized-styled-field");
+        });
+        click(() -> screenPoint(1700, 350));
+        STEPS.add(() -> require(textEditing(), "The resized box opens the same editable source."));
+        move(() -> screenPoint(1822, 503), false);
+        move(() -> screenPoint(1822, 503), true);
+        STEPS.add(() -> { mouseX -= 32; mouseY += 32; });
+        STEPS.add(() -> mouseDown = false);
+        STEPS.add(() -> {
+            require(textEditing(), "Resizing editable source restores its text focus.");
+            capture("10h-resized-source-field");
+        });
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require((int) field(field(greetingSelection(), "preview"), "renderedHeight") >= originalHeight[0] + 90
+                            && (int) field(field(greetingSelection(), "preview"), "renderedWidth") <= originalWidth[0] - 96 + ImGui.getStyle().getScrollbarSize() + 1,
+                    "Applying field edits preserves the chosen text box dimensions.");
+            require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().equals(GREETING),
+                    "Saving a resized field preserves its authored text.");
+        });
+        move(() -> screenPoint(1790, 535), false);
+        STEPS.add(() -> { mouseDown = true; mouseDoubleClicked = true; });
+        STEPS.add(() -> { mouseDown = false; mouseDoubleClicked = false; });
+        STEPS.add(() -> require((int) field(field(greetingSelection(), "preview"), "renderedHeight") == originalHeight[0]
+                        && (int) field(field(greetingSelection(), "preview"), "renderedWidth") == originalWidth[0],
+                "Double-clicking the resize handle restores the default dimensions."));
         click(() -> screenPoint(1700, 350));
         STEPS.add(() -> {
             require(textEditing(), "Clicking the styled field reveals editable tags.");
@@ -860,7 +903,8 @@ public final class AuthoringEditorClientSmoke {
             }
             io.setMouseDownDurationPrev(0, io.getMouseDownDuration(0));
             io.setMouseDownDuration(0, mouseDown ? previousDown ? .5f : 0 : -1);
-            io.setMouseClickedCount(0, mouseDown && !previousDown ? 1 : 0);
+            io.setMouseClickedCount(0, mouseDown && !previousDown ? mouseDoubleClicked ? 2 : 1 : 0);
+            if (mouseDoubleClicked) io.setMouseDoubleClicked(0, mouseDown && !previousDown);
             io.setMouseDragMaxDistanceSqr(0, mouseDown ? (mouseX - downX) * (mouseX - downX) + (mouseY - downY) * (mouseY - downY) : 0);
             imgui.internal.ImGui.updateHoveredWindowAndCaptureFlags(mouseX, mouseY);
             previousX = mouseX;
