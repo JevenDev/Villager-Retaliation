@@ -105,6 +105,10 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSteps() {
         STEPS.add(() -> {
+            try { EditorClientChecks.questSimulationUsesRuntimeCompletionRules(); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        STEPS.add(() -> {
             require((int) field(editor, "guideStep") == 0, "First open shows the guide.");
             capture("01-first-open");
         });

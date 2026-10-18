@@ -91,6 +91,8 @@ final class ImGuiAuthoringEditor {
     private boolean rendering;
     private final Map<String, float[]> positions = new HashMap<>();
     private final PreviewConditions conditions = new PreviewConditions();
+    private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
+    private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
     private AuthoringDocument document;
@@ -1375,7 +1377,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (document.kind() == DefinitionKind.QUEST) {
-            ImGui.textWrapped("Quest progression preview is not available. Select a conversation or dialogue tree to play it.");
+            questSimulation();
             ImGui.end();
             return;
         }
@@ -1406,9 +1408,55 @@ final class ImGuiAuthoringEditor {
         if (target == null) ImGui.textDisabled("Select a target to play.");
         else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
         EditorPreviewConditions.render(conditions, document == null ? null : document.json());
+        previewScenarios();
         if (ImGui.collapsingHeader("Preview log"))
             for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
         ImGui.end();
+    }
+
+    private void questSimulation() {
+        ImGui.textWrapped("Isolated quest simulation. Objective completion is simulated. Actions and rewards are logged.");
+        if (ImGui.button("Start / restart quest test")) operation(() -> questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions));
+        if (questPreview != null) {
+            ImGui.textUnformatted("Current stage: " + questPreview.currentStage());
+            for (String objective : questPreview.objectives()) {
+                boolean complete = questPreview.completed(objective);
+                if (ImGui.checkbox(objective, complete)) questPreview.completed(objective, !complete);
+            }
+            if (questPreview.ready()) ImGui.textWrapped("Stage requirements met.");
+            else for (String blocker : questPreview.blockers()) ImGui.textWrapped(blocker);
+            ImGui.beginDisabled(!questPreview.ready());
+            if (ImGui.button("Advance quest")) operation(questPreview::advance);
+            ImGui.endDisabled();
+            for (var transition : questPreview.transitions()) {
+                var availability = questPreview.availability(transition);
+                ImGui.beginDisabled(availability != com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
+                if (ImGui.button(transition.label() + "##" + transition.id())) operation(() -> questPreview.choose(transition.id()));
+                ImGui.endDisabled();
+                if (availability != com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED) ImGui.textWrapped("Transition " + availability.name().toLowerCase(Locale.ROOT));
+            }
+            for (String line : questPreview.log()) ImGui.textWrapped(line);
+        }
+        EditorPreviewConditions.render(conditions, document.json());
+        previewScenarios();
+    }
+
+    private void previewScenarios() {
+        if (!ImGui.collapsingHeader("Saved test scenarios")) return;
+        input("Scenario name", scenarioName);
+        if (ImGui.button("Save scenario")) operation(() -> {
+            if (scenarioName.get().isBlank()) throw new IllegalArgumentException("Enter a scenario name");
+            document.editMetadata("Save scenario", metadata -> {
+                if (!metadata.has("preview_scenarios")) metadata.add("preview_scenarios", new JsonObject());
+                metadata.getAsJsonObject("preview_scenarios").add(scenarioName.get(), conditions.snapshot());
+            });
+        });
+        JsonObject metadata = document.metadata();
+        if (metadata.has("preview_scenarios")) for (var entry : metadata.getAsJsonObject("preview_scenarios").entrySet()) {
+            if (ImGui.button("Load " + entry.getKey())) operation(() -> { conditions.restore(entry.getValue().getAsJsonObject()); EditorPreviewConditions.sync(conditions); questPreview = null; });
+            ImGui.sameLine();
+            if (ImGui.smallButton("Remove##scenario" + entry.getKey())) operation(() -> document.editMetadata("Remove scenario", value -> value.getAsJsonObject("preview_scenarios").remove(entry.getKey())));
+        }
     }
 
     private void startPreview(String node) {
@@ -1454,10 +1502,13 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Save and export")) operation(() -> {
             validate();
             workspace.save();
-            workspace.exportPack(Path.of(exportPath.get()));
-            status = "Exported datapack to " + exportPath.get();
+            Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, Path.of(exportPath.get()));
+            preferences = preferences.withExport(exportPath.get()); savePreferences();
+            status = "Exported datapack to " + exportPath.get() + (backup == null ? "" : ". Previous version: " + backup);
         });
         ImGui.endDisabled();
+        if (ImGui.button("Open output folder")) net.minecraft.Util.getPlatform().openFile(Path.of(exportPath.get()).toFile());
+        if (ImGui.button("Prepare separate test world")) operation(() -> { save(); EditorTestWorld.prepare(workspace, screen); });
         ImGui.separator();
         ImGui.textWrapped(status);
         for (var diagnostic : diagnostics) {
@@ -1571,6 +1622,7 @@ final class ImGuiAuthoringEditor {
             clearCampaignPreview();
         }
         document = next;
+        questPreview = null;
         fitGraph = true;
         historyDocument = next;
         selectedNode = "";

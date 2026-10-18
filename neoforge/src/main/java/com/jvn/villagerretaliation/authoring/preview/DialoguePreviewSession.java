@@ -131,8 +131,8 @@ public final class DialoguePreviewSession implements AutoCloseable {
         if (!checkId.isBlank()) {
             JsonObject check = find(array(root, "checks"), checkId);
             if (check == null) throw new IllegalArgumentException("Missing check: " + checkId);
-            pendingNext = string(check, conditions.checkSuccess() ? "success" : "failure");
-            log.add("Simulated check " + checkId + ": " + (conditions.checkSuccess() ? "success" : "failure"));
+            pendingNext = string(check, conditions.checkSuccess(checkId) ? "success" : "failure");
+            log.add("Simulated check " + checkId + ": " + (conditions.checkSuccess(checkId) ? "success" : "failure"));
         }
         if (choice.source().has("follow_up")) {
             String nested = nodeId + "/follow_up/" + choice.id();

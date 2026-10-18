@@ -10,6 +10,8 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        managedExportsPreserveExternalFilesAndBackups();
+        previewScenariosRestoreIndependentChecks();
         recipesAndObjectivesValidate();
         nodeRenamingAndDeletionPreserveReferences();
         namesAndSearchFollowCreatorWording();
@@ -39,7 +41,64 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 29;
+        return 31;
+    }
+
+    private static void managedExportsPreserveExternalFilesAndBackups() throws java.io.IOException {
+        var root = java.nio.file.Files.createTempDirectory("vr-managed-export");
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(root.resolve("drafts"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:managed");
+        var output = root.resolve("pack");
+        com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, output);
+        java.nio.file.Files.writeString(output.resolve("custom.txt"), "Keep this file");
+        document.edit("Revise", value -> value.addProperty("priority", 3));
+        var backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, output);
+        check(backup != null && java.nio.file.Files.exists(backup.resolve(document.resourcePath())), "updating an export retains its previous version");
+        check(java.nio.file.Files.readString(output.resolve("custom.txt")).equals("Keep this file"), "managed exports retain unowned files");
+        java.nio.file.Files.writeString(output.resolve(document.resourcePath()), "external edit");
+        try {
+            com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, output);
+            throw new AssertionError("external edits must block re-export");
+        } catch (java.io.IOException expected) {
+            check(expected.getMessage().contains("external edit"), "conflicts identify the edited file");
+        }
+        check(java.nio.file.Files.readString(output.resolve(document.resourcePath())).equals("external edit"), "a rejected export never replaces external edits");
+    }
+
+    public static void questSimulationUsesRuntimeCompletionRules() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-quest-preview"));
+        var document = workspace.createDocument(DefinitionKind.QUEST, "test:simulation");
+        EditorContentTools.recipe(workspace, document, "Fetch quest");
+        DialogueGraph.addNode(document, "finish");
+        EditorDocumentOperations.nextStage(document, "start", "finish");
+        var original = document.json();
+        var session = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document,
+                new com.jvn.villagerretaliation.authoring.preview.PreviewConditions());
+        check(!session.ready() && !session.blockers().isEmpty(), "quest testing explains unmet runtime predicates");
+        session.completed(session.objectives().getFirst(), true);
+        check(session.ready(), "satisfying an objective meets runtime composition rules");
+        session.advance();
+        check(session.currentStage().equals("finish"), "quest testing follows authored stage transitions");
+        session.advance();
+        check(session.outcome().equals("complete"), "quest testing follows terminal transitions");
+        session.reset();
+        check(session.currentStage().equals("start") && !session.ready() && session.outcome().isEmpty(), "replay resets simulated progress");
+        check(document.json().equals(original), "quest testing never changes the authored source");
+    }
+
+    private static void previewScenariosRestoreIndependentChecks() {
+        var conditions = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        conditions.reputation(12, com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL);
+        conditions.dayTime(6000L);
+        conditions.checkSuccess("first", true);
+        conditions.checkSuccess("second", false);
+        conditions.quest("test:quest", "completed");
+        var saved = conditions.snapshot();
+        conditions.reputation(-20, com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL);
+        conditions.checkSuccess("second", true);
+        conditions.restore(saved);
+        check(conditions.checkSuccess("first") && !conditions.checkSuccess("second"), "checks can succeed and fail independently within a scenario");
+        check(conditions.snapshot().equals(saved), "scenario loading restores its full simulated context");
     }
 
     private static void recipesAndObjectivesValidate() throws java.io.IOException {

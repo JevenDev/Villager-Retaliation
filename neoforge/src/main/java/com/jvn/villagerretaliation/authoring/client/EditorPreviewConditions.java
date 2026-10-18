@@ -72,6 +72,14 @@ final class EditorPreviewConditions {
         } else if (element.isJsonArray()) element.getAsJsonArray().forEach(value -> collectRoles(value, roles));
     }
 
+    static void sync(PreviewConditions conditions) {
+        var saved = conditions.snapshot();
+        REPUTATION.set(saved.get("reputation").getAsInt());
+        tier = com.jvn.villagerretaliation.reputation.VillagerReputationLevel.valueOf(saved.get("tier").getAsString());
+        VARIANT.set(saved.get("variant").getAsInt());
+        PROFESSION.set(saved.get("profession").getAsString());
+    }
+
     static void time(PreviewConditions conditions) {
         String[] names = {"World time", "Morning (06:00)", "Afternoon (12:00)", "Evening (18:00)", "Night (00:00)"};
         long[] ticks = {0, 0, 6000, 12000, 18000};
@@ -122,6 +130,11 @@ final class EditorPreviewConditions {
         if (ImGui.inputInt("Variant index", VARIANT)) conditions.variant(VARIANT.get());
         if (ImGui.inputText("Profession", PROFESSION)) conditions.profession(PROFESSION.get());
         if (ImGui.checkbox("Successful checks", conditions.checkSuccess())) conditions.checkSuccess(!conditions.checkSuccess());
+        if (definition != null) for (var check : com.jvn.villagerretaliation.authoring.core.DialogueGraph.array(definition, "checks")) {
+            if (!check.isJsonObject()) continue;
+            String id = com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(check.getAsJsonObject(), "id");
+            if (ImGui.checkbox("Pass check: " + id, conditions.checkSuccess(id))) conditions.checkSuccess(id, !conditions.checkSuccess(id));
+        }
         ImGui.inputText("Quest ID", QUEST_ID);
         ImGui.inputText("Quest state", QUEST_STATE);
         if (ImGui.button("Set simulated quest state")) conditions.quest(QUEST_ID.get(), QUEST_STATE.get());
