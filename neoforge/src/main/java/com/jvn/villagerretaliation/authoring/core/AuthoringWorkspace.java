@@ -23,6 +23,14 @@ import java.util.zip.ZipFile;
 
 public final class AuthoringWorkspace {
     private static final String FILE = "workspace.json";
+    private static final String RECOVERY = "workspace.recovery.json";
+    private List<AuthoringDocument> savedDocuments = List.of();
+    private Map<String, byte[]> savedAttachments = Map.of();
+    private JsonObject savedPack;
+    private boolean recovered;
+    private JsonObject recoveryBuffers = new JsonObject();
+    private final List<JsonObject> deleted = new ArrayList<>();
+    private int savedDeleted;
     private static final long MAX_FILE_BYTES = 32L * 1024 * 1024;
     private static final long MAX_PACK_BYTES = 256L * 1024 * 1024;
     private final Path directory;
@@ -51,10 +59,20 @@ public final class AuthoringWorkspace {
     }
 
     public static AuthoringWorkspace open(Path directory) throws IOException {
+        return open(directory, FILE);
+    }
+
+    public static AuthoringWorkspace recover(Path directory) throws IOException {
+        AuthoringWorkspace workspace = open(directory, RECOVERY);
+        workspace.recovered = true;
+        return workspace;
+    }
+
+    private static AuthoringWorkspace open(Path directory, String file) throws IOException {
         AuthoringWorkspace result = new AuthoringWorkspace(directory);
-        rejectSymlinks(result.directory.resolve(FILE));
+        rejectSymlinks(result.directory.resolve(file));
         try {
-            JsonObject state = JsonParser.parseString(Files.readString(result.directory.resolve(FILE))).getAsJsonObject();
+            JsonObject state = JsonParser.parseString(Files.readString(result.directory.resolve(file))).getAsJsonObject();
             if (!state.has("version") || !state.get("version").isJsonPrimitive()
                     || !state.get("version").getAsString().equals("1")) throw new IOException("Unsupported workspace version at /version (expected 1)");
             if (!state.has("documents") || !state.get("documents").isJsonArray())
@@ -96,6 +114,10 @@ public final class AuthoringWorkspace {
                 if (!state.get("pack").isJsonObject()) throw new IOException("Invalid authoring workspace: /pack must be an object");
                 result.packMetadata = state.getAsJsonObject("pack").deepCopy();
             }
+            if (state.has("deleted")) for (JsonElement entry : state.getAsJsonArray("deleted"))
+                result.deleted.add(entry.getAsJsonObject().deepCopy());
+            if (state.has("recovery_buffers")) result.recoveryBuffers = state.getAsJsonObject("recovery_buffers").deepCopy();
+            result.markSaved();
             return result;
         } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException ex) {
             throw new IOException("Invalid authoring workspace: " + ex.getMessage(), ex);
@@ -344,11 +366,49 @@ public final class AuthoringWorkspace {
     }
 
     public void remove(AuthoringDocument document) {
-        if (document.kind() == DefinitionKind.QUEST) {
-            String bundle = document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1);
-            documents.removeIf(value -> value.resourcePath().startsWith(bundle));
-            attachments.keySet().removeIf(path -> path.startsWith(bundle));
-        } else documents.remove(document);
+        if (!documents.contains(document)) throw new IllegalArgumentException("Select a file in this workspace");
+        String bundle = document.kind() == DefinitionKind.QUEST
+                ? document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1) : null;
+        JsonObject entry = new JsonObject();
+        entry.addProperty("name", document.id());
+        JsonArray values = new JsonArray();
+        for (AuthoringDocument member : List.copyOf(documents)) {
+            if (member == document || bundle != null && member.resourcePath().startsWith(bundle)) {
+                values.add(documentState(member));
+                documents.remove(member);
+            }
+        }
+        JsonObject files = new JsonObject();
+        for (String path : List.copyOf(attachments.keySet())) {
+            if (bundle != null && path.startsWith(bundle)) files.addProperty(path, Base64.getEncoder().encodeToString(attachments.remove(path)));
+        }
+        entry.add("documents", values);
+        entry.add("attachments", files);
+        deleted.add(entry);
+    }
+
+    public List<String> deletedNames() { return deleted.stream().map(value -> value.get("name").getAsString()).toList(); }
+
+    public void restoreDeleted(int index) {
+        JsonObject entry = deleted.get(index);
+        List<AuthoringDocument> restored = new ArrayList<>();
+        for (JsonElement element : entry.getAsJsonArray("documents")) {
+            JsonObject value = element.getAsJsonObject();
+            String path = value.get("path").getAsString();
+            if (containsPath(path)) throw new IllegalArgumentException("Restore would overwrite " + path);
+            AuthoringDocument document = new AuthoringDocument(DefinitionKind.valueOf(value.get("kind").getAsString()), path, value.getAsJsonObject("definition"));
+            document.loadMetadata(value.getAsJsonObject("editor"));
+            restored.add(document);
+        }
+        Map<String, byte[]> files = new LinkedHashMap<>();
+        for (var file : entry.getAsJsonObject("attachments").entrySet()) {
+            String path = safeRelativePath(file.getKey());
+            if (containsPath(path)) throw new IllegalArgumentException("Restore would overwrite " + path);
+            files.put(path, Base64.getDecoder().decode(file.getValue().getAsString()));
+        }
+        documents.addAll(restored);
+        attachments.putAll(files);
+        deleted.remove(index);
     }
 
     private AuthoringDocument transferQuestBundle(AuthoringDocument quest, String id, boolean copy) {
@@ -727,25 +787,65 @@ public final class AuthoringWorkspace {
         return String.join("/", java.util.Arrays.copyOf(parts, parts[index + 1].equals("_shared") ? index + 2 : index + 3)) + "/";
     }
 
-    public void save() throws IOException {
+    private JsonObject snapshot() {
         JsonObject root = new JsonObject();
         root.addProperty("version", 1);
         JsonArray values = new JsonArray();
         for (AuthoringDocument document : documents) {
-            JsonObject entry = new JsonObject();
-            entry.addProperty("kind", document.kind().name());
-            entry.addProperty("path", document.resourcePath());
-            entry.add("definition", document.json());
-            entry.add("editor", document.metadata());
-            values.add(entry);
+            values.add(documentState(document));
         }
         root.add("documents", values);
         JsonObject files = new JsonObject();
         attachments.forEach((path, bytes) -> files.addProperty(path, Base64.getEncoder().encodeToString(bytes)));
         root.add("attachments", files);
         root.add("pack", packMetadata.deepCopy());
-        atomicWrite(directory.resolve(FILE), AuthoringDocument.JSON.toJson(root).getBytes(StandardCharsets.UTF_8));
+        JsonArray trash = new JsonArray();
+        deleted.forEach(value -> trash.add(value.deepCopy()));
+        root.add("deleted", trash);
+        return root;
+    }
+
+    private static JsonObject documentState(AuthoringDocument document) {
+        JsonObject entry = new JsonObject();
+        entry.addProperty("kind", document.kind().name());
+        entry.addProperty("path", document.resourcePath());
+        entry.add("definition", document.json());
+        entry.add("editor", document.metadata());
+        return entry;
+    }
+
+    private void markSaved() {
         documents.forEach(AuthoringDocument::markSaved);
+        savedDocuments = List.copyOf(documents);
+        savedAttachments = Map.copyOf(attachments);
+        savedPack = packMetadata.deepCopy();
+        savedDeleted = deleted.size();
+        recovered = false;
+    }
+
+    public boolean dirty() {
+        return recovered || !documents.equals(savedDocuments) || documents.stream().anyMatch(AuthoringDocument::dirty)
+                || !attachments.equals(savedAttachments) || !packMetadata.equals(savedPack) || deleted.size() != savedDeleted;
+    }
+
+    public boolean recoveryAvailable() { return Files.isRegularFile(directory.resolve(RECOVERY), LinkOption.NOFOLLOW_LINKS); }
+    public JsonObject recoveryBuffers() { return recoveryBuffers.deepCopy(); }
+
+    public void saveRecovery(JsonObject buffers) throws IOException {
+        JsonObject root = snapshot();
+        root.add("recovery_buffers", buffers.deepCopy());
+        atomicWrite(directory.resolve(RECOVERY), AuthoringDocument.JSON.toJson(root).getBytes(StandardCharsets.UTF_8));
+    }
+
+    public void discardRecovery() throws IOException {
+        rejectSymlinks(directory.resolve(RECOVERY));
+        Files.deleteIfExists(directory.resolve(RECOVERY));
+    }
+
+    public void save() throws IOException {
+        atomicWrite(directory.resolve(FILE), AuthoringDocument.JSON.toJson(snapshot()).getBytes(StandardCharsets.UTF_8));
+        markSaved();
+        discardRecovery();
     }
 
     public void exportPack(Path destination) throws IOException {

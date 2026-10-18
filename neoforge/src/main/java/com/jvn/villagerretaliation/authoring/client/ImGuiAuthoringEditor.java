@@ -108,6 +108,9 @@ final class ImGuiAuthoringEditor {
     private boolean escapeReady;
     private boolean popupWasOpen;
     private boolean confirmDelete;
+    private boolean showRecovery;
+    private boolean confirmClose;
+    private long nextRecovery;
     private Entity target;
 
     static void initialize() {
@@ -123,12 +126,17 @@ final class ImGuiAuthoringEditor {
     }
 
     static void tick() {
+        if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
+            INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
+            INSTANCE.attempt(INSTANCE::writeRecovery);
+        }
         if (INSTANCE.view != 1) EditorCameraPanel.close();
         EditorCameraPanel.tick(INSTANCE.screen);
         if (INSTANCE.target != null && (MC.level != INSTANCE.target.level() || INSTANCE.target.isRemoved())) INSTANCE.target = null;
     }
 
     static void disconnect() {
+        if (!INSTANCE.showRecovery) INSTANCE.attempt(INSTANCE::writeRecovery);
         AuthoringDialoguePreview.stop();
         EditorCameraPanel.close();
         INSTANCE.clearCampaignPreview();
@@ -173,11 +181,13 @@ final class ImGuiAuthoringEditor {
                 }
             }
             shell();
+            ImGui.beginDisabled(showRecovery || confirmClose);
             browser();
             if (view == 0) graph();
             else if (view == 1) preview();
             else diagnostics();
             inspector();
+            ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
             ImGui.popStyleColor(13);
@@ -217,6 +227,7 @@ final class ImGuiAuthoringEditor {
         ImGui.begin("Authoring###VR_AuthoringShell", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking
                 | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings);
         toolbar();
+        recoveryControls();
         guide();
         ImGui.separator();
         int dock = ImGui.getID("VR_AuthoringDock");
@@ -258,6 +269,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void toolbar() {
+        ImGui.beginDisabled(showRecovery || confirmClose);
         if (ImGui.button("Workspace")) showWorkspace = !showWorkspace;
         ImGui.sameLine();
         ImGui.beginDisabled(workspace == null);
@@ -280,9 +292,10 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Reset layout")) resetLayout = true;
         ImGui.sameLine();
         if (ImGui.button("Close")) screen.onClose();
+        ImGui.endDisabled();
         ImGui.textDisabled(workspace == null ? "No workspace open" : workspace.directory().getFileName()
                 + (document == null ? "" : "  /  " + document.id())
-                + (document != null && (document.dirty() || hasPendingFields() || rawModified) ? "  (unsaved)" : ""));
+                + (workspace != null && (workspace.dirty() || hasPendingFields() || rawModified) ? "  (unsaved)" : ""));
     }
 
     private boolean viewButton(String label, int index) {
@@ -366,6 +379,7 @@ final class ImGuiAuthoringEditor {
         showCreate = workspace.documents().isEmpty();
         preferences = new EditorPreferences(preferences.guideDismissed(), preferences.layoutVersion(), workspace.directory().toString());
         savePreferences();
+        showRecovery = !create && workspace.recoveryAvailable();
         status = create ? "Workspace created." : "Workspace opened.";
     }
 
@@ -473,10 +487,21 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Duplicate")) operation(() -> select(workspace.duplicate(document, newId.get())));
             if (ImGui.button("Delete...")) confirmDelete = true;
             if (confirmDelete) {
-                ImGui.textWrapped("Delete this draft? Saving makes the removal permanent.");
+                ImGui.textWrapped("Move this draft to Deleted files? You can restore it later.");
                 if (ImGui.button("Confirm delete")) operation(() -> { workspace.remove(document); select(null); });
                 ImGui.sameLine();
                 if (ImGui.button("Cancel")) confirmDelete = false;
+            }
+        }
+        if (!workspace.deletedNames().isEmpty() && ImGui.collapsingHeader("Deleted files")) {
+            var names = workspace.deletedNames();
+            for (int i = 0; i < names.size(); i++) {
+                int index = i;
+                if (ImGui.button("Restore " + names.get(i) + "##trash" + i)) operation(() -> {
+                    workspace.restoreDeleted(index);
+                    validate();
+                    status = "File restored.";
+                });
             }
         }
         ImGui.separator();
@@ -701,7 +726,7 @@ final class ImGuiAuthoringEditor {
             graphText(draw, x + 12 * zoom, y + 10 * zoom, 0xfff2f0e9,
                     (node.entry() ? "Start: " : "") + node.id(), EditorGraph.WIDTH - 24);
             float inputY = y + EditorGraph.HEADER / 2 * zoom;
-            boolean inputHover = hover && ImGui.isMouseHoveringRect(x - 12, inputY - 12, x + 12, inputY + 12);
+            boolean inputHover = hover && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), x, inputY, EditorGraph.HEADER * zoom);
             draw.addCircleFilled(x, inputY, 6 * zoom, inputHover ? 0xff81c9ed : 0xffc2bdb4);
             if (inputHover) {
                 ImGui.setTooltip(selectedEdge.isEmpty() ? "Input: connect a response here" : "Connect to " + node.id());
@@ -729,7 +754,7 @@ final class ImGuiAuthoringEditor {
                 float centerY = y + card.outputY(i) * zoom;
                 float outputX = x + w;
                 boolean outputHover = block.output() != null && hover
-                        && ImGui.isMouseHoveringRect(outputX - 12, centerY - 12, outputX + 12, centerY + 12);
+                        && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), outputX, centerY, EditorGraph.ROW * zoom);
                 boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + EditorGraph.ROW * zoom);
                 int background = blockHover ? 0xff514a40 : block.output() != null ? 0xff403c32 : 0xff35322e;
                 draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, background, 3);
@@ -1318,6 +1343,70 @@ final class ImGuiAuthoringEditor {
         ImGui.end();
     }
 
+    private void writeRecovery() throws IOException {
+        if (workspace == null || showRecovery || !(workspace.dirty() || hasPendingFields() || rawModified)) return;
+        JsonObject buffers = new JsonObject();
+        if (document != null) buffers.addProperty("document", document.resourcePath());
+        buffers.addProperty("pointer", pointer.get());
+        buffers.addProperty("node", selectedNode);
+        buffers.add("fields", pendingFields.snapshot());
+        JsonObject translated = new JsonObject();
+        translatedFields.forEach((owner, edits) -> translated.add(owner.resourcePath(), edits.snapshot()));
+        buffers.add("translated", translated);
+        if (rawModified) buffers.addProperty("raw", jsonText.get());
+        workspace.saveRecovery(buffers);
+    }
+
+    private void recoveryControls() {
+        if (showRecovery) {
+            ImGui.textWrapped("Recovered drafts are available. Choose a version before continuing.");
+            if (ImGui.button("Recover drafts")) attempt(() -> {
+                workspace = AuthoringWorkspace.recover(workspace.directory());
+                JsonObject buffers = workspace.recoveryBuffers();
+                String path = buffers.has("document") ? buffers.get("document").getAsString() : "";
+                select(workspace.documents().stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElse(null));
+                if (document != null) {
+                    if (buffers.has("pointer")) pointer.set(buffers.get("pointer").getAsString());
+                    if (buffers.has("node")) selectedNode = buffers.get("node").getAsString();
+                    if (buffers.has("fields")) {
+                        pendingFields.restore(buffers.getAsJsonObject("fields"));
+                        buffers.getAsJsonObject("fields").entrySet().forEach(entry -> fields.put(entry.getKey(),
+                                new ImString(entry.getValue().getAsJsonObject().get("text").getAsString(), 65536)));
+                    }
+                    if (buffers.has("translated")) for (var entry : buffers.getAsJsonObject("translated").entrySet()) {
+                        var owner = workspace.documents().stream().filter(value -> value.resourcePath().equals(entry.getKey())).findFirst().orElse(null);
+                        if (owner == null) continue;
+                        EditorFieldEdits edits = new EditorFieldEdits();
+                        edits.restore(entry.getValue().getAsJsonObject());
+                        translatedFields.put(owner, edits);
+                        entry.getValue().getAsJsonObject().entrySet().forEach(field -> fields.put(owner.resourcePath() + field.getKey(),
+                                new ImString(field.getValue().getAsJsonObject().get("text").getAsString(), 65536)));
+                    }
+                    if (buffers.has("raw")) { jsonText.set(buffers.get("raw").getAsString()); rawModified = true; }
+                }
+                showRecovery = false;
+                status = "Drafts recovered. Save when ready.";
+            });
+            ImGui.sameLine();
+            if (ImGui.button("Keep saved version")) attempt(() -> { workspace.discardRecovery(); showRecovery = false; });
+        }
+        if (confirmClose) {
+            ImGui.textWrapped("You have unsaved drafts. Save them or keep a recovery copy before closing.");
+            if (ImGui.button("Save and close")) operation(() -> { save(); closeEditor(); });
+            ImGui.sameLine();
+            if (ImGui.button("Keep recovery and close")) attempt(() -> { writeRecovery(); closeEditor(); });
+            ImGui.sameLine();
+            if (ImGui.button("Continue editing")) confirmClose = false;
+        }
+    }
+
+    private void closeEditor() {
+        confirmClose = false;
+        AuthoringDialoguePreview.stop();
+        EditorCameraPanel.close();
+        MC.setScreen(null);
+    }
+
     private void save() throws IOException {
         if (rawModified) throw new IllegalArgumentException("Apply or discard the JSON buffer before saving.");
         if (workspace == null) throw new IllegalArgumentException("Open a workspace first.");
@@ -1476,11 +1565,9 @@ final class ImGuiAuthoringEditor {
         @Override public boolean isPauseScreen() { return false; }
         @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
         @Override public void onClose() {
-            operation(() -> {
-                AuthoringDialoguePreview.stop();
-                EditorCameraPanel.close();
-                MC.setScreen(null);
-            });
+            if (showRecovery) { closeEditor(); return; }
+            if (workspace != null && (workspace.dirty() || hasPendingFields() || rawModified)) confirmClose = true;
+            else closeEditor();
         }
     }
 }

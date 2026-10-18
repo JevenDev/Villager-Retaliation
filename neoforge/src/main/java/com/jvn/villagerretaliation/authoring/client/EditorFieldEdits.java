@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.authoring.client;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
@@ -14,6 +15,23 @@ public final class EditorFieldEdits {
     public boolean pending() { return !edits.isEmpty(); }
 
     public void clear() { edits.clear(); }
+
+    public JsonObject snapshot() {
+        JsonObject values = new JsonObject();
+        edits.forEach((path, edit) -> {
+            JsonObject value = new JsonObject();
+            value.add("original", edit.original().deepCopy());
+            value.addProperty("text", edit.text());
+            values.add(path, value);
+        });
+        return values;
+    }
+
+    public void restore(JsonObject values) {
+        clear();
+        values.entrySet().forEach(entry -> update(entry.getKey(), entry.getValue().getAsJsonObject().get("original"),
+                entry.getValue().getAsJsonObject().get("text").getAsString()));
+    }
 
     public void update(String path, JsonElement original, String text) {
         boolean string = original.isJsonPrimitive() && original.getAsJsonPrimitive().isString();

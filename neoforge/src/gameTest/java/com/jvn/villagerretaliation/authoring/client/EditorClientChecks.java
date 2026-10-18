@@ -10,6 +10,9 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        recoveryPreservesSavedDraftsAndDeletedBundles();
+        connectorTargetsStaySeparateAtMinimumZoom();
+        pendingFieldsSurviveRecovery();
         propertyEditsApplyTogether();
         invalidPropertiesDoNotPartiallyApply();
         stalePropertiesAreNotOverwritten();
@@ -33,7 +36,56 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 23;
+        return 26;
+    }
+
+    private static void recoveryPreservesSavedDraftsAndDeletedBundles() throws java.io.IOException {
+        var directory = java.nio.file.Files.createTempDirectory("vr-recovery-check");
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(directory);
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:recovery");
+        workspace.save();
+        check(!workspace.dirty(), "saved workspace is clean");
+        quest.edit("Change draft", root -> root.addProperty("extension", "recover me"));
+        JsonObject buffers = new JsonObject();
+        buffers.addProperty("raw", "{unfinished");
+        workspace.saveRecovery(buffers);
+        check(workspace.dirty() && workspace.recoveryAvailable(), "recovery never marks drafts saved");
+        var saved = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.open(directory);
+        check(!saved.documents().getFirst().json().has("extension"), "recovery keeps the explicit save intact");
+        var recovered = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.recover(directory);
+        check(recovered.dirty() && recovered.recoveryBuffers().equals(buffers), "recovery restores unsaved buffers and dirty state");
+        check(recovered.documents().getFirst().json().get("extension").getAsString().equals("recover me"), "recovery retains changed content");
+        recovered.remove(recovered.documents().getFirst());
+        check(recovered.documents().isEmpty(), "deleting a quest moves its locale too");
+        recovered.save();
+        var reopened = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.open(directory);
+        check(!reopened.recoveryAvailable() && reopened.deletedNames().size() == 1, "explicit save clears recovery and preserves deleted files");
+        reopened.restoreDeleted(0);
+        check(reopened.documents().size() == 2 && reopened.dirty(), "restoring a deleted quest includes its locale and marks the workspace dirty");
+        check(reopened.documents().getFirst().json().has("extension"), "restored quest retains unsaved authored content");
+    }
+
+    private static void connectorTargetsStaySeparateAtMinimumZoom() {
+        for (float zoom : new float[] {.35f, .5f, .7f, 1, 2}) {
+            float first = 100;
+            float second = first + EditorGraph.ROW * zoom;
+            for (float y = first - 20; y <= second + 20; y += .25f) {
+                check(!(EditorGraphHit.port(10, y, 10, first, EditorGraph.ROW * zoom)
+                        && EditorGraphHit.port(10, y, 10, second, EditorGraph.ROW * zoom)), "adjacent ports never share a hit target");
+            }
+            check(EditorGraphHit.port(10, first, 10, first, EditorGraph.ROW * zoom), "port centres remain clickable at every zoom");
+        }
+    }
+
+    private static void pendingFieldsSurviveRecovery() {
+        var edits = new EditorFieldEdits();
+        var document = tree();
+        edits.update("/priority", document.json().get("priority"), "unfinished number");
+        var restored = new EditorFieldEdits();
+        restored.restore(edits.snapshot());
+        check(restored.snapshot().equals(edits.snapshot()) && restored.pending(), "recovery preserves invalid pending input without applying it");
+        rejects(() -> restored.apply(document));
+        check(document.json().get("priority").getAsInt() == 1, "recovering invalid input does not change the document");
     }
 
     private static void endingNodesDoesNotSilentlyDeleteAuthoredChoices() {
