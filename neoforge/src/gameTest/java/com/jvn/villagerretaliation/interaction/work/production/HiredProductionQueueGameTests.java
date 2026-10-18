@@ -177,8 +177,10 @@ public final class HiredProductionQueueGameTests {
         helper.assertTrue(invalid.output(helper.getLevel()).isEmpty(), "an invalid narrowed choice cannot silently revert to any ingredient");
         helper.assertTrue(HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("iron_ingot_from_smelting_raw_iron"), Map.of())
                 .supports(helper.getLevel(), HiredVillagerRole.SMELTER), "native raw ore processing remains supported");
-        helper.assertFalse(HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("charcoal"), Map.of())
-                .supports(helper.getLevel(), HiredVillagerRole.SMELTER), "queues preserve the smelter's supported input restrictions");
+        helper.assertTrue(HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("charcoal"), Map.of())
+                .supports(helper.getLevel(), HiredVillagerRole.SMELTER), "smelters support non-food furnace products");
+        helper.assertFalse(HiredProductionRecipe.exact(ResourceLocation.withDefaultNamespace("cooked_beef"), Map.of())
+                .supports(helper.getLevel(), HiredVillagerRole.SMELTER), "food furnace recipes remain cooking orders");
         helper.succeed();
     }
 

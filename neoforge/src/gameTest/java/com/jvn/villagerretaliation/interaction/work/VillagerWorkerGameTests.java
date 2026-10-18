@@ -593,7 +593,7 @@ public final class VillagerWorkerGameTests {
         setBlock(helper, cleanRel, Blocks.FURNACE.defaultBlockState());
         Container wrong = container(level, helper.absolutePos(wrongRel));
         Container clean = container(level, helper.absolutePos(cleanRel));
-        wrong.setItem(2, new ItemStack(Items.STONE));
+        wrong.setItem(2, new ItemStack(Items.COOKED_BEEF));
 
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 3));
         HiredWorkContext context = context(
@@ -608,7 +608,7 @@ public final class VillagerWorkerGameTests {
 
         helper.assertValueEqual(result.status(), "interaction.work.smelting.loaded_input", "clean station load status");
         helper.assertValueEqual(clean.getItem(0).getCount(), 4, "clean furnace should receive ore");
-        helper.assertTrue(wrong.getItem(2).is(Items.STONE), "contaminating output must remain untouched");
+        helper.assertTrue(wrong.getItem(2).is(Items.COOKED_BEEF), "contaminating output must remain untouched");
         villager.discard();
         helper.succeed();
     }
