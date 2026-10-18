@@ -322,7 +322,9 @@ public final class SettlementCullingGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 200, batch = "settlement_culling_experience")
     public static void deathExperienceDeliveryAndOldSaveReplayAreIdempotent(GameTestHelper helper) {
-        var fixture = fixture(helper, false, true);
+        var origin = helper.absolutePos(new BlockPos(2, 2, 2)).offset(10_000_000, 0, 10_000_000);
+        var center = new BlockPos((origin.getX() >> 4 << 4) + 14, 80, (origin.getZ() >> 4 << 4) + 14);
+        var fixture = fixture(helper, false, true, center);
         var sword = new ItemStack(Items.IRON_SWORD);
         sword.enchant(helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.MENDING), 1);
         sword.setDamageValue(20);
@@ -342,6 +344,9 @@ public final class SettlementCullingGameTests {
         saved.put("Experience", rewards);
         var level = helper.getLevel();
         var position = new net.minecraft.world.level.ChunkPos(experience.position());
+        for (var floor : BlockPos.betweenClosed(experience.position().offset(-4, -1, -4), experience.position().offset(4, -1, 4))) {
+            level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        }
         level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 4, position);
         level.getChunk(position.x, position.z);
         helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
@@ -356,14 +361,15 @@ public final class SettlementCullingGameTests {
         helper.startSequence().thenWaitUntil(() -> {
             helper.assertTrue(level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(experience.position())) && level.isPositionEntityTicking(experience.position()),
                     "the actual experience chunk becomes active");
-        }).thenExecute(() -> {
-            for (var floor : BlockPos.betweenClosed(experience.position().offset(-4, -1, -4), experience.position().offset(4, -1, 4))) {
-                level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
-            }
+        }).thenWaitUntil(() -> {
             SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
             SettlementGroundExperienceService.update(level, fixture.town(), level.getGameTime());
             var orb = level.getEntity(experience.id());
-            helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb, "pending experience becomes an actual native orb");
+            helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb,
+                    "pending experience becomes an actual native orb at " + experience.position()
+                            + ", removed=" + experience.removed() + ", pending=" + experience.pendingSpawn());
+        }).thenExecute(() -> {
+            var orb = level.getEntity(experience.id());
             helper.assertTrue(fixture.town().groundExperience().containsKey(experience.id()), "delivered death experience enters native transition tracking");
             helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerWorkExperience.belongsTo(
                     (net.minecraft.world.entity.ExperienceOrb) orb, fixture.worker().context(level, fixture.town())),
@@ -533,9 +539,12 @@ public final class SettlementCullingGameTests {
     }
 
     private static Fixture fixture(GameTestHelper helper, boolean loaded, boolean weapon) {
-        var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(2, 2, 2));
-        var center = loaded ? origin : origin.offset(10_000_000, 0, 10_000_000).atY(80);
+        return fixture(helper, loaded, weapon, loaded ? origin : origin.offset(10_000_000, 0, 10_000_000).atY(80));
+    }
+
+    private static Fixture fixture(GameTestHelper helper, boolean loaded, boolean weapon, BlockPos center) {
+        var level = helper.getLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(0L, level.dimension().location(), center, "");
         var town = SettlementSavedData.get(level).establish(registry, id, UUID.randomUUID(), center, 0L).orElseThrow();
