@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL30;
 public final class EditorPlaytestViewport {
     private static boolean enabled;
     private static boolean rendering;
+    private static boolean invalidated;
     private static float fraction = 2F / 3;
     private static TextureTarget target;
     private static PlaytestLayout layout;
@@ -24,6 +25,7 @@ public final class EditorPlaytestViewport {
         return enabled && mc.level != null && mc.player != null;
     }
 
+    public static void invalidate() { invalidated = true; }
     public static boolean rendering() { return rendering; }
     public static PlaytestLayout layout() { return layout; }
     public static RenderTarget target(RenderTarget original) { return rendering ? target : original; }
@@ -54,7 +56,8 @@ public final class EditorPlaytestViewport {
         var full = mc.getMainRenderTarget();
         var next = PlaytestLayout.calculate(window.getWidth(), window.getHeight(), window.getScreenWidth(),
                 window.getScreenHeight(), fraction, mc.options.guiScale().get(), mc.isEnforceUnicode());
-        boolean resized = !next.equals(layout);
+        boolean resized = invalidated || !next.equals(layout);
+        invalidated = false;
         layout = next;
         if (target == null) target = new TextureTarget(layout.width(), layout.height(), true, Minecraft.ON_OSX);
         else if (target.width != layout.width() || target.height != layout.height())
@@ -84,6 +87,7 @@ public final class EditorPlaytestViewport {
     }
 
     static void close() {
+        if (!enabled && target == null) return;
         enabled = false;
         releaseInput = null;
         layout = null;

@@ -84,6 +84,8 @@ public final class QuestTriggerDispatcher {
             return QuestTriggerDispatchResult.empty();
         }
 
+        if (triggerContext.dialogueContext() != null && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(
+                triggerContext.dialogueContext().player(), definition.id())) return QuestTriggerDispatchResult.empty();
         if ((definition.campaign() != null || !progress.campaignId().isBlank()) && (triggerContext.dialogueContext() == null
                 || !CampaignQuestAccess.executionIssue(
                         triggerContext.dialogueContext().level(), triggerContext.dialogueContext().player().getUUID(), definition, progress).isBlank())) return QuestTriggerDispatchResult.empty();

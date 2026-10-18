@@ -100,6 +100,24 @@ public final class ManagedPackExport {
         }
     }
 
+    public static void restore(Path destination, Path backup) throws IOException {
+        Path target = destination.toAbsolutePath().normalize();
+        Path previous = backup.toAbsolutePath().normalize();
+        if (!java.util.Objects.equals(target.getParent(), previous.getParent())
+                || !previous.getFileName().toString().startsWith(target.getFileName() + ".backup-")
+                || !Files.isRegularFile(previous.resolve(MANIFEST), LinkOption.NOFOLLOW_LINKS))
+            throw new IOException("The backup does not belong to this managed export");
+        rejectLinks(target.getParent(), target);
+        rejectLinks(previous.getParent(), previous);
+        Path rejected = target.resolveSibling(target.getFileName() + ".rejected-" + java.util.UUID.randomUUID());
+        move(target, rejected);
+        try { move(previous, target); }
+        catch (IOException failure) {
+            try { move(rejected, target); } catch (IOException recovery) { failure.addSuppressed(recovery); }
+            throw failure;
+        }
+    }
+
     private static void move(Path source, Path destination) throws IOException {
         for (int attempt = 0; ; attempt++) {
             try {

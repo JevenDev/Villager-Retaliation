@@ -38,6 +38,7 @@ import net.minecraft.world.level.storage.LevelResource;
 final class EditorTestWorld {
     private static final List<Session> sessions = new ArrayList<>();
     private static Pending pending;
+    private static boolean applying;
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
     private EditorTestWorld() { }
@@ -45,7 +46,7 @@ final class EditorTestWorld {
     static Path snapshot(AuthoringWorkspace workspace) throws IOException {
         Path directory = Files.createTempDirectory("vr-test-world-");
         try {
-            workspace.exportPack(directory.resolve("test_content"));
+            com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, directory.resolve("test_content"));
             return directory;
         } catch (IOException exception) {
             try { deleteSnapshot(directory); }
@@ -106,6 +107,93 @@ final class EditorTestWorld {
 
     static boolean active(AuthoringWorkspace workspace) {
         return session(workspace) != null;
+    }
+
+    static Map<String, JsonObject> content(AuthoringWorkspace workspace) {
+        Map<String, JsonObject> content = new LinkedHashMap<>();
+        workspace.documents().forEach(document -> content.put(document.resourcePath(), document.json()));
+        return Map.copyOf(content);
+    }
+
+    static Map<String, JsonObject> appliedContent(AuthoringWorkspace workspace) {
+        Session session = session(workspace);
+        return session == null ? Map.of() : session.content();
+    }
+
+    static boolean currentLogic(AuthoringWorkspace workspace) {
+        Session session = session(workspace);
+        return session != null && com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.sameLogic(session.content(), content(workspace));
+    }
+
+    static boolean applying() { return applying; }
+
+    static java.util.concurrent.CompletableFuture<Void> apply(AuthoringWorkspace workspace) throws IOException {
+        return apply(workspace, EditorTestWorld::reload);
+    }
+
+    static java.util.concurrent.CompletableFuture<Void> apply(AuthoringWorkspace workspace,
+            java.util.function.Function<MinecraftServer, java.util.concurrent.CompletableFuture<Void>> reloader) throws IOException {
+        Session session = session(workspace);
+        var minecraft = Minecraft.getInstance();
+        var server = minecraft.getSingleplayerServer();
+        if (session == null || server == null) throw new IllegalStateException("Enter the workspace's separate test world first");
+        if (applying) throw new IllegalStateException("A draft is already being applied");
+        Map<String, JsonObject> draft = content(workspace);
+        Path pack = session.world().resolve("datapacks/test_content");
+        Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
+        if (backup == null) throw new IllegalStateException("The running test pack has no previous snapshot");
+        applying = true;
+        var playerId = minecraft.player.getUUID();
+        var result = new java.util.concurrent.CompletableFuture<Void>();
+        server.execute(() -> {
+            Runnable resume = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspend(server, playerId);
+            var baseline = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server).entries();
+            reloader.apply(server).whenComplete((ignored, failure) -> server.execute(() -> {
+                Throwable issue = failure;
+                if (issue == null) {
+                    var report = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server);
+                    var error = report.entries().stream().filter(entry -> entry.severity()
+                            == com.jvn.villagerretaliation.quest.content.QuestContentLoadReport.Severity.ERROR && !baseline.contains(entry)).findFirst();
+                    if (error.isPresent()) issue = new IllegalStateException(error.get().source() + ": " + error.get().message());
+                }
+                if (issue == null) {
+                    resume.run();
+                    minecraft.execute(() -> {
+                        sessions.remove(session);
+                        sessions.add(new Session(session.world(), session.workspace(), draft));
+                        applying = false;
+                        result.complete(null);
+                    });
+                } else rollback(server, minecraft, pack, backup, result, issue, reloader, resume);
+            }));
+        });
+        return result;
+    }
+
+    private static java.util.concurrent.CompletableFuture<Void> reload(MinecraftServer server) {
+        try { return server.reloadResources(server.getPackRepository().getSelectedIds()); }
+        catch (IllegalArgumentException | IllegalStateException exception) { return java.util.concurrent.CompletableFuture.failedFuture(exception); }
+    }
+
+    private static void rollback(MinecraftServer server, Minecraft minecraft, Path pack, Path backup,
+            java.util.concurrent.CompletableFuture<Void> result, Throwable failure,
+            java.util.function.Function<MinecraftServer, java.util.concurrent.CompletableFuture<Void>> reloader, Runnable resume) {
+        try { com.jvn.villagerretaliation.authoring.core.ManagedPackExport.restore(pack, backup); }
+        catch (IOException recovery) {
+            failure.addSuppressed(recovery);
+            resume.run();
+            minecraft.execute(() -> { applying = false; result.completeExceptionally(new IllegalStateException("Could not restore the previous test pack: " + recovery.getMessage(), failure)); });
+            return;
+        }
+        reloader.apply(server).whenComplete((ignored, recovery) -> server.execute(() -> {
+            resume.run();
+            minecraft.execute(() -> {
+                if (recovery != null) failure.addSuppressed(recovery);
+                applying = false;
+                result.completeExceptionally(new IllegalStateException(recovery == null ? "Previous test pack restored. " + failure.getMessage()
+                        : "Previous pack files restored, but its resource reload failed: " + recovery.getMessage(), failure));
+            });
+        }));
     }
 
     static boolean currentSnapshot(AuthoringWorkspace workspace) {

@@ -32,6 +32,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private final ClientVillagerConversationState.Snapshot conversation;
     private final Object level;
     private final String start;
+    private boolean showTransport = true;
     private VillagerInteractionScreen screen;
     private SoundInstance voice;
     private int shownRevision = -1;
@@ -56,6 +57,11 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
 
     public static void start(AuthoringDocument document, String nodeId, Entity target,
             PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization) {
+        start(document, nodeId, target, conditions, returnToEditor, localization, true);
+    }
+
+    public static void start(AuthoringDocument document, String nodeId, Entity target,
+            PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null || target == null
                 || target.level() != minecraft.level || !target.isAlive() || target.isRemoved())
@@ -69,6 +75,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         var session = new DialoguePreviewSession(json, id, conditions, localization);
         session.start(nodeId);
         var preview = new AuthoringDialoguePreview(session, target, nodeId, conditions, returnToEditor);
+        preview.showTransport = showTransport;
         active = preview;
         try {
             preview.screen = VillagerInteractionScreen.localPreview(target, preview);
@@ -80,8 +87,21 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         }
     }
 
+    public static JsonObject definition() { return active == null ? null : active.session.definition(); }
+
+    public static void refreshPresentation(JsonObject latest) {
+        var preview = active;
+        if (preview == null) return;
+        preview.session.refreshPresentation(latest);
+        preview.update(preview.screen);
+    }
+
     public static DialoguePreviewSession.Cursor cursor() { return active == null ? null : active.session.cursor(); }
-    public static List<DialoguePreviewSession.Choice> choices() { return active == null ? List.of() : active.session.choices(); }
+    public static List<DialoguePreviewSession.Choice> choices() {
+        var preview = active;
+        return preview == null ? List.of() : preview.session.choices().stream().map(choice -> new DialoguePreviewSession.Choice(
+                choice.id(), preview.resolveText(choice.label()), choice.available(), choice.reason(), choice.next(), choice.source())).toList();
+    }
     public static void next() { command(() -> active.session.advance()); }
     public static void previous() { command(() -> active.session.previous()); }
     public static void exchange(int index) { command(() -> active.session.exchange(index)); }
@@ -173,11 +193,11 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
                 update(screen);
             }), !choice.available()));
         }
-        result.add(new VillagerInteractionScreen.LocalOption("Restart preview", () -> perform(() -> {
+        if (showTransport) result.add(new VillagerInteractionScreen.LocalOption("Restart preview", () -> perform(() -> {
             session.start(start);
             update(screen);
         }), false));
-        result.add(new VillagerInteractionScreen.LocalOption("Return to editor", this::close, false));
+        if (showTransport) result.add(new VillagerInteractionScreen.LocalOption("Return to editor", this::close, false));
         return result;
     }
 

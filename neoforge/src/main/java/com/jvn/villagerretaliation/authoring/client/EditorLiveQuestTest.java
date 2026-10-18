@@ -45,7 +45,9 @@ final class EditorLiveQuestTest {
 
     static void start(AuthoringWorkspace workspace, AuthoringDocument document) { start(workspace, document, null); }
 
-    static void start(AuthoringWorkspace workspace, AuthoringDocument document, Boolean hold) {
+    static void start(AuthoringWorkspace workspace, AuthoringDocument document, Boolean hold) { startAt(workspace, document, hold, ""); }
+
+    static void startAt(AuthoringWorkspace workspace, AuthoringDocument document, Boolean hold, String stage) {
         submit(workspace, document, (player, quest) -> {
             Villager provider = player.serverLevel().getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(24)).stream()
                     .min(java.util.Comparator.comparingDouble(entity -> entity.distanceToSqr(player))).orElse(null);
@@ -57,9 +59,16 @@ final class EditorLiveQuestTest {
                 provider.setInvulnerable(true);
                 player.serverLevel().addFreshEntity(provider);
             }
-            if (hold != null) com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.open(player, quest, hold);
+            if (hold != null) {
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.close(player.server, player.getUUID());
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.open(player, quest, hold);
+            }
             VillagerQuestService.debugTraceSetEnabled(player, true);
             var result = VillagerQuestService.debugStartQuest(player, provider, quest, true);
+            if (result.started() && !stage.isBlank()) {
+                var jump = VillagerQuestService.debugSetQuestStage(player, quest, stage);
+                if (!jump.found()) throw new IllegalStateException(jump.message());
+            }
             return result.message();
         });
     }
@@ -110,7 +119,7 @@ final class EditorLiveQuestTest {
         submit(workspace, document, (player, quest) -> {
             com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).hold(value);
             return value ? "Automatic transitions wait for Next" : "Normal automatic progression enabled";
-        });
+        }, false);
     }
 
     static void next(AuthoringWorkspace workspace, AuthoringDocument document) {
@@ -157,7 +166,7 @@ final class EditorLiveQuestTest {
         var server = minecraft.getSingleplayerServer();
         if (document.kind() != DefinitionKind.QUEST || minecraft.player == null || !EditorTestWorld.active(workspace))
             throw new IllegalArgumentException("Create and enter a separate editor test world first");
-        if (requireCurrent && !EditorTestWorld.currentSnapshot(workspace)) throw new IllegalArgumentException("Content changed after export. Create a new test world to load this draft.");
+        if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply & replay in Playtest to load this draft.");
         UUID playerId = minecraft.player.getUUID();
         ResourceLocation quest = ResourceLocation.parse(document.id());
         Path world = server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();

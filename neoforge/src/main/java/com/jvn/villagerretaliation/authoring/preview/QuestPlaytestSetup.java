@@ -168,20 +168,48 @@ public final class QuestPlaytestSetup {
     private static String facts(QuestObjectiveEvaluationContext context, QuestDefinition.Objective objective, String value) {
         String scope = context.debugState(objective).factScopeKey();
         if (scope.isBlank() || scope.equals("unresolved")) throw new IllegalStateException("Bind the required fact scope before setting its value");
+        Integer desired = null;
+        if (objective.factMin() != null || objective.factMax() != null)
+            desired = value.isBlank() ? objective.factMin() == null ? objective.factMax() : objective.factMin() : Integer.parseInt(value);
         var facts = VillagerQuestFacts.get(context.level());
         objective.factTags().forEach(tag -> facts.setTag(scope, tag));
         if (!objective.factKey().isBlank()) {
-            if (!value.isBlank() || !objective.factValues().isEmpty()) facts.setVariable(scope, objective.factKey(), value.isBlank() ? objective.factValues().stream().sorted().findFirst().orElse("") : value);
-            if (objective.factMin() != null || objective.factMax() != null) {
-                int desired = value.isBlank() ? objective.factMin() == null ? objective.factMax() : objective.factMin() : Integer.parseInt(value);
-                facts.addCounter(scope, objective.factKey(), desired - facts.counter(scope, objective.factKey()));
+            if (desired == null || !objective.factValues().isEmpty()) facts.setVariable(scope, objective.factKey(),
+                    value.isBlank() ? objective.factValues().stream().sorted().findFirst().orElse("true") : value);
+            if (desired != null) {
+                int current = facts.counter(scope, objective.factKey());
+                while (current != desired) {
+                    int delta = (int) Math.clamp((long) desired - current, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                    current = facts.addCounter(scope, objective.factKey(), delta);
+                }
             }
         }
         return "Updated required facts in " + scope;
     }
 
     private static String reputation(QuestObjectiveEvaluationContext context, QuestDefinition.Objective objective, String value) {
-        int desired = value.isBlank() ? objective.minReputation() == null ? objective.maxReputation() == null ? 0 : objective.maxReputation() : objective.minReputation() : Integer.parseInt(value);
+        int desired;
+        if (!value.isBlank()) desired = Integer.parseInt(value);
+        else {
+            var candidates = new java.util.ArrayList<Integer>();
+            candidates.add(0);
+            if (objective.minReputation() != null) candidates.add(objective.minReputation());
+            if (objective.maxReputation() != null) candidates.add(objective.maxReputation());
+            candidates.addAll(java.util.List.of(
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ROYALTY_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.REVERED_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.RESPECTED_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.TRUSTED_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SUSPICIOUS_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HOSTILE_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.DESPISED_THRESHOLD.get(),
+                    com.jvn.villagerretaliation.config.VillagerRetaliationConfig.FEARED_THRESHOLD.get()));
+            desired = candidates.stream().filter(candidate -> (objective.minReputation() == null || candidate >= objective.minReputation())
+                    && (objective.maxReputation() == null || candidate <= objective.maxReputation())
+                    && (objective.reputationLevels().isEmpty() || objective.reputationLevels().contains(
+                            com.jvn.villagerretaliation.reputation.VillagerReputationLevel.fromReputation(candidate))))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("The reputation requirements do not have a setup value"));
+        }
         com.jvn.villagerretaliation.reputation.VillagerReputationManager.setReputation(context.level(), context.dialogueContext().villager(), context.player().getUUID(), desired);
         return "Set provider reputation to " + desired;
     }

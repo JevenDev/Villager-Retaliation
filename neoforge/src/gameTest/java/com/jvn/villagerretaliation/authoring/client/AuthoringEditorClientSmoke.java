@@ -46,6 +46,10 @@ public final class AuthoringEditorClientSmoke {
     private static long started, resumeAt;
     private static java.util.concurrent.CompletableFuture<?> liveCheck;
     private static Path originalWorld;
+    private static Path reloadWorld;
+    private static AuthoringDocument playtestTitleLocale;
+    private static int reloadExperience, playtestLogSize;
+    private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
     private static boolean cameraGuiBefore;
@@ -359,7 +363,24 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(AuthoringDialoguePreview.active() && EditorPlaytestViewport.active(), "Native dialogue keeps the editor beside it.");
             require(Minecraft.getInstance().screen.width == EditorPlaytestViewport.layout().guiWidth(), "Dialogue reflows inside the game viewport.");
+            require(((List<?>) field(Minecraft.getInstance().screen, "options")).stream()
+                    .noneMatch(option -> field(option, "label").equals("Restart preview") || field(option, "label").equals("Return to editor")),
+                    "Playtest transport controls stay in the editor pane.");
             capture("15a-playtest-dialogue");
+            playtestLogSize = AuthoringDialoguePreview.log().size();
+            document.edit("Revise live wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start")
+                    .getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Updated dialogue for {player}")));
+        });
+        pause(400);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals("Updated dialogue for " + Minecraft.getInstance().player.getName().getString()),
+                    "Text edits refresh the current native dialogue automatically.");
+            require(AuthoringDialoguePreview.log().size() == playtestLogSize, "Visual refresh does not replay actions.");
+            capture("15b-playtest-live-text");
+            document.undo();
+        });
+        pause(400);
+        STEPS.add(() -> {
             AuthoringDialoguePreview.choose(0);
         });
         STEPS.add(() -> {
@@ -559,6 +580,33 @@ public final class AuthoringEditorClientSmoke {
             require(EditorLiveQuestTest.snapshot().stage().equals("start") && EditorLiveQuestTest.snapshot().ready(),
                     "Real inventory requirements become ready while the stage stays held: " + EditorLiveQuestTest.snapshot());
             capture("29-playtest-quest-ready");
+            String localePath = document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1) + "locales/en_us.json";
+            playtestTitleLocale = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(localePath)).findFirst().orElseThrow();
+            playtestTitleLocale.edit("Revise title wording", root -> root.addProperty("test.quest.live_execution.title", "Revised live quest"));
+            document.edit("Revise quest display", root -> {
+                var title = new com.google.gson.JsonObject(); title.addProperty("key", "#title");
+                var display = new com.google.gson.JsonObject(); display.add("title", title);
+                root.add("display", display);
+            });
+            require(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR),
+                    "The title preview uses a valid localized draft: " + workspace.validate());
+        });
+        pause(400);
+        STEPS.add(() -> {
+            require(EditorTestWorld.currentLogic(workspace), "Quest display edits keep live logic unchanged.");
+            require(com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay.entries().stream()
+                    .anyMatch(entry -> entry.questId().equals(document.id()) && entry.title().equals("Revised live quest")),
+                    "Quest journal and HUD entries use the edited presentation.");
+            Minecraft.getInstance().setScreen(new com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen());
+        });
+        STEPS.add(() -> {
+            capture("29a-playtest-quest-live-title");
+            Minecraft.getInstance().setScreen((net.minecraft.client.gui.screens.Screen) field(editor, "screen"));
+            document.undo();
+            playtestTitleLocale.undo();
+        });
+        pause(400);
+        STEPS.add(() -> {
             EditorLiveQuestTest.replay(workspace, document);
         });
         waitUntil(() -> !EditorLiveQuestTest.view().busy());
@@ -573,6 +621,64 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(!EditorLiveQuestTest.snapshot().stage().equals("start"), "Next advances through the real stage runtime.");
             capture("30-playtest-quest-next");
+        });
+        buildPlaytestReloadSteps();
+    }
+
+    private static void buildPlaytestReloadSteps() {
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            reloadWorld = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            liveCheck = server.submit(() -> reloadExperience = server.getPlayerList().getPlayer(playerId).totalExperience);
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            document.edit("Update live logic", root -> {
+                root.addProperty("revision", 2);
+                root.getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonArray("on_enter").get(0).getAsJsonObject().addProperty("amount", 11);
+            });
+            require(!EditorTestWorld.currentLogic(workspace), "Quest logic stays pending until applied.");
+        });
+        waitUntil(() -> {
+            if (EditorLiveQuestTest.view().busy()) return false;
+            invoke("applyPlaytestDraft", new Class<?>[0]);
+            return true;
+        });
+        waitUntil(() -> {
+            if (!EditorTestWorld.applying() && field(editor, "status").toString().startsWith("Draft reload failed"))
+                throw new IllegalStateException(field(editor, "status").toString());
+            return !EditorTestWorld.applying() && EditorTestWorld.currentSnapshot(workspace)
+                    && !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("start");
+        });
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> require(server.getPlayerList().getPlayer(playerId).totalExperience == reloadExperience + 11,
+                    "Apply & replay executes the updated entry action exactly once."));
+            require(reloadWorld.equals(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
+                    "Applying logic keeps the same test world.");
+            capture("31-playtest-applied-draft");
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            document.edit("Rejected logic", root -> root.addProperty("revision", 3));
+            var attempts = new java.util.concurrent.atomic.AtomicInteger();
+            try {
+                reloadCheck = EditorTestWorld.apply(workspace, server -> attempts.getAndIncrement() == 0
+                        ? java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Injected resource reload failure"))
+                        : server.reloadResources(server.getPackRepository().getSelectedIds()));
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> {
+            require(reloadCheck.isCompletedExceptionally(), "A failed resource reload is reported.");
+            require(!EditorTestWorld.currentSnapshot(workspace), "A failed reload does not advance the applied snapshot.");
+            document.undo();
+            require(EditorTestWorld.currentSnapshot(workspace), "Rollback restores the last applied draft.");
+            capture("32-playtest-reload-rollback");
             invoke("leavePlaytest", new Class<?>[] {int.class}, 1);
         });
     }

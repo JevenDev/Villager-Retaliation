@@ -24,6 +24,11 @@ public abstract class AuthoringPlaytestRenderMixin {
         if (EditorPlaytestViewport.rendering()) callback.setReturnValue(EditorPlaytestViewport.target(callback.getReturnValue()));
     }
 
+    @Inject(method = "resizeDisplay", at = @At("RETURN"))
+    private void villagerretaliation$invalidatePlaytest(CallbackInfo callback) {
+        EditorPlaytestViewport.invalidate();
+    }
+
     @Inject(method = "setScreen", at = @At("RETURN"))
     private void villagerretaliation$resizePlaytestScreen(CallbackInfo callback) {
         EditorPlaytestViewport.resizeScreen();

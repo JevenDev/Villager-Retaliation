@@ -438,6 +438,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final DialogueExchangeAutoAdvance automaticDialogue = new DialogueExchangeAutoAdvance();
     private final PairedGreetingRequestState greetingRequest = new PairedGreetingRequestState();
     private String villagerDialogueText = "";
+    private com.jvn.villagerretaliation.dialogue.DialogueSpeech authoringOriginalSpeech;
+    private String authoringOriginalText = "";
+    private String authoringShownText = "";
+    private List<DialogueTextSegment> authoringOriginalSegments = List.of();
+    private List<DialogueOption> authoringOriginalOptions = List.of();
+    private List<DialogueOption> authoringShownOptions = List.of();
+    private List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> authoringOriginalCamera = List.of();
+    private List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> authoringShownCamera = List.of();
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
     private int dialogueLineScroll;
     private long dialogueTextAnimationStartMillis;
@@ -979,6 +987,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        refreshAuthoringPresentation();
         refreshTutorialControlHints();
         int slideOffset = slideOffsetY();
         int stateOffsetY = interactionStateTransitionOffsetY();
@@ -1055,6 +1064,37 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     totalOffsetY);
             VillagerClientUiUtil.popGuiLayer(graphics);
         }
+    }
+
+    private void refreshAuthoringPresentation() {
+        if (localPresentation != null || !com.jvn.villagerretaliation.authoring.client.EditorPlaytestViewport.active()) return;
+        if (dialogueSpeech != null) {
+            if (authoringOriginalSpeech == null || !authoringOriginalSpeech.presentationId().equals(dialogueSpeech.presentationId()))
+                authoringOriginalSpeech = dialogueSpeech;
+            if (com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.refreshVoice(authoringOriginalSpeech)) campaignMedia.stop();
+            var updated = com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.speech(authoringOriginalSpeech);
+            if (!updated.equals(dialogueSpeech)) {
+                dialogueSpeech = updated;
+                setDialogueText(updated.text(), updated.segments());
+            }
+        } else if (!villagerDialogueText.isBlank()) {
+            if (!authoringShownText.equals(villagerDialogueText)) {
+                authoringOriginalText = villagerDialogueText;
+                authoringOriginalSegments = villagerDialogueTextSegments;
+            }
+            var updated = com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.segments(authoringOriginalText, authoringOriginalSegments);
+            if (!updated.equals(villagerDialogueTextSegments)) setDialogueText(DialogueTextSegment.plainText(updated), updated);
+            authoringShownText = villagerDialogueText;
+        }
+        if (!authoringShownCamera.equals(dialogueCameraBatch)) authoringOriginalCamera = List.copyOf(dialogueCameraBatch);
+        dialogueCameraBatch = authoringOriginalCamera.stream().map(com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation::speech).toList();
+        authoringShownCamera = dialogueCameraBatch;
+        if (!authoringShownOptions.equals(options)) authoringOriginalOptions = List.copyOf(options);
+        var updatedOptions = authoringOriginalOptions.stream().map(option -> new DialogueOption(
+                com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.text(option.label()), option.action(),
+                option.locked(), option.checkbox(), option.checked(), option.reason())).toList();
+        options.clear(); options.addAll(updatedOptions);
+        authoringShownOptions = List.copyOf(options);
     }
 
     @Override

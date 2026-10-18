@@ -50,6 +50,25 @@ public final class QuestPlaytestSession {
         }
     }
 
+    public static synchronized Runnable suspend(MinecraftServer server, UUID player) {
+        var sessions = SESSIONS.get(server);
+        var restore = new java.util.ArrayList<Runnable>();
+        if (sessions != null) sessions.forEach((key, session) -> {
+            if (key.player().equals(player)) {
+                var controls = session.controls();
+                boolean prior = controls.suspended;
+                controls.suspended = true;
+                restore.add(() -> controls.suspended = prior);
+            }
+        });
+        return () -> restore.forEach(Runnable::run);
+    }
+
+    public static boolean suspended(ServerPlayer player, ResourceLocation quest) {
+        var controls = controls(player, quest);
+        return controls != null && controls.suspended;
+    }
+
     public static boolean held(ServerPlayer player, ResourceLocation quest, String stage) {
         var controls = controls(player, quest);
         return controls != null && controls.held(stage);
@@ -70,6 +89,7 @@ public final class QuestPlaytestSession {
 
     public static final class Controls {
         private boolean hold = true;
+        private boolean suspended;
         private String stepping;
         private final Set<String> readyStages = new HashSet<>();
         private final Set<String> objectives = new HashSet<>();
@@ -81,7 +101,7 @@ public final class QuestPlaytestSession {
 
         public boolean hold() { return hold; }
         public void hold(boolean value) { hold = value; }
-        public boolean held(String stage) { return hold && (stepping == null || !stepping.equals(stage)); }
+        public boolean held(String stage) { return suspended || hold && (stepping == null || !stepping.equals(stage)); }
         public void advance(String stage, Runnable action) {
             if (stepping != null) throw new IllegalStateException("A quest step is already advancing");
             stepping = stage;

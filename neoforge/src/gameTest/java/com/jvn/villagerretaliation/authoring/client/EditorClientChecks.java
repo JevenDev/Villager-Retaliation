@@ -33,6 +33,8 @@ public final class EditorClientChecks {
         editorPreferencesSurviveRestart();
         automaticLayoutKeepsUsablePaneWidths();
         playtestLayoutPreservesGameCoordinates();
+        questDisplayEditsRemainValid();
+        failedPlaytestExportRestoresTheLastPack();
         plainTextAuthoringPreservesLocalizationAndUndo();
         fieldValidationDoesNotConsumeEdits();
         terminalResponsePortsReconnectAndUndo();
@@ -48,7 +50,7 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 38;
+        return 40;
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
@@ -570,6 +572,41 @@ public final class EditorClientChecks {
         } finally {
             java.nio.file.Files.deleteIfExists(path);
             java.nio.file.Files.deleteIfExists(directory);
+        }
+    }
+
+    private static void questDisplayEditsRemainValid() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-playtest-display"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:display");
+        quest.edit("Set quest title", root -> {
+            var reference = new JsonObject(); reference.addProperty("key", "#title");
+            var display = new JsonObject(); display.add("title", reference); root.add("display", display);
+        });
+        var locale = workspace.documents().stream().filter(candidate -> candidate.resourcePath().endsWith("/display/locales/en_us.json")).findFirst().orElseThrow();
+        locale.edit("Set title wording", root -> root.addProperty("test.quest.display.title", "Revised live quest"));
+        var errors = workspace.validate().stream().filter(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+        check(errors.isEmpty(), "live title drafts validate: " + errors);
+        var reference = new JsonObject(); reference.addProperty("key", "#title");
+        check(workspace.resolveText(quest, reference, "en_us").equals("Revised live quest"), "display text resolves through its owning quest locale");
+    }
+
+    private static void failedPlaytestExportRestoresTheLastPack() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-playtest-rollback"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:rollback");
+        var pack = workspace.directory().resolve("pack");
+        com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
+        String previous = java.nio.file.Files.readString(pack.resolve(document.resourcePath()));
+        document.edit("Change text", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Changed")));
+        var backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
+        check(!previous.equals(java.nio.file.Files.readString(pack.resolve(document.resourcePath()))), "draft export installs new content");
+        com.jvn.villagerretaliation.authoring.core.ManagedPackExport.restore(pack, backup);
+        check(previous.equals(java.nio.file.Files.readString(pack.resolve(document.resourcePath()))), "reload failure restores the last working content");
+        document.edit("Invalid destination", root -> root.getAsJsonArray("entries").get(0).getAsJsonObject().addProperty("start", "missing"));
+        try {
+            com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
+            throw new AssertionError("invalid drafts must fail before replacing the pack");
+        } catch (java.io.IOException expected) {
+            check(previous.equals(java.nio.file.Files.readString(pack.resolve(document.resourcePath()))), "invalid drafts preserve the running pack");
         }
     }
 

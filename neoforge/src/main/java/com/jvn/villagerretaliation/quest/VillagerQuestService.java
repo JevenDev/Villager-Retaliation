@@ -1098,6 +1098,7 @@ public final class VillagerQuestService {
         boolean progressNotice = false;
         for (var entry : data.progress(player.getUUID())) {
             var progress = entry.getValue();
+            if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(player, entry.getKey())) continue;
             if (progress.pendingPartyReward()) PartyQuestRewardService.deliverPendingPartyReward(player, entry.getKey(), progress);
             boolean maintenance = progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents() || !progress.campaignId().isBlank();
             if (!maintenance && progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
@@ -1637,7 +1638,7 @@ public final class VillagerQuestService {
         var provider = progress.startedVillagerId() == null ? null : player.serverLevel().getEntity(progress.startedVillagerId());
         return new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView(progress.currentStage(), progress.state().name().toLowerCase(java.util.Locale.ROOT),
                 provider == null ? -1 : provider.getId(), controls == null || controls.hold(), readiness.ready(), readiness.reason(), rows,
-                definition.stages().keySet().stream().toList(), transitions, controls == null ? List.of() : controls.log());
+                definition.stages().keySet().stream().toList(), transitions, controls == null ? List.of() : controls.log(), context == null ? Map.of() : replacements(context, definition, progress));
     }
 
     public static void debugPlaytestAdvance(ServerPlayer player, ResourceLocation quest) {
@@ -1655,10 +1656,10 @@ public final class VillagerQuestService {
         com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).clear();
         var progress = evaluation.progress();
         if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) throw new IllegalStateException("Restart the completed quest before replaying a stage");
+        if (!QuestStageActionService.ready(evaluation.dialogueContext(), progress)) throw new IllegalStateException("Resolve pending stage actions before replaying");
         var stage = evaluation.definition().stages().get(progress.currentStage());
         progress.resetObjectiveProgress(new java.util.HashSet<>(stage.objectives()));
         progress.resetBonusesForStage(stage.id());
-        if (!QuestStageActionService.ready(evaluation.dialogueContext(), progress)) throw new IllegalStateException("Resolve pending stage actions before replaying");
         progress.requestStageEntry(stage.id());
         STAGES.resumePendingStageEntry(evaluation.dialogueContext(), evaluation.definition(), progress);
         VillagerQuestSavedData.get(player.serverLevel()).setDirty();

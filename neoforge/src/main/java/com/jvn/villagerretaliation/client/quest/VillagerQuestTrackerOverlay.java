@@ -177,7 +177,8 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
-        return entries;
+        if (!com.jvn.villagerretaliation.authoring.client.EditorPlaytestViewport.active()) return entries;
+        return entries.stream().map(com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation::entry).toList();
     }
 
     public static List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes() {
@@ -210,7 +211,7 @@ public final class VillagerQuestTrackerOverlay {
         for (String questId : trackedQuestIds) {
             for (QuestTrackerSyncPayload.Entry entry : entries) {
                 if (entry.trackable() && questId.equals(entry.questId())) {
-                    tracked.add(entry);
+                    tracked.add(com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.entry(entry));
                     break;
                 }
             }

@@ -13,7 +13,7 @@ import java.util.function.Function;
 import net.minecraft.resources.ResourceLocation;
 
 public final class DialoguePreviewSession implements AutoCloseable {
-    private final JsonObject root;
+    private JsonObject root;
     private final ResourceLocation id;
     private final PreviewConditions conditions;
     private final Function<String, String> localization;
@@ -28,24 +28,81 @@ public final class DialoguePreviewSession implements AutoCloseable {
     private int line;
     private int revision;
     private boolean closed;
+    private JsonObject lineOwner;
+    private JsonObject lineInherited;
     private final java.util.ArrayDeque<Position> history = new java.util.ArrayDeque<>();
 
     public record Cursor(String node, int exchange, int exchanges, boolean previous, boolean next) { }
     private record Position(JsonObject node, String nodeId, String pendingNext, boolean pendingEnd, int line,
-            List<JsonObject> lines, List<Choice> choices) { }
+            List<JsonObject> lines, List<Choice> choices, JsonObject owner, JsonObject inherited) { }
 
     public Cursor cursor() { return new Cursor(nodeId, line, lines.size(), !history.isEmpty(), hasNextLine()); }
     private void remember() {
-        history.addLast(new Position(node, nodeId, pendingNext, pendingEnd, line, List.copyOf(lines), List.copyOf(choices)));
+        history.addLast(new Position(node, nodeId, pendingNext, pendingEnd, line, List.copyOf(lines), List.copyOf(choices), lineOwner, lineInherited));
         if (history.size() > 256) history.removeFirst();
     }
     public void previous() {
         requireOpen();
         if (history.isEmpty()) return;
         var position = history.removeLast();
+        restore(position);
+        revision++;
+    }
+
+    private Position position() { return new Position(node, nodeId, pendingNext, pendingEnd, line, List.copyOf(lines), List.copyOf(choices), lineOwner, lineInherited); }
+
+    private void restore(Position position) {
         node = position.node(); nodeId = position.nodeId(); pendingNext = position.pendingNext(); pendingEnd = position.pendingEnd();
         line = position.line(); lines.clear(); lines.addAll(position.lines()); choices.clear(); choices.addAll(position.choices());
+        lineOwner = position.owner(); lineInherited = position.inherited();
+    }
+
+    public void refreshPresentation(JsonObject latest) {
+        requireOpen();
+        JsonObject visual = PlaytestDrafts.presentation(root, latest);
+        var current = refreshPosition(position(), visual);
+        var prior = history.stream().map(position -> refreshPosition(position, visual)).toList();
+        var paths = new LinkedHashMap<String, String>();
+        nodes.forEach((key, value) -> paths.put(key, locate(root, value, "")));
+        nodes.replaceAll((key, value) -> objectAt(visual, paths.get(key), value));
+        root = visual;
+        restore(current);
+        history.clear(); history.addAll(prior);
         revision++;
+    }
+
+    private Position refreshPosition(Position position, JsonObject visual) {
+        var owner = objectAt(visual, locate(root, position.owner(), ""), position.owner());
+        var inherited = objectAt(visual, locate(root, position.inherited(), ""), position.inherited());
+        var renderer = new DialoguePreviewSession(visual, id, conditions, localization);
+        if (owner != null) renderer.addLines(owner, inherited == null ? visual : inherited);
+        var updatedChoices = position.choices().stream().map(choice -> {
+            var source = objectAt(visual, locate(root, choice.source(), ""), choice.source());
+            String label = source.has("label") || source.has("label_key") ? renderer.text(source, "label") : choice.label();
+            return new Choice(choice.id(), label, choice.available(), choice.reason(), choice.next(), source);
+        }).toList();
+        return new Position(objectAt(visual, locate(root, position.node(), ""), position.node()), position.nodeId(), position.pendingNext(),
+                position.pendingEnd(), Math.min(position.line(), Math.max(0, renderer.lines.size() - 1)), List.copyOf(renderer.lines), updatedChoices, owner, inherited);
+    }
+
+    private static JsonObject objectAt(JsonObject root, String path, JsonObject fallback) {
+        if (path == null) return fallback;
+        return path.isEmpty() ? root : pointer(root, path);
+    }
+
+    private static String locate(JsonElement value, JsonObject target, String path) {
+        if (target == null) return null;
+        if (value.isJsonObject()) {
+            if (value.equals(target)) return path;
+            for (var entry : value.getAsJsonObject().entrySet()) {
+                String found = locate(entry.getValue(), target, path + "/" + entry.getKey().replace("~", "~0").replace("/", "~1"));
+                if (found != null) return found;
+            }
+        } else if (value.isJsonArray()) for (int i = 0; i < value.getAsJsonArray().size(); i++) {
+            String found = locate(value.getAsJsonArray().get(i), target, path + "/" + i);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     public void exchange(int index) {
@@ -197,6 +254,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
     public boolean hasNextLine() { return !closed && (!lines.isEmpty() && line + 1 < lines.size() || pendingNext != null || pendingEnd); }
     public boolean closed() { return closed; }
     public String nodeId() { return nodeId; }
+    public JsonObject definition() { return root.deepCopy(); }
 
     private void enter(String next) {
         JsonObject value = nodes.get(next);
@@ -278,6 +336,8 @@ public final class DialoguePreviewSession implements AutoCloseable {
     }
 
     private void addLines(JsonObject value, JsonObject inherited) {
+        lineOwner = value;
+        lineInherited = inherited;
         JsonArray exchanges = array(value, "exchanges");
         if (!exchanges.isEmpty()) {
             for (JsonElement raw : exchanges) {

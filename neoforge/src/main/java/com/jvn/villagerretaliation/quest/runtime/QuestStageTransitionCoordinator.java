@@ -137,6 +137,7 @@ public final class QuestStageTransitionCoordinator {
                 || !CampaignQuestAccess.executionIssue(context, definition).isBlank()) {
             return false;
         }
+        if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(context.player(), definition.id())) return false;
         boolean changed = false;
         for (int i = 0; i < MAX_STAGE_ADVANCES_PER_CHECK; i++) {
             changed |= resumePendingStageEntry(context, definition, progress);

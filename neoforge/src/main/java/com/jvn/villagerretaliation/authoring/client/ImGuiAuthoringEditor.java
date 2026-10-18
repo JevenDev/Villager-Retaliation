@@ -98,6 +98,11 @@ final class ImGuiAuthoringEditor {
     private boolean playtestHold = true;
     private long nextPlaytestRefresh;
     private final ImString playtestValue = new ImString(256);
+    private Map<String, JsonObject> playtestVisuals = Map.of();
+    private String playtestLocale = "";
+    private Map<String, String> playtestReplacements = Map.of();
+    private boolean playtestEditing;
+    private boolean playtestStepRemoved;
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
@@ -152,7 +157,8 @@ final class ImGuiAuthoringEditor {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
             INSTANCE.attempt(INSTANCE::writeRecovery);
         }
-        if (INSTANCE.view == 3 && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
+        if (INSTANCE.view == 3 && !EditorTestWorld.applying()) INSTANCE.updatePlaytestPresentation();
+        if (INSTANCE.view == 3 && !EditorTestWorld.applying() && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
                 && EditorTestWorld.active(INSTANCE.workspace) && !EditorLiveQuestTest.view().busy()
                 && net.minecraft.Util.getMillis() >= INSTANCE.nextPlaytestRefresh) {
             INSTANCE.nextPlaytestRefresh = net.minecraft.Util.getMillis() + 250;
@@ -169,6 +175,7 @@ final class ImGuiAuthoringEditor {
         EditorPlaytestViewport.close();
         EditorCameraPanel.close();
         EditorLiveQuestTest.stop();
+        EditorPlaytestPresentation.clear();
         INSTANCE.clearCampaignPreview();
         INSTANCE.target = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
@@ -1643,6 +1650,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void leavePlaytest(int next) {
+        EditorPlaytestPresentation.clear();
         EditorLiveQuestTest.stop();
         AuthoringDialoguePreview.stop();
         EditorPlaytestViewport.close();
@@ -1694,6 +1702,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Stop playtest")) operation(() -> leavePlaytest(0));
         ImGui.textWrapped("Click the game to play. F9 returns control to this panel.");
         recoveryControls();
+        ImGui.beginDisabled(EditorTestWorld.applying());
         if (workspace == null) {
             ImGui.textWrapped("Open a workspace in Edit first.");
         } else {
@@ -1723,11 +1732,63 @@ final class ImGuiAuthoringEditor {
                 if (hasPendingFields() && ImGui.button("Apply field edits")) operation(() -> { });
             }
         }
+        ImGui.endDisabled();
+        if (EditorTestWorld.applying()) ImGui.textWrapped("Applying draft and reloading test content...");
+        boolean editing = ImGui.isAnyItemActive();
+        if (playtestEditing && !editing && hasPendingFields()) operation(() -> { });
+        playtestEditing = editing;
         ImGui.separator();
         ImGui.textWrapped(status);
         ImGui.end();
         if (MC.screen == screen && ImGui.getMousePosX() < viewport.getWorkPosX() + split - 3
                 && ImGui.isMouseClicked(0) && !confirmClose && !showRecovery) MC.setScreen(null);
+    }
+
+    private void updatePlaytestPresentation() {
+        if (workspace == null || document == null || rawModified) return;
+        Map<String, JsonObject> latest = EditorTestWorld.content(workspace);
+        var replacements = new java.util.LinkedHashMap<>(EditorLiveQuestTest.snapshot().replacements());
+        replacements.putAll(conditions.placeholders());
+        if (MC.player != null) replacements.putIfAbsent("player", MC.player.getName().getString());
+        if (target != null) {
+            replacements.putIfAbsent("villager", target.getName().getString());
+            replacements.putIfAbsent("villager_name", target.getName().getString());
+        }
+        if (latest.equals(playtestVisuals) && locale.get().equals(playtestLocale) && replacements.equals(playtestReplacements)) return;
+        if (workspace.validate().stream().anyMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)) return;
+        playtestVisuals = latest;
+        playtestLocale = locale.get();
+        playtestReplacements = Map.copyOf(replacements);
+        EditorPlaytestPresentation.update(workspace, document, EditorTestWorld.appliedContent(workspace), replacements, locale.get(), conditions.speakers());
+        if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(document.json()));
+    }
+
+    private void applyPlaytestDraft() throws IOException {
+        var errors = workspace.validate().stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR).toList();
+        if (!errors.isEmpty()) throw new IllegalArgumentException(errors.getFirst().resourcePath() + errors.getFirst().pointer() + ": " + errors.getFirst().message());
+        if (document.kind() != DefinitionKind.QUEST) {
+            AuthoringDialoguePreview.stop();
+            if (!playtestStepRemoved) startPreview(selectedNode);
+            else status = "Selected step was removed. Choose a step and replay explicitly.";
+            return;
+        }
+        if (EditorLiveQuestTest.view().busy()) throw new IllegalStateException("Wait for the current quest operation to finish");
+        AuthoringDialoguePreview.stop();
+        if (MC.screen != screen) MC.setScreen(screen);
+        var expected = document;
+        String stage = selectedNode;
+        boolean replay = !playtestStepRemoved;
+        var world = MC.getSingleplayerServer();
+        EditorTestWorld.apply(workspace).whenComplete((ignored, failure) -> MC.execute(() -> {
+            if (failure != null) {
+                status = "Draft reload failed: " + failure.getMessage();
+                return;
+            }
+            playtestVisuals = Map.of();
+            if (view != 3 || document != expected || MC.getSingleplayerServer() != world) return;
+            if (replay) attempt(() -> EditorLiveQuestTest.startAt(workspace, document, playtestHold, stage));
+            status = replay ? "Draft applied in this test world. Replaying " + stage : "Draft applied. Selected step was removed. Replay the entry step explicitly.";
+        }));
     }
 
     private void playtestDialogue() {
@@ -1738,6 +1799,12 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(target == null);
         if (ImGui.button("Play from entry")) startPreview("");
         if (ImGui.button("Jump / replay selected step")) startPreview(selectedNode);
+        if (AuthoringDialoguePreview.active()) {
+            if (!com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(AuthoringDialoguePreview.definition())
+                    .equals(com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(document.json())))
+                ImGui.textWrapped("Logic changes pending. Visual edits update automatically.");
+            if (ImGui.button("Apply & replay")) operation(this::applyPlaytestDraft);
+        }
         ImGui.endDisabled();
         var cursor = AuthoringDialoguePreview.cursor();
         if (cursor != null) {
@@ -1780,13 +1847,18 @@ final class ImGuiAuthoringEditor {
             return;
         }
         var state = EditorLiveQuestTest.snapshot();
+        if (EditorPlaytestPresentation.ambiguousEdits()) ImGui.textWrapped("Repeated wording needs Apply & replay to update the intended live line.");
         ImGui.textWrapped("Live stage: " + state.stage() + " | " + state.state());
         if (ImGui.checkbox("Wait for Next", playtestHold)) {
             playtestHold = !playtestHold;
             if (!state.stage().isBlank()) operation(() -> EditorLiveQuestTest.hold(workspace, document, playtestHold));
         }
-        if (!EditorTestWorld.currentSnapshot(workspace)) ImGui.textWrapped("Draft changes are pending. Apply the latest draft before changing live state.");
-        ImGui.beginDisabled(!EditorTestWorld.currentSnapshot(workspace) || EditorLiveQuestTest.view().busy());
+        if (!EditorTestWorld.currentSnapshot(workspace)) {
+            ImGui.textWrapped(EditorTestWorld.currentLogic(workspace) ? "Visual changes previewed. Apply to load them into the test pack."
+                    : "Logic changes pending. Apply & replay to load this draft.");
+        }
+        if (ImGui.button("Apply & replay")) operation(this::applyPlaytestDraft);
+        ImGui.beginDisabled(!EditorTestWorld.currentLogic(workspace) || EditorLiveQuestTest.view().busy());
         if (ImGui.button("Start / restart quest")) operation(() -> EditorLiveQuestTest.start(workspace, document, playtestHold));
         ImGui.beginDisabled(state.stage().isBlank());
         if (ImGui.button("Jump to selected stage")) operation(() -> EditorLiveQuestTest.stage(workspace, document, selectedNode));
@@ -1925,7 +1997,7 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.textWrapped("Live tests change this test world. Restarting a quest repeats its actions. Return to the game to make objective progress, then refresh here.");
         boolean current = EditorTestWorld.currentSnapshot(workspace);
-        if (!current) ImGui.textWrapped("Content changed after export. Create another test world to load your latest draft.");
+        if (!current) ImGui.textWrapped("Content changed after export. Open Playtest and use Apply & replay to load your latest draft.");
         ImGui.beginDisabled(!current || EditorLiveQuestTest.view().busy());
         if (ImGui.button("Start / restart live quest")) operation(() -> EditorLiveQuestTest.start(workspace, document));
         if (ImGui.button("Refresh live state")) operation(() -> EditorLiveQuestTest.inspect(workspace, document));
@@ -1968,7 +2040,7 @@ final class ImGuiAuthoringEditor {
                 }
             }
             EditorCameraPanel.close();
-            if (view == 3) AuthoringDialoguePreview.stop();
+            if (view == 3) { AuthoringDialoguePreview.stop(); playtestStepRemoved = false; playtestVisuals = Map.of(); }
             var authoredId = net.minecraft.resources.ResourceLocation.tryParse(document.id());
             var evaluationId = authoredId == null
                     ? net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview") : authoredId;
@@ -1981,7 +2053,7 @@ final class ImGuiAuthoringEditor {
                         conditions.variant(), candidate -> conditions.evaluate(evaluationId, candidate)
                                 == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
                 return resolved.equals(key) ? null : resolved;
-            });
+            }, view != 3);
         });
     }
 
@@ -2106,6 +2178,7 @@ final class ImGuiAuthoringEditor {
 
     private void closeEditor() {
         confirmClose = false;
+        EditorPlaytestPresentation.clear();
         EditorLiveQuestTest.stop();
         EditorPlaytestViewport.close();
         AuthoringDialoguePreview.stop();
@@ -2131,10 +2204,13 @@ final class ImGuiAuthoringEditor {
         }
         if (document != next) {
             EditorLiveQuestTest.stop();
+            EditorPlaytestPresentation.clear();
             AuthoringDialoguePreview.stop();
             EditorCameraPanel.close();
             clearCampaignPreview();
         }
+        playtestVisuals = Map.of();
+        playtestStepRemoved = false;
         document = next;
         questPreview = null;
         fitGraph = true;
@@ -2199,7 +2275,13 @@ final class ImGuiAuthoringEditor {
             try {
                 var ids = DialogueGraph.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet());
                 nodeSelection.retainAll(ids);
-                if (!selectedNode.isEmpty() && !ids.contains(selectedNode)) { selectedNode = ""; pointer.set(""); }
+                if (!selectedNode.isEmpty() && !ids.contains(selectedNode)) {
+                    playtestStepRemoved = view == 3;
+                    var entry = DialogueGraph.nodes(document).stream().filter(DialogueGraph.Node::entry).findFirst();
+                    selectedNode = entry.map(DialogueGraph.Node::id).orElse("");
+                    pointer.set(entry.map(DialogueGraph.Node::pointer).orElse(""));
+                    if (playtestStepRemoved) status = "Selected step was removed. Entry selected. Replay explicitly to continue.";
+                }
             } catch (IllegalArgumentException | IllegalStateException | ClassCastException | UnsupportedOperationException exception) {
                 nodeSelection.clear();
             }
