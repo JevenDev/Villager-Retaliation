@@ -980,7 +980,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_follow")
     public static void mountedMoveToKeepsHorseRouteActive(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("mounted_move_to_leader"));
+        ServerPlayer leader = onlinePlayer(helper);
         for (int x = 1; x <= 14; x++) {
             helper.setBlock(new BlockPos(x, 0, 2), Blocks.STONE);
         }
@@ -1019,13 +1019,16 @@ public final class PartyGameTests {
 
         helper.startSequence()
                 .thenExecuteAfter(40, () -> {
-                    helper.assertTrue(horse.getX() - startingX > 1.0D,
-                            "The mounted villager must carry the horse along the Move To route; delta="
-                                    + (horse.getX() - startingX)
-                                    + ", target=" + horse.getNavigation().getTargetPos());
-                    VillagerMountAssignmentSavedData.get(level).removeForVillager(villager.getUUID());
-                    PartyService.deleteParty(level, party.id());
-                    PartyQuickCommandService.clearRuntimeState();
+                    try {
+                        helper.assertTrue(horse.getX() - startingX > 1.0D,
+                                "The mounted villager must carry the horse along the Move To route; delta="
+                                        + (horse.getX() - startingX)
+                                        + ", target=" + horse.getNavigation().getTargetPos());
+                    } finally {
+                        VillagerMountAssignmentSavedData.get(level).removeForVillager(villager.getUUID());
+                        PartyService.deleteParty(level, party.id());
+                        PartyQuickCommandService.clearRuntimeState();
+                    }
                 })
                 .thenSucceed();
     }
@@ -1201,7 +1204,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void recruitmentPaymentExtensionCommandsInventoryAndDismissalAreAuthoritative(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_contract_leader"));
+        ServerPlayer leader = onlinePlayer(helper);
         ServerPlayer member = fakePlayer(level, uniqueName("party_contract_member"));
         ServerPlayer outsider = fakePlayer(level, uniqueName("party_contract_outsider"));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -1420,7 +1423,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void standGuardDoesNotInterruptVillagerEating(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_guard_recovery"));
+        ServerPlayer leader = onlinePlayer(helper);
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         long now = level.getGameTime();
@@ -1466,7 +1469,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void standGuardUsesMainhandShieldWithOffhandTotem(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_guard_totem"));
+        ServerPlayer leader = onlinePlayer(helper);
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         long now = level.getGameTime();
@@ -2065,7 +2068,7 @@ public final class PartyGameTests {
                 helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
             }
         }
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_shared_move_route"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         for (int tick = 0; tick < 20; tick++) {
@@ -2103,7 +2106,7 @@ public final class PartyGameTests {
                 helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
             }
         }
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_move_return"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         BlockPos target = helper.absolutePos(new BlockPos(10, 2, 2));
@@ -2150,7 +2153,7 @@ public final class PartyGameTests {
                         x <= 3 ? Blocks.DIRT_PATH : Blocks.GRASS_BLOCK);
             }
         }
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_path_grass_edge"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 2));
         BlockPos pathSide = helper.absolutePos(new BlockPos(3, 2, 2));
@@ -2437,7 +2440,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE)
     public static void pickUpDropsRecoversOwnConsumedArrowButNotMultishotCopy(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_arrow_pickup"));
+        ServerPlayer leader = onlinePlayer(helper);
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         long now = level.getGameTime();
@@ -2657,7 +2660,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void fallBackCancelsActiveMoveToPath(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_fall_back_move_to"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         long now = level.getServer().overworld().getGameTime();
@@ -2754,7 +2757,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyGatherDropsCollectsItemsAndMoveToOverridesIt(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_gather_drops"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         long now = level.getServer().overworld().getGameTime();
@@ -2828,7 +2831,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyLootContainersEmptiesContainersNearPing(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_containers"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         long now = level.getServer().overworld().getGameTime();
@@ -2875,7 +2878,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyLootContainersRejectsLockedContainers(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_locked"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         long now = level.getServer().overworld().getGameTime();
@@ -2916,7 +2919,7 @@ public final class PartyGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyLootContainersHonorsCanceledBlockInteraction(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_protected"));
+        ServerPlayer leader = onlinePlayer(helper);
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         long now = level.getServer().overworld().getGameTime();
@@ -3396,6 +3399,27 @@ public final class PartyGameTests {
         }
         level.tickNonPassenger(villager);
         return villager;
+    }
+
+    private static ServerPlayer onlinePlayer(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var profile = new GameProfile(UUID.randomUUID(), uniqueName("party"));
+        var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(profile, false);
+        var player = new ServerPlayer(level.getServer(), level, profile, cookie.clientInformation());
+        var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
+        var channel = new io.netty.channel.embedded.EmbeddedChannel(connection);
+        level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
+            @Override public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo test) { }
+            @Override public void testPassed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testFailed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo original, net.minecraft.gametest.framework.GameTestInfo rerun, net.minecraft.gametest.framework.GameTestRunner runner) { }
+            private void cleanup() {
+                level.getServer().getPlayerList().remove(player);
+                channel.finishAndReleaseAll();
+            }
+        });
+        return player;
     }
 
     private static ServerPlayer fakePlayer(ServerLevel level, String name) {

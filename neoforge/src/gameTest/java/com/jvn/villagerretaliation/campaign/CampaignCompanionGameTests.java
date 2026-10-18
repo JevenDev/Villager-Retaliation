@@ -43,7 +43,7 @@ public final class CampaignCompanionGameTests {
     private CampaignCompanionGameTests() { }
 
     @GameTest(template = "empty", batch = "campaign_companions")
-    public static void companionsRequireTheBoundIdentityNearbyAndAnActivePartyContract(GameTestHelper helper) throws IOException {
+    public static void companionsRequireTheBoundIdentityNearbyAndActivePartyMembership(GameTestHelper helper) throws IOException {
         try (var fixture = new Fixture(helper)) {
             var leader = fixture.story.player();
             var member = fixture.story.player();
@@ -74,9 +74,11 @@ public final class CampaignCompanionGameTests {
             helper.getLevel().getServer().overworld().getDataStorage().set("villagerretaliation_parties",
                     PartySavedData.load(parties, helper.getLevel().registryAccess()));
             var expired = PartySavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess());
-            helper.assertFalse(fixture.matches(member), "expired contract stops matching before maintenance removes the roster entry");
+            helper.assertTrue(fixture.matches(member), "legacy contract deadlines do not expire permanent companions");
             helper.assertValueEqual(PartySavedData.get(helper.getLevel()).save(new CompoundTag(), helper.getLevel().registryAccess()),
                     expired, "condition does not perform contract maintenance");
+            helper.assertTrue(PartyService.leaveParty(member).success(), "member leaves the party");
+            helper.assertFalse(fixture.matches(member), "leaving the party removes the active companion");
         }
         helper.succeed();
     }

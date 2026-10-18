@@ -272,8 +272,8 @@ public final class CompanionRedesignGameTests {
         var level = helper.getLevel();
         var source = helper.absolutePos(new BlockPos(1024, 2, 1024));
         var home = source.offset(16, 0, 0);
-        level.getChunkAt(source);
-        level.getChunkAt(home);
+        level.setChunkForced(source.getX() >> 4, source.getZ() >> 4, true);
+        level.setChunkForced(home.getX() >> 4, home.getZ() >> 4, true);
         for (var pos : List.of(source, home)) {
             level.setBlockAndUpdate(pos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
             level.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
@@ -290,16 +290,32 @@ public final class CompanionRedesignGameTests {
         state.putUUID("Owner", UUID.randomUUID());
         state.putString("HomeDimension", level.dimension().location().toString());
         state.putLong("HomePosition", home.asLong());
-        CompanionLifecycleService.beginDeparture(level, id, "Goodbye");
-        state.putInt("DepartureTicks", 200);
-        villager.tickCount = 20;
-        helper.assertTrue(CompanionLifecycleService.unseen(level, villager.position(), villager), "return fixture is out of sight of every nearby player");
-        CompanionLifecycleService.tick(villager);
-        helper.assertValueEqual(state.getString("Status"), "At home", "unseen safe return completes");
-        helper.assertTrue(villager.blockPosition().distSqr(home) < 9.0D, "real entity reaches registered home");
-        helper.assertTrue(level.getEntity(id) == villager, "same entity and UUID survive return");
-        helper.assertValueEqual(inventory.getItem(6).getCount(), 7, "belongings survive without copying or dropping");
-        helper.succeed();
+        helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
+            @Override public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo test) { }
+            @Override public void testPassed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testFailed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo original, net.minecraft.gametest.framework.GameTestInfo rerun, net.minecraft.gametest.framework.GameTestRunner runner) { }
+            private void cleanup() {
+                villager.discard();
+                level.setChunkForced(source.getX() >> 4, source.getZ() >> 4, false);
+                level.setChunkForced(home.getX() >> 4, home.getZ() >> 4, false);
+            }
+        });
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(level.getEntity(id) == villager, "source chunk tracks the real companion before departure");
+        }).thenExecute(() -> {
+            CompanionLifecycleService.beginDeparture(level, id, "Goodbye");
+            state.putInt("DepartureTicks", 200);
+            villager.tickCount = 20;
+            helper.assertTrue(CompanionLifecycleService.unseen(level, villager.position(), villager), "return fixture is out of sight of every nearby player");
+            CompanionLifecycleService.tick(villager);
+            helper.assertValueEqual(state.getString("Status"), "At home", "unseen safe return completes");
+            helper.assertTrue(villager.blockPosition().distSqr(home) < 9.0D, "real entity reaches registered home");
+        }).thenWaitUntil(() -> {
+            helper.assertTrue(level.getEntity(id) == villager, "same entity and UUID survive return");
+        }).thenExecute(() -> {
+            helper.assertValueEqual(inventory.getItem(6).getCount(), 7, "belongings survive without copying or dropping");
+        }).thenSucceed();
     }
 
     @GameTest(template = "empty", batch = "companion_recruitment")
