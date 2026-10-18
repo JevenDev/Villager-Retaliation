@@ -76,7 +76,11 @@ public final class QuestContentCatalogGameTests {
                         && catalog.bundles().containsKey(horizonOwner),
                 "pilot bundles were not accepted: bundles=" + catalog.bundles().keySet()
                         + ", report=" + QuestContentCatalogs.loadReport(server).entries());
-        helper.assertValueEqual(catalog.quests().size(), 85, "pilot migration changed the built-in quest set");
+        var expected = new java.util.HashSet<>(com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility.rules().frozenQuestIds());
+        for (String role : List.of("animal_handling", "brewing", "builder", "combat", "cook", "courier", "craftsman",
+                "farming", "fishing", "hunting", "logging", "mining", "nitwit", "smelter"))
+            expected.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", "clipboard_" + role));
+        helper.assertValueEqual(catalog.quests().keySet(), expected, "packaged quests retain the frozen inventory and all worker tutorials");
 
         CompiledQuest bread = catalog.compiledQuest(breadId).orElseThrow();
         CompiledQuest horizon = catalog.compiledQuest(horizonId).orElseThrow();
@@ -118,6 +122,20 @@ public final class QuestContentCatalogGameTests {
                         .get(QuestBundlePath.Kind.SCENE)
                         .containsKey(ResourceLocation.parse("villagerretaliation:atlas_horizon_choice")),
                 "complex pilot private scene was not owned by its bundle");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "quest_bundle_pilot")
+    public static void everyEmbeddedDialogueBindingHasANetworkSafeEntry(GameTestHelper helper) {
+        var catalog = QuestContentCatalogs.current(helper.getLevel().getServer()).dialogueCatalog();
+        for (var binding : catalog.bindings().values()) {
+            if (!binding.treeId().equals(com.jvn.villagerretaliation.dialogue.resources.QuestDialogueCompiler.treeId(binding.questId()))) continue;
+            var tree = catalog.tree(binding.treeId()).orElseThrow();
+            var entry = tree.entry(binding.entryId()).orElseThrow(() -> new net.minecraft.gametest.framework.GameTestAssertException(
+                    "Missing generated dialogue entry: " + binding));
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition.isNetworkSafeId(entry.toOption(tree.id()).id()),
+                    "generated entry fits the request packet: " + binding);
+        }
         helper.succeed();
     }
 

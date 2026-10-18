@@ -84,6 +84,12 @@ public final class QuestDialogueCompiler {
                 TREE_ROOT + questId.getPath());
     }
 
+    private static String boundedEntryId(ResourceLocation treeId, String entryId) {
+        return com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition.isNetworkSafeId(
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.entryOptionId(treeId, entryId)) ? entryId
+                : java.util.UUID.nameUUIDFromBytes(entryId.getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+    }
+
     private static void addLifecycleScenes(
             QuestV2Resource resource,
             QuestSourcePointer source,
@@ -111,7 +117,7 @@ public final class QuestDialogueCompiler {
                 continue;
             }
             String nodeId = lifecycleNodeId(scene.id());
-            String entryId = lifecycleEntryId(scene.id());
+            String entryId = boundedEntryId(treeId, lifecycleEntryId(scene.id()));
             addSceneNode(resource, "", scene, sceneSource, nodeId, null, nodes);
             addEntry(resource, "", entryId, titleCase(scene.id()), nodeId, sceneSource, scene.data(), entries);
             putBinding(
@@ -167,7 +173,7 @@ public final class QuestDialogueCompiler {
             if (!shouldCompile(scene)) {
                 continue;
             }
-            String entryId = stageSlotEntryId(stage.id(), slot.slot());
+            String entryId = boundedEntryId(treeId, stageSlotEntryId(stage.id(), slot.slot()));
             addSceneNode(resource, stage.id(), scene, slotSource, nodeId, stage, nodes);
             addEntry(resource, stage.id(), entryId, titleCase(slot.slot()), nodeId, slotSource, slot.data(), entries);
             putBinding(
@@ -200,7 +206,7 @@ public final class QuestDialogueCompiler {
                                 sceneSource));
             } else if (shouldCompile(scene)) {
                 String nodeId = stageSceneNodeId(stage.id(), scene.id());
-                String entryId = stageSceneEntryId(stage.id(), scene.id());
+                String entryId = boundedEntryId(treeId, stageSceneEntryId(stage.id(), scene.id()));
                 addSceneNode(resource, stage.id(), scene, sceneSource, nodeId, stage, nodes);
                 addEntry(resource, stage.id(), entryId, titleCase(scene.id()), nodeId, sceneSource, scene.data(), entries);
                 putBinding(
@@ -220,7 +226,7 @@ public final class QuestDialogueCompiler {
         if (!stage.responses().isEmpty()) {
             QuestSourcePointer responsesSource = stageSource.child("responses");
             String nodeId = stageResponsesNodeId(stage.id());
-            String entryId = stageResponsesEntryId(stage.id());
+            String entryId = boundedEntryId(treeId, stageResponsesEntryId(stage.id()));
             List<String> lines = nonBlankLines(List.of(stage.ui().trackerText()));
             nodes.putIfAbsent(nodeId, new DialogueTreeDefinition.Node(nodeId, lines,
                     textVariants(treeId + "/node/" + nodeId, lines, "", DialogueEntryMetadata.EMPTY),
