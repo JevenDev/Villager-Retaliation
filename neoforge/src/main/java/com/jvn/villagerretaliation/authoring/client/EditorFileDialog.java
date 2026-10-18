@@ -19,7 +19,7 @@ final class EditorFileDialog {
                 chooser.setDialogTitle(label);
                 chooser.setSelectedFile(new File(current));
                 boolean image = label.startsWith("PNG");
-                chooser.setFileSelectionMode(image ? JFileChooser.FILES_ONLY : JFileChooser.DIRECTORIES_ONLY);
+                chooser.setFileSelectionMode(image ? JFileChooser.FILES_ONLY : label.startsWith("Pack") ? JFileChooser.FILES_AND_DIRECTORIES : JFileChooser.DIRECTORIES_ONLY);
                 if (image) chooser.setFileFilter(new FileNameExtensionFilter("PNG image", "png"));
                 if (chooser.showDialog(null, "Choose") == JFileChooser.APPROVE_OPTION) selected.accept(chooser.getSelectedFile().getAbsolutePath());
             } finally {

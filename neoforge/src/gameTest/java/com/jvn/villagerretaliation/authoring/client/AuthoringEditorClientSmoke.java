@@ -46,6 +46,7 @@ public final class AuthoringEditorClientSmoke {
     private static long started, resumeAt;
     private static int frames;
     private static boolean finished, installed, mouseDown, previousDown;
+    private static boolean cameraGuiBefore;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
     private static float mouseWheel;
     private static float[] canvas;
@@ -310,6 +311,7 @@ public final class AuthoringEditorClientSmoke {
             capture("15-reopened-draft");
         });
         buildImportSteps();
+        buildCreatorToolsSteps();
         STEPS.add(() -> {
             try {
                 Files.writeString(output().resolve("result.txt"),
@@ -318,6 +320,75 @@ public final class AuthoringEditorClientSmoke {
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
+        });
+    }
+
+    private static void buildCreatorToolsSteps() {
+        var original = new AuthoringDocument[1];
+        STEPS.add(() -> { original[0] = document; locateCanvas(); });
+        click(() -> point("start", 80, 18));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        click(() -> point("node_2", 80, 18));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        STEPS.add(() -> {
+            require(((java.util.Set<?>) field(editor, "nodeSelection")).size() == 2, "Ctrl-click selects multiple nodes.");
+            capture("19-multiselect");
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.C);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.V);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 4, "Keyboard paste creates the selected nodes.");
+            capture("20-pasted-selection");
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Z);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 2, "One undo removes the entire pasted selection.");
+            set("showMinimap", true); set("showGraphTools", true);
+        });
+        pause(250);
+        STEPS.add(() -> capture("21-graph-tools"));
+        STEPS.add(() -> {
+            document = workspace.createDocument(DefinitionKind.QUEST, "test:creator_tools");
+            EditorContentTools.recipe(workspace, document, "Fetch quest");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 1);
+        });
+        click(() -> screenPoint(440, 209));
+        STEPS.add(() -> {
+            var preview = (com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession) field(editor, "questPreview");
+            require(preview != null && !preview.ready(), "Quest test starts through its native control.");
+            capture("22-quest-test-blocked");
+        });
+        click(() -> screenPoint(400, 277));
+        click(() -> screenPoint(360, 345));
+        STEPS.add(() -> {
+            var preview = (com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession) field(editor, "questPreview");
+            require(preview.outcome().equals("complete"), "Native quest controls satisfy and advance a simulated quest.");
+            capture("23-quest-test-completed");
+            document = original[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("showGraphTools", false);
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1.3f));
+            long handle = Minecraft.getInstance().getWindow().getWindow();
+            GLFW.glfwRestoreWindow(handle); GLFW.glfwSetWindowSize(handle, 1280, 720);
+        });
+        pause(400);
+        STEPS.add(() -> { Minecraft.getInstance().resizeDisplay(); capture("24-small-window-large-text"); });
+        STEPS.add(() -> ((net.minecraft.client.gui.screens.Screen) field(editor, "screen")).onClose());
+        pause(250);
+        STEPS.add(() -> {
+            require((boolean) field(editor, "confirmClose"), "Closing dirty content asks how to preserve drafts.");
+            capture("25-unsaved-close");
+            set("confirmClose", false);
+            try { EditorTestWorld.prepare(workspace, Minecraft.getInstance().screen); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        pause(250);
+        STEPS.add(() -> {
+            require(Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen, "Preparing a separate test world explains the world switch.");
+            capture("26-test-world-setup");
+            Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(Minecraft.getInstance().screen == field(editor, "screen"), "Cancelling test world setup returns to the editor.");
         });
     }
 
@@ -330,11 +401,12 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require("/nodes/start".equals(field(EditorCameraPanel.class, "cameraOwner")), "Camera panel resolves the Say block's owner.");
             capture("13c-camera-controls");
+            cameraGuiBefore = Minecraft.getInstance().options.hideGui;
         });
         click(() -> screenPoint(365, 533));
-        STEPS.add(() -> require(cameraSession() != null && cameraSession().active(), "Begin camera session starts the native camera."));
-        click(() -> screenPoint(350, 733));
-        click(() -> screenPoint(365, 773));
+        STEPS.add(() -> require(cameraSession() != null && cameraSession().active() && Minecraft.getInstance().options.hideGui, "Begin camera session starts the native camera with a clean viewport."));
+        click(() -> screenPoint(350, 653));
+        click(() -> screenPoint(365, 693));
         STEPS.add(() -> {
             require(cameraSession().ownsScreen(Minecraft.getInstance().screen), "Position free camera opens native positioning controls.");
             cameraBefore = cameraSession().pose();
@@ -351,18 +423,24 @@ public final class AuthoringEditorClientSmoke {
             capture("13d-free-camera");
             Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
         });
-        click(() -> screenPoint(500, 773));
+        click(() -> screenPoint(500, 693));
         STEPS.add(() -> {
             var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(document.json().getAsJsonObject("nodes").getAsJsonObject("start"));
             require(camera != null && camera.shots().size() == 1 && camera.shots().getFirst().orientation() != null,
                     "Add shot stores the captured pose on the selected node.");
+            String encoded = EditorCameraShots.thumbnails(document.metadata(), "/nodes/start", 1).get(0).getAsString();
+            require(!encoded.isBlank(), "Captured shots retain a real viewport thumbnail.");
+            try (var thumbnail = NativeImage.read(new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(encoded)))) {
+                require(thumbnail.getWidth() == 480 && thumbnail.getHeight() == 270, "Shot thumbnails keep their preview dimensions.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
             capture("13e-captured-shot");
         });
-        click(() -> screenPoint(375, 933));
+        click(() -> screenPoint(375, 773));
         click(() -> screenPoint(560, 533));
         STEPS.add(() -> require(cameraSession() == null
                 && !com.jvn.villagerretaliation.client.interaction.DialogueCameraController.active()
-                && !Minecraft.getInstance().mouseHandler.isMouseGrabbed(),
+                && !Minecraft.getInstance().mouseHandler.isMouseGrabbed()
+                && Minecraft.getInstance().options.hideGui == cameraGuiBefore,
                 "Restore player camera disposes the authoring camera."));
     }
 

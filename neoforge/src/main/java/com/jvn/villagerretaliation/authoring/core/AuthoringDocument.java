@@ -52,6 +52,17 @@ public final class AuthoringDocument {
         json = changed;
     }
 
+    public void edit(String label, Consumer<JsonObject> edit, Consumer<JsonObject> editorEdit) {
+        JsonObject changed = json.deepCopy();
+        JsonObject changedMetadata = metadata.deepCopy();
+        edit.accept(changed);
+        editorEdit.accept(changedMetadata);
+        if (changed.equals(json) && changedMetadata.equals(metadata)) return;
+        remember();
+        json = changed;
+        metadata = changedMetadata;
+    }
+
     public void replaceJson(String text) {
         JsonObject changed = JsonParser.parseString(text).getAsJsonObject();
         edit("Edit JSON", root -> {

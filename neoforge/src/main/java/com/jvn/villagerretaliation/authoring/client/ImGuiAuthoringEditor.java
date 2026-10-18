@@ -116,6 +116,13 @@ final class ImGuiAuthoringEditor {
     private String objectiveType = "item_check";
     private String contentKind = "All";
     private boolean groupContent;
+    private boolean showMinimap;
+    private boolean showGraphTools;
+    private final ImString nodeFilter = new ImString(256);
+    private boolean focusSearch;
+    private String graphFocus = "";
+    private final java.util.Set<String> nodeSelection = new java.util.LinkedHashSet<>();
+    private final EditorGraphClipboard graphClipboard = new EditorGraphClipboard();
     private final ImString replaceText = new ImString(1024);
     private boolean showRecovery;
     private boolean confirmClose;
@@ -191,6 +198,13 @@ final class ImGuiAuthoringEditor {
                     if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
                 }
             }
+            if (document != null && view == 0 && !ImGui.getIO().getWantTextInput() && !showRecovery && !confirmClose) {
+                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
+                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.C)) operation(() -> graphClipboard.copy(document, selectedNodes()));
+                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.V)) operation(this::pasteNodes);
+                if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
+                if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
+            }
             shell();
             ImGui.beginDisabled(showRecovery || confirmClose);
             browser();
@@ -237,12 +251,13 @@ final class ImGuiAuthoringEditor {
         ImGui.setNextWindowViewport(viewport.getID());
         ImGui.begin("Authoring###VR_AuthoringShell", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking
                 | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings);
+        ImGui.setWindowFontScale(preferences.textScale());
         toolbar();
         recoveryControls();
         guide();
         ImGui.separator();
         int dock = ImGui.getID("VR_AuthoringDock");
-        boolean compact = EditorLayout.forWidth(ImGui.getContentRegionAvailX()).compact();
+        boolean compact = EditorLayout.forWidth(ImGui.getContentRegionAvailX() / preferences.textScale()).compact();
         if (!initializedLayout || resetLayout || compact != compactLayout) {
             var existing = imgui.internal.ImGui.dockBuilderGetNode(dock);
             if (resetLayout || preferences.layoutVersion() != EditorPreferences.CURRENT_LAYOUT
@@ -260,7 +275,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void arrangePanels(int dock, float width, float height) {
-        var plan = EditorLayout.forWidth(width);
+        var plan = EditorLayout.forWidth(width / preferences.textScale());
         imgui.internal.ImGui.dockBuilderRemoveNode(dock);
         imgui.internal.ImGui.dockBuilderAddNode(dock, imgui.internal.flag.ImGuiDockNodeFlags.DockSpace);
         imgui.internal.ImGui.dockBuilderSetNodeSize(dock, width, height);
@@ -318,10 +333,10 @@ final class ImGuiAuthoringEditor {
 
     private void guide() {
         if (guideStep < 0) return;
-        String[] titles = {"Choose a workspace", "Create or select dialogue", "Write and connect", "Try the conversation", "Check and export"};
+        String[] titles = {"Choose a workspace", "Create or select content", "Write and connect", "Try the conversation", "Check and export"};
         String[] hints = {
                 "Your workspace holds drafts. Open an existing folder or create a new one in Content.",
-                "Choose New, pick a format, and give it an ID. Your dialogues stay in the Content list.",
+                "Choose New, select a content type, and enter a name or resource ID. Content tools includes starter recipes.",
                 "Click a Say block to write dialogue. Add a response, then connect its right-hand dot to another node's input dot. Use Arrange nodes to tidy the flow.",
                 "Choose Preview in the top bar, select a nearby villager, then play. Camera and condition controls are optional.",
                 "Save your drafts, then choose Check & export. Fix any errors before exporting to a new datapack folder."
@@ -359,6 +374,7 @@ final class ImGuiAuthoringEditor {
     private void panel(String title) {
         if (title.equals(focusPanel)) { ImGui.setNextWindowFocus(); focusPanel = ""; }
         ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
+        ImGui.setWindowFontScale(preferences.textScale());
     }
 
     private static void input(String label, ImString value) {
@@ -396,6 +412,7 @@ final class ImGuiAuthoringEditor {
         preferences = preferences.withWorkspace(workspace.directory().toString());
         savePreferences();
         showRecovery = !create && workspace.recoveryAvailable();
+        if (guideStep == 0) guideStep = 1;
         status = create ? "Workspace created." : "Workspace opened.";
     }
 
@@ -469,11 +486,13 @@ final class ImGuiAuthoringEditor {
                 showCreate = false;
                 view = 0;
                 status = "Content created.";
+                if (guideStep == 1) guideStep = 2;
             });
             ImGui.endDisabled();
             ImGui.separator();
         }
         ImGui.setNextItemWidth(-1);
+        if (focusSearch) { ImGui.setKeyboardFocusHere(); focusSearch = false; }
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
         if (ImGui.checkbox("Supporting files", showResources)) showResources = !showResources;
         int visible = 0;
@@ -496,7 +515,7 @@ final class ImGuiAuthoringEditor {
                 ? "No dialogue yet. Create a dialogue or import a pack." : "No matches. Clear the search to see all content.");
         ImGui.separator();
         if (ImGui.collapsingHeader("Import existing pack")) {
-            input("Pack folder", importPath);
+            input("Pack folder or ZIP", importPath);
             if (ImGui.button("Import")) operation(() -> {
                 int count = workspace.importPack(Path.of(importPath.get()));
                 if (document == null && count > 0) {
@@ -553,9 +572,13 @@ final class ImGuiAuthoringEditor {
     private void contentTools() {
         if (!ImGui.collapsingHeader("Content tools")) return;
         if (ImGui.checkbox("Group by campaign and type", groupContent)) groupContent = !groupContent;
+        float[] scale = {preferences.textScale()};
+        if (ImGui.sliderFloat("Editor text size", scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
+        graphTools();
         input("Editing language", locale);
         if (ImGui.button("Use language")) operation(() -> {
-            if (!locale.get().matches("[a-z]{2,3}_[a-z]{2,3}")) throw new IllegalArgumentException("Use a language code such as en_us");
+            locale.set(locale.get().strip().toLowerCase(Locale.ROOT));
+            if (!locale.get().matches("[a-z0-9_-]+")) throw new IllegalArgumentException("Use a language code such as en_us");
             preferences = preferences.withLocale(locale.get()); savePreferences(); refresh();
         });
         if (ImGui.beginCombo("Content type", contentKind)) {
@@ -571,6 +594,7 @@ final class ImGuiAuthoringEditor {
                 var created = workspace.createDocument(kind, EditorContentTools.resourceId(newId.get()));
                 EditorContentTools.recipe(workspace, created, recipe);
                 select(created); showCreate = false; view = 0;
+                if (guideStep == 1) guideStep = 2;
             });
         }
         input("Replace matching wording with", replaceText);
@@ -637,28 +661,32 @@ final class ImGuiAuthoringEditor {
             setPointer(added.pointer());
             showBranch = false;
             refresh();
+            nodeSelection.clear(); nodeSelection.add(selectedNode);
             focusPanel = DETAIL_PANEL;
         });
         ImGui.endDisabled();
         boolean selected = nodes.stream().anyMatch(node -> node.id().equals(selectedNode));
-        ImGui.sameLine();
+        sameLineFor(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Add response");
         ImGui.beginDisabled(!selected);
         if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Add response")) {
             showBranch = !showBranch;
             if (showBranch) nextStage.set("");
         }
         ImGui.endDisabled();
-        ImGui.sameLine();
+        sameLineFor("Fit graph");
         if (ImGui.button("Fit graph")) fitGraph = true;
-        ImGui.sameLine();
+        sameLineFor("Arrange nodes");
         if (ImGui.button("Arrange nodes")) operation(() -> {
             persistPositions(EditorGraph.arrange(cards));
             fitGraph = true;
             refresh();
         });
-        ImGui.sameLine();
+        sameLineFor("100%");
         boolean resetZoom = ImGui.button(Math.round(zoom * 100) + "%###graph_zoom");
         if (ImGui.isItemHovered()) ImGui.setTooltip("Reset zoom to 100%. Scroll over the graph to zoom. Middle-drag to pan.");
+        sameLineFor("Graph tools");
+        if (ImGui.button("Graph tools")) showGraphTools = !showGraphTools;
+        if (showGraphTools) graphTools();
         if (selected && ImGui.collapsingHeader("Node actions")) {
             ImGui.textUnformatted("Selected: " + selectedNode);
             input("Node name / copy ID", nodeName);
@@ -670,10 +698,11 @@ final class ImGuiAuthoringEditor {
             });
             var incoming = EditorContentTools.usages(document, selectedNode);
             ImGui.textWrapped(incoming.size() + " incoming connections");
-            for (var edge : incoming) if (ImGui.selectable("From " + edge.from() + "##usage" + edge.pointer())) operation(() -> {
+            for (var edge : incoming) if (ImGui.selectable((edge.from().isBlank() ? "File settings" : "From " + edge.from()) + "##usage" + edge.pointer())) operation(() -> {
                 selectedNode = edge.from(); setPointer(edge.pointer());
             });
-            input("Redirect deleted node to", nextStage);
+            if (document.kind() != DefinitionKind.FORCED) input("Redirect deleted node to", nextStage);
+            else ImGui.textWrapped("Deleting a follow-up also removes its owning player response.");
             if (ImGui.button("Duplicate node")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
             ImGui.sameLine();
             if (ImGui.button("Delete node")) operation(() -> { EditorContentTools.deleteNode(document, selectedNode, nextStage.get()); selectedNode = ""; setPointer(""); refresh(); });
@@ -704,6 +733,9 @@ final class ImGuiAuthoringEditor {
                             || selectedNode.startsWith(destination.id() + "/") || destination.id().isEmpty())) continue;
                     if (ImGui.selectable(destination.id(), destination.id().equals(nextStage.get()))) nextStage.set(destination.id());
                 }
+                if (document.kind() != DefinitionKind.FORCED && ImGui.selectable("Create a new destination")) operation(() -> {
+                    String id = nextNodeId(); DialogueGraph.addNode(document, id); nextStage.set(id); refresh();
+                });
                 ImGui.endCombo();
             }
             if (document.kind() == DefinitionKind.FORCED && ImGui.button("Create follow-up")) operation(() -> {
@@ -731,6 +763,7 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Create response")) operation(() -> {
                 if (document.kind() == DefinitionKind.QUEST) EditorDocumentOperations.nextStage(document, selectedNode, nextStage.get());
                 else workspace.addDialogueResponse(document, selectedNode, nextResponseId(), responseLabel.get(), nextStage.get());
+                if (guideStep == 2) guideStep = 3;
                 showBranch = false;
                 refresh();
             });
@@ -740,6 +773,13 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.textWrapped("Select a block to edit. Connect an output dot to an input dot. Drag node headers to arrange.");
         if (!selectedEdge.isEmpty()) {
+            if (ImGui.smallButton("Create connected node")) operation(() -> {
+                selectedNode = EditorContentTools.createConnected(document, selectedEdge, nextNodeId());
+                selectedEdge = ""; refresh();
+                setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+                graphFocus = selectedNode; nodeSelection.clear(); nodeSelection.add(selectedNode);
+            });
+            ImGui.sameLine();
             if (ImGui.smallButton("Cancel connection")) selectedEdge = "";
             boolean responseEdge = selectedEdge.contains("/responses/") || selectedEdge.contains("/options/");
             if (responseEdge) {
@@ -757,8 +797,16 @@ final class ImGuiAuthoringEditor {
         float canvasHeight = Math.max(100, ImGui.getContentRegionAvailY());
         ImGui.invisibleButton("graph_canvas", canvasWidth, canvasHeight);
         boolean hover = ImGui.isItemHovered();
+        boolean minimapHover = showMinimap && hover && ImGui.isMouseHoveringRect(canvasX + canvasWidth - 190, canvasY + canvasHeight - 130, canvasX + canvasWidth, canvasY + canvasHeight);
+        if (minimapHover) hover = false;
         Map<String, float[]> defaults = EditorGraph.arrange(cards);
         for (var card : cards) positions.putIfAbsent(card.node().id(), defaults.get(card.node().id()));
+        if (!graphFocus.isEmpty() && positions.containsKey(graphFocus)) {
+            var point = positions.get(graphFocus);
+            panX = canvasWidth / 2 - (point[0] + EditorGraph.WIDTH / 2) * zoom;
+            panY = canvasHeight / 2 - (point[1] + EditorGraph.HEADER) * zoom;
+            graphFocus = ""; fitGraph = false;
+        }
         if (fitGraph && !cards.isEmpty()) {
             float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
             for (var card : cards) {
@@ -820,10 +868,13 @@ final class ImGuiAuthoringEditor {
             float h = card.height() * zoom;
             draw.addRectFilled(x, y, x + w, y + h, 0xff39352f, 4);
             draw.addRectFilled(x, y, x + w, y + EditorGraph.HEADER * zoom,
-                    selectedNode.equals(node.id()) ? 0xff65513d : 0xff494037, 4);
+                    selectedNode.equals(node.id()) || nodeSelection.contains(node.id()) ? 0xff65513d : 0xff494037, 4);
             draw.addRect(x, y, x + w, y + h, node.entry() ? 0xff9cc6a2 : 0xff78716b, 4);
             graphText(draw, x + 12 * zoom, y + 10 * zoom, 0xfff2f0e9,
                     (node.entry() ? "Start: " : "") + node.id(), EditorGraph.WIDTH - 24);
+            long issueCount = diagnostics.stream().filter(issue -> issue.resourcePath().equals(document.resourcePath())
+                    && (issue.pointer().equals(node.pointer()) || issue.pointer().startsWith(node.pointer() + "/"))).count();
+            if (issueCount > 0) draw.addText(x + w - 28, y + 10, 0xff82b9ef, "!" + issueCount);
             float inputY = y + EditorGraph.HEADER / 2 * zoom;
             boolean inputHover = hover && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), x, inputY, EditorGraph.HEADER * zoom);
             draw.addCircleFilled(x, inputY, 6 * zoom, inputHover ? 0xff81c9ed : 0xffc2bdb4);
@@ -840,6 +891,10 @@ final class ImGuiAuthoringEditor {
             }
             if (!inputHover && hover && ImGui.isMouseHoveringRect(x, y, x + w, y + EditorGraph.HEADER * zoom)
                     && ImGui.isMouseClicked(0)) operation(() -> {
+                if (ImGui.getIO().getKeyCtrl()) {
+                    if (nodeSelection.isEmpty() && !selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+                    if (!nodeSelection.add(node.id())) nodeSelection.remove(node.id());
+                } else if (!nodeSelection.contains(node.id())) { nodeSelection.clear(); nodeSelection.add(node.id()); }
                 selectedNode = node.id();
                 setPointer(node.pointer());
                 selectedEdge = "";
@@ -875,6 +930,7 @@ final class ImGuiAuthoringEditor {
                     else graphText.tooltip(block);
                     if (ImGui.isMouseClicked(0)) operation(() -> {
                         selectedNode = node.id();
+                        nodeSelection.clear(); nodeSelection.add(node.id());
                         setPointer(block.pointer());
                         selectedEdge = "";
                         showBranch = false;
@@ -910,10 +966,15 @@ final class ImGuiAuthoringEditor {
             });
             if (node.id().equals(draggingNode) && ImGui.isMouseDragging(0)) {
                 nodeDragMoved = true;
-                position[0] += ImGui.getIO().getMouseDeltaX() / zoom;
-                position[1] += ImGui.getIO().getMouseDeltaY() / zoom;
+                for (String id : selectedNodes()) {
+                    float[] point = positions.get(id);
+                    if (point == null) continue;
+                    point[0] += ImGui.getIO().getMouseDeltaX() / zoom;
+                    point[1] += ImGui.getIO().getMouseDeltaY() / zoom;
+                }
             }
         }
+        if (showMinimap && !cards.isEmpty()) minimap(draw, cards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
         draw.popClipRect();
         if (ImGui.isMouseReleased(0)) {
             wireDragMoved = false;
@@ -925,6 +986,37 @@ final class ImGuiAuthoringEditor {
             }
         }
         ImGui.end();
+    }
+
+    private void minimap(ImDrawList draw, List<EditorGraph.Card> cards, float canvasX, float canvasY, float width, float height, boolean hovered) {
+        float left = canvasX + width - 190, top = canvasY + height - 130;
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        for (var card : cards) {
+            float[] point = positions.get(card.node().id());
+            minX = Math.min(minX, point[0]); minY = Math.min(minY, point[1]);
+            maxX = Math.max(maxX, point[0] + EditorGraph.WIDTH); maxY = Math.max(maxY, point[1] + card.height());
+        }
+        float scale = Math.min(170 / Math.max(1, maxX - minX), 110 / Math.max(1, maxY - minY));
+        draw.addRectFilled(left, top, left + 190, top + 130, 0xf0202020);
+        for (var card : cards) {
+            float[] point = positions.get(card.node().id());
+            float x = left + 10 + (point[0] - minX) * scale, y = top + 10 + (point[1] - minY) * scale;
+            draw.addRectFilled(x, y, x + EditorGraph.WIDTH * scale, y + card.height() * scale, card.node().id().equals(selectedNode) ? 0xff9cc6a2 : 0xff727272);
+        }
+        draw.pushClipRect(left, top, left + 190, top + 130, true);
+        draw.addRect(left + 10 + (-panX / zoom - minX) * scale, top + 10 + (-panY / zoom - minY) * scale,
+                left + 10 + ((width - panX) / zoom - minX) * scale, top + 10 + ((height - panY) / zoom - minY) * scale, 0xffedc981);
+        draw.popClipRect();
+        if (hovered) ImGui.setTooltip("Click to move the graph view");
+        if (hovered && ImGui.isMouseClicked(0)) {
+            float x = (ImGui.getMousePosX() - left - 10) / scale + minX;
+            float y = (ImGui.getMousePosY() - top - 10) / scale + minY;
+            panX = width / 2 - x * zoom; panY = height / 2 - y * zoom;
+        }
+    }
+
+    private static void sameLineFor(String label) {
+        if (ImGui.getItemRectMaxX() + ImGui.calcTextSize(label).x + 32 < ImGui.getWindowPosX() + ImGui.getWindowWidth() - 14) ImGui.sameLine();
     }
 
     private void wire(ImDrawList draw, float x1, float y1, float x2, float y2, int color) {
@@ -997,6 +1089,13 @@ final class ImGuiAuthoringEditor {
             }
             if (pointer.get().isEmpty()) campaignOwnership();
             selectedDetails();
+            for (var issue : diagnostics) if (issue.resourcePath().equals(document.resourcePath())
+                    && (issue.pointer().equals(pointer.get()) || issue.pointer().startsWith(pointer.get() + "/"))) {
+                ImGui.textWrapped(issue.severity() + ": " + issue.message());
+                ImGui.textWrapped(diagnosticHint(issue.message()));
+            }
+            if (pendingFields.pending()) try { pendingFields.validate(document); }
+            catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
             guidedObjective();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
@@ -1144,6 +1243,51 @@ final class ImGuiAuthoringEditor {
         if (changed) refresh();
     }
 
+    private java.util.Set<String> selectedNodes() {
+        return nodeSelection.isEmpty() && !selectedNode.isEmpty() ? java.util.Set.of(selectedNode) : java.util.Set.copyOf(nodeSelection);
+    }
+
+    private void pasteNodes() {
+        var added = graphClipboard.paste(document);
+        refresh(); nodeSelection.clear(); nodeSelection.addAll(added);
+        selectedNode = added.getFirst(); graphFocus = selectedNode;
+        setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+    }
+
+    private void navigateNode(int offset) {
+        var nodes = DialogueGraph.nodes(document);
+        if (nodes.isEmpty()) return;
+        int index = 0;
+        for (int i = 0; i < nodes.size(); i++) if (nodes.get(i).id().equals(selectedNode)) index = i;
+        var node = nodes.get(Math.floorMod(index + offset, nodes.size()));
+        selectedNode = node.id(); setPointer(node.pointer()); graphFocus = node.id();
+        nodeSelection.clear(); nodeSelection.add(node.id());
+    }
+
+    private void graphTools() {
+        if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind() == DefinitionKind.WORLD_CAMPAIGN) return;
+        if (ImGui.checkbox("Show minimap", showMinimap)) showMinimap = !showMinimap;
+        ImGui.textWrapped("Ctrl-click headers to select nodes. Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
+        if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(document, selectedNodes()));
+        if (ImGui.button("Paste nodes")) operation(this::pasteNodes);
+        if (!ImGui.collapsingHeader("Graph outline and bookmarks")) return;
+        input("Find node or wording", nodeFilter);
+        JsonObject metadata = document.metadata();
+        var bookmarks = metadata.has("bookmarks") ? metadata.getAsJsonArray("bookmarks") : new JsonArray();
+        for (var node : DialogueGraph.nodes(document)) {
+            if (!(node.id() + JsonPointers.get(document.json(), node.pointer())).toLowerCase(Locale.ROOT).contains(nodeFilter.get().toLowerCase(Locale.ROOT))) continue;
+            boolean bookmarked = bookmarks.asList().stream().anyMatch(value -> value.getAsString().equals(node.id()));
+            if (ImGui.selectable((bookmarked ? "* " : "") + node.id(), selectedNode.equals(node.id()))) operation(() -> {
+                selectedNode = node.id(); setPointer(node.pointer()); graphFocus = node.id(); nodeSelection.clear(); nodeSelection.add(node.id());
+            });
+            if (ImGui.smallButton((bookmarked ? "Unbookmark" : "Bookmark") + "##" + node.id())) operation(() -> document.editMetadata("Bookmark node", value -> {
+                if (!value.has("bookmarks")) value.add("bookmarks", new JsonArray());
+                var list = value.getAsJsonArray("bookmarks");
+                if (bookmarked) list.asList().removeIf(entry -> entry.getAsString().equals(node.id())); else list.add(node.id());
+            }));
+        }
+    }
+
     private void guidedObjective() {
         if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !ImGui.collapsingHeader("Add quest objective")) return;
         if (ImGui.beginCombo("Objective", objectiveType.replace('_', ' '))) {
@@ -1206,6 +1350,26 @@ final class ImGuiAuthoringEditor {
         var location = workspace.textLocation(document, key, locale.get());
         ImGui.textUnformatted(label);
         if (location != null) {
+            boolean fallback = !locale.get().equals("en_us") && !location.document().resourcePath().contains("/" + locale.get() + "/")
+                    && !location.document().resourcePath().endsWith("/" + locale.get() + ".json");
+            if (fallback) {
+                ImGui.textWrapped("English fallback. Create a translation before editing this language.");
+                if (location.document().resourcePath().endsWith("/locales/en_us.json") && ImGui.button("Create translation##" + path)) operation(() -> {
+                    if (!locale.get().matches("[a-z0-9_-]+")) throw new IllegalArgumentException("Choose a valid language code");
+                    String targetPath = location.document().resourcePath().replace("/locales/en_us.json", "/locales/" + locale.get() + ".json");
+                    var translated = workspace.documents().stream().filter(value -> value.resourcePath().equals(targetPath)).findFirst().orElse(null);
+                    if (translated == null) { translated = new AuthoringDocument(DefinitionKind.RESOURCE, targetPath, new JsonObject()); workspace.add(translated); }
+                    String messageKey = location.pointer().substring(location.pointer().lastIndexOf('/') + 1).replace("~1", "/").replace("~0", "~");
+                    String initial = workspace.resolveText(document, reference, "en_us");
+                    translated.edit("Create translation", root -> {
+                        JsonObject messages = root.has("messages") ? root.getAsJsonObject("messages") : root;
+                        messages.addProperty(messageKey, initial);
+                    });
+                    refresh();
+                });
+                ImGui.textWrapped(workspace.resolveText(document, reference, "en_us"));
+                return;
+            }
             JsonElement text = JsonPointers.get(location.document().json(), location.pointer());
             if (text.isJsonPrimitive() && text.getAsJsonPrimitive().isString()) {
                 String bufferId = location.document().resourcePath() + location.pointer();
@@ -1362,7 +1526,8 @@ final class ImGuiAuthoringEditor {
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
             default -> List.of();
         };
-        if (!choices.isEmpty() && ImGui.beginCombo("Choose " + field, input.get())) {
+        ImGui.setNextItemWidth(-1);
+        if (!choices.isEmpty() && ImGui.beginCombo("##choose_" + field, "Choose " + field + "...")) {
             for (String choice : choices) if (ImGui.selectable(choice, input.get().equals(choice))) input.set(choice);
             ImGui.endCombo();
         }
@@ -1406,7 +1571,7 @@ final class ImGuiAuthoringEditor {
             startPreview(selectedNode.isEmpty() ? pointer.get() : selectedNode);
         ImGui.endDisabled();
         if (target == null) ImGui.textDisabled("Select a target to play.");
-        else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
+        else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation, preferences.textScale());
         EditorPreviewConditions.render(conditions, document == null ? null : document.json());
         previewScenarios();
         if (ImGui.collapsingHeader("Preview log"))
@@ -1415,6 +1580,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void questSimulation() {
+        conditions.worldTime(MC.level.getDayTime());
         ImGui.textWrapped("Isolated quest simulation. Objective completion is simulated. Actions and rewards are logged.");
         if (ImGui.button("Start / restart quest test")) operation(() -> questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions));
         if (questPreview != null) {
@@ -1437,6 +1603,7 @@ final class ImGuiAuthoringEditor {
             }
             for (String line : questPreview.log()) ImGui.textWrapped(line);
         }
+        EditorPreviewConditions.time(conditions);
         EditorPreviewConditions.render(conditions, document.json());
         previewScenarios();
     }
@@ -1473,6 +1640,7 @@ final class ImGuiAuthoringEditor {
             var authoredId = net.minecraft.resources.ResourceLocation.tryParse(document.id());
             var evaluationId = authoredId == null
                     ? net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview") : authoredId;
+            if (guideStep == 3) guideStep = 4;
             conditions.worldTime(MC.level.getDayTime());
             AuthoringDialoguePreview.start(document, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
                 JsonObject reference = new JsonObject();
@@ -1483,6 +1651,15 @@ final class ImGuiAuthoringEditor {
                 return resolved.equals(key) ? null : resolved;
             });
         });
+    }
+
+    private static String diagnosticHint(String message) {
+        String text = message.toLowerCase(Locale.ROOT);
+        if (text.contains("missing target") || text.contains("missing entry")) return "Choose an existing node or create a connected destination.";
+        if (text.contains("unreachable")) return "Connect this node from the conversation, or make it an entry.";
+        if (text.contains("duplicate")) return "Give the conflicting entries distinct IDs.";
+        if (text.contains("local") || text.contains("translation")) return "Check the selected language and import its locale file.";
+        return "Select this issue to open the affected field.";
     }
 
     private void diagnostics() {
@@ -1505,6 +1682,7 @@ final class ImGuiAuthoringEditor {
             Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, Path.of(exportPath.get()));
             preferences = preferences.withExport(exportPath.get()); savePreferences();
             status = "Exported datapack to " + exportPath.get() + (backup == null ? "" : ". Previous version: " + backup);
+            if (guideStep == 4) dismissGuide();
         });
         ImGui.endDisabled();
         if (ImGui.button("Open output folder")) net.minecraft.Util.getPlatform().openFile(Path.of(exportPath.get()).toFile());
@@ -1626,6 +1804,7 @@ final class ImGuiAuthoringEditor {
         fitGraph = true;
         historyDocument = next;
         selectedNode = "";
+        nodeSelection.clear();
         selectedEdge = "";
         draggingNode = null;
         pointer.set("");
@@ -1678,7 +1857,16 @@ final class ImGuiAuthoringEditor {
                 }
             }
         }
-        if (document != null) jsonText.set(JSON.toJson(document.json()));
+        if (document != null) {
+            jsonText.set(JSON.toJson(document.json()));
+            try {
+                var ids = DialogueGraph.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet());
+                nodeSelection.retainAll(ids);
+                if (!selectedNode.isEmpty() && !ids.contains(selectedNode)) { selectedNode = ""; pointer.set(""); }
+            } catch (IllegalArgumentException | IllegalStateException | ClassCastException | UnsupportedOperationException exception) {
+                nodeSelection.clear();
+            }
+        }
         validate();
     }
 

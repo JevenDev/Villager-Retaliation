@@ -57,6 +57,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
         preview = DialogueCameraController.beginPreview();
         preview.frame(initial);
         preview.pose(requested);
+        minecraft.options.hideGui = true;
     }
 
     public static AuthoringCameraSession begin(Entity speaker, Entity character, Runnable returnToEditor) {

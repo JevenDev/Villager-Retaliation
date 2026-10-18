@@ -1,5 +1,5 @@
 {
-  "key.villagerretaliation.open_authoring_editor": "Open dialogue authoring editor",
+  "key.villagerretaliation.open_authoring_editor": "Open content authoring editor",
   "villagerretaliation.party.error.companion_owner_required": "Only the companion owner can manage this permission.",
   "villagerretaliation.party.error.companion_in_combat": "Goodbye is unavailable during combat or recovery. Wait until it is safe.",
   "villagerretaliation.party.error.companion_permanent": "This companion stays until you say goodbye. No renewal is needed.",

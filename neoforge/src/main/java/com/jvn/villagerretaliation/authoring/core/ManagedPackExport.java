@@ -30,9 +30,11 @@ public final class ManagedPackExport {
                 throw new IOException("This folder is not an editor-managed export. Choose a new folder.");
             try {
                 JsonObject state = JsonParser.parseString(Files.readString(manifest)).getAsJsonObject();
+                if (!state.has("workspace") || !state.get("workspace").isJsonPrimitive() || !state.has("files") || !state.get("files").isJsonObject())
+                    throw new IOException("Invalid managed export manifest");
                 if (!workspace.directory().toString().equals(state.get("workspace").getAsString())) throw new IOException("This export belongs to another workspace");
                 for (var entry : state.getAsJsonObject("files").entrySet()) previous.put(AuthoringWorkspace.safeRelativePath(entry.getKey()), entry.getValue().getAsString());
-            } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException | NullPointerException exception) {
+            } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException exception) {
                 throw new IOException("Invalid managed export manifest", exception);
             }
             for (var entry : previous.entrySet()) {

@@ -29,7 +29,37 @@ final class EditorContentTools {
     }
 
     static List<DialogueGraph.Edge> usages(AuthoringDocument document, String id) {
-        return DialogueGraph.edges(document).stream().filter(edge -> edge.to().equals(id)).distinct().toList();
+        var references = new java.util.LinkedHashMap<String, DialogueGraph.Edge>();
+        DialogueGraph.edges(document).stream().filter(edge -> edge.to().equals(id)).forEach(edge -> references.put(edge.pointer(), edge));
+        if (document.kind() != DefinitionKind.FORCED) collectReferences(document, document.json(), "", id, references);
+        return List.copyOf(references.values());
+    }
+
+    private static void collectReferences(AuthoringDocument document, JsonElement value, String pointer, String id,
+            java.util.Map<String, DialogueGraph.Edge> references) {
+        if (value.isJsonObject()) {
+            JsonObject object = value.getAsJsonObject();
+            String quest = object.has("quest") ? DialogueGraph.string(object, "quest") : DialogueGraph.string(object, "quest_id");
+            if (!quest.isBlank() && !quest.equals(document.id())) return;
+            for (var entry : object.entrySet()) {
+                if (List.of("metadata", "text", "label", "lines", "variants", "display").contains(entry.getKey())) continue;
+                String path = pointer + "/" + JsonPointers.escape(entry.getKey());
+                if (List.of("stage", "next", "start", "entry_stage", "success", "failure").contains(entry.getKey())
+                        && entry.getValue().isJsonPrimitive() && id.equals(entry.getValue().getAsString())) {
+                    String owner = DialogueGraph.nodes(document).stream().filter(node -> path.startsWith(node.pointer() + "/"))
+                            .map(DialogueGraph.Node::id).findFirst().orElse("");
+                    references.putIfAbsent(path, new DialogueGraph.Edge(owner, id, path, "Reference"));
+                } else if (entry.getKey().equals("stages") && entry.getValue().isJsonArray()) {
+                    int index = 0;
+                    for (var child : entry.getValue().getAsJsonArray()) {
+                        if (child.isJsonPrimitive() && id.equals(child.getAsString())) references.putIfAbsent(path + "/" + index,
+                                new DialogueGraph.Edge("", id, path + "/" + index, "Stage filter"));
+                        else collectReferences(document, child, path + "/" + index, id, references);
+                        index++;
+                    }
+                } else collectReferences(document, entry.getValue(), path, id, references);
+            }
+        } else if (value.isJsonArray()) for (int i = 0; i < value.getAsJsonArray().size(); i++) collectReferences(document, value.getAsJsonArray().get(i), pointer + "/" + i, id, references);
     }
 
     static void renameNode(AuthoringDocument document, String id, String replacement) {
@@ -52,12 +82,48 @@ final class EditorContentTools {
                 parent.add(replacement, owner.deepCopy());
                 JsonPointers.remove(root, node.pointer());
             }
+        }, metadata -> {
+            if (metadata.has("node_positions")) {
+                var positions = metadata.getAsJsonObject("node_positions");
+                if (positions.has(id)) positions.add(replacement, positions.remove(id));
+            }
+            if (metadata.has("bookmarks")) {
+                var bookmarks = metadata.getAsJsonArray("bookmarks");
+                for (int i = 0; i < bookmarks.size(); i++) if (bookmarks.get(i).getAsString().equals(id)) bookmarks.set(i, new JsonPrimitive(replacement));
+            }
         });
+    }
+
+    static String createConnected(AuthoringDocument document, String output, String id) {
+        var draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+        String selected = id;
+        if (document.kind() == DefinitionKind.FORCED) {
+            draft.edit("Add follow-up", root -> {
+                var followUp = DialogueGraph.defaultNode(DefinitionKind.FORCED, "follow_up");
+                followUp.remove("id"); followUp.remove("trigger"); followUp.add("options", new JsonArray());
+                JsonPointers.set(root, output, followUp);
+                JsonObject response = JsonPointers.get(root, output.substring(0, output.lastIndexOf('/'))).getAsJsonObject();
+                response.addProperty("end_conversation", false);
+            });
+            selected = output;
+        } else {
+            DialogueGraph.addNode(draft, id);
+            DialogueGraph.connect(draft, output, id);
+        }
+        document.edit("Create connected node", root -> { root.keySet().clear(); draft.json().entrySet().forEach(entry -> root.add(entry.getKey(), entry.getValue())); });
+        return selected;
     }
 
     static void deleteNode(AuthoringDocument document, String id, String redirect) {
         var references = usages(document, id).stream().filter(edge -> !edge.from().equals(id)).toList();
         var node = DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
+        if (document.kind() == DefinitionKind.FORCED) {
+            if (node.pointer().isEmpty() || node.entry() && DialogueGraph.array(document.json(), "entries").size() < 2)
+                throw new IllegalArgumentException("Keep one entry, or remove this dialogue using Delete file");
+            String removal = node.pointer().endsWith("/follow_up") ? node.pointer().substring(0, node.pointer().length() - "/follow_up".length()) : node.pointer();
+            document.edit("Delete triggered branch", root -> JsonPointers.remove(root, removal));
+            return;
+        }
         if (node.entry()) throw new IllegalArgumentException("Choose another start node before deleting this one");
         if (!references.isEmpty() && (redirect.isBlank() || redirect.equals(id)
                 || DialogueGraph.nodes(document).stream().noneMatch(value -> value.id().equals(redirect))))

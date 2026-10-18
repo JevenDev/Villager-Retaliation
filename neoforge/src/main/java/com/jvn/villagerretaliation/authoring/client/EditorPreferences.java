@@ -26,6 +26,11 @@ public record EditorPreferences(boolean guideDismissed, int layoutVersion, Strin
     public EditorPreferences withExport(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, value, locale, textScale); }
     public EditorPreferences withLocale(String value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, value, textScale); }
     public EditorPreferences withScale(float value) { return new EditorPreferences(guideDismissed, layoutVersion, workspace, recentWorkspaces, exportFolder, locale, Math.clamp(value, .8f, 2f)); }
+    public EditorPreferences {
+        recentWorkspaces = java.util.List.copyOf(recentWorkspaces);
+        if (!Float.isFinite(textScale) || textScale < .8f || textScale > 2) throw new IllegalArgumentException("Invalid editor text scale");
+    }
+
     public static final int CURRENT_LAYOUT = 1;
 
     public static EditorPreferences defaults() { return new EditorPreferences(false, 0, ""); }

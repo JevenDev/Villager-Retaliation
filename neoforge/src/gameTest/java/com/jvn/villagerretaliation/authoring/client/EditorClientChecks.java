@@ -10,6 +10,10 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        stageReferencesAndTriggeredDeletionStaySafe();
+        cameraSequenceEditsKeepThumbnailsAndUndoTogether();
+        graphClipboardPreservesBranchesAndUndo();
+        connectedNodeCreationIsAtomic();
         managedExportsPreserveExternalFilesAndBackups();
         previewScenariosRestoreIndependentChecks();
         recipesAndObjectivesValidate();
@@ -41,7 +45,76 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 31;
+        return 35;
+    }
+
+    private static void stageReferencesAndTriggeredDeletionStaySafe() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-stage-refs"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:stage_refs");
+        DialogueGraph.addNode(quest, "other");
+        quest.edit("Add stage-filtered event", root -> {
+            JsonObject event = new JsonObject(); event.addProperty("id", "event"); event.addProperty("event", "player_tick");
+            event.addProperty("stage", "other"); var values = new com.google.gson.JsonArray(); values.add(event); root.add("events", values);
+        });
+        EditorContentTools.renameNode(quest, "other", "renamed");
+        check(quest.json().getAsJsonArray("events").get(0).getAsJsonObject().get("stage").getAsString().equals("renamed"), "stage renames update event filters");
+        quest.undo();
+        check(quest.json().getAsJsonArray("events").get(0).getAsJsonObject().get("stage").getAsString().equals("other"), "event filters undo with their stage rename");
+        var forced = workspace.createDocument(DefinitionKind.FORCED, "test:triggered");
+        forced.edit("Add nested branch", root -> {
+            JsonObject response = root.getAsJsonArray("options").get(0).getAsJsonObject();
+            response.addProperty("end_conversation", false);
+            var follow = new JsonObject(); var lines = new com.google.gson.JsonArray(); lines.add("Keep the parent safe"); follow.add("lines", lines);
+            response.add("follow_up", follow);
+        });
+        var original = forced.json();
+        EditorContentTools.deleteNode(forced, "/options/0/follow_up", "");
+        check(forced.json().getAsJsonArray("options").isEmpty(), "deleting a nested follow-up removes its owning response");
+        forced.undo(); check(forced.json().equals(original), "triggered branch deletion is fully undoable");
+    }
+
+    private static void cameraSequenceEditsKeepThumbnailsAndUndoTogether() {
+        var document = tree();
+        JsonObject shot = new JsonObject(); shot.addProperty("preset", "over_shoulder_left");
+        EditorDocumentOperations.appendShot(document, "/nodes/start", shot, "first");
+        EditorDocumentOperations.appendShot(document, "/nodes/start", shot, "second");
+        var original = document.json(); var metadata = document.metadata();
+        EditorCameraShots.edit(document, "/nodes/start", 1, "up", ignored -> { });
+        check(EditorCameraShots.thumbnails(document.metadata(), "/nodes/start", 2).get(0).getAsString().equals("second"), "shot movement includes its thumbnail");
+        document.undo();
+        check(document.json().equals(original) && document.metadata().equals(metadata), "shot order and thumbnails undo together");
+        EditorCameraShots.edit(document, "/nodes/start", 0, "update", value -> value.addProperty("hold_seconds", 3));
+        var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(document.json().getAsJsonObject("nodes").getAsJsonObject("start"));
+        check(camera.shots().getFirst().holdSeconds() == 3, "timing edits use runtime camera fields");
+        EditorCameraShots.edit(document, "/nodes/start", 1, "delete", ignored -> { });
+        EditorCameraShots.edit(document, "/nodes/start", 0, "delete", ignored -> { });
+        check(!document.json().getAsJsonObject("nodes").getAsJsonObject("start").has("camera"), "removing the last shot removes its camera cleanly");
+        document.undo();
+        check(document.json().getAsJsonObject("nodes").getAsJsonObject("start").has("camera"), "deleted shots remain undoable");
+    }
+
+    private static void graphClipboardPreservesBranchesAndUndo() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-clipboard"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:clipboard");
+        EditorContentTools.recipe(workspace, document, "Branching dialogue");
+        var clipboard = new EditorGraphClipboard();
+        var original = document.json();
+        clipboard.copy(document, java.util.Set.of("start", "follow_up"));
+        var pasted = clipboard.paste(document);
+        check(pasted.size() == 2 && DialogueGraph.edges(document).stream().anyMatch(edge -> edge.from().equals("start_copy") && edge.to().equals("follow_up_copy")), "pasting a selection remaps its internal branches");
+        document.undo();
+        check(document.json().equals(original), "pasting multiple nodes undoes as one change");
+    }
+
+    private static void connectedNodeCreationIsAtomic() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-connected"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:connected");
+        workspace.addDialogueResponse(document, "start", "reply", "Continue", "");
+        var original = document.json();
+        EditorContentTools.createConnected(document, "/nodes/start/responses/0/next", "new_destination");
+        check(DialogueGraph.edges(document).getFirst().to().equals("new_destination"), "new nodes connect directly to their selected output");
+        document.undo();
+        check(document.json().equals(original), "node creation and connection undo together");
     }
 
     private static void managedExportsPreserveExternalFilesAndBackups() throws java.io.IOException {

@@ -82,6 +82,10 @@ public final class EditorDocumentOperations {
     }
 
     public static void appendShot(AuthoringDocument document, String pointer, JsonObject shot) {
+        appendShot(document, pointer, shot, "");
+    }
+
+    static void appendShot(AuthoringDocument document, String pointer, JsonObject shot, String thumbnail) {
         cameraOwner(document, pointer);
         document.edit("Capture camera shot", root -> {
             JsonObject owner = JsonPointers.get(root, pointer).getAsJsonObject();
@@ -92,6 +96,10 @@ public final class EditorDocumentOperations {
             camera.getAsJsonArray("shots").add(shot.deepCopy());
             owner.add("camera", camera);
             DialogueCamera.read(owner);
+        }, metadata -> {
+            JsonObject original = cameraOwner(document, pointer);
+            int count = original.has("camera") && original.getAsJsonObject("camera").has("shots") ? original.getAsJsonObject("camera").getAsJsonArray("shots").size() : 0;
+            EditorCameraShots.thumbnails(metadata, pointer, count).add(thumbnail);
         });
     }
 

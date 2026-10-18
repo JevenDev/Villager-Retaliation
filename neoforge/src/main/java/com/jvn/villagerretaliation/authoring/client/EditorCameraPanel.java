@@ -26,6 +26,9 @@ final class EditorCameraPanel {
     private static DialogueCamera.Preset preset = DialogueCamera.Preset.OVER_SHOULDER_LEFT;
     private static String cameraOwner;
     private static AuthoringDocument ownerDocument;
+    private static final EditorWorldPreview worldPreview = new EditorWorldPreview();
+    private static final java.util.Map<String, net.minecraft.client.renderer.texture.DynamicTexture> thumbnails = new java.util.HashMap<>();
+    private static int selectedShot;
 
     private EditorCameraPanel() { }
 
@@ -36,6 +39,9 @@ final class EditorCameraPanel {
     }
 
     static void close() {
+        worldPreview.close();
+        thumbnails.values().forEach(net.minecraft.client.renderer.texture.DynamicTexture::close);
+        thumbnails.clear();
         if (session != null) {
             session.close();
             session = null;
@@ -44,7 +50,7 @@ final class EditorCameraPanel {
     }
 
     static void render(AuthoringDocument document, String pointer, Entity speaker, Screen returnScreen,
-            Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation) {
+            Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation, float textScale) {
         if (session != null && (sessionSpeaker != speaker || ownerDocument != document)) close();
         String nextOwner;
         try {
@@ -91,10 +97,12 @@ final class EditorCameraPanel {
         ImGui.sameLine();
         if (ImGui.button("Restore player camera")) close();
         if (session == null || !session.active()) return;
-        anchor = enumeration("Anchor", anchor);
-        placement = enumeration("Placement", placement);
-        target = enumeration("Look at", target);
         preset = enumeration("Preset", preset);
+        if (ImGui.collapsingHeader("Advanced framing")) {
+            anchor = enumeration("Anchor", anchor);
+            placement = enumeration("Placement", placement);
+            target = enumeration("Look at", target);
+        }
         if (ImGui.button("Preview preset")) operation.accept(() -> session.preview(new Camera(Target.SPEAKER, null, List.of(
                 new DialogueCamera.Shot(preset, anchor, placement, DialogueCamera.Perspective.THIRD_PERSON,
                         Vec3.ZERO, target, null, DialogueCamera.Transition.CUT, 0, DialogueCamera.Easing.LINEAR, 0)))));
@@ -104,19 +112,21 @@ final class EditorCameraPanel {
             var shot = session.capture(anchor, placement, DialogueCamera.Perspective.THIRD_PERSON, target);
             JsonObject shotJson = DialogueCamera.json(new Camera(Target.SPEAKER, null, List.of(shot)))
                     .getAsJsonArray("shots").get(0).getAsJsonObject();
-            EditorDocumentOperations.appendShot(document, cameraOwner, shotJson);
+            EditorDocumentOperations.appendShot(document, cameraOwner, shotJson, worldPreview.thumbnail());
             changed.run();
             session.preview(new Camera(Target.SPEAKER, null, List.of(shot)));
         });
-        var pose = session.pose();
-        float[] position = {(float) pose.position().x, (float) pose.position().y, (float) pose.position().z};
-        float[] rotation = {pose.yaw(), pose.pitch()};
-        float[] fov = {(float) pose.fov()};
-        if (ImGui.inputFloat3("World XYZ", position)) operation.accept(() -> session.setPose(
-                new DialogueCameraTimeline.Pose(new Vec3(position[0], position[1], position[2]), pose.yaw(), pose.pitch(), pose.fov())));
-        if (ImGui.inputFloat2("Yaw / pitch", rotation)) operation.accept(() -> session.setPose(
-                new DialogueCameraTimeline.Pose(pose.position(), rotation[0], rotation[1], pose.fov())));
-        if (ImGui.sliderFloat("FOV", fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
+        if (ImGui.collapsingHeader("Coordinates and FOV")) {
+            var pose = session.pose();
+            float[] position = {(float) pose.position().x, (float) pose.position().y, (float) pose.position().z};
+            float[] rotation = {pose.yaw(), pose.pitch()};
+            float[] fov = {(float) pose.fov()};
+            if (ImGui.inputFloat3("World XYZ", position)) operation.accept(() -> session.setPose(
+                    new DialogueCameraTimeline.Pose(new Vec3(position[0], position[1], position[2]), pose.yaw(), pose.pitch(), pose.fov())));
+            if (ImGui.inputFloat2("Yaw / pitch", rotation)) operation.accept(() -> session.setPose(
+                    new DialogueCameraTimeline.Pose(pose.position(), rotation[0], rotation[1], pose.fov())));
+            if (ImGui.sliderFloat("FOV", fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
+        }
         if (ImGui.button("Preview saved sequence")) operation.accept(() -> {
             JsonObject savedOwner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
             Camera camera = DialogueCamera.read(savedOwner);
@@ -124,9 +134,71 @@ final class EditorCameraPanel {
             session.preview(camera);
         });
         if (ImGui.collapsingHeader("Shot settings")) {
-            ImGui.textWrapped("Select the Camera block in Edit to adjust timing, reorder or remove shots.");
+            ImGui.textWrapped("Use Camera preview and shots to adjust timing, reorder or remove shots.");
             ImGui.textWrapped("Relative shots follow the anchor. Fixed shots use world coordinates. Captured shots keep their rotation. Remove orientation to track the look-at target.");
         }
+        studio(document, changed, operation, textScale);
+    }
+
+    private static void studio(AuthoringDocument document, Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation, float textScale) {
+        var viewport = ImGui.getMainViewport();
+        ImGui.setNextWindowPos(viewport.getWorkPosX() + Math.max(480, viewport.getWorkSizeX() - 650), viewport.getWorkPosY() + 180, imgui.flag.ImGuiCond.FirstUseEver);
+        ImGui.setNextWindowSize(620, 660, imgui.flag.ImGuiCond.FirstUseEver);
+        if (ImGui.begin("Camera preview and shots###VR_CameraStudio")) {
+            ImGui.setWindowFontScale(textScale);
+            worldPreview.render(Math.max(160, ImGui.getContentRegionAvailX()));
+            ImGui.textWrapped("Live framing. Position the free camera, then add a shot.");
+            JsonObject owner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
+            if (owner.has("camera") && owner.getAsJsonObject("camera").has("shots")) {
+                var shots = owner.getAsJsonObject("camera").getAsJsonArray("shots");
+                selectedShot = Math.clamp(selectedShot, 0, Math.max(0, shots.size() - 1));
+                var images = EditorCameraShots.thumbnails(document.metadata(), cameraOwner, shots.size());
+                for (int i = 0; i < shots.size(); i++) {
+                    int index = i;
+                    ImGui.pushID(i);
+                    String encoded = images.get(i).getAsString();
+                    if (!encoded.isBlank()) {
+                        try {
+                            var texture = thumbnails.get(encoded);
+                            if (texture == null) {
+                                texture = new net.minecraft.client.renderer.texture.DynamicTexture(com.mojang.blaze3d.platform.NativeImage.read(
+                                        new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(encoded))));
+                                thumbnails.put(encoded, texture);
+                            }
+                            ImGui.image(texture.getId(), 96, 54);
+                            ImGui.sameLine();
+                        } catch (java.io.IOException | IllegalArgumentException exception) {
+                            ImGui.textWrapped("Thumbnail unavailable: " + exception.getMessage());
+                        }
+                    }
+                    if (ImGui.selectable("Shot " + (i + 1), selectedShot == i)) selectedShot = i;
+                    if (selectedShot == i) {
+                        JsonObject shot = shots.get(i).getAsJsonObject();
+                        float[] hold = {shot.has("hold_seconds") ? shot.get("hold_seconds").getAsFloat() : 0};
+                        if (ImGui.sliderFloat("Hold seconds", hold, 0, 30)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.addProperty("hold_seconds", hold[0])); changed.run(); });
+                        JsonObject transition = shot.has("transition") ? shot.getAsJsonObject("transition") : new JsonObject();
+                        boolean smooth = "lerp".equals(com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(transition, "type"));
+                        if (ImGui.checkbox("Smooth transition", smooth)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> {
+                            JsonObject settings = new JsonObject(); settings.addProperty("type", smooth ? "cut" : "lerp");
+                            if (!smooth) { settings.addProperty("duration_seconds", 1); settings.addProperty("easing", "smoothstep"); }
+                            value.add("transition", settings);
+                        }); changed.run(); });
+                        if (smooth) {
+                            float[] duration = {transition.has("duration_seconds") ? transition.get("duration_seconds").getAsFloat() : 1};
+                            if (ImGui.sliderFloat("Transition seconds", duration, .05f, 10)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.getAsJsonObject("transition").addProperty("duration_seconds", duration[0])); changed.run(); });
+                        }
+                        for (String action : List.of("up", "down", "duplicate", "delete")) {
+                            ImGui.beginDisabled(action.equals("up") && i == 0 || action.equals("down") && i == shots.size() - 1);
+                            if (ImGui.button(action)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, action, ignored -> { }); changed.run(); });
+                            ImGui.endDisabled(); ImGui.sameLine();
+                        }
+                        ImGui.newLine();
+                    }
+                    ImGui.popID();
+                }
+            }
+        }
+        ImGui.end();
     }
 
     private static String enumLabel(Enum<?> value) {
