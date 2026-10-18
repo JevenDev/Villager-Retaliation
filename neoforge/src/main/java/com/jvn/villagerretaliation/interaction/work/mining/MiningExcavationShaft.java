@@ -681,7 +681,8 @@ public final class MiningExcavationShaft {
     }
 
     private static boolean isMineableShaftBlock(LevelReader level, BlockPos pos) {
-        if (!MiningBlockRules.isBuilderClearableObstruction(level, pos, level.getBlockState(pos))) {
+        if (!MiningBlockRules.isMineableExcavationBlock(level, level::hasChunkAt, pos)
+                && !MiningBlockRules.isBuilderClearableObstruction(level, pos, level.getBlockState(pos))) {
             return false;
         }
         for (Direction direction : Direction.values()) {
