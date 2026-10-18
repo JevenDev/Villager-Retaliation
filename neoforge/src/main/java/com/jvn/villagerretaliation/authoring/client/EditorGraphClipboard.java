@@ -246,7 +246,7 @@ final class EditorGraphClipboard {
     private static void collectStrings(JsonElement value, String field, Set<String> values) {
         if (value.isJsonObject()) {
             JsonObject object = value.getAsJsonObject();
-            if (object.has(field) && object.get(field).isJsonPrimitive() && object.getAsJsonPrimitive(field).isString())
+            if (referenceField(object, field) && object.has(field) && object.get(field).isJsonPrimitive() && object.getAsJsonPrimitive(field).isString())
                 values.add(object.get(field).getAsString());
             for (var entry : object.entrySet()) if (!entry.getKey().equals("metadata")) collectStrings(entry.getValue(), field, values);
         } else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> collectStrings(child, field, values));
@@ -255,10 +255,16 @@ final class EditorGraphClipboard {
     private static void rewriteStrings(JsonElement value, String field, Map<String, String> names) {
         if (value.isJsonObject()) {
             JsonObject object = value.getAsJsonObject();
-            if (object.has(field) && object.get(field).isJsonPrimitive() && names.containsKey(object.get(field).getAsString()))
+            if (referenceField(object, field) && object.has(field) && object.get(field).isJsonPrimitive() && names.containsKey(object.get(field).getAsString()))
                 object.addProperty(field, names.get(object.get(field).getAsString()));
             for (var entry : object.entrySet()) if (!entry.getKey().equals("metadata")) rewriteStrings(entry.getValue(), field, names);
         } else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> rewriteStrings(child, field, names));
+    }
+
+    private static boolean referenceField(JsonObject object, String field) {
+        if (field.equals("key")) return object.keySet().equals(Set.of("key"));
+        if (field.equals("role")) return DialogueGraph.string(object, "type").equals("role");
+        return true;
     }
 
     private static String unique(String id, Set<String> used) {

@@ -87,6 +87,11 @@ final class EditorSchema {
 
     Map<String, JsonElement> choices(JsonObject rule) {
         Map<String, JsonElement> result = new LinkedHashMap<>();
+        if (rule.isEmpty()) {
+            result.put("Text", new JsonPrimitive("")); result.put("Number", new JsonPrimitive(0)); result.put("Toggle", new JsonPrimitive(false));
+            result.put("Object", new JsonObject()); result.put("List", new JsonArray());
+            return result;
+        }
         alternatives(rule, result, 0);
         if (result.isEmpty()) result.put("New entry", seed(rule));
         return result;
@@ -120,7 +125,15 @@ final class EditorSchema {
                     : value.isJsonObject() ? "Object" : value.isJsonArray() ? "List"
                     : value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean() ? "Toggle"
                     : value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() ? "Number" : "Text";
-            result.putIfAbsent(name, value);
+            if (value.isJsonObject() && !value.getAsJsonObject().isEmpty()) {
+                JsonObject object = value.getAsJsonObject();
+                name = object.has("type") && object.get("type").isJsonPrimitive() ? object.get("type").getAsString()
+                        : "Object (" + String.join(", ", object.keySet()) + ")";
+            }
+            String unique = name;
+            int number = 2;
+            while (result.containsKey(unique)) unique = name + " " + number++;
+            result.put(unique, value);
         }
     }
 

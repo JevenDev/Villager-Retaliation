@@ -44,8 +44,10 @@ public final class AuthoringEditorClientSmoke {
     private static AuthoringWorkspace workspace;
     private static AuthoringDocument document;
     private static long started, resumeAt;
+    private static java.util.concurrent.CompletableFuture<?> liveCheck;
+    private static Path originalWorld;
     private static int frames;
-    private static boolean finished, installed, mouseDown, previousDown;
+    private static boolean finished, installed, mouseDown, previousDown, stepping;
     private static boolean cameraGuiBefore;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
     private static float mouseWheel;
@@ -60,7 +62,7 @@ public final class AuthoringEditorClientSmoke {
         if (System.getProperty(OUTPUT) == null || finished) return;
         var minecraft = Minecraft.getInstance();
         if (started == 0) started = Util.getMillis();
-        require(Util.getMillis() - started < 180_000, "Editor client test timed out after " + frames + " frames.");
+        require(Util.getMillis() - started < 360_000, "Editor client test timed out after " + frames + " frames.");
         minecraft.setWindowActive(true);
         minecraft.options.pauseOnLostFocus = false;
         if (installed || minecraft.player == null || minecraft.level == null || minecraft.screen != null) return;
@@ -316,7 +318,7 @@ public final class AuthoringEditorClientSmoke {
             try {
                 Files.writeString(output().resolve("result.txt"),
                         "Authoring editor client smoke passed\nGraph interactions, automatic layout, onboarding, and full setup through native controls.\n"
-                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews, free-camera positioning, shot capture, camera restoration, import protection, and reimport into a new workspace.\n");
+                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews, free-camera positioning, shot capture, camera restoration, import protection, and reimport into a new workspace. Separate world creation, automatic test pack activation, real inventory objectives, live entry actions and rewards, original world preservation, and stale snapshot rejection.\n");
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
@@ -389,6 +391,120 @@ public final class AuthoringEditorClientSmoke {
             capture("26-test-world-setup");
             Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(Minecraft.getInstance().screen == field(editor, "screen"), "Cancelling test world setup returns to the editor.");
+        });
+        buildLiveWorldSteps();
+    }
+
+    private static void buildLiveWorldSteps() {
+        STEPS.add(() -> {
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:live_execution");
+            EditorContentTools.recipe(workspace, quest, "Fetch quest");
+            DialogueGraph.addNode(quest, "finish");
+            DialogueGraph.connect(quest, "/stages/0/transition", "finish");
+            quest.edit("Set live rewards", root -> {
+                var start = root.getAsJsonArray("stages").get(0).getAsJsonObject();
+                var entry = new com.google.gson.JsonArray();
+                var experience = new com.google.gson.JsonObject();
+                experience.addProperty("type", "experience"); experience.addProperty("amount", 7); entry.add(experience);
+                start.add("on_enter", entry);
+                var reward = new com.google.gson.JsonObject(); reward.addProperty("experience", 17); root.add("rewards", reward);
+            });
+            require(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR),
+                    "The live test workspace validates before world creation: " + workspace.validate());
+            document = quest;
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, quest);
+            originalWorld = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            require(!EditorTestWorld.active(workspace), "Ordinary worlds cannot execute editor live tests.");
+            try { EditorLiveQuestTest.start(workspace, quest); throw new IllegalStateException("Live start escaped its separate test world"); }
+            catch (IllegalArgumentException expected) { }
+            try { EditorTestWorld.prepare(workspace, Minecraft.getInstance().screen); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
+        });
+        waitUntil(() -> Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen);
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            require(minecraft.screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen,
+                    "Confirmed setup opens the vanilla world creation screen.");
+            var create = (net.minecraft.client.gui.screens.worldselection.CreateWorldScreen) minecraft.screen;
+            require(create.getUiState().getSettings().dataConfiguration().dataPacks().getEnabled().contains("file/test_content"),
+                    "The exported test pack is enabled automatically.");
+            capture("27-test-world-ready");
+            minecraft.tell(() -> create.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0));
+        });
+        waitUntil(() -> {
+            if (Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen) Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
+            return Minecraft.getInstance().player != null && Minecraft.getInstance().screen == null && EditorTestWorld.active(workspace);
+        });
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            require(!originalWorld.equals(minecraft.getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
+                    "Live testing creates a different world directory.");
+            require(Files.isRegularFile(originalWorld.resolve("level.dat")) && !Files.exists(originalWorld.resolve("datapacks/test_content")),
+                    "The original world remains available without the test pack.");
+            require(minecraft.getSingleplayerServer().getPackRepository().getSelectedIds().contains("file/test_content"), "The created server loaded the test pack.");
+            require(EditorTestWorld.currentSnapshot(workspace), "Live execution identifies the exported snapshot.");
+            EditorLiveQuestTest.start(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.view().message().contains("Started quest"), "Live quest starts through the runtime: " + EditorLiveQuestTest.view());
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                require(player.totalExperience == 7, "Live entry actions grant real experience exactly once.");
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel())
+                        .get(playerId, net.minecraft.resources.ResourceLocation.parse(document.id()));
+                require(progress != null && progress.currentStage().equals("start"), "Unmet live objectives keep the quest at its first stage.");
+                player.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD, 3));
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> liveCheck.join());
+        pause(2500);
+        STEPS.add(() -> EditorLiveQuestTest.inspect(workspace, document));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel())
+                        .get(playerId, net.minecraft.resources.ResourceLocation.parse(document.id()));
+                require(progress != null && progress.state() == com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestState.COMPLETED,
+                        "Real inventory progress completes the live quest: " + (progress == null ? "missing" : progress.state() + "/" + progress.currentStage()));
+                require(player.totalExperience == 24, "Live quest rewards execute exactly once: " + player.totalExperience);
+            });
+            ImGuiAuthoringEditor.open();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0);
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> liveCheck.join());
+        click(() -> toolbar("Preview"));
+        pause(500);
+        STEPS.add(() -> {
+            require((int) field(editor, "view") == 1, "Compact mode opens Preview at the configured text scale.");
+            capture("28-live-quest-complete");
+            document.edit("Change draft", root -> root.addProperty("revision", 2));
+            require(!EditorTestWorld.currentSnapshot(workspace), "Live tests detect edits made after export.");
+            try { EditorLiveQuestTest.start(workspace, document); throw new IllegalStateException("Stale snapshot accepted"); }
+            catch (IllegalArgumentException expected) { }
+            document.undo();
+            require(EditorTestWorld.currentSnapshot(workspace), "Undo restores the exported test snapshot.");
+        });
+    }
+
+    private static void confirmYes() {
+        require(Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen, "The expected confirmation is visible.");
+        Minecraft.getInstance().screen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.Button)
+                .map(child -> (net.minecraft.client.gui.components.Button) child).findFirst().orElseThrow().onPress();
+    }
+
+    private static void waitUntil(java.util.function.BooleanSupplier ready) {
+        STEPS.add(new Runnable() {
+            @Override public void run() { if (!ready.getAsBoolean()) STEPS.addFirst(this); }
         });
     }
 
@@ -720,7 +836,8 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void frame() {
-        if (finished) return;
+        if (finished || stepping) return;
+        stepping = true;
         try {
             if (++frames % 12 == 0 && Util.getMillis() >= resumeAt && !STEPS.isEmpty()) STEPS.removeFirst().run();
             var io = ImGui.getIO();
@@ -752,6 +869,8 @@ public final class AuthoringEditorClientSmoke {
         } catch (RuntimeException exception) {
             capture("failure");
             throw exception;
+        } finally {
+            stepping = false;
         }
     }
 
@@ -774,10 +893,11 @@ public final class AuthoringEditorClientSmoke {
 
     private static float[] toolbar(String target) {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
+        float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
         for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Check & export",
                 (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Close"}) {
-            float width = ImGui.calcTextSize(label).x + 16;
-            if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() + 12) / 2};
+            float width = ImGui.calcTextSize(label).x * scale + 16;
+            if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};
             x += width + 8;
         }
         throw new IllegalArgumentException(target);

@@ -93,6 +93,7 @@ final class ImGuiAuthoringEditor {
     private final PreviewConditions conditions = new PreviewConditions();
     private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
     private EditorSchema propertySchema;
+    private boolean liveQuestMode = true;
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
@@ -305,11 +306,11 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Save")) operation(this::save);
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (viewButton("Edit", 0)) view = 0;
+        if (viewButton("Edit", 0)) { view = 0; focusPanel = WORK_PANEL; }
         ImGui.sameLine();
-        if (viewButton("Preview", 1)) view = 1;
+        if (viewButton("Preview", 1)) { view = 1; focusPanel = WORK_PANEL; }
         ImGui.sameLine();
-        if (viewButton("Check & export", 2)) operation(() -> { validate(); view = 2; });
+        if (viewButton("Check & export", 2)) operation(() -> { validate(); view = 2; focusPanel = WORK_PANEL; });
         if (ImGui.getWindowWidth() > 1000) ImGui.sameLine();
         if (ImGui.button(guideStep < 0 ? "Quick guide" : "Hide guide")) {
             if (guideStep < 0) guideStep = 0;
@@ -1296,15 +1297,20 @@ final class ImGuiAuthoringEditor {
                 if (ImGui.selectable(type.replace('_', ' '), objectiveType.equals(type))) objectiveType = type;
             ImGui.endCombo();
         }
-        input("Resource ID", objectiveResource);
-        ImGui.setNextItemWidth(-1);
-        if (ImGui.beginCombo("Choose resource", objectiveResource.get())) {
-            var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                    : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
-            for (var id : registry.keySet().stream().sorted().toList()) if (ImGui.selectable(id.toString(), objectiveResource.get().equals(id.toString()))) objectiveResource.set(id.toString());
-            ImGui.endCombo();
-        }
-        ImGui.inputInt("Required count", objectiveCount);
+        boolean simple = List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade").contains(objectiveType);
+        if (simple) {
+            if (!objectiveType.equals("trade")) {
+                input("Resource ID", objectiveResource);
+                ImGui.setNextItemWidth(-1);
+                if (ImGui.beginCombo("Choose resource", objectiveResource.get())) {
+                    var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                            : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
+                    for (var id : registry.keySet().stream().sorted().toList()) if (ImGui.selectable(id.toString(), objectiveResource.get().equals(id.toString()))) objectiveResource.set(id.toString());
+                    ImGui.endCombo();
+                }
+            }
+            ImGui.inputInt("Required count", objectiveCount);
+        } else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
         ImGui.textWrapped("The objective is added to this stage's completion requirements.");
         if (ImGui.button("Add objective")) operation(() -> {
             String added;
@@ -1656,6 +1662,10 @@ final class ImGuiAuthoringEditor {
     }
 
     private void questSimulation() {
+        if (EditorTestWorld.active(workspace)) {
+            if (ImGui.checkbox("Use live test world", liveQuestMode)) liveQuestMode = !liveQuestMode;
+            if (liveQuestMode) { liveQuestTest(); return; }
+        }
         conditions.worldTime(MC.level.getDayTime());
         ImGui.textWrapped("Isolated quest simulation. Objective completion is simulated. Actions and rewards are logged.");
         if (ImGui.button("Start / restart quest test")) operation(() -> questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions));
@@ -1682,6 +1692,35 @@ final class ImGuiAuthoringEditor {
         EditorPreviewConditions.time(conditions);
         EditorPreviewConditions.render(conditions, document.json());
         previewScenarios();
+        liveQuestTest();
+    }
+
+    private void liveQuestTest() {
+        if (!ImGui.collapsingHeader("Live quest test", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!EditorTestWorld.active(workspace)) {
+            ImGui.textWrapped("Create a separate test world to execute real objectives, actions, and rewards.");
+            if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+            return;
+        }
+        var state = EditorLiveQuestTest.view();
+        if (state.quest().equals(document.id())) {
+            ImGui.textWrapped(state.summary());
+            ImGui.textWrapped(state.message());
+        }
+        ImGui.textWrapped("Live tests change this test world. Restarting a quest repeats its actions. Return to the game to make objective progress, then refresh here.");
+        boolean current = EditorTestWorld.currentSnapshot(workspace);
+        if (!current) ImGui.textWrapped("Content changed after export. Create another test world to load your latest draft.");
+        ImGui.beginDisabled(!current || EditorLiveQuestTest.view().busy());
+        if (ImGui.button("Start / restart live quest")) operation(() -> EditorLiveQuestTest.start(workspace, document));
+        if (ImGui.button("Refresh live state")) operation(() -> EditorLiveQuestTest.inspect(workspace, document));
+        if (ImGui.button("Turn in live quest")) operation(() -> EditorLiveQuestTest.turnIn(workspace, document));
+        if (!selectedNode.isEmpty() && ImGui.button("Jump to selected stage")) operation(() -> EditorLiveQuestTest.stage(workspace, document, selectedNode));
+        if (ImGui.button("Clear live quest progress")) operation(() -> EditorLiveQuestTest.clear(workspace, document));
+        ImGui.endDisabled();
+        if (ImGui.button("Return to game")) closeEditor();
+        if (ImGui.button("Create fresh test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+        if (state.quest().equals(document.id()) && ImGui.collapsingHeader("Live quest diagnostics"))
+            for (String line : state.lines()) ImGui.textWrapped(line);
     }
 
     private void previewScenarios() {

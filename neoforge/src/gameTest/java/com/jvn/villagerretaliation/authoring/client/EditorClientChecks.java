@@ -61,6 +61,8 @@ public final class EditorClientChecks {
         check(forms.seed(fields).getAsJsonObject().has("id"), "required objective values are seeded");
         JsonObject transition = forms.at(quest.json(), "/stages/0/transition");
         check(!forms.choices(transition).isEmpty(), "nested transition forms resolve references");
+        check(forms.choices(com.jvn.villagerretaliation.dialogue.DialogueCamera.schema()).size() == 3, "all structured camera alternatives remain available");
+        check(forms.choices(new JsonObject()).get("Object").isJsonObject(), "empty extension lists can create structured entries");
         JsonObject node = forms.at(quest.json(), "/stages/0");
         check(node.getAsJsonObject("properties").has("on_enter"), "optional stage actions are available");
         JsonObject action = schema.getAsJsonObject("$defs").getAsJsonObject("action");
@@ -142,6 +144,12 @@ public final class EditorClientChecks {
         var french = new com.google.gson.JsonObject();
         french.addProperty("test:source.greeting", "Bonjour");
         workspace.add(new AuthoringDocument(DefinitionKind.RESOURCE, locale.resourcePath().replace("en_us.json", "fr_fr.json"), french));
+        source.edit("Add runtime variable gate", root -> {
+            var condition = new JsonObject(); condition.addProperty("type", "quest_fact"); condition.addProperty("scope", "player"); condition.addProperty("key", "test:source.greeting");
+            condition.addProperty("value", "ready");
+            var conditions = new com.google.gson.JsonArray(); conditions.add(condition);
+            root.getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("responses").get(0).getAsJsonObject().add("conditions", conditions);
+        });
         var clipboard = new EditorGraphClipboard();
         clipboard.copy(workspace, source, java.util.Set.of("start"));
         JsonObject before = target.json();
@@ -150,6 +158,8 @@ public final class EditorClientChecks {
         check(DialogueGraph.edges(target).stream().anyMatch(edge -> edge.from().equals("start_copy") && edge.to().equals("finish_copy")), "cross-file branches point at copied destinations");
         var node = target.json().getAsJsonArray("nodes").asList().stream().map(value -> value.getAsJsonObject())
                 .filter(value -> DialogueGraph.string(value, "id").equals("start_copy")).findFirst().orElseThrow();
+        check(node.getAsJsonArray("responses").get(0).getAsJsonObject().getAsJsonArray("conditions").get(0)
+                .getAsJsonObject().get("key").getAsString().equals("test:source.greeting"), "localization remapping preserves runtime variable keys");
         var text = node.getAsJsonArray("exchanges").get(0).getAsJsonObject().get("text");
         check(workspace.resolveText(target, text, "fr_fr").equals("Bonjour"), "cross-file paste preserves translated wording");
         check(workspace.resolveText(target, text, "en_us").equals("Hello."), "cross-file paste preserves English wording");
