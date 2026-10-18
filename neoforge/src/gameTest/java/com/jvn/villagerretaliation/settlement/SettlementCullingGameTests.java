@@ -342,32 +342,37 @@ public final class SettlementCullingGameTests {
         saved.put("Experience", rewards);
         var level = helper.getLevel();
         var position = new net.minecraft.world.level.ChunkPos(experience.position());
-        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 2, position);
+        level.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 4, position);
         level.getChunk(position.x, position.z);
+        helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
+            @Override public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo test) { }
+            @Override public void testPassed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testFailed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            @Override public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo original, net.minecraft.gametest.framework.GameTestInfo rerun, net.minecraft.gametest.framework.GameTestRunner runner) { }
+            private void cleanup() {
+                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 4, position);
+            }
+        });
         helper.startSequence().thenWaitUntil(() -> {
-            helper.assertTrue(level.areEntitiesLoaded(position.toLong()) && level.isPositionEntityTicking(experience.position()),
+            helper.assertTrue(level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(experience.position())) && level.isPositionEntityTicking(experience.position()),
                     "the actual experience chunk becomes active");
         }).thenExecute(() -> {
-            try {
-                for (var floor : BlockPos.betweenClosed(experience.position().offset(-4, -1, -4), experience.position().offset(4, -1, 4))) {
-                    level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
-                }
-                SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
-                SettlementGroundExperienceService.update(level, fixture.town(), level.getGameTime());
-                var orb = level.getEntity(experience.id());
-                helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb, "pending experience becomes an actual native orb");
-                helper.assertTrue(fixture.town().groundExperience().containsKey(experience.id()), "delivered death experience enters native transition tracking");
-                helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerWorkExperience.belongsTo(
-                        (net.minecraft.world.entity.ExperienceOrb) orb, fixture.worker().context(level, fixture.town())),
-                        "native delivery retains work-experience ownership");
-                orb.discard();
-                fixture.town().recordEntityDeath(SettlementEntityDeath.load(saved));
-                SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
-                helper.assertTrue(level.getEntity(experience.id()) == null, "an older pending snapshot cannot recreate collected experience");
-                helper.assertTrue(fixture.town().entityDeaths().isEmpty(), "both native-body and experience receipts acknowledge the old save");
-            } finally {
-                level.getChunkSource().removeRegionTicket(net.minecraft.server.level.TicketType.FORCED, position, 2, position);
+            for (var floor : BlockPos.betweenClosed(experience.position().offset(-4, -1, -4), experience.position().offset(4, -1, 4))) {
+                level.setBlockAndUpdate(floor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
             }
+            SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
+            SettlementGroundExperienceService.update(level, fixture.town(), level.getGameTime());
+            var orb = level.getEntity(experience.id());
+            helper.assertTrue(orb instanceof net.minecraft.world.entity.ExperienceOrb, "pending experience becomes an actual native orb");
+            helper.assertTrue(fixture.town().groundExperience().containsKey(experience.id()), "delivered death experience enters native transition tracking");
+            helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerWorkExperience.belongsTo(
+                    (net.minecraft.world.entity.ExperienceOrb) orb, fixture.worker().context(level, fixture.town())),
+                    "native delivery retains work-experience ownership");
+            orb.discard();
+            fixture.town().recordEntityDeath(SettlementEntityDeath.load(saved));
+            SettlementEntityDeathService.update(level, fixture.town(), level.getGameTime());
+            helper.assertTrue(level.getEntity(experience.id()) == null, "an older pending snapshot cannot recreate collected experience");
+            helper.assertTrue(fixture.town().entityDeaths().isEmpty(), "both native-body and experience receipts acknowledge the old save");
         }).thenSucceed();
     }
 
