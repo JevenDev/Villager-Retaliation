@@ -139,7 +139,7 @@ public final class BuiltInQuestContentGameTests {
         helper.assertValueEqual(compiled.id(), questId, questId + " compiled id");
         helper.assertValueEqual(definition.id(), questId, questId + " runtime id");
         helper.assertValueEqual(definition.questline(), expectedQuestline, questId + " questline");
-        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, questId + " schema");
+        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V3, questId + " schema");
         helper.assertValueEqual(
                 compiled.source().resource(), expectedSource, questId + " source resource");
         helper.assertFalse(definition.title().isBlank(), questId + " title is blank");
@@ -579,8 +579,8 @@ public final class BuiltInQuestContentGameTests {
         if (!definition.rules().repeatable()) {
             return;
         }
-        helper.assertTrue(definition.rules().consumeOnCompletion(),
-                definition.id() + " repeatable quest does not consume hand-in items");
+        helper.assertFalse(definition.rules().consumeOnCompletion(),
+                definition.id() + " repeatable quest must remain available after its cooldown");
         helper.assertTrue(definition.rules().completionCooldownTicks() > 0L,
                 definition.id() + " repeatable quest has no completion cooldown");
         for (QuestDefinition.Objective objective : definition.objectives()) {

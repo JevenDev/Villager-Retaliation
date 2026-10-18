@@ -217,14 +217,14 @@ public final class QuestBundleArchitectureGameTests {
         assertRejected(helper, compile(introduce(
                 0, "base", NS, LINE, SLUG, externalRoot,
                 locale(PREFIX + ".title", "Alpha"))),
-                "structural dialogue must remain in quest.json", "external dialogue root");
+                "/external_scenes unsupported field", "external dialogue root");
 
         JsonObject externalSlot = quest(NS, LINE, SLUG, PREFIX);
         externalSlot.add("dialogue", object("{\"offer\":{\"external_scene\":\"examplemod:legacy_tree\"}}"));
         assertRejected(helper, compile(introduce(
                 0, "base", NS, LINE, SLUG, externalSlot,
                 locale(PREFIX + ".title", "Alpha"))),
-                "structural dialogue must remain in quest.json", "external dialogue slot");
+                "/dialogue/offer/external_scene unsupported field", "external dialogue slot");
         helper.succeed();
     }
 
@@ -258,7 +258,7 @@ public final class QuestBundleArchitectureGameTests {
         JsonObject slashId = quest(NS, LINE, SLUG, PREFIX);
         slashId.addProperty("id", NS + ":nested/alpha");
         assertRejected(helper, compile(introduce(0, "base", NS, LINE, SLUG, slashId,
-                locale(PREFIX + ".title", "Alpha"))), "single-segment", "slash quest ID");
+                locale(PREFIX + ".title", "Alpha"))), "/id text does not match", "slash quest ID");
         JsonObject wrongPrefix = quest(NS, LINE, SLUG, "quest.legacy.alpha");
         assertRejected(helper, compile(introduce(0, "base", NS, LINE, SLUG, wrongPrefix,
                 locale("quest.legacy.alpha.title", "Alpha"))), "must begin with", "third-party prefix");
@@ -609,7 +609,7 @@ public final class QuestBundleArchitectureGameTests {
     private static void assertRejected(
             GameTestHelper helper, QuestBundleTransactions.Result result, String expected, String name) {
         helper.assertTrue(result.bundles().isEmpty() && diagnostic(result, expected),
-                name + " was not rejected with an actionable diagnostic");
+                name + " was not rejected with an actionable diagnostic: " + result.diagnostics());
     }
 
     private static QuestBundleTransactions.Result compile(List<QuestBundleTransactions.RawResource> resources) {

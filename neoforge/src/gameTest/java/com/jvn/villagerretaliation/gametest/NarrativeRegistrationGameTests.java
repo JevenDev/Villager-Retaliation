@@ -152,12 +152,12 @@ public final class NarrativeRegistrationGameTests {
         Set<VillagerActionDefinition.Kind> reconciled = Set.of(VillagerActionDefinition.Kind.CAMPAIGN_PAYMENT,
                 VillagerActionDefinition.Kind.CAMPAIGN_REWARD, VillagerActionDefinition.Kind.CAMPAIGN_STANDING,
                 VillagerActionDefinition.Kind.CAMPAIGN_FACT, VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME,
-                VillagerActionDefinition.Kind.START_SCENE);
+                VillagerActionDefinition.Kind.START_SCENE, VillagerActionDefinition.Kind.TUTORIAL);
         for (var action : VillagerActionRegistry.descriptors()) {
             var mirrored = VillagerRetaliationRegistries.QUEST_ACTIONS.get(VillagerRetaliation.id(action.id())).orElseThrow();
             helper.assertValueEqual(mirrored.recoveryMode(), action.recoveryMode(), "action recovery agrees");
             helper.assertValueEqual(action.reconcilesPreparedOperation(), reconciled.contains(action.kind()),
-                    "prepared operation reconciliation retains its existing conservative action set");
+                    action.id() + " prepared operation reconciliation matches its declared recovery contract");
             for (String alias : action.aliases()) {
                 helper.assertTrue(VillagerRetaliationRegistries.QUEST_ACTIONS.get(VillagerRetaliation.id(alias)).orElseThrow() == mirrored,
                         "public action alias resolves to its runtime type");
@@ -190,9 +190,26 @@ public final class NarrativeRegistrationGameTests {
         helper.assertTrue(result.outcome().success(), "registered handler completes through the existing runner");
         helper.assertValueEqual(player.totalExperience, before + 7, "registered effect applies once");
         helper.assertValueEqual(result.nextActionIndex(), 1, "runner advances the existing cursor");
-        var schema = QuestV2Schema.export().getAsJsonObject("$defs").getAsJsonObject("action");
-        helper.assertValueEqual(schema.getAsJsonArray("allOf"), VillagerActionRegistry.structuralRules(),
-                "authoring validation derives action rules from runtime registrations");
+        var exported = QuestV2Schema.export();
+        var schema = exported.getAsJsonObject("$defs").getAsJsonObject("action");
+        var authoredRules = schema.getAsJsonArray("allOf").deepCopy();
+        var runtimeRules = VillagerActionRegistry.structuralRules();
+        helper.assertValueEqual(authoredRules.size(), runtimeRules.size(), "authoring retains every registered action rule");
+        for (int index = 0; index < runtimeRules.size(); index++) {
+            var fields = runtimeRules.get(index).getAsJsonObject().getAsJsonObject("then").getAsJsonObject("properties");
+            if (fields == null || !fields.has("text")) continue;
+            fields.remove("text");
+            authoredRules.get(index).getAsJsonObject().getAsJsonObject("then").getAsJsonObject("properties").remove("text");
+        }
+        helper.assertValueEqual(authoredRules, runtimeRules, "authoring retains registered action rules around localized text fields");
+        var actionSchema = json("{\"$ref\":\"#/$defs/action\"}");
+        actionSchema.add("$defs", exported.get("$defs"));
+        helper.assertTrue(QuestJsonSchema.validate(json("""
+                {"type":"companion_service","service_id":"fixture:service","duration_ticks":200,"text":{"key":"#offer"}}
+                """), actionSchema).isEmpty(), "registered action text accepts a localized reference");
+        helper.assertFalse(QuestJsonSchema.validate(json("""
+                {"type":"companion_service","service_id":"fixture:service","duration_ticks":1,"text":{"key":"#offer"}}
+                """), actionSchema).isEmpty(), "localized text does not weaken registered duration limits");
         helper.succeed();
     }
 

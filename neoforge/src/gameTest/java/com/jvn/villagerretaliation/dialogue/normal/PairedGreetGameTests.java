@@ -553,7 +553,8 @@ public final class PairedGreetGameTests {
     public static void exactBindingProducesOneOrderedPairWithoutNewOptions(GameTestHelper helper) {
         var context = context(helper);
         var option = greet(context);
-        var optionsBefore = VillagerDialogueResources.dialogueOptions(context, VillagerDialogueService.dispositionFor(context.reputationLevel()));
+        var optionsBefore = VillagerDialogueResources.dialogueOptions(context, VillagerDialogueService.dispositionFor(context.reputationLevel())).stream()
+                .map(value -> value.withSelectionToken(new UUID(0, 0))).toList();
         var original = new VillagerDialogueService.DialogueResult("fixture.owner#one", "Hello there.");
         var result = PairedGreetingService.attach(context, option, original, false,
                 List.of(pair(context, "fixture.pair.one", "Good morning.")));
@@ -565,7 +566,8 @@ public final class PairedGreetGameTests {
         helper.assertValueEqual(result.lineId(), original.lineId(), "pairing cannot replace the selected source owner");
         helper.assertValueEqual(result.textSegments(), original.textSegments(), "pairing preserves NPC styling and content");
         helper.assertTrue(result.exchanges().stream().allMatch(line -> line.camera() == null), "pairing introduces no camera change");
-        helper.assertValueEqual(VillagerDialogueResources.dialogueOptions(context, VillagerDialogueService.dispositionFor(context.reputationLevel())),
+        helper.assertValueEqual(VillagerDialogueResources.dialogueOptions(context, VillagerDialogueService.dispositionFor(context.reputationLevel())).stream()
+                        .map(value -> value.withSelectionToken(new UUID(0, 0))).toList(),
                 optionsBefore, "pairing neither adds a Continue choice nor changes the existing menu");
         helper.assertTrue(PairedGreetingService.attach(context, option, result, false,
                 List.of(pair(context, "fixture.pair.one", "Good morning."))) == result, "already paired speech cannot be attached twice");
