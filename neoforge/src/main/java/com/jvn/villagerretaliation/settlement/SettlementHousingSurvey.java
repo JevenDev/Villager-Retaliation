@@ -101,8 +101,13 @@ final class SettlementHousingSurvey {
     }
 
     private boolean canStand(BlockPos pos) {
-        return this.walkable.computeIfAbsent(pos, at -> floor(at.below())
+        return this.walkable.computeIfAbsent(pos, at -> supportsStanding(at.below())
                 && (door(at) || clear(at) && clear(at.above())));
+    }
+
+    private boolean supportsStanding(BlockPos pos) {
+        return floor(pos) || observed(pos) && this.blocks.getFluidState(pos).isEmpty()
+                && Block.isFaceFull(this.blocks.getBlockState(pos).getCollisionShape(this.blocks, pos), Direction.DOWN);
     }
 
     private boolean floor(BlockPos pos) {

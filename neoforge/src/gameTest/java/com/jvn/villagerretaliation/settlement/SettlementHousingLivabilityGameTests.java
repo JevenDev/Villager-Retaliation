@@ -86,6 +86,21 @@ public final class SettlementHousingLivabilityGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_housing_livability")
+    public static void supportedEntranceStepsAndPathsKeepBedsReachable(GameTestHelper helper) {
+        var home = home(helper);
+        var level = helper.getLevel();
+        var approachFloor = home.min().offset(-1, -1, 2);
+        for (var block : List.of(Blocks.OAK_STAIRS, Blocks.OAK_SLAB, Blocks.DIRT_PATH)) {
+            level.setBlock(approachFloor, block.defaultBlockState(), 2);
+            helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, home).beds().size(), 1,
+                    "supported partial-height entrance remains usable: " + block);
+        }
+        level.setBlock(approachFloor, Blocks.AIR.defaultBlockState(), 2);
+        helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "an unsupported entrance still blocks housing");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_housing_livability")
     public static void observedLivabilityLossInvalidatesPreviouslyRecordedCapacity(GameTestHelper helper) {
         var home = home(helper);
         var level = helper.getLevel();
