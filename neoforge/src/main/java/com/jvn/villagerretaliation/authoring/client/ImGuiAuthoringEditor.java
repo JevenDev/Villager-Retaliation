@@ -75,6 +75,9 @@ final class ImGuiAuthoringEditor {
     private String referenceTitle = "";
     private List<EditorReferences.Location> referenceResults = List.of();
     private final EditorResourcePicker resourcePicker = new EditorResourcePicker();
+    private final EditorLibrary library = new EditorLibrary(MC.gameDirectory.toPath().resolve("config/authoring-editor-library.json"));
+    private final EditorSnippets snippets = new EditorSnippets();
+    private final EditorBulkEdit bulkEdit = new EditorBulkEdit();
     private boolean requestQuickOpen;
     private final ImString quickQuery = new ImString(256);
     private int quickIndex;
@@ -215,6 +218,7 @@ final class ImGuiAuthoringEditor {
         exportPath.set(root.resolve("exports/pack").toAbsolutePath().toString());
         importPath.set(root.toAbsolutePath().toString());
         try {
+            library.load();
             preferences = EditorPreferences.load(preferencesPath);
             guideStep = preferences.guideDismissed() ? -1 : 0;
             if (!preferences.workspace().isBlank()) workspacePath.set(preferences.workspace());
@@ -579,8 +583,8 @@ final class ImGuiAuthoringEditor {
             if (createKind == DefinitionKind.CONVERSATION) {
                 ImGui.textUnformatted("Associated quest");
                 ImGui.setNextItemWidth(-1);
-                resourcePicker.render("linked_quest", linkedQuest.get().isEmpty() ? "Choose a quest" : linkedQuest.get(), linkedQuest.get(),
-                        workspace.documents().stream().filter(candidate -> candidate.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList(), linkedQuest::set);
+                resourcePicker.render("linked_quest", "Choose quest...", linkedQuest.get(),
+                        workspace.documents().stream().filter(candidate -> candidate.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList(), linkedQuest::set, library, this::attempt);
                 if (workspace.documents().stream().noneMatch(candidate -> candidate.kind() == DefinitionKind.QUEST))
                     ImGui.textWrapped("Create a quest first, or choose Dialogue tree for standalone dialogue.");
             }
@@ -1520,6 +1524,8 @@ final class ImGuiAuthoringEditor {
                     && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
         }
         try {
+            bulkEdit.render(workspace, document, selectedNodes(), this::operation, this::refresh);
+            snippets.render(library, workspace, document, selectedNodes(), pointer.get(), this::operation, this::selectInsertedNodes);
             var availableBlocks = EditorBlocks.available(document, pointer.get());
             if (!availableBlocks.isEmpty() && ImGui.beginCombo("##add_block", "Add behavior block...")) {
                 for (var block : availableBlocks) {
@@ -1724,8 +1730,13 @@ final class ImGuiAuthoringEditor {
     }
 
     private void pasteNodes() {
-        var added = graphClipboard.paste(workspace, document);
-        refresh(); nodeSelection.clear(); nodeSelection.addAll(added);
+        selectInsertedNodes(graphClipboard.paste(workspace, document));
+    }
+
+    private void selectInsertedNodes(List<String> added) {
+        refresh();
+        if (added.isEmpty()) return;
+        nodeSelection.clear(); nodeSelection.addAll(added);
         selectedNode = added.getFirst(); graphFocus = selectedNode;
         setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
     }
@@ -1789,8 +1800,8 @@ final class ImGuiAuthoringEditor {
                 input("Resource ID", objectiveResource);
                 var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
                         : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
-                resourcePicker.render("objective_resource", objectiveResource.get(), objectiveResource.get(),
-                        registry.keySet().stream().map(Object::toString).sorted().toList(), objectiveResource::set);
+                resourcePicker.render("objective_resource", "Choose " + (objectiveType.equals("mob_kill") ? "entity" : objectiveType.startsWith("block_") ? "block" : "item") + "...", objectiveResource.get(),
+                        registry.keySet().stream().map(Object::toString).sorted().toList(), objectiveResource::set, library, this::attempt);
             }
             ImGui.inputInt("Required count", objectiveCount);
         } else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
@@ -2200,7 +2211,7 @@ final class ImGuiAuthoringEditor {
         JsonObject rule = propertySchema.at(document.json(), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
-        resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set);
+        resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);
     }
 
     private void enterPlaytest() {

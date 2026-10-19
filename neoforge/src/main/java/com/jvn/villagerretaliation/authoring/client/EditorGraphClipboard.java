@@ -59,6 +59,38 @@ final class EditorGraphClipboard {
         owner = document;
     }
 
+    JsonObject exportSnippet() {
+        if (snapshot == null || copied.isEmpty()) throw new IllegalStateException("Select nodes to copy first");
+        JsonObject result = new JsonObject();
+        result.addProperty("kind", snapshot.kind().name());
+        result.addProperty("path", snapshot.resourcePath());
+        result.add("source", snapshot.json());
+        result.add("positions", copiedPositions.deepCopy());
+        JsonArray selection = new JsonArray(); copied.keySet().forEach(selection::add);
+        result.add("selection", selection);
+        JsonObject wording = new JsonObject();
+        translations.forEach((key, languages) -> {
+            JsonObject values = new JsonObject(); languages.forEach((language, value) -> values.add(language, value.deepCopy()));
+            wording.add(key, values);
+        });
+        result.add("translations", wording);
+        return result;
+    }
+
+    void importSnippet(JsonObject value) {
+        var source = new AuthoringDocument(DefinitionKind.valueOf(value.get("kind").getAsString()),
+                value.get("path").getAsString(), value.getAsJsonObject("source"));
+        Set<String> selection = new java.util.LinkedHashSet<>();
+        value.getAsJsonArray("selection").forEach(id -> selection.add(id.getAsString()));
+        copy(source, selection);
+        copiedPositions = value.getAsJsonObject("positions").deepCopy();
+        value.getAsJsonObject("translations").entrySet().forEach(entry -> {
+            Map<String, JsonElement> languages = new LinkedHashMap<>();
+            entry.getValue().getAsJsonObject().entrySet().forEach(language -> languages.put(language.getKey(), language.getValue().deepCopy()));
+            translations.put(entry.getKey(), languages);
+        });
+    }
+
     List<String> paste(AuthoringDocument document) {
         return paste(null, document);
     }

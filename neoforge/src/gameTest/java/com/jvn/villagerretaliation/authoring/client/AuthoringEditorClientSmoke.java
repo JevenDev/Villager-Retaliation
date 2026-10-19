@@ -640,7 +640,7 @@ public final class AuthoringEditorClientSmoke {
         ImGui.begin("Editor control acceptance");
         qualityPickerPoint = new float[] {ImGui.getCursorScreenPosX() + 150, ImGui.getCursorScreenPosY() + ImGui.getFrameHeight() / 2};
         ((EditorResourcePicker) field(editor, "resourcePicker")).render("acceptance_resource", "Choose an item", qualityResource,
-                net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList(), value -> qualityResource = value);
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList(), value -> qualityResource = value, (EditorLibrary) field(editor, "library"), action -> invoke("attempt", new Class<?>[] {ImGuiAuthoringEditor.EditorOperation.class}, action));
         ImGui.setNextItemOpen(true);
         invoke("replacementTools", new Class<?>[0]);
         ImGui.end();
