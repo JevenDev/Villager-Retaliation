@@ -55,8 +55,9 @@ final class EditorShortcuts {
         }
         String key = parts[parts.length - 1].strip();
         Integer code = KEYS.get(key);
-        if (code == null) throw new IllegalArgumentException("Use A-Z, F1-F12, Tab, Space, Delete, Home, End or an arrow key");
-        if (key.equals("F9")) throw new IllegalArgumentException("F9 is reserved for opening the editor");
+        if (code == null) throw new IllegalArgumentException("Use A-Z, F1-F12, Tab, Delete, Home, End or an arrow key");
+        if (key.equals("SPACE")) throw new IllegalArgumentException("Space is reserved for activating focused controls");
+        if (key.equals("F9") || key.equals("F11")) throw new IllegalArgumentException("F9 opens the editor and F11 toggles Minecraft fullscreen");
         if (!ctrl && !alt && !key.startsWith("F")) throw new IllegalArgumentException("Use Ctrl or Alt with this key");
         String label = key.length() == 1 || key.startsWith("F") ? key : key.substring(0, 1) + key.substring(1).toLowerCase(Locale.ROOT);
         return new Binding(ctrl, alt, shift, code, label);
@@ -95,7 +96,7 @@ final class EditorShortcuts {
 
     void render(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run) {
         if (!ImGui.collapsingHeader("Keyboard shortcuts")) return;
-        ImGui.textWrapped("Enter a chord such as Ctrl+Shift+G or F11. Leave it blank to unbind. F9 stays assigned to opening the editor.");
+        ImGui.textWrapped("Enter a chord such as Ctrl+Shift+G or F10. Leave it blank to unbind. F9 opens the editor and F11 toggles fullscreen.");
         if (ImGui.button("Restore default shortcuts")) run.accept(() -> { library.resetShortcuts(); fields.clear(); });
         var overrides = library.shortcuts();
         for (var command : commands) {

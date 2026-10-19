@@ -105,6 +105,12 @@ final class EditorContentTools {
                 var positions = metadata.getAsJsonObject("node_positions");
                 if (positions.has(id)) positions.add(replacement, positions.remove(id));
             }
+            for (var entry : EditorSchema.object(metadata.get("preview_scenario_tests")).entrySet()) {
+                var test = entry.getValue().getAsJsonObject();
+                if (id.equals(DialogueGraph.string(test, "start"))) test.addProperty("start", replacement);
+                if (DialogueGraph.string(test, "expectation").equals("Node or stage") && id.equals(DialogueGraph.string(test, "target")))
+                    test.addProperty("target", replacement);
+            }
             for (var group : EditorSchema.object(metadata.get("graph_groups")).entrySet()) {
                 var members = group.getValue().getAsJsonObject().getAsJsonArray("nodes");
                 for (int i = 0; i < members.size(); i++) if (members.get(i).getAsString().equals(id)) members.set(i, new JsonPrimitive(replacement));

@@ -19,7 +19,9 @@ final class EditorWorkspaceReplacement {
         if (!ImGui.collapsingHeader("Replace wording across files")) return;
         if (owner != workspace) { owner = workspace; selected.clear(); selected.addAll(workspace.documents()); preview = null; }
         selected.retainAll(workspace.documents());
-        if (ImGui.inputText("Find across files", find) | ImGui.inputText("Replacement wording", replacement)) preview = null;
+        boolean changedFind = ImGui.inputText("Find across files", find);
+        boolean changedReplacement = ImGui.inputText("Replacement wording", replacement);
+        if (changedFind || changedReplacement) preview = null;
         ImGui.inputTextWithHint("##replace_file_filter", "Filter file paths...", filter);
         if (ImGui.smallButton("Select matching files")) { workspace.documents().stream().filter(this::matches).forEach(selected::add); preview = null; }
         ImGui.sameLine();

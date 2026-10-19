@@ -148,7 +148,7 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSteps() {
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
-            buildWorkflowSteps(); buildFeatureSteps(); finishSteps("Focused editor workflow and quality controls passed."); return;
+            buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
         STEPS.add(() -> {
             try { EditorClientChecks.questSimulationUsesRuntimeCompletionRules(); }
@@ -390,6 +390,7 @@ public final class AuthoringEditorClientSmoke {
         buildQualityOfLifeSteps();
         buildWorkflowSteps();
         buildFeatureSteps();
+        buildProductivitySteps();
         finishSteps("Full editor graph, pack, camera, playtest, recovery and workflow checks passed.");
     }
 
@@ -531,6 +532,7 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             try {
                 EditorQualityChecks.questSimulationRecordsCoverage();
+                EditorProductivityChecks.questScenarioTestsSimulateObjectivesAndOutcomes();
                 workspace = AuthoringWorkspace.create(output().resolve("feature-drafts"));
                 document = workspace.createDocument(DefinitionKind.TREE, "test:feature_graph");
                 DialogueGraph.addNode(document, "finish");
@@ -608,6 +610,93 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> capture("56-coverage-graph"));
     }
 
+    private static void focusWorkShortcut() {
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        chord(ImGuiKey.ImGuiMod_Shift, ImGuiKey.G);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+    }
+
+    private static void buildProductivitySteps() {
+        var drop = new float[2];
+        STEPS.add(() -> {
+            document = workspace.createDocument(DefinitionKind.TREE, "test:productivity_graph");
+            DialogueGraph.addNode(document, "finish");
+            workspace.addDialogueResponse(document, "start", "continue", "Continue", "finish");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("focusMode", ""); set("fitGraph", true); set("showGraphTools", false);
+            EditorGraphOrganization.saveGroup(document, "", "Greeting branch", "Ask about the village", java.util.Set.of("start", "finish"));
+        });
+        pause(250);
+        focusWorkShortcut();
+        STEPS.add(() -> {
+            require(!field(editor, "focusMode").equals(""), "The default focus shortcut focuses the work area.");
+            capture("57-focused-graph");
+        });
+        focusWorkShortcut();
+        STEPS.add(() -> {
+            require(field(editor, "focusMode").equals(""), "The default focus shortcut restores the dock layout.");
+            try { ((EditorLibrary) field(editor, "library")).shortcut("Focus work area", "Ctrl+G"); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.G);
+        STEPS.add(() -> require(!field(editor, "focusMode").equals(""), "A remapped keyboard shortcut runs the configured action."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.G);
+        STEPS.add(() -> {
+            require(field(editor, "focusMode").equals(""), "The remapped shortcut toggles focus back.");
+            require(DialogueGraph.nodes(document).size() == 2, "Focus shortcuts do not activate unrelated controls.");
+            try { ((EditorLibrary) field(editor, "library")).shortcut("Focus work area", "Ctrl+Shift+G"); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        pause(250);
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+        move(() -> new float[] {canvas[0] + 60, canvas[3] - 80}, false);
+        STEPS.add(() -> rightDown = true); STEPS.add(() -> rightDown = false);
+        STEPS.add(() -> {
+            require(field(editor, "contextNode").equals("") && field(editor, "contextOutput").equals(""), "Right-clicking empty canvas opens canvas actions.");
+            capture("58-graph-context-menu");
+        });
+        key(ImGuiKey.Escape);
+        pause(150);
+        STEPS.add(() -> { drop[0] = canvas[0] + 140; drop[1] = canvas[3] - 180; });
+        move(() -> port("start"), false); move(() -> port("start"), true);
+        move(() -> drop, true); move(() -> drop, false);
+        STEPS.add(() -> {
+            require(!field(editor, "contextOutput").equals(""), "Dropping a wire on empty canvas opens connected-node actions.");
+            capture("59-wire-drop-create");
+        });
+        click(() -> new float[] {drop[0] + 35, drop[1] + 28});
+        STEPS.add(() -> require(DialogueGraph.nodes(document).size() == 3
+                && DialogueGraph.edges(document).stream().anyMatch(edge -> !edge.from().equals("start") && edge.to().equals("finish")), "The native insert action preserves the existing downstream destination."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Z);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 2, "Inserted graph nodes undo with their position.");
+            document.editMetadata("Save scenario", metadata -> {
+                var scenarios = new com.google.gson.JsonObject();
+                scenarios.add("Greeting", new com.jvn.villagerretaliation.authoring.preview.PreviewConditions().snapshot());
+                metadata.add("preview_scenarios", scenarios);
+                var tests = new com.google.gson.JsonObject();
+                tests.add("Greeting", EditorScenarioTests.config("start", "Node or stage", "finish", List.of(new EditorScenarioTests.Step("choice", "continue"))));
+                metadata.add("preview_scenario_tests", tests);
+            });
+            featureStage = 6;
+        });
+        pause(250);
+        STEPS.add(() -> capture("60-scenario-test-steps"));
+        click(() -> featureActionPoint);
+        STEPS.add(() -> {
+            var results = (List<?>) field(field(editor, "scenarioTests"), "results");
+            require(results.size() == 1 && ((EditorScenarioTests.Result) results.getFirst()).passed(), "The native Run all button evaluates saved steps and expectations.");
+            capture("61-scenario-test-results");
+            featureStage = 7;
+        });
+        pause(250);
+        STEPS.add(() -> { capture("62-shortcut-settings"); featureStage = -1; set("zoom", .35f); set("fitGraph", false); });
+        pause(250);
+        STEPS.add(() -> capture("63-comment-groups-minimum-zoom"));
+        STEPS.add(() -> { set("fitGraph", true); });
+        pause(250);
+    }
+
     private static void renderFeatureControls() {
         if (featureStage < 0) return;
         ImGui.setNextWindowPos(460, 100); ImGui.setNextWindowSize(850, 740);
@@ -630,7 +719,13 @@ public final class AuthoringEditorClientSmoke {
                 EditorQuickFixes.render(workspace, document, issue, run, () -> invoke("refresh", new Class<?>[0]));
                 featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
             }
-        } else if (featureStage == 4) ((EditorCoverage) field(editor, "coverage")).render(document, id -> { });
+        } else if (featureStage == 6) {
+            ((EditorScenarioTests) field(editor, "scenarioTests")).render(document, run, (key, simulated) -> null,
+                    ((EditorCoverage) field(editor, "coverage")).observe(document), id -> { });
+            if (((List<?>) field(field(editor, "scenarioTests"), "results")).isEmpty())
+                featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+        } else if (featureStage == 7) ((EditorShortcuts) field(editor, "shortcuts")).render(((List<?>) invoke("commands", new Class<?>[0])).stream().map(EditorCommands.Command.class::cast).toList(), (EditorLibrary) field(editor, "library"), run);
+        else if (featureStage == 4) ((EditorCoverage) field(editor, "coverage")).render(document, id -> { });
         else {
             featureActionPoint = new float[] {ImGui.getCursorScreenPosX() + 150, ImGui.getCursorScreenPosY() + ImGui.getFrameHeight() / 2};
             ((EditorResourcePicker) field(editor, "resourcePicker")).render("feature_resource", "Choose item...", qualityResource,
@@ -1910,14 +2005,14 @@ public final class AuthoringEditorClientSmoke {
         boolean navigation = List.of("Back", "Forward", "Undo", "Redo").contains(target);
         String[] labels = navigation ? new String[] {"Back", "Forward", "Undo", "Redo"}
                 : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
-                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close"};
+                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Shortcuts", "Focus pane...", "Reset layout", "Files", "Close"};
         if (navigation) {
             x = ImGui.getMainViewport().getWorkPosX() + ImGui.getMainViewport().getWorkSizeX() - 14;
             for (String label : labels) x -= ImGui.calcTextSize(label).x * scale + 24;
             x += 8;
         }
         for (String label : labels) {
-            float width = ImGui.calcTextSize(label).x * scale + 16;
+            float width = label.equals("Focus pane...") ? 150 : ImGui.calcTextSize(label).x * scale + 16;
             if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};
             x += width + 8;
         }
@@ -2017,11 +2112,11 @@ public final class AuthoringEditorClientSmoke {
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 
-    private static void invoke(String name, Class<?>[] types, Object... arguments) {
+    private static Object invoke(String name, Class<?>[] types, Object... arguments) {
         try {
             var method = ImGuiAuthoringEditor.class.getDeclaredMethod(name, types);
             method.setAccessible(true);
-            method.invoke(editor, arguments);
+            return method.invoke(editor, arguments);
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 

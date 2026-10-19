@@ -116,7 +116,7 @@ final class EditorGraphOrganization {
             draw.addRectFilled(x, y, endX, endY, 0x224f6650, 4);
             draw.addRect(x, y, endX, endY, 0xff6b806b, 4);
             draw.pushClipRect(x + 6, y, endX - 6, originY + (top - 8) * zoom, true);
-            draw.addText(x + 8, y + 8, 0xffced6c8, entry.getKey() + (group.get("comment").getAsString().isBlank() ? "" : ": " + group.get("comment").getAsString().replace('\n', ' ')));
+            draw.addText(ImGui.getFont(), Math.max(6, (int) (ImGui.getFontSize() * zoom)), x + 8 * zoom, y + 8 * zoom, 0xffced6c8, entry.getKey() + (group.get("comment").getAsString().isBlank() ? "" : ": " + group.get("comment").getAsString().replace('\n', ' ')));
             draw.popClipRect();
         }
     }

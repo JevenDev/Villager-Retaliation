@@ -22,7 +22,9 @@ final class EditorProductivityChecks {
         graphInsertionPreservesDestinationsAndLayoutHistory();
         graphGroupsAndBranchFocusHandleCyclesAndRenames();
         shortcutsRejectConflictsAndPersistOverrides();
-        return 6;
+        dialogueScenarioTestsIsolateConditionsAndReportFailures();
+        scenarioTestsPreserveLegacySnapshotsAndRejectInvalidData();
+        return 8;
     }
 
     private static void nestedBulkEditsPreserveBlockTypesAndUndo() throws IOException {
@@ -158,6 +160,8 @@ final class EditorProductivityChecks {
         rejects(() -> EditorShortcuts.parse("G"));
         rejects(() -> EditorShortcuts.parse("Ctrl+Ctrl+G"));
         rejects(() -> EditorShortcuts.parse("F9"));
+        rejects(() -> EditorShortcuts.parse("F11"));
+        rejects(() -> EditorShortcuts.parse("Ctrl+Space"));
         var path = Files.createTempDirectory("vr-shortcuts").resolve("library.json");
         var library = new EditorLibrary(path);
         library.shortcut("Find", "Ctrl+Shift+G");
@@ -168,6 +172,93 @@ final class EditorProductivityChecks {
         check(EditorShortcuts.binding(commands.getLast(), restored.shortcuts()).isEmpty(), "commands can be explicitly unbound");
         restored.resetShortcuts();
         check(EditorShortcuts.binding(commands.getLast(), restored.shortcuts()).equals("Ctrl+F"), "restoring defaults removes overrides");
+    }
+
+    private static void saveScenario(com.jvn.villagerretaliation.authoring.core.AuthoringDocument document, String name,
+                                     com.jvn.villagerretaliation.authoring.preview.PreviewConditions conditions, JsonObject config) {
+        document.editMetadata("Save test scenario", metadata -> {
+            if (!metadata.has("preview_scenarios")) metadata.add("preview_scenarios", new JsonObject());
+            if (!metadata.has("preview_scenario_tests")) metadata.add("preview_scenario_tests", new JsonObject());
+            metadata.getAsJsonObject("preview_scenarios").add(name, conditions.snapshot());
+            if (config != null) metadata.getAsJsonObject("preview_scenario_tests").add(name, config);
+        });
+    }
+
+    private static void dialogueScenarioTestsIsolateConditionsAndReportFailures() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-scenario-dialogue"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:scenarios");
+        DialogueGraph.addNode(document, "finish");
+        workspace.addDialogueResponse(document, "start", "continue", "Continue", "finish");
+        document.edit("Conditional branch", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses")
+                .get(0).getAsJsonObject().add("conditions", JsonParser.parseString("[{\"type\":\"reputation\",\"min\":5}]")));
+        var high = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions(); high.reputation(10, com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL);
+        var low = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions(); low.reputation(0, com.jvn.villagerretaliation.reputation.VillagerReputationLevel.NEUTRAL);
+        saveScenario(document, "Allowed", high, EditorScenarioTests.config("start", "Node or stage", "finish", List.of(new EditorScenarioTests.Step("choice", "continue"))));
+        saveScenario(document, "Blocked", low, EditorScenarioTests.config("start", "Choice unavailable", "continue", List.of()));
+        saveScenario(document, "Wrong outcome", high, EditorScenarioTests.config("start", "Node or stage", "start", List.of(new EditorScenarioTests.Step("choice", "continue"))));
+        saveScenario(document, "Missing response", high, EditorScenarioTests.config("start", "Node or stage", "finish", List.of(new EditorScenarioTests.Step("choice", "deleted"))));
+        document.edit("Condition on destination", root -> root.getAsJsonObject("nodes").getAsJsonObject("finish")
+                .add("conditions", JsonParser.parseString("[{\"type\":\"reputation\",\"min\":5}]")));
+        var unknown = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        unknown.override("reputation", com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN);
+        saveScenario(document, "Unknown context", unknown, EditorScenarioTests.config("start", "Choice unavailable", "continue", List.of()));
+        saveScenario(document, "Blocked node", low, EditorScenarioTests.config("finish", "Node or stage", "finish", List.of()));
+        saveScenario(document, "Ended", high, EditorScenarioTests.config("finish", "Dialogue ended", "", List.of()));
+        document.edit("Conditional entry", root -> root.getAsJsonArray("entries").get(0).getAsJsonObject()
+                .add("conditions", JsonParser.parseString("[{\"type\":\"reputation\",\"min\":5}]")));
+        saveScenario(document, "Blocked entry", low, EditorScenarioTests.config("", "Choice unavailable", "default", List.of()));
+        var before = document.json(); var metadata = document.metadata();
+        var coverage = new EditorCoverage();
+        var results = EditorScenarioTests.run(document, (key, simulated) -> null, coverage.observe(document));
+        check(results.get(0).passed() && results.get(1).passed() && !results.get(2).passed() && !results.get(3).passed(), "batch tests isolate reputation snapshots and distinguish mismatches from execution failures: " + results);
+        check(!results.get(4).passed() && !results.get(5).passed() && results.get(6).passed() && results.get(7).passed(), "unknown conditions and blocked nodes cannot pass assertions, while terminal dialogue and disabled entry assertions work");
+        check(results.get(3).node().equals("start") && results.get(3).message().contains("deleted"), "failed steps identify the affected node and missing choice");
+        check(document.json().equals(before) && document.metadata().equals(metadata), "running scenarios leaves authored definitions and snapshots unchanged");
+        check(coverage.visited(document, "/nodes/finish") && coverage.chosen(document, "/nodes/start/responses/0"), "batch runs contribute actual execution coverage");
+        document.editMetadata("Remove extra tests", value -> { value.getAsJsonObject("preview_scenarios").remove("Wrong outcome"); value.getAsJsonObject("preview_scenarios").remove("Missing response"); value.getAsJsonObject("preview_scenarios").remove("Unknown context"); value.getAsJsonObject("preview_scenarios").remove("Blocked node"); });
+        EditorContentTools.renameNode(document, "start", "renamed");
+        var test = document.metadata().getAsJsonObject("preview_scenario_tests").getAsJsonObject("Allowed");
+        check(test.get("start").getAsString().equals("renamed"), "scenario starting nodes follow node renames");
+        workspace.save();
+        var restored = AuthoringWorkspace.open(workspace.directory()).documents().getFirst();
+        check(EditorScenarioTests.run(restored, (key, simulated) -> null, ignored -> { }).stream().allMatch(EditorScenarioTests.Result::passed), "scenario steps and expectations survive workspace saves");
+    }
+
+    static void questScenarioTestsSimulateObjectivesAndOutcomes() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-scenario-quest"));
+        var document = workspace.createDocument(DefinitionKind.QUEST, "test:scenario_quest");
+        EditorContentTools.appendObjective(document, "start", "item_check", "minecraft:stone", 3);
+        var conditions = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        String objective = JsonPointers.get(document.json(), "/stages/0/objectives/0/id").getAsString();
+        DialogueGraph.addNode(document, "finish");
+        EditorDocumentOperations.nextStage(document, "start", "finish");
+        saveScenario(document, "Complete", conditions, EditorScenarioTests.config("", "Quest outcome", "complete",
+                List.of(new EditorScenarioTests.Step("objective", objective), new EditorScenarioTests.Step("advance", ""), new EditorScenarioTests.Step("advance", ""))));
+        saveScenario(document, "Unmet objective", conditions, EditorScenarioTests.config("", "Quest outcome", "complete", List.of(new EditorScenarioTests.Step("advance", ""))));
+        saveScenario(document, "Start later", conditions, EditorScenarioTests.config("finish", "Quest outcome", "complete", List.of(new EditorScenarioTests.Step("advance", ""))));
+        var before = document.json();
+        var results = EditorScenarioTests.run(document, (key, simulated) -> null, ignored -> { });
+        check(results.get(0).passed() && !results.get(1).passed() && results.get(2).passed(), "quest scenario tests simulate objective completion, enforce blockers and support selected starting stages: " + results);
+        check(results.get(1).node().equals("start") && document.json().equals(before), "failed quest tests keep their current stage without changing authored progress");
+        var later = new com.jvn.villagerretaliation.authoring.core.AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+        saveScenario(later, "Start later", conditions, EditorScenarioTests.config("finish", "Quest outcome", "complete", List.of(new EditorScenarioTests.Step("advance", ""))));
+        var visited = new java.util.HashSet<String>();
+        EditorScenarioTests.run(later, (key, simulated) -> null, batch -> visited.addAll(batch.nodes()));
+        check(visited.equals(Set.of("/stages/1")), "selected-stage scenario tests do not mark the skipped entry stage as covered");
+    }
+
+    private static void scenarioTestsPreserveLegacySnapshotsAndRejectInvalidData() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-scenario-compatibility"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:legacy_scenarios");
+        var conditions = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        saveScenario(document, "Legacy", conditions, null);
+        saveScenario(document, "Invalid", conditions, new JsonObject());
+        saveScenario(document, "Valid", conditions, EditorScenarioTests.config("start", "Node or stage", "start", List.of()));
+        var results = EditorScenarioTests.run(document, (key, simulated) -> null, ignored -> { });
+        check(results.get(0).skipped() && !results.get(1).passed() && !results.get(1).skipped() && results.get(2).passed(), "legacy snapshots remain available while invalid expectations fail without stopping later tests");
+        rejects(() -> EditorScenarioTests.config("", "Node or stage", "", List.of()));
+        rejects(() -> EditorScenarioTests.config("", "Dialogue ended", "", java.util.Collections.nCopies(257, new EditorScenarioTests.Step("advance", ""))));
+        rejects(() -> EditorScenarioTests.config("", "Dialogue ended", "", List.of(new EditorScenarioTests.Step("unknown", ""))));
     }
 
     private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

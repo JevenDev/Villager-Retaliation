@@ -41,8 +41,11 @@ public final class QuestPreviewSession {
         reset();
     }
 
-    public void reset() {
-        completed.clear(); log.clear(); outcome = ""; current = compiled.entryStage();
+    public void reset() { startAt(compiled.entryStage()); }
+
+    public void startAt(String stage) {
+        if (!compiled.stagesById().containsKey(stage)) throw new IllegalArgumentException("Missing start stage " + stage);
+        completed.clear(); log.clear(); outcome = ""; current = stage;
         visitedNodes.add(stagePath());
         log.add("Started isolated quest simulation");
         log.add("Entry effects: " + stage().entryActions());

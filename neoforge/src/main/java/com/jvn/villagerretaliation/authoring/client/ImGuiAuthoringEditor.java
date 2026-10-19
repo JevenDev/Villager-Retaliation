@@ -136,6 +136,7 @@ final class ImGuiAuthoringEditor {
     private boolean playtestEditing;
     private boolean playtestStepRemoved;
     private final ImString scenarioName = new ImString("New scenario", 256);
+    private final EditorScenarioTests scenarioTests = new EditorScenarioTests();
     private final EditorScreen screen = new EditorScreen();
     private AuthoringWorkspace workspace;
     private AuthoringDocument document;
@@ -332,6 +333,7 @@ final class ImGuiAuthoringEditor {
         toolbar();
         recoveryControls();
         guide();
+        if (!focusMode.isEmpty()) ImGui.textWrapped(status);
         ImGui.separator();
         focusX = ImGui.getCursorScreenPosX(); focusY = ImGui.getCursorScreenPosY();
         focusWidth = ImGui.getContentRegionAvailX(); focusHeight = ImGui.getContentRegionAvailY();
@@ -633,7 +635,7 @@ final class ImGuiAuthoringEditor {
         if (focusSearch) { ImGui.setKeyboardFocusHere(); focusSearch = false; }
         ImGui.setNextItemWidth(Math.max(40, ImGui.getContentRegionAvailX() - ImGui.calcTextSize("Clear").x - 24));
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
-        if (ImGui.isItemHovered()) ImGui.setTooltip("Ctrl+F focuses search. Ctrl+P opens a file by name or resource ID.");
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Find content: " + keyHint("Find content") + ". Quick open: " + keyHint("Quick open file") + ".");
         ImGui.sameLine();
         ImGui.beginDisabled(filter.get().isEmpty());
         if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
@@ -778,8 +780,8 @@ final class ImGuiAuthoringEditor {
                 if (guideStep == 1) guideStep = 2;
             });
         }
-        if (ImGui.button("Quick open (Ctrl+P)")) requestQuickOpen = true;
-        if (ImGui.button("Commands (Ctrl+Shift+P)")) commandPalette.open();
+        if (ImGui.button("Quick open (" + keyHint("Quick open file") + ")")) requestQuickOpen = true;
+        if (ImGui.button("Commands (" + keyHint("Open commands") + ")")) commandPalette.open();
         openFileTools();
         historyTools();
         try { changes.render(workspace, this::operation, this::openPackFile, changed -> { if (changed != null) historyDocument = changed; refresh(); }); }
@@ -920,8 +922,8 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Paste nodes", "Ctrl+V", graph && view == 0, this::pasteNodes));
         result.add(new EditorCommands.Command("Next node", "Alt+Right", graph && view == 0, () -> navigateNode(1)));
         result.add(new EditorCommands.Command("Previous node", "Alt+Left", graph && view == 0, () -> navigateNode(-1)));
-        result.add(new EditorCommands.Command("Focus work area", "F11", true, () -> focusMode = focusMode.equals(WORK_PANEL) ? "" : WORK_PANEL));
-        result.add(new EditorCommands.Command("Focus properties", "Shift+F11", view != 3, () -> focusMode = focusMode.equals(DETAIL_PANEL) ? "" : DETAIL_PANEL));
+        result.add(new EditorCommands.Command("Focus work area", "Ctrl+Shift+G", true, () -> focusMode = focusMode.equals(WORK_PANEL) ? "" : WORK_PANEL));
+        result.add(new EditorCommands.Command("Focus properties", "Ctrl+Shift+H", view != 3, () -> focusMode = focusMode.equals(DETAIL_PANEL) ? "" : DETAIL_PANEL));
         result.add(new EditorCommands.Command("Quick open file", "Ctrl+P", workspace != null && view != 3, () -> requestQuickOpen = true));
         result.add(new EditorCommands.Command("Next open file", "Ctrl+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(1)));
         result.add(new EditorCommands.Command("Previous open file", "Ctrl+Shift+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(-1)));
@@ -947,9 +949,16 @@ final class ImGuiAuthoringEditor {
         return result;
     }
 
+    private String keyHint(String id) {
+        var overrides = library.shortcuts();
+        String binding = commands().stream().filter(command -> command.id().equals(id)).findFirst()
+                .map(command -> EditorShortcuts.binding(command, overrides)).orElse("");
+        return binding.isEmpty() ? "unbound" : binding;
+    }
+
     private void openFileTools() {
         if (!ImGui.collapsingHeader("Open and pinned files")) return;
-        ImGui.textWrapped("Ctrl+Tab switches files. Ctrl+Shift+Tab switches back.");
+        ImGui.textWrapped("Next file: " + keyHint("Next open file") + ". Previous file: " + keyHint("Previous open file") + ".");
         if (workspace.filePaths().contains(activePath()) && ImGui.button("Pin or unpin current file")) operation(() -> openFiles.pin(workspace, activePath()));
         var listed = openFiles.entries(workspace).stream().sorted(java.util.Comparator.comparing(entry -> !entry.pinned())).toList();
         for (int i = 0; i < listed.size(); i++) {
@@ -1262,9 +1271,10 @@ final class ImGuiAuthoringEditor {
                 maxX = Math.max(maxX, point[0] + EditorGraph.WIDTH);
                 maxY = Math.max(maxY, point[1] + card.height());
             }
-            zoom = Math.clamp(Math.min((canvasWidth - 50) / (maxX - minX), (canvasHeight - 50) / (maxY - minY)), .35f, 1f);
-            panX = 25 - minX * zoom;
-            panY = 25 - minY * zoom;
+            float padding = EditorSchema.object(document.metadata().get("graph_groups")).isEmpty() ? 25 : 60;
+            zoom = Math.clamp(Math.min((canvasWidth - padding * 2) / (maxX - minX), (canvasHeight - padding * 2) / (maxY - minY)), .35f, 1f);
+            panX = padding - minX * zoom;
+            panY = padding - minY * zoom;
             fitGraph = false; fitSelection = false;
         }
         if (resetZoom) {
@@ -1897,7 +1907,7 @@ final class ImGuiAuthoringEditor {
         }));
         if (ImGui.checkbox("Show minimap", showMinimap)) { showMinimap = !showMinimap; saveViewPreferences(); }
         ImGui.textWrapped("Drag empty space to box-select. Ctrl adds to the selection. Drag selected headers to move the group.");
-        ImGui.textWrapped("Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
+        ImGui.textWrapped("Copy: " + keyHint("Copy nodes") + ". Paste: " + keyHint("Paste nodes") + ". Previous node: " + keyHint("Previous node") + ". Next node: " + keyHint("Next node") + ".");
         if (ImGui.checkbox("Snap group to 16-unit grid", snapGrid)) { snapGrid = !snapGrid; attempt(this::saveSession); }
         ImGui.beginDisabled(selectedNodes().isEmpty());
         if (ImGui.button("Frame selection")) { fitSelection = true; fitGraph = true; }
@@ -2752,10 +2762,30 @@ final class ImGuiAuthoringEditor {
         });
         JsonObject metadata = document.metadata();
         if (metadata.has("preview_scenarios")) for (var entry : metadata.getAsJsonObject("preview_scenarios").entrySet()) {
-            if (ImGui.button("Load " + entry.getKey())) operation(() -> { conditions.restore(entry.getValue().getAsJsonObject()); EditorPreviewConditions.sync(conditions); questPreview = null; });
+            if (ImGui.button("Load " + entry.getKey())) operation(() -> { scenarioName.set(entry.getKey()); conditions.restore(entry.getValue().getAsJsonObject()); EditorPreviewConditions.sync(conditions); questPreview = null; });
             ImGui.sameLine();
-            if (ImGui.smallButton("Remove##scenario" + entry.getKey())) operation(() -> document.editMetadata("Remove scenario", value -> value.getAsJsonObject("preview_scenarios").remove(entry.getKey())));
+            if (ImGui.smallButton("Remove##scenario" + entry.getKey())) operation(() -> document.editMetadata("Remove scenario", value -> {
+                value.getAsJsonObject("preview_scenarios").remove(entry.getKey());
+                if (value.has("preview_scenario_tests")) value.getAsJsonObject("preview_scenario_tests").remove(entry.getKey());
+            }));
         }
+        scenarioTests.render(document, this::operation, (key, simulated) -> {
+            var reference = new JsonObject(); reference.addProperty("key", key);
+            var id = net.minecraft.resources.ResourceLocation.tryParse(document.id());
+            String resolved = workspace.resolveText(document, reference, locale.get(), simulated.variant(),
+                    candidate -> simulated.evaluate(id, candidate) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
+            return resolved.equals(key) ? null : resolved;
+        },
+                coverage.observe(document), id -> operation(() -> openScenarioResult(id)));
+    }
+
+    private void openScenarioResult(String id) {
+        if (id.equals("/") && document.kind() == DefinitionKind.FORCED) id = "";
+        String destination = id;
+        selectedNode = id;
+        nodeSelection.clear(); if (!id.isEmpty()) nodeSelection.add(id);
+        setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(destination)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
+        graphFocus = id; view = 0; focusMode = ""; focusPanel = WORK_PANEL;
     }
 
     private void startPreview(String node) {
@@ -2889,24 +2919,24 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(back == null);
         if (ImGui.button("Back##navigation_back")) operation(() -> navigateHistory(-1));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Back (Ctrl+Alt+Left)" + (back == null ? "" : "\n" + back.label()));
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Back (" + keyHint("Navigate back") + ")" + (back == null ? "" : "\n" + back.label()));
         ImGui.sameLine();
         var forward = navigation.target(1);
         ImGui.beginDisabled(forward == null);
         if (ImGui.button("Forward##navigation_forward")) operation(() -> navigateHistory(1));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Forward (Ctrl+Alt+Right)" + (forward == null ? "" : "\n" + forward.label()));
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Forward (" + keyHint("Navigate forward") + ")" + (forward == null ? "" : "\n" + forward.label()));
         ImGui.sameLine();
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         ImGui.beginDisabled(history == null || !history.canUndo() || rawModified);
         if (ImGui.button("Undo")) operation(() -> changeHistory(false));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo" + (history == null || history.undoLabel().isEmpty() ? "" : ": " + history.undoLabel()) + " (Ctrl+Z)");
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo" + (history == null || history.undoLabel().isEmpty() ? "" : ": " + history.undoLabel()) + " (" + keyHint("Undo") + ")");
         ImGui.sameLine();
         ImGui.beginDisabled(history == null || !history.canRedo() || rawModified);
         if (ImGui.button("Redo")) operation(() -> changeHistory(true));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo" + (history == null || history.redoLabel().isEmpty() ? "" : ": " + history.redoLabel()) + " (Ctrl+Y)");
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo" + (history == null || history.redoLabel().isEmpty() ? "" : ": " + history.redoLabel()) + " (" + keyHint("Redo") + ")");
         ImGui.endDisabled();
     }
 
