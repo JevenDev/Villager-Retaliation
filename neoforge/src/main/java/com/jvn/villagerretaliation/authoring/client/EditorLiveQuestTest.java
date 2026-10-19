@@ -180,7 +180,11 @@ final class EditorLiveQuestTest {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player == null) { view = new View(quest.toString(), "Player left the test world", "", List.of(), false); return; }
             String message;
-            try { message = action.run(player, quest); }
+            try {
+                String problem = EditorContentTools.playtestProblem(document, com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.get(server));
+                if (problem != null) throw new IllegalStateException(problem);
+                message = action.run(player, quest);
+            }
             catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException exception) {
                 if (requests.get() == request) view = new View(quest.toString(), exception.getMessage(), previous.summary(), previous.lines(), false);
                 return;

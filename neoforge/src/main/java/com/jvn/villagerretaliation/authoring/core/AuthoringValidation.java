@@ -26,6 +26,18 @@ public final class AuthoringValidation {
     }
 
     public static List<AuthoringDiagnostic> validate(List<AuthoringDocument> documents) {
+        Map<String, List<AuthoringDocument>> scopes = new LinkedHashMap<>();
+        for (AuthoringDocument document : documents) {
+            String root = DefinitionKind.contentRoot(document.resourcePath());
+            String scope = root.split("/").length == 4 ? root : "";
+            scopes.computeIfAbsent(scope, ignored -> new ArrayList<>()).add(document);
+        }
+        List<AuthoringDiagnostic> result = new ArrayList<>();
+        scopes.values().forEach(scope -> result.addAll(validateScope(scope)));
+        return List.copyOf(result);
+    }
+
+    private static List<AuthoringDiagnostic> validateScope(List<AuthoringDocument> documents) {
         List<AuthoringDiagnostic> result = new ArrayList<>();
         Set<String> paths = new HashSet<>();
         Map<String, AuthoringDocument> ids = new LinkedHashMap<>();
@@ -42,7 +54,7 @@ public final class AuthoringValidation {
                 String id = document.id();
                 if (ResourceLocation.tryParse(id) == null || !id.contains(":")) error(result, document, "/id", "A namespaced resource ID is required");
                 String locale = document.kind() == DefinitionKind.TREE && document.resourcePath().split("/").length > 3
-                        ? document.resourcePath().split("/")[3] : "";
+                        ? DefinitionKind.unscopedPath(document.resourcePath()).split("/")[3] : "";
                 if (ids.putIfAbsent(document.kind() + ":" + locale + ":" + id, document) != null) error(result, document, "/id", "Duplicate definition ID " + id);
             }
             ResourceLocation resource = resourceLocation(document.resourcePath());
@@ -67,7 +79,11 @@ public final class AuthoringValidation {
                     resource = ResourceLocation.fromNamespaceAndPath(resource.getNamespace(), parts[2]);
                 }
             }
-            if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.WORLD_CAMPAIGN) root.remove("world_campaign");
+            if (resource.getPath().startsWith("campaign_addons/") && !document.kind().campaignManifest()) {
+                String[] parts = resource.getPath().split("/", 3);
+                if (parts.length == 3) resource = ResourceLocation.fromNamespaceAndPath(resource.getNamespace(), parts[2]);
+            }
+            if (document.kind() != DefinitionKind.QUEST && !document.kind().campaignManifest()) root.remove("world_campaign");
             if (resource.getPath().startsWith("quests/")) {
                 if (bundlePaths.putIfAbsent(resource, document.resourcePath()) != null)
                     error(result, document, "", "Multiple campaign files map to the same quest bundle path");
@@ -124,11 +140,22 @@ public final class AuthoringValidation {
                             }
                         }
                     }
-                    case WORLD_CAMPAIGN -> issues(result, document, "", QuestJsonSchema.validate(root,
-                            com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.export()));
+                    case WORLD_CAMPAIGN, CAMPAIGN_ADDON -> {
+                        JsonObject schema = document.kind() == DefinitionKind.WORLD_CAMPAIGN
+                                ? com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.export()
+                                : com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.schema();
+                        var schemaIssues = QuestJsonSchema.validate(root, schema);
+                        issues(result, document, "", schemaIssues);
+                        if (!schemaIssues.isEmpty()) continue;
+                        if (!document.resourcePath().equals(document.kind().path(document.id())))
+                            error(result, document, "/id", "ID must match the manifest namespace and folder");
+                        if (document.kind() == DefinitionKind.WORLD_CAMPAIGN)
+                            com.jvn.villagerretaliation.campaign.selection.WorldCampaign.read(root);
+                        else com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.read(root);
+                    }
                     case RESOURCE -> { }
                 }
-                if (document.kind() != DefinitionKind.RESOURCE && document.kind() != DefinitionKind.WORLD_CAMPAIGN) validateGraph(result, document);
+                if (document.kind() != DefinitionKind.RESOURCE && !document.kind().campaignManifest()) validateGraph(result, document);
             } catch (IllegalArgumentException | IllegalStateException ex) {
                 error(result, document, "", "Invalid structure: " + ex.getMessage());
             }

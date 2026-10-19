@@ -10,6 +10,8 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        playtestRespectsCampaignAndAddonSelection();
+        campaignAddonFormsExposeRuntimeSettings();
         schemaFormsResolveNestedVariantsAndRequiredFields();
         stageReferencesAndTriggeredDeletionStaySafe();
         cameraSequenceEditsKeepThumbnailsAndUndoTogether();
@@ -52,7 +54,38 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 42;
+        return 44;
+    }
+
+    private static void playtestRespectsCampaignAndAddonSelection() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-addon-playtest"));
+        var campaign = workspace.createDocument(DefinitionKind.WORLD_CAMPAIGN, "test:campaign");
+        var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest", addon);
+        var selection = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                net.minecraft.resources.ResourceLocation.parse(campaign.id()), false);
+        check(EditorContentTools.playtestProblem(quest, selection).contains("Enable addon test:addon"), "disabled addons explain how to enter a suitable test world");
+        selection = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(selection.id(), false,
+                java.util.List.of(net.minecraft.resources.ResourceLocation.parse(addon.id())));
+        check(EditorContentTools.playtestProblem(quest, selection) == null, "enabled addon quests can be playtested");
+        quest.edit("Filter campaign", root -> root.addProperty("world_campaign", "test:other"));
+        check(EditorContentTools.playtestProblem(quest, selection) != null, "addon campaign filters also apply to playtests");
+        var owned = workspace.createDocument(DefinitionKind.QUEST, "test:owned", campaign);
+        check(EditorContentTools.playtestProblem(owned, selection) == null, "selected campaign content can be playtested");
+        var ordinary = workspace.createDocument(DefinitionKind.QUEST, "test:ordinary");
+        check(EditorContentTools.playtestProblem(ordinary, selection) != null, "campaigns excluding default content cannot run a default quest with the same ID");
+    }
+
+    private static void campaignAddonFormsExposeRuntimeSettings() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-addon-forms"));
+        var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+        var forms = EditorSchema.forDocument(addon);
+        JsonObject properties = forms.at(addon.json(), "").getAsJsonObject("properties");
+        for (String field : java.util.List.of("campaigns", "incompatible_campaigns", "requires", "incompatible_addons", "allow_existing_worlds", "description_file", "image"))
+            check(properties.has(field), "addon forms expose " + field);
+        check(!properties.has("locked") && !properties.has("include_default_content"), "campaign-only settings are absent from addon forms");
+        check(EditorBlocks.available(addon, "").isEmpty(), "addon manifests do not offer dialogue behavior blocks");
+        check(forms.at(addon.json(), "/requires").get("uniqueItems").getAsBoolean(), "dependency lists retain runtime uniqueness constraints");
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {

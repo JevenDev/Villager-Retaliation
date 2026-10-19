@@ -22,6 +22,19 @@ final class EditorContentTools {
         return "example:" + slug;
     }
 
+    static String playtestProblem(AuthoringDocument document, com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection selection) {
+        String[] path = document.resourcePath().split("/", 5);
+        boolean addon = path.length == 5 && path[2].equals("campaign_addons");
+        if (addon && !selection.addons().contains(net.minecraft.resources.ResourceLocation.parse(path[1] + ":" + path[3])))
+            return "Enable addon " + path[1] + ":" + path[3] + " when creating the editor test world.";
+        String owner = path.length == 5 && path[2].equals("world_campaigns") ? path[1] + ":" + path[3]
+                : DialogueGraph.string(document.json(), "world_campaign");
+        var campaign = owner.isBlank() ? addon ? com.jvn.villagerretaliation.campaign.selection.WorldCampaign.SHARED : null
+                : net.minecraft.resources.ResourceLocation.parse(owner);
+        if (!selection.allows(campaign)) return "This content is outside the test world's campaign. Create a test world with its campaign and addons selected.";
+        return null;
+    }
+
     static boolean matches(AuthoringDocument document, String query) {
         String term = query.strip().toLowerCase(Locale.ROOT);
         return term.isEmpty() || (document.id() + " " + document.resourcePath() + " " + document.json())

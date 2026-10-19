@@ -66,6 +66,8 @@ final class ImGuiAuthoringEditor {
     private boolean nodeDragMoved;
     private String focusPanel = "";
     private final ImString workspacePath = new ImString(4096);
+    private AuthoringDocument createScope;
+    private final ImString campaignDescriptionPath = new ImString(4096);
     private final ImString campaignImagePath = new ImString(4096);
     private net.minecraft.client.renderer.texture.DynamicTexture campaignPreview;
     private String campaignPreviewKey = "";
@@ -421,6 +423,7 @@ final class ImGuiAuthoringEditor {
             case FORCED -> "Triggered dialogue";
             case QUEST -> "Quest";
             case WORLD_CAMPAIGN -> "World campaign";
+            case CAMPAIGN_ADDON -> "Campaign addon";
             case RESOURCE -> "Supporting resource";
         };
     }
@@ -430,6 +433,7 @@ final class ImGuiAuthoringEditor {
         AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
                 : AuthoringWorkspace.open(Path.of(workspacePath.get()));
         workspace = next;
+        createScope = null;
         select(null);
         showWorkspace = false;
         view = 0;
@@ -463,7 +467,12 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        if (ImGui.button("New content", -1, 0)) { showCreate = !showCreate; view = 0; }
+        if (ImGui.button("New content", -1, 0)) {
+            showCreate = !showCreate;
+            view = 0;
+            if (document != null) setCreateScope(workspace.documents().stream().filter(value -> value.kind().campaignManifest()
+                    && DefinitionKind.contentRoot(value.resourcePath()).equals(DefinitionKind.contentRoot(document.resourcePath()))).findFirst().orElse(null));
+        }
         if (showCreate) {
             ImGui.textUnformatted("Format");
             ImGui.setNextItemWidth(-1);
@@ -479,15 +488,29 @@ final class ImGuiAuthoringEditor {
                 case FORCED -> "Dialogue opened by a game event.";
                 case QUEST -> "Stages, objectives and rewards.";
                 case WORLD_CAMPAIGN -> "Campaign card and content settings for world creation.";
+                case CAMPAIGN_ADDON -> "Optional content with campaign compatibility, dependencies and existing-world settings.";
                 default -> "";
             });
             input("Name or namespace:id", newId);
+            if (!createKind.campaignManifest() && workspace.documents().stream().anyMatch(value -> value.kind().campaignManifest())) {
+                if (createScope != null && !workspace.documents().contains(createScope)) createScope = null;
+                ImGui.textUnformatted("Content folder");
+                ImGui.setNextItemWidth(-1);
+                if (ImGui.beginCombo("##content_folder", createScope == null ? "Default content" : createScope.id())) {
+                    if (ImGui.selectable("Default content", createScope == null)) createScope = null;
+                    for (var scope : workspace.documents()) {
+                        if (scope.kind().campaignManifest() && ImGui.selectable(kindLabel(scope.kind()) + ": " + scope.id(), scope == createScope)) setCreateScope(scope);
+                    }
+                    ImGui.endCombo();
+                }
+                if (createScope != null) ImGui.textWrapped("Content uses the " + createScope.id().split(":", 2)[0] + " namespace and stays inside this folder.");
+            }
             if (createKind == DefinitionKind.CONVERSATION) {
                 ImGui.textUnformatted("Associated quest");
                 ImGui.setNextItemWidth(-1);
                 if (ImGui.beginCombo("##linked_quest", linkedQuest.get().isEmpty() ? "Choose a quest" : linkedQuest.get())) {
                     for (var candidate : workspace.documents()) {
-                        if (candidate.kind() == DefinitionKind.QUEST && ImGui.selectable(candidate.id(), linkedQuest.get().equals(candidate.id())))
+                        if (candidate.kind() == DefinitionKind.QUEST && ImGui.selectable(candidate.id() + "##" + candidate.resourcePath(), linkedQuest.get().equals(candidate.id())))
                             linkedQuest.set(candidate.id());
                     }
                     ImGui.endCombo();
@@ -499,10 +522,10 @@ final class ImGuiAuthoringEditor {
                     candidate.kind() == DefinitionKind.QUEST && candidate.id().equals(linkedQuest.get()));
             ImGui.beginDisabled(createKind == DefinitionKind.CONVERSATION && !questSelected);
             if (ImGui.button("Create", -1, 0)) operation(() -> {
-                AuthoringDocument created = workspace.createDocument(createKind, EditorContentTools.resourceId(newId.get()));
+                AuthoringDocument created = createContent(createKind);
                 if (createKind == DefinitionKind.CONVERSATION) created.edit("Assign quest", root -> root.addProperty("quest", linkedQuest.get()));
                 if (!newId.get().contains(":")) created.edit("Set content name", root -> {
-                    if (createKind == DefinitionKind.WORLD_CAMPAIGN) root.addProperty("name", newId.get());
+                    if (createKind.campaignManifest()) root.addProperty("name", newId.get());
                     else if (createKind == DefinitionKind.TREE || createKind == DefinitionKind.QUEST) {
                         if (!root.has("display")) root.add("display", new JsonObject());
                         root.getAsJsonObject("display").addProperty("title", newId.get());
@@ -558,6 +581,7 @@ final class ImGuiAuthoringEditor {
         }
         if (document != null && ImGui.collapsingHeader("Manage selected file")) {
             ImGui.textWrapped(document.resourcePath());
+            if (document.kind().campaignManifest()) ImGui.textWrapped("Rename, duplicate and delete include all content and assets in this folder.");
             input("New resource ID", newId);
             if (ImGui.button("Rename")) operation(() -> { workspace.rename(document, newId.get()); refresh(); });
             ImGui.sameLine();
@@ -588,16 +612,29 @@ final class ImGuiAuthoringEditor {
         ImGui.end();
     }
 
+    private void setCreateScope(AuthoringDocument scope) {
+        createScope = scope;
+        if (scope != null && newId.get().contains(":")) newId.set(scope.id().split(":", 2)[0] + newId.get().substring(newId.get().indexOf(':')));
+    }
+
+    private AuthoringDocument createContent(DefinitionKind kind) {
+        String id = EditorContentTools.resourceId(newId.get());
+        AuthoringDocument scope = kind.campaignManifest() ? null : createScope;
+        if (scope != null && !newId.get().contains(":")) id = scope.id().split(":", 2)[0] + id.substring(id.indexOf(':'));
+        return workspace.createDocument(kind, id, scope);
+    }
+
     private String contentGroup(AuthoringDocument value) {
         String[] parts = value.resourcePath().split("/");
-        String campaign = parts.length > 3 && parts[2].equals("world_campaigns") ? parts[1] + ":" + parts[3]
+        String campaign = parts.length > 3 && (parts[2].equals("world_campaigns") || parts[2].equals("campaign_addons"))
+                ? (parts[2].equals("campaign_addons") ? "Addon " : "Campaign ") + parts[1] + ":" + parts[3]
                 : DialogueGraph.string(value.json(), "world_campaign");
         return (campaign.isBlank() ? "Default content" : campaign) + " / " + kindLabel(value.kind());
     }
 
     private void contentTools() {
         if (!ImGui.collapsingHeader("Content tools")) return;
-        if (ImGui.checkbox("Group by campaign and type", groupContent)) groupContent = !groupContent;
+        if (ImGui.checkbox("Group by campaign, addon and type", groupContent)) groupContent = !groupContent;
         float[] scale = {preferences.textScale()};
         if (ImGui.sliderFloat("Editor text size", scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
         graphTools();
@@ -617,7 +654,7 @@ final class ImGuiAuthoringEditor {
         for (String recipe : List.of("Branching dialogue", "Fetch quest", "Triggered encounter", "Reputation choice")) {
             if (ImGui.button(recipe)) operation(() -> {
                 var kind = recipe.equals("Fetch quest") ? DefinitionKind.QUEST : recipe.equals("Triggered encounter") ? DefinitionKind.FORCED : DefinitionKind.TREE;
-                var created = workspace.createDocument(kind, EditorContentTools.resourceId(newId.get()));
+                var created = createContent(kind);
                 EditorContentTools.recipe(workspace, created, recipe);
                 select(created); showCreate = false; view = 0;
                 if (guideStep == 1) guideStep = 2;
@@ -655,7 +692,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        if (document.kind() == DefinitionKind.WORLD_CAMPAIGN) {
+        if (document.kind().campaignManifest()) {
             campaignCard();
             ImGui.end();
             return;
@@ -1184,15 +1221,18 @@ final class ImGuiAuthoringEditor {
     }
 
     private void campaignOwnership() {
-        if (document.kind() == DefinitionKind.WORLD_CAMPAIGN || document.kind() == DefinitionKind.RESOURCE) return;
+        if (document.kind().campaignManifest() || document.kind() == DefinitionKind.RESOURCE) return;
         String[] path = document.resourcePath().split("/", 5);
         if (path.length == 5 && path[2].equals("world_campaigns")) {
             ImGui.textWrapped("World campaign: " + path[1] + ":" + path[3] + " (from folder)");
             return;
         }
+        boolean addon = path.length == 5 && path[2].equals("campaign_addons");
+        if (addon) ImGui.textWrapped("Campaign addon: " + path[1] + ":" + path[3] + " (from folder)");
         String owner = DialogueGraph.string(document.json(), "world_campaign");
-        if (ImGui.beginCombo("World campaign", owner.isBlank() ? "Default VR" : owner)) {
-            if (ImGui.selectable("Default VR", owner.isBlank())) operation(() -> {
+        String fallback = addon ? "All supported campaigns" : "Default VR";
+        if (ImGui.beginCombo(addon ? "Campaign filter" : "World campaign", owner.isBlank() ? fallback : owner)) {
+            if (ImGui.selectable(fallback, owner.isBlank())) operation(() -> {
                 document.edit("Set campaign", root -> root.remove("world_campaign"));
                 refresh();
             });
@@ -1220,9 +1260,17 @@ final class ImGuiAuthoringEditor {
     private void campaignCard() {
         JsonObject value = document.json();
         ImGui.textUnformatted(DialogueGraph.string(value, "name"));
-        ImGui.textWrapped(DialogueGraph.string(value, "description"));
+        try { ImGui.textWrapped(workspace.campaignDescription(document)); }
+        catch (IOException exception) { ImGui.textWrapped(exception.getMessage()); }
         if (value.has("locked") && value.get("locked").getAsBoolean()) ImGui.textUnformatted("Coming soon");
-        String key = document.id() + ":" + DialogueGraph.string(value, "image");
+        boolean addon = document.kind() == DefinitionKind.CAMPAIGN_ADDON;
+        if (addon) {
+            ImGui.textWrapped(value.has("allow_existing_worlds") && value.get("allow_existing_worlds").getAsBoolean()
+                    ? "Can be added to existing worlds." : "Available when creating a world.");
+            ImGui.textWrapped("Set supported campaigns, required addons and conflicts in Properties. Empty supported campaigns allows any campaign.");
+            ImGui.textWrapped("Required addons must be enabled first. This addon takes priority over them. Saved addons stay enabled in existing worlds.");
+        }
+        String key = document.resourcePath() + ":" + DialogueGraph.string(value, "image");
         if (!key.equals(campaignPreviewKey)) {
             clearCampaignPreview();
             campaignPreviewKey = key;
@@ -1240,12 +1288,20 @@ final class ImGuiAuthoringEditor {
             ImGui.image(campaignPreview.getId(), pixels.getWidth() * scale, pixels.getHeight() * scale);
         }
         input("PNG image path", campaignImagePath);
-        if (ImGui.button("Import campaign image")) operation(() -> {
+        if (ImGui.button(addon ? "Import addon image" : "Import campaign image")) operation(() -> {
             workspace.importCampaignImage(document, Path.of(campaignImagePath.get()));
             clearCampaignPreview();
             refresh();
         });
-        ImGui.textWrapped("Edit the card details and content settings in Properties. The selected campaign is permanent once a world is created.");
+        input("Markdown description path", campaignDescriptionPath);
+        if (ImGui.button("Import description")) operation(() -> {
+            workspace.importCampaignDescription(document, Path.of(campaignDescriptionPath.get()));
+            refresh();
+        });
+        ImGui.textWrapped("Descriptions support Markdown and images. Imported files are included in the exported datapack. A description file overrides inline description text.");
+        if (ImGui.button("Create content in this folder")) { setCreateScope(document); createKind = DefinitionKind.QUEST; showCreate = true; }
+        ImGui.textWrapped(addon ? "Install the exported datapack, then enable this addon in Campaign addons."
+                : "Edit the card details and content settings in Properties. Unlock the campaign when it is ready for world creation. The selected campaign is permanent.");
     }
 
     private void clearCampaignPreview() {
@@ -1291,7 +1347,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void graphTools() {
-        if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind() == DefinitionKind.WORLD_CAMPAIGN) return;
+        if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest()) return;
         if (ImGui.checkbox("Show minimap", showMinimap)) showMinimap = !showMinimap;
         ImGui.textWrapped("Ctrl-click headers to select nodes. Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
         if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
@@ -1369,7 +1425,9 @@ final class ImGuiAuthoringEditor {
         if (matchMode) matchMode(object, pointer.get());
         if (object.has("type") && object.get("type").isJsonPrimitive() && object.get("type").getAsString().equals("player_last_death"))
             ImGui.textWrapped("Each list matches any entry. If both lists are set, they must match the same death.");
-        List<String> main = List.of("name", "description", "authors", "image", "locked", "include_default_content", "display", "title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
+        List<String> main = document.kind().campaignManifest()
+                ? List.of("name", "description", "description_file", "allow_existing_worlds", "campaigns", "incompatible_campaigns", "requires", "incompatible_addons", "authors", "image", "locked", "include_default_content")
+                : List.of("name", "description", "authors", "image", "locked", "include_default_content", "display", "title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
         boolean shown = false;
         for (String field : main) {
             if (!object.has(field)) continue;
@@ -1435,6 +1493,10 @@ final class ImGuiAuthoringEditor {
             case "responses", "options" -> "Player responses";
             case "end", "end_conversation" -> "End conversation";
             case "next" -> "Next node";
+            case "campaigns" -> "Supported campaigns";
+            case "incompatible_campaigns" -> "Incompatible campaigns";
+            case "requires" -> "Required addons";
+            case "incompatible_addons" -> "Incompatible addons";
             default -> field.isEmpty() ? "(unnamed field)" : Character.toUpperCase(field.charAt(0)) + field.substring(1).replace('_', ' ');
         };
     }
@@ -1937,6 +1999,11 @@ final class ImGuiAuthoringEditor {
         ImGui.textUnformatted("Preview dialogue");
         if (document == null) {
             ImGui.textWrapped("Choose a dialogue in Content first.");
+            ImGui.end();
+            return;
+        }
+        if (document.kind().campaignManifest()) {
+            campaignCard();
             ImGui.end();
             return;
         }

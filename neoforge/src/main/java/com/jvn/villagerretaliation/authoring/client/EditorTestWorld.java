@@ -85,7 +85,7 @@ final class EditorTestWorld {
                         Component.literal("Test world setup failed"), Component.literal(exception.getMessage() == null ? exception.toString() : exception.getMessage())));
             }
         }, Component.literal("Create a separate test world?"),
-                Component.literal("Your workspace is saved. This leaves the current world and opens a creative test world with test_content enabled. Live tests execute real actions and rewards there. Return to the editor with F9 after entering.")));
+                Component.literal("Your workspace is saved. This leaves the current world and opens a creative test world with test_content enabled. Choose your campaign and addons before creating the world. Live tests execute real actions and rewards there. Return to the editor with F9 after entering.")));
     }
 
     private static WorldCreationContext load(Minecraft minecraft, Path pack) {

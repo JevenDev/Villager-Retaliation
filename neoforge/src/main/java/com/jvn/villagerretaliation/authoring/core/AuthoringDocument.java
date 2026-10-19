@@ -33,7 +33,7 @@ public final class AuthoringDocument {
     public String id() {
         if (json.has("id") && json.get("id").isJsonPrimitive()) return json.get("id").getAsString();
         if (kind == DefinitionKind.TREE) {
-            String[] parts = resourcePath.split("/", 5);
+            String[] parts = DefinitionKind.unscopedPath(resourcePath).split("/", 5);
             if (parts.length == 5 && parts[2].equals("dialogue_trees") && parts[4].endsWith(".json")) {
                 return parts[1] + ":" + parts[4].substring(0, parts[4].length() - 5);
             }

@@ -74,6 +74,25 @@ public final class AuthoringEditorClientSmoke {
         if (GLFW.glfwGetWindowAttrib(window, GLFW.GLFW_FOCUSED) == GLFW.GLFW_FALSE) GLFW.glfwFocusWindow(window);
         minecraft.setWindowActive(true);
         minecraft.options.pauseOnLostFocus = false;
+        if (minecraft.screen instanceof com.jvn.villagerretaliation.client.BetaWarningScreen warning) {
+            warning.children().stream().filter(net.minecraft.client.gui.components.Button.class::isInstance)
+                    .map(net.minecraft.client.gui.components.Button.class::cast)
+                    .filter(button -> button.active && button.getMessage().getString().equals(net.minecraft.network.chat.Component.translatable(
+                            "screen.villagerretaliation.beta_warning.acknowledge").getString())).findFirst().ifPresent(net.minecraft.client.gui.components.Button::onPress);
+            return;
+        }
+        if (installed && minecraft.screen instanceof com.jvn.villagerretaliation.client.campaign.CampaignSelectScreen selection) {
+            var campaigns = (java.util.List<?>) field(selection, "campaigns");
+            var campaign = campaigns.stream().map(com.jvn.villagerretaliation.campaign.selection.WorldCampaign.class::cast)
+                    .filter(value -> value.id().equals(com.jvn.villagerretaliation.campaign.selection.WorldCampaign.DEFAULT)).findFirst().orElseThrow();
+            selection.children().stream().filter(net.minecraft.client.gui.components.Button.class::isInstance)
+                    .map(net.minecraft.client.gui.components.Button.class::cast).filter(button -> button.getMessage().getString().equals(campaign.name()))
+                    .findFirst().orElseThrow().onPress();
+            selection.children().stream().filter(net.minecraft.client.gui.components.Button.class::isInstance)
+                    .map(net.minecraft.client.gui.components.Button.class::cast).filter(button -> button.active && button.getMessage().getString().equals(
+                            net.minecraft.network.chat.Component.translatable("selectWorld.create").getString())).findFirst().orElseThrow().onPress();
+            return;
+        }
         if (installed || minecraft.player == null || minecraft.level == null || minecraft.screen != null) return;
         installed = true;
         minecraft.options.guiScale().set(3);
@@ -133,6 +152,7 @@ public final class AuthoringEditorClientSmoke {
             capture("02-automatic-layout");
             locateCanvas();
         });
+        buildCampaignSteps();
         click(() -> point("start", 80, EditorGraph.HEADER + EditorGraph.ROW + 12));
         STEPS.add(() -> require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
                 "Clicking the Say block opens its editable lines."));
@@ -395,6 +415,56 @@ public final class AuthoringEditorClientSmoke {
             require(AuthoringDialoguePreview.cursor().node().equals("start"), "Dialogue can return to the previous node.");
             invoke("leavePlaytest", new Class<?>[] {int.class}, 0);
         });
+    }
+
+    private static void buildCampaignSteps() {
+        var originalWorkspace = new AuthoringWorkspace[1];
+        var originalDocument = new AuthoringDocument[1];
+        var originalName = new String[1];
+        STEPS.add(() -> {
+            originalWorkspace[0] = workspace;
+            originalDocument[0] = document;
+            originalName[0] = ((imgui.type.ImString) field(editor, "newId")).get();
+            try {
+                workspace = AuthoringWorkspace.create(output().resolve("addon-drafts"));
+                document = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:editor_addon");
+                document.edit("Name addon", value -> value.addProperty("name", "Village Stories"));
+                Path description = output().resolve("addon-description.md");
+                Files.writeString(description, "# Village Stories\nAn optional adventure for your campaign.");
+                workspace.importCampaignDescription(document, description);
+                Path image = output().resolve("addon-image.png");
+                try (var stream = AuthoringEditorClientSmoke.class.getResourceAsStream("/villager_retaliation_cover.png")) { Files.write(image, stream.readAllBytes()); }
+                workspace.importCampaignImage(document, image);
+                set("workspace", workspace);
+                invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        pause(250);
+        STEPS.add(() -> {
+            require(field(editor, "campaignPreview") != null, "Addon artwork renders in the native editor.");
+            capture("02a-addon-card");
+            invoke("setCreateScope", new Class<?>[] {AuthoringDocument.class}, document);
+            set("createKind", DefinitionKind.QUEST);
+            ((imgui.type.ImString) field(editor, "newId")).set("test:addon_quest");
+            set("showCreate", true);
+        });
+        pause(250);
+        STEPS.add(() -> {
+            capture("02b-addon-content-creation");
+            invoke("createContent", new Class<?>[] {DefinitionKind.class}, DefinitionKind.QUEST);
+            require(workspace.documents().stream().anyMatch(value -> value.resourcePath().equals(
+                    "data/test/campaign_addons/editor_addon/quests/authored/addon_quest/quest.json")), "Editor creation uses the selected addon folder.");
+            workspace = originalWorkspace[0];
+            document = originalDocument[0];
+            set("workspace", workspace);
+            set("createScope", null);
+            set("createKind", DefinitionKind.TREE);
+            set("showCreate", false);
+            ((imgui.type.ImString) field(editor, "newId")).set(originalName[0]);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+        });
+        pause(250);
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
     }
 
     private static void buildCreatorToolsSteps() {

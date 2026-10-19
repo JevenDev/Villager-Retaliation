@@ -26,6 +26,7 @@ final class EditorSchema {
             case QUEST -> com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
             case CONVERSATION -> com.jvn.villagerretaliation.dialogue.conversation.ConversationSchema.export();
             case WORLD_CAMPAIGN -> com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.export();
+            case CAMPAIGN_ADDON -> com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.schema();
             default -> new JsonObject();
         };
         if (!root.has("$defs")) root.add("$defs", com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions());

@@ -93,8 +93,10 @@ public final class AuthoringWorkspace {
                     throw new IOException("Invalid authoring workspace: /documents/" + index + "/definition must be an object");
                 if (value.has("editor") && !value.get("editor").isJsonObject())
                     throw new IOException("Invalid authoring workspace: /documents/" + index + "/editor must be an object");
-                AuthoringDocument document = new AuthoringDocument(DefinitionKind.valueOf(value.get("kind").getAsString()),
-                        value.get("path").getAsString(), value.getAsJsonObject("definition"));
+                DefinitionKind kind = DefinitionKind.valueOf(value.get("kind").getAsString());
+                String path = value.get("path").getAsString();
+                if (kind == DefinitionKind.RESOURCE) kind = DefinitionKind.fromPath(path);
+                AuthoringDocument document = new AuthoringDocument(kind, path, value.getAsJsonObject("definition"));
                 document.loadMetadata(value.has("editor") ? value.getAsJsonObject("editor") : new JsonObject());
                 document.markSaved();
                 result.add(document);
@@ -133,7 +135,7 @@ public final class AuthoringWorkspace {
     }
 
     public void importCampaignImage(AuthoringDocument campaign, Path source) throws IOException {
-        if (campaign.kind() != DefinitionKind.WORLD_CAMPAIGN) throw new IllegalArgumentException("Select a campaign first");
+        if (!documents.contains(campaign) || !campaign.kind().campaignManifest()) throw new IllegalArgumentException("Select a campaign or addon first");
         if (!Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS) || Files.size(source) > 4 * 1024 * 1024) {
             throw new IOException("Choose a PNG image no larger than 4 MiB");
         }
@@ -149,8 +151,36 @@ public final class AuthoringWorkspace {
         campaign.edit("Set campaign image", root -> root.addProperty("image", path[1] + ":" + path[2]));
     }
 
+    public void importCampaignDescription(AuthoringDocument campaign, Path source) throws IOException {
+        if (!documents.contains(campaign) || !campaign.kind().campaignManifest()) throw new IllegalArgumentException("Select a campaign or addon first");
+        if (!Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS) || Files.size(source) > 16384) throw new IOException("Choose a Markdown file with at most 4096 characters");
+        String text = Files.readString(source, StandardCharsets.UTF_8);
+        if (text.length() > 4096) throw new IOException("Campaign descriptions must be at most 4096 characters");
+        String target = DefinitionKind.contentRoot(campaign.resourcePath()) + "description-"
+                + com.google.common.hash.Hashing.sha256().hashString(text, StandardCharsets.UTF_8) + ".md";
+        if (documents.stream().anyMatch(value -> value.resourcePath().equals(target))) throw new IOException("Description path is already occupied");
+        attachments.put(target, text.getBytes(StandardCharsets.UTF_8));
+        String[] path = target.split("/", 3);
+        campaign.edit("Set campaign description", root -> root.addProperty("description_file", path[1] + ":" + path[2]));
+    }
+
+    public String campaignDescription(AuthoringDocument campaign) throws IOException {
+        String id = DialogueGraph.string(campaign.json(), "description_file");
+        if (id.isBlank()) return DialogueGraph.string(campaign.json(), "description");
+        String[] parts = id.split(":", 2);
+        byte[] bytes = parts.length == 2 ? attachments.get("data/" + parts[0] + "/" + parts[1]) : null;
+        if (bytes == null) throw new java.nio.file.NoSuchFileException(id, null, "Description file is missing from this workspace");
+        String text = new String(bytes, StandardCharsets.UTF_8);
+        if (text.length() > 4096) throw new IOException("Campaign description exceeds 4096 characters");
+        return text;
+    }
+
     public byte[] campaignImage(AuthoringDocument campaign) throws IOException {
         String id = DialogueGraph.string(campaign.json(), "image");
+        if (id.isBlank() && campaign.kind() == DefinitionKind.CAMPAIGN_ADDON) {
+            byte[] icon = attachments.get("pack.png");
+            return icon == null ? new byte[0] : icon.clone();
+        }
         if (id.isBlank() || id.equals("villagerretaliation:mod_icon")) {
             try (var stream = AuthoringWorkspace.class.getResourceAsStream("/villager_retaliation_cover.png")) {
                 return stream == null ? new byte[0] : stream.readAllBytes();
@@ -168,9 +198,22 @@ public final class AuthoringWorkspace {
     }
 
     public AuthoringDocument createDocument(DefinitionKind kind, String id) {
+        return createDocument(kind, id, null);
+    }
+
+    public AuthoringDocument createDocument(DefinitionKind kind, String id, AuthoringDocument scope) {
         String path = kind.path(id);
-        if ((kind == DefinitionKind.QUEST || kind == DefinitionKind.CONVERSATION || kind == DefinitionKind.WORLD_CAMPAIGN) && id.substring(id.indexOf(':') + 1).contains("/")) {
-            throw new IllegalArgumentException("Quest bundles and world campaigns require a single-segment resource ID");
+        String dataRoot = "data/" + id.substring(0, id.indexOf(':')) + "/";
+        if (scope != null) {
+            if (!documents.contains(scope) || !scope.kind().campaignManifest() || kind.campaignManifest() || kind == DefinitionKind.RESOURCE)
+                throw new IllegalArgumentException("Choose a campaign or addon in this workspace for playable content");
+            if (!scope.resourcePath().startsWith(dataRoot)) throw new IllegalArgumentException("Content must use its campaign or addon namespace");
+            String relative = path.substring(dataRoot.length());
+            dataRoot = DefinitionKind.contentRoot(scope.resourcePath());
+            path = dataRoot + relative;
+        }
+        if ((kind == DefinitionKind.QUEST || kind == DefinitionKind.CONVERSATION || kind.campaignManifest()) && id.substring(id.indexOf(':') + 1).contains("/")) {
+            throw new IllegalArgumentException("Quest bundles, campaigns and addons require a single-segment resource ID");
         }
         if (containsPath(path)) throw new IllegalArgumentException("Resource already exists: " + path);
         if (kind == DefinitionKind.QUEST) {
@@ -178,7 +221,7 @@ public final class AuthoringWorkspace {
             if (containsPath(localePath)) throw new IllegalArgumentException("Resource already exists: " + localePath);
         }
         if (kind == DefinitionKind.CONVERSATION) {
-            String localePath = "data/" + id.substring(0, id.indexOf(':')) + "/quests/_shared/locales/en_us.json";
+            String localePath = dataRoot + "quests/_shared/locales/en_us.json";
             AuthoringDocument locale = documents.stream().filter(document -> document.resourcePath().equalsIgnoreCase(localePath)).findFirst().orElse(null);
             if (containsPath(localePath) && locale == null) throw new IllegalArgumentException("Locale is not an editable JSON object: " + localePath);
             if (locale != null) {
@@ -255,6 +298,17 @@ public final class AuthoringWorkspace {
                 root.addProperty("locked", true);
                 root.addProperty("include_default_content", false);
             }
+            case CAMPAIGN_ADDON -> {
+                root.addProperty("schema", com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.SCHEMA);
+                root.addProperty("name", "New addon");
+                root.addProperty("description", "");
+                root.add("authors", new JsonArray());
+                root.add("campaigns", new JsonArray());
+                root.add("incompatible_campaigns", new JsonArray());
+                root.add("requires", new JsonArray());
+                root.add("incompatible_addons", new JsonArray());
+                root.addProperty("allow_existing_worlds", false);
+            }
             case RESOURCE -> { }
         }
         AuthoringDocument result = new AuthoringDocument(kind, path, root);
@@ -263,7 +317,7 @@ public final class AuthoringWorkspace {
             add(new AuthoringDocument(DefinitionKind.RESOURCE, path.substring(0, path.lastIndexOf('/')) + "/locales/en_us.json", new JsonObject()));
         }
         if (kind == DefinitionKind.CONVERSATION) {
-            String localePath = "data/" + id.substring(0, id.indexOf(':')) + "/quests/_shared/locales/en_us.json";
+            String localePath = dataRoot + "quests/_shared/locales/en_us.json";
             AuthoringDocument locale = documents.stream().filter(document -> document.resourcePath().equalsIgnoreCase(localePath)).findFirst().orElse(null);
             if (locale == null) {
                 locale = new AuthoringDocument(DefinitionKind.RESOURCE, localePath, new JsonObject());
@@ -287,6 +341,7 @@ public final class AuthoringWorkspace {
     }
 
     public AuthoringDocument duplicate(AuthoringDocument document, String id) {
+        if (document.kind().campaignManifest()) return transferCampaignBundle(document, id, true);
         if (document.kind() == DefinitionKind.QUEST) return transferQuestBundle(document, id, true);
         String path = renamedPath(document, id);
         JsonObject definition = document.json();
@@ -298,6 +353,10 @@ public final class AuthoringWorkspace {
     }
 
     public void rename(AuthoringDocument document, String id) {
+        if (document.kind().campaignManifest()) {
+            transferCampaignBundle(document, id, false);
+            return;
+        }
         if (document.kind() == DefinitionKind.QUEST) {
             transferQuestBundle(document, id, false);
             return;
@@ -311,7 +370,8 @@ public final class AuthoringWorkspace {
         document.rename(path, id);
         if (document.kind() == DefinitionKind.CONVERSATION && !previousId.equals(id)) {
             for (AuthoringDocument other : documents) {
-                if (other == document) continue;
+                if (other == document || DefinitionKind.contentRoot(document.resourcePath()).split("/").length == 4
+                        && !DefinitionKind.contentRoot(other.resourcePath()).equals(DefinitionKind.contentRoot(document.resourcePath()))) continue;
                 JsonObject rewritten = rewriteConversationReferences(other.json(), previousId, id).getAsJsonObject();
                 if (!rewritten.equals(other.json())) {
                     beforePaths.put(other, other.resourcePath());
@@ -330,9 +390,13 @@ public final class AuthoringWorkspace {
         String defaultPath = document.kind().path(id);
         String[] identity = id.split(":", 2);
         if (document.kind() == DefinitionKind.TREE) {
-            String[] source = document.resourcePath().split("/", 5);
+            String[] source = DefinitionKind.unscopedPath(document.resourcePath()).split("/", 5);
             if (source.length != 5 || !source[2].equals("dialogue_trees")) throw new IllegalArgumentException("Invalid dialogue tree resource path");
-            return safeRelativePath("data/" + identity[0] + "/dialogue_trees/" + source[3] + "/" + identity[1] + ".json");
+            String scope = DefinitionKind.contentRoot(document.resourcePath());
+            if (!scope.equals("data/" + source[1] + "/") && !identity[0].equals(source[1]))
+                throw new IllegalArgumentException("Keep bundled dialogue in its campaign or addon namespace");
+            String root = scope.equals("data/" + source[1] + "/") ? "data/" + identity[0] + "/" : scope;
+            return safeRelativePath(root + "dialogue_trees/" + source[3] + "/" + identity[1] + ".json");
         }
         if (document.kind() == DefinitionKind.CONVERSATION) {
             String[] source = document.resourcePath().split("/", 3);
@@ -341,6 +405,13 @@ public final class AuthoringWorkspace {
             }
             String directory = document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1);
             return safeRelativePath(directory + identity[1].replace('/', '_') + ".json");
+        }
+        if (document.kind() == DefinitionKind.FORCED) {
+            String root = DefinitionKind.contentRoot(document.resourcePath());
+            if (root.split("/").length == 4) {
+                if (!root.startsWith("data/" + identity[0] + "/")) throw new IllegalArgumentException("Keep bundled dialogue in its campaign or addon namespace");
+                return root + "forced_dialogue/" + identity[1] + ".json";
+            }
         }
         return defaultPath;
     }
@@ -367,7 +438,7 @@ public final class AuthoringWorkspace {
 
     public void remove(AuthoringDocument document) {
         if (!documents.contains(document)) throw new IllegalArgumentException("Select a file in this workspace");
-        String bundle = document.kind() == DefinitionKind.QUEST
+        String bundle = document.kind() == DefinitionKind.QUEST || document.kind().campaignManifest()
                 ? document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1) : null;
         JsonObject entry = new JsonObject();
         entry.addProperty("name", document.id());
@@ -396,7 +467,9 @@ public final class AuthoringWorkspace {
             JsonObject value = element.getAsJsonObject();
             String path = value.get("path").getAsString();
             if (containsPath(path)) throw new IllegalArgumentException("Restore would overwrite " + path);
-            AuthoringDocument document = new AuthoringDocument(DefinitionKind.valueOf(value.get("kind").getAsString()), path, value.getAsJsonObject("definition"));
+            DefinitionKind kind = DefinitionKind.valueOf(value.get("kind").getAsString());
+            if (kind == DefinitionKind.RESOURCE) kind = DefinitionKind.fromPath(path);
+            AuthoringDocument document = new AuthoringDocument(kind, path, value.getAsJsonObject("definition"));
             document.loadMetadata(value.getAsJsonObject("editor"));
             restored.add(document);
         }
@@ -411,15 +484,114 @@ public final class AuthoringWorkspace {
         deleted.remove(index);
     }
 
+    private AuthoringDocument transferCampaignBundle(AuthoringDocument campaign, String id, boolean copy) {
+        if (!documents.contains(campaign)) throw new IllegalArgumentException("Select a file in this workspace");
+        String previousId = campaign.id();
+        String target = campaign.kind().path(id);
+        if (id.substring(id.indexOf(':') + 1).contains("/")) throw new IllegalArgumentException("Campaign and addon IDs require a single path segment");
+        String source = DefinitionKind.contentRoot(campaign.resourcePath());
+        String destination = DefinitionKind.contentRoot(target);
+        List<AuthoringDocument> members = documents.stream().filter(value -> value.resourcePath().startsWith(source)).toList();
+        Map<String, byte[]> assets = new LinkedHashMap<>();
+        attachments.forEach((path, bytes) -> { if (path.startsWith(source)) assets.put(path.substring(source.length()), bytes.clone()); });
+        for (AuthoringDocument member : members) {
+            String path = destination + member.resourcePath().substring(source.length());
+            if (containsPath(path) && (copy || !path.equals(member.resourcePath()))) throw new IllegalArgumentException("Resource already exists: " + path);
+        }
+        for (String asset : assets.keySet()) {
+            String path = destination + asset;
+            if (containsPath(path) && (copy || !source.equals(destination))) throw new IllegalArgumentException("Resource already exists: " + path);
+        }
+        Map<String, String> references = new LinkedHashMap<>();
+        String oldNamespace = campaign.resourcePath().split("/", 3)[1];
+        String newNamespace = id.split(":", 2)[0];
+        if (!oldNamespace.equals(newNamespace) && members.size() > 1)
+            throw new IllegalArgumentException("Keep bundled campaigns and addons in their current namespace to preserve content IDs");
+        String oldResource = source.substring(5).replaceFirst("/", ":");
+        String newResource = destination.substring(5).replaceFirst("/", ":");
+        assets.keySet().forEach(asset -> references.put(oldResource + asset, newResource + asset));
+        Map<String, byte[]> relocatedAssets = new LinkedHashMap<>();
+        assets.forEach((asset, bytes) -> {
+            if (asset.endsWith(".md")) {
+                String text = new String(bytes, StandardCharsets.UTF_8);
+                for (var reference : references.entrySet()) text = text.replace(reference.getKey(), reference.getValue());
+                relocatedAssets.put(asset, text.getBytes(StandardCharsets.UTF_8));
+            } else relocatedAssets.put(asset, bytes.clone());
+        });
+        Map<AuthoringDocument, String> beforePaths = new LinkedHashMap<>();
+        AuthoringDocument result = campaign;
+        for (AuthoringDocument member : members) {
+            String path = destination + member.resourcePath().substring(source.length());
+            JsonObject definition = rewriteCampaignReferences(member.json(), campaign.kind(), previousId, id);
+            definition = rewriteReferences(definition, references, "", "").getAsJsonObject();
+            if (member == campaign) definition.addProperty("id", id);
+            if (copy) {
+                var duplicate = new AuthoringDocument(member.kind(), path, definition);
+                duplicate.loadMetadata(member.metadata());
+                add(duplicate);
+                if (member == campaign) result = duplicate;
+            } else {
+                beforePaths.put(member, member.resourcePath());
+                member.relocate(path, definition);
+            }
+        }
+        if (!copy) {
+            for (AuthoringDocument other : documents) {
+                if (members.contains(other)) continue;
+                JsonObject rewritten = rewriteCampaignReferences(other.json(), campaign.kind(), previousId, id);
+                rewritten = rewriteReferences(rewritten, references, "", "").getAsJsonObject();
+                if (!rewritten.equals(other.json())) {
+                    beforePaths.put(other, other.resourcePath());
+                    other.replaceJson(AuthoringDocument.JSON.toJson(rewritten));
+                }
+            }
+            assets.keySet().forEach(asset -> attachments.remove(source + asset));
+        }
+        relocatedAssets.forEach((asset, bytes) -> attachments.put(destination + asset, bytes.clone()));
+        if (!copy) {
+            Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
+            beforePaths.keySet().forEach(value -> afterPaths.put(value, value.resourcePath()));
+            AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+                    () -> restoreBundlePaths(beforePaths, destination, source, relocatedAssets, assets),
+                    () -> restoreBundlePaths(afterPaths, source, destination, assets, relocatedAssets));
+        }
+        return result;
+    }
+
+    private static JsonObject rewriteCampaignReferences(JsonObject root, DefinitionKind kind, String previous, String next) {
+        JsonObject result = root.deepCopy();
+        for (var entry : result.entrySet()) {
+            String field = entry.getKey();
+            JsonElement value = entry.getValue();
+            boolean reference = kind == DefinitionKind.WORLD_CAMPAIGN && field.equals("world_campaign");
+            boolean list = root.has("schema") && root.get("schema").isJsonPrimitive()
+                    && root.get("schema").getAsString().equals(com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.SCHEMA)
+                    && (kind == DefinitionKind.WORLD_CAMPAIGN ? List.of("campaigns", "incompatible_campaigns")
+                    : List.of("requires", "incompatible_addons")).contains(field);
+            if (reference && value.isJsonPrimitive() && value.getAsString().equals(previous)) entry.setValue(new com.google.gson.JsonPrimitive(next));
+            else if (value.isJsonObject()) entry.setValue(rewriteCampaignReferences(value.getAsJsonObject(), kind, previous, next));
+            else if (value.isJsonArray()) {
+                JsonArray rewritten = new JsonArray();
+                for (JsonElement element : value.getAsJsonArray()) {
+                    if (list && element.isJsonPrimitive() && element.getAsString().equals(previous)) rewritten.add(next);
+                    else if (element.isJsonObject()) rewritten.add(rewriteCampaignReferences(element.getAsJsonObject(), kind, previous, next));
+                    else rewritten.add(element.deepCopy());
+                }
+                entry.setValue(rewritten);
+            }
+        }
+        return result;
+    }
+
     private AuthoringDocument transferQuestBundle(AuthoringDocument quest, String id, boolean copy) {
         DefinitionKind.QUEST.path(id);
         String[] identity = id.split(":", 2);
         if (identity[1].contains("/")) throw new IllegalArgumentException("Quest IDs require a single path segment");
         String source = quest.resourcePath().substring(0, quest.resourcePath().lastIndexOf('/') + 1);
         String[] originalPath = source.split("/");
-        boolean bundled = originalPath[2].equals("world_campaigns");
-        if (bundled && !identity[0].equals(originalPath[1])) throw new IllegalArgumentException("Keep a bundled quest in its campaign namespace");
-        String destination = "data/" + identity[0] + (bundled ? "/world_campaigns/" + originalPath[3] : "")
+        boolean bundled = originalPath[2].equals("world_campaigns") || originalPath[2].equals("campaign_addons");
+        if (bundled && !identity[0].equals(originalPath[1])) throw new IllegalArgumentException("Keep a bundled quest in its campaign or addon namespace");
+        String destination = "data/" + identity[0] + (bundled ? "/" + originalPath[2] + "/" + originalPath[3] : "")
                 + "/quests/" + originalPath[bundled ? 5 : 3] + "/" + identity[1] + "/";
         List<AuthoringDocument> members = documents.stream().filter(value -> value.resourcePath().startsWith(source)).toList();
         List<String> binaryMembers = attachments.keySet().stream().filter(path -> path.startsWith(source)).toList();
@@ -469,7 +641,7 @@ public final class AuthoringWorkspace {
         }
         if (!copy) {
             for (AuthoringDocument other : documents) {
-                if (members.contains(other)) continue;
+                if (members.contains(other) || bundled && !DefinitionKind.contentRoot(other.resourcePath()).equals(DefinitionKind.contentRoot(quest.resourcePath()))) continue;
                 JsonObject rewritten = rewriteReferences(other.json(), ids, "", "").getAsJsonObject();
                 if (!rewritten.equals(other.json())) {
                     beforePaths.put(other, other.resourcePath());
@@ -487,6 +659,11 @@ public final class AuthoringWorkspace {
 
     private void restoreBundlePaths(Map<AuthoringDocument, String> restoredPaths, String source, String destination,
             Map<String, byte[]> movedAttachments) {
+        restoreBundlePaths(restoredPaths, source, destination, movedAttachments, movedAttachments);
+    }
+
+    private void restoreBundlePaths(Map<AuthoringDocument, String> restoredPaths, String source, String destination,
+            Map<String, byte[]> movedAttachments, Map<String, byte[]> restoredAttachments) {
         for (var entry : restoredPaths.entrySet()) {
             if (!documents.contains(entry.getKey())) throw new IllegalStateException("An affected document was removed from the workspace");
             String target = entry.getValue();
@@ -504,7 +681,7 @@ public final class AuthoringWorkspace {
             if (!from.equals(to) && containsPath(to)) throw new IllegalStateException("Another resource now occupies " + to);
         }
         for (var entry : movedAttachments.entrySet()) attachments.remove(source + entry.getKey());
-        for (var entry : movedAttachments.entrySet()) attachments.put(destination + entry.getKey(), entry.getValue().clone());
+        for (var entry : restoredAttachments.entrySet()) attachments.put(destination + entry.getKey(), entry.getValue().clone());
     }
 
     private static JsonElement rewriteReferences(JsonElement value, Map<String, String> ids, String oldPrefix, String newPrefix) {
@@ -604,7 +781,18 @@ public final class AuthoringWorkspace {
     }
 
     public List<AuthoringDiagnostic> validate() {
-        return AuthoringValidation.validate(documents());
+        List<AuthoringDiagnostic> result = new ArrayList<>(AuthoringValidation.validate(documents()));
+        for (AuthoringDocument document : documents) {
+            if (!document.kind().campaignManifest()) continue;
+            try { campaignDescription(document); }
+            catch (java.nio.file.NoSuchFileException exception) {
+                result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.WARNING, document.resourcePath(), "/description_file",
+                        "Description file is external to this workspace and must exist in the target datapacks: " + exception.getFile()));
+            } catch (IOException exception) {
+                result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, document.resourcePath(), "/description_file", exception.getMessage()));
+            }
+        }
+        return List.copyOf(result);
     }
 
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
@@ -653,7 +841,7 @@ public final class AuthoringWorkspace {
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
             var candidates = documents.stream().filter(candidate -> candidate.resourcePath().endsWith("/locales/" + language + ".json"))
                     .sorted(Comparator.comparingInt((AuthoringDocument candidate) -> candidate.resourcePath().startsWith(bundle) && !bundle.isEmpty() ? 0
-                            : candidate.resourcePath().startsWith("data/" + namespace + "/quests/_shared/") ? 1
+                            : candidate.resourcePath().startsWith(DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/") ? 1
                             : candidate.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
                             .thenComparing(AuthoringDocument::resourcePath)).toList();
             for (var candidate : candidates) {
@@ -773,7 +961,7 @@ public final class AuthoringWorkspace {
         String namespace = owner.resourcePath().startsWith("data/") ? owner.resourcePath().split("/", 3)[1] : "";
         List<AuthoringDocument> candidates = documents.stream().sorted(Comparator
                 .comparingInt((AuthoringDocument document) -> !bundle.isEmpty() && document.resourcePath().startsWith(bundle) ? 0
-                        : document.resourcePath().startsWith("data/" + namespace + "/quests/_shared/") ? 1
+                        : document.resourcePath().startsWith(DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/") ? 1
                         : document.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
                 .thenComparing(AuthoringDocument::resourcePath)).toList();
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
@@ -814,7 +1002,7 @@ public final class AuthoringWorkspace {
 
     private static String bundleDirectory(String path) {
         String[] parts = path.split("/");
-        int index = parts.length > 4 && parts[2].equals("world_campaigns") ? 4 : 2;
+        int index = parts.length > 4 && (parts[2].equals("world_campaigns") || parts[2].equals("campaign_addons")) ? 4 : 2;
         if (parts.length < index + 3 || !parts[0].equals("data") || !parts[index].equals("quests")) return "";
         return String.join("/", java.util.Arrays.copyOf(parts, parts[index + 1].equals("_shared") ? index + 2 : index + 3)) + "/";
     }

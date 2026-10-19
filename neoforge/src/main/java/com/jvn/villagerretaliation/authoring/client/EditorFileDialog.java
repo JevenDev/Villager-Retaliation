@@ -19,7 +19,9 @@ final class EditorFileDialog {
                 chooser.setDialogTitle(label);
                 chooser.setSelectedFile(new File(current));
                 boolean image = label.startsWith("PNG");
-                chooser.setFileSelectionMode(image ? JFileChooser.FILES_ONLY : label.startsWith("Pack") ? JFileChooser.FILES_AND_DIRECTORIES : JFileChooser.DIRECTORIES_ONLY);
+                boolean markdown = label.startsWith("Markdown");
+                chooser.setFileSelectionMode(image || markdown ? JFileChooser.FILES_ONLY : label.startsWith("Pack") ? JFileChooser.FILES_AND_DIRECTORIES : JFileChooser.DIRECTORIES_ONLY);
+                if (markdown) chooser.setFileFilter(new FileNameExtensionFilter("Markdown description", "md"));
                 if (image) chooser.setFileFilter(new FileNameExtensionFilter("PNG image", "png"));
                 if (chooser.showDialog(null, "Choose") == JFileChooser.APPROVE_OPTION) selected.accept(chooser.getSelectedFile().getAbsolutePath());
             } finally {

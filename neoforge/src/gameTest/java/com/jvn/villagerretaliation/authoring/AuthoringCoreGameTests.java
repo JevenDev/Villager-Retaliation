@@ -700,6 +700,139 @@ public final class AuthoringCoreGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "authoring")
+    public static void campaignAddonsCreatePlayableContentInTheirOwnScope(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-addon-authoring-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var campaign = workspace.createDocument(DefinitionKind.WORLD_CAMPAIGN, "test:campaign");
+            var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+            workspace.createDocument(DefinitionKind.QUEST, "test:quest");
+            var baseConversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:base_talk");
+            baseConversation.edit("Assign quest", value -> value.addProperty("quest", "test:quest"));
+            workspace.createDocument(DefinitionKind.QUEST, "test:quest", campaign);
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest", addon);
+            var tree = workspace.createDocument(DefinitionKind.TREE, "test:tree", addon);
+            var forced = workspace.createDocument(DefinitionKind.FORCED, "test:trigger", addon);
+            var conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:talk", addon);
+            conversation.edit("Assign quest", value -> value.addProperty("quest", quest.id()));
+            DialogueGraph.addNode(conversation, "finish");
+            workspace.addDialogueResponse(conversation, "start", "bye", "Addon farewell", "finish");
+            helper.assertValueEqual(workspace.resolveText(conversation, json("{\"key\":\"test:talk.start.response.bye\"}"), "en_us"),
+                    "Addon farewell", "addon conversations resolve their scoped wording");
+            for (var document : workspace.documents()) helper.assertValueEqual(DefinitionKind.fromPath(document.resourcePath()), document.kind(), "scoped files retain their editor type");
+            var errors = workspace.validate().stream().filter(value -> value.severity() == AuthoringDiagnostic.Severity.ERROR).toList();
+            helper.assertTrue(errors.isEmpty(), "campaign and addon overlays validate independently: " + errors);
+            var copy = workspace.duplicate(quest, "test:quest_copy");
+            helper.assertTrue(copy.resourcePath().startsWith("data/test/campaign_addons/addon/quests/"), "quest copies stay inside the addon");
+            workspace.rename(quest, "test:renamed_quest");
+            helper.assertValueEqual(conversation.json().get("quest").getAsString(), "test:renamed_quest", "addon quest references follow a scoped rename");
+            helper.assertValueEqual(baseConversation.json().get("quest").getAsString(), "test:quest", "addon quest renames preserve references to the base quest with the same ID");
+            workspace.rename(tree, "test:tree_renamed");
+            workspace.rename(forced, "test:trigger_renamed");
+            helper.assertTrue(tree.resourcePath().contains("/campaign_addons/addon/dialogue_trees/"), "tree renames retain the addon folder");
+            helper.assertTrue(forced.resourcePath().contains("/campaign_addons/addon/forced_dialogue/"), "trigger renames retain the addon folder");
+            int before = workspace.documents().size();
+            boolean rejected = false;
+            try { workspace.createDocument(DefinitionKind.QUEST, "other:quest", addon); } catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected && before == workspace.documents().size(), "cross-namespace creation fails without partial content");
+            workspace.save();
+            String saved = Files.readString(workspace.directory().resolve("workspace.json"));
+            Files.writeString(workspace.directory().resolve("workspace.json"), saved.replace("\"kind\": \"CAMPAIGN_ADDON\"", "\"kind\": \"RESOURCE\""));
+            var reopened = AuthoringWorkspace.open(workspace.directory());
+            helper.assertTrue(reopened.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.CAMPAIGN_ADDON), "older workspace addon resources upgrade to editable manifests");
+            reopened.exportPack(root.resolve("addon.zip"));
+            var imported = AuthoringWorkspace.create(root.resolve("imported"));
+            imported.importPack(root.resolve("addon.zip"));
+            helper.assertTrue(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.CAMPAIGN_ADDON), "ZIP import recognizes addon manifests");
+            helper.assertTrue(imported.validate().stream().noneMatch(value -> value.severity() == AuthoringDiagnostic.Severity.ERROR), "scoped content survives workspace and pack round trips");
+            helper.succeed();
+        } finally { removeTemporaryTree(root); }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void campaignAddonAssetsAndReferencesFollowBundleOperations(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-addon-assets-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var campaign = workspace.createDocument(DefinitionKind.WORLD_CAMPAIGN, "test:campaign");
+            var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+            var dependent = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:dependent");
+            dependent.edit("Require addon", value -> value.add("requires", JsonParser.parseString("[\"test:addon\"]")));
+            addon.edit("Support campaign", value -> value.add("campaigns", JsonParser.parseString("[\"test:campaign\"]")));
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:addon", addon);
+            quest.edit("Own content", value -> value.addProperty("world_campaign", campaign.id()));
+            Path description = root.resolve("description.md");
+            Files.writeString(description, "# A new adventure\nExplore **the village**.");
+            Path image = root.resolve("image.png");
+            try (var stream = AuthoringCoreGameTests.class.getResourceAsStream("/villager_retaliation_cover.png")) { Files.write(image, stream.readAllBytes()); }
+            workspace.importCampaignImage(addon, image);
+            String originalImageId = addon.json().get("image").getAsString();
+            Files.writeString(description, Files.readString(description) + "\n![Cover](" + originalImageId + ")");
+            workspace.importCampaignDescription(addon, description);
+            byte[] originalImage = workspace.campaignImage(addon);
+            var copy = workspace.duplicate(addon, "test:copy");
+            helper.assertTrue(java.util.Arrays.equals(workspace.campaignImage(copy), originalImage), "copied addon keeps its image");
+            helper.assertValueEqual(workspace.campaignDescription(copy), Files.readString(description).replace(originalImageId, copy.json().get("image").getAsString()), "copied addon keeps its Markdown and embedded image references");
+            helper.assertTrue(copy.json().get("description_file").getAsString().contains("campaign_addons/copy/"), "copied descriptions use the copied asset path");
+            int count = workspace.documents().size();
+            boolean rejected = false;
+            try { workspace.duplicate(addon, "other:moved"); } catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected && workspace.documents().size() == count, "cross-namespace bundle copies fail without changing content IDs or paths");
+            workspace.rename(addon, "test:renamed");
+            helper.assertValueEqual(quest.id(), "test:addon", "renaming an addon does not rename a quest with the same ID");
+            helper.assertValueEqual(dependent.json().getAsJsonArray("requires").get(0).getAsString(), "test:renamed", "dependent addon references follow renames");
+            helper.assertTrue(quest.resourcePath().contains("/campaign_addons/renamed/"), "rename moves playable content");
+            helper.assertTrue(addon.undo(), "bundle rename can be undone");
+            helper.assertValueEqual(dependent.json().getAsJsonArray("requires").get(0).getAsString(), "test:addon", "undo restores dependent references");
+            helper.assertTrue(java.util.Arrays.equals(workspace.campaignImage(addon), originalImage), "undo restores asset paths");
+            helper.assertTrue(addon.redo(), "bundle rename can be redone");
+            workspace.rename(campaign, "test:campaign_renamed");
+            helper.assertValueEqual(quest.json().get("world_campaign").getAsString(), "test:campaign_renamed", "campaign ownership follows campaign renames");
+            helper.assertValueEqual(addon.json().getAsJsonArray("campaigns").get(0).getAsString(), "test:campaign_renamed", "supported campaigns follow campaign renames");
+            workspace.remove(addon);
+            helper.assertFalse(workspace.documents().contains(quest), "removing an addon removes its bundled content");
+            workspace.restoreDeleted(0);
+            var restored = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.CAMPAIGN_ADDON && value.id().equals("test:renamed")).findFirst().orElseThrow();
+            helper.assertTrue(java.util.Arrays.equals(workspace.campaignImage(restored), originalImage), "restoring an addon restores its assets");
+            workspace.exportPack(root.resolve("pack"));
+            var imported = AuthoringWorkspace.create(root.resolve("imported"));
+            imported.importPack(root.resolve("pack"));
+            var importedAddon = imported.documents().stream().filter(value -> value.id().equals("test:renamed")).findFirst().orElseThrow();
+            helper.assertValueEqual(imported.campaignDescription(importedAddon), Files.readString(description).replace(originalImageId, importedAddon.json().get("image").getAsString()), "folder export retains descriptions and relocated embedded images");
+            helper.succeed();
+        } finally { removeTemporaryTree(root); }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void addonValidationReportsManifestAndScopedContentErrors(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-addon-validation-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest", addon);
+            addon.edit("Invalid dependencies", value -> value.add("requires", JsonParser.parseString("[\"test:addon\"]")));
+            helper.assertTrue(workspace.validate().stream().anyMatch(value -> value.resourcePath().equals(addon.resourcePath()) && value.severity() == AuthoringDiagnostic.Severity.ERROR), "self dependencies are rejected by runtime validation");
+            addon.undo();
+            addon.edit("Missing description", value -> value.addProperty("description_file", "test:missing.md"));
+            helper.assertTrue(workspace.validate().stream().anyMatch(value -> value.pointer().equals("/description_file") && value.severity() == AuthoringDiagnostic.Severity.WARNING), "external description references remain exportable with a located warning");
+            addon.undo();
+            addon.edit("Mismatched identity", value -> value.addProperty("id", "test:other"));
+            helper.assertTrue(workspace.validate().stream().anyMatch(value -> value.pointer().equals("/id")), "manifest identity must match its folder");
+            addon.undo();
+            quest.edit("Invalid quest", value -> value.remove("stages"));
+            helper.assertTrue(workspace.validate().stream().anyMatch(value -> value.resourcePath().equals(quest.resourcePath()) && value.severity() == AuthoringDiagnostic.Severity.ERROR), "invalid addon quests point to the physical editor resource");
+            quest.undo();
+            Path longDescription = root.resolve("long.md");
+            Files.writeString(longDescription, "x".repeat(4097));
+            JsonObject before = addon.json();
+            boolean rejected = false;
+            try { workspace.importCampaignDescription(addon, longDescription); } catch (IOException expected) { rejected = true; }
+            helper.assertTrue(rejected && addon.json().equals(before), "oversized descriptions do not modify the manifest");
+            helper.succeed();
+        } finally { removeTemporaryTree(root); }
+    }
+
     private static JsonObject json(String value) {
         return JsonParser.parseString(value).getAsJsonObject();
     }
