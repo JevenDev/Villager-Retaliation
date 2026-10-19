@@ -100,11 +100,11 @@ final class EditorBulkEdit {
                 Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable refresh) {
         if (ids.size() < 2) return;
         if (owner != document || !selection.equals(ids)) { owner = document; selection = Set.copyOf(ids); field = ""; preview = null; }
-        if (!ImGui.collapsingHeader("Bulk properties (" + ids.size() + " nodes)")) return;
+        if (!EditorWidgets.section("Bulk properties (" + ids.size() + " nodes)")) return;
         var common = commonFields(document, ids);
         if (!common.containsKey(field)) { field = ""; preview = null; }
         if (common.isEmpty()) { ImGui.textWrapped("These nodes have no shared editable scalar properties."); return; }
-        if (ImGui.beginCombo("Shared property", field.isEmpty() ? "Choose a property..." : field)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Shared property"), field.isEmpty() ? "Choose a property..." : field)) {
             for (var entry : common.entrySet()) if (ImGui.selectable(entry.getKey(), entry.getKey().equals(field))) {
                 field = entry.getKey(); preview = null;
                 var original = JsonPointers.get(document.json(), entry.getValue().getFirst());
@@ -119,7 +119,7 @@ final class EditorBulkEdit {
         boolean mixed = paths.stream().anyMatch(path -> !JsonPointers.get(document.json(), path).equals(original));
         ImGui.textWrapped(mixed ? "Current values: mixed" : "Current value: " + original);
         ImGui.textDisabled(original.getAsJsonPrimitive().isBoolean() ? "Enter true or false" : original.getAsJsonPrimitive().isNumber() ? "Enter a number" : "Enter plain text");
-        if (ImGui.inputText("New value", value)) preview = null;
+        if (ImGui.inputText(EditorWidgets.field("New value"), value)) preview = null;
         if (ImGui.button("Preview bulk edit")) run.accept(() -> preview = preview(document, ids, field, value.get()));
         if (preview == null) return;
         var plan = preview;

@@ -49,7 +49,6 @@ final class EditorVariablePicker {
                 : matches.size() + " variables in " + groups.size() + " categories");
         float footer = ImGui.getFrameHeightWithSpacing() + ImGui.getTextLineHeightWithSpacing() * 3;
         ImGui.beginChild("##catalog", 0, Math.max(1, ImGui.getContentRegionAvailY() - footer), false);
-        ImGui.setWindowFontScale(textScale);
         if (changed) ImGui.setScrollY(0);
         if (matches.isEmpty()) ImGui.textWrapped("No matching built-in variables. Pack-defined names can be entered below.");
         int index = 0;

@@ -18,6 +18,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -57,11 +58,14 @@ public final class AuthoringEditorClientSmoke {
     private static boolean qualityControls;
     private static boolean layoutChecks;
     private static boolean variableControls;
+    private static final List<PanelSection> panelSections = new ArrayList<>();
+    private record PanelSection(String panel, String label, boolean open) { }
     private static final EditorTextField variableFields = new EditorTextField();
     private static final imgui.type.ImString variableText = new imgui.type.ImString("Hello, ", 1024);
     private static float[] variableMenuPoint;
     private static float variableTextScale = 1;
     private static float[] shortcutPopupSize;
+    private static float shortcutBaseFontSize;
     private static int shortcutPopupFrames;
     private static int featureStage = -1;
     private static float[] featureActionPoint;
@@ -151,6 +155,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::checkShortcutPopup);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderVariableControls);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::preparePanelSections);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
@@ -159,6 +164,7 @@ public final class AuthoringEditorClientSmoke {
     private static void buildSteps() {
         buildLayoutSteps();
         buildVariableSteps();
+        buildPanelSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
@@ -443,8 +449,9 @@ public final class AuthoringEditorClientSmoke {
 
     private static void checkShortcutPopup() {
         if (!layoutChecks) return;
-        float baseFontSize = ImGui.getTextLineHeight();
-        if (!ImGui.beginPopup("Customize shortcuts")) return;
+        float fontScale = ImGui.getStyle().getFontScaleMain();
+        ImGui.getStyle().setFontScaleMain(fontScale * ((EditorPreferences) field(editor, "preferences")).textScale());
+        if (!ImGui.beginPopup("Customize shortcuts")) { ImGui.getStyle().setFontScaleMain(fontScale); return; }
         try {
             float width = ImGui.getWindowWidth(), height = ImGui.getWindowHeight();
             if (++shortcutPopupFrames > 3) {
@@ -455,11 +462,13 @@ public final class AuthoringEditorClientSmoke {
                 require(width <= viewport.getWorkSizeX() && height <= viewport.getWorkSizeY(), "The Shortcuts popup fits the viewport.");
                 require(ImGui.getScrollMaxY() > 0, "The shortcut list scrolls inside its popup.");
                 float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
-                require(Math.abs(ImGui.getTextLineHeight() - baseFontSize * scale) <= 1,
-                        "The Shortcuts popup uses the editor text scale: font=" + ImGui.getTextLineHeight() + ", base=" + baseFontSize + ", scale=" + scale);
+                if (scale == 1) shortcutBaseFontSize = ImGui.getTextLineHeight();
+                require(shortcutBaseFontSize > 0 && Math.abs(ImGui.getTextLineHeight() - shortcutBaseFontSize * scale) <= 1,
+                        "The Shortcuts popup uses the editor text scale: font=" + ImGui.getTextLineHeight() + ", base=" + shortcutBaseFontSize + ", scale=" + scale);
             }
         } finally {
             ImGui.endPopup();
+            ImGui.getStyle().setFontScaleMain(fontScale);
         }
     }
 
@@ -516,8 +525,10 @@ public final class AuthoringEditorClientSmoke {
     private static void renderVariableControls() {
         if (!variableControls) return;
         invoke("pushEditorStyle", new Class<?>[0]);
+        float fontScale = ImGui.getStyle().getFontScaleMain();
+        ImGui.getStyle().setFontScaleMain(fontScale * variableTextScale);
         ImGui.setNextWindowPos(450, 150); ImGui.setNextWindowSize(800, 600);
-        ImGui.begin("Text variable acceptance"); ImGui.setWindowFontScale(variableTextScale);
+        ImGui.begin("Text variable acceptance"); ImGui.setWindowFontScale(1);
         float x = ImGui.getCursorScreenPosX();
         for (String label : List.of("B", "I", "U")) x += ImGui.calcTextSize(label).x + 8 + ImGui.getStyle().getItemSpacingX();
         variableMenuPoint = new float[] {x + (ImGui.calcTextSize("Insert variable").x + 8) / 2,
@@ -526,6 +537,49 @@ public final class AuthoringEditorClientSmoke {
         ImGui.dummy(0, 0);
         ImGui.end();
         ImGui.popStyleColor(14); ImGui.popStyleVar(5);
+        ImGui.getStyle().setFontScaleMain(fontScale);
+    }
+
+    private static void buildPanelSteps() {
+        for (float scale : new float[] {1, 2}) {
+            STEPS.add(() -> {
+                set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(scale));
+                set("view", 0); set("filesMode", false); set("guideStep", -1); set("showCreate", false); set("resetLayout", true);
+            });
+            pause(350);
+            STEPS.add(() -> {
+                capture("72-content-panel-" + (int) scale);
+                panelSections.add(new PanelSection("Content###VR_Content", "Content tools", true));
+            });
+            pause(250);
+            STEPS.add(() -> {
+                capture("73-content-tools-" + (int) scale);
+                panelSections.add(new PanelSection("Content###VR_Content", "Content tools", false));
+                panelSections.add(new PanelSection("Work area###VR_Work", "Simulated conditions", true));
+                set("view", 1);
+            });
+            pause(250);
+            STEPS.add(() -> { capture("74-preview-panel-" + (int) scale); set("view", 2); });
+            pause(250);
+            STEPS.add(() -> { capture("75-build-panel-" + (int) scale); set("view", 4); set("filesMode", true); });
+            pause(250);
+            STEPS.add(() -> capture("76-files-panel-" + (int) scale));
+        }
+        STEPS.add(() -> {
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            set("view", 0); set("filesMode", false); set("resetLayout", true);
+            panelSections.add(new PanelSection("Work area###VR_Work", "Simulated conditions", false));
+        });
+        pause(250);
+    }
+
+    private static void preparePanelSections() {
+        for (var section : panelSections) {
+            ImGui.begin(section.panel());
+            ImGui.getStateStorage().setBool(ImGui.getID(section.label()), section.open());
+            ImGui.end();
+        }
+        panelSections.clear();
     }
 
     private static void finishSteps(String details) {

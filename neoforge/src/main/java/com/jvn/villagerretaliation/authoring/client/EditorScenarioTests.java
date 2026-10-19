@@ -214,11 +214,11 @@ final class EditorScenarioTests {
         var saved = EditorSchema.object(document.metadata().get("preview_scenario_tests")).get(selected);
         if (!java.util.Objects.equals(saved, loadedConfig)) load(document, selected);
         if (!loadError.isEmpty()) ImGui.textWrapped(loadError);
-        if (ImGui.beginCombo("Scenario to test", selected)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Scenario to test"), selected)) {
             for (String name : scenarios.keySet()) if (ImGui.selectable(name, name.equals(selected))) load(document, name);
             ImGui.endCombo();
         }
-        if (ImGui.beginCombo("Start at", start.isEmpty() ? document.kind() == DefinitionKind.QUEST ? "Entry stage" : "Entry choices" : start)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Start at"), start.isEmpty() ? document.kind() == DefinitionKind.QUEST ? "Entry stage" : "Entry choices" : start)) {
             if (ImGui.selectable(document.kind() == DefinitionKind.QUEST ? "Entry stage" : "Entry choices", start.isEmpty())) start = "";
             for (var node : DialogueGraph.nodes(document)) {
                 String id = node.id().isEmpty() ? "/" : node.id();
@@ -226,7 +226,7 @@ final class EditorScenarioTests {
             }
             ImGui.endCombo();
         }
-        if (ImGui.beginCombo("Add test step", "Choose an action...")) {
+        if (ImGui.beginCombo(EditorWidgets.field("Add test step"), "Choose an action...")) {
             if (ImGui.selectable(document.kind() == DefinitionKind.QUEST ? "Advance stage" : "Next exchange")) steps.add(new Step("advance", ""));
             for (String field : List.of("entries", "topics")) {
                 int index = 0;
@@ -259,19 +259,19 @@ final class EditorScenarioTests {
             ImGui.textWrapped((i + 1) + ". " + (step.action().equals("advance") ? "Advance" : step.action().equals("objective") ? "Complete objective: " + step.target() : "Choose: " + step.target()));
             ImGui.beginDisabled(i == 0);
             if (ImGui.smallButton("Up")) java.util.Collections.swap(steps, i, i - 1);
-            ImGui.endDisabled(); ImGui.sameLine(); ImGui.beginDisabled(i == steps.size() - 1);
+            ImGui.endDisabled(); EditorWidgets.sameLineFor("Down"); ImGui.beginDisabled(i == steps.size() - 1);
             if (ImGui.smallButton("Down")) java.util.Collections.swap(steps, i, i + 1);
-            ImGui.endDisabled(); ImGui.sameLine();
+            ImGui.endDisabled(); EditorWidgets.sameLineFor("Remove step");
             boolean remove = ImGui.smallButton("Remove step"); ImGui.popID();
             if (remove) { steps.remove(i); break; }
         }
-        if (ImGui.beginCombo("Expected result", expectation)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Expected result"), expectation)) {
             for (String value : EXPECTATIONS) if (document.kind() == DefinitionKind.QUEST ? !value.equals("Dialogue ended") : !value.equals("Quest outcome"))
                 if (ImGui.selectable(value, value.equals(expectation))) { expectation = value; target.set(""); }
             ImGui.endCombo();
         }
         if (expectation.equals("Node or stage")) {
-            if (ImGui.beginCombo("Expected node / stage", target.get().isEmpty() ? "Choose..." : target.get())) {
+            if (ImGui.beginCombo(EditorWidgets.field("Expected node / stage"), target.get().isEmpty() ? "Choose..." : target.get())) {
                 for (var node : DialogueGraph.nodes(document)) {
                     String id = node.id().isEmpty() ? "/" : node.id();
                     if (ImGui.selectable(id, id.equals(target.get()))) target.set(id);
@@ -279,11 +279,11 @@ final class EditorScenarioTests {
                 ImGui.endCombo();
             }
         } else if (expectation.equals("Quest outcome")) {
-            if (ImGui.beginCombo("Expected outcome", target.get().isEmpty() ? "Choose..." : target.get())) {
+            if (ImGui.beginCombo(EditorWidgets.field("Expected outcome"), target.get().isEmpty() ? "Choose..." : target.get())) {
                 for (String value : List.of("complete", "fail", "abandon")) if (ImGui.selectable(value, value.equals(target.get()))) target.set(value);
                 ImGui.endCombo();
             }
-        } else if (!expectation.equals("Dialogue ended")) ImGui.inputText("Expected choice ID", target);
+        } else if (!expectation.equals("Dialogue ended")) ImGui.inputText(EditorWidgets.field("Expected choice ID"), target);
         if (ImGui.button("Save test steps and expectation")) run.accept(() -> {
             var config = config(start, expectation, target.get(), List.copyOf(steps));
             String name = selected;

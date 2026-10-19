@@ -85,7 +85,7 @@ final class EditorPackBuild {
             ImGui.textUnformatted("Pack description");
             ImGui.inputTextMultiline("##pack_description", description, -1, 64);
         }
-        ImGui.setNextItemWidth(160); ImGui.inputInt("Pack format", format);
+        ImGui.inputInt(EditorWidgets.field("Pack format"), format);
         ImGui.textDisabled("Minecraft 1.21.1 uses pack format 48.");
         if (pending() && ImGui.button("Discard pack setting edits")) reload();
         if (ImGui.button("Open pack.mcmeta")) open.accept("pack.mcmeta");
@@ -95,9 +95,9 @@ final class EditorPackBuild {
         long warnings = diagnostics.size() - errors;
         ImGui.textWrapped(errors + " errors, " + warnings + " warnings. Builds run validation again before writing files.");
         if (ImGui.button("Check drafts")) schedule.accept(check::run);
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Browse pack files");
         if (ImGui.button("Browse pack files")) open.accept("");
-        if (ImGui.collapsingHeader("Included files (" + files.size() + ")")) {
+        if (EditorWidgets.section("Included files (" + files.size() + ")")) {
             ImGui.beginChild("##build_files", 0, 160, true);
             for (String file : files) if (ImGui.selectable(file + "##build:" + file)) open.accept(file);
             ImGui.endChild();
@@ -105,11 +105,11 @@ final class EditorPackBuild {
         ImGui.separator();
         ImGui.textUnformatted("3. Build output");
         if (ImGui.radioButton("Folder", !zip)) { zip = false; if (destination.get().endsWith(".zip")) destination.set(destination.get().substring(0, destination.get().length() - 4)); }
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor(ImGui.getFrameHeight() + ImGui.getStyle().getItemInnerSpacingX() + ImGui.calcTextSize("ZIP package").x);
         if (ImGui.radioButton("ZIP package", zip)) { zip = true; if (!destination.get().endsWith(".zip")) destination.set(destination.get() + ".zip"); }
-        ImGui.textUnformatted(zip ? "ZIP filename" : "Output folder"); ImGui.setNextItemWidth(Math.max(60, ImGui.getContentRegionAvailX() - 86));
+        ImGui.textUnformatted(zip ? "ZIP filename" : "Output folder"); ImGui.setNextItemWidth(EditorWidgets.inputWidth("Browse"));
         ImGui.inputText("##build_destination", destination);
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Browse");
         if (ImGui.button("Browse")) EditorFileDialog.choose("Pack folder or ZIP", destination.get(), path -> net.minecraft.client.Minecraft.getInstance().execute(() -> destination.set(path)));
         ImGui.textWrapped(zip ? "Creates a shareable ZIP with pack.mcmeta at its root. Choose a new filename for each release."
                 : "Updates editor-managed folders with a backup of the previous build. External edits are preserved.");

@@ -82,7 +82,7 @@ final class EditorCoverage {
     }
 
     void render(AuthoringDocument document, Consumer<String> focus) {
-        if (document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest() || !ImGui.collapsingHeader("Playtest coverage")) return;
+        if (document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest() || !EditorWidgets.section("Playtest coverage")) return;
         if (ImGui.checkbox("Highlight playtest coverage", show)) show = !show;
         ImGui.textWrapped(summary(document));
         ImGui.textWrapped("Coverage accumulates during this editor session. Logic edits reset it. Green marks visited nodes and chosen paths.");

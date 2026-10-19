@@ -61,8 +61,8 @@ final class EditorGraphOrganization {
 
     void render(AuthoringDocument document, Set<String> selection, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Consumer<Set<String>> select) {
         if (owner != document) { owner = document; selectedGroup = ""; name.set(""); comment.set(""); }
-        if (!ImGui.collapsingHeader("Branch focus and comment groups")) return;
-        if (ImGui.beginCombo("Highlight path", mode)) {
+        if (!EditorWidgets.section("Branch focus and comment groups")) return;
+        if (ImGui.beginCombo(EditorWidgets.field("Highlight path"), mode)) {
             for (String value : List.of("All nodes", "Downstream", "Upstream"))
                 if (ImGui.selectable(value, value.equals(mode))) mode = value;
             ImGui.endCombo();
@@ -70,7 +70,7 @@ final class EditorGraphOrganization {
         ImGui.textWrapped("Upstream and downstream follow the current selection. Unrelated nodes are dimmed.");
         if (ImGui.button("Select highlighted branch")) select.accept(highlighted(document, selection));
         var groups = EditorSchema.object(document.metadata().get("graph_groups"));
-        if (ImGui.beginCombo("Comment group", selectedGroup.isEmpty() ? "New group" : selectedGroup)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Comment group"), selectedGroup.isEmpty() ? "New group" : selectedGroup)) {
             if (ImGui.selectable("New group")) { selectedGroup = ""; name.set(""); comment.set(""); }
             for (var entry : groups.entrySet()) if (ImGui.selectable(entry.getKey(), entry.getKey().equals(selectedGroup))) {
                 selectedGroup = entry.getKey(); name.set(entry.getKey());
@@ -78,8 +78,8 @@ final class EditorGraphOrganization {
             }
             ImGui.endCombo();
         }
-        ImGui.inputText("Group name", name);
-        ImGui.inputTextMultiline("Group comment", comment, -1, 70);
+        ImGui.inputText(EditorWidgets.field("Group name"), name);
+        ImGui.inputTextMultiline(EditorWidgets.field("Group comment"), comment, -1, 70);
         if (ImGui.button("Save group from selection")) run.accept(() -> {
             saveGroup(document, selectedGroup, name.get(), comment.get(), selection); selectedGroup = name.get().strip();
         });
@@ -90,7 +90,7 @@ final class EditorGraphOrganization {
                 ids.retainAll(DialogueGraph.nodes(document).stream().map(DialogueGraph.Node::id).toList());
                 select.accept(ids);
             }
-            ImGui.sameLine();
+            EditorWidgets.sameLineFor("Remove comment group");
             if (ImGui.smallButton("Remove comment group")) run.accept(() -> {
                 document.editMetadata("Remove graph comment group", metadata -> metadata.getAsJsonObject("graph_groups").remove(selectedGroup));
                 selectedGroup = "";

@@ -50,7 +50,7 @@ final class EditorCameraPanel {
     }
 
     static void render(AuthoringDocument document, String pointer, Entity speaker, Screen returnScreen,
-            Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation, float textScale) {
+            Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation) {
         if (session != null && (sessionSpeaker != speaker || ownerDocument != document)) close();
         String nextOwner;
         try {
@@ -58,7 +58,7 @@ final class EditorCameraPanel {
         } catch (IllegalArgumentException | IllegalStateException | ClassCastException
                 | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             close();
-            if (ImGui.collapsingHeader("Camera"))
+            if (EditorWidgets.section("Camera"))
                 ImGui.textWrapped("Repair the definition in Check & export before attaching a camera: " + exception.getMessage());
             return;
         }
@@ -67,7 +67,7 @@ final class EditorCameraPanel {
             cameraOwner = nextOwner;
             ownerDocument = document;
         }
-        if (!ImGui.collapsingHeader("Camera")) return;
+        if (!EditorWidgets.section("Camera")) return;
         if (cameraOwner == null) {
             ImGui.textWrapped("Select a dialogue node or spoken line in Edit to attach camera shots.");
             return;
@@ -79,7 +79,7 @@ final class EditorCameraPanel {
         ImGui.textUnformatted("Attach shots to: " + name);
         if (ImGui.isItemHovered()) ImGui.setTooltip(cameraOwner);
         var minecraft = Minecraft.getInstance();
-        if (minecraft.level != null && minecraft.player != null && ImGui.beginCombo("Character target",
+        if (minecraft.level != null && minecraft.player != null && ImGui.beginCombo(EditorWidgets.field("Character target"),
                 character == null ? "Use speaker" : character.getName().getString())) {
             if (ImGui.selectable("Use speaker", character == null)) operation.accept(() -> { close(); character = null; });
             for (Entity entity : minecraft.level.getEntities(minecraft.player, minecraft.player.getBoundingBox().inflate(32), Entity::isAlive)) {
@@ -94,11 +94,11 @@ final class EditorCameraPanel {
                     minecraft.setScreen(minecraft.level != null && minecraft.player != null ? returnScreen : null));
             sessionSpeaker = speaker;
         });
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Restore player camera");
         if (ImGui.button("Restore player camera")) close();
         if (session == null || !session.active()) return;
         preset = enumeration("Preset", preset);
-        if (ImGui.collapsingHeader("Advanced framing")) {
+        if (EditorWidgets.section("Advanced framing")) {
             anchor = enumeration("Anchor", anchor);
             placement = enumeration("Placement", placement);
             target = enumeration("Look at", target);
@@ -107,7 +107,7 @@ final class EditorCameraPanel {
                 new DialogueCamera.Shot(preset, anchor, placement, DialogueCamera.Perspective.THIRD_PERSON,
                         Vec3.ZERO, target, null, DialogueCamera.Transition.CUT, 0, DialogueCamera.Easing.LINEAR, 0)))));
         if (ImGui.button("Position free camera")) operation.accept(session::freeCamera);
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Add shot");
         if (ImGui.button("Add shot")) operation.accept(() -> {
             var shot = session.capture(anchor, placement, DialogueCamera.Perspective.THIRD_PERSON, target);
             JsonObject shotJson = DialogueCamera.json(new Camera(Target.SPEAKER, null, List.of(shot)))
@@ -116,16 +116,16 @@ final class EditorCameraPanel {
             changed.run();
             session.preview(new Camera(Target.SPEAKER, null, List.of(shot)));
         });
-        if (ImGui.collapsingHeader("Coordinates and FOV")) {
+        if (EditorWidgets.section("Coordinates and FOV")) {
             var pose = session.pose();
             float[] position = {(float) pose.position().x, (float) pose.position().y, (float) pose.position().z};
             float[] rotation = {pose.yaw(), pose.pitch()};
             float[] fov = {(float) pose.fov()};
-            if (ImGui.inputFloat3("World XYZ", position)) operation.accept(() -> session.setPose(
+            if (ImGui.inputFloat3(EditorWidgets.field("World XYZ"), position)) operation.accept(() -> session.setPose(
                     new DialogueCameraTimeline.Pose(new Vec3(position[0], position[1], position[2]), pose.yaw(), pose.pitch(), pose.fov())));
-            if (ImGui.inputFloat2("Yaw / pitch", rotation)) operation.accept(() -> session.setPose(
+            if (ImGui.inputFloat2(EditorWidgets.field("Yaw / pitch"), rotation)) operation.accept(() -> session.setPose(
                     new DialogueCameraTimeline.Pose(pose.position(), rotation[0], rotation[1], pose.fov())));
-            if (ImGui.sliderFloat("FOV", fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
+            if (ImGui.sliderFloat(EditorWidgets.field("FOV"), fov, 10, 110)) operation.accept(() -> session.setFov(fov[0]));
         }
         if (ImGui.button("Preview saved sequence")) operation.accept(() -> {
             JsonObject savedOwner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
@@ -133,19 +133,19 @@ final class EditorCameraPanel {
             if (camera == null) throw new IllegalArgumentException("Selected object has no camera.");
             session.preview(camera);
         });
-        if (ImGui.collapsingHeader("Shot settings")) {
+        if (EditorWidgets.section("Shot settings")) {
             ImGui.textWrapped("Use Camera preview and shots to adjust timing, reorder or remove shots.");
             ImGui.textWrapped("Relative shots follow the anchor. Fixed shots use world coordinates. Captured shots keep their rotation. Remove orientation to track the look-at target.");
         }
-        studio(document, changed, operation, textScale);
+        studio(document, changed, operation);
     }
 
-    private static void studio(AuthoringDocument document, Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation, float textScale) {
+    private static void studio(AuthoringDocument document, Runnable changed, Consumer<ImGuiAuthoringEditor.EditorOperation> operation) {
         var viewport = ImGui.getMainViewport();
         ImGui.setNextWindowPos(viewport.getWorkPosX() + Math.max(480, viewport.getWorkSizeX() - 650), viewport.getWorkPosY() + 180, imgui.flag.ImGuiCond.FirstUseEver);
         ImGui.setNextWindowSize(620, 660, imgui.flag.ImGuiCond.FirstUseEver);
         if (ImGui.begin("Camera preview and shots###VR_CameraStudio")) {
-            ImGui.setWindowFontScale(textScale);
+            ImGui.setWindowFontScale(1);
             worldPreview.render(Math.max(160, ImGui.getContentRegionAvailX()));
             ImGui.textWrapped("Live framing. Position the free camera, then add a shot.");
             JsonObject owner = EditorDocumentOperations.cameraOwner(document, cameraOwner);
@@ -166,7 +166,7 @@ final class EditorCameraPanel {
                                 thumbnails.put(encoded, texture);
                             }
                             ImGui.image(texture.getId(), 96, 54);
-                            ImGui.sameLine();
+                            EditorWidgets.sameLineFor("Shot " + (i + 1));
                         } catch (java.io.IOException | IllegalArgumentException exception) {
                             ImGui.textWrapped("Thumbnail unavailable: " + exception.getMessage());
                         }
@@ -175,7 +175,7 @@ final class EditorCameraPanel {
                     if (selectedShot == i) {
                         JsonObject shot = shots.get(i).getAsJsonObject();
                         float[] hold = {shot.has("hold_seconds") ? shot.get("hold_seconds").getAsFloat() : 0};
-                        if (ImGui.sliderFloat("Hold seconds", hold, 0, 30)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.addProperty("hold_seconds", hold[0])); changed.run(); });
+                        if (ImGui.sliderFloat(EditorWidgets.field("Hold seconds"), hold, 0, 30)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.addProperty("hold_seconds", hold[0])); changed.run(); });
                         JsonObject transition = shot.has("transition") ? shot.getAsJsonObject("transition") : new JsonObject();
                         boolean smooth = "lerp".equals(com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(transition, "type"));
                         if (ImGui.checkbox("Smooth transition", smooth)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> {
@@ -185,14 +185,14 @@ final class EditorCameraPanel {
                         }); changed.run(); });
                         if (smooth) {
                             float[] duration = {transition.has("duration_seconds") ? transition.get("duration_seconds").getAsFloat() : 1};
-                            if (ImGui.sliderFloat("Transition seconds", duration, .05f, 10)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.getAsJsonObject("transition").addProperty("duration_seconds", duration[0])); changed.run(); });
+                            if (ImGui.sliderFloat(EditorWidgets.field("Transition seconds"), duration, .05f, 10)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.getAsJsonObject("transition").addProperty("duration_seconds", duration[0])); changed.run(); });
                         }
                         for (String action : List.of("up", "down", "duplicate", "delete")) {
+                            if (!action.equals("up")) EditorWidgets.sameLineFor(action);
                             ImGui.beginDisabled(action.equals("up") && i == 0 || action.equals("down") && i == shots.size() - 1);
                             if (ImGui.button(action)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, action, ignored -> { }); changed.run(); });
-                            ImGui.endDisabled(); ImGui.sameLine();
+                            ImGui.endDisabled();
                         }
-                        ImGui.newLine();
                     }
                     ImGui.popID();
                 }
@@ -208,7 +208,7 @@ final class EditorCameraPanel {
 
     private static <E extends Enum<E>> E enumeration(String label, E value) {
         E selected = value;
-        if (ImGui.beginCombo(label, enumLabel(value))) {
+        if (ImGui.beginCombo(EditorWidgets.field(label), enumLabel(value))) {
             for (E candidate : value.getDeclaringClass().getEnumConstants()) {
                 if (candidate == Target.NONE) continue;
                 if (ImGui.selectable(enumLabel(candidate), candidate == value)) selected = candidate;

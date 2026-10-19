@@ -21,7 +21,7 @@ final class EditorPreviewConditions {
     private EditorPreviewConditions() { }
 
     private static void speakers(PreviewConditions conditions, com.google.gson.JsonObject definition) {
-        if (definition == null || !ImGui.collapsingHeader("Conversation speakers")) return;
+        if (definition == null || !EditorWidgets.section("Conversation speakers")) return;
         var minecraft = net.minecraft.client.Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
         var roles = new java.util.TreeSet<String>();
@@ -38,7 +38,7 @@ final class EditorPreviewConditions {
             var bound = conditions.speakers().get(role);
             String label = entities.stream().filter(entity -> entity.getUUID().equals(bound))
                     .map(entity -> entity.getName().getString()).findFirst().orElse("Unbound");
-            if (ImGui.beginCombo(role, label)) {
+            if (ImGui.beginCombo(EditorWidgets.field(role), label)) {
                 if (ImGui.selectable("Unbound", bound == null)) conditions.bindSpeaker(role, null);
                 for (var entity : entities) {
                     if (ImGui.selectable(entity.getName().getString() + "##" + entity.getUUID(),
@@ -113,12 +113,12 @@ final class EditorPreviewConditions {
 
     static void render(PreviewConditions conditions, com.google.gson.JsonObject definition) {
         speakers(conditions, definition);
-        if (!ImGui.collapsingHeader("Simulated conditions")) return;
-        if (ImGui.inputInt("Reputation", REPUTATION)) {
+        if (!EditorWidgets.section("Simulated conditions")) return;
+        if (ImGui.inputInt(EditorWidgets.field("Reputation"), REPUTATION)) {
             conditions.reputation(REPUTATION.get());
             tier = com.jvn.villagerretaliation.reputation.VillagerReputationLevel.fromReputation(REPUTATION.get());
         }
-        if (ImGui.beginCombo("Reputation tier", tier.name())) {
+        if (ImGui.beginCombo(EditorWidgets.field("Reputation tier"), tier.name())) {
             for (var candidate : com.jvn.villagerretaliation.reputation.VillagerReputationLevel.values()) {
                 if (ImGui.selectable(candidate.name(), tier == candidate)) {
                     tier = candidate;
@@ -127,25 +127,25 @@ final class EditorPreviewConditions {
             }
             ImGui.endCombo();
         }
-        if (ImGui.inputInt("Variant index", VARIANT)) conditions.variant(VARIANT.get());
-        if (ImGui.inputText("Profession", PROFESSION)) conditions.profession(PROFESSION.get());
+        if (ImGui.inputInt(EditorWidgets.field("Variant index"), VARIANT)) conditions.variant(VARIANT.get());
+        if (ImGui.inputText(EditorWidgets.field("Profession"), PROFESSION)) conditions.profession(PROFESSION.get());
         if (ImGui.checkbox("Successful checks", conditions.checkSuccess())) conditions.checkSuccess(!conditions.checkSuccess());
         if (definition != null) for (var check : com.jvn.villagerretaliation.authoring.core.DialogueGraph.array(definition, "checks")) {
             if (!check.isJsonObject()) continue;
             String id = com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(check.getAsJsonObject(), "id");
             if (ImGui.checkbox("Pass check: " + id, conditions.checkSuccess(id))) conditions.checkSuccess(id, !conditions.checkSuccess(id));
         }
-        ImGui.inputText("Quest ID", QUEST_ID);
-        ImGui.inputText("Quest state", QUEST_STATE);
+        ImGui.inputText(EditorWidgets.field("Quest ID"), QUEST_ID);
+        ImGui.inputText(EditorWidgets.field("Quest state"), QUEST_STATE);
         if (ImGui.button("Set simulated quest state")) conditions.quest(QUEST_ID.get(), QUEST_STATE.get());
-        ImGui.inputText("Placeholder key", PLACEHOLDER_KEY);
-        ImGui.inputText("Placeholder value", PLACEHOLDER_VALUE);
+        ImGui.inputText(EditorWidgets.field("Placeholder key"), PLACEHOLDER_KEY);
+        ImGui.inputText(EditorWidgets.field("Placeholder value"), PLACEHOLDER_VALUE);
         if (ImGui.button("Set simulated placeholder")) conditions.placeholder(PLACEHOLDER_KEY.get(), PLACEHOLDER_VALUE.get());
         var legacy = new java.util.TreeSet<String>();
         if (definition != null) collectLegacy(definition, legacy);
         for (String flag : legacy) {
             ConditionOutcome selected = conditions.overrides().get(flag);
-            if (ImGui.beginCombo(flag, selected == null ? "Unknown context" : selected.name())) {
+            if (ImGui.beginCombo(EditorWidgets.field(flag), selected == null ? "Unknown context" : selected.name())) {
                 if (ImGui.selectable("Unknown context", selected == null)) conditions.override(flag, null);
                 for (ConditionOutcome outcome : ConditionOutcome.values()) {
                     if (ImGui.selectable(outcome.name(), selected == outcome)) conditions.override(flag, outcome);
@@ -158,7 +158,7 @@ final class EditorPreviewConditions {
         for (var descriptor : DialogueCondition.descriptors()) {
             if (!used.contains(descriptor.id())) continue;
             ConditionOutcome selected = conditions.overrides().get(descriptor.id());
-            if (ImGui.beginCombo(EditorProgressConditions.label(descriptor.id()) + "##" + descriptor.id(),
+            if (ImGui.beginCombo(EditorWidgets.field(EditorProgressConditions.label(descriptor.id()) + "##" + descriptor.id()),
                     selected == null ? "Evaluate simulated context" : selected.name())) {
                 if (ImGui.selectable("Evaluate simulated context", selected == null)) conditions.override(descriptor.id(), null);
                 for (ConditionOutcome outcome : ConditionOutcome.values()) {

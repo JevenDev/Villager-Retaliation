@@ -253,7 +253,7 @@ final class EditorPackFiles implements AutoCloseable {
                 manage.accept(target); changed.run(); closeFolderPopup = true;
             } catch (IllegalArgumentException exception) { folderError = exception.getMessage(); throw exception; }
         });
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Cancel");
         if (ImGui.button("Cancel") || ImGui.isKeyPressed(imgui.flag.ImGuiKey.Escape)) ImGui.closeCurrentPopup();
         ImGui.endPopup();
     }
@@ -303,7 +303,7 @@ final class EditorPackFiles implements AutoCloseable {
                     ImGui.inputTextMultiline("##pack_file_text", text, -1, Math.max(160, Math.min(360, ImGui.getContentRegionAvailY() * .5f)), ImGuiInputTextFlags.AllowTabInput);
                     ImGui.beginDisabled(!pending());
                     if (ImGui.button("Apply file edits")) schedule.accept(() -> { apply(workspace); changed.run(); });
-                    ImGui.sameLine();
+                    EditorWidgets.sameLineFor("Discard file edits");
                     if (ImGui.button("Discard file edits")) attempt.accept(() -> { text.set(originalText); close(); });
                     ImGui.endDisabled();
                 } else if (image != null && image.getPixels() != null) {
@@ -321,7 +321,7 @@ final class EditorPackFiles implements AutoCloseable {
             long folders = entries.stream().filter(Entry::folder).count(), files = entries.size() - folders;
             ImGui.textUnformatted(folders + (folders == 1 ? " folder, " : " folders, ") + files + (files == 1 ? " file" : " files"));
             ImGui.setNextItemOpen(true, ImGuiCond.Once);
-            if (ImGui.collapsingHeader("Folder contents##" + selected)) for (Entry entry : entries) {
+            if (EditorWidgets.section("Folder contents##" + selected)) for (Entry entry : entries) {
                 String label = entry.path().substring(entry.path().lastIndexOf('/') + 1) + (entry.folder() ? "/" : "");
                 if (ImGui.selectable(label + "##contents:" + entry.path())) open.accept(entry.path());
                 if (ImGui.isItemHovered()) ImGui.setTooltip(entry.path());
@@ -344,7 +344,7 @@ final class EditorPackFiles implements AutoCloseable {
         ImGui.textUnformatted("Destination folder in pack"); ImGui.setNextItemWidth(-1);
         if (focusMove == 2) { ImGui.setKeyboardFocusHere(); focusMove = 0; }
         if (ImGui.inputText("##move_parent", parent)) preview = null;
-        if (ImGui.beginCombo("Choose folder", "Existing folders...")) {
+        if (ImGui.beginCombo(EditorWidgets.field("Choose folder"), "Existing folders...")) {
             for (String folder : workspace.folderPaths()) if (ImGui.selectable(folder)) { parent.set(folder); preview = null; }
             ImGui.endCombo();
         }
@@ -356,7 +356,7 @@ final class EditorPackFiles implements AutoCloseable {
         if (preview != null) {
             ImGui.textWrapped((preview.paths().isEmpty() ? "Empty folder" : preview.paths().size() + (preview.paths().size() == 1 ? " file" : " files")) + " will move to " + preview.destination());
             for (String change : preview.changes()) ImGui.textWrapped(change);
-            if (ImGui.collapsingHeader("Affected files")) preview.paths().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> ImGui.textWrapped(entry.getKey() + " -> " + entry.getValue()));
+            if (EditorWidgets.section("Affected files")) preview.paths().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> ImGui.textWrapped(entry.getKey() + " -> " + entry.getValue()));
             if (ImGui.button("Apply move")) schedule.accept(() -> {
                 var plan = preview; workspace.applyFileMove(plan); select(plan.destination()); changed.run();
             });

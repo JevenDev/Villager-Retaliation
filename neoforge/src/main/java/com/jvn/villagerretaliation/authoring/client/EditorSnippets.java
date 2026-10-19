@@ -127,28 +127,29 @@ final class EditorSnippets {
     void render(EditorLibrary library, AuthoringWorkspace workspace, AuthoringDocument document, Set<String> nodes, String pointer,
                 Consumer<ImGuiAuthoringEditor.EditorOperation> run, Consumer<List<String>> inserted) {
         if (!EditorWidgets.section("Reusable snippets")) return;
-        ImGui.inputText("Snippet name", name);
+        ImGui.inputText(EditorWidgets.field("Snippet name"), name);
         ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED || nodes.isEmpty() || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest());
         if (ImGui.button("Save selected nodes as snippet")) run.accept(() -> library.saveSnippet(name.get(), nodes(workspace, document, nodes)));
         ImGui.endDisabled();
         if (ImGui.button("Save selected block as snippet")) run.accept(() -> library.saveSnippet(name.get(), block(document, pointer)));
+        ImGui.setNextItemWidth(-1);
         ImGui.inputTextWithHint("##snippet_search", "Search snippets...", search);
         var categories = library.snippets().stream().map(entry -> {
             var saved = library.snippet(entry);
             return saved.has("category") ? saved.get("category").getAsString() : "";
         }).filter(value -> !value.isEmpty()).distinct().sorted().toList();
-        if (ImGui.beginCombo("Category filter", categoryFilter.isEmpty() ? "All categories" : categoryFilter)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Category filter"), categoryFilter.isEmpty() ? "All categories" : categoryFilter)) {
             if (ImGui.selectable("All categories", categoryFilter.isEmpty())) categoryFilter = "";
             for (String value : categories) if (ImGui.selectable(value, categoryFilter.equals(value))) categoryFilter = value;
             ImGui.endCombo();
         }
         if (ImGui.button("Import snippet library")) EditorFileDialog.choose("JSON import snippets", "", path ->
                 net.minecraft.client.Minecraft.getInstance().execute(() -> run.accept(() -> library.importSnippets(java.nio.file.Path.of(path)))));
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Export snippet library");
         if (ImGui.button("Export snippet library")) EditorFileDialog.choose("JSON export snippets", "snippets.json", path ->
                 net.minecraft.client.Minecraft.getInstance().execute(() -> run.accept(() -> library.exportSnippets(java.nio.file.Path.of(path)))));
         ImGui.textDisabled("Import keeps existing snippets. Export needs a new file name.");
-        if (ImGui.beginCombo("Saved snippets", selected.isEmpty() ? "Choose a snippet..." : selected)) {
+        if (ImGui.beginCombo(EditorWidgets.field("Saved snippets"), selected.isEmpty() ? "Choose a snippet..." : selected)) {
             for (String entry : library.snippets(search.get(), categoryFilter)) if (ImGui.selectable(entry, selected.equals(entry))) {
                 selected = entry; name.set(entry);
                 var saved = library.snippet(entry);
@@ -160,9 +161,9 @@ final class EditorSnippets {
         JsonObject snippet = library.snippet(selected);
         ImGui.textWrapped(snippet.get("type").getAsString().equals("nodes") ? "Graph nodes with their connected dependencies. Paste creates new IDs."
                 : "Append to the selected " + snippet.get("collection").getAsString() + " list.");
-        if (ImGui.collapsingHeader("Snippet contents")) ImGui.textWrapped(AuthoringDocument.JSON.toJson(snippet.get("payload")));
+        if (EditorWidgets.section("Snippet contents")) ImGui.textWrapped(AuthoringDocument.JSON.toJson(snippet.get("payload")));
         if (ImGui.button("Rename snippet")) run.accept(() -> { library.renameSnippet(selected, name.get()); selected = name.get().strip(); });
-        ImGui.inputText("Snippet category", category);
+        ImGui.inputText(EditorWidgets.field("Snippet category"), category);
         if (ImGui.smallButton("Save category")) run.accept(() -> library.categorizeSnippet(selected, category.get()));
         boolean graphSnippet = snippet.get("type").getAsString().equals("nodes");
         ImGui.beginDisabled(graphSnippet && (nodes.isEmpty() || document.kind() == DefinitionKind.FORCED));
@@ -170,7 +171,7 @@ final class EditorSnippets {
                 library.updateSnippet(selected, graphSnippet ? nodes(workspace, document, nodes) : block(document, pointer)));
         ImGui.endDisabled();
         if (ImGui.button("Insert snippet")) run.accept(() -> inserted.accept(insert(workspace, document, pointer, snippet)));
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Remove snippet");
         if (ImGui.button("Remove snippet")) run.accept(() -> { library.removeSnippet(selected); selected = ""; });
     }
 }

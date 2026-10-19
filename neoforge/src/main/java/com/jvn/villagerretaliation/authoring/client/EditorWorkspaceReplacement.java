@@ -16,15 +16,16 @@ final class EditorWorkspaceReplacement {
     private String previewFind = "", previewReplacement = "";
 
     void render(AuthoringWorkspace workspace, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Consumer<AuthoringDocument> applied) {
-        if (!ImGui.collapsingHeader("Replace wording across files")) return;
+        if (!EditorWidgets.section("Replace wording across files")) return;
         if (owner != workspace) { owner = workspace; selected.clear(); selected.addAll(workspace.documents()); preview = null; }
         selected.retainAll(workspace.documents());
-        boolean changedFind = ImGui.inputText("Find across files", find);
-        boolean changedReplacement = ImGui.inputText("Replacement wording", replacement);
+        boolean changedFind = ImGui.inputText(EditorWidgets.field("Find across files"), find);
+        boolean changedReplacement = ImGui.inputText(EditorWidgets.field("Replacement wording"), replacement);
         if (changedFind || changedReplacement) preview = null;
+        ImGui.setNextItemWidth(-1);
         ImGui.inputTextWithHint("##replace_file_filter", "Filter file paths...", filter);
         if (ImGui.smallButton("Select matching files")) { workspace.documents().stream().filter(this::matches).forEach(selected::add); preview = null; }
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Clear selected files");
         if (ImGui.smallButton("Clear selected files")) { selected.clear(); preview = null; }
         ImGui.beginChild("##replace_files", 0, 130, true);
         for (var document : workspace.documents()) if (matches(document)) {
@@ -57,7 +58,7 @@ final class EditorWorkspaceReplacement {
             plan.files().stream().filter(file -> !file.changes().isEmpty()).findFirst().ifPresent(file -> applied.accept(file.document()));
         });
         ImGui.endDisabled();
-        ImGui.sameLine();
+        EditorWidgets.sameLineFor("Cancel workspace preview");
         if (ImGui.button("Cancel workspace preview")) preview = null;
         ImGui.beginChild("##workspace_replacement_preview", 0, 220, true);
         for (var file : plan.files()) if (!file.changes().isEmpty()) {

@@ -94,7 +94,7 @@ final class EditorShortcuts {
     }
 
     void render(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run) {
-        if (!ImGui.collapsingHeader("Keyboard shortcuts")) return;
+        if (!EditorWidgets.section("Keyboard shortcuts")) return;
         ImGui.textWrapped("Enter a chord such as Ctrl+Shift+G or F10. Leave it blank to unbind. F9 opens the editor and F11 toggles fullscreen.");
         if (ImGui.button("Restore default shortcuts")) run.accept(() -> { library.resetShortcuts(); fields.clear(); });
         var overrides = library.shortcuts();

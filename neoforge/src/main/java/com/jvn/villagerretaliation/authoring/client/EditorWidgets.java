@@ -6,7 +6,7 @@ final class EditorWidgets {
     private EditorWidgets() { }
 
     static float buttonWidth(String label) {
-        return ImGui.calcTextSize(label).x + ImGui.getStyle().getFramePaddingX() * 2;
+        return ImGui.calcTextSize(label.split("##", 2)[0]).x + ImGui.getStyle().getFramePaddingX() * 2;
     }
 
     static float inputWidth(String button) {
@@ -22,11 +22,22 @@ final class EditorWidgets {
         if (ImGui.getItemRectMaxX() + ImGui.getStyle().getItemSpacingX() + width <= right + .5f) ImGui.sameLine();
     }
 
-    static boolean section(String label) {
-        float x = ImGui.getCursorScreenPosX(), y = ImGui.getCursorScreenPosY();
-        ImGui.pushClipRect(x, y, x + ImGui.getContentRegionAvailX(), y + ImGui.getFrameHeight(), true);
-        boolean open = ImGui.collapsingHeader(label);
+    static String field(String label) {
+        ImGui.textWrapped(label.split("##", 2)[0]);
+        ImGui.setNextItemWidth(-1);
+        return "##" + label;
+    }
+
+    static boolean section(String label) { return section(label, 0); }
+
+    static boolean section(String label, int flags) {
+        float x = ImGui.getCursorScreenPosX(), y = ImGui.getCursorScreenPosY(), width = ImGui.getContentRegionAvailX();
+        ImGui.pushClipRect(x, y, x + width, y + ImGui.getFrameHeight(), true);
+        boolean open = ImGui.collapsingHeader(label, flags);
         ImGui.popClipRect();
+        String title = label.split("##", 2)[0];
+        if (ImGui.isItemHovered() && ImGui.calcTextSize(title).x + ImGui.getFontSize() + ImGui.getStyle().getFramePaddingX() * 3 > width)
+            ImGui.setTooltip(title);
         return open;
     }
 
@@ -44,7 +55,7 @@ final class EditorWidgets {
         ImGui.setNextWindowPos(viewport.getWorkPosX() + (viewport.getWorkSizeX() - width) / 2,
                 viewport.getWorkPosY() + (viewport.getWorkSizeY() - height) / 2);
         if (!ImGui.beginPopup(title)) return false;
-        ImGui.setWindowFontScale(textScale);
+        ImGui.setWindowFontScale(1);
         return true;
     }
 }

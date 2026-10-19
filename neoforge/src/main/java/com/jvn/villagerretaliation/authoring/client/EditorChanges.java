@@ -60,7 +60,7 @@ final class EditorChanges {
 
     void render(AuthoringWorkspace workspace, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Consumer<String> open, Consumer<AuthoringDocument> changed) throws IOException {
         if (owner != workspace) { owner = workspace; supportingRevert = null; }
-        if (!ImGui.collapsingHeader("Changes since last save")) return;
+        if (!EditorWidgets.section("Changes since last save")) return;
         ImGui.textWrapped("Apply pending field or JSON edits to include them in this review.");
         var paths = workspace.changedFilePaths();
         if (paths.isEmpty()) ImGui.textWrapped("No pack file changes. Editor layout and other editor settings are saved separately.");
