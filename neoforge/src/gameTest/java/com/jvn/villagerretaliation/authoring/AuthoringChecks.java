@@ -13,7 +13,7 @@ public final class AuthoringChecks {
     public static void main(String[] args) throws Exception {
         int count = 0;
         var failures = new java.util.ArrayList<String>();
-        for (Class<?> suite : new Class<?>[] {AuthoringCoreGameTests.class, DialoguePreviewGameTests.class, com.jvn.villagerretaliation.authoring.preview.QuestPlaytestGameTests.class}) {
+        for (Class<?> suite : new Class<?>[] {AuthoringCoreGameTests.class, AuthoringFilesGameTests.class, DialoguePreviewGameTests.class, com.jvn.villagerretaliation.authoring.preview.QuestPlaytestGameTests.class}) {
             for (var method : Arrays.stream(suite.getDeclaredMethods()).sorted(Comparator.comparing(java.lang.reflect.Method::getName)).toList()) {
                 if (!java.lang.reflect.Modifier.isPublic(method.getModifiers())
                         || !Arrays.equals(method.getParameterTypes(), new Class<?>[] {GameTestHelper.class})) continue;

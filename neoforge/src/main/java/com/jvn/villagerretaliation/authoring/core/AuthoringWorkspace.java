@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,6 +129,215 @@ public final class AuthoringWorkspace {
 
     public Path directory() { return directory; }
     public List<AuthoringDocument> documents() { return List.copyOf(documents); }
+
+    public List<String> filePaths() {
+        var paths = new java.util.TreeSet<String>(attachments.keySet());
+        documents.forEach(document -> paths.add(document.resourcePath()));
+        paths.add("pack.mcmeta");
+        return List.copyOf(paths);
+    }
+
+    public byte[] readFile(String path) throws IOException {
+        safeRelativePath(path);
+        if (path.equals("pack.mcmeta")) return AuthoringDocument.JSON.toJson(packMetadata).getBytes(StandardCharsets.UTF_8);
+        for (AuthoringDocument document : documents) if (document.resourcePath().equals(path))
+            return AuthoringDocument.JSON.toJson(document.json()).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = attachments.get(path);
+        if (bytes == null) throw new java.nio.file.NoSuchFileException(path);
+        return bytes.clone();
+    }
+
+    public JsonObject packMetadata() { return packMetadata.deepCopy(); }
+
+    public void setPackMetadata(JsonObject value) {
+        validatePackMetadata(value);
+        packMetadata = value.deepCopy();
+    }
+
+    private static void validatePackMetadata(JsonObject value) {
+        if (!value.has("pack") || !value.get("pack").isJsonObject()) throw new IllegalArgumentException("Pack metadata requires a pack object");
+        JsonObject pack = value.getAsJsonObject("pack");
+        if (!pack.has("pack_format") || !pack.get("pack_format").isJsonPrimitive() || !pack.getAsJsonPrimitive("pack_format").isNumber()
+                || !pack.get("pack_format").getAsString().matches("[1-9][0-9]*")) throw new IllegalArgumentException("Pack format must be a positive whole number");
+        if (!pack.has("description") || pack.get("description").isJsonNull()) throw new IllegalArgumentException("Enter a pack description");
+    }
+
+    public void writeTextFile(String path, String text) throws IOException {
+        if (!filePaths().contains(path)) throw new java.nio.file.NoSuchFileException(path);
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length > MAX_FILE_BYTES) throw new IOException("File exceeds the 32 MiB limit");
+        try {
+            if (path.equals("pack.mcmeta")) { setPackMetadata(JsonParser.parseString(text).getAsJsonObject()); return; }
+            for (AuthoringDocument document : documents) if (document.resourcePath().equals(path)) { document.replaceJson(text); return; }
+            attachments.put(path, bytes);
+        } catch (com.google.gson.JsonParseException | IllegalStateException exception) {
+            throw new IOException("Invalid JSON in " + path + ": " + exception.getMessage(), exception);
+        }
+    }
+
+    public record FileMove(String source, String destination, Map<String, String> paths, List<String> changes, String fingerprint) {
+        public FileMove { paths = Map.copyOf(paths); changes = List.copyOf(changes); }
+    }
+
+    private record Relocation(Map<AuthoringDocument, JsonObject> definitions, Map<String, byte[]> assets, FileMove move) { }
+    private Runnable undoFileMove;
+    private String movedFingerprint = "";
+
+    private String fileFingerprint() {
+        return com.google.common.hash.Hashing.sha256().hashString(snapshot().toString(), StandardCharsets.UTF_8).toString();
+    }
+
+    public FileMove previewFileMove(String source, String destination) {
+        return relocation(source, destination).move();
+    }
+
+    private Relocation relocation(String source, String destination) {
+        source = safeRelativePath(source.endsWith("/") ? source.substring(0, source.length() - 1) : source);
+        destination = safeRelativePath(destination.endsWith("/") ? destination.substring(0, destination.length() - 1) : destination);
+        if (source.equals("pack.mcmeta") || destination.equals("pack.mcmeta")) throw new IllegalArgumentException("pack.mcmeta must stay at the pack root");
+        if (destination.equalsIgnoreCase(source) || destination.toLowerCase(java.util.Locale.ROOT).startsWith(source.toLowerCase(java.util.Locale.ROOT) + "/"))
+            throw new IllegalArgumentException("Choose a different folder outside the source");
+        Map<String, String> paths = new LinkedHashMap<>();
+        for (String path : filePaths()) if (path.equals(source) || path.startsWith(source + "/"))
+            paths.put(path, destination + path.substring(source.length()));
+        if (paths.isEmpty()) throw new IllegalArgumentException("No files found at " + source);
+        var occupied = new HashSet<String>();
+        for (String path : filePaths()) {
+            String target = paths.getOrDefault(path, path);
+            String normalized = target.toLowerCase(java.util.Locale.ROOT);
+            if (!occupied.add(normalized)) throw new IllegalArgumentException("Move would overwrite " + target);
+            if (paths.containsKey(path)) {
+                String[] before = path.split("/", 3), after = target.split("/", 3);
+                if (before.length < 3 || after.length < 3 || !before[0].equals(after[0]) || !before[1].equals(after[1]))
+                    throw new IllegalArgumentException("Keep files inside their data or assets namespace");
+                if (net.minecraft.resources.ResourceLocation.tryParse(after[1] + ":" + after[2]) == null)
+                    throw new IllegalArgumentException("Use lowercase resource folder and file names");
+            }
+        }
+        for (String path : occupied) {
+            for (int slash = path.lastIndexOf('/'); slash >= 0; slash = path.lastIndexOf('/', slash - 1))
+                if (occupied.contains(path.substring(0, slash))) throw new IllegalArgumentException("A file occupies the parent folder of " + path);
+        }
+        Map<String, String> resources = new LinkedHashMap<>();
+        paths.forEach((from, to) -> resources.put(from.split("/", 3)[1] + ":" + from.split("/", 3)[2], to.split("/", 3)[1] + ":" + to.split("/", 3)[2]));
+        Map<String, Map<String, String>> idsByScope = new LinkedHashMap<>();
+        List<String> changes = new ArrayList<>();
+        Map<AuthoringDocument, JsonObject> definitions = new LinkedHashMap<>();
+        for (AuthoringDocument document : documents) {
+            String target = paths.get(document.resourcePath());
+            if (target == null) continue;
+            if (DefinitionKind.fromPath(target) != document.kind()) throw new IllegalArgumentException("Keep the runtime folder layout for " + document.resourcePath());
+            String logical = DefinitionKind.unscopedPath(document.resourcePath());
+            String nextLogical = DefinitionKind.unscopedPath(target);
+            if (logical.split("/", 3)[2].startsWith("quests/")) {
+                var before = com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.classify(AuthoringValidation.resourceLocation(logical));
+                var after = com.jvn.villagerretaliation.quest.content.bundle.QuestBundlePath.classify(AuthoringValidation.resourceLocation(nextLogical));
+                if (before.valid() && (!after.valid() || before.path().kind() != after.path().kind()))
+                    throw new IllegalArgumentException("Keep quest companion files in their locales, conversations, scenes or other matching bundle folder");
+            }
+            if ((document.kind() == DefinitionKind.QUEST || document.kind().campaignManifest())
+                    && !source.equals(document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/')))
+                    && !document.resourcePath().startsWith(source + "/")) throw new IllegalArgumentException("Move the entire owning folder, including its companion files");
+            String[] moved = DefinitionKind.unscopedPath(target).split("/");
+            JsonObject definition = document.json();
+            if (document.kind() == DefinitionKind.CONVERSATION
+                    && !DefinitionKind.contentRoot(target).equals(DefinitionKind.contentRoot(document.resourcePath()))
+                    && !paths.containsKey(document.resourcePath().substring(0, document.resourcePath().indexOf("/conversations/")) + "/locales/en_us.json"))
+                throw new IllegalArgumentException("Move the owning quest or _shared folder so conversation localization stays together");
+            if (document.kind().campaignManifest()) {
+                String id = moved[1] + ":" + target.split("/")[3];
+                if (!document.kind().path(id).equals(target)) throw new IllegalArgumentException("Keep campaign and addon manifests in their named folder");
+                definition.addProperty("id", id);
+                if (!id.equals(document.id())) changes.add(document.id() + " -> " + id);
+            } else if (document.kind() == DefinitionKind.QUEST) {
+                if (moved.length != 6) throw new IllegalArgumentException("Keep quests in quests/<questline>/<id>/quest.json");
+                String id = moved[1] + ":" + moved[4];
+                definition.addProperty("id", id);
+                definition.getAsJsonObject("metadata").addProperty("questline", moved[3]);
+                if (!id.equals(document.id())) {
+                    idsByScope.computeIfAbsent(DefinitionKind.contentRoot(document.resourcePath()), ignored -> new LinkedHashMap<>()).put(document.id(), id);
+                    changes.add(document.id() + " -> " + id);
+                }
+            }
+            if (!DefinitionKind.contentRoot(target).equals(DefinitionKind.contentRoot(document.resourcePath())) && !document.kind().campaignManifest()) {
+                definition.remove("world_campaign");
+                if (definition.has("entries") && definition.get("entries").isJsonArray()) for (JsonElement entry : definition.getAsJsonArray("entries"))
+                    if (entry.isJsonObject()) entry.getAsJsonObject().remove("world_campaign");
+                if (!changes.contains("Content ownership follows the destination folder")) changes.add("Content ownership follows the destination folder");
+            }
+            definitions.put(document, definition);
+        }
+        for (AuthoringDocument owner : documents) {
+            if (!paths.containsKey(owner.resourcePath()) || !owner.kind().campaignManifest()) continue;
+            String nextId = definitions.get(owner).get("id").getAsString();
+            if (nextId.equals(owner.id())) continue;
+            for (AuthoringDocument document : documents) {
+                JsonObject before = definitions.getOrDefault(document, document.json());
+                JsonObject after = rewriteCampaignReferences(before, owner.kind(), owner.id(), nextId);
+                if (!after.equals(before)) definitions.put(document, after);
+            }
+        }
+        for (AuthoringDocument document : documents) {
+            JsonObject before = definitions.getOrDefault(document, document.json());
+            JsonObject after = rewriteReferences(before, idsByScope.getOrDefault(DefinitionKind.contentRoot(document.resourcePath()), Map.of()), "", "").getAsJsonObject();
+            after = rewriteReferences(after, resources, "", "").getAsJsonObject();
+            if (!after.equals(before)) definitions.put(document, after);
+        }
+        List<AuthoringDocument> candidates = new ArrayList<>();
+        for (AuthoringDocument document : documents) candidates.add(new AuthoringDocument(document.kind(), paths.getOrDefault(document.resourcePath(), document.resourcePath()), definitions.getOrDefault(document, document.json())));
+        var existingErrors = AuthoringValidation.validate(documents()).stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)
+                .map(issue -> paths.getOrDefault(issue.resourcePath(), issue.resourcePath()) + issue.pointer() + ":" + issue.message()).collect(java.util.stream.Collectors.toSet());
+        for (var issue : AuthoringValidation.validate(candidates)) if (issue.severity() == AuthoringDiagnostic.Severity.ERROR && !existingErrors.contains(issue.resourcePath() + issue.pointer() + ":" + issue.message()))
+            throw new IllegalArgumentException(issue.resourcePath() + issue.pointer() + ": " + issue.message());
+        Map<String, byte[]> assets = new LinkedHashMap<>();
+        attachments.forEach((path, bytes) -> {
+            byte[] content = bytes;
+            if (path.endsWith(".md")) {
+                String text = new String(bytes, StandardCharsets.UTF_8);
+                for (var resource : resources.entrySet()) text = text.replace(resource.getKey(), resource.getValue());
+                content = text.getBytes(StandardCharsets.UTF_8);
+            }
+            assets.put(paths.getOrDefault(path, path), content);
+        });
+        return new Relocation(definitions, assets, new FileMove(source, destination, paths, changes, fileFingerprint()));
+    }
+
+    public void applyFileMove(FileMove move) {
+        if (!fileFingerprint().equals(move.fingerprint())) throw new IllegalStateException("Files changed since this preview. Preview the move again");
+        Relocation planned = relocation(move.source(), move.destination());
+        if (!planned.move().paths().equals(move.paths())) throw new IllegalStateException("The move preview is stale");
+        Map<AuthoringDocument, String> beforePaths = new LinkedHashMap<>(), afterPaths = new LinkedHashMap<>();
+        Map<String, byte[]> beforeAssets = new LinkedHashMap<>(attachments);
+        planned.definitions().forEach((document, definition) -> {
+            beforePaths.put(document, document.resourcePath());
+            String target = move.paths().getOrDefault(document.resourcePath(), document.resourcePath());
+            document.relocate(target, definition);
+            afterPaths.put(document, target);
+        });
+        attachments.clear(); attachments.putAll(planned.assets());
+        if (!beforePaths.isEmpty()) {
+            AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+                    () -> restoreFileMove(beforePaths, planned.assets(), beforeAssets),
+                    () -> restoreFileMove(afterPaths, beforeAssets, planned.assets()));
+            undoFileMove = () -> beforePaths.keySet().iterator().next().undo();
+        } else undoFileMove = () -> restoreFileMove(Map.of(), planned.assets(), beforeAssets);
+        movedFingerprint = fileFingerprint();
+    }
+
+    private void restoreFileMove(Map<AuthoringDocument, String> paths, Map<String, byte[]> expected, Map<String, byte[]> restored) {
+        if (!attachments.keySet().equals(expected.keySet()) || expected.entrySet().stream().anyMatch(entry -> !java.util.Arrays.equals(attachments.get(entry.getKey()), entry.getValue())))
+            throw new IllegalStateException("An affected asset changed after the move");
+        for (var entry : paths.entrySet()) if (documents.stream().anyMatch(document -> !paths.containsKey(document) && document.resourcePath().equalsIgnoreCase(entry.getValue())))
+            throw new IllegalStateException("Another document occupies " + entry.getValue());
+        attachments.clear(); attachments.putAll(restored);
+    }
+
+    public boolean canUndoFileMove() { return undoFileMove != null && movedFingerprint.equals(fileFingerprint()); }
+    public void undoFileMove() {
+        if (!canUndoFileMove()) throw new IllegalStateException("Undo newer changes before undoing the file move");
+        undoFileMove.run();
+        undoFileMove = null;
+    }
 
     public void add(AuthoringDocument document) {
         if (containsPath(document.resourcePath())) throw new IllegalArgumentException("Resource already exists: " + document.resourcePath());
@@ -782,6 +992,10 @@ public final class AuthoringWorkspace {
 
     public List<AuthoringDiagnostic> validate() {
         List<AuthoringDiagnostic> result = new ArrayList<>(AuthoringValidation.validate(documents()));
+        try { validatePackMetadata(packMetadata); }
+        catch (IllegalArgumentException exception) {
+            result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, "pack.mcmeta", "/pack", exception.getMessage()));
+        }
         for (AuthoringDocument document : documents) {
             if (!document.kind().campaignManifest()) continue;
             try { campaignDescription(document); }
