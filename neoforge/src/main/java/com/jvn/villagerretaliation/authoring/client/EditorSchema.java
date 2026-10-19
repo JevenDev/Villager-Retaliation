@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 final class EditorSchema {
     private final JsonObject root;
@@ -95,17 +96,23 @@ final class EditorSchema {
 
     Map<String, JsonElement> choices(JsonObject rule) {
         Map<String, JsonElement> result = new LinkedHashMap<>();
-        if (rule.isEmpty()) {
-            result.put("Text", new JsonPrimitive("")); result.put("Number", new JsonPrimitive(0)); result.put("Toggle", new JsonPrimitive(false));
-            result.put("Object", new JsonObject()); result.put("List", new JsonArray());
-            return result;
-        }
-        alternatives(rule, result, 0);
-        if (result.isEmpty()) result.put("New entry", seed(rule));
+        options(rule).forEach((label, factory) -> result.put(label, factory.get()));
         return result;
     }
 
-    private void alternatives(JsonObject rule, Map<String, JsonElement> result, int depth) {
+    Map<String, Supplier<JsonElement>> options(JsonObject rule) {
+        Map<String, Supplier<JsonElement>> result = new LinkedHashMap<>();
+        if (rule.isEmpty()) {
+            result.put("Text", () -> new JsonPrimitive("")); result.put("Number", () -> new JsonPrimitive(0)); result.put("Toggle", () -> new JsonPrimitive(false));
+            result.put("Object", JsonObject::new); result.put("List", JsonArray::new);
+            return result;
+        }
+        alternatives(rule, result, 0);
+        if (result.isEmpty()) result.put("New entry", () -> seed(rule));
+        return result;
+    }
+
+    private void alternatives(JsonObject rule, Map<String, Supplier<JsonElement>> result, int depth) {
         if (depth > 16) return;
         if (rule.has("$ref")) {
             alternatives(object(JsonPointers.get(root, rule.get("$ref").getAsString().substring(1))), result, depth + 1);
@@ -120,17 +127,17 @@ final class EditorSchema {
         if (discriminator.has("enum")) {
             boolean conditionTypes = discriminator.getAsJsonArray("enum").contains(new JsonPrimitive("player_dimension_visited"));
             for (var type : discriminator.getAsJsonArray("enum")) {
-                JsonObject value = new JsonObject();
-                value.add("type", type.deepCopy());
-                JsonObject resolved = effective(rule, value);
-                fillRequired(value, resolved, 0);
-                JsonObject progress = conditionTypes ? EditorProgressConditions.seed(type.getAsString()) : null;
-                if (progress != null) value = progress;
                 String name = conditionTypes ? EditorProgressConditions.label(type.getAsString()) : type.getAsString();
-                result.put(name.replace('_', ' '), value);
+                result.put(name.replace('_', ' '), () -> {
+                    JsonObject value = new JsonObject();
+                    value.add("type", type.deepCopy());
+                    fillRequired(value, effective(rule, value), 0);
+                    JsonObject progress = conditionTypes ? EditorProgressConditions.seed(type.getAsString()) : null;
+                    return progress != null ? progress : value;
+                });
             }
         } else if (rule.has("enum")) {
-            for (var value : rule.getAsJsonArray("enum")) result.put(value.getAsString(), value.deepCopy());
+            for (var value : rule.getAsJsonArray("enum")) result.put(value.getAsString(), value::deepCopy);
         } else {
             JsonElement value = seed(rule);
             String name = rule.has("title") ? rule.get("title").getAsString()
@@ -145,7 +152,7 @@ final class EditorSchema {
             String unique = name;
             int number = 2;
             while (result.containsKey(unique)) unique = name + " " + number++;
-            result.put(unique, value);
+            result.put(unique, value::deepCopy);
         }
     }
 

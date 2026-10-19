@@ -2086,8 +2086,8 @@ final class ImGuiAuthoringEditor {
             for (var entry : properties.entrySet()) {
                 if (value.has(entry.getKey())) continue;
                 if (ImGui.beginMenu(friendlyLabel(entry.getKey()) + (required.contains(entry.getKey()) ? " (required)" : ""))) {
-                    for (var choice : propertySchema.choices(EditorSchema.object(entry.getValue())).entrySet()) {
-                        if (ImGui.menuItem(choice.getKey())) operation(() -> replaceValue(path + "/" + escape(entry.getKey()), choice.getValue()));
+                    for (var choice : propertySchema.options(EditorSchema.object(entry.getValue())).entrySet()) {
+                        if (ImGui.menuItem(choice.getKey())) operation(() -> replaceValue(path + "/" + escape(entry.getKey()), choice.getValue().get()));
                     }
                     ImGui.endMenu();
                 }
@@ -2108,11 +2108,10 @@ final class ImGuiAuthoringEditor {
                 input("Field name", name);
                 if (ImGui.beginCombo(EditorWidgets.field("Field value"), "Choose a type...")) {
                     JsonObject additional = EditorSchema.object(rule.get("additionalProperties"));
-                    var options = additional.isEmpty() ? Map.<String, JsonElement>of("Text", new JsonPrimitive(""), "Number", new JsonPrimitive(0),
-                            "Toggle", new JsonPrimitive(false), "Object", new JsonObject(), "List", new JsonArray()) : propertySchema.choices(additional);
+                    var options = propertySchema.options(additional);
                     for (var choice : options.entrySet()) if (ImGui.selectable(choice.getKey())) operation(() -> {
                         if (name.get().isBlank() || value.has(name.get())) throw new IllegalArgumentException("Enter a new, nonempty field name");
-                        replaceValue(path + "/" + escape(name.get()), choice.getValue());
+                        replaceValue(path + "/" + escape(name.get()), choice.getValue().get());
                     });
                     ImGui.endCombo();
                 }
@@ -2289,8 +2288,8 @@ final class ImGuiAuthoringEditor {
                 var array = value.getAsJsonArray();
                 JsonObject rule = propertySchema.at(documentCache.json(document), path);
                 if (ImGui.beginCombo(EditorWidgets.field("Add entry"), "Choose an entry type...")) {
-                    for (var choice : propertySchema.choices(EditorSchema.object(rule.get("items"))).entrySet())
-                        if (ImGui.selectable(choice.getKey())) editArray(path, values -> values.add(choice.getValue().deepCopy()));
+                    for (var choice : propertySchema.options(EditorSchema.object(rule.get("items"))).entrySet())
+                        if (ImGui.selectable(choice.getKey())) editArray(path, values -> values.add(choice.getValue().get()));
                     ImGui.endCombo();
                 }
                 for (int i = 0; i < array.size(); i++) {

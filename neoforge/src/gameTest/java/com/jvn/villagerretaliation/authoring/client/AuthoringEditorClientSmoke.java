@@ -71,6 +71,7 @@ public final class AuthoringEditorClientSmoke {
     private static int shortcutPopupFrames;
     private static int featureStage = -1;
     private static float[] featureActionPoint;
+    private static final List<Long> dropdownFrameTimes = new ArrayList<>();
     private static String qualityResource = "minecraft:stone";
     private static float[] qualityPickerPoint;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
@@ -168,6 +169,7 @@ public final class AuthoringEditorClientSmoke {
         buildVariableSteps();
         buildPanelSteps();
         buildPerformanceSteps();
+        buildDropdownSteps();
         buildDeletionSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
@@ -700,6 +702,47 @@ public final class AuthoringEditorClientSmoke {
         pause(250);
     }
 
+    private static void buildDropdownSteps() {
+        var previous = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            previous[0] = document;
+            document = workspace.createDocument(DefinitionKind.QUEST, "test:dropdown_performance");
+            document.edit("Empty objectives", root -> root.getAsJsonArray("stages").get(0).getAsJsonObject().add("objectives", new com.google.gson.JsonArray()));
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            featureStage = 8; featureActionPoint = null;
+        });
+        pause(250);
+        click(() -> featureActionPoint);
+        STEPS.add(dropdownFrameTimes::clear);
+        pause(1000);
+        STEPS.add(() -> {
+            require(dropdownFrameTimes.size() >= 20, "The objective dropdown renders across multiple frames.");
+            var sorted = dropdownFrameTimes.stream().sorted().toList();
+            System.out.printf(java.util.Locale.ROOT, "Editor objective dropdown: %.3f ms median render across %d open frames%n", sorted.get(sorted.size() / 2) / 1_000_000.0, sorted.size());
+            capture("81-objective-dropdown");
+        });
+        key(ImGuiKey.Home);
+        var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+        var labels = new EditorSchema(root).options(root.getAsJsonObject("$defs").getAsJsonObject("objective")).keySet().stream().toList();
+        int index = labels.indexOf("break block");
+        require(index >= 0, "The objective menu contains the break block alias.");
+        for (int i = 0; i < index; i++) key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            var objectives = document.value("/stages/0/objectives").getAsJsonArray();
+            require(objectives.size() == 1, "Choosing an objective from the dropdown adds one entry.");
+            var objective = objectives.get(0).getAsJsonObject();
+            require(objective.get("type").getAsString().equals("break_block") && objective.has("id"),
+                    "The break block menu entry supplies its required defaults.");
+            document.undo(); invoke("refresh", new Class<?>[0]);
+            require(document.value("/stages/0/objectives").getAsJsonArray().isEmpty(), "Objective dropdown edits remain undoable.");
+            featureStage = -1;
+            workspace.remove(document); document = previous[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+        });
+        pause(250);
+    }
+
     private static void finishSteps(String details) {
         STEPS.add(() -> {
             try { Files.writeString(output().resolve("result.txt"), "Authoring editor client smoke passed\n" + details + "\n"); }
@@ -1031,6 +1074,14 @@ public final class AuthoringEditorClientSmoke {
             if (((List<?>) field(field(editor, "scenarioTests"), "results")).isEmpty())
                 featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
         } else if (featureStage == 7) ((EditorShortcuts) field(editor, "shortcuts")).render(((List<?>) invoke("commands", new Class<?>[0])).stream().map(EditorCommands.Command.class::cast).toList(), (EditorLibrary) field(editor, "library"), run);
+        else if (featureStage == 8) {
+            long start = System.nanoTime();
+            invoke("inspectValue", new Class<?>[] {com.google.gson.JsonElement.class, String.class, String.class, int.class},
+                    document.value("/stages/0/objectives"), "/stages/0/objectives", "Objectives", 0);
+            dropdownFrameTimes.add(System.nanoTime() - start);
+            if (featureActionPoint == null) featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2,
+                    (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+        }
         else if (featureStage == 4) ((EditorCoverage) field(editor, "coverage")).render(document, id -> { });
         else {
             featureActionPoint = new float[] {ImGui.getCursorScreenPosX() + 150, ImGui.getCursorScreenPosY() + ImGui.getFrameHeight() / 2};

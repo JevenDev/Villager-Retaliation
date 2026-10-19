@@ -22,8 +22,10 @@ final class EditorPerformanceChecks {
         cachedPlacementDoesNotRetainDraggedCoordinates();
         highlightsAndCoverageTrackLogicChanges();
         fieldCandidatesPreserveValidationAndIsolation();
+        schemaMenusPreserveDefaultsAndIsolation();
+        benchmarkSchemaMenus();
         benchmarkGraphPreparation();
-        return 6;
+        return 7;
     }
 
     private static AuthoringWorkspace workspace() throws IOException {
@@ -142,6 +144,49 @@ final class EditorPerformanceChecks {
         check(!edits.issue(document, "/count").isEmpty() && edits.issues(document).containsKey("/count"), "targeted reads still reject stale field edits");
         edits.update("/count", document.value("/count"), "\"wrong type\"");
         check(edits.issue(document, "/count").contains("Expected a number"), "targeted reads retain type validation");
+    }
+
+    private static void schemaMenusPreserveDefaultsAndIsolation() {
+        var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+        var schema = new EditorSchema(root);
+        var rule = JsonParser.parseString("{\"$ref\":\"#/$defs/objective\"}").getAsJsonObject();
+        var options = schema.options(rule);
+        var types = root.getAsJsonObject("$defs").getAsJsonObject("objective").getAsJsonObject("properties").getAsJsonObject("type").getAsJsonArray("enum");
+        check(options.keySet().stream().toList().equals(types.asList().stream().map(value -> value.getAsString().replace('_', ' ')).toList()),
+                "objective menus retain every type and alias in schema order");
+        for (String type : java.util.List.of("block_break", "break_block")) {
+            var factory = options.get(type.replace('_', ' '));
+            var selected = factory.get().getAsJsonObject();
+            check(selected.get("type").getAsString().equals(type) && selected.has("id") && schema.effective(root.getAsJsonObject("$defs").getAsJsonObject("objective"), selected).getAsJsonObject("properties").has("block"),
+                    "selecting a block objective retains its required defaults and subtype fields");
+            var expected = selected.deepCopy();
+            selected.addProperty("block", "minecraft:stone");
+            check(factory.get().equals(expected), "repeated selections create independent objective defaults");
+        }
+        var condition = schema.options(root.getAsJsonObject("$defs").getAsJsonObject("condition"))
+                .get("Player has entered dimensions").get().getAsJsonObject();
+        check(condition.equals(EditorProgressConditions.seed("player_dimension_visited")), "condition menus retain complete progress presets");
+        condition.getAsJsonArray("dimensions").add("test:changed");
+        check(!EditorProgressConditions.seed("player_dimension_visited").equals(condition), "nested condition defaults remain isolated");
+        var camera = schema.options(com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
+        check(camera.size() == 3 && camera.values().stream().allMatch(factory -> factory.get().isJsonObject()), "structured alternatives remain selectable");
+        var extension = schema.options(new JsonObject());
+        check(extension.size() == 5 && extension.get("Object").get() != extension.get("Object").get()
+                && extension.get("List").get() != extension.get("List").get(), "extension menus create independent objects and lists");
+    }
+
+    private static void benchmarkSchemaMenus() {
+        var schema = new EditorSchema(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
+        var rule = JsonParser.parseString("{\"$ref\":\"#/$defs/objective\"}").getAsJsonObject();
+        for (int i = 0; i < 10; i++) { schema.choices(rule); schema.options(rule); }
+        long start = System.nanoTime(); int entries = 0;
+        for (int i = 0; i < 30; i++) entries += schema.choices(rule).size();
+        double eager = (System.nanoTime() - start) / 30_000_000.0;
+        start = System.nanoTime();
+        for (int i = 0; i < 300; i++) entries += schema.options(rule).size();
+        double deferred = (System.nanoTime() - start) / 300_000_000.0;
+        check(entries == schema.options(rule).size() * 330, "benchmark enumerates the complete objective menu");
+        System.out.printf(java.util.Locale.ROOT, "Editor objective menu (%d entries): eager %.3f ms, deferred %.6f ms per frame%n", schema.options(rule).size(), eager, deferred);
     }
 
     private static AuthoringDocument largeDocument(int count) {
