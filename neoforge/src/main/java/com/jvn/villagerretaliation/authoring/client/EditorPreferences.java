@@ -37,7 +37,7 @@ public record EditorPreferences(boolean guideDismissed, int layoutVersion, Strin
         if (!Float.isFinite(textScale) || textScale < .8f || textScale > 2) throw new IllegalArgumentException("Invalid editor text scale");
     }
 
-    public static final int CURRENT_LAYOUT = 1;
+    public static final int CURRENT_LAYOUT = 2;
 
     public static EditorPreferences defaults() { return new EditorPreferences(false, 0, ""); }
 

@@ -251,8 +251,8 @@ public final class AuthoringEditorClientSmoke {
             require(workspace.documents().isEmpty(), "The new workspace starts empty.");
             capture("09-empty-workspace");
         });
-        replaceText(() -> screenPoint(120, 357), () -> "test:from_scratch");
-        click(() -> screenPoint(120, 397));
+        replaceText(() -> screenPoint(120, 337), () -> "test:from_scratch");
+        click(() -> screenPoint(120, 377));
         STEPS.add(() -> {
             document = (AuthoringDocument) field(editor, "document");
             require(document != null && document.id().equals("test:from_scratch"), "Create makes the typed dialogue ID.");
@@ -674,13 +674,13 @@ public final class AuthoringEditorClientSmoke {
             require(field(field(editor, "packFiles"), "selected").equals(addon + "/quests/release"), "Breadcrumb navigation participates in history.");
             ((imgui.type.ImString) field(editor, "filter")).set("no_matching_file");
         });
-        click(() -> screenPoint(216, 193));
+        click(() -> clearSearchPoint());
         STEPS.add(() -> require(((imgui.type.ImString) field(editor, "filter")).get().isEmpty(), "Clear search restores the file tree."));
         click(() -> screenPoint(600, 150));
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.F);
         STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8("release"));
         STEPS.add(() -> require(((imgui.type.ImString) field(editor, "filter")).get().equals("release"), "Ctrl+F focuses search from a folder view."));
-        click(() -> screenPoint(216, 193));
+        click(() -> clearSearchPoint());
         STEPS.add(() -> invoke("openFolder", new Class<?>[] {String.class}, addon));
         pause(250);
     }
@@ -1140,9 +1140,9 @@ public final class AuthoringEditorClientSmoke {
         click(() -> screenPoint(200, 317));
         click(() -> screenPoint(140, 153));
         STEPS.add(() -> capture("17-empty-import-workspace"));
-        click(() -> screenPoint(140, 350));
-        replaceText(() -> screenPoint(130, 418), () -> output().resolve("setup-export").toString());
-        click(() -> screenPoint(70, 458));
+        click(() -> screenPoint(140, 330));
+        replaceText(() -> screenPoint(130, 398), () -> output().resolve("setup-export").toString());
+        click(() -> screenPoint(70, 438));
         STEPS.add(() -> {
             workspace = (AuthoringWorkspace) field(editor, "workspace");
             document = (AuthoringDocument) field(editor, "document");
@@ -1434,7 +1434,19 @@ public final class AuthoringEditorClientSmoke {
         });
     }
 
+    private static float contentColumnWidth() {
+        float width = ImGui.getMainViewport().getWorkSizeX() - 28;
+        float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
+        return width * EditorLayout.forWidth(width / scale).contentFraction();
+    }
+
+    private static float[] clearSearchPoint() {
+        return new float[] {ImGui.getMainViewport().getPosX() + contentColumnWidth() - 34, ImGui.getMainViewport().getPosY() + 193};
+    }
+
     private static float[] screenPoint(float x, float y) {
+        float referenceContentWidth = 250;
+        if (x >= referenceContentWidth + 14 && x < 1525) x += contentColumnWidth() - referenceContentWidth;
         return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
     }
 
