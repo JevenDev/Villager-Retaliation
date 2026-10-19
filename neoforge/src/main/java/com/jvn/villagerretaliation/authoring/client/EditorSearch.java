@@ -44,7 +44,11 @@ final class EditorSearch {
                 }
             }
             for (var entry : object.entrySet()) {
-                collect(workspace, document, entry.getValue(), path + "/" + JsonPointers.escape(entry.getKey()), term, locale, limit, hits);
+                String childPath = path + "/" + JsonPointers.escape(entry.getKey());
+                int before = hits.size();
+                collect(workspace, document, entry.getValue(), childPath, term, locale, limit, hits);
+                if (hits.size() == before && entry.getKey().toLowerCase(Locale.ROOT).contains(term))
+                    hits.add(new Hit(document, childPath, entry.getKey()));
                 if (hits.size() >= limit) break;
             }
         } else if (value.isJsonArray()) {

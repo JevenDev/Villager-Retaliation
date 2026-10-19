@@ -122,6 +122,9 @@ final class ImGuiAuthoringEditor {
     private AuthoringDocument document;
     private DefinitionKind createKind = DefinitionKind.TREE;
     private List<AuthoringDiagnostic> diagnostics = List.of();
+    private boolean diagnosticErrors = true, diagnosticWarnings = true;
+    private final ImString diagnosticFilter = new ImString(256);
+    private AuthoringDiagnostic activeDiagnostic;
     private String selectedNode = "";
     private String selectedEdge = "";
     private String status = "Create or open a workspace to begin.";
@@ -148,6 +151,8 @@ final class ImGuiAuthoringEditor {
     private final java.util.Set<String> nodeSelection = new java.util.LinkedHashSet<>();
     private final EditorGraphClipboard graphClipboard = new EditorGraphClipboard();
     private final ImString replaceText = new ImString(1024);
+    private final ImString replaceFind = new ImString(1024);
+    private EditorWordingReplacement.Preview replacementPreview;
     private boolean showRecovery;
     private boolean confirmClose;
     private long nextRecovery;
@@ -477,6 +482,7 @@ final class ImGuiAuthoringEditor {
         packBuild.load(next);
         createScope = null;
         searchQuery = ""; searchHits = List.of();
+        activeDiagnostic = null; replacementPreview = null;
         select(null);
         showWorkspace = false;
         view = 0;
@@ -590,12 +596,12 @@ final class ImGuiAuthoringEditor {
         if (focusSearch) { ImGui.setKeyboardFocusHere(); focusSearch = false; }
         ImGui.setNextItemWidth(Math.max(40, ImGui.getContentRegionAvailX() - ImGui.calcTextSize("Clear").x - 24));
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Ctrl+F focuses search. Ctrl+P opens a file by name or resource ID.");
         ImGui.sameLine();
         ImGui.beginDisabled(filter.get().isEmpty());
         if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
         ImGui.endDisabled();
         if (!filter.get().isBlank()) contextualSearch();
-        if (ImGui.smallButton("Quick open (Ctrl+P)")) requestQuickOpen = true;
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
             packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
@@ -730,28 +736,48 @@ final class ImGuiAuthoringEditor {
                 if (guideStep == 1) guideStep = 2;
             });
         }
-        input("Replace matching wording with", replaceText);
-        if (ImGui.button("Replace in selected file")) operation(() -> {
-            if (document == null || filter.get().isBlank()) throw new IllegalArgumentException("Select a file and enter search text first");
-            document.edit("Replace wording", root -> replaceWording(root, filter.get(), replaceText.get()));
-            refresh();
-        });
+        if (ImGui.button("Quick open (Ctrl+P)")) requestQuickOpen = true;
+        replacementTools();
     }
 
-    private static void replaceWording(JsonElement value, String find, String replacement) {
-        if (value.isJsonObject()) for (var entry : value.getAsJsonObject().entrySet()) {
-            String field = entry.getKey();
-            if (List.of("text", "line", "label", "title", "description", "lines", "variants").contains(field)) {
-                JsonElement wording = entry.getValue();
-                if (wording.isJsonPrimitive() && wording.getAsJsonPrimitive().isString()) entry.setValue(new JsonPrimitive(wording.getAsString().replace(find, replacement)));
-                else if (wording.isJsonArray()) for (int i = 0; i < wording.getAsJsonArray().size(); i++) {
-                    var line = wording.getAsJsonArray().get(i);
-                    if (line.isJsonPrimitive() && line.getAsJsonPrimitive().isString()) wording.getAsJsonArray().set(i, new JsonPrimitive(line.getAsString().replace(find, replacement)));
-                    else replaceWording(line, find, replacement);
-                }
-            } else if (!List.of("metadata", "conditions", "actions", "effects").contains(field)) replaceWording(entry.getValue(), find, replacement);
+    private void replacementTools() {
+        if (!ImGui.collapsingHeader("Replace wording")) return;
+        input("Find wording (case sensitive)", replaceFind);
+        if (!filter.get().isBlank() && ImGui.smallButton("Use content search wording")) replaceFind.set(filter.get());
+        input("Replace matching wording with", replaceText);
+        ImGui.beginDisabled(document == null || replaceFind.get().isBlank());
+        if (ImGui.button("Preview replacements")) operation(() -> replacementPreview = EditorWordingReplacement.preview(document, replaceFind.get(), replaceText.get()));
+        ImGui.endDisabled();
+        var preview = replacementPreview;
+        if (preview == null || preview.document() != document) return;
+        boolean current = preview.find().equals(replaceFind.get()) && preview.replacement().equals(replaceText.get()) && preview.baseline().equals(document.json());
+        String summary = preview.occurrences() + (preview.occurrences() == 1 ? " replacement in " : " replacements in ")
+                + preview.changes().size() + (preview.changes().size() == 1 ? " field" : " fields");
+        ImGui.textWrapped(summary + " of " + document.id());
+        if (!current) ImGui.textWrapped("Wording or file contents changed. Preview again before applying.");
+        ImGui.beginDisabled(!current || preview.changes().isEmpty());
+        if (ImGui.button("Apply replacements")) operation(() -> {
+            if (document != preview.document() || !preview.find().equals(replaceFind.get()) || !preview.replacement().equals(replaceText.get()))
+                throw new IllegalStateException("Preview the current wording again before applying");
+            preview.apply();
+            status = "Applied " + summary + ".";
+            replacementPreview = null;
+            refresh();
+        });
+        ImGui.endDisabled();
+        ImGui.sameLine();
+        if (ImGui.button("Cancel preview")) replacementPreview = null;
+        if (preview.changes().isEmpty()) ImGui.textWrapped("No wording would change. IDs, references and behavior fields are preserved.");
+        else {
+            ImGui.beginChild("##replacement_preview", 0, 220, true);
+            for (var change : preview.changes()) {
+                ImGui.textWrapped(change.pointer() + " (" + change.occurrences() + " matches)");
+                ImGui.textDisabled("Before"); ImGui.textWrapped(change.before());
+                ImGui.textDisabled("After"); ImGui.textWrapped(change.after());
+                ImGui.separator();
+            }
+            ImGui.endChild();
         }
-        else if (value.isJsonArray()) for (var child : value.getAsJsonArray()) replaceWording(child, find, replacement);
     }
 
     private void contextualSearch() {
@@ -799,7 +825,8 @@ final class ImGuiAuthoringEditor {
         if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere();
         String before = quickQuery.get();
         ImGui.setNextItemWidth(-1);
-        boolean enter = ImGui.inputTextWithHint("##quick_query", "Find a file or resource ID...", quickQuery, ImGuiInputTextFlags.EnterReturnsTrue);
+        ImGui.inputTextWithHint("##quick_query", "Find a file or resource ID...", quickQuery);
+        boolean enter = ImGui.isKeyPressed(ImGuiKey.Enter);
         if (!before.equals(quickQuery.get())) quickIndex = 0;
         var recent = navigation.recentFiles(workspace);
         var matches = EditorSearch.files(workspace, quickQuery.get(), recent);
@@ -1260,6 +1287,7 @@ final class ImGuiAuthoringEditor {
 
     private void inspector() {
         panel(DETAIL_PANEL);
+        if (activeDiagnostic != null) diagnosticNavigation();
         if (view == 4) {
             ImGui.textUnformatted("File details");
             ImGui.textWrapped(packFiles.selected().isEmpty() ? "Select a folder or file in the tree." : packFiles.selected());
@@ -2340,6 +2368,7 @@ final class ImGuiAuthoringEditor {
         String path = target.currentPath();
         packFiles.select(target.view() != 4 && !path.isEmpty() && !workspace.filePaths().contains(path) && !workspace.folderPaths().contains(path) ? "" : path);
         filesMode = target.filesMode();
+        saveViewPreferences();
         restoreDocumentPosition(target);
         if (target.view() == 3 && view != 3) enterPlaytest();
         else view = target.view();
@@ -2457,31 +2486,71 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Prepare separate test world")) operation(() -> { save(); EditorTestWorld.prepare(workspace, screen); });
         ImGui.separator();
         ImGui.textWrapped(status);
-        for (var diagnostic : diagnostics) {
-            if (ImGui.selectable(diagnostic.severity() + ": " + diagnostic.message() + "##"
-                    + diagnostic.resourcePath() + diagnostic.pointer())) {
-                if (workspace != null) {
-                    if (diagnostic.resourcePath().equals("pack.mcmeta")) operation(() -> openPackFile("pack.mcmeta"));
-                    for (var candidate : workspace.documents()) {
-                        if (candidate.resourcePath().equals(diagnostic.resourcePath())) {
-                            operation(() -> {
-                                select(candidate);
-                                var location = EditorDiagnosticLocation.resolve(candidate, diagnostic.pointer());
-                                setPointer(location.pointer());
-                                selectedNode = location.nodeId();
-                                showResources = candidate.kind() == DefinitionKind.RESOURCE || showResources;
-                                status = diagnostic.resourcePath() + diagnostic.pointer() + ": " + diagnostic.message();
-                                view = 0;
-                                focusPanel = DETAIL_PANEL;
-                            });
-                            break;
-                        }
-                    }
-                }
+        ImGui.separator();
+        if (ImGui.checkbox("Errors", diagnosticErrors)) diagnosticErrors = !diagnosticErrors;
+        ImGui.sameLine();
+        if (ImGui.checkbox("Warnings", diagnosticWarnings)) diagnosticWarnings = !diagnosticWarnings;
+        ImGui.setNextItemWidth(-1);
+        ImGui.inputTextWithHint("##diagnostic_filter", "Filter issues by file, field or message...", diagnosticFilter);
+        diagnosticNavigation();
+        var visible = visibleDiagnostics();
+        String previousPath = null;
+        boolean expanded = false;
+        for (int i = 0; i < visible.size(); i++) {
+            var diagnostic = visible.get(i);
+            if (!diagnostic.resourcePath().equals(previousPath)) {
+                previousPath = diagnostic.resourcePath();
+                long count = visible.stream().filter(issue -> issue.resourcePath().equals(diagnostic.resourcePath())).count();
+                ImGui.setNextItemOpen(true, ImGuiCond.Once);
+                String label = diagnostic.resourcePath().isEmpty() ? "Workspace" : diagnostic.resourcePath();
+                expanded = ImGui.collapsingHeader(label + " (" + count + ")###issues:" + diagnostic.resourcePath());
+                if (ImGui.isItemHovered()) ImGui.setTooltip(label);
             }
+            if (!expanded) continue;
+            ImGui.pushID(i);
+            if (ImGui.selectable(diagnostic.severity() + ": " + diagnostic.message() + "##issue", diagnostic.equals(activeDiagnostic)))
+                operation(() -> openDiagnostic(diagnostic));
+            ImGui.textDisabled(diagnostic.pointer().isEmpty() ? "File settings" : diagnostic.pointer());
             if (ImGui.isItemHovered()) ImGui.setTooltip(diagnostic.message() + "\n" + diagnostic.resourcePath() + diagnostic.pointer());
+            ImGui.popID();
         }
+        if (visible.isEmpty()) ImGui.textWrapped(diagnostics.isEmpty() ? "No validation issues." : "No issues match these filters.");
         ImGui.end();
+    }
+
+    private List<AuthoringDiagnostic> visibleDiagnostics() {
+        return EditorDiagnostics.matching(diagnostics, diagnosticErrors, diagnosticWarnings, diagnosticFilter.get());
+    }
+
+    private void diagnosticNavigation() {
+        var visible = visibleDiagnostics();
+        ImGui.beginDisabled(visible.isEmpty());
+        if (ImGui.button("Previous issue")) operation(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, -1)));
+        sameLineFor("Next issue");
+        if (ImGui.button("Next issue")) operation(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, 1)));
+        ImGui.endDisabled();
+        int index = visible.indexOf(activeDiagnostic);
+        ImGui.textDisabled(index < 0 ? visible.size() + " matching issues" : "Issue " + (index + 1) + " of " + visible.size());
+    }
+
+    private void openDiagnostic(AuthoringDiagnostic diagnostic) {
+        if (diagnostic == null) return;
+        if (diagnostic.resourcePath().isEmpty()) { view = 2; focusPanel = WORK_PANEL; }
+        else if (diagnostic.resourcePath().equals("pack.mcmeta")) openPackFile("pack.mcmeta");
+        else {
+            var owner = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(diagnostic.resourcePath())).findFirst().orElse(null);
+            if (owner == null) throw new IllegalStateException("The file for this issue is no longer available");
+            select(owner);
+            var location = EditorDiagnosticLocation.resolve(owner, diagnostic.pointer());
+            setPointer(location.pointer()); selectedNode = location.nodeId();
+            nodeSelection.clear();
+            if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+            graphFocus = selectedNode; fitGraph = false;
+            showResources = owner.kind() == DefinitionKind.RESOURCE || showResources;
+            view = 0; focusPanel = DETAIL_PANEL;
+        }
+        activeDiagnostic = diagnostic;
+        status = diagnostic.resourcePath() + diagnostic.pointer() + ": " + diagnostic.message();
     }
 
     private void writeRecovery() throws IOException {
@@ -2572,6 +2641,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void validate() {
+        searchQuery = "";
         if (workspace != null) diagnostics = workspace.validate();
     }
 

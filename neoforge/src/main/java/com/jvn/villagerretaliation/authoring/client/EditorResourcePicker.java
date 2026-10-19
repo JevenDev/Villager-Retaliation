@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.authoring.client;
 
 import imgui.ImGui;
-import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiKey;
 import imgui.type.ImString;
 import java.util.List;
@@ -14,7 +13,11 @@ final class EditorResourcePicker {
 
     static List<String> matching(List<String> choices, String query) {
         String term = query.strip().toLowerCase(Locale.ROOT);
-        return choices.stream().filter(choice -> choice.toLowerCase(Locale.ROOT).contains(term)).toList();
+        return choices.stream().filter(choice -> choice.toLowerCase(Locale.ROOT).contains(term))
+                .sorted(java.util.Comparator.comparingInt(choice -> {
+                    String id = choice.toLowerCase(Locale.ROOT);
+                    return id.equals(term) || id.substring(id.indexOf(':') + 1).equals(term) ? 0 : 1;
+                })).toList();
     }
 
     void render(String id, String label, String current, List<String> choices, Consumer<String> choose) {
@@ -25,7 +28,8 @@ final class EditorResourcePicker {
             if (ImGui.isWindowAppearing()) { search.set(""); selected = 0; ImGui.setKeyboardFocusHere(); }
             String before = search.get();
             ImGui.setNextItemWidth(-1);
-            boolean enter = ImGui.inputTextWithHint("##filter", "Type to filter...", search, ImGuiInputTextFlags.EnterReturnsTrue);
+            ImGui.inputTextWithHint("##filter", "Type to filter...", search);
+            boolean enter = ImGui.isKeyPressed(ImGuiKey.Enter);
             if (!before.equals(search.get())) selected = 0;
             var matches = matching(choices, search.get());
             boolean moved = false;

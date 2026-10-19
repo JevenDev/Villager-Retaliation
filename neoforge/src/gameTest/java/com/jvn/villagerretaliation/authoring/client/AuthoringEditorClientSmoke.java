@@ -51,6 +51,9 @@ public final class AuthoringEditorClientSmoke {
     private static int reloadExperience, playtestLogSize;
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
+    private static boolean qualityControls;
+    private static String qualityResource = "minecraft:stone";
+    private static float[] qualityPickerPoint;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
     private static boolean cameraGuiBefore, rightDown, previousRightDown;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
@@ -130,6 +133,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiAuthoringEditor.open();
             buildSteps();
             ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(AuthoringEditorClientSmoke::frame);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
@@ -373,6 +377,7 @@ public final class AuthoringEditorClientSmoke {
         buildImportSteps();
         buildCreatorToolsSteps();
         buildProgressConditionSteps();
+        buildQualityOfLifeSteps();
         STEPS.add(() -> {
             try {
                 Files.writeString(output().resolve("result.txt"),
@@ -382,6 +387,94 @@ public final class AuthoringEditorClientSmoke {
             finished = true;
             Minecraft.getInstance().stop();
         });
+    }
+
+    private static void buildQualityOfLifeSteps() {
+        var remembered = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            set("view", 0); set("activeDiagnostic", null); set("filesMode", false); set("showWorkspace", false); set("showCreate", false);
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            document = workspace.createDocument(DefinitionKind.TREE, "test:qol_smoke");
+            document.edit("Set searchable wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines")
+                    .set(0, new com.google.gson.JsonPrimitive("Meet at the village gate, then return to the gate.")));
+            remembered[0] = document;
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("selectedNode", "start");
+            ((imgui.type.ImString) field(editor, "pointer")).set("/nodes/start/lines");
+            set("panX", 130f); set("panY", 90f); set("zoom", .8f); set("fitGraph", false); set("graphFocus", "");
+        });
+        pause(250);
+        STEPS.add(() -> invoke("openPackFile", new Class<?>[] {String.class}, "pack.mcmeta"));
+        STEPS.add(() -> invoke("openPackFile", new Class<?>[] {String.class}, remembered[0].resourcePath()));
+        STEPS.add(() -> require(field(editor, "document") == remembered[0]
+                && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines")
+                && (float) field(editor, "panX") == 130f && (float) field(editor, "zoom") == .8f,
+                "Ordinary file opening restores the selected field and graph position."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.P);
+        type("pack.mcmeta");
+        STEPS.add(() -> {
+            require(((imgui.type.ImString) field(editor, "quickQuery")).get().equals("pack.mcmeta"), "Quick open focuses its searchable input.");
+            capture("39-qol-quick-open");
+        });
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require((int) field(editor, "view") == 4 && field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Enter opens a supporting file from quick open."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.P);
+        type("test:qol_smoke");
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(field(editor, "document") == remembered[0], "Quick open resolves resource IDs back to their files.");
+            ((imgui.type.ImString) field(editor, "filter")).set("village gate");
+        });
+        pause(250);
+        STEPS.add(() -> {
+            var hits = (java.util.List<?>) field(editor, "searchHits");
+            require(!hits.isEmpty(), "Contextual content search finds the matching wording.");
+            capture("40-qol-contextual-search");
+            var hit = hits.stream().map(EditorSearch.Hit.class::cast).filter(value -> value.document() == remembered[0]).findFirst().orElseThrow();
+            invoke("openSearchHit", new Class<?>[] {EditorSearch.Hit.class}, hit);
+            require(field(editor, "selectedNode").equals("start"), "Opening a search result selects its owning graph node.");
+            ((imgui.type.ImString) field(editor, "filter")).set("");
+            var preview = EditorWordingReplacement.preview(remembered[0], "gate", "square");
+            require(preview.occurrences() == 2, "Replacement preview counts every wording match.");
+            preview.apply(); invoke("refresh", new Class<?>[0]);
+            invoke("changeHistory", new Class<?>[] {boolean.class}, false);
+            require(remembered[0].json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().contains("gate"), "Wording replacements undo together in the editor.");
+            ((imgui.type.ImString) field(editor, "replaceFind")).set("gate");
+            ((imgui.type.ImString) field(editor, "replaceText")).set("square");
+            set("replacementPreview", EditorWordingReplacement.preview(remembered[0], "gate", "square"));
+            qualityControls = true;
+        });
+        pause(250);
+        STEPS.add(() -> capture("41-qol-replacement-preview"));
+        click(() -> qualityPickerPoint);
+        type("DIAMOND");
+        STEPS.add(() -> capture("42-qol-filtered-resource-picker"));
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(qualityResource.equals("minecraft:diamond"), "Typing in a resource picker filters identifiers and Enter selects the match.");
+            qualityControls = false;
+            set("replacementPreview", null);
+            var issue = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(
+                    com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR, remembered[0].resourcePath(), "/nodes/start/missing", "Missing field acceptance check");
+            set("diagnostics", java.util.List.of(issue));
+            invoke("openDiagnostic", new Class<?>[] {com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.class}, issue);
+            require(field(editor, "selectedNode").equals("start") && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start"), "Issue navigation opens the nearest editable owner of a missing field.");
+        });
+        pause(250);
+        STEPS.add(() -> capture("43-qol-issue-navigation"));
+    }
+
+    private static void renderQualityControls() {
+        if (!qualityControls) return;
+        ImGui.setNextWindowPos(450, 150);
+        ImGui.setNextWindowSize(800, 600);
+        ImGui.begin("Editor control acceptance");
+        qualityPickerPoint = new float[] {ImGui.getCursorScreenPosX() + 150, ImGui.getCursorScreenPosY() + ImGui.getFrameHeight() / 2};
+        ((EditorResourcePicker) field(editor, "resourcePicker")).render("acceptance_resource", "Choose an item", qualityResource,
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList(), value -> qualityResource = value);
+        ImGui.setNextItemOpen(true);
+        invoke("replacementTools", new Class<?>[0]);
+        ImGui.end();
     }
 
     private static void buildPlaytestDialogueSteps() {

@@ -60,7 +60,57 @@ public final class EditorClientChecks {
         filePositionsSurviveSelectionAndHistoryBranches();
         searchLocatesWordingAndLocalizedNodes();
         quickOpenRanksRecentFilesAndResourceIds();
-        return 50;
+        diagnosticsFilterGroupAndCycleThroughIssues();
+        wordingPreviewsAreAtomicAndRejectStaleContent();
+        return 52;
+    }
+
+    private static void diagnosticsFilterGroupAndCycleThroughIssues() {
+        var error = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR, "a.json", "/missing", "Missing target");
+        var warning = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.WARNING, "a.json", "/start", "Unreachable");
+        var other = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR, "z.json", "", "Bad ID");
+        var issues = java.util.List.of(other, warning, error);
+        var visible = EditorDiagnostics.matching(issues, true, true, "");
+        check(visible.equals(java.util.List.of(error, warning, other)), "issues group by file and sort errors before warnings");
+        check(EditorDiagnostics.matching(issues, true, false, "A.JSON").equals(java.util.List.of(error)), "severity and case-insensitive path filters combine");
+        check(EditorDiagnostics.matching(issues, false, true, "unreachable").equals(java.util.List.of(warning)), "issue text is searchable");
+        check(EditorDiagnostics.matching(issues, false, false, "").isEmpty(), "both severity filters can be disabled");
+        check(EditorDiagnostics.next(visible, other, 1).equals(error) && EditorDiagnostics.next(visible, error, -1).equals(other), "issue navigation wraps in both directions");
+        check(EditorDiagnostics.next(visible, null, 1).equals(error) && EditorDiagnostics.next(java.util.List.of(), error, 1) == null, "navigation handles stale selections and empty lists");
+    }
+
+    private static void wordingPreviewsAreAtomicAndRejectStaleContent() {
+        var document = tree();
+        document.edit("Set wording", root -> {
+            root.addProperty("id", "find:find");
+            root.add("metadata", json("{\"label\":\"find\"}"));
+            var node = root.getAsJsonObject("nodes").getAsJsonObject("start");
+            node.add("lines", JsonParser.parseString("[\"find find\",\"find\"]"));
+            node.add("conditions", JsonParser.parseString("[{\"label\":\"find\"}]"));
+            node.add("text", json("{\"key\":\"find\"}"));
+        });
+        var original = document.json();
+        var preview = EditorWordingReplacement.preview(document, "find", "replaced");
+        check(document.json().equals(original) && preview.occurrences() == 3 && preview.changes().size() == 2, "preview counts literal occurrences without editing the draft");
+        preview.apply();
+        var changed = document.json();
+        check(changed.get("id").equals(original.get("id")) && changed.get("metadata").equals(original.get("metadata")), "replacement preserves IDs and metadata");
+        check(changed.getAsJsonObject("nodes").getAsJsonObject("start").get("conditions").equals(original.getAsJsonObject("nodes").getAsJsonObject("start").get("conditions")), "replacement preserves behavior fields");
+        check(changed.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonObject("text").get("key").getAsString().equals("find"), "localization references are not rewritten as wording");
+        document.undo(); check(document.json().equals(original), "all replacements undo in one step");
+        document.redo(); check(document.json().equals(changed), "replacement redo restores every changed field");
+        var stale = EditorWordingReplacement.preview(document, "replaced", "new");
+        document.edit("New wording", root -> root.addProperty("title", "Keep this edit"));
+        var latest = document.json();
+        rejects(stale::apply);
+        check(document.json().equals(latest), "stale previews cannot overwrite newer edits");
+        rejects(() -> EditorWordingReplacement.preview(document, "", "x"));
+        check(EditorWordingReplacement.preview(document, "missing", "x").changes().isEmpty(), "unmatched replacement previews stay empty");
+        var locale = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/quests/authored/example/locales/en_us.json", json("{\"find.key\":\"find find\"}"));
+        var localized = EditorWordingReplacement.preview(locale, "find", "translated");
+        check(localized.occurrences() == 2, "locale files preview their translated wording");
+        localized.apply();
+        check(locale.json().has("find.key") && locale.json().get("find.key").getAsString().equals("translated translated"), "locale replacements preserve localization keys");
     }
 
     private static void resourcePickersFilterWithoutChangingIdentifiers() {
@@ -68,6 +118,7 @@ public final class EditorClientChecks {
         check(EditorResourcePicker.matching(choices, " STONE ").equals(choices), "picker filtering ignores case and surrounding whitespace");
         check(EditorResourcePicker.matching(choices, "test:").equals(java.util.List.of("test:Stone_Brick")), "picker results preserve the exact identifier");
         check(EditorResourcePicker.matching(choices, "missing").isEmpty(), "pickers can represent an empty result");
+        check(EditorResourcePicker.matching(java.util.List.of("minecraft:deepslate_diamond_ore", "minecraft:diamond"), "DIAMOND").getFirst().equals("minecraft:diamond"), "exact resource names rank ahead of substring matches");
     }
 
     private static void filePositionsSurviveSelectionAndHistoryBranches() throws java.io.IOException {
@@ -99,6 +150,9 @@ public final class EditorClientChecks {
         var hit = hits.stream().filter(value -> value.document() == dialogue).findFirst().orElseThrow();
         check(hit.pointer().equals("/nodes/start/lines/0") && hit.text().contains("village"), "search retains the exact matching wording field");
         check(EditorDiagnosticLocation.resolve(dialogue, hit.pointer()).nodeId().equals("start"), "a wording hit resolves to its graph node");
+        DialogueGraph.addNode(dialogue, "named_gate");
+        var nodeHit = EditorSearch.find(workspace, "NAMED_GATE", "en_us", 200).stream().filter(value -> value.document() == dialogue).findFirst().orElseThrow();
+        check(EditorDiagnosticLocation.resolve(dialogue, nodeHit.pointer()).nodeId().equals("named_gate"), "node IDs stored as object keys are searchable and navigable");
         var quest = workspace.createDocument(DefinitionKind.QUEST, "test:localized_search");
         var conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:localized_search");
         conversation.edit("Assign quest", root -> root.addProperty("quest", quest.id()));
