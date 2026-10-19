@@ -64,6 +64,14 @@ public final class QuestPlaytestSession {
         return () -> restore.forEach(Runnable::run);
     }
 
+    public static void recordStage(ServerPlayer player, ResourceLocation quest, String stage) {
+        var controls = controls(player, quest); if (controls != null && !stage.isBlank()) controls.visitedStages.add(stage);
+    }
+
+    public static void recordChoice(ServerPlayer player, ResourceLocation quest, String pointer) {
+        var controls = controls(player, quest); if (controls != null && !pointer.isBlank()) controls.chosenPaths.add(pointer);
+    }
+
     public static boolean suspended(ServerPlayer player, ResourceLocation quest) {
         var controls = controls(player, quest);
         return controls != null && controls.suspended;
@@ -88,6 +96,12 @@ public final class QuestPlaytestSession {
     private record Session(Path world, Controls controls) { }
 
     public static final class Controls {
+        private final Set<String> visitedStages = new HashSet<>();
+        private final Set<String> chosenPaths = new HashSet<>();
+        public PreviewCoverage drainCoverage() {
+            var result = new PreviewCoverage(visitedStages, chosenPaths); visitedStages.clear(); chosenPaths.clear(); return result;
+        }
+
         private boolean hold = true;
         private boolean suspended;
         private String stepping;

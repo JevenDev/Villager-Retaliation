@@ -79,6 +79,8 @@ final class ImGuiAuthoringEditor {
     private final EditorSnippets snippets = new EditorSnippets();
     private final EditorBulkEdit bulkEdit = new EditorBulkEdit();
     private final EditorChanges changes = new EditorChanges();
+    private final EditorCoverage coverage = new EditorCoverage();
+    private java.util.function.Consumer<com.jvn.villagerretaliation.authoring.preview.PreviewCoverage> simulationCoverage = ignored -> { };
     private boolean requestQuickOpen;
     private final ImString quickQuery = new ImString(256);
     private int quickIndex;
@@ -189,6 +191,7 @@ final class ImGuiAuthoringEditor {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
             INSTANCE.attempt(INSTANCE::writeRecovery);
         }
+        if (INSTANCE.questPreview != null) INSTANCE.simulationCoverage.accept(INSTANCE.questPreview.drainCoverage());
         if (INSTANCE.view == 3 && !EditorTestWorld.applying()) INSTANCE.updatePlaytestPresentation();
         if (INSTANCE.view == 3 && !EditorTestWorld.applying() && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
                 && EditorTestWorld.active(INSTANCE.workspace) && !EditorLiveQuestTest.view().busy()
@@ -214,12 +217,14 @@ final class ImGuiAuthoringEditor {
     }
 
     private ImGuiAuthoringEditor() {
+        EditorLiveQuestTest.coverage = coverage::live;
         Path root = MC.gameDirectory.toPath().resolve("authoring");
         workspacePath.set(root.resolve("workspaces/default").toAbsolutePath().toString());
         exportPath.set(root.resolve("exports/pack").toAbsolutePath().toString());
         importPath.set(root.toAbsolutePath().toString());
+        try { library.load(); }
+        catch (IOException exception) { status = exception.getMessage(); }
         try {
-            library.load();
             preferences = EditorPreferences.load(preferencesPath);
             guideStep = preferences.guideDismissed() ? -1 : 0;
             if (!preferences.workspace().isBlank()) workspacePath.set(preferences.workspace());
@@ -742,6 +747,10 @@ final class ImGuiAuthoringEditor {
         float[] scale = {preferences.textScale()};
         if (ImGui.sliderFloat("Editor text size", scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
         graphTools();
+        if (document != null) coverage.render(document, id -> operation(() -> {
+            selectedNode = id; graphFocus = id; view = 0; nodeSelection.clear(); nodeSelection.add(id);
+            setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
+        }));
         input("Editing language", locale);
         if (ImGui.button("Use language")) operation(() -> {
             locale.set(locale.get().strip().toLowerCase(Locale.ROOT));
@@ -1069,6 +1078,7 @@ final class ImGuiAuthoringEditor {
         }
         List<DialogueGraph.Node> nodes;
         List<EditorGraph.Card> cards;
+        var coverageSnapshot = coverage.snapshot(document);
         try {
             nodes = DialogueGraph.nodes(document);
             cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, locale.get()));
@@ -1279,7 +1289,7 @@ final class ImGuiAuthoringEditor {
                 if (to != null) {
                     float x2 = canvasX + panX + to[0] * zoom;
                     float y2 = canvasY + panY + (to[1] + EditorGraph.HEADER / 2) * zoom;
-                    wire(draw, x1, y1, x2, y2, 0xffb2a68c);
+                    wire(draw, x1, y1, x2, y2, coverage.visible() && coverageSnapshot.chosen(edge.pointer()) ? 0xff94c697 : 0xffb2a68c);
                 }
                 if (edge.pointer().equals(selectedEdge))
                     wire(draw, x1, y1, ImGui.getIO().getMousePosX(), ImGui.getIO().getMousePosY(), 0xff81c9ed);
@@ -1295,7 +1305,9 @@ final class ImGuiAuthoringEditor {
             draw.addRectFilled(x, y, x + w, y + h, 0xff39352f, 4);
             draw.addRectFilled(x, y, x + w, y + EditorGraph.HEADER * zoom,
                     selectedNode.equals(node.id()) || nodeSelection.contains(node.id()) ? 0xff65513d : 0xff494037, 4);
-            draw.addRect(x, y, x + w, y + h, node.entry() ? 0xff9cc6a2 : 0xff78716b, 4);
+            boolean tested = coverage.visible() && coverageSnapshot.visited(node.pointer());
+            draw.addRect(x, y, x + w, y + h, tested ? 0xff94c697 : node.entry() ? 0xff9cc6a2 : 0xff78716b, 4);
+            if (tested) draw.addCircleFilled(x + w - 12 * zoom, y + h - 12 * zoom, 4 * zoom, 0xff94c697);
             graphText(draw, x + 12 * zoom, y + 10 * zoom, 0xfff2f0e9,
                     (node.entry() ? "Start: " : "") + node.id(), EditorGraph.WIDTH - 24);
             long issueCount = diagnostics.stream().filter(issue -> issue.resourcePath().equals(document.resourcePath())
@@ -1336,7 +1348,8 @@ final class ImGuiAuthoringEditor {
                 boolean outputHover = block.output() != null && hover
                         && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), outputX, centerY, EditorGraph.ROW * zoom);
                 boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + EditorGraph.ROW * zoom);
-                int background = blockHover ? 0xff514a40 : block.output() != null ? 0xff403c32 : 0xff35322e;
+                boolean testedChoice = coverage.visible() && coverageSnapshot.chosen(block.pointer());
+                int background = blockHover ? 0xff514a40 : testedChoice ? 0xff3b5540 : block.output() != null ? 0xff403c32 : 0xff35322e;
                 draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, background, 3);
                 if (selectedNode.equals(node.id()) && pointer.get().equals(block.pointer()))
                     draw.addRect(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, 0xff9cc6a2, 3);
@@ -1528,7 +1541,6 @@ final class ImGuiAuthoringEditor {
         }
         try {
             bulkEdit.render(workspace, document, selectedNodes(), this::operation, this::refresh);
-            snippets.render(library, workspace, document, selectedNodes(), pointer.get(), this::operation, this::selectInsertedNodes);
             var availableBlocks = EditorBlocks.available(document, pointer.get());
             if (!availableBlocks.isEmpty() && ImGui.beginCombo("##add_block", "Add behavior block...")) {
                 for (var block : availableBlocks) {
@@ -1608,6 +1620,7 @@ final class ImGuiAuthoringEditor {
                 if (rawModified) ImGui.textWrapped("Unapplied JSON buffer. Apply before saving, previewing or switching definitions.");
             }
         }
+        snippets.render(library, workspace, document, selectedNodes(), pointer.get(), this::operation, this::selectInsertedNodes);
         ImGui.end();
     }
 
@@ -2541,7 +2554,11 @@ final class ImGuiAuthoringEditor {
         }
         conditions.worldTime(MC.level.getDayTime());
         ImGui.textWrapped("Isolated quest simulation. Objective completion is simulated. Actions and rewards are logged.");
-        if (ImGui.button("Start / restart quest test")) operation(() -> questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions));
+        if (ImGui.button("Start / restart quest test")) operation(() -> {
+            questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions);
+            simulationCoverage = coverage.observe(document);
+            simulationCoverage.accept(questPreview.drainCoverage());
+        });
         if (questPreview != null) {
             ImGui.textUnformatted("Current stage: " + questPreview.currentStage());
             for (String objective : questPreview.objectives()) {
@@ -2638,7 +2655,7 @@ final class ImGuiAuthoringEditor {
                         conditions.variant(), candidate -> conditions.evaluate(evaluationId, candidate)
                                 == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
                 return resolved.equals(key) ? null : resolved;
-            }, view != 3);
+            }, view != 3, coverage.observe(document));
         });
     }
 

@@ -24,6 +24,8 @@ public final class QuestPreviewSession {
     private final PreviewConditions conditions;
     private final Set<String> completed = new HashSet<>();
     private final List<String> log = new ArrayList<>();
+    private final Set<String> visitedNodes = new HashSet<>();
+    private final Set<String> chosenPaths = new HashSet<>();
     private String current;
     private String outcome = "";
 
@@ -41,8 +43,19 @@ public final class QuestPreviewSession {
 
     public void reset() {
         completed.clear(); log.clear(); outcome = ""; current = compiled.entryStage();
+        visitedNodes.add(stagePath());
         log.add("Started isolated quest simulation");
         log.add("Entry effects: " + stage().entryActions());
+    }
+
+    private String stagePath() {
+        var stages = source.getAsJsonArray("stages");
+        for (int i = 0; i < stages.size(); i++) if (current.equals(DialogueGraph.string(stages.get(i).getAsJsonObject(), "id"))) return "/stages/" + i;
+        throw new IllegalStateException("Missing authored stage " + current);
+    }
+
+    public PreviewCoverage drainCoverage() {
+        var result = new PreviewCoverage(visitedNodes, chosenPaths); visitedNodes.clear(); chosenPaths.clear(); return result;
     }
 
     public String currentStage() { return current; }
@@ -105,7 +118,9 @@ public final class QuestPreviewSession {
         if (availability(choice) != ConditionOutcome.MATCHED) throw new IllegalStateException("Transition conditions are unmet or need simulated context");
         log.add(choice.label());
         if (choice.data().has("actions")) log.add("Transition effects: " + choice.data().get("actions"));
+        String path = stagePath() + "/" + id;
         applyTransition(choice.data().getAsJsonObject("transition"));
+        chosenPaths.add(path);
     }
 
     public void advance() {
@@ -113,7 +128,9 @@ public final class QuestPreviewSession {
         JsonObject authored = source.getAsJsonArray("stages").asList().stream().map(value -> value.getAsJsonObject())
                 .filter(value -> current.equals(DialogueGraph.string(value, "id"))).findFirst().orElseThrow();
         if (!authored.has("transition")) throw new IllegalStateException("This stage needs an event or response transition. Add one in the editor.");
+        String path = stagePath() + "/transition";
         applyTransition(authored.getAsJsonObject("transition"));
+        chosenPaths.add(path);
     }
 
     private void applyTransition(JsonObject transition) {
@@ -122,6 +139,7 @@ public final class QuestPreviewSession {
         if (!next.isBlank()) {
             if (!compiled.stagesById().containsKey(next)) throw new IllegalStateException("Missing destination stage " + next);
             current = next;
+            visitedNodes.add(stagePath());
             log.add("Entered " + current);
             log.add("Entry effects: " + stage().entryActions());
             return;

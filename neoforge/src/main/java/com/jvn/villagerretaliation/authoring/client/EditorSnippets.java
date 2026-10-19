@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
 import com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace;
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
+import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
 import com.jvn.villagerretaliation.authoring.core.JsonPointers;
 import imgui.ImGui;
 import imgui.type.ImString;
@@ -17,6 +18,35 @@ final class EditorSnippets {
     private static final Set<String> COLLECTIONS = Set.of("conditions", "available_when", "actions", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "objectives", "effects");
     private final ImString name = new ImString(256);
     private String selected = "";
+
+    static void validate(JsonObject snippet) {
+        String type = string(snippet, "type");
+        if (type.equals("nodes")) {
+            JsonObject payload = object(snippet, "payload");
+            string(payload, "kind"); string(payload, "path"); object(payload, "source"); object(payload, "positions");
+            JsonObject translations = object(payload, "translations");
+            for (var entry : translations.entrySet()) if (!entry.getValue().isJsonObject()) throw new IllegalArgumentException("Invalid snippet wording: " + entry.getKey());
+            if (!payload.has("selection") || !payload.get("selection").isJsonArray() || payload.getAsJsonArray("selection").isEmpty())
+                throw new IllegalArgumentException("A node snippet requires selected nodes");
+            for (var id : payload.getAsJsonArray("selection")) if (!id.isJsonPrimitive() || !id.getAsJsonPrimitive().isString()) throw new IllegalArgumentException("Invalid snippet node ID");
+            new EditorGraphClipboard().importSnippet(payload);
+        } else if (type.equals("block")) {
+            DefinitionKind.valueOf(string(snippet, "kind")); object(snippet, "payload");
+            if (!COLLECTIONS.contains(string(snippet, "collection"))) throw new IllegalArgumentException("Unsupported snippet collection");
+        } else throw new IllegalArgumentException("Unsupported snippet type: " + type);
+    }
+
+    private static String string(JsonObject object, String field) {
+        JsonElement value = object.get(field);
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) throw new IllegalArgumentException("Snippet requires text field " + field);
+        return value.getAsString();
+    }
+
+    private static JsonObject object(JsonObject object, String field) {
+        JsonElement value = object.get(field);
+        if (value == null || !value.isJsonObject()) throw new IllegalArgumentException("Snippet requires object field " + field);
+        return value.getAsJsonObject();
+    }
 
     static JsonObject nodes(AuthoringWorkspace workspace, AuthoringDocument document, Set<String> selection) {
         var clipboard = new EditorGraphClipboard(); clipboard.copy(workspace, document, selection);
@@ -42,6 +72,7 @@ final class EditorSnippets {
     }
 
     static List<String> insert(AuthoringWorkspace workspace, AuthoringDocument document, String pointer, JsonObject snippet) {
+        validate(snippet);
         if (snippet.get("type").getAsString().equals("nodes")) {
             var clipboard = new EditorGraphClipboard(); clipboard.importSnippet(snippet.getAsJsonObject("payload"));
             return clipboard.paste(workspace, document);
@@ -55,8 +86,21 @@ final class EditorSnippets {
         if (!owner.isJsonArray() || !field.equals(snippet.get("collection").getAsString()))
             throw new IllegalArgumentException("Select the " + snippet.get("collection").getAsString() + " list, or an entry in it");
         JsonObject value = snippet.getAsJsonObject("payload").deepCopy();
+        if (document.kind() == DefinitionKind.QUEST && field.equals("objectives")) {
+            String destination = target;
+            var stage = DialogueGraph.nodes(document).stream().filter(node -> (node.pointer() + "/objectives").equals(destination)).findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Select a quest stage's objectives list"));
+            var draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+            EditorContentTools.appendObjective(draft, stage.id(), value);
+            EditorMutation.validate(workspace, document, draft.json());
+            document.edit("Insert objective snippet", root -> {
+                root.keySet().clear(); draft.json().entrySet().forEach(entry -> root.add(entry.getKey(), entry.getValue()));
+            });
+            return List.of();
+        }
         if (value.has("id")) {
             Set<String> used = new HashSet<>();
+            if (field.equals("effects")) effectIds(changed, used);
             owner.getAsJsonArray().forEach(child -> { if (child.isJsonObject() && child.getAsJsonObject().has("id")) used.add(child.getAsJsonObject().get("id").getAsString()); });
             String id = value.get("id").getAsString();
             while (used.contains(id)) id += "_copy";
@@ -67,6 +111,14 @@ final class EditorSnippets {
         String destination = target;
         document.edit("Insert snippet", root -> JsonPointers.get(root, destination).getAsJsonArray().add(value.deepCopy()));
         return List.of();
+    }
+
+    private static void effectIds(JsonElement value, Set<String> used) {
+        if (value.isJsonObject()) {
+            var object = value.getAsJsonObject();
+            for (var effect : DialogueGraph.array(object, "effects")) if (effect.isJsonObject() && effect.getAsJsonObject().has("id")) used.add(effect.getAsJsonObject().get("id").getAsString());
+            object.entrySet().stream().filter(entry -> !entry.getKey().equals("metadata")).forEach(entry -> effectIds(entry.getValue(), used));
+        } else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> effectIds(child, used));
     }
 
     void render(EditorLibrary library, AuthoringWorkspace workspace, AuthoringDocument document, Set<String> nodes, String pointer,

@@ -18,9 +18,12 @@ public final class DialoguePreviewSession implements AutoCloseable {
     private final PreviewConditions conditions;
     private final Function<String, String> localization;
     private final Map<String, JsonObject> nodes = new LinkedHashMap<>();
+    private final Map<String, String> nodePaths = new LinkedHashMap<>();
     private final List<String> log = new ArrayList<>();
     private final List<JsonObject> lines = new ArrayList<>();
     private final List<Choice> choices = new ArrayList<>();
+    private final java.util.Set<String> visitedNodes = new java.util.LinkedHashSet<>();
+    private final java.util.Set<String> chosenPaths = new java.util.LinkedHashSet<>();
     private JsonObject node;
     private String nodeId = "";
     private String pendingNext;
@@ -35,6 +38,25 @@ public final class DialoguePreviewSession implements AutoCloseable {
     public record Cursor(String node, int exchange, int exchanges, boolean previous, boolean next) { }
     private record Position(JsonObject node, String nodeId, String pendingNext, boolean pendingEnd, int line,
             List<JsonObject> lines, List<Choice> choices, JsonObject owner, JsonObject inherited) { }
+
+    public PreviewCoverage drainCoverage() {
+        var result = new PreviewCoverage(visitedNodes, chosenPaths);
+        visitedNodes.clear(); chosenPaths.clear();
+        return result;
+    }
+
+    private static String coveragePath(JsonElement value, JsonObject target, String path) {
+        if (value == target) return path;
+        if (value.isJsonObject()) for (var entry : value.getAsJsonObject().entrySet()) {
+            String found = coveragePath(entry.getValue(), target, path + "/" + entry.getKey().replace("~", "~0").replace("/", "~1"));
+            if (found != null) return found;
+        }
+        else if (value.isJsonArray()) for (int i = 0; i < value.getAsJsonArray().size(); i++) {
+            String found = coveragePath(value.getAsJsonArray().get(i), target, path + "/" + i);
+            if (found != null) return found;
+        }
+        return null;
+    }
 
     public Cursor cursor() { return new Cursor(nodeId, line, lines.size(), !history.isEmpty(), hasNextLine()); }
     private void remember() {
@@ -79,7 +101,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
         var updatedChoices = position.choices().stream().map(choice -> {
             var source = objectAt(visual, locate(root, choice.source(), ""), choice.source());
             String label = source.has("label") || source.has("label_key") ? renderer.text(source, "label") : choice.label();
-            return new Choice(choice.id(), label, choice.available(), choice.reason(), choice.next(), source);
+            return new Choice(choice.id(), label, choice.available(), choice.reason(), choice.next(), source, choice.pointer());
         }).toList();
         return new Position(objectAt(visual, locate(root, position.node(), ""), position.node()), position.nodeId(), position.pendingNext(),
                 position.pendingEnd(), Math.min(position.line(), Math.max(0, renderer.lines.size() - 1)), List.copyOf(renderer.lines), updatedChoices, owner, inherited);
@@ -123,17 +145,20 @@ public final class DialoguePreviewSession implements AutoCloseable {
         this.localization = localization;
         conditions.defaultQuest(ResourceLocation.tryParse(string(root, "quest")));
         JsonElement raw = root.get("nodes");
-        if (raw != null && raw.isJsonObject()) raw.getAsJsonObject().entrySet().forEach(entry ->
-                nodes.put(string(entry.getValue().getAsJsonObject(), "id").isBlank() ? entry.getKey()
-                        : string(entry.getValue().getAsJsonObject(), "id"), entry.getValue().getAsJsonObject()));
-        else if (raw != null && raw.isJsonArray()) for (JsonElement value : raw.getAsJsonArray()) {
-            JsonObject entry = value.getAsJsonObject();
+        if (raw != null && raw.isJsonObject()) raw.getAsJsonObject().entrySet().forEach(entry -> {
+            String key = string(entry.getValue().getAsJsonObject(), "id").isBlank() ? entry.getKey() : string(entry.getValue().getAsJsonObject(), "id");
+            nodes.put(key, entry.getValue().getAsJsonObject()); nodePaths.put(key, "/nodes/" + entry.getKey().replace("~", "~0").replace("/", "~1"));
+        });
+        else if (raw != null && raw.isJsonArray()) for (int index = 0; index < raw.getAsJsonArray().size(); index++) {
+            JsonObject entry = raw.getAsJsonArray().get(index).getAsJsonObject();
+            nodePaths.put(string(entry, "id"), "/nodes/" + index);
             nodes.put(string(entry, "id"), entry);
         }
         if (nodes.isEmpty() && root.has("entries")) {
             int index = 0;
             for (JsonElement value : array(root, "entries")) {
-                nodes.put("/entries/" + index++, value.getAsJsonObject());
+                String path = "/entries/" + index++;
+                nodes.put(path, value.getAsJsonObject()); nodePaths.put(path, path);
             }
         }
         boolean pool = root.has("openings") || root.has("closings")
@@ -145,12 +170,14 @@ public final class DialoguePreviewSession implements AutoCloseable {
             for (String field : List.of("openings", "closings", "options", "lines")) {
                 int index = 0;
                 for (JsonElement value : array(root, field)) {
-                    if (value.isJsonObject()) nodes.put("/" + field + "/" + index, value.getAsJsonObject());
+                    if (value.isJsonObject()) {
+                        String path = "/" + field + "/" + index; nodes.put(path, value.getAsJsonObject()); nodePaths.put(path, path);
+                    }
                     index++;
                 }
             }
         }
-        if (nodes.isEmpty()) nodes.put("/", root);
+        if (nodes.isEmpty()) { nodes.put("/", root); nodePaths.put("/", ""); }
     }
 
     public void start(String selected) {
@@ -182,7 +209,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
                 JsonObject entry = raw.getAsJsonObject();
                 ConditionOutcome outcome = conditions.evaluate(id, entry);
                 choices.add(new Choice(string(entry, "id"), text(entry, "label"),
-                        outcome == ConditionOutcome.MATCHED, outcome.name(), string(entry, "start"), entry));
+                        outcome == ConditionOutcome.MATCHED, outcome.name(), string(entry, "start"), entry, coveragePath(root, entry, "")));
             }
             revision++;
         } else if (root.has("entries") && !root.has("nodes")) {
@@ -207,6 +234,7 @@ public final class DialoguePreviewSession implements AutoCloseable {
         Choice choice = choices.get(index);
         if (!choice.available()) throw new IllegalStateException("Preview condition is " + choice.reason());
         remember();
+        if (choice.pointer() != null) chosenPaths.add(choice.pointer());
         choices.clear();
         log.add("Choice: " + choice.label());
         effects(choice.source());
@@ -219,12 +247,16 @@ public final class DialoguePreviewSession implements AutoCloseable {
         if (!checkId.isBlank()) {
             JsonObject check = find(array(root, "checks"), checkId);
             if (check == null) throw new IllegalArgumentException("Missing check: " + checkId);
-            pendingNext = string(check, conditions.checkSuccess(checkId) ? "success" : "failure");
+            String branch = conditions.checkSuccess(checkId) ? "success" : "failure";
+            pendingNext = string(check, branch);
+            String path = coveragePath(root, check, "");
+            if (path != null) chosenPaths.add(path + "/" + branch);
             log.add("Simulated check " + checkId + ": " + (conditions.checkSuccess(checkId) ? "success" : "failure"));
         }
         if (choice.source().has("follow_up")) {
             String nested = nodeId + "/follow_up/" + choice.id();
             nodes.put(nested, choice.source().getAsJsonObject("follow_up"));
+            nodePaths.put(nested, choice.pointer() == null ? null : choice.pointer() + "/follow_up");
             pendingNext = nested;
             pendingEnd = false;
         }
@@ -273,6 +305,10 @@ public final class DialoguePreviewSession implements AutoCloseable {
             revision++;
             return;
         }
+        String path = nodePaths.get(next);
+        if (path == null) path = coveragePath(root, node, "");
+        nodePaths.put(next, path);
+        if (path != null) visitedNodes.add(path);
         log.add("Node: " + next);
         effects(node);
         addLines(node, root);
@@ -311,18 +347,18 @@ public final class DialoguePreviewSession implements AutoCloseable {
                     String label = text(value, "label");
                     choices.add(new Choice(string(value, "id").isBlank() ? Integer.toString(index) : string(value, "id"),
                             label.isBlank() ? "Response " + (index + 1) : label, outcome == ConditionOutcome.MATCHED,
-                            outcome.name(), string(value, "next"), value));
+                            outcome.name(), string(value, "next"), value, nodePaths.get(nodeId) + "/" + field + "/" + index));
                 }
                 index++;
             }
             if (node.has("leave_option")) {
                 JsonObject value = node.getAsJsonObject("leave_option");
-                choices.add(new Choice("leave", text(value, "label"), true, "", "", value));
+                choices.add(new Choice("leave", text(value, "label"), true, "", "", value, nodePaths.get(nodeId) + "/leave_option"));
             }
             choices.sort(Comparator.comparingInt(choice -> integer(choice.source(), "order")));
             if (choices.isEmpty() && !string(node, "next").isBlank()) {
                 pendingNext = string(node, "next");
-                choices.add(new Choice("continue", "Continue", true, "", pendingNext, new JsonObject()));
+                choices.add(new Choice("continue", "Continue", true, "", pendingNext, new JsonObject(), nodePaths.get(nodeId) + "/next"));
                 pendingNext = null;
             }
         }
@@ -491,7 +527,10 @@ public final class DialoguePreviewSession implements AutoCloseable {
         return value.has(field) && value.get(field).isJsonArray() ? value.getAsJsonArray(field) : new JsonArray();
     }
 
-    public record Choice(String id, String label, boolean available, String reason, String next, JsonObject source) {
+    public record Choice(String id, String label, boolean available, String reason, String next, JsonObject source, String pointer) {
+        public Choice(String id, String label, boolean available, String reason, String next, JsonObject source) {
+            this(id, label, available, reason, next, source, null);
+        }
         public Choice { source = source.deepCopy(); }
         @Override public JsonObject source() { return source.deepCopy(); }
     }

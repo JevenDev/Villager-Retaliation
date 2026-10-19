@@ -103,6 +103,7 @@ final class EditorBulkEdit {
         var original = JsonPointers.get(document.json(), paths.getFirst());
         boolean mixed = paths.stream().anyMatch(path -> !JsonPointers.get(document.json(), path).equals(original));
         ImGui.textWrapped(mixed ? "Current values: mixed" : "Current value: " + original);
+        ImGui.textDisabled(original.getAsJsonPrimitive().isBoolean() ? "Enter true or false" : original.getAsJsonPrimitive().isNumber() ? "Enter a number" : "Enter plain text");
         if (ImGui.inputText("New value", value)) preview = null;
         if (ImGui.button("Preview bulk edit")) run.accept(() -> preview = preview(document, ids, field, value.get()));
         if (preview == null) return;

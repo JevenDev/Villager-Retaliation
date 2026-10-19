@@ -23,6 +23,11 @@ final class EditorLiveQuestTest {
     private static UUID testPlayer;
     private static final java.util.concurrent.atomic.AtomicLong requests = new java.util.concurrent.atomic.AtomicLong();
 
+    interface CoverageObserver {
+        void accept(AuthoringDocument document, com.google.gson.JsonObject source, com.jvn.villagerretaliation.authoring.preview.PreviewCoverage batch);
+    }
+    static CoverageObserver coverage = (document, source, batch) -> { };
+
     private EditorLiveQuestTest() { }
 
     static com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView snapshot() { return snapshot; }
@@ -167,6 +172,8 @@ final class EditorLiveQuestTest {
         if (document.kind() != DefinitionKind.QUEST || minecraft.player == null || !EditorTestWorld.active(workspace))
             throw new IllegalArgumentException("Create and enter a separate editor test world first");
         if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply & replay in Playtest to load this draft.");
+        boolean trackCoverage = EditorTestWorld.currentLogic(workspace);
+        var source = document.json();
         UUID playerId = minecraft.player.getUUID();
         ResourceLocation quest = ResourceLocation.parse(document.id());
         Path world = server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
@@ -202,6 +209,10 @@ final class EditorLiveQuestTest {
             String summary = progress == null ? "Not started" : "State: " + progress.state().name().toLowerCase(java.util.Locale.ROOT)
                     + " | Stage: " + progress.currentStage();
             if (requests.get() != request) return;
+            if (trackCoverage && controls != null) {
+                var batch = controls.drainCoverage();
+                minecraft.execute(() -> coverage.accept(document, source, batch));
+            }
             snapshot = nextSnapshot;
             view = new View(quest.toString(), message.isBlank() ? previous.message() : message, summary, List.copyOf(lines), false);
         });

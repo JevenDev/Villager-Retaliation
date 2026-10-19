@@ -122,6 +122,8 @@ public final class QuestTriggerDispatcher {
         for (CompiledQuestTrigger compiledTrigger : ordered) {
             QuestDefinition.Trigger trigger = compiledTrigger.definition();
             if (actionRunner.run(triggerContext, definition, progress, trigger)) {
+                if (triggerContext.dialogueContext() != null && compiledTrigger.source() != null) com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordChoice(
+                        triggerContext.dialogueContext().player(), definition.id(), compiledTrigger.source().jsonPointer());
                 progress.markTriggerUsed(trigger.id(), triggerContext.gameTime());
                 dirty = true;
                 ran++;

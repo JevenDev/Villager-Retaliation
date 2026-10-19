@@ -23,7 +23,10 @@ final class EditorQualityChecks {
         savedChangesTrackFilesFieldsAndRecovery();
         fieldRevertsPreserveOtherEditsAndRejectStaleReviews();
         quickFixesRepairMissingDestinationsAtomically();
-        return 7;
+        dialogueCoverageRecordsActualBranchesAndDistinctNodePaths();
+        questCoverageAccumulatesAndRejectsOldLogic();
+        liveCoverageMapsRuntimePathsWithoutInferringChoices();
+        return 10;
     }
 
     private static void resourceLibraryPersistsAndFiltersUnavailableChoices() throws IOException {
@@ -32,7 +35,9 @@ final class EditorQualityChecks {
         library.resource("items", "minecraft:stone", true);
         library.resource("items", "minecraft:diamond", false);
         library.resource("items", "missing:resource", true);
-        var example = new JsonObject(); example.addProperty("type", "block");
+        var example = json("""
+                {"type":"block","kind":"TREE","collection":"actions","payload":{"type":"experience","amount":1}}
+                """);
         library.saveSnippet("Example", example);
         var restored = new EditorLibrary(path); restored.load();
         check(restored.favorite("items", "minecraft:stone") && !restored.favorite("blocks", "minecraft:stone"), "favorites persist within their resource category");
@@ -66,6 +71,8 @@ final class EditorQualityChecks {
         var restored = new EditorLibrary(workspace.directory().resolve("library.json")); restored.load();
         var target = workspace.createDocument(DefinitionKind.TREE, "test:snippet_target");
         var before = target.json();
+        rejects(() -> EditorSnippets.insert(workspace, target, "", new JsonObject()));
+        check(target.json().equals(before), "malformed snippet payloads fail before changing the draft");
         var added = EditorSnippets.insert(workspace, target, "", restored.snippet("Branch"));
         check(added.size() == 2 && DialogueGraph.edges(target).stream().anyMatch(edge -> edge.from().equals(added.getFirst()) && added.contains(edge.to())), "persisted snippets include connected dependencies and rewrite links");
         target.undo(); check(target.json().equals(before), "snippet insertion undoes in one step");
@@ -86,6 +93,8 @@ final class EditorQualityChecks {
         EditorSnippets.insert(workspace, quest, path, snippet);
         var objectives = JsonPointers.get(quest.json(), "/stages/0/objectives").getAsJsonArray();
         check(objectives.size() == 2 && !objectives.get(0).getAsJsonObject().get("id").equals(objectives.get(1).getAsJsonObject().get("id")), "objective snippets avoid duplicate IDs");
+        var completion = JsonPointers.get(quest.json(), "/stages/0/complete_when").getAsJsonArray();
+        check(completion.contains(objectives.get(1).getAsJsonObject().get("id")), "objective snippets join the stage's completion requirements");
         quest.undo(); check(quest.json().equals(before), "block insertion is atomic and undoable");
         rejects(() -> EditorSnippets.insert(workspace, quest, "/stages/0", snippet));
         check(quest.json().equals(before), "a snippet cannot be inserted into an unrelated object");
@@ -182,6 +191,87 @@ final class EditorQualityChecks {
         check(tree.json().equals(before), "invalid destination names cannot partly change the graph");
         var other = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR, tree.resourcePath(), "/id", "Duplicate definition ID");
         check(EditorQuickFixes.target(tree, other) == null, "unrelated diagnostics never receive graph reference fixes");
+    }
+
+    private static void dialogueCoverageRecordsActualBranchesAndDistinctNodePaths() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-dialogue-coverage"));
+        var tree = workspace.createDocument(DefinitionKind.TREE, "test:coverage");
+        DialogueGraph.addNode(tree, "identical");
+        var conditions = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        var session = new com.jvn.villagerretaliation.authoring.preview.DialoguePreviewSession(tree.json(), net.minecraft.resources.ResourceLocation.parse(tree.id()), conditions, key -> null);
+        session.start("identical");
+        check(session.drainCoverage().nodes().equals(Set.of("/nodes/identical")), "equal-looking nodes keep their exact authored paths in coverage");
+        workspace.addDialogueResponse(tree, "start", "continue", "Continue", "identical");
+        session = new com.jvn.villagerretaliation.authoring.preview.DialoguePreviewSession(tree.json(), net.minecraft.resources.ResourceLocation.parse(tree.id()), conditions, key -> null);
+        session.start("start");
+        var initial = session.drainCoverage();
+        check(initial.nodes().equals(Set.of("/nodes/start")) && initial.choices().isEmpty(), "showing a choice does not mark it as tested");
+        session.choose(0);
+        var selected = session.drainCoverage();
+        check(selected.nodes().contains("/nodes/identical") && selected.choices().contains("/nodes/start/responses/0"), "taking a branch records both the choice and destination");
+        check(session.drainCoverage().nodes().isEmpty() && session.drainCoverage().choices().isEmpty(), "coverage batches drain without replaying old results");
+        var forced = json("""
+                {"trigger":"container_opened","lines":["Hello"],"options":[{"id":"continue","label":"Go on","follow_up":{"lines":["Next"],"options":[{"id":"end","label":"Bye","end_conversation":true}]}}]}
+                """);
+        session = new com.jvn.villagerretaliation.authoring.preview.DialoguePreviewSession(forced, net.minecraft.resources.ResourceLocation.parse("test:forced_coverage"), conditions, key -> null);
+        session.start(""); session.drainCoverage(); session.choose(0);
+        var nested = session.drainCoverage();
+        check(nested.nodes().contains("/options/0/follow_up") && nested.choices().contains("/options/0"), "forced follow-ups record authored ownership paths rather than temporary preview IDs");
+        session.choose(0);
+        check(session.drainCoverage().choices().contains("/options/0/follow_up/options/0"), "terminal responses count even without a destination edge");
+        session.close();
+    }
+
+    private static void questCoverageAccumulatesAndRejectsOldLogic() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-quest-coverage"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest_coverage");
+        DialogueGraph.addNode(quest, "finish"); EditorDocumentOperations.nextStage(quest, "start", "finish");
+        var coverage = new EditorCoverage(); var observe = coverage.observe(quest);
+        observe.accept(new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("/stages/0"), Set.of()));
+        check(coverage.visited(quest, "/stages/0") && !coverage.visited(quest, "/stages/1"), "quest simulation records only entered stages");
+        observe.accept(new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("/stages/1"), Set.of("/stages/0/transition")));
+        check(coverage.visited(quest, "/stages/1") && coverage.chosen(quest, "/stages/0/transition/stage"), "quest transitions map to their graph connections");
+        coverage.clear(quest); observe.accept(new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of(), Set.of()));
+        check(!coverage.visited(quest, "/stages/0"), "clearing coverage does not re-add old drained events");
+        observe.accept(new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("/stages/0"), Set.of()));
+        quest.edit("Visual edit", root -> root.addProperty("description", "New wording"));
+        check(coverage.visited(quest, "/stages/0"), "presentation edits preserve coverage");
+        quest.edit("Change entry", root -> root.addProperty("entry_stage", "finish"));
+        check(!coverage.visited(quest, "/stages/0"), "logic edits invalidate older coverage");
+        observe.accept(new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("/stages/1"), Set.of()));
+        check(!coverage.visited(quest, "/stages/1"), "events from an older running simulation cannot cover edited logic");
+        var other = workspace.createDocument(DefinitionKind.QUEST, "test:other_coverage");
+        check(!coverage.visited(other, "/stages/0"), "coverage stays attached to the tested document");
+    }
+
+    static void questSimulationRecordsCoverage() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-native-coverage"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:simulation_coverage");
+        DialogueGraph.addNode(quest, "finish"); EditorDocumentOperations.nextStage(quest, "start", "finish");
+        var simulation = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(quest, new com.jvn.villagerretaliation.authoring.preview.PreviewConditions());
+        check(simulation.drainCoverage().nodes().equals(Set.of("/stages/0")), "quest startup records the entry stage");
+        simulation.advance(); var advanced = simulation.drainCoverage();
+        check(advanced.nodes().equals(Set.of("/stages/1")) && advanced.choices().contains("/stages/0/transition"), "executed quest transitions produce precise coverage events");
+        simulation.advance();
+        check(simulation.drainCoverage().choices().contains("/stages/1/transition"), "terminal quest transitions count without a destination node");
+    }
+
+    private static void liveCoverageMapsRuntimePathsWithoutInferringChoices() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-live-coverage"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:live_coverage");
+        var coverage = new EditorCoverage(); var source = quest.json();
+        coverage.live(quest, source, new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("start"), Set.of()));
+        check(coverage.visited(quest, "/stages/0") && !coverage.chosen(quest, "/stages/0/transition"), "live stage visits do not infer which choice was taken");
+        coverage.live(quest, source, new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of(), Set.of("/stages/0/next")));
+        check(coverage.chosen(quest, "/stages/0/transition"), "runtime next paths map back to authored transition fields");
+        coverage.clear(quest);
+        coverage.live(quest, source, new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of(), Set.of("transition:start")));
+        check(coverage.chosen(quest, "/stages/0/transition"), "automatic live transitions use their exact source stage");
+        quest.edit("Different logic", root -> root.addProperty("entry_stage", "different"));
+        coverage.live(quest, source, new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(Set.of("start"), Set.of()));
+        check(!coverage.visited(quest, "/stages/0"), "live results from an unapplied older pack are ignored");
+        var controls = new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.Controls();
+        check(controls.drainCoverage().nodes().isEmpty() && controls.drainCoverage().choices().isEmpty(), "fresh live playtests have no fabricated coverage");
     }
 
     private static JsonObject json(String value) { return JsonParser.parseString(value).getAsJsonObject(); }

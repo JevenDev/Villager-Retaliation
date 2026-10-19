@@ -34,8 +34,10 @@ final class EditorLibrary {
                     for (var id : values.getAsJsonArray(field))
                         if (!id.isJsonPrimitive() || !id.getAsJsonPrimitive().isString()) throw new IllegalArgumentException("Invalid resource ID");
             }
-            for (var snippet : EditorSchema.object(loaded.get("snippets")).entrySet())
+            for (var snippet : EditorSchema.object(loaded.get("snippets")).entrySet()) {
                 if (!snippet.getValue().isJsonObject()) throw new IllegalArgumentException("Invalid snippet " + snippet.getKey());
+                EditorSnippets.validate(snippet.getValue().getAsJsonObject());
+            }
             data = loaded; writable = true;
         } catch (IllegalArgumentException | IllegalStateException | com.google.gson.JsonParseException exception) {
             throw new IOException("Cannot read editor library: " + exception.getMessage(), exception);
@@ -56,7 +58,7 @@ final class EditorLibrary {
         if (toggleFavorite) { if (!values.remove(id)) values.add(id); }
         else { values.remove(id); values.addFirst(id); }
         JsonArray list = new JsonArray();
-        values.stream().limit(toggleFavorite ? 128 : 16).forEach(list::add);
+        values.stream().limit(toggleFavorite ? Long.MAX_VALUE : 16).forEach(list::add);
         update(root -> {
             if (!root.has("resources")) root.add("resources", new JsonObject());
             JsonObject groups = root.getAsJsonObject("resources");
@@ -77,6 +79,7 @@ final class EditorLibrary {
         String key = name.strip();
         if (key.isEmpty()) throw new IllegalArgumentException("Enter a snippet name");
         if (snippets().contains(key)) throw new IllegalArgumentException("Choose a new name or remove the existing snippet first");
+        EditorSnippets.validate(value);
         update(root -> {
             if (!root.has("snippets")) root.add("snippets", new JsonObject());
             root.getAsJsonObject("snippets").add(key, value.deepCopy());

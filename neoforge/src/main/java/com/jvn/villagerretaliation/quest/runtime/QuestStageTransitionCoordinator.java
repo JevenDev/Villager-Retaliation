@@ -123,6 +123,7 @@ public final class QuestStageTransitionCoordinator {
             DialogueContext context,
             QuestDefinition definition,
             String stage) {
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordStage(context.player(), definition.id(), stage);
         String scopeKey = access.playerQuestScopeKey(context.player(), definition);
         if (!scopeKey.isBlank()) {
             VillagerQuestFacts.get(context.level()).setVariable(scopeKey, "stage", stage);
@@ -163,6 +164,7 @@ public final class QuestStageTransitionCoordinator {
             if (!changeQuestStage(context, definition, progress, readiness.nextStage(), true, true)) {
                 break;
             }
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordChoice(context.player(), definition.id(), "transition:" + readiness.currentStage());
             changed = true;
         }
         return changed;

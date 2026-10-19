@@ -28,6 +28,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private final Entity target;
     private final PreviewConditions conditions;
     private final Runnable returnToEditor;
+    private final java.util.function.Consumer<PreviewCoverage> coverage;
     private final DialogueCameraController.Preview camera;
     private final ClientVillagerConversationState.Snapshot conversation;
     private final Object level;
@@ -39,8 +40,9 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private boolean disposed;
 
     private AuthoringDialoguePreview(DialoguePreviewSession session, Entity target, String start,
-            PreviewConditions conditions, Runnable returnToEditor) {
+            PreviewConditions conditions, Runnable returnToEditor, java.util.function.Consumer<PreviewCoverage> coverage) {
         this.session = session;
+        this.coverage = coverage;
         this.conditions = conditions;
         this.target = target;
         this.start = start;
@@ -62,6 +64,12 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
 
     public static void start(AuthoringDocument document, String nodeId, Entity target,
             PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport) {
+        start(document, nodeId, target, conditions, returnToEditor, localization, showTransport, ignored -> { });
+    }
+
+    public static void start(AuthoringDocument document, String nodeId, Entity target,
+            PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport,
+            java.util.function.Consumer<PreviewCoverage> coverage) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null || target == null
                 || target.level() != minecraft.level || !target.isAlive() || target.isRemoved())
@@ -74,7 +82,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         if (id == null) id = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview");
         var session = new DialoguePreviewSession(json, id, conditions, localization);
         session.start(nodeId);
-        var preview = new AuthoringDialoguePreview(session, target, nodeId, conditions, returnToEditor);
+        var preview = new AuthoringDialoguePreview(session, target, nodeId, conditions, returnToEditor, coverage);
         preview.showTransport = showTransport;
         active = preview;
         try {
@@ -129,6 +137,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         }
         if (shownRevision == session.revision()) return;
         shownRevision = session.revision();
+        coverage.accept(session.drainCoverage());
         stopVoice();
         JsonObject line = session.currentLine();
         if (line == null) {
@@ -203,6 +212,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
 
     @Override public void close() {
         if (disposed) return;
+        coverage.accept(session.drainCoverage());
         var minecraft = Minecraft.getInstance();
         boolean ownedScreen = minecraft.screen == screen;
         if (ownedScreen) minecraft.setScreen(null);

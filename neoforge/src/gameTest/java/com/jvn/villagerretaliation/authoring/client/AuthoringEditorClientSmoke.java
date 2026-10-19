@@ -55,6 +55,8 @@ public final class AuthoringEditorClientSmoke {
     private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
     private static float[] workflowFieldPoint;
     private static boolean qualityControls;
+    private static int featureStage = -1;
+    private static float[] featureActionPoint;
     private static String qualityResource = "minecraft:stone";
     private static float[] qualityPickerPoint;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
@@ -138,6 +140,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(AuthoringEditorClientSmoke::frame);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
@@ -145,7 +148,7 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSteps() {
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
-            buildWorkflowSteps(); finishSteps("Focused editor workflow controls passed."); return;
+            buildWorkflowSteps(); buildFeatureSteps(); finishSteps("Focused editor workflow and quality controls passed."); return;
         }
         STEPS.add(() -> {
             try { EditorClientChecks.questSimulationUsesRuntimeCompletionRules(); }
@@ -386,6 +389,7 @@ public final class AuthoringEditorClientSmoke {
         buildProgressConditionSteps();
         buildQualityOfLifeSteps();
         buildWorkflowSteps();
+        buildFeatureSteps();
         finishSteps("Full editor graph, pack, camera, playtest, recovery and workflow checks passed.");
     }
 
@@ -521,6 +525,118 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> capture("49-workflow-restored-session"));
+    }
+
+    private static void buildFeatureSteps() {
+        STEPS.add(() -> {
+            try {
+                EditorQualityChecks.questSimulationRecordsCoverage();
+                workspace = AuthoringWorkspace.create(output().resolve("feature-drafts"));
+                document = workspace.createDocument(DefinitionKind.TREE, "test:feature_graph");
+                DialogueGraph.addNode(document, "finish");
+                workspace.addDialogueResponse(document, "start", "continue", "Continue", "finish");
+                workspace.save();
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            set("workspace", workspace); set("view", 0); set("filesMode", false);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            document.edit("Different wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("finish").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Different")));
+            invoke("refresh", new Class<?>[0]);
+            featureStage = 0;
+        });
+        pause(250);
+        STEPS.add(() -> {
+            var bulk = (EditorBulkEdit) field(editor, "bulkEdit");
+            setField(bulk, "field", "/lines/0");
+            ((imgui.type.ImString) field(bulk, "value")).set("Shared greeting");
+            setField(bulk, "preview", EditorBulkEdit.preview(document, java.util.Set.of("start", "finish"), "/lines/0", "Shared greeting"));
+        });
+        pause(250);
+        STEPS.add(() -> capture("50-bulk-property-preview"));
+        click(() -> featureActionPoint);
+        STEPS.add(() -> {
+            require(document.json().getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").get(0).getAsString().equals("Shared greeting"), "Native bulk Apply button commits the preview.");
+            require(document.json().getAsJsonObject("nodes").getAsJsonObject("finish").getAsJsonArray("lines").get(0).getAsString().equals("Shared greeting"), "Native bulk Apply changes every selected node.");
+            var library = (EditorLibrary) field(editor, "library");
+            try { library.saveSnippet("Greeting branch", EditorSnippets.nodes(workspace, document, java.util.Set.of("start"))); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            setField(field(editor, "snippets"), "selected", "Greeting branch"); featureStage = 1;
+        });
+        pause(250);
+        STEPS.add(() -> capture("51-reusable-snippets"));
+        STEPS.add(() -> {
+            var library = (EditorLibrary) field(editor, "library");
+            var inserted = EditorSnippets.insert(workspace, document, "", library.snippet("Greeting branch"));
+            require(inserted.size() == 2, "Saved snippet pastes its connected branch in the native editor.");
+            invoke("selectInsertedNodes", new Class<?>[] {List.class}, inserted);
+            featureStage = 2;
+        });
+        pause(250);
+        click(() -> new float[] {570, 198});
+        STEPS.add(() -> capture("52-saved-change-review"));
+        STEPS.add(() -> {
+            document.edit("Broken entry", root -> root.getAsJsonArray("entries").get(0).getAsJsonObject().addProperty("start", "missing_destination"));
+            invoke("refresh", new Class<?>[0]); featureStage = 3;
+        });
+        pause(250);
+        STEPS.add(() -> capture("53-validation-quick-fix"));
+        click(() -> featureActionPoint);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).stream().anyMatch(node -> node.id().equals("missing_destination")), "Native quick-fix button creates the missing destination.");
+            var session = new com.jvn.villagerretaliation.authoring.preview.DialoguePreviewSession(document.json(), net.minecraft.resources.ResourceLocation.parse(document.id()), new com.jvn.villagerretaliation.authoring.preview.PreviewConditions(), key -> null);
+            var observe = ((EditorCoverage) field(editor, "coverage")).observe(document);
+            session.start("start"); observe.accept(session.drainCoverage()); session.choose(0); observe.accept(session.drainCoverage()); session.close();
+            featureStage = 4;
+        });
+        pause(250);
+        STEPS.add(() -> {
+            require(((EditorCoverage) field(editor, "coverage")).visited(document, "/nodes/finish"), "Native graph coverage contains the executed branch.");
+            capture("54-playtest-coverage");
+            var library = (EditorLibrary) field(editor, "library");
+            try { library.resource("Choose item...", "minecraft:emerald", true); library.resource("Choose item...", "minecraft:diamond", false); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            qualityResource = "minecraft:stone"; featureStage = 5;
+        });
+        pause(250);
+        click(() -> featureActionPoint);
+        STEPS.add(() -> capture("55-favorite-resource-picker"));
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(qualityResource.equals("minecraft:emerald"), "Native picker keyboard selection chooses the favorite first.");
+            featureStage = -1; set("fitGraph", true);
+        });
+        pause(250);
+        STEPS.add(() -> capture("56-coverage-graph"));
+    }
+
+    private static void renderFeatureControls() {
+        if (featureStage < 0) return;
+        ImGui.setNextWindowPos(460, 100); ImGui.setNextWindowSize(850, 740);
+        ImGui.begin("Editor quality acceptance"); ImGui.setNextItemOpen(true);
+        java.util.function.Consumer<ImGuiAuthoringEditor.EditorOperation> run = action -> invoke("operation", new Class<?>[] {ImGuiAuthoringEditor.EditorOperation.class}, action);
+        if (featureStage == 0) {
+            var bulk = (EditorBulkEdit) field(editor, "bulkEdit");
+            bulk.render(workspace, document, java.util.Set.of("start", "finish"), run, () -> invoke("refresh", new Class<?>[0]));
+            if (field(bulk, "preview") != null) featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+        } else if (featureStage == 1) {
+            ((EditorSnippets) field(editor, "snippets")).render((EditorLibrary) field(editor, "library"), workspace, document, java.util.Set.of("start"), "", run,
+                    added -> invoke("selectInsertedNodes", new Class<?>[] {List.class}, added));
+        } else if (featureStage == 2) {
+            try { ((EditorChanges) field(editor, "changes")).render(workspace, run, path -> invoke("openPackFile", new Class<?>[] {String.class}, path), changed -> invoke("refresh", new Class<?>[0])); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        } else if (featureStage == 3) {
+            ImGui.textUnformatted("Missing entry destination");
+            var issue = workspace.validate().stream().filter(value -> value.message().equals("Missing entry node")).findFirst().orElse(null);
+            if (issue != null) {
+                EditorQuickFixes.render(workspace, document, issue, run, () -> invoke("refresh", new Class<?>[0]));
+                featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+            }
+        } else if (featureStage == 4) ((EditorCoverage) field(editor, "coverage")).render(document, id -> { });
+        else {
+            featureActionPoint = new float[] {ImGui.getCursorScreenPosX() + 150, ImGui.getCursorScreenPosY() + ImGui.getFrameHeight() / 2};
+            ((EditorResourcePicker) field(editor, "resourcePicker")).render("feature_resource", "Choose item...", qualityResource,
+                    List.of("minecraft:stone", "minecraft:diamond", "minecraft:emerald"), value -> qualityResource = value, (EditorLibrary) field(editor, "library"), run);
+        }
+        ImGui.end();
     }
 
     private static void workflowCommand(String query) {
@@ -1150,6 +1266,7 @@ public final class AuthoringEditorClientSmoke {
         waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("start"));
         STEPS.add(() -> {
             require(EditorLiveQuestTest.snapshot().hold(), "Quest playtesting waits for Next.");
+            require(((EditorCoverage) field(editor, "coverage")).visited(document, "/stages/0"), "Live quest startup records the actual entry stage.");
             String objective = EditorLiveQuestTest.snapshot().objectives().getFirst().id();
             EditorLiveQuestTest.prepare(workspace, document, objective, "");
         });
@@ -1199,6 +1316,7 @@ public final class AuthoringEditorClientSmoke {
         pause(1000);
         STEPS.add(() -> {
             require(!EditorLiveQuestTest.snapshot().stage().equals("start"), "Next advances through the real stage runtime.");
+            require(((EditorCoverage) field(editor, "coverage")).chosen(document, "/stages/0/transition"), "Live stage execution records its source transition.");
             capture("30-playtest-quest-next");
         });
         buildPlaytestReloadSteps();

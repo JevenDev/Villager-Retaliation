@@ -20,9 +20,12 @@ public final class QuestProgressionService {
             VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<List<DialogueCondition>> conditionsMet) {
         if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.held(player, definition.id(), progress.currentStage())) return false;
+        String previousStage = progress.currentStage();
         if (!advanceSaved(definition, progress, level.getGameTime(), objectiveComplete,
                 conditions -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(player, definition.id(), progress.currentStage())
                         || conditionsMet.test(conditions))) return false;
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordStage(player, definition.id(), progress.currentStage());
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordChoice(player, definition.id(), "transition:" + previousStage);
         VillagerQuestFacts.get(level).setVariable(QuestScopeKey.quest(player.getUUID(), definition.id()).asString(),
                 "stage", progress.currentStage());
         VillagerQuestSavedData.get(level).setDirty();

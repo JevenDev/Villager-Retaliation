@@ -40,7 +40,8 @@ final class EditorResourcePicker {
             ImGui.inputTextWithHint("##filter", "Type to filter...", search);
             boolean enter = ImGui.isKeyPressed(ImGuiKey.Enter);
             if (!before.equals(search.get())) selected = 0;
-            var matches = ranked(choices, search.get(), library.resources(label, true), library.resources(label, false));
+            var favorites = library.resources(label, true); var recent = library.resources(label, false);
+            var matches = ranked(choices, search.get(), favorites, recent);
             boolean moved = false;
             if (ImGui.isKeyPressed(ImGuiKey.DownArrow)) { selected++; moved = true; }
             if (ImGui.isKeyPressed(ImGuiKey.UpArrow)) { selected--; moved = true; }
@@ -51,10 +52,10 @@ final class EditorResourcePicker {
             for (int i = 0; i < matches.size(); i++) {
                 String choice = matches.get(i);
                 ImGui.pushID(i);
-                boolean favorite = library.favorite(label, choice);
+                boolean favorite = favorites.contains(choice);
                 if (ImGui.smallButton(favorite ? "Unstar" : "Star")) run.accept(() -> library.resource(label, choice, true));
                 ImGui.sameLine();
-                String prefix = favorite ? "[Favorite] " : library.resources(label, false).contains(choice) ? "[Recent] " : "";
+                String prefix = favorite ? "[Favorite] " : recent.contains(choice) ? "[Recent] " : "";
                 if (ImGui.selectable(prefix + choice, choice.equals(current) || i == selected)) {
                     choose.accept(choice); run.accept(() -> library.resource(label, choice, false)); ImGui.closeCurrentPopup();
                 }

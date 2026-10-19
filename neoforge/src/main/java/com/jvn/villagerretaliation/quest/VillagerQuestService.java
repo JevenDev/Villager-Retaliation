@@ -983,6 +983,7 @@ public final class VillagerQuestService {
                     false);
         }
 
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordChoice(context.player(), definition.id(), transition.sourcePointer());
         progress.recordChoice(
                 transition.scenePath(),
                 transition.responseId(),
