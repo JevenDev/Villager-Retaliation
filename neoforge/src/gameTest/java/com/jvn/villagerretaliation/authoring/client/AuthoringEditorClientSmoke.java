@@ -56,6 +56,11 @@ public final class AuthoringEditorClientSmoke {
     private static float[] workflowFieldPoint;
     private static boolean qualityControls;
     private static boolean layoutChecks;
+    private static boolean variableControls;
+    private static final EditorTextField variableFields = new EditorTextField();
+    private static final imgui.type.ImString variableText = new imgui.type.ImString("Hello, ", 1024);
+    private static float[] variableMenuPoint;
+    private static float variableTextScale = 1;
     private static float[] shortcutPopupSize;
     private static int shortcutPopupFrames;
     private static int featureStage = -1;
@@ -145,6 +150,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::checkShortcutPopup);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderVariableControls);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
@@ -152,6 +158,7 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSteps() {
         buildLayoutSteps();
+        buildVariableSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
@@ -454,6 +461,71 @@ public final class AuthoringEditorClientSmoke {
         } finally {
             ImGui.endPopup();
         }
+    }
+
+    private static void buildVariableSteps() {
+        STEPS.add(() -> { variableControls = true; variableFields.focus("variable_smoke"); });
+        pause(250);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        click(() -> variableMenuPoint);
+        pause(250);
+        STEPS.add(() -> capture("68-variable-categories"));
+        type("objective_item");
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.UpArrow);
+        key(ImGuiKey.DownArrow);
+        pause(250);
+        STEPS.add(() -> {
+            require(((imgui.type.ImString) field(field(variableFields, "variables"), "search")).get().equals("objective_item"), "Variable search updates before Enter is pressed.");
+            capture("69-variable-search");
+        });
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(variableText.get().equals("Hello, {objective_item_id}"), "Searching, arrow selection and Enter insert a previously missing quest variable at the caret."));
+        type(" and ");
+        click(() -> variableMenuPoint);
+        type("{parent}");
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(variableText.get().equals("Hello, {objective_item_id} and {parent}"), "Reopening clears search and exact variable names rank ahead of partial matches."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        click(() -> variableMenuPoint);
+        type("held_item_damage");
+        key(ImGuiKey.Enter);
+        type("!");
+        STEPS.add(() -> {
+            require(variableText.get().equals("{held_item_damage}!"), "Variable selection replaces selected source text and restores its caret.");
+        });
+        click(() -> variableMenuPoint);
+        type("not_a_builtin_variable");
+        key(ImGuiKey.Tab);
+        type("trigger_criterion_boss_killed");
+        pause(250);
+        STEPS.add(() -> capture("70-custom-variable"));
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(variableText.get().equals("{held_item_damage}!{trigger_criterion_boss_killed}"), "Custom variable entry inserts once and restores source focus.");
+            variableTextScale = 2;
+        });
+        pause(250);
+        click(() -> variableMenuPoint);
+        pause(250);
+        STEPS.add(() -> capture("71-variable-picker-large-text"));
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> { variableControls = false; variableFields.clear(); });
+    }
+
+    private static void renderVariableControls() {
+        if (!variableControls) return;
+        invoke("pushEditorStyle", new Class<?>[0]);
+        ImGui.setNextWindowPos(450, 150); ImGui.setNextWindowSize(800, 600);
+        ImGui.begin("Text variable acceptance"); ImGui.setWindowFontScale(variableTextScale);
+        float x = ImGui.getCursorScreenPosX();
+        for (String label : List.of("B", "I", "U")) x += ImGui.calcTextSize(label).x + 8 + ImGui.getStyle().getItemSpacingX();
+        variableMenuPoint = new float[] {x + (ImGui.calcTextSize("Insert variable").x + 8) / 2,
+                ImGui.getCursorScreenPosY() + ImGui.getTextLineHeight() / 2};
+        variableFields.render("variable_smoke", variableText, DefinitionKind.TREE, true, variableTextScale);
+        ImGui.dummy(0, 0);
+        ImGui.end();
+        ImGui.popStyleColor(14); ImGui.popStyleVar(5);
     }
 
     private static void finishSteps(String details) {
@@ -1758,15 +1830,15 @@ public final class AuthoringEditorClientSmoke {
         key(ImGuiKey.Escape);
         STEPS.add(() -> require(Minecraft.getInstance().screen == field(editor, "screen")
                 && !ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup), "Escape dismisses the variable menu without closing the editor."));
-        insertVariable(307);
+        insertVariable("player");
         expectCaret("Welcome, {player}");
         type("! It is ");
         expectCaret("Welcome, {player}! It is ");
-        insertVariable(372);
+        insertVariable("time");
         type(" (");
-        insertVariable(400);
+        insertVariable("time_of_day");
         type("), day ");
-        insertVariable(428);
+        insertVariable("day");
         type(".");
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Home);
         STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Shift, true));
@@ -1885,10 +1957,11 @@ public final class AuthoringEditorClientSmoke {
         });
     }
 
-    private static void insertVariable(float y) {
+    private static void insertVariable(String name) {
         click(() -> textTool("Insert variable"));
+        type(name);
         STEPS.add(() -> capture("10a-variable-menu"));
-        click(() -> screenPoint(1700, y));
+        key(ImGuiKey.Enter);
     }
 
     private static float[] textTool(String target) {

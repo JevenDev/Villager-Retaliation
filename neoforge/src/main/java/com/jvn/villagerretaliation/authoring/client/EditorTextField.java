@@ -16,6 +16,7 @@ import java.util.Map;
 final class EditorTextField {
     private final Map<String, Selection> selections = new HashMap<>();
     private final Map<String, Size> sizes = new HashMap<>();
+    private final EditorVariablePicker variables = new EditorVariablePicker();
     private String focus = "";
 
     void focus(String id) { focus = id; }
@@ -30,7 +31,7 @@ final class EditorTextField {
         if (!visible) selections.values().forEach(selection -> selection.preview.close());
     }
 
-    void render(String id, ImString buffer, DefinitionKind kind, boolean formatting) {
+    void render(String id, ImString buffer, DefinitionKind kind, boolean formatting, float textScale) {
         Selection selection = selections.compute(id, (key, prior) -> {
             if (prior != null && prior.buffer == buffer) return prior;
             if (prior != null) prior.preview.retire();
@@ -47,30 +48,8 @@ final class EditorTextField {
             formatButton("U", "Underline", "u", selection);
             EditorWidgets.sameLineFor("Insert variable");
         }
-        if (ImGui.smallButton("Insert variable")) ImGui.openPopup("variables");
-        if (ImGui.beginPopup("variables")) {
-            variable("Player name", "player", selection);
-            variable("Villager name", "villager", selection);
-            ImGui.separator();
-            variable("Time (06:00)", "time", selection);
-            variable("Time of day (morning)", "time_of_day", selection);
-            variable("Day number (1)", "day", selection);
-            ImGui.separator();
-            variable("Last death message", "last_death_message", selection);
-            variable("Last death killer", "last_death_killer", selection);
-            variable("Last death dimension", "last_death_dimension", selection);
-            ImGui.separator();
-            if (kind != DefinitionKind.FORCED) {
-                variable("Villager's name (possessive)", "villager_possessive", selection);
-                variable("Profession", "profession", selection);
-                variable("Reputation", "reputation", selection);
-                variable("Reputation level", "reputation_level", selection);
-            }
-            variable("Villager X", "x", selection);
-            variable("Villager Y", "y", selection);
-            variable("Villager Z", "z", selection);
-            ImGui.endPopup();
-        }
+        String variable = variables.render(kind, textScale);
+        if (variable != null) selection.command = new Command("{" + variable + "}", false);
         if (formatting) {
             EditorWidgets.sameLineFor("Style");
             if (ImGui.smallButton("Style")) ImGui.openPopup("styles");
@@ -186,10 +165,6 @@ final class EditorTextField {
     private static void formatButton(String label, String name, String tag, Selection selection) {
         if (ImGui.smallButton(label)) selection.command = new Command(tag, true);
         if (ImGui.isItemHovered()) ImGui.setTooltip(name + ": apply to the selection, or insert a text span.");
-    }
-
-    private static void variable(String label, String key, Selection selection) {
-        if (ImGui.menuItem(label, "{" + key + "}")) selection.command = new Command("{" + key + "}", false);
     }
 
     private record Command(String value, boolean format) { }

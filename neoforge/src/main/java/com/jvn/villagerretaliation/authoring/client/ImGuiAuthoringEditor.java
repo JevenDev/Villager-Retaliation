@@ -1171,7 +1171,7 @@ final class ImGuiAuthoringEditor {
         if (selected && showBranch) {
             if (document.kind() != DefinitionKind.QUEST) {
                 ImGui.textUnformatted("Player response");
-                textFields.render("new_response", responseLabel, document.kind(), false);
+                textFields.render("new_response", responseLabel, document.kind(), false, preferences.textScale());
             }
             ImGui.textUnformatted("Leads to");
             ImGui.setNextItemWidth(-1);
@@ -2101,7 +2101,7 @@ final class ImGuiAuthoringEditor {
                 String bufferId = location.document().resourcePath() + location.pointer();
                 ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
                 ImGui.beginDisabled(rawModified);
-                textFields.render(bufferId, buffer, document.kind(), !path.endsWith("/label") && !path.endsWith("/title"));
+                textFields.render(bufferId, buffer, document.kind(), !path.endsWith("/label") && !path.endsWith("/title"), preferences.textScale());
                 ImGui.endDisabled();
                 translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
                         .update(location.pointer(), text, buffer.get());
@@ -2269,9 +2269,9 @@ final class ImGuiAuthoringEditor {
                 ImGui.setKeyboardFocusHere();
             }
             if (text && (path.contains("/lines/") || path.contains("/variants/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
-                textFields.render(path, input, document.kind(), true);
+                textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))
-                textFields.render(path, input, document.kind(), false);
+                textFields.render(path, input, document.kind(), false, preferences.textScale());
             else {
                 ImGui.inputText("##value", input);
                 apply = ImGui.isItemDeactivatedAfterEdit() && ImGui.isKeyPressed(ImGuiKey.Enter);
