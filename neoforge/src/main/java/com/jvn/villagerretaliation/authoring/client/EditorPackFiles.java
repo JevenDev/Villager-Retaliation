@@ -29,6 +29,13 @@ final class EditorPackFiles implements AutoCloseable {
     }
 
     private record FileDrag(Path workspace, String source) { }
+    record Entry(String path, boolean folder) { }
+
+    static List<Entry> contents(AuthoringWorkspace workspace, String folder) {
+        return java.util.stream.Stream.concat(
+                workspace.folderPaths().stream().filter(path -> EditorNavigation.parent(path).equals(folder)).map(path -> new Entry(path, true)),
+                workspace.filePaths().stream().filter(path -> EditorNavigation.parent(path).equals(folder)).map(path -> new Entry(path, false))).toList();
+    }
 
     private String selected = "";
     private String loaded = "";
@@ -247,7 +254,7 @@ final class EditorPackFiles implements AutoCloseable {
             } catch (IllegalArgumentException exception) { folderError = exception.getMessage(); throw exception; }
         });
         ImGui.sameLine();
-        if (ImGui.button("Cancel")) ImGui.closeCurrentPopup();
+        if (ImGui.button("Cancel") || ImGui.isKeyPressed(imgui.flag.ImGuiKey.Escape)) ImGui.closeCurrentPopup();
         ImGui.endPopup();
     }
 
@@ -288,8 +295,7 @@ final class EditorPackFiles implements AutoCloseable {
         ImGui.textUnformatted(selected.isEmpty() ? "Pack files" : selected);
         ImGui.textWrapped("These paths match the built datapack. Drafts are stored in workspace.json. Build the pack to write this file tree to disk.");
         if (!selected.isEmpty() && ImGui.button("Copy pack path")) Minecraft.getInstance().keyboardHandler.setClipboard(selected);
-        List<String> files = workspace.filePaths().stream().filter(path -> selected.isEmpty() || path.equals(selected) || path.startsWith(selected + "/")).toList();
-        if (files.size() == 1 && files.getFirst().equals(selected)) {
+        if (workspace.filePaths().contains(selected)) {
             try {
                 load(workspace);
                 ImGui.textDisabled(size + " bytes");
@@ -311,10 +317,15 @@ final class EditorPackFiles implements AutoCloseable {
                 if (Files.isRegularFile(built) && ImGui.button("Open built file")) net.minecraft.Util.getPlatform().openFile(built.toFile());
             } catch (java.nio.file.InvalidPathException exception) { ImGui.textDisabled("Choose an output folder to open built files."); }
         } else {
-            ImGui.textUnformatted(files.size() + " files in this folder");
+            var entries = contents(workspace, selected);
+            long folders = entries.stream().filter(Entry::folder).count(), files = entries.size() - folders;
+            ImGui.textUnformatted(folders + (folders == 1 ? " folder, " : " folders, ") + files + (files == 1 ? " file" : " files"));
             ImGui.setNextItemOpen(true, ImGuiCond.Once);
-            if (ImGui.collapsingHeader("Folder contents##" + selected)) for (String file : files)
-                if (ImGui.selectable((selected.isEmpty() ? file : file.substring(selected.length() + 1)) + "##contents:" + file)) open.accept(file);
+            if (ImGui.collapsingHeader("Folder contents##" + selected)) for (Entry entry : entries) {
+                String label = entry.path().substring(entry.path().lastIndexOf('/') + 1) + (entry.folder() ? "/" : "");
+                if (ImGui.selectable(label + "##contents:" + entry.path())) open.accept(entry.path());
+                if (ImGui.isItemHovered()) ImGui.setTooltip(entry.path());
+            }
         }
         if (selected.isEmpty() || selected.equals("pack.mcmeta") || selected.equals("pack.png")) return;
         ImGui.separator();
@@ -343,7 +354,7 @@ final class EditorPackFiles implements AutoCloseable {
             preview = workspace.previewFileMove(from, parent.get().isBlank() ? name.get() : parent.get() + "/" + name.get());
         });
         if (preview != null) {
-            ImGui.textWrapped((preview.paths().isEmpty() ? "Empty folder" : preview.paths().size() + " files") + " will move to " + preview.destination());
+            ImGui.textWrapped((preview.paths().isEmpty() ? "Empty folder" : preview.paths().size() + (preview.paths().size() == 1 ? " file" : " files")) + " will move to " + preview.destination());
             for (String change : preview.changes()) ImGui.textWrapped(change);
             if (ImGui.collapsingHeader("Affected files")) preview.paths().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> ImGui.textWrapped(entry.getKey() + " -> " + entry.getValue()));
             if (ImGui.button("Apply move")) schedule.accept(() -> {

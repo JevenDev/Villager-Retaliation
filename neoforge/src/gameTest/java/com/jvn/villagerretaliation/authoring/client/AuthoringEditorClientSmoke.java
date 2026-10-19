@@ -469,6 +469,7 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         buildFileTreeSteps();
+        buildNavigationSteps();
         STEPS.add(() -> {
             capture("02c-pack-file-tree");
             var files = field(editor, "packFiles");
@@ -591,6 +592,112 @@ public final class AuthoringEditorClientSmoke {
             invoke("openPackFile", new Class<?>[] {String.class}, addon);
         });
         pause(250);
+    }
+
+    private static void buildNavigationSteps() {
+        String addon = "data/test/campaign_addons/editor_addon";
+        var selected = new AuthoringDocument[1];
+        var selectedPointer = new String[1];
+        STEPS.add(() -> {
+            selected[0] = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, selected[0]);
+            set("view", 0); set("fitGraph", false); set("graphFocus", "");
+            set("panX", 120f); set("panY", 80f); set("zoom", .75f);
+        });
+        pause(250);
+        STEPS.add(() -> {
+            selectedPointer[0] = ((imgui.type.ImString) field(editor, "pointer")).get();
+            invoke("openPackFile", new Class<?>[] {String.class}, "pack.mcmeta");
+        });
+        click(() -> toolbar("Back"));
+        STEPS.add(() -> require(field(editor, "document") == selected[0] && (int) field(editor, "view") == 0
+                && ((imgui.type.ImString) field(editor, "pointer")).get().equals(selectedPointer[0])
+                && (float) field(editor, "panX") == 120f && (float) field(editor, "panY") == 80f && (float) field(editor, "zoom") == .75f,
+                "Back restores the graph document, field, pan and zoom after opening metadata."));
+        STEPS.add(() -> invoke("openFolder", new Class<?>[] {String.class}, addon));
+        click(() -> toolbar("Build pack"));
+        STEPS.add(() -> invoke("openPackFile", new Class<?>[] {String.class}, "pack.mcmeta"));
+        replaceText(() -> screenPoint(600, 330), () -> "{");
+        click(() -> toolbar("Back"));
+        STEPS.add(() -> {
+            require((int) field(editor, "view") == 4 && field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Invalid metadata keeps navigation on the edited file.");
+            require(((imgui.type.ImString) field(field(editor, "packFiles"), "text")).get().equals("{"), "Failed navigation preserves the invalid buffer.");
+        });
+        click(() -> toolbar("Edit"));
+        STEPS.add(() -> require((int) field(editor, "view") == 4, "View buttons cannot hide an invalid pending metadata buffer."));
+        replaceText(() -> screenPoint(600, 330), () -> {
+            var metadata = workspace.packMetadata(); metadata.getAsJsonObject("pack").addProperty("description", "Navigation keeps edits");
+            return metadata.toString();
+        });
+        click(() -> toolbar("Back"));
+        STEPS.add(() -> {
+            require((int) field(editor, "view") == 2, "Back returns from pack.mcmeta to pack finalization.");
+            require(((String) field(editor, "status")).startsWith("Back to"), "Successful navigation clears the previous error message.");
+            require(workspace.packMetadata().getAsJsonObject("pack").get("description").getAsString().equals("Navigation keeps edits"), "Valid pending edits apply before navigation.");
+            capture("02h-navigation-back");
+        });
+        click(() -> toolbar("Back"));
+        STEPS.add(() -> require((int) field(editor, "view") == 4 && field(field(editor, "packFiles"), "selected").equals(addon), "Back returns to the previous folder."));
+        click(() -> toolbar("Forward"));
+        click(() -> toolbar("Forward"));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Forward reopens the metadata file."));
+        click(() -> toolbar("Up"));
+        STEPS.add(() -> {
+            require(field(field(editor, "packFiles"), "selected").equals(""), "Up opens the containing pack root for pack.mcmeta.");
+            capture("02i-pack-root-navigation");
+        });
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        chord(ImGuiKey.ImGuiMod_Alt, ImGuiKey.LeftArrow);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Ctrl+Alt+Left navigates back."));
+        click(() -> screenPoint(600, 330));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        chord(ImGuiKey.ImGuiMod_Alt, ImGuiKey.RightArrow);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals(""), "Ctrl+Alt+Right works while a text file is focused."));
+        STEPS.add(() -> ImGui.getIO().addMouseButtonEvent(3, true));
+        STEPS.add(() -> ImGui.getIO().addMouseButtonEvent(3, false));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "The mouse back button reopens the previous file."));
+        STEPS.add(() -> ImGui.getIO().addMouseButtonEvent(4, true));
+        STEPS.add(() -> ImGui.getIO().addMouseButtonEvent(4, false));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals(""), "The mouse forward button restores the next location."));
+        STEPS.add(() -> invoke("openPackFile", new Class<?>[] {String.class}, "pack.mcmeta"));
+        chord(ImGuiKey.ImGuiMod_Alt, ImGuiKey.UpArrow);
+        STEPS.add(() -> {
+            require(field(field(editor, "packFiles"), "selected").equals(""), "Alt+Up opens the containing folder.");
+            invoke("openFolder", new Class<?>[] {String.class}, addon + "/quests/release");
+        });
+        click(() -> breadcrumb("data/test"));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals("data/test"), "Breadcrumbs open the chosen containing folder."));
+        click(() -> toolbar("Back"));
+        STEPS.add(() -> {
+            require(field(field(editor, "packFiles"), "selected").equals(addon + "/quests/release"), "Breadcrumb navigation participates in history.");
+            ((imgui.type.ImString) field(editor, "filter")).set("no_matching_file");
+        });
+        click(() -> screenPoint(216, 193));
+        STEPS.add(() -> require(((imgui.type.ImString) field(editor, "filter")).get().isEmpty(), "Clear search restores the file tree."));
+        click(() -> screenPoint(600, 150));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.F);
+        STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8("release"));
+        STEPS.add(() -> require(((imgui.type.ImString) field(editor, "filter")).get().equals("release"), "Ctrl+F focuses search from a folder view."));
+        click(() -> screenPoint(216, 193));
+        STEPS.add(() -> invoke("openFolder", new Class<?>[] {String.class}, addon));
+        pause(250);
+    }
+
+    private static float[] breadcrumb(String target) {
+        float x = ImGui.getMainViewport().getWorkPosX() + 14;
+        float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
+        String root = workspace.directory().getFileName().toString();
+        x += ImGui.calcTextSize(root).x * scale + 16;
+        String path = (String) field(field(editor, "packFiles"), "selected");
+        for (String folder : EditorNavigation.ancestors(path)) {
+            x += ImGui.calcTextSize("/").x * scale + 16;
+            float width = ImGui.calcTextSize(folder.substring(folder.lastIndexOf('/') + 1)).x * scale + 16;
+            if (folder.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 64};
+            x += width;
+        }
+        throw new IllegalArgumentException(target);
     }
 
     private static void buildCreatorToolsSteps() {
@@ -1407,7 +1514,7 @@ public final class AuthoringEditorClientSmoke {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
         for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
-                (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close"}) {
+                (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close", "Back", "Forward", "Up"}) {
             float width = ImGui.calcTextSize(label).x * scale + 16;
             if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};
             x += width + 8;

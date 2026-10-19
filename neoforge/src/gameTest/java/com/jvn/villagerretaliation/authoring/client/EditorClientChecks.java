@@ -10,6 +10,7 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        navigationKeepsContextBranchesAndWorkspaceBoundaries();
         packFileTreeKeepsAncestorFolders();
         playtestRespectsCampaignAndAddonSelection();
         campaignAddonFormsExposeRuntimeSettings();
@@ -55,7 +56,47 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 45;
+        return 46;
+    }
+
+    private static void navigationKeepsContextBranchesAndWorkspaceBoundaries() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-navigation"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest");
+        var navigation = new EditorNavigation();
+        var edit = new EditorNavigation.Location(quest, quest.resourcePath(), 0, false, "/stages/start", 25, 25, 1, 0);
+        navigation.record(workspace, edit);
+        var adjusted = new EditorNavigation.Location(quest, quest.resourcePath(), 0, false, "/stages/start/objectives", 120, 80, .75f, 140);
+        navigation.record(workspace, adjusted);
+        var metadata = new EditorNavigation.Location(null, "pack.mcmeta", 4, true, "", 0, 0, 1, 0);
+        navigation.record(workspace, metadata);
+        check(navigation.target(-1).equals(adjusted), "back keeps the last graph field, pan, zoom and scroll without recording every adjustment");
+        navigation.accept(adjusted); navigation.record(workspace, adjusted);
+        check(navigation.target(-1) == null && navigation.target(1).equals(metadata), "restoring a location keeps its forward history");
+        var build = new EditorNavigation.Location(quest, quest.resourcePath(), 2, false, "", 0, 0, 1, 0);
+        navigation.record(workspace, build);
+        check(navigation.target(1) == null, "opening a new destination clears the forward branch");
+        workspace.rename(quest, "test:renamed");
+        check(navigation.target(-1).currentPath().equals(quest.resourcePath()), "document history follows renamed definitions");
+        workspace.createFolder("data/test/empty");
+        navigation.record(workspace, new EditorNavigation.Location(null, "data/test/empty", 4, true, "", 0, 0, 1, 0));
+        workspace.applyFileMove(workspace.previewFileMove("data/test/empty", "data/test/moved"));
+        navigation.record(workspace, metadata);
+        check(navigation.target(-1).equals(build), "history skips folders that no longer exist");
+        workspace.remove(quest);
+        check(navigation.target(-1) == null, "history skips removed documents");
+        var other = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-navigation-other"));
+        navigation.record(other, metadata);
+        check(navigation.target(-1) == null && navigation.target(1) == null, "opening another workspace resets both directions");
+        for (int i = 0; i < 140; i++) {
+            String folder = "data/test/folder_" + i;
+            other.createFolder(folder);
+            navigation.record(other, new EditorNavigation.Location(null, folder, 4, true, "", 0, 0, 1, 0));
+        }
+        int previous = 0;
+        for (var target = navigation.target(-1); target != null; target = navigation.target(-1)) { navigation.accept(target); previous++; }
+        check(previous == 127, "navigation retains a bounded recent history");
+        check(EditorNavigation.parent("pack.mcmeta").isEmpty() && EditorNavigation.parent("data/test/quests").equals("data/test"), "up works for root files and nested folders");
+        check(EditorNavigation.ancestors("data/test/quests/quest.json").equals(java.util.List.of("data", "data/test", "data/test/quests")), "breadcrumbs expose each containing folder");
     }
 
     private static void packFileTreeKeepsAncestorFolders() throws java.io.IOException {
@@ -68,6 +109,9 @@ public final class EditorClientChecks {
         check(EditorContentTools.contentScope(workspace, "data/test/campaign_addons/addon/quests/authored/example/quest.json") == addon, "descendant files retain their addon scope");
         check(EditorContentTools.contentScope(workspace, "data/test/quests") == null, "ordinary folders use the default content scope");
         workspace.createFolder("data/test/campaign_addons/addon/artwork/empty");
+        var contents = EditorPackFiles.contents(workspace, "data/test/campaign_addons/addon");
+        check(contents.stream().anyMatch(entry -> entry.folder() && entry.path().endsWith("/artwork")) && contents.stream().noneMatch(entry -> entry.path().endsWith("/empty")), "folder contents show immediate child folders instead of flattened descendants");
+        check(EditorPackFiles.contents(workspace, "").stream().anyMatch(entry -> entry.path().equals("data") && entry.folder()), "pack root includes its folders alongside metadata");
         tree = EditorPackFiles.tree(workspace.filePaths(), workspace.folderPaths(), "empty");
         check(!tree.children.get("data").children.get("test").children.get("campaign_addons").children.get("addon").children.get("artwork").children.get("empty").file, "empty folders remain folders in filtered trees");
         var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest", addon);

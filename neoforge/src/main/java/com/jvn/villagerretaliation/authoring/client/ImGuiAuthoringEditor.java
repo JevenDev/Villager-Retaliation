@@ -63,6 +63,8 @@ final class ImGuiAuthoringEditor {
     private boolean filesMode = true;
     private final EditorPackFiles packFiles = new EditorPackFiles();
     private final EditorPackBuild packBuild = new EditorPackBuild();
+    private final EditorNavigation navigation = new EditorNavigation();
+    private float workScroll, restoreWorkScroll = Float.NaN;
     private boolean showBranch;
     private boolean fitGraph = true;
     private boolean wireDragMoved;
@@ -216,6 +218,7 @@ final class ImGuiAuthoringEditor {
             } else screen.onClose();
             return;
         }
+        recordLocation();
         rendering = true;
         pushEditorStyle();
         try {
@@ -226,12 +229,21 @@ final class ImGuiAuthoringEditor {
                     if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
                 }
             }
+            if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
+                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
+                if (ImGui.getIO().getKeyCtrl() && ImGui.getIO().getKeyAlt()) {
+                    if (ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateHistory(-1));
+                    if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateHistory(1));
+                }
+                if (workspace != null && ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.UpArrow) && !activePath().isEmpty()) operation(this::navigateUp);
+                if (ImGui.isMouseClicked(3)) operation(() -> navigateHistory(-1));
+                if (ImGui.isMouseClicked(4)) operation(() -> navigateHistory(1));
+            }
             if (document != null && view == 0 && !ImGui.getIO().getWantTextInput() && !showRecovery && !confirmClose) {
-                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
                 if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.C)) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
                 if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.V)) operation(this::pasteNodes);
-                if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
-                if (ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
+                if (ImGui.getIO().getKeyAlt() && !ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
+                if (ImGui.getIO().getKeyAlt() && !ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
             }
             if (view == 3) { playtest(); return; }
             shell();
@@ -249,6 +261,7 @@ final class ImGuiAuthoringEditor {
             ImGui.popStyleVar(5);
             rendering = false;
             while (!operations.isEmpty()) runOperation(operations.removeFirst());
+            recordLocation();
         }
     }
 
@@ -329,16 +342,16 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Workspace")) showWorkspace = !showWorkspace;
         ImGui.sameLine();
         ImGui.beginDisabled(workspace == null);
-        if (ImGui.button("New")) { chooseCreateScope(); showCreate = !showCreate; view = 0; }
+        if (ImGui.button("New")) operation(() -> { chooseCreateScope(); showCreate = !showCreate; view = 0; });
         ImGui.sameLine();
         if (ImGui.button("Save")) operation(this::save);
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (viewButton("Edit", 0)) { view = 0; focusPanel = WORK_PANEL; }
+        if (viewButton("Edit", 0)) operation(() -> { view = 0; focusPanel = WORK_PANEL; });
         ImGui.sameLine();
-        if (viewButton("Preview", 1)) { view = 1; focusPanel = WORK_PANEL; }
+        if (viewButton("Preview", 1)) operation(() -> { view = 1; focusPanel = WORK_PANEL; });
         ImGui.sameLine();
-        if (viewButton("Playtest", 3)) enterPlaytest();
+        if (viewButton("Playtest", 3)) operation(this::enterPlaytest);
         ImGui.sameLine();
         if (viewButton("Build pack", 2)) operation(() -> { validate(); view = 2; focusPanel = WORK_PANEL; });
         if (ImGui.getWindowWidth() > 1000) ImGui.sameLine();
@@ -352,10 +365,9 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Files")) operation(() -> { filesMode = true; view = 4; focusPanel = WORK_PANEL; });
         ImGui.sameLine();
         if (ImGui.button("Close")) screen.onClose();
+        navigationControls();
+        breadcrumbs();
         ImGui.endDisabled();
-        ImGui.textDisabled(workspace == null ? "No workspace open" : workspace.directory().getFileName()
-                + (view == 4 ? "  /  " + packFiles.selected() : document == null ? "" : "  /  " + document.resourcePath())
-                + (workspace != null && (workspace.dirty() || hasPendingFields() || rawModified) ? "  (unsaved)" : ""));
     }
 
     private boolean viewButton(String label, int index) {
@@ -382,12 +394,12 @@ final class ImGuiAuthoringEditor {
         if (ImGui.smallButton("Back")) guideStep--;
         ImGui.endDisabled();
         ImGui.sameLine();
-        if (ImGui.smallButton("Show me")) {
+        if (ImGui.smallButton("Show me")) operation(() -> {
             if (guideStep == 0) showWorkspace = true;
             if (guideStep == 1) showCreate = true;
             view = guideStep < 3 ? 0 : guideStep == 3 ? 1 : 2;
             focusPanel = guideStep < 2 ? CONTENT_PANEL : guideStep == 2 ? DETAIL_PANEL : WORK_PANEL;
-        }
+        });
         ImGui.sameLine();
         if (ImGui.smallButton(guideStep == titles.length - 1 ? "Finish" : "Next")) {
             if (guideStep == titles.length - 1) dismissGuide();
@@ -408,6 +420,10 @@ final class ImGuiAuthoringEditor {
     private void panel(String title) {
         if (title.equals(focusPanel)) { ImGui.setNextWindowFocus(); focusPanel = ""; }
         ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
+        if (title.equals(WORK_PANEL)) {
+            if (!Float.isNaN(restoreWorkScroll)) { ImGui.setScrollY(restoreWorkScroll); restoreWorkScroll = Float.NaN; }
+            workScroll = ImGui.getScrollY();
+        }
         ImGui.setWindowFontScale(preferences.textScale());
     }
 
@@ -475,11 +491,11 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        if (ImGui.button("New content", -1, 0)) {
+        if (ImGui.button("New content", -1, 0)) operation(() -> {
             showCreate = !showCreate;
             view = 0;
             chooseCreateScope();
-        }
+        });
         if (showCreate) {
             ImGui.textUnformatted("Format");
             ImGui.setNextItemWidth(-1);
@@ -558,7 +574,12 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.setNextItemWidth(-1);
         if (focusSearch) { ImGui.setKeyboardFocusHere(); focusSearch = false; }
+        ImGui.setNextItemWidth(Math.max(40, ImGui.getContentRegionAvailX() - ImGui.calcTextSize("Clear").x - 24));
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
+        ImGui.sameLine();
+        ImGui.beginDisabled(filter.get().isEmpty());
+        if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
+        ImGui.endDisabled();
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
             packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
@@ -1842,6 +1863,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Save")) operation(this::save);
         ImGui.sameLine();
         if (ImGui.button("Stop playtest")) operation(() -> leavePlaytest(0));
+        navigationControls();
         ImGui.textWrapped("Click the game to play. F9 returns control to this panel.");
         recoveryControls();
         ImGui.beginDisabled(EditorTestWorld.applying());
@@ -2218,8 +2240,107 @@ final class ImGuiAuthoringEditor {
         select(content);
         packFiles.select(path);
         filesMode = true;
+        restoreWorkScroll = 0;
         view = content == null ? 4 : 0;
         focusPanel = WORK_PANEL;
+    }
+
+    private String activePath() {
+        return view == 4 ? packFiles.selected() : document == null ? "" : document.resourcePath();
+    }
+
+    private void recordLocation() {
+        navigation.record(workspace, new EditorNavigation.Location(document, packFiles.selected(), view, filesMode, pointer.get(), panX, panY, zoom, workScroll));
+    }
+
+    private void navigateHistory(int direction) {
+        recordLocation();
+        var target = navigation.target(direction);
+        if (target == null) return;
+        if (view == 3 && target.view() != 3) leavePlaytest(target.view());
+        select(target.document());
+        String path = target.currentPath();
+        packFiles.select(target.view() != 4 && !path.isEmpty() && !workspace.filePaths().contains(path) && !workspace.folderPaths().contains(path) ? "" : path);
+        filesMode = target.filesMode();
+        if (target.document() != null) {
+            var location = EditorDiagnosticLocation.resolve(target.document(), target.pointer());
+            selectedNode = location.nodeId(); pointer.set(location.pointer());
+            nodeSelection.clear();
+            if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+        }
+        panX = target.panX(); panY = target.panY(); zoom = target.zoom();
+        fitGraph = false; graphFocus = "";
+        restoreWorkScroll = target.scroll();
+        if (target.view() == 3 && view != 3) enterPlaytest();
+        else view = target.view();
+        focusPanel = view == 3 ? "Playtest###VR_Playtest" : WORK_PANEL;
+        navigation.accept(target);
+        status = (direction < 0 ? "Back to " : "Forward to ") + target.label() + ".";
+    }
+
+    private void openFolder(String path) {
+        if (!path.isEmpty() && !workspace.folderPaths().contains(path)) throw new IllegalArgumentException("Folder no longer exists: " + path);
+        if (view == 3) leavePlaytest(4);
+        openPackFile(path); view = 4;
+        status = path.isEmpty() ? "Opened pack root." : "Opened folder: " + path;
+    }
+
+    private void navigateUp() {
+        if (!activePath().isEmpty()) openFolder(EditorNavigation.parent(activePath()));
+    }
+
+    private void navigationControls() {
+        ImGui.sameLine();
+        if (ImGui.getContentRegionAvailX() < ImGui.calcTextSize("BackForwardUp").x + 64) ImGui.newLine();
+        ImGui.beginDisabled(showRecovery || confirmClose || EditorTestWorld.applying());
+        var back = navigation.target(-1);
+        ImGui.beginDisabled(back == null);
+        if (ImGui.button("Back##navigation_back")) operation(() -> navigateHistory(-1));
+        ImGui.endDisabled();
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Back (Ctrl+Alt+Left)" + (back == null ? "" : "\n" + back.label()));
+        ImGui.sameLine();
+        var forward = navigation.target(1);
+        ImGui.beginDisabled(forward == null);
+        if (ImGui.button("Forward##navigation_forward")) operation(() -> navigateHistory(1));
+        ImGui.endDisabled();
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Forward (Ctrl+Alt+Right)" + (forward == null ? "" : "\n" + forward.label()));
+        ImGui.sameLine();
+        ImGui.beginDisabled(workspace == null || activePath().isEmpty());
+        if (ImGui.button("Up##navigation_up")) operation(this::navigateUp);
+        ImGui.endDisabled();
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Open containing folder (Alt+Up)");
+        ImGui.endDisabled();
+    }
+
+    private void breadcrumbs() {
+        if (workspace == null) { ImGui.textDisabled("No workspace open"); return; }
+        boolean dirty = workspace.dirty() || hasPendingFields() || rawModified;
+        String path = activePath();
+        String root = java.util.Objects.toString(workspace.directory().getFileName(), workspace.directory().toString());
+        if (ImGui.smallButton(shortText(root, 24) + "##pack_root_path")) operation(() -> openFolder(""));
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Open pack root\nDraft workspace: " + workspace.directory());
+        var ancestors = EditorNavigation.ancestors(path);
+        float width = ImGui.calcTextSize(path).x + ancestors.size() * 32 + 25 + (dirty ? 120 : 0);
+        float available = ImGui.getCursorScreenPosX() + ImGui.getContentRegionAvailX() - ImGui.getItemRectMaxX() - 8;
+        if (width > available && !ancestors.isEmpty()) {
+            ImGui.sameLine(); ImGui.textDisabled("/"); ImGui.sameLine();
+            if (ImGui.smallButton("...##path_parents")) ImGui.openPopup("Containing folders##path_parents");
+            if (ImGui.beginPopup("Containing folders##path_parents")) {
+                for (String folder : ancestors) if (ImGui.menuItem(folder)) operation(() -> openFolder(folder));
+                ImGui.endPopup();
+            }
+        } else for (String folder : ancestors) {
+            ImGui.sameLine(); ImGui.textDisabled("/"); ImGui.sameLine();
+            if (ImGui.smallButton(folder.substring(folder.lastIndexOf('/') + 1) + "##path:" + folder)) operation(() -> openFolder(folder));
+            if (ImGui.isItemHovered()) ImGui.setTooltip(folder);
+        }
+        if (!path.isEmpty()) {
+            ImGui.sameLine(); ImGui.textDisabled("/"); ImGui.sameLine();
+            int limit = Math.max(4, (int) ((ImGui.getContentRegionAvailX() - (dirty ? 120 : 0)) / ImGui.calcTextSize("M").x));
+            ImGui.textDisabled(shortText(path.substring(path.lastIndexOf('/') + 1), limit));
+            if (ImGui.isItemHovered()) ImGui.setTooltip(path);
+        }
+        if (dirty) { ImGui.sameLine(); ImGui.textDisabled("(unsaved)"); }
     }
 
     private void files() {
