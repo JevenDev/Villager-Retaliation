@@ -30,6 +30,7 @@ public final class AuthoringWorkspace {
     private java.util.Set<String> savedFolders = java.util.Set.of();
     private JsonObject savedPack;
     private boolean recovered;
+    private AuthoringWorkspace recoveredBaseline;
     private JsonObject recoveryBuffers = new JsonObject();
     private final List<JsonObject> deleted = new ArrayList<>();
     private int savedDeleted;
@@ -146,6 +147,33 @@ public final class AuthoringWorkspace {
         documents.forEach(document -> paths.add(document.resourcePath()));
         paths.add("pack.mcmeta");
         return List.copyOf(paths);
+    }
+
+    private AuthoringWorkspace savedBaseline() throws IOException {
+        if (!recovered) return this;
+        if (recoveredBaseline == null) recoveredBaseline = open(directory, FILE);
+        return recoveredBaseline;
+    }
+
+    public byte[] savedFile(String path) throws IOException {
+        safeRelativePath(path);
+        if (recovered) return savedBaseline().savedFile(path);
+        if (path.equals("pack.mcmeta")) return savedPack == null ? null : AuthoringDocument.JSON.toJson(savedPack).getBytes(StandardCharsets.UTF_8);
+        for (var document : savedDocuments) if (path.equals(document.savedPath()))
+            return AuthoringDocument.JSON.toJson(document.savedJson()).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = savedAttachments.get(path);
+        return bytes == null ? null : bytes.clone();
+    }
+
+    public List<String> changedFilePaths() throws IOException {
+        var paths = new java.util.TreeSet<>(filePaths());
+        var baseline = savedBaseline();
+        paths.addAll(baseline.savedAttachments.keySet());
+        baseline.savedDocuments.forEach(document -> { if (document.savedPath() != null) paths.add(document.savedPath()); });
+        var current = new HashSet<>(filePaths());
+        var changed = new ArrayList<String>();
+        for (String path : paths) if (!java.util.Arrays.equals(savedFile(path), current.contains(path) ? readFile(path) : null)) changed.add(path);
+        return List.copyOf(changed);
     }
 
     public List<String> folderPaths() {
@@ -1383,6 +1411,7 @@ public final class AuthoringWorkspace {
         savedPack = packMetadata.deepCopy();
         savedDeleted = deleted.size();
         recovered = false;
+        recoveredBaseline = null;
     }
 
     public boolean dirty() {

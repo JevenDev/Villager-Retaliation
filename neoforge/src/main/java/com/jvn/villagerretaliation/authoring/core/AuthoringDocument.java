@@ -114,6 +114,8 @@ public final class AuthoringDocument {
 
     void loadMetadata(JsonObject value) { metadata = value.deepCopy(); }
     void markSaved() { saved = state(); }
+    String savedPath() { return saved == null ? null : saved.path(); }
+    JsonObject savedJson() { return saved == null ? null : saved.json().deepCopy(); }
 
     private void remember(String label) {
         undo.push(new HistoryEntry(state(), null, label == null || label.isBlank() ? "Edit document" : label));

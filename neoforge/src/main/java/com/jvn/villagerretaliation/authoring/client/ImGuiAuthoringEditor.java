@@ -78,6 +78,7 @@ final class ImGuiAuthoringEditor {
     private final EditorLibrary library = new EditorLibrary(MC.gameDirectory.toPath().resolve("config/authoring-editor-library.json"));
     private final EditorSnippets snippets = new EditorSnippets();
     private final EditorBulkEdit bulkEdit = new EditorBulkEdit();
+    private final EditorChanges changes = new EditorChanges();
     private boolean requestQuickOpen;
     private final ImString quickQuery = new ImString(256);
     private int quickIndex;
@@ -767,6 +768,8 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Commands (Ctrl+Shift+P)")) commandPalette.open();
         openFileTools();
         historyTools();
+        try { changes.render(workspace, this::operation, this::openPackFile, changed -> { if (changed != null) historyDocument = changed; refresh(); }); }
+        catch (IOException exception) { ImGui.textWrapped("Could not read saved changes: " + exception.getMessage()); }
         if (document != null && ImGui.button("Find usages across workspace")) findUsages();
         replacementTools();
     }
@@ -1543,6 +1546,7 @@ final class ImGuiAuthoringEditor {
                     && (issue.pointer().equals(pointer.get()) || issue.pointer().startsWith(pointer.get() + "/"))) {
                 ImGui.textWrapped(issue.severity() + ": " + issue.message());
                 ImGui.textWrapped(diagnosticHint(issue.message()));
+                EditorQuickFixes.render(workspace, document, issue, this::operation, this::refresh);
             }
             if (pendingFields.pending()) try { pendingFields.validate(document); }
             catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
@@ -2852,6 +2856,8 @@ final class ImGuiAuthoringEditor {
             ImGui.pushID(i);
             if (ImGui.selectable(diagnostic.severity() + ": " + diagnostic.message() + "##issue", diagnostic.equals(activeDiagnostic)))
                 operation(() -> openDiagnostic(diagnostic));
+            var owner = workspace.documents().stream().filter(value -> value.resourcePath().equals(diagnostic.resourcePath())).findFirst().orElse(null);
+            EditorQuickFixes.render(workspace, owner, diagnostic, this::operation, () -> { historyDocument = owner; refresh(); });
             ImGui.textDisabled(diagnostic.pointer().isEmpty() ? "File settings" : diagnostic.pointer());
             if (ImGui.isItemHovered()) ImGui.setTooltip(diagnostic.message() + "\n" + diagnostic.resourcePath() + diagnostic.pointer());
             ImGui.popID();

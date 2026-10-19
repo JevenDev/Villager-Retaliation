@@ -20,7 +20,10 @@ final class EditorQualityChecks {
         snippetsPreserveDependenciesAcrossRestartAndUndo();
         behaviorSnippetsValidateAndAvoidDuplicateIds();
         bulkPropertiesPreviewMixedValuesAndRejectStaleOrInvalidEdits();
-        return 4;
+        savedChangesTrackFilesFieldsAndRecovery();
+        fieldRevertsPreserveOtherEditsAndRejectStaleReviews();
+        quickFixesRepairMissingDestinationsAtomically();
+        return 7;
     }
 
     private static void resourceLibraryPersistsAndFiltersUnavailableChoices() throws IOException {
@@ -111,6 +114,74 @@ final class EditorQualityChecks {
         check(tree.json().equals(latest), "stale bulk previews preserve newer edits");
         rejects(() -> EditorBulkEdit.preview(tree, ids, "/end", "123"));
         rejects(() -> EditorBulkEdit.preview(tree, Set.of("start", "missing"), "/lines/0", "No"));
+    }
+
+    private static void savedChangesTrackFilesFieldsAndRecovery() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-saved-changes"));
+        var tree = workspace.createDocument(DefinitionKind.TREE, "test:changes"); workspace.save();
+        byte[] saved = workspace.savedFile(tree.resourcePath());
+        tree.edit("Change wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new JsonPrimitive("Draft")));
+        check(workspace.changedFilePaths().equals(List.of(tree.resourcePath())), "saved change review lists modified content files");
+        var before = JsonParser.parseString(new String(saved, java.nio.charset.StandardCharsets.UTF_8));
+        var diff = EditorChanges.compare(before, tree.json());
+        check(diff.size() == 1 && diff.getFirst().pointer().equals("/nodes/start/lines/0"), "changes locate individual wording fields");
+        var recoveredPath = tree.resourcePath(); workspace.saveRecovery(new JsonObject());
+        var recovered = AuthoringWorkspace.recover(workspace.directory());
+        check(java.util.Arrays.equals(saved, recovered.savedFile(recoveredPath)) && recovered.changedFilePaths().contains(recoveredPath), "recovered drafts compare against the saved workspace rather than the recovery snapshot");
+        workspace.rename(tree, "test:renamed_changes");
+        check(workspace.changedFilePaths().containsAll(List.of(recoveredPath, tree.resourcePath())), "renames expose the removed and added file paths");
+        var added = workspace.createDocument(DefinitionKind.TREE, "test:new_changes");
+        check(workspace.savedFile(added.resourcePath()) == null, "new files have no saved baseline");
+        workspace.save(); check(workspace.changedFilePaths().isEmpty(), "saving refreshes every comparison baseline");
+        tree.editMetadata("Move node", root -> root.addProperty("test_layout", true));
+        check(workspace.changedFilePaths().isEmpty() && workspace.dirty(), "editor metadata does not appear as pack content changes");
+        workspace.remove(added);
+        check(workspace.changedFilePaths().contains(added.resourcePath()), "removed files remain visible in the change review");
+    }
+
+    private static void fieldRevertsPreserveOtherEditsAndRejectStaleReviews() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-field-reverts"));
+        var tree = workspace.createDocument(DefinitionKind.TREE, "test:revert"); workspace.save();
+        var original = tree.json();
+        tree.edit("Change wording and display", root -> {
+            root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new JsonPrimitive("Draft"));
+            root.addProperty("display", "Keep this edit");
+        });
+        var baseline = tree.json();
+        var wording = EditorChanges.compare(original, baseline).stream().filter(change -> change.pointer().endsWith("/lines/0")).findFirst().orElseThrow();
+        EditorChanges.revert(workspace, tree, baseline, wording);
+        check(JsonPointers.get(tree.json(), wording.pointer()).getAsString().equals("Hello.") && tree.json().get("display").getAsString().equals("Keep this edit"), "field reverts preserve unrelated edits");
+        tree.undo(); check(tree.json().equals(baseline), "field reverts can be undone");
+        tree.edit("Newer wording", root -> root.addProperty("display", "Newer"));
+        var latest = tree.json(); rejects(() -> EditorChanges.revert(workspace, tree, baseline, wording));
+        check(tree.json().equals(latest), "stale change reviews cannot overwrite newer drafts");
+        var first = JsonParser.parseString("[{\"id\":\"a\",\"value\":1},{\"id\":\"b\",\"value\":2}]");
+        var reordered = JsonParser.parseString("[{\"id\":\"b\",\"value\":2},{\"id\":\"a\",\"value\":1}]");
+        check(EditorChanges.compare(first, reordered).size() == 1 && EditorChanges.compare(first, reordered).getFirst().pointer().isEmpty(), "reordered identity lists revert together without mixing entries");
+        var absent = new JsonObject(); var explicitNull = new JsonObject(); explicitNull.add("field", com.google.gson.JsonNull.INSTANCE);
+        var nullChange = EditorChanges.compare(absent, explicitNull).getFirst();
+        check(nullChange.before() == null && nullChange.after().isJsonNull(), "change review distinguishes absent fields from explicit nulls");
+    }
+
+    private static void quickFixesRepairMissingDestinationsAtomically() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-quick-fixes"));
+        var tree = workspace.createDocument(DefinitionKind.TREE, "test:fixes");
+        tree.edit("Broken reference", root -> root.getAsJsonArray("entries").get(0).getAsJsonObject().addProperty("start", "missing"));
+        var issue = workspace.validate().stream().filter(value -> value.message().equals("Missing entry node")).findFirst().orElseThrow();
+        var target = EditorQuickFixes.target(tree, issue); var before = tree.json();
+        check(target != null, "missing entry diagnostics expose a targeted repair");
+        EditorQuickFixes.apply(workspace, tree, target, "missing", true);
+        check(DialogueGraph.nodes(tree).stream().anyMatch(node -> node.id().equals("missing")) && workspace.validate().stream().noneMatch(value -> value.message().equals("Missing entry node")), "create destination repairs the reference and graph in one operation");
+        tree.undo(); check(tree.json().equals(before), "quick fix creation undoes in one step");
+        EditorQuickFixes.apply(workspace, tree, target, "start", false);
+        check(tree.json().getAsJsonArray("entries").get(0).getAsJsonObject().get("start").getAsString().equals("start"), "replacement fixes select an existing destination");
+        var latest = tree.json(); rejects(() -> EditorQuickFixes.apply(workspace, tree, target, "missing", true));
+        check(tree.json().equals(latest), "stale fixes preserve newer references");
+        tree.undo();
+        rejects(() -> EditorQuickFixes.apply(workspace, tree, target, "bad id", true));
+        check(tree.json().equals(before), "invalid destination names cannot partly change the graph");
+        var other = new com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic(com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR, tree.resourcePath(), "/id", "Duplicate definition ID");
+        check(EditorQuickFixes.target(tree, other) == null, "unrelated diagnostics never receive graph reference fixes");
     }
 
     private static JsonObject json(String value) { return JsonParser.parseString(value).getAsJsonObject(); }
