@@ -1650,6 +1650,14 @@ final class ImGuiAuthoringEditor {
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
             default -> EditorProgressConditions.resources(field);
         };
+        var parent = JsonPointers.get(document.json(), path.substring(0, path.lastIndexOf('/')));
+        if (field.equals("target") && parent.isJsonObject()) {
+            var type = parent.getAsJsonObject().get("type");
+            if (type != null && type.isJsonPrimitive() && type.getAsJsonPrimitive().isString()) {
+                if (type.getAsString().equals("player_stat")) choices = EditorProgressConditions.statisticTargets(parent.getAsJsonObject());
+                else if (type.getAsString().equals("event_history")) choices = EditorProgressConditions.historyTargets(parent.getAsJsonObject());
+            }
+        }
         JsonObject rule = propertySchema.at(document.json(), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());

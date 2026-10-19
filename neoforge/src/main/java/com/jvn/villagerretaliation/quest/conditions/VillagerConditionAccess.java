@@ -110,6 +110,9 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.ProgressConditions.Check check)
+            return check.reference().evaluate(this.level, this.player, this.live, this.progress);
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerStatCondition stat) return stat.evaluate(this.player);
         if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check check)
             return check.reference().evaluate(this.level, this.player);
         if (condition instanceof DialogueCondition.WorkState work && work.reference().check().equals("eligible"))
@@ -147,6 +150,9 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public String unavailableReason(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.ProgressConditions.Check)
+            return "The player, provider, settlement or required settlement observations are unavailable.";
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerStatCondition stat) return stat.reason(this.player);
         if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check check)
             return check.reference().reason(this.level, this.player);
         if (condition instanceof DialogueCondition.WorkState work)

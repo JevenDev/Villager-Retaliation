@@ -44,6 +44,7 @@ public final class EditorClientChecks {
         graphArrangementHandlesCyclesAndLargeCards();
         behaviorBlocksRejectUnsupportedOwners();
         progressConditionsKeepListsModesAndPreviewOverrides();
+        expandedProgressConditionsRoundTripThroughTheEditor();
         textToolsPreserveUnicodeSelectionAndToggleStyles();
         timeVariablesFollowWorldClockAndPreviewConditions();
         graphSummariesKeepFormattingOutOfTheFlow();
@@ -51,7 +52,7 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 41;
+        return 42;
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
@@ -820,6 +821,50 @@ public final class EditorClientChecks {
         var effects = conversation.json().getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("effects");
         check(!effects.get(0).getAsJsonObject().get("id").equals(effects.get(1).getAsJsonObject().get("id")),
                 "conversation effect IDs remain unique");
+    }
+
+
+    private static void expandedProgressConditionsRoundTripThroughTheEditor() throws java.io.IOException {
+        var forms = new EditorSchema(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-expanded-progress"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:expanded_progress");
+        var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+        var choices = forms.choices(root.getAsJsonObject("$defs").getAsJsonObject("condition"));
+        var preview = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        for (var kind : java.util.List.of(EditorBlocks.Kind.PLAYER_STAT, EditorBlocks.Kind.EVENT_HISTORY,
+                EditorBlocks.Kind.PERSONAL_TRADE, EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION)) {
+            check(choices.containsKey(kind.label), "new checks appear in schema forms and the behavior palette");
+            String path = EditorBlocks.append(document, "/nodes/start", kind);
+            var condition = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(document.json(), path).getAsJsonObject();
+            String type = condition.get("type").getAsString();
+            var parsed = com.jvn.villagerretaliation.dialogue.DialogueCondition.readObjects(net.minecraft.resources.ResourceLocation.parse("test:expanded_progress"),
+                    "editor", java.util.List.of(condition), null);
+            check(!(parsed.getFirst() instanceof com.jvn.villagerretaliation.dialogue.DialogueCondition.Invalid), "every new editor preset parses at runtime");
+            check(preview.evaluate(parsed) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN,
+                    "preview does not invent history or settlement observations");
+            preview.override(type, com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
+            check(preview.evaluate(parsed) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED, "new checks support explicit preview overrides");
+            var beforeUndo = document.json();
+            document.undo(); document.redo();
+            check(document.json().equals(beforeUndo), "new checks retain undo and redo");
+        }
+        var beforeExport = document.json();
+        var pack = java.nio.file.Files.createTempDirectory("vr-expanded-progress-pack").resolve("pack");
+        workspace.exportPack(pack);
+        var imported = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-expanded-progress-import"));
+        imported.importPack(pack);
+        check(imported.documents().stream().anyMatch(value -> value.id().equals(document.id()) && value.json().equals(beforeExport)),
+                "all new condition fields survive export and import");
+        check(EditorProgressConditions.resources("event").contains("villagerretaliation:contribution_food"), "event picker includes recorded contributions");
+        check(EditorProgressConditions.statisticTargets(json("{\"category\":[]}")).isEmpty(), "malformed statistic categories remain editable");
+        check(EditorProgressConditions.historyTargets(json("{\"event\":null}")).isEmpty(), "malformed event targets remain editable");
+        document.edit("Invert a statistic range", value -> {
+            var condition = value.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("conditions").get(0).getAsJsonObject();
+            condition.addProperty("min", 5);
+            condition.addProperty("max", 4);
+        });
+        check(workspace.validate().stream().anyMatch(issue -> issue.pointer().equals("/nodes/start/conditions/0")),
+                "editor validation rejects cross-field range errors at the owning condition");
     }
 
     private static void progressConditionsKeepListsModesAndPreviewOverrides() throws java.io.IOException {

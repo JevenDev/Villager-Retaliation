@@ -221,6 +221,8 @@ public final class VillagerReputationEvents {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             int completedTradeCount = VillagerTradeUseTracker.completedTradeCount(villager, event.getMerchantOffer());
+            if (event.getEntity() instanceof ServerPlayer player)
+                com.jvn.villagerretaliation.progress.ProgressHistoryService.trade(level, player, villager, event.getMerchantOffer(), completedTradeCount);
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
             if (villager instanceof Villager villageResident) {
                 ServerPlayer serverPlayer = event.getEntity() instanceof ServerPlayer player ? player : null;

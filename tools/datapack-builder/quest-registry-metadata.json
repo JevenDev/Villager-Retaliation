@@ -5,6 +5,307 @@
   "registries": {
     "conditions": [
       {
+        "id": "event_history",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "History",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "event"
+          ],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "event_history"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "event": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "target": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "scope": {
+              "enum": [
+                "player",
+                "world",
+                "villager",
+                "settlement"
+              ]
+            },
+            "metric": {
+              "enum": [
+                "count",
+                "amount"
+              ]
+            },
+            "player_only": {
+              "type": "boolean",
+              "description": "Only this player's events. Defaults to false for world scope, true otherwise."
+            }
+          }
+        }
+      },
+      {
+        "id": "personal_trade",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Trade",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "personal_trade"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "metric": {
+              "enum": [
+                "trades",
+                "items_paid",
+                "items_received",
+                "currency_paid",
+                "currency_received"
+              ]
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            }
+          }
+        }
+      },
+      {
+        "id": "settlement_need",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Need",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "need"
+          ],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "settlement_need"
+            },
+            "need": {
+              "enum": [
+                "food",
+                "equipment",
+                "materials",
+                "production",
+                "stock",
+                "planting",
+                "housing",
+                "workers",
+                "population",
+                "housing_capacity"
+              ],
+              "description": "Supply needs measure missing units after committed and incoming supplies. Food uses nutrition points, other supplies use their demand quantities. Housing counts residents without a usable assigned bed. Workers counts unfilled desired worksite positions. Unavailable observations remain unknown."
+            }
+          }
+        }
+      },
+      {
+        "id": "settlement_contribution",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "Contribution",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "settlement_contribution"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "metric": {
+              "enum": [
+                "items",
+                "food",
+                "equipment",
+                "currency",
+                "defense",
+                "construction",
+                "storage"
+              ]
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            }
+          }
+        }
+      },
+      {
+        "id": "player_stat",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerStatCondition",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "category",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "player_stat"
+            },
+            "category": {
+              "enum": [
+                "mined",
+                "crafted",
+                "used",
+                "broken",
+                "picked_up",
+                "dropped",
+                "killed",
+                "killed_by",
+                "custom"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "description": "Registered block, item, entity or custom statistic. Values use vanilla units: distance in centimetres, time in ticks, damage in tenths of a health point. Workstation statistics count interactions."
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          }
+        }
+      },
+      {
         "id": "player_dimension_visited",
         "aliases": [],
         "capabilities": [
@@ -5544,6 +5845,88 @@
         }
       },
       {
+        "id": "villagerretaliation:event_history",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Event history",
+        "description": "Built-in Event history type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "event_history"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "event": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "target": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "scope": {
+              "enum": [
+                "player",
+                "world",
+                "villager",
+                "settlement"
+              ]
+            },
+            "metric": {
+              "enum": [
+                "count",
+                "amount"
+              ]
+            },
+            "player_only": {
+              "type": "boolean",
+              "description": "Only this player's events. Defaults to false for world scope, true otherwise."
+            }
+          },
+          "required": [
+            "type",
+            "event"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:family",
         "aliases": [],
         "live_capabilities": [
@@ -5689,6 +6072,74 @@
           },
           "required": [
             "condition"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:personal_trade",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Personal trade",
+        "description": "Built-in Personal trade type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "personal_trade"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "metric": {
+              "enum": [
+                "trades",
+                "items_paid",
+                "items_received",
+                "currency_paid",
+                "currency_received"
+              ]
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            }
+          },
+          "required": [
+            "type"
           ],
           "type": "object"
         }
@@ -6141,6 +6592,64 @@
         }
       },
       {
+        "id": "villagerretaliation:player_stat",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player stat",
+        "description": "Built-in Player stat type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_stat"
+            },
+            "category": {
+              "enum": [
+                "mined",
+                "crafted",
+                "used",
+                "broken",
+                "picked_up",
+                "dropped",
+                "killed",
+                "killed_by",
+                "custom"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "description": "Registered block, item, entity or custom statistic. Values use vanilla units: distance in centimetres, time in ticks, damage in tenths of a health point. Workstation statistics count interactions."
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type",
+            "category",
+            "target"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:player_used_item",
         "aliases": [],
         "live_capabilities": [
@@ -6326,6 +6835,129 @@
         "description": "Built-in Selected choice type.",
         "browser_available": true,
         "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:settlement_contribution",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Settlement contribution",
+        "description": "Built-in Settlement contribution type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "settlement_contribution"
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Elapsed server game ticks, 20 per second. Bounds apply to the first or most recent occurrence, not a rolling event count."
+            },
+            "metric": {
+              "enum": [
+                "items",
+                "food",
+                "equipment",
+                "currency",
+                "defense",
+                "construction",
+                "storage"
+              ]
+            },
+            "item": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:settlement_need",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Settlement need",
+        "description": "Built-in Settlement need type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "type": {
+              "const": "settlement_need"
+            },
+            "need": {
+              "enum": [
+                "food",
+                "equipment",
+                "materials",
+                "production",
+                "stock",
+                "planting",
+                "housing",
+                "workers",
+                "population",
+                "housing_capacity"
+              ],
+              "description": "Supply needs measure missing units after committed and incoming supplies. Food uses nutrition points, other supplies use their demand quantities. Housing counts residents without a usable assigned bed. Workers counts unfilled desired worksite positions. Unavailable observations remain unknown."
+            }
+          },
+          "required": [
+            "type",
+            "need"
+          ],
           "type": "object"
         }
       },
@@ -7142,6 +7774,7 @@
         "dimension",
         "entity_nearby",
         "equipment",
+        "event_history",
         "event_payload",
         "fact",
         "family",
@@ -7154,6 +7787,7 @@
         "nearby_entity",
         "not",
         "or",
+        "personal_trade",
         "physical_state",
         "player_biome_visited",
         "player_crafted_item",
@@ -7165,6 +7799,7 @@
         "player_killed_entity",
         "player_kills",
         "player_last_death",
+        "player_stat",
         "player_used_item",
         "quest",
         "quest_choice_selected",
@@ -7182,6 +7817,8 @@
         "score",
         "scoreboard",
         "selected_choice",
+        "settlement_contribution",
+        "settlement_need",
         "skill",
         "social_attribute",
         "stage",

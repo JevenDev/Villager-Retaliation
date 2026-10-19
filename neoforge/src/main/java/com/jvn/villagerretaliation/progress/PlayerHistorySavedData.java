@@ -52,7 +52,13 @@ public final class PlayerHistorySavedData extends SavedData {
     }
 
     public void visitBiome(UUID player, ResourceLocation biome) {
-        if (players.computeIfAbsent(player, ignored -> new History()).biomes.add(biome)) setDirty();
+        discoverBiome(player, biome);
+    }
+
+    public boolean discoverBiome(UUID player, ResourceLocation biome) {
+        boolean changed = players.computeIfAbsent(player, ignored -> new History()).biomes.add(biome);
+        if (changed) setDirty();
+        return changed;
     }
 
     public void obtainWorldAdvancement(ResourceLocation advancement) {

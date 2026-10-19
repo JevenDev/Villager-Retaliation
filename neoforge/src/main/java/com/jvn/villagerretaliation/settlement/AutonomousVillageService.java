@@ -267,7 +267,9 @@ public final class AutonomousVillageService {
                 || !player.isAlive() || player.isSpectator() || player.distanceToSqr(pos.getCenter())>64 || !level.hasChunkAt(pos)) return "Storage unavailable";
         if(level.getBlockEntity(pos) instanceof com.jvn.villagerretaliation.storage.StorageBlockEntity bank) {
             if(!bank.controller() || bank.treasury!=null || !bank.allowed(player) || !com.jvn.villagerretaliation.storage.StorageKeys.carries(player,bank.identity)) return "Carry the matching key to donate an unregistered safe or controller";
-            return BankTreasury.register(level,town,bank)?"Treasury donated; normal withdrawals now require village leadership":"Treasury registration blocked";
+            if (!BankTreasury.register(level,town,bank)) return "Treasury registration blocked";
+            com.jvn.villagerretaliation.progress.ProgressHistoryService.contribution(level,player.getUUID(),town.id(),"storage","",1);
+            return "Treasury donated; normal withdrawals now require village leadership";
         }
         if(level.getBlockEntity(pos) instanceof com.jvn.villagerretaliation.block.SettlementDepotBlockEntity block && block.inventory()==null) {
             var area=new SettlementArea(UUID.randomUUID(),SettlementAreaType.DEPOT,"Village supplies",pos,pos,5,true);
@@ -275,6 +277,7 @@ public final class AutonomousVillageService {
             var depot=town.registerDepot(town.leader(),area.id(),pos,SettlementDepotPurpose.GENERAL);
             if(depot==null) return "Depot capacity reached";
             block.bind(town.id(),depot.id());SettlementDepotService.observeRules(level,depot);
+            com.jvn.villagerretaliation.progress.ProgressHistoryService.contribution(level,player.getUUID(),town.id(),"storage","",1);
             return "Depot donated; residents can use permitted supplies and outputs";
         }
         return "Donate an unbound settlement depot, safe or vault controller";

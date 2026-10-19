@@ -64,6 +64,15 @@ final class SettlementCommands {
                     if(town==null || !town.dimension().equals(source.getLevel().dimension().location())) return 0;
                     source.sendSuccess(()->Component.literal(com.jvn.villagerretaliation.settlement.AutonomousVillageService.describe(source.getLevel(),town)),false);return 1;
                 }))
+                .then(literal("contribute").then(argument("count", IntegerArgumentType.integer(1, 64)).executes(context -> {
+                    var source = context.getSource();
+                    int delivered = com.jvn.villagerretaliation.settlement.SettlementContributionService.contributeHeld(
+                            source.getPlayerOrException(), new VillageAllegianceId(UuidArgument.getUuid(context, "town")),
+                            IntegerArgumentType.getInteger(context, "count"));
+                    if (delivered == 0) source.sendFailure(Component.literal("No items delivered. Hold supplies near an accessible settlement supply depot with logistics permission."));
+                    else source.sendSuccess(() -> Component.literal("Contributed " + delivered + " items to settlement supplies."), false);
+                    return delivered;
+                })))
                 .then(literal("donateStorage").then(argument("position",BlockPosArgument.blockPos()).executes(context -> {
                     var source=context.getSource();var town=SettlementSavedData.get(source.getLevel()).get(new VillageAllegianceId(UuidArgument.getUuid(context,"town"))).orElse(null);
                     String result=com.jvn.villagerretaliation.settlement.AutonomousVillageService.donateStorage(source.getPlayerOrException(),town,BlockPosArgument.getLoadedBlockPos(context,"position"));

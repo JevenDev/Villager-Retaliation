@@ -451,6 +451,9 @@ public final class SettlementConstructionService {
             observe(builder, state);
             if (status == SettlementProject.Status.COMPLETED) SettlementConstructionMaterials.complete((ServerLevel) builder.level(), town, project);
             town.finishProject(project.id(), status);
+            if (status == SettlementProject.Status.COMPLETED)
+                com.jvn.villagerretaliation.progress.ProgressHistoryService.contribution((ServerLevel) builder.level(),
+                        project.authority(), town.id(), "construction", project.structure().toString(), 1);
             SettlementConstructionMaterials.refund((ServerLevel) builder.level(), town, project);
             synchronizePayments(town, builder);
             town.recordEvent(builder.level().getGameTime(), status == SettlementProject.Status.COMPLETED

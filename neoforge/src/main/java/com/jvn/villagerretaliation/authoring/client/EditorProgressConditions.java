@@ -23,7 +23,12 @@ final class EditorProgressConditions {
             case "player_crafted_item" -> "Player has crafted items";
             case "player_used_item" -> "Player has used items";
             case "player_deaths" -> "Total player deaths";
-            case "player_kills" -> "Total player kills";
+            case "player_kills" -> "Total player kills (PvP)";
+            case "player_stat" -> "Player statistic threshold";
+            case "event_history" -> "Event count and timing";
+            case "personal_trade" -> "Trade history with this villager";
+            case "settlement_need" -> "Settlement needs and population";
+            case "settlement_contribution" -> "Player contributions to this settlement";
             case "advancement", "advancements" -> "Player has obtained advancements";
             default -> type;
         };
@@ -32,6 +37,27 @@ final class EditorProgressConditions {
     static JsonObject seed(String type) {
         var condition = new JsonObject();
         condition.addProperty("type", type);
+        if (type.equals("player_stat")) {
+            condition.addProperty("category", "custom");
+            condition.addProperty("target", "minecraft:mob_kills");
+            condition.addProperty("min", 1);
+            return condition;
+        }
+        if (java.util.Set.of("event_history", "personal_trade", "settlement_need", "settlement_contribution").contains(type)) {
+            condition.addProperty("min", 1);
+            switch (type) {
+                case "event_history" -> {
+                    condition.addProperty("event", "villagerretaliation:player_died");
+                    condition.addProperty("scope", "player");
+                    condition.addProperty("metric", "count");
+                }
+                case "personal_trade" -> condition.addProperty("metric", "trades");
+                case "settlement_need" -> condition.addProperty("need", "food");
+                case "settlement_contribution" -> condition.addProperty("metric", "items");
+                default -> throw new IllegalStateException("Unknown progress condition");
+            }
+            return condition;
+        }
         if (type.equals("advancement") || type.equals("advancements")) {
             var ids = new JsonArray();
             ids.add("minecraft:story/mine_stone");
@@ -87,9 +113,44 @@ final class EditorProgressConditions {
         };
     }
 
+    static List<String> statisticTargets(JsonObject condition) {
+        var selected = condition.get("category");
+        if (selected != null && (!selected.isJsonPrimitive() || !selected.getAsJsonPrimitive().isString())) return List.of();
+        String category = selected == null ? "custom" : selected.getAsString();
+        var targets = switch (category) {
+            case "mined" -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.keySet();
+            case "killed", "killed_by" -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet();
+            case "custom" -> net.minecraft.core.registries.BuiltInRegistries.CUSTOM_STAT.keySet();
+            default -> net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet();
+        };
+        return targets.stream().map(Object::toString).sorted().toList();
+    }
+
+    static List<String> historyTargets(JsonObject condition) {
+        var selected = condition.get("event");
+        if (selected != null && (!selected.isJsonPrimitive() || !selected.getAsJsonPrimitive().isString())) return List.of();
+        String event = selected == null ? "" : selected.getAsString();
+        if (event.endsWith(":player_died")) return resources("damage_type");
+        if (event.endsWith(":entity_killed")) return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(Object::toString).sorted().toList();
+        if (event.endsWith(":dimension_entered")) return resources("dimension");
+        if (event.endsWith(":biome_discovered")) return resources("biome");
+        if (event.endsWith(":advancement_earned")) return resources("advancement");
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList();
+    }
+
     static List<String> resources(String field) {
         var minecraft = Minecraft.getInstance();
         if (field.equals("criterion")) return List.of("villagerretaliation:player_died");
+        if (field.equals("event")) {
+            var events = new java.util.TreeSet<String>();
+            for (var tag : com.jvn.villagerretaliation.village.VillageEventMemory.EventTag.values())
+                events.add(com.jvn.villagerretaliation.village.VillageEventMemory.idFor(tag).toString());
+            for (String name : List.of("dimension_entered", "advancement_earned", "biome_discovered", "player_died", "entity_killed",
+                    "trade_completed", "trade_item_paid", "trade_item_received", "trade_currency_paid", "trade_currency_received",
+                    "contribution_items", "contribution_food", "contribution_equipment", "contribution_currency",
+                    "contribution_defense", "contribution_construction", "contribution_storage")) events.add("villagerretaliation:" + name);
+            return List.copyOf(events);
+        }
         if (minecraft == null || minecraft.getConnection() == null) return List.of();
         return switch (field) {
             case "dimension" -> minecraft.getConnection().levels().stream().map(key -> key.location().toString()).sorted().toList();

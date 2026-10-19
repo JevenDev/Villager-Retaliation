@@ -200,8 +200,28 @@ public final class AuthoringValidation {
                     schema.add("items", item);
                     schema.add("$defs", questSchema.get("$defs"));
                     issues(result, document, child, QuestJsonSchema.validate(entry.getValue(), schema));
+                    if (entry.getKey().equals("conditions")) validateProgressConditions(result, document, entry.getValue(), child);
                 } else validateRuntimeFields(result, document, entry.getValue(), child, questSchema);
             }
+        }
+    }
+
+    private static void validateProgressConditions(List<AuthoringDiagnostic> result, AuthoringDocument document,
+                                                   JsonElement value, String pointer) {
+        if (value.isJsonArray()) {
+            for (int i = 0; i < value.getAsJsonArray().size(); i++)
+                validateProgressConditions(result, document, value.getAsJsonArray().get(i), pointer + "/" + i);
+        } else if (value.isJsonObject()) {
+            var object = value.getAsJsonObject();
+            if (object.has("type") && object.get("type").isJsonPrimitive() && Set.of("player_stat", "event_history", "personal_trade",
+                    "settlement_need", "settlement_contribution").contains(object.get("type").getAsString())) {
+                var parsed = com.jvn.villagerretaliation.dialogue.DialogueCondition.readObjects(
+                        ResourceLocation.withDefaultNamespace("authoring_validation"), pointer, List.of(object), null);
+                if (parsed.getFirst() instanceof com.jvn.villagerretaliation.dialogue.DialogueCondition.Invalid)
+                    error(result, document, pointer, "Invalid progress check. Check count bounds, timing bounds and item filters.");
+            }
+            for (var entry : object.entrySet()) if (entry.getValue().isJsonArray() || entry.getValue().isJsonObject())
+                validateProgressConditions(result, document, entry.getValue(), pointer + "/" + JsonPointers.escape(entry.getKey()));
         }
     }
 

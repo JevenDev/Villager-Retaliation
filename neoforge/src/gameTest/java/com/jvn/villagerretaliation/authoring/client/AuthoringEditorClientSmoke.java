@@ -728,8 +728,27 @@ public final class AuthoringEditorClientSmoke {
         pause(400);
         STEPS.add(() -> {
             capture("28-progress-latest-death");
-            invoke("select", new Class<?>[] {AuthoringDocument.class}, original[0]);
         });
+        for (var kind : List.of(EditorBlocks.Kind.PLAYER_STAT, EditorBlocks.Kind.EVENT_HISTORY, EditorBlocks.Kind.PERSONAL_TRADE,
+                EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION)) {
+            STEPS.add(() -> {
+                String path = EditorBlocks.append(progress[0], "/nodes/start", kind);
+                progress[0].edit("Configure progress check", root -> {
+                    var value = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(root, path).getAsJsonObject();
+                    value.addProperty("max", 100);
+                    if (kind == EditorBlocks.Kind.EVENT_HISTORY) {
+                        value.addProperty("since", "last");
+                        value.addProperty("max_age_ticks", 24000);
+                    }
+                });
+                invoke("setPointer", new Class<?>[] {String.class}, path);
+                require(EditorProgressConditions.statisticTargets(EditorProgressConditions.seed("player_stat")).contains("minecraft:damage_blocked_by_shield"),
+                        "Statistic selector includes vanilla combat measures.");
+            });
+            pause(400);
+            STEPS.add(() -> capture("29-progress-" + kind.name().toLowerCase(java.util.Locale.ROOT)));
+        }
+        STEPS.add(() -> invoke("select", new Class<?>[] {AuthoringDocument.class}, original[0]));
     }
 
     private static void buildCameraSteps() {

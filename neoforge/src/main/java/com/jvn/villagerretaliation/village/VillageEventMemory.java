@@ -406,7 +406,20 @@ public final class VillageEventMemory {
         // A communal bucket is the incident-level dedupe anchor. Personal witness copies may still be added
         // without firing quest/event callbacks again for the same village incident.
         boolean dispatched = villageId.isPresent() ? villageAppend.added() : villagerAppend.added();
+        var history = com.jvn.villagerretaliation.progress.EventHistorySavedData.get(level);
+        long historyTime = level.getServer().overworld().getGameTime();
+        String target = event.gift() == null ? "" : event.gift().itemId();
+        long amount = event.gift() == null ? 1 : Math.max(1, event.gift().itemCount());
+        if (villagerId != null && (villagerAppend.added() || event.gift() != null && villagerChanged))
+            history.add("villager", villagerId, event.playerId(), event.tagId(), target, 1, amount, historyTime);
+        if (villageId.isPresent() && (villageAppend.added() || event.gift() != null && villageChanged))
+            history.add("settlement", villageId.get().value(), event.playerId(), event.tagId(), target, 1, amount, historyTime);
+        if (dispatched || event.gift() != null && (villageId.isPresent() ? villageChanged : villagerChanged))
+            history.add("world", null, event.playerId(), event.tagId(), target, 1, amount, historyTime);
         if (dispatched) {
+            if (event.tag() == EventTag.PLAYER_DEFENDED_VILLAGE || event.tag() == EventTag.PLAYER_DEFENDED_RAID)
+                villageId.ifPresent(id -> com.jvn.villagerretaliation.progress.ProgressHistoryService.contribution(
+                        level, event.playerId(), id, "defense", event.tagId().toString(), 1));
             VillagerQuestService.onMemoryEvent(level, event);
             VillagerEventTriggerService.onMemoryWritten(level, event);
         }

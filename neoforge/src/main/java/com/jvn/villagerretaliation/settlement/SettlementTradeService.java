@@ -34,6 +34,7 @@ public final class SettlementTradeService {
             return false;
         }
         town.economy().credit(CurrencyAmount.of(amount, 1L));
+        com.jvn.villagerretaliation.progress.ProgressHistoryService.contribution(player.serverLevel(), player.getUUID(), town.id(), "currency", "", amount);
         return true;
     }
 

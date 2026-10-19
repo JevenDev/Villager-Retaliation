@@ -44,7 +44,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
         DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
         DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState,
-        com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check {
+        com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check {
 
     boolean matches(DialogueContext context);
 
@@ -994,6 +994,25 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
     final class ConditionRegistry {
         private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register("event_history", ProgressConditions.History.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (source, pointer, value, quest) -> ProgressConditions.read(source, pointer, value, ProgressConditions.Kind.HISTORY),
+                        ProgressConditions.schema(ProgressConditions.Kind.HISTORY)),
+                register("personal_trade", ProgressConditions.Trade.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (source, pointer, value, quest) -> ProgressConditions.read(source, pointer, value, ProgressConditions.Kind.TRADE),
+                        ProgressConditions.schema(ProgressConditions.Kind.TRADE)),
+                register("settlement_need", ProgressConditions.Need.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (source, pointer, value, quest) -> ProgressConditions.read(source, pointer, value, ProgressConditions.Kind.NEED),
+                        ProgressConditions.schema(ProgressConditions.Kind.NEED)),
+                register("settlement_contribution", ProgressConditions.Contribution.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN),
+                        (source, pointer, value, quest) -> ProgressConditions.read(source, pointer, value, ProgressConditions.Kind.CONTRIBUTION),
+                        ProgressConditions.schema(ProgressConditions.Kind.CONTRIBUTION)),
+                register("player_stat", PlayerStatCondition.class, Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
+                        (source, pointer, value, quest) -> PlayerStatCondition.read(source, pointer, value), PlayerStatCondition.schema()),
                 register("player_dimension_visited", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.PlayerDimensionVisited.class, Set.of(),
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
                         (source, pointer, value, quest) -> com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.read(source, pointer, value,

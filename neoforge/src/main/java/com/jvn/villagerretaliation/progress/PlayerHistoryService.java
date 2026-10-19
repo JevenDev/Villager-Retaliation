@@ -15,17 +15,26 @@ public final class PlayerHistoryService {
     private PlayerHistoryService() { }
 
     public static void dimensionChanged(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             PlayerHistorySavedData.get(player.serverLevel()).visitDimension(player.getUUID(), event.getTo().location());
+            ProgressHistoryService.playerEvent(player, "dimension_entered", event.getTo().location());
+        }
     }
 
     public static void advancementEarned(AdvancementEvent.AdvancementEarnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player)
+        if (event.getEntity() instanceof ServerPlayer player) {
             PlayerHistorySavedData.get(player.serverLevel()).obtainWorldAdvancement(event.getAdvancement().id());
+            ProgressHistoryService.playerEvent(player, "advancement_earned", event.getAdvancement().id());
+        }
     }
 
     public static void died(LivingDeathEvent event) {
-        if (event.isCanceled() || !(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.isCanceled()) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            if (event.getEntity().getKillCredit() instanceof ServerPlayer killer)
+                ProgressHistoryService.playerEvent(killer, "entity_killed", BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType()));
+            return;
+        }
         var source = event.getSource();
         var killer = player.getKillCredit();
         var death = new PlayerHistorySavedData.Death(
@@ -36,13 +45,17 @@ public final class PlayerHistoryService {
                 player.serverLevel().dimension().location(), player.blockPosition(),
                 player.serverLevel().getGameTime(), player.getCombatTracker().getDeathMessage().getString());
         PlayerHistorySavedData.get(player.serverLevel()).recordDeath(player.getUUID(), death);
+        ProgressHistoryService.playerEvent(player, "player_died", death.damageType());
     }
 
     public static void tick(ServerPlayer player) {
         if (!player.isAlive()) return;
         var data = PlayerHistorySavedData.get(player.serverLevel());
         player.serverLevel().getBiome(player.blockPosition()).unwrapKey()
-                .ifPresent(key -> data.visitBiome(player.getUUID(), key.location()));
+                .ifPresent(key -> {
+                    if (data.discoverBiome(player.getUUID(), key.location()))
+                        ProgressHistoryService.playerEvent(player, "biome_discovered", key.location());
+                });
         var death = data.takePendingDeath(player.getUUID());
         if (death != null) VillagerQuestService.onCriterion(player.serverLevel(), player, PLAYER_DIED, death.payload());
     }

@@ -23,7 +23,12 @@ final class EditorBlocks {
         PLAYER_CRAFTED_ITEM("Player has crafted items", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_CRAFTED_ITEM),
         PLAYER_USED_ITEM("Player has used items", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_USED_ITEM),
         PLAYER_DEATHS("Total player deaths", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_DEATHS),
-        PLAYER_KILLS("Total player kills", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_KILLS),
+        PLAYER_KILLS("Total player kills (PvP)", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_KILLS),
+        PLAYER_STAT("player_stat"),
+        EVENT_HISTORY("event_history"),
+        PERSONAL_TRADE("personal_trade"),
+        SETTLEMENT_NEED("settlement_need"),
+        SETTLEMENT_CONTRIBUTION("settlement_contribution"),
         ADVANCEMENT_GATE("Player has obtained advancements", true, "{\"type\":\"advancement\",\"advancements\":[\"minecraft:story/mine_stone\"],\"all\":true}"),
         REPUTATION_GATE("Require reputation", true, "{\"type\":\"reputation\",\"min\":0}"),
         ITEM_GATE("Require an item", true, "{\"type\":\"player_item\",\"item\":\"minecraft:emerald\"}"),
@@ -40,6 +45,10 @@ final class EditorBlocks {
 
         Kind(String label, com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind kind) {
             this(label, true, EditorProgressConditions.seed(kind.id()).toString());
+        }
+
+        Kind(String type) {
+            this(EditorProgressConditions.label(type), true, EditorProgressConditions.seed(type).toString());
         }
 
         Kind(String label, boolean condition, String json) {
