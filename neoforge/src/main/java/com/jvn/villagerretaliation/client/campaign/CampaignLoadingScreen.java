@@ -12,12 +12,12 @@ import net.minecraft.network.chat.Component;
 
 public final class CampaignLoadingScreen extends Screen {
     private final Screen parent;
-    private final Supplier<CampaignSelectScreen> load;
+    private final Supplier<? extends Screen> load;
     private boolean started;
     private boolean rendered;
-    private CampaignSelectScreen prepared;
+    private Screen prepared;
 
-    public CampaignLoadingScreen(Screen parent, Supplier<CampaignSelectScreen> load) {
+    public CampaignLoadingScreen(Screen parent, Supplier<? extends Screen> load) {
         super(Component.translatable("screen.villagerretaliation.campaign.title"));
         this.parent = parent;
         this.load = load;
@@ -29,8 +29,8 @@ public final class CampaignLoadingScreen extends Screen {
         if (started) return;
         started = true;
         CompletableFuture.supplyAsync(() -> {
-            CampaignSelectScreen screen = load.get();
-            screen.prepareFirstPage();
+            Screen screen = load.get();
+            if (screen instanceof CampaignSelectScreen campaigns) campaigns.prepareFirstPage();
             return screen;
         }, Util.backgroundExecutor()).whenCompleteAsync((screen, error) -> {
             if (minecraft.screen != this) {
@@ -49,7 +49,7 @@ public final class CampaignLoadingScreen extends Screen {
     @Override
     public void tick() {
         if (rendered && prepared != null) {
-            CampaignSelectScreen screen = prepared;
+            Screen screen = prepared;
             prepared = null;
             minecraft.setScreen(screen);
         }

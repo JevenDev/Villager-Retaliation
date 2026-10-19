@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -39,7 +40,12 @@ public final class CampaignSelectScreen extends Screen {
     private static final ResourceLocation COLLAPSE = texture("campaign_select_screen_card_caret_expanded");
     private final Screen parent;
     private List<WorldCampaign> campaigns;
-    private final Consumer<WorldCampaign> create;
+    private final BiConsumer<WorldCampaign, List<ResourceLocation>> create;
+    private WorldCampaignCatalog catalog;
+    private final Map<ResourceLocation, List<ResourceLocation>> addons = new LinkedHashMap<>();
+    private final Map<ResourceLocation, CampaignMedia> addonIcons = new LinkedHashMap<>();
+    private Button addonsButton;
+    private boolean configuringAddons;
     private final Supplier<CloseableResourceManager> reloadResources;
     private final Map<ResourceLocation, CampaignMedia> descriptionImages = new LinkedHashMap<>();
     private final Map<ResourceLocation, CampaignMedia> images = new LinkedHashMap<>();
@@ -66,11 +72,19 @@ public final class CampaignSelectScreen extends Screen {
 
     public CampaignSelectScreen(Screen parent, WorldCampaignCatalog catalog, ResourceManager resources,
                                 Supplier<CloseableResourceManager> reloadResources, Consumer<WorldCampaign> create) {
+        this(parent, catalog, resources, reloadResources, (campaign, addons) -> create.accept(campaign));
+    }
+
+    public CampaignSelectScreen(Screen parent, WorldCampaignCatalog catalog, ResourceManager resources,
+                                Supplier<CloseableResourceManager> reloadResources,
+                                BiConsumer<WorldCampaign, List<ResourceLocation>> create) {
         super(Component.translatable("screen.villagerretaliation.campaign.title"));
         this.parent = parent;
+        this.catalog = catalog;
         this.campaigns = catalog.choices();
         this.create = create;
         this.reloadResources = reloadResources;
+        catalog.addonChoices().forEach(addon -> addonIcons.put(addon.id(), CampaignMedia.addonIcon(resources, addon)));
         for (WorldCampaign campaign : campaigns) {
             images.computeIfAbsent(campaign.image(), id -> CampaignMedia.load(resources, id));
             var blocks = CampaignDescription.parse(campaign.description());
@@ -127,9 +141,13 @@ public final class CampaignSelectScreen extends Screen {
         int y = height - 28;
         int buttonWidth = expanded == null && pages > 1 ? Math.min(150, (width - 104) / 2) : 150;
         addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> onClose()).bounds(width / 2 - buttonWidth - 4, y, buttonWidth, 20).build());
-        createButton = addRenderableWidget(Button.builder(Component.translatable("selectWorld.create"), button -> create.accept(selected))
+        createButton = addRenderableWidget(Button.builder(Component.translatable("selectWorld.create"), button -> createSelection())
                 .bounds(width / 2 + 4, y, buttonWidth, 20).build());
-        createButton.active = selected != null;
+        createButton.active = selected != null && addonProblem() == null;
+        addonsButton = addRenderableWidget(Button.builder(Component.translatable("screen.villagerretaliation.addons.button", selectedAddons().size()),
+                button -> openAddons()).bounds(width - 116, 6, 110, 20).build());
+        addonsButton.active = selected != null;
+        updateSelectionButtons();
         if (expanded == null && pages > 1) {
             Button previous = addRenderableWidget(Button.builder(Component.literal("<"), button -> changePage(-1))
                     .bounds(16, y, 20, 20).build());
@@ -159,7 +177,47 @@ public final class CampaignSelectScreen extends Screen {
 
     private void select(WorldCampaign campaign) {
         selected = campaign.locked() ? null : campaign;
-        createButton.active = selected != null;
+        updateSelectionButtons();
+    }
+
+    private List<ResourceLocation> selectedAddons() {
+        return selected == null ? List.of() : addons.getOrDefault(selected.id(), List.of());
+    }
+
+    private String addonProblem() {
+        for (var addon : selectedAddons()) {
+            String problem = catalog.addonProblem(addon, selected.id(), selectedAddons());
+            if (problem != null) return problem;
+        }
+        return null;
+    }
+
+    private void updateSelectionButtons() {
+        String problem = addonProblem();
+        createButton.active = selected != null && problem == null;
+        createButton.setTooltip(problem == null ? null : Tooltip.create(Component.literal(problem)));
+        addonsButton.active = selected != null;
+        addonsButton.setMessage(Component.translatable("screen.villagerretaliation.addons.button", selectedAddons().size()));
+    }
+
+    private void createSelection() {
+        if (selected == null) return;
+        catalog.validate(new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                selected.id(), selected.includeDefaultContent(), selectedAddons()), true);
+        create.accept(selected, List.copyOf(selectedAddons()));
+    }
+
+    private void openAddons() {
+        configuringAddons = true;
+        minecraft.setScreen(new CampaignAddonScreen(catalog, selected, selectedAddons(), addonIcons, null, enabled -> {
+            addons.put(selected.id(), enabled);
+            returnFromAddons();
+        }, this::returnFromAddons));
+    }
+
+    private void returnFromAddons() {
+        configuringAddons = false;
+        minecraft.setScreen(this);
     }
 
     private void toggle(WorldCampaign campaign) {
@@ -269,9 +327,11 @@ public final class CampaignSelectScreen extends Screen {
         Map<ResourceLocation, List<CampaignDescription.Block>> nextDescriptions = new LinkedHashMap<>();
         Map<ResourceLocation, CampaignMedia> nextCovers = new LinkedHashMap<>();
         Map<ResourceLocation, CampaignMedia> nextImages = new LinkedHashMap<>();
+        Map<ResourceLocation, CampaignMedia> nextAddonIcons = new LinkedHashMap<>();
         try (var resources = reloadResources.get()) {
             catalog = WorldCampaignCatalog.load(resources);
             nextCampaigns = catalog.choices();
+            catalog.addonChoices().forEach(addon -> nextAddonIcons.put(addon.id(), CampaignMedia.addonIcon(resources, addon)));
             for (WorldCampaign campaign : nextCampaigns) {
                 nextCovers.computeIfAbsent(campaign.image(), id -> CampaignMedia.load(resources, id));
                 var blocks = CampaignDescription.parse(campaign.description());
@@ -285,6 +345,7 @@ public final class CampaignSelectScreen extends Screen {
         } catch (JsonParseException | IllegalArgumentException | IllegalStateException exception) {
             nextCovers.values().forEach(CampaignMedia::close);
             nextImages.values().forEach(CampaignMedia::close);
+            nextAddonIcons.values().forEach(CampaignMedia::close);
             LogUtils.getLogger().warn("Could not reload campaigns", exception);
             reloadStatus = Component.translatable("screen.villagerretaliation.campaign.reload_failed");
             reloadStatusUntil = Util.getMillis() + 5_000;
@@ -299,6 +360,10 @@ public final class CampaignSelectScreen extends Screen {
         descriptionImages.putAll(nextImages);
         descriptions.clear();
         descriptions.putAll(nextDescriptions);
+        addonIcons.values().forEach(CampaignMedia::close);
+        addonIcons.clear();
+        addonIcons.putAll(nextAddonIcons);
+        this.catalog = catalog;
         campaigns = nextCampaigns;
         selected = selected == null ? null : catalog.campaigns().get(selected.id());
         if (selected != null && selected.locked()) selected = null;
@@ -322,6 +387,8 @@ public final class CampaignSelectScreen extends Screen {
 
     @Override
     public void removed() {
+        if (configuringAddons) return;
+        addonIcons.values().forEach(CampaignMedia::close);
         images.values().forEach(CampaignMedia::close);
         descriptionImages.values().forEach(CampaignMedia::close);
     }

@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:campaign_addon/v1",
+  "id": "campaign_addon_fixture:blocked",
+  "name": "Incompatible expansion",
+  "description": "Additional village stories for the selected campaign.",
+  "authors": [
+    "Campaign creator"
+  ],
+  "incompatible_campaigns": [
+    "villagerretaliation:default"
+  ]
+}

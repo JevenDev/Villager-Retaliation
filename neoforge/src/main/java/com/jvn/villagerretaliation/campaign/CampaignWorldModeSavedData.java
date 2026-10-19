@@ -17,11 +17,12 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 
 public final class CampaignWorldModeSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
     public static final String DATA_NAME = "villagerretaliation_campaign_mode";
     private CampaignWorldMode mode = CampaignWorldMode.LEGACY;
     private net.minecraft.resources.ResourceLocation worldCampaign;
     private boolean includeDefaultContent;
+    private java.util.List<net.minecraft.resources.ResourceLocation> addons = java.util.List.of();
     private String selectionSource = "existing_world";
     private long selectedAt = -1L;
     private boolean selectionCommitted;
@@ -80,6 +81,34 @@ public final class CampaignWorldModeSavedData extends SavedData {
             }
             data.includeDefaultContent = migrated.getBoolean("IncludeDefaultContent");
         }
+        if (migrated.contains("CampaignAddons")) {
+            if (!migrated.contains("CampaignAddons", Tag.TAG_LIST) || data.worldCampaign == null) {
+                data.preserve(input, "invalid campaign addon selection");
+                return data;
+            }
+            var list = (net.minecraft.nbt.ListTag) migrated.get("CampaignAddons");
+            if (!list.isEmpty() && list.getElementType() != Tag.TAG_STRING) {
+                data.preserve(input, "invalid campaign addon IDs");
+                return data;
+            }
+            var addons = new java.util.ArrayList<net.minecraft.resources.ResourceLocation>();
+            for (int index = 0; index < list.size(); index++) {
+                String value = list.getString(index);
+                var id = net.minecraft.resources.ResourceLocation.tryParse(value);
+                if (id == null || !value.contains(":")) {
+                    data.preserve(input, "invalid campaign addon ID");
+                    return data;
+                }
+                addons.add(id);
+            }
+            try {
+                data.addons = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                        data.worldCampaign, data.includeDefaultContent, addons).addons();
+            } catch (IllegalArgumentException exception) {
+                data.preserve(input, exception.getMessage());
+                return data;
+            }
+        }
         data.mode = CampaignWorldMode.byId(migrated.getString("Mode"));
         if (data.mode == CampaignWorldMode.UNKNOWN) {
             data.preserve(input, "unrecognized campaign world mode " + migrated.getString("Mode"));
@@ -100,6 +129,10 @@ public final class CampaignWorldModeSavedData extends SavedData {
         return this.worldCampaign;
     }
 
+    public java.util.List<net.minecraft.resources.ResourceLocation> addons() {
+        return this.addons;
+    }
+
     public boolean includeDefaultContent() {
         return this.includeDefaultContent;
     }
@@ -114,6 +147,13 @@ public final class CampaignWorldModeSavedData extends SavedData {
 
     public static void createSelection(Path world, com.jvn.villagerretaliation.campaign.selection.WorldCampaign campaign,
             String authority, HolderLookup.Provider provider) throws IOException {
+        createSelection(world, campaign, java.util.List.of(), authority, provider);
+    }
+
+    public static void createSelection(Path world, com.jvn.villagerretaliation.campaign.selection.WorldCampaign campaign,
+            java.util.List<net.minecraft.resources.ResourceLocation> addons, String authority, HolderLookup.Provider provider) throws IOException {
+        var selection = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                campaign.id(), campaign.includeDefaultContent(), addons);
         if (campaign.locked()) throw new IOException("This campaign is not available yet");
         if (!Files.notExists(world.resolve("data").resolve(DATA_NAME + ".dat"))) {
             throw new IOException("This world already has a permanent campaign selection");
@@ -121,8 +161,25 @@ public final class CampaignWorldModeSavedData extends SavedData {
         CampaignWorldModeSavedData data = new CampaignWorldModeSavedData();
         data.selectForNewWorld(CampaignWorldMode.CAMPAIGN, authority, 0);
         data.worldCampaign = campaign.id();
+        data.addons = selection.addons();
         data.includeDefaultContent = campaign.includeDefaultContent();
         data.persist(world.resolve("data"), provider);
+    }
+
+    public static void addToExistingWorld(Path world, java.util.List<net.minecraft.resources.ResourceLocation> addons,
+            com.jvn.villagerretaliation.campaign.selection.WorldCampaignCatalog catalog) throws IOException {
+        CampaignWorldModeSavedData data = readSelection(world, null);
+        if (!data.diagnostic().isBlank()) throw new IOException(data.diagnostic());
+        if (data.worldCampaign == null) throw new IOException("This world has no saved campaign selection");
+        var previous = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                data.worldCampaign, data.includeDefaultContent, data.addons);
+        var next = new com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.Selection(
+                data.worldCampaign, data.includeDefaultContent, addons);
+        catalog.validate(next, false);
+        String problem = catalog.addonChangeProblem(previous, addons);
+        if (problem != null) throw new IOException(problem);
+        data.addons = next.addons();
+        data.persist(world.resolve("data"), null);
     }
 
     public CampaignWorldMode mode() {
@@ -194,6 +251,9 @@ public final class CampaignWorldModeSavedData extends SavedData {
         if (this.worldCampaign != null) {
             tag.putString("WorldCampaign", this.worldCampaign.toString());
             tag.putBoolean("IncludeDefaultContent", this.includeDefaultContent);
+            var addons = new net.minecraft.nbt.ListTag();
+            this.addons.forEach(id -> addons.add(net.minecraft.nbt.StringTag.valueOf(id.toString())));
+            tag.put("CampaignAddons", addons);
         }
         tag.putString("SelectionSource", this.selectionSource);
         tag.putLong("SelectedAt", this.selectedAt);

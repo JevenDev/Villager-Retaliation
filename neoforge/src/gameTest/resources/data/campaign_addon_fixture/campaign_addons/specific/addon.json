@@ -1,0 +1,13 @@
+{
+  "schema": "villagerretaliation:campaign_addon/v1",
+  "id": "campaign_addon_fixture:specific",
+  "name": "Default expansion",
+  "description": "Additional village stories for the selected campaign.",
+  "authors": [
+    "Campaign creator"
+  ],
+  "campaigns": [
+    "villagerretaliation:default"
+  ],
+  "image": "minecraft:textures/block/emerald_block.png"
+}

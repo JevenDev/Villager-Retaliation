@@ -1,0 +1,9 @@
+{
+  "schema": "villagerretaliation:campaign_addon/v1",
+  "id": "campaign_addon_fixture:spare_2",
+  "name": "Extra stories 2",
+  "description": "Additional village stories for the selected campaign.",
+  "authors": [
+    "Campaign creator"
+  ]
+}

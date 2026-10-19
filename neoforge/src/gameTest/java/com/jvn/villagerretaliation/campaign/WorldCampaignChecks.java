@@ -132,9 +132,135 @@ public final class WorldCampaignChecks {
         quest.add("ui", new JsonObject());
         check(!QuestJsonSchema.validate(quest, QuestV3Schema.export()).isEmpty(), "V2 aliases are rejected in V3");
         System.out.println("PASS campaign ownership, permanent selection, and V3 lowering checks");
-        return 26 + markdownDescriptions() + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
+        return 26 + addons() + markdownDescriptions() + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
     }
 
+
+    private static int addons() throws Exception {
+        var resources = new MemoryResources();
+        resources.add("test:world_campaigns/alpha/campaign.json", manifest("alpha", false));
+        resources.add("test:world_campaigns/beta/campaign.json", manifest("beta", false));
+        resources.add("base", "test:campaign_addons/general/addon.json", addon("general", ""));
+        resources.add("base", "test:campaign_addons/specific/addon.json", addon("specific", ",\"campaigns\":[\"test:alpha\"]"));
+        resources.add("base", "test:campaign_addons/excluded/addon.json", addon("excluded", ",\"incompatible_campaigns\":[\"test:alpha\"]"));
+        resources.add("base", "test:campaign_addons/dependent/addon.json", addon("dependent", ",\"requires\":[\"test:general\"]"));
+        resources.add("base", "test:campaign_addons/conflict/addon.json", addon("conflict", ",\"incompatible_addons\":[\"test:general\"]"));
+        resources.add("base", "test:campaign_addons/disabled/addon.json", addon("disabled", ""));
+        resources.add("base", "test:campaign_addons/disabled/dialogue/en_us/broken.json", "[broken disabled content");
+        resources.add("base", "test:campaign_addons/late/addon.json", addon("late", ",\"allow_existing_worlds\":true"));
+        var catalog = WorldCampaignCatalog.load(resources);
+        var general = id("test:general");
+        var specific = id("test:specific");
+        var alpha = id("test:alpha");
+        var enabled = new WorldCampaignSelection.Selection(alpha, false, List.of(general, specific));
+        catalog.validate(enabled, true);
+        check(catalog.choices().size() == 2 && catalog.addonChoices().size() == 7, "addons do not become campaign choices");
+        catalog.validate(new WorldCampaignSelection.Selection(id("test:beta"), false, List.of(general)), true);
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(id("test:beta"), false, List.of(specific)), true));
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(id("test:excluded"))), true));
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(id("test:missing"))), false));
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(id("test:dependent"))), true));
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(id("test:dependent"), general)), true));
+        catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(general, id("test:dependent"))), true);
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(general, id("test:conflict"))), true));
+        reject(() -> catalog.validate(new WorldCampaignSelection.Selection(alpha, false, List.of(id("test:conflict"), general)), true));
+        reject(() -> new WorldCampaignSelection.Selection(alpha, false, List.of(general, general)));
+        reject(() -> new WorldCampaignSelection.Selection(null, true, List.of(general)));
+        reject(() -> WorldCampaignAddon.read(JsonParser.parseString(addon("invalid", ",\"campaigns\":[\"alpha\"]")).getAsJsonObject()));
+        reject(() -> WorldCampaignAddon.read(JsonParser.parseString(addon("invalid", ",\"requires\":[\"test:invalid\"]")).getAsJsonObject()));
+        reject(() -> WorldCampaignAddon.read(JsonParser.parseString(addon("invalid", ",\"campaigns\":[\"test:alpha\"],\"incompatible_campaigns\":[\"test:alpha\"]")).getAsJsonObject()));
+        resources.add("base", "test:campaign_addons/general/dialogue/en_us/shared.json", "{\"value\":\"general\"}");
+        resources.add("base", "test:campaign_addons/specific/dialogue/en_us/shared.json", "{\"value\":\"specific\"}");
+        resources.add("base", "test:world_campaigns/alpha/dialogue/en_us/shared.json", "{\"value\":\"campaign\"}");
+        resources.add("patch", "test:campaign_addons/general/dialogue/en_us/shared.json", "{\"value\":\"general patch\"}");
+        var stack = WorldCampaignResources.stacks(resources, enabled, "dialogue/en_us");
+        check(stack.size() == 1 && stack.getFirst().layersLowToHigh().size() == 4, "enabled scopes overlay the campaign even within one datapack");
+        var layers = stack.getFirst().layersLowToHigh();
+        check(layers.get(0).priority() < layers.get(1).priority() && layers.get(1).priority() < layers.get(2).priority()
+                && layers.get(2).priority() < layers.get(3).priority(), "addon and pack priorities are distinct and ordered");
+        try (var reader = layers.getLast().resource().openAsReader()) {
+            check(JsonParser.parseReader(reader).getAsJsonObject().get("value").getAsString().equals("specific"), "highest addon beats a higher datapack layer of a lower addon");
+        }
+        var reversed = new WorldCampaignSelection.Selection(alpha, false, List.of(specific, general));
+        try (var reader = WorldCampaignResources.stacks(resources, reversed, "dialogue/en_us").getFirst().layersLowToHigh().getLast().resource().openAsReader()) {
+            check(JsonParser.parseReader(reader).getAsJsonObject().get("value").getAsString().equals("general patch"), "reordering addons changes effective content");
+        }
+        check(WorldCampaignResources.stacks(resources, new WorldCampaignSelection.Selection(alpha, false), "dialogue/en_us")
+                .getFirst().layersLowToHigh().size() == 1, "disabled addons contribute no content");
+        check(WorldCampaignResources.stacks(resources, new WorldCampaignSelection.Selection(null, true), "dialogue/en_us")
+                .getFirst().layersLowToHigh().size() == 1, "legacy worlds do not implicitly enable addons");
+        String quest = """
+                {"schema":"villagerretaliation:quest/v3","id":"test:quest","localization_prefix":"test.quest.quest",
+                 "metadata":{"questline":"line"},"provider":{"type":"villagerretaliation:villager"},
+                 "entry_stage":"start","stages":[{"id":"start","objectives":[],"transition":{"complete":true}}]}
+                """;
+        resources.add("base", "test:world_campaigns/alpha/quests/line/quest/quest.json", quest);
+        resources.add("base", "test:world_campaigns/alpha/quests/line/quest/locales/en_us.json", "{}");
+        resources.add("base", "test:campaign_addons/general/quests/line/quest/quest.json", quest);
+        resources.add("base", "test:campaign_addons/specific/quests/line/quest/quest.json", quest);
+        resources.add("base", "test:campaign_addons/specific/quests/line/quest/locales/en_us.json", "{\"test.quest.quest.title\":\"Addon title\"}");
+        var raw = new ArrayList<com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource>();
+        for (var bundleStack : WorldCampaignResources.stacks(resources, enabled, "quests")) {
+            for (var layer : bundleStack.layersLowToHigh()) {
+                try (var reader = layer.resource().openAsReader()) {
+                    raw.add(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.RawResource.valid(
+                            layer.priority(), layer.resource().sourcePackId(), layer.location(), JsonParser.parseReader(reader).getAsJsonObject()));
+                }
+            }
+        }
+        var compiled = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleTransactions.compile(raw, null);
+        check(compiled.bundles().size() == 1 && compiled.diagnostics().isEmpty(), "quest transactions accept same-pack addon layers and companion locales: " + compiled.diagnostics());
+        resources.add("base", "test:campaign_addons/general/quests/line/hidden/quest.json", "{\"world_campaign\":\"test:beta\"}");
+        resources.add("base", "test:campaign_addons/general/quests/line/hidden/locales/en_us.json", "{}");
+        check(WorldCampaignResources.stacks(resources, enabled, "quests").stream().noneMatch(value -> value.location().getPath().contains("/hidden/")),
+                "addon companions inherit campaign ownership from their scoped manifest");
+        var world = Files.createTempDirectory("vr-campaign-addons-");
+        try {
+            CampaignWorldModeSavedData.createSelection(world, catalog.require(alpha, true), enabled.addons(), "test", null);
+            var saved = CampaignWorldModeSavedData.readSelection(world, null);
+            check(saved.addons().equals(enabled.addons()), "addon order survives a disk round trip");
+            var tag = saved.save(new net.minecraft.nbt.CompoundTag(), null);
+            tag.remove("CampaignAddons");
+            tag.putInt("DataVersion", 2);
+            check(CampaignWorldModeSavedData.load(tag, null).addons().isEmpty(), "older selected worlds migrate without enabling addons");
+            tag.putString("CampaignAddons", "invalid");
+            check(CampaignWorldModeSavedData.load(tag, null).save(new net.minecraft.nbt.CompoundTag(), null).equals(tag), "malformed addon data is preserved");
+            var duplicates = new net.minecraft.nbt.ListTag();
+            duplicates.add(net.minecraft.nbt.StringTag.valueOf(general.toString()));
+            duplicates.add(net.minecraft.nbt.StringTag.valueOf(general.toString()));
+            tag.put("CampaignAddons", duplicates);
+            check(!CampaignWorldModeSavedData.load(tag, null).diagnostic().isEmpty(), "duplicate saved addons fail closed");
+            var expanded = List.of(general, specific, id("test:late"));
+            CampaignWorldModeSavedData.addToExistingWorld(world, expanded, catalog);
+            var updated = CampaignWorldModeSavedData.readSelection(world, null);
+            check(updated.addons().equals(expanded) && updated.worldCampaign().equals(alpha), "safe late additions persist without changing the campaign");
+            check(updated.selectionSource().equals(saved.selectionSource()) && updated.selectedAt() == saved.selectedAt(), "late additions preserve selection authority and time");
+            check(!catalog.addons().get(general).allowExistingWorlds(), "addons default to new worlds only");
+            check(catalog.addonChangeProblem(enabled, List.of(general, specific, id("test:dependent"))) != null, "new-world-only addons cannot be added later");
+            check(catalog.addonChangeProblem(enabled, List.of(specific)) != null, "saved addons cannot be removed");
+            check(catalog.addonChangeProblem(enabled, List.of(specific, general)) != null, "saved addon relative priority is preserved");
+            byte[] before = Files.readAllBytes(world.resolve("data").resolve(CampaignWorldModeSavedData.DATA_NAME + ".dat"));
+            boolean blocked = false;
+            try { CampaignWorldModeSavedData.addToExistingWorld(world, List.of(specific), catalog); }
+            catch (java.io.IOException expected) { blocked = true; }
+            check(blocked && Arrays.equals(before, Files.readAllBytes(world.resolve("data").resolve(CampaignWorldModeSavedData.DATA_NAME + ".dat"))),
+                    "rejected late changes leave saved bytes untouched");
+        } finally {
+            try (var paths = Files.walk(world)) {
+                for (var file : paths.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
+            }
+        }
+        var mismatch = new MemoryResources();
+        mismatch.add("test:campaign_addons/wrong/addon.json", addon("general", ""));
+        reject(() -> WorldCampaignCatalog.load(mismatch));
+        System.out.println("PASS addon compatibility, dependencies, conflicts, scoped content, priority, quest transactions, and permanent saves");
+        return 36;
+    }
+
+    private static String addon(String name, String fields) {
+        return "{\"schema\":\"villagerretaliation:campaign_addon/v1\",\"id\":\"test:" + name
+                + "\",\"name\":\"" + name + "\",\"description\":\"Test addon\"" + fields + "}";
+    }
 
     private static int markdownDescriptions() {
         var resources = new MemoryResources();

@@ -39,7 +39,8 @@ public final class QuestBundleDiscovery {
                     continue;
                 }
                 for (DatapackResourceLoader.JsonResource layer : stack.layersLowToHigh()) {
-                    int priority = packOrder.getOrDefault(layer.resource().sourcePackId(), Integer.MAX_VALUE);
+                    int priority = layer.priority() >= 0 ? layer.priority()
+                            : packOrder.getOrDefault(layer.resource().sourcePackId(), Integer.MAX_VALUE);
                     try (Reader reader = layer.resource().openAsReader()) {
                         result.add(QuestBundleTransactions.RawResource.valid(
                                 priority,

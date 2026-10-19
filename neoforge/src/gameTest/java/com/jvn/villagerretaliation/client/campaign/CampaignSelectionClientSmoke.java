@@ -168,6 +168,20 @@ public final class CampaignSelectionClientSmoke {
             frames = 0;
         } else if (step == 3 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 5) {
             campaignButton(screen, "default").onPress();
+            CampaignAddonClientChecks.start(screen);
+            step = 18;
+            frames = 0;
+        } else if (step == 18 && minecraft.screen instanceof CampaignAddonScreen screen && ++frames >= 10) {
+            Screenshot.grab(output().toFile(), "campaign-addons-available.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignAddonClientChecks.exercise(screen);
+            step = 19;
+            frames = 0;
+        } else if (step == 19 && minecraft.screen instanceof CampaignAddonScreen screen && ++frames >= 10) {
+            Screenshot.grab(output().toFile(), "campaign-addons-enabled.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignAddonClientChecks.finish(screen);
+            step = 20;
+            frames = 0;
+        } else if (step == 20 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 5) {
             Button create = button(screen, Component.translatable("selectWorld.create").getString());
             require(create.active, "Selecting an available campaign enables creation");
             create.onPress();
@@ -179,7 +193,18 @@ public final class CampaignSelectionClientSmoke {
             var selection = CampaignWorldModeSavedData.readSelection(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), server.registryAccess());
             require(WorldCampaign.DEFAULT.equals(selection.worldCampaign()), "Created world persists Default VR");
             require(selection.includeDefaultContent(), "Created world retains default content");
-            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: centered cards, responsive background loading and cancellation, continuous panorama handoff, animated paging and expansion, cursor tilt, cover-only tooltips, parallax hover slowdown, moving hit areas, accessible carets, Markdown and Minecraft color codes, transparent PNG/GIF media, F5 disk edits to campaign titles, authors, PNG covers, Markdown, and GIFs, selected datapack priority, campaign catalog reload, failed reload recovery, scrolling, locked state, Back, creation, and permanent saved selection.\n");
+            CampaignAddonClientChecks.verifyServer(server);
+            CampaignAddonClientChecks.disconnect(server);
+            step = 21;
+            frames = 0;
+        } else if (step == 21 && minecraft.screen instanceof TitleScreen && ++frames >= 10) {
+            CampaignAddonClientChecks.openExisting();
+            step = 22;
+            frames = 0;
+        } else if (step == 22 && minecraft.screen instanceof CampaignAddonScreen screen && ++frames >= 10) {
+            Screenshot.grab(output().toFile(), "campaign-addons-existing-world.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignAddonClientChecks.existing(screen);
+            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: centered cards, responsive background loading and cancellation, continuous panorama handoff, animated paging and expansion, cursor tilt, cover-only tooltips, parallax hover slowdown, moving hit areas, accessible carets, Markdown and Minecraft color codes, transparent PNG/GIF media, F5 disk edits to campaign titles, authors, PNG covers, Markdown, and GIFs, selected datapack priority, campaign catalog reload, failed reload recovery, scrolling, locked state, Back, creation, addon icons, vanilla controls, drag transfers and ordering, compatibility, search, dependencies, conflicts, cancel, runtime quests, existing-world additions, and permanent saved selection.\n");
             step = 6;
             minecraft.stop();
         }

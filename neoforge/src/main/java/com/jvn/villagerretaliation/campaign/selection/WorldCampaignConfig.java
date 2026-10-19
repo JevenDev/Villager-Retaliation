@@ -10,6 +10,10 @@ public final class WorldCampaignConfig {
             .comment("Campaign for a new world. Existing worlds keep their permanent saved selection.")
             .define("campaign", WorldCampaign.DEFAULT.toString(), value -> value instanceof String id
                     && id.contains(":") && net.minecraft.resources.ResourceLocation.tryParse(id) != null);
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> ADDONS = BUILDER
+            .comment("Addons for a new world, in low-to-high priority order. Existing worlds keep their saved addons.")
+            .defineListAllowEmpty("addons", java.util.List.of(), () -> "example:addon", value -> value instanceof String id
+                    && id.contains(":") && net.minecraft.resources.ResourceLocation.tryParse(id) != null);
     private static final ModConfigSpec SPEC = BUILDER.build();
 
     private WorldCampaignConfig() { }

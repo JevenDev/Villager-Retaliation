@@ -96,7 +96,11 @@ public final class DatapackResourceLoader {
         }
     }
 
-    public record JsonResource(ResourceLocation location, Resource resource) {
+    public record JsonResource(ResourceLocation location, Resource resource, int priority) {
+        public JsonResource(ResourceLocation location, Resource resource) {
+            this(location, resource, -1);
+        }
+
         public boolean isFromPack(String packId) {
             String expected = normalizePackId(packId);
             String actual = normalizePackId(this.resource.sourcePackId());

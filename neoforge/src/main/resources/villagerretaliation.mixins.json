@@ -93,6 +93,7 @@
     "client.AuthoringPlaytestMouseMixin",
     "client.AuthoringPlaytestKeyMixin",
     "client.CreateWorldCampaignMixin",
+    "client.EditWorldCampaignMixin",
     "client.PanoramaRendererAccessor",
     "client.DialogueCameraMixin",
     "client.DialogueCameraGuiMixin",

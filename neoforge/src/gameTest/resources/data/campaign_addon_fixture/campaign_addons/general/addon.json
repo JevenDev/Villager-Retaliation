@@ -1,0 +1,10 @@
+{
+  "schema": "villagerretaliation:campaign_addon/v1",
+  "id": "campaign_addon_fixture:general",
+  "name": "General stories",
+  "description": "Additional village stories for the selected campaign.",
+  "authors": [
+    "Campaign creator"
+  ],
+  "image": "villagerretaliation:mod_icon"
+}

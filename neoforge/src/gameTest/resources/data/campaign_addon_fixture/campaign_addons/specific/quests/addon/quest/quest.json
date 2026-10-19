@@ -1,0 +1,26 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "campaign_addon_fixture:quest",
+  "localization_prefix": "campaign_addon_fixture.quest.example",
+  "display": {
+    "title": {
+      "key": "#title"
+    }
+  },
+  "metadata": {
+    "questline": "addon"
+  },
+  "provider": {
+    "type": "villagerretaliation:villager"
+  },
+  "entry_stage": "start",
+  "stages": [
+    {
+      "id": "start",
+      "objectives": [],
+      "transition": {
+        "complete": true
+      }
+    }
+  ]
+}

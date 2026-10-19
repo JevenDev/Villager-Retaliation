@@ -60,6 +60,22 @@ final class CampaignMedia implements AutoCloseable {
         }
     }
 
+    static CampaignMedia addonIcon(ResourceManager resources, com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon addon) {
+        if (addon.image() != null) return load(resources, addon.image());
+        var pack = resources.listPacks().filter(source -> source.packId().equals(addon.sourcePack())).findFirst();
+        var icon = pack.isEmpty() ? null : pack.get().getRootResource("pack.png");
+        if (icon != null) {
+            try (var stream = icon.get()) {
+                byte[] bytes = stream.readNBytes(MAX_BYTES + 1);
+                if (bytes.length > MAX_BYTES) throw new IOException("Addon icon exceeds 4 MiB");
+                return new CampaignMedia(addon.id(), bytes);
+            } catch (IOException exception) {
+                LogUtils.getLogger().warn("Could not load addon pack icon {}", addon.id(), exception);
+            }
+        }
+        return load(resources, ResourceLocation.withDefaultNamespace("textures/misc/unknown_pack.png"));
+    }
+
     boolean available() {
         if (frames.isEmpty() && !failed) decode();
         return !frames.isEmpty();

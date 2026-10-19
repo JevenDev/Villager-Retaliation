@@ -35,6 +35,7 @@ public abstract class CreateWorldCampaignMixin {
     @Shadow private Pair<Path, PackRepository> getDataPackSelectionSettings(WorldDataConfiguration configuration) { throw new AssertionError(); }
     @Shadow private void onCreate() { throw new AssertionError(); }
     @Unique private WorldCampaign villagerretaliation$campaign;
+    @Unique private java.util.List<net.minecraft.resources.ResourceLocation> villagerretaliation$addons = java.util.List.of();
     @Unique private boolean villagerretaliation$confirmed;
 
     @Inject(method = "onCreate", at = @At("HEAD"), cancellable = true)
@@ -53,8 +54,9 @@ public abstract class CreateWorldCampaignMixin {
                 try (var resources = CampaignResources.open(packs.getSecond())) {
                     var catalog = WorldCampaignCatalog.load(resources);
                     return new CampaignSelectScreen(parent, catalog, resources,
-                            () -> CampaignResources.open(packs.getSecond()), campaign -> {
+                            () -> CampaignResources.open(packs.getSecond()), (campaign, addons) -> {
                         villagerretaliation$campaign = campaign;
+                        villagerretaliation$addons = addons;
                         villagerretaliation$confirmed = true;
                         minecraft.setScreen(parent);
                         onCreate();
@@ -73,7 +75,7 @@ public abstract class CreateWorldCampaignMixin {
         if (villagerretaliation$campaign == null) throw new IllegalStateException("Select a campaign before creating this world");
         try {
             CampaignWorldModeSavedData.createSelection(cir.getReturnValue().get().getLevelPath(LevelResource.ROOT),
-                    villagerretaliation$campaign, "singleplayer_owner", uiState.getSettings().worldgenRegistries().compositeAccess());
+                    villagerretaliation$campaign, villagerretaliation$addons, "singleplayer_owner", uiState.getSettings().worldgenRegistries().compositeAccess());
         } catch (IOException exception) {
             throw new UncheckedIOException("Could not save the permanent campaign selection", exception);
         }

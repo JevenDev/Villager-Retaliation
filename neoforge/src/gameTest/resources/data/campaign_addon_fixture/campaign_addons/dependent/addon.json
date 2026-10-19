@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:campaign_addon/v1",
+  "id": "campaign_addon_fixture:dependent",
+  "name": "Dependent stories",
+  "description": "Additional village stories for the selected campaign.",
+  "authors": [
+    "Campaign creator"
+  ],
+  "requires": [
+    "campaign_addon_fixture:general"
+  ]
+}

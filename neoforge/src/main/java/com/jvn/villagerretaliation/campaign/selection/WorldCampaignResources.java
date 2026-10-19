@@ -34,10 +34,10 @@ public final class WorldCampaignResources {
     public static List<DatapackResourceLoader.JsonResourceStack> stacks(net.minecraft.server.packs.resources.ResourceManager manager,
             WorldCampaignSelection.Selection selection, String root) {
         WorldCampaignCatalog catalog = WorldCampaignCatalog.load(manager);
-        if (selection.id() != null) catalog.require(selection.id(), false);
+        catalog.validate(selection, false);
         Map<ResourceLocation, List<Resource>> mapped = new LinkedHashMap<>();
         manager.listResourceStacks(root, id -> id.getPath().endsWith(".json")).forEach((id, resources) -> {
-            for (Resource resource : resources) append(manager, mapped, id, resource, null, selection, catalog);
+            for (Resource resource : resources) append(manager, mapped, id, resource, null, null, selection, catalog);
         });
         for (WorldCampaign campaign : catalog.choices()) {
             if (!selection.allows(campaign.id())) continue;
@@ -45,27 +45,47 @@ public final class WorldCampaignResources {
             manager.listResourceStacks(prefix + root, id -> id.getNamespace().equals(campaign.id().getNamespace()) && id.getPath().endsWith(".json"))
                     .forEach((physical, resources) -> {
                         ResourceLocation logical = ResourceLocation.fromNamespaceAndPath(physical.getNamespace(), physical.getPath().substring(prefix.length()));
-                        for (Resource resource : resources) append(manager, mapped, logical, resource, campaign.id(), selection, catalog);
+                        for (Resource resource : resources) append(manager, mapped, logical, resource, campaign.id(), null, selection, catalog);
                     });
+        }
+        List<Map<ResourceLocation, List<Resource>>> scopes = new ArrayList<>();
+        scopes.add(mapped);
+        for (ResourceLocation addon : selection.addons()) {
+            Map<ResourceLocation, List<Resource>> content = new LinkedHashMap<>();
+            String prefix = "campaign_addons/" + addon.getPath() + "/";
+            manager.listResourceStacks(prefix + root, id -> id.getNamespace().equals(addon.getNamespace()) && id.getPath().endsWith(".json"))
+                    .forEach((physical, resources) -> {
+                        ResourceLocation logical = ResourceLocation.fromNamespaceAndPath(physical.getNamespace(), physical.getPath().substring(prefix.length()));
+                        for (Resource resource : resources) append(manager, content, logical, resource, WorldCampaign.SHARED, prefix, selection, catalog);
+                    });
+            scopes.add(content);
         }
         Map<String, Integer> order = new LinkedHashMap<>();
         manager.listPacks().forEach(pack -> order.put(pack.packId(), order.size()));
-        return mapped.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(entry -> {
-            List<DatapackResourceLoader.JsonResource> layers = entry.getValue().stream()
-                    .sorted(Comparator.comparingInt(resource -> order.getOrDefault(resource.sourcePackId(), Integer.MAX_VALUE)))
-                    .map(resource -> new DatapackResourceLoader.JsonResource(entry.getKey(), resource)).toList();
-            return new DatapackResourceLoader.JsonResourceStack(entry.getKey(), layers);
-        }).toList();
+        Map<ResourceLocation, List<DatapackResourceLoader.JsonResource>> combined = new LinkedHashMap<>();
+        for (int scope = 0; scope < scopes.size(); scope++) {
+            int offset = scope * order.size();
+            scopes.get(scope).forEach((location, resources) -> {
+                var layers = combined.computeIfAbsent(location, ignored -> new ArrayList<>());
+                resources.stream().sorted(Comparator.comparingInt(resource -> order.get(resource.sourcePackId())))
+                        .forEach(resource -> layers.add(new DatapackResourceLoader.JsonResource(location, resource,
+                                offset + order.get(resource.sourcePackId()))));
+            });
+        }
+        return combined.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(entry -> new DatapackResourceLoader.JsonResourceStack(entry.getKey(), entry.getValue())).toList();
     }
 
     private static void append(net.minecraft.server.packs.resources.ResourceManager manager, Map<ResourceLocation, List<Resource>> mapped,
-            ResourceLocation location, Resource resource, ResourceLocation folderOwner,
+            ResourceLocation location, Resource resource, ResourceLocation folderOwner, String addonPrefix,
             WorldCampaignSelection.Selection selection, WorldCampaignCatalog catalog) {
         JsonObject root;
         ResourceLocation inherited;
         try (var reader = resource.openAsReader()) {
             root = JsonParser.parseReader(reader).getAsJsonObject();
-            inherited = folderOwner == null ? bundleOwner(manager, location, resource) : folderOwner;
+            inherited = folderOwner == null || addonPrefix != null
+                    ? bundleOwner(manager, location, resource, addonPrefix == null ? "" : addonPrefix) : folderOwner;
+            if (inherited == null && addonPrefix != null) inherited = WorldCampaign.SHARED;
         } catch (IOException | JsonParseException | IllegalStateException exception) {
             appendLayer(mapped, location, new Resource(resource.source(), () -> {
                 throw new IOException("Cannot read campaign content " + location + " from " + resource.sourcePackId(), exception);
@@ -73,14 +93,14 @@ public final class WorldCampaignResources {
             return;
         }
         try {
-            ResourceLocation owner = owner(root, inherited, folderOwner != null, catalog);
+            ResourceLocation owner = owner(root, inherited, folderOwner != null && addonPrefix == null, catalog);
             JsonObject filtered = root.deepCopy();
             if (root.has("entries") && root.get("entries").isJsonArray()) {
                 JsonArray entries = new JsonArray();
                 for (var element : root.getAsJsonArray("entries")) {
                     if (!element.isJsonObject()) throw new IllegalArgumentException("Dialogue entries must be objects");
                     JsonObject entry = element.getAsJsonObject();
-                    ResourceLocation entryOwner = owner(entry, owner, folderOwner != null, catalog);
+                    ResourceLocation entryOwner = owner(entry, owner, folderOwner != null && addonPrefix == null, catalog);
                     if (selection.allows(entryOwner)) {
                         JsonObject accepted = entry.deepCopy();
                         accepted.remove("world_campaign");
@@ -118,7 +138,7 @@ public final class WorldCampaignResources {
         return explicit;
     }
 
-    private static ResourceLocation bundleOwner(net.minecraft.server.packs.resources.ResourceManager manager, ResourceLocation location, Resource companion) throws IOException {
+    private static ResourceLocation bundleOwner(net.minecraft.server.packs.resources.ResourceManager manager, ResourceLocation location, Resource companion, String prefix) throws IOException {
         String[] parts = location.getPath().split("/", 4);
         String manifest;
         if (parts.length == 4 && parts[0].equals("quests") && !parts[1].equals("_shared") && !parts[3].equals("quest.json")) {
@@ -126,7 +146,7 @@ public final class WorldCampaignResources {
         } else if (parts.length >= 3 && parts[0].equals("campaigns") && !parts[2].equals("campaign.json")) {
             manifest = "campaigns/" + parts[1] + "/campaign.json";
         } else return null;
-        ResourceLocation quest = ResourceLocation.fromNamespaceAndPath(location.getNamespace(), manifest);
+        ResourceLocation quest = ResourceLocation.fromNamespaceAndPath(location.getNamespace(), prefix + manifest);
         List<String> packs = manager.listPacks().map(net.minecraft.server.packs.PackResources::packId).toList();
         int layer = packs.indexOf(companion.sourcePackId());
         var resource = manager.getResourceStack(quest).stream()
