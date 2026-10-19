@@ -25,7 +25,77 @@ final class EditorWorkflowChecks {
         openFilesCyclePinRenameAndRemove();
         sessionsRestoreContextAfterRestart();
         commandSearchKeepsAvailabilityAndShortcuts();
-        return 8;
+        nodeDeletionKeepsReferencesAndHistoryTogether();
+        nodeDeletionHandlesStageArraysAndInternalLinks();
+        triggeredDeletionIsAtomicAndKeepsAnEntry();
+        graphArrangementFollowsTheAuthoredChoiceOrder();
+        return 12;
+    }
+
+    private static void nodeDeletionKeepsReferencesAndHistoryTogether() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-delete-nodes"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:delete");
+        DialogueGraph.addNode(document, "middle"); DialogueGraph.addNode(document, "finish");
+        workspace.addDialogueResponse(document, "start", "continue", "Continue", "middle");
+        document.editMetadata("Place node", metadata -> metadata.add("node_positions", JsonParser.parseString("{\"middle\":{\"x\":12,\"y\":24}}")));
+        var before = document.json(); var metadata = document.metadata();
+        check(EditorGraphActions.needsRedirect(document, Set.of("middle")), "connected deletion requests a replacement");
+        try { EditorGraphActions.delete(document, Set.of("middle"), ""); throw new AssertionError("missing replacement accepted"); }
+        catch (IllegalArgumentException expected) { check(document.json().equals(before), "failed deletion preserves the draft"); }
+        EditorGraphActions.delete(document, Set.of("middle"), "finish");
+        check(DialogueGraph.edges(document).stream().anyMatch(edge -> edge.to().equals("finish")), "incoming choices reconnect to the replacement");
+        check(!document.metadata().getAsJsonObject("node_positions").has("middle"), "deleted node positions are removed");
+        var after = document.json(); document.undo();
+        check(document.json().equals(before) && document.metadata().equals(metadata), "deletion, references and layout undo together");
+        document.redo(); check(document.json().equals(after), "deletion redoes in one step");
+        EditorGraphActions.delete(document, Set.of("start"), "finish");
+        check(DialogueGraph.nodes(document).size() == 1 && DialogueGraph.nodes(document).getFirst().entry(), "deleting a start node moves the start point to its replacement");
+        before = document.json();
+        try { EditorGraphActions.delete(document, Set.of("finish"), "finish"); throw new AssertionError("last node deletion accepted"); }
+        catch (IllegalArgumentException expected) { check(document.json().equals(before), "the last start node is preserved"); }
+        check(EditorShortcuts.parse("Delete").label().equals("Delete"), "Delete is available without modifiers");
+    }
+
+    private static void nodeDeletionHandlesStageArraysAndInternalLinks() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-delete-stages"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:delete_stages");
+        DialogueGraph.addNode(quest, "second"); DialogueGraph.addNode(quest, "third");
+        EditorDocumentOperations.nextStage(quest, "second", "third");
+        check(!EditorGraphActions.needsRedirect(quest, Set.of("second", "third")), "links within the deleted selection need no replacement");
+        var before = quest.json();
+        EditorGraphActions.delete(quest, Set.of("second", "third"), "");
+        check(DialogueGraph.nodes(quest).size() == 1, "array-backed stages delete without index drift");
+        quest.undo(); check(quest.json().equals(before), "batch deletion restores every stage in one undo");
+        var start = DialogueGraph.nodes(quest).getFirst().id();
+        EditorGraphActions.delete(quest, Set.of(start, "second"), "third");
+        check(DialogueGraph.nodes(quest).getFirst().id().equals("third") && DialogueGraph.nodes(quest).getFirst().entry(), "batch deletion redirects the quest entry");
+    }
+
+    private static void triggeredDeletionIsAtomicAndKeepsAnEntry() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-delete-triggered"));
+        var document = workspace.createDocument(DefinitionKind.FORCED, "test:delete_triggered");
+        document.edit("Add nested branches", root -> {
+            var response = root.getAsJsonArray("options").get(0).getAsJsonObject();
+            response.addProperty("end_conversation", false);
+            response.add("follow_up", JsonParser.parseString("{\"lines\":[\"Follow up\"],\"options\":[{\"id\":\"next\",\"label\":\"Next\",\"end_conversation\":false,\"follow_up\":{\"lines\":[\"Nested\"]}}]}"));
+        });
+        var before = document.json();
+        EditorGraphActions.delete(document, Set.of("/options/0/follow_up", "/options/0/follow_up/options/0/follow_up"), "");
+        check(document.json().getAsJsonArray("options").isEmpty(), "overlapping nested selections delete their owning response once");
+        document.undo(); check(document.json().equals(before), "nested branches undo together");
+        try { EditorGraphActions.delete(document, Set.of("", "/options/0/follow_up"), ""); throw new AssertionError("last entry deletion accepted"); }
+        catch (IllegalArgumentException expected) { check(document.json().equals(before), "a rejected batch leaves all nested branches intact"); }
+    }
+
+    private static void graphArrangementFollowsTheAuthoredChoiceOrder() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-branch-order"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:branch_order");
+        DialogueGraph.addNode(document, "last_choice"); DialogueGraph.addNode(document, "first_choice");
+        workspace.addDialogueResponse(document, "start", "first", "First", "first_choice");
+        workspace.addDialogueResponse(document, "start", "last", "Last", "last_choice");
+        var layout = EditorGraph.arrange(EditorGraph.cards(document, value -> workspace.resolveText(document, value, "en_us")));
+        check(layout.get("first_choice")[1] < layout.get("last_choice")[1], "arranged branches follow response order even when their files were authored in another order");
+        check(layout.get("first_choice")[0] > layout.get("start")[0], "choices lead to the next column");
     }
 
     private static void historyLabelsFollowUndoRedoAndGroups() throws IOException {

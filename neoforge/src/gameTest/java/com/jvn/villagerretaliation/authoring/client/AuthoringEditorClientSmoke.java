@@ -53,6 +53,8 @@ public final class AuthoringEditorClientSmoke {
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
     private static boolean workflowControls, workflowLists;
+    private static boolean deletionTyping, deletionFocus;
+    private static final imgui.type.ImString deletionText = new imgui.type.ImString("Keep typing", 128);
     private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
     private static float[] workflowFieldPoint;
     private static boolean qualityControls;
@@ -166,6 +168,7 @@ public final class AuthoringEditorClientSmoke {
         buildVariableSteps();
         buildPanelSteps();
         buildPerformanceSteps();
+        buildDeletionSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
@@ -177,7 +180,7 @@ public final class AuthoringEditorClientSmoke {
             require((int) field(editor, "guideStep") == 0, "First open shows the guide.");
             capture("01-first-open");
         });
-        click(() -> toolbar("Hide guide"));
+        toolMenu("Hide guide");
         STEPS.add(() -> {
             require((int) field(editor, "guideStep") == -1, "Hide guide button dismisses onboarding.");
             try {
@@ -227,12 +230,12 @@ public final class AuthoringEditorClientSmoke {
             require(DialogueGraph.edges(document).getFirst().to().equals("finish"), "Dragging an output to an input reconnects the branch.");
             capture("05-drag-connected");
         });
-        click(() -> toolbar("Quick guide"));
+        toolMenu("Quick guide");
         STEPS.add(() -> {
             require((int) field(editor, "guideStep") == 0, "Quick guide reopens onboarding.");
             capture("06-guide-reopened");
         });
-        click(() -> toolbar("Hide guide"));
+        toolMenu("Hide guide");
         click(() -> toolbar("Preview"));
         STEPS.add(() -> {
             require((int) field(editor, "view") == 1, "Preview toolbar control switches the rendered view.");
@@ -413,6 +416,65 @@ public final class AuthoringEditorClientSmoke {
         finishSteps("Full editor graph, pack, camera, playtest, recovery and workflow checks passed.");
     }
 
+    private static void toolMenu(String name) {
+        click(() -> toolbar("Tools"));
+        key(ImGuiKey.Home);
+        int index = switch (name) { case "Quick guide", "Hide guide" -> 0; case "Keyboard shortcuts" -> 1; default -> throw new IllegalArgumentException(name); };
+        for (int i = 0; i < index; i++) key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
+    }
+
+    private static void buildDeletionSteps() {
+        var originalWorkspace = new AuthoringWorkspace[1];
+        var originalDocument = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            originalWorkspace[0] = workspace; originalDocument[0] = document;
+            try { workspace = AuthoringWorkspace.create(output().resolve("delete-key-drafts")); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            set("workspace", workspace);
+            document = workspace.createDocument(DefinitionKind.TREE, "test:delete_keyboard");
+            DialogueGraph.addNode(document, "discard"); DialogueGraph.addNode(document, "keep");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("guideStep", -1); set("showGraphTools", false); set("fitGraph", true);
+        });
+        pause(250);
+        STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+        click(() -> point("discard", 80, 18));
+        STEPS.add(() -> { deletionTyping = true; deletionFocus = true; });
+        pause(250);
+        STEPS.add(() -> require(ImGui.getIO().getWantTextInput(), "A focused text field captures keyboard input."));
+        key(ImGuiKey.Delete);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 3, "Delete in a text field keeps the selected node.");
+            deletionTyping = false;
+        });
+        pause(150);
+        click(() -> point("discard", 80, 18));
+        key(ImGuiKey.Delete);
+        STEPS.add(() -> require(DialogueGraph.nodes(document).stream().noneMatch(node -> node.id().equals("discard")), "Delete removes the selected graph node."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Z);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 3, "Ctrl+Z restores the deleted node.");
+            workspace.addDialogueResponse(document, "start", "continue", "Continue", "discard");
+            invoke("refresh", new Class<?>[0]);
+        });
+        click(() -> point("discard", 80, 18));
+        key(ImGuiKey.Delete);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 3 && ImGui.isPopupOpen("Delete nodes###node_delete"), "Connected deletion opens the replacement picker without changing the draft.");
+            capture("78-delete-reconnect");
+        });
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 3, "Cancel preserves connected nodes.");
+            capture("79-creator-scene");
+            workspace = originalWorkspace[0]; document = originalDocument[0];
+            set("workspace", workspace);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("guideStep", 0); set("fitGraph", true);
+        });
+    }
+
     private static void buildLayoutSteps() {
         for (int variant : new int[] {1, 2, 3}) {
             float scale = variant == 1 ? 1 : 2;
@@ -428,7 +490,7 @@ public final class AuthoringEditorClientSmoke {
                 shortcutPopupFrames = 0;
                 layoutChecks = true;
             });
-            if (variant == 1) click(() -> toolbar("Shortcuts"));
+            if (variant == 1) toolMenu("Keyboard shortcuts");
             else STEPS.add(() -> ((EditorShortcuts) field(editor, "shortcuts")).open());
             pause(1200);
             STEPS.add(() -> {
@@ -985,6 +1047,13 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void renderWorkflowControls() {
+        if (deletionTyping) {
+            ImGui.setNextWindowPos(500, 200); ImGui.setNextWindowSize(420, 140);
+            ImGui.begin("Typing during graph selection");
+            if (deletionFocus) { deletionFocus = false; ImGui.setKeyboardFocusHere(); }
+            ImGui.inputText("Text", deletionText);
+            ImGui.end();
+        }
         if (!workflowControls) return;
         ImGui.setNextWindowPos(450, 150); ImGui.setNextWindowSize(800, 600);
         ImGui.begin("Editor workflow acceptance");
@@ -2245,8 +2314,7 @@ public final class AuthoringEditorClientSmoke {
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
         boolean navigation = List.of("Back", "Forward", "Undo", "Redo").contains(target);
         String[] labels = navigation ? new String[] {"Back", "Forward", "Undo", "Redo"}
-                : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
-                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Shortcuts", "Focus pane...", "Reset layout", "Files", "Close"};
+                : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack", "Tools", "Close"};
         if (navigation) {
             x = ImGui.getMainViewport().getWorkPosX() + ImGui.getMainViewport().getWorkSizeX() - 14;
             for (String label : labels) x -= ImGui.calcTextSize(label).x * scale + 24;

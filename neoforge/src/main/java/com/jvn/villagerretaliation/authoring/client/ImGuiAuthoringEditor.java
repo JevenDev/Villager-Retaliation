@@ -167,6 +167,10 @@ final class ImGuiAuthoringEditor {
     private boolean groupContent;
     private boolean showMinimap;
     private boolean showGraphTools;
+    private boolean requestNodeDelete;
+    private AuthoringDocument deleteDocument;
+    private java.util.Set<String> deleteNodes = java.util.Set.of();
+    private String deleteRedirect = "";
     private final ImString nodeFilter = new ImString(256);
     private boolean focusSearch;
     private String graphFocus = "";
@@ -274,7 +278,7 @@ final class ImGuiAuthoringEditor {
         try {
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
                 if (shortcuts.pressed()) shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
-                        library, this::operation, ImGui.getIO().getWantTextInput());
+                        library, this::operation, ImGui.getIO().getWantTextInput() || ImGui.isAnyItemActive());
                 if (ImGui.isMouseClicked(3)) operation(() -> navigateHistory(-1));
                 if (ImGui.isMouseClicked(4)) operation(() -> navigateHistory(1));
             }
@@ -292,6 +296,7 @@ final class ImGuiAuthoringEditor {
             quickOpen();
             if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
             referencePopup();
+            nodeDeletePopup();
             shortcuts.popup(commands(), library, this::operation, preferences.textScale());
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
@@ -398,25 +403,24 @@ final class ImGuiAuthoringEditor {
         if (viewButton("Playtest", 3)) operation(this::enterPlaytest);
         sameLineFor("Build pack");
         if (viewButton("Build pack", 2)) operation(() -> { validate(); view = 2; focusPanel = WORK_PANEL; });
-        sameLineFor(guideStep < 0 ? "Quick guide" : "Hide guide");
-        if (ImGui.button(guideStep < 0 ? "Quick guide" : "Hide guide")) {
-            if (guideStep < 0) guideStep = 0;
-            else dismissGuide();
-        }
-        sameLineFor("Shortcuts");
-        if (ImGui.button("Shortcuts")) shortcuts.open();
-        EditorWidgets.sameLineFor(150 * preferences.textScale());
-        ImGui.setNextItemWidth(150 * preferences.textScale());
-        if (ImGui.beginCombo("##focus_panel", focusMode.isEmpty() ? "Focus pane..." : "Restore panes")) {
-            if (ImGui.selectable("Restore panes", focusMode.isEmpty())) focusMode = "";
+        sameLineFor("Tools");
+        if (ImGui.button("Tools")) ImGui.openPopup("Editor tools");
+        if (ImGui.beginPopup("Editor tools")) {
+            if (ImGui.menuItem(guideStep < 0 ? "Quick guide" : "Hide guide")) {
+                if (guideStep < 0) guideStep = 0;
+                else dismissGuide();
+            }
+            ImGui.setItemDefaultFocus();
+            if (ImGui.menuItem("Keyboard shortcuts")) shortcuts.open();
+            if (ImGui.menuItem("Pack files")) operation(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
+            if (ImGui.menuItem("Find an action", keyHint("Open commands"))) commandPalette.open();
+            ImGui.separator();
+            if (ImGui.menuItem("Restore all panes", "", focusMode.isEmpty())) focusMode = "";
             for (String title : List.of(WORK_PANEL, DETAIL_PANEL, CONTENT_PANEL))
-                if (ImGui.selectable(title.substring(0, title.indexOf("###")), focusMode.equals(title))) focusMode = title;
-            ImGui.endCombo();
+                if (ImGui.menuItem("Focus " + title.substring(0, title.indexOf("###")).toLowerCase(Locale.ROOT), "", focusMode.equals(title))) focusMode = title;
+            if (ImGui.menuItem("Reset layout")) resetLayout = true;
+            ImGui.endPopup();
         }
-        sameLineFor("Reset layout");
-        if (ImGui.button("Reset layout")) resetLayout = true;
-        sameLineFor("Files");
-        if (ImGui.button("Files")) operation(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
         sameLineFor("Close");
         if (ImGui.button("Close")) screen.onClose();
         navigationControls();
@@ -927,6 +931,7 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Navigate forward", "Ctrl+Alt+Right", view != 3, () -> navigateHistory(1)));
         result.add(new EditorCommands.Command("Parent folder", "Alt+Up", workspace != null && view != 3 && !activePath().isEmpty(), this::navigateUp));
         result.add(new EditorCommands.Command("Copy nodes", "Ctrl+C", graph && view == 0 && !selectedNodes().isEmpty(), () -> graphClipboard.copy(workspace, document, selectedNodes())));
+        result.add(new EditorCommands.Command("Delete selected nodes", "Delete", graph && view == 0 && !selectedNodes().isEmpty(), this::requestDeleteNodes));
         result.add(new EditorCommands.Command("Paste nodes", "Ctrl+V", graph && view == 0, this::pasteNodes));
         result.add(new EditorCommands.Command("Next node", "Alt+Right", graph && view == 0, () -> navigateNode(1)));
         result.add(new EditorCommands.Command("Previous node", "Alt+Left", graph && view == 0, () -> navigateNode(-1)));
@@ -1146,38 +1151,11 @@ final class ImGuiAuthoringEditor {
         sameLineFor("100%");
         boolean resetZoom = ImGui.button(Math.round(zoom * 100) + "%###graph_zoom");
         if (ImGui.isItemHovered()) ImGui.setTooltip("Reset zoom to 100%. Scroll over the graph to zoom. Middle-drag to pan.");
+        sameLineFor("Go to start");
+        if (ImGui.button("Go to start")) nodes.stream().filter(DialogueGraph.Node::entry).findFirst().ifPresent(node -> graphFocus = node.id());
         sameLineFor("Graph tools");
         if (ImGui.button("Graph tools")) showGraphTools = !showGraphTools;
         if (showGraphTools) graphTools();
-        if (selected && EditorWidgets.section("Node actions")) {
-            ImGui.textUnformatted("Selected: " + selectedNode);
-            input("Node name / copy ID", nodeName);
-            if (document.kind() != DefinitionKind.FORCED && ImGui.button("Rename node and references")) operation(() -> {
-                EditorContentTools.renameNode(document, selectedNode, nodeName.get());
-                selectedNode = nodeName.get();
-                refresh();
-                setPointer(documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
-            });
-            var incoming = EditorContentTools.usages(document, selectedNode);
-            ImGui.textWrapped(incoming.size() + " incoming connections");
-            for (var edge : incoming) if (ImGui.selectable((edge.from().isBlank() ? "File settings" : "From " + edge.from()) + "##usage" + edge.pointer())) operation(() -> {
-                selectedNode = edge.from(); setPointer(edge.pointer());
-            });
-            if (document.kind() != DefinitionKind.FORCED) input("Redirect deleted node to", nextStage);
-            else ImGui.textWrapped("Deleting a follow-up also removes its owning player response.");
-            if (ImGui.button("Duplicate node")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nodeName.get()); refresh(); });
-            EditorWidgets.sameLineFor("Delete node");
-            if (ImGui.button("Delete node")) operation(() -> { EditorContentTools.deleteNode(document, selectedNode, nextStage.get()); selectedNode = ""; setPointer(""); refresh(); });
-            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
-            if (ImGui.button("Start here")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
-            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.QUEST ? "Start the quest at this stage."
-                    : "Change the first entry or topic to start at this node. Other entries are preserved.");
-            ImGui.endDisabled();
-            EditorWidgets.sameLineFor("End here");
-            if (ImGui.button("End here")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
-            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.FORCED
-                    ? "End this node. Remove existing player choices first; they will not be discarded automatically." : "End this node.");
-        }
         if (selected && showBranch) {
             if (document.kind() != DefinitionKind.QUEST) {
                 ImGui.textUnformatted("Player response");
@@ -1233,7 +1211,9 @@ final class ImGuiAuthoringEditor {
             EditorWidgets.sameLineFor("Cancel connection");
             if (ImGui.button("Cancel connection")) showBranch = false;
         }
-        ImGui.textWrapped("Select a block to edit. Connect an output dot to an input dot. Drag node headers to arrange.");
+        ImGui.textWrapped(!selectedEdge.isEmpty() ? "Choose an input dot on the left of a node. Escape cancels the connection."
+                : selectedNodes().isEmpty() ? "Click a block to edit. Connect right output dots to left input dots. Drag empty space to select."
+                : selectedNodes().size() + " selected. Drag headers to move. " + keyHint("Delete selected nodes") + " to delete. " + keyHint("Undo") + " to undo.");
         if (!selectedEdge.isEmpty()) {
             if (ImGui.smallButton("Create connected node")) operation(() -> {
                 selectedNode = EditorContentTools.createConnected(document, selectedEdge, nextNodeId());
@@ -1373,11 +1353,11 @@ final class ImGuiAuthoringEditor {
                     if (nodeSelection.isEmpty() && !selectedNode.isEmpty()) nodeSelection.add(selectedNode);
                     if (!nodeSelection.add(node.id())) nodeSelection.remove(node.id());
                 } else if (!nodeSelection.contains(node.id())) { nodeSelection.clear(); nodeSelection.add(node.id()); }
-                selectedNode = node.id();
-                setPointer(node.pointer());
+                selectedNode = nodeSelection.contains(node.id()) ? node.id() : nodeSelection.stream().findFirst().orElse("");
+                setPointer(nodes.stream().filter(value -> value.id().equals(selectedNode)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
                 selectedEdge = "";
                 showBranch = false;
-                draggingNode = node.id();
+                draggingNode = nodeSelection.contains(node.id()) ? node.id() : null;
                 nodeDragMoved = false;
             });
             for (int i = 0; i < card.blocks().size(); i++) {
@@ -1424,6 +1404,7 @@ final class ImGuiAuthoringEditor {
                                 + "\nClick or drag to an input dot");
                         if (ImGui.isMouseClicked(0)) operation(() -> {
                             selectedNode = node.id();
+                            nodeSelection.clear(); nodeSelection.add(node.id());
                             selectedEdge = block.output().pointer();
                             setPointer(block.pointer());
                             draggingNode = null;
@@ -1556,14 +1537,7 @@ final class ImGuiAuthoringEditor {
                     ImGui.closeCurrentPopup();
                 }
             }
-            if (ImGui.beginCombo(EditorWidgets.field("Redirect incoming links"), nextStage.get().isEmpty() ? "Choose destination..." : nextStage.get())) {
-                for (var node : documentCache.nodes(document)) if (!node.id().equals(id) && ImGui.selectable(node.id())) nextStage.set(node.id());
-                ImGui.endCombo();
-            }
-            if (ImGui.button("Delete node")) {
-                operation(() -> { EditorContentTools.deleteNode(document, id, nextStage.get()); selectedNode = ""; nodeSelection.clear(); setPointer(""); refresh(); });
-                ImGui.closeCurrentPopup();
-            }
+            if (ImGui.menuItem("Delete selected nodes", keyHint("Delete selected nodes"))) operation(this::requestDeleteNodes);
             if (document.kind() != DefinitionKind.FORCED) {
                 ImGui.inputText(EditorWidgets.field("Snippet name"), graphSnippetName);
                 if (ImGui.button("Save selection as snippet")) {
@@ -1580,6 +1554,44 @@ final class ImGuiAuthoringEditor {
             if (ImGui.menuItem("Show all paths")) graphOrganization.focus("All nodes");
             if (ImGui.menuItem("Comment groups")) showGraphTools = true;
         }
+        ImGui.endPopup();
+    }
+
+    private void requestDeleteNodes() {
+        deleteNodes = java.util.Set.copyOf(selectedNodes());
+        if (deleteNodes.isEmpty()) return;
+        deleteDocument = document;
+        deleteRedirect = "";
+        if (EditorGraphActions.needsRedirect(document, deleteNodes)) requestNodeDelete = true;
+        else deleteSelectedNodes();
+    }
+
+    private void deleteSelectedNodes() {
+        if (document != deleteDocument) throw new IllegalStateException("Select the original file before deleting its nodes");
+        EditorGraphActions.delete(document, deleteNodes, deleteRedirect);
+        selectedNode = ""; nodeSelection.clear(); selectedEdge = "";
+        draggingNode = null; showBranch = false;
+        setPointer(""); refresh();
+        status = deleteNodes.size() == 1 ? "Node deleted. Ctrl+Z to undo." : "Selected nodes deleted. Ctrl+Z to undo.";
+        deleteNodes = java.util.Set.of(); deleteDocument = null;
+    }
+
+    private void nodeDeletePopup() {
+        if (requestNodeDelete) { requestNodeDelete = false; ImGui.openPopup("Delete nodes###node_delete"); }
+        if (!EditorWidgets.beginPopup("Delete nodes###node_delete", 520, 310, preferences.textScale())) return;
+        ImGui.textWrapped("These nodes have incoming connections or are a start point. Choose where those connections should lead after deletion.");
+        var remaining = deleteDocument == document ? documentCache.nodes(document).stream().filter(node -> !deleteNodes.contains(node.id())).toList() : List.<DialogueGraph.Node>of();
+        if (remaining.isEmpty()) ImGui.textWrapped("Keep at least one node. Add a replacement or select fewer nodes.");
+        ImGui.setNextItemWidth(-1);
+        if (ImGui.beginCombo("##delete_redirect", deleteRedirect.isEmpty() ? "Choose replacement node..." : deleteRedirect)) {
+            for (var node : remaining) if (ImGui.selectable(node.id(), node.id().equals(deleteRedirect))) deleteRedirect = node.id();
+            ImGui.endCombo();
+        }
+        ImGui.beginDisabled(deleteRedirect.isEmpty());
+        if (ImGui.button("Delete and reconnect")) { operation(this::deleteSelectedNodes); ImGui.closeCurrentPopup(); }
+        ImGui.endDisabled();
+        sameLineFor("Cancel");
+        if (ImGui.button("Cancel")) { deleteNodes = java.util.Set.of(); deleteDocument = null; ImGui.closeCurrentPopup(); }
         ImGui.endPopup();
     }
 
@@ -1656,6 +1668,41 @@ final class ImGuiAuthoringEditor {
         }
     }
 
+    private void nodeActions() {
+        if (!selectedNode.isEmpty() && EditorWidgets.section("Node actions")) {
+            ImGui.textUnformatted("Selected: " + selectedNode);
+            input("Node ID", nodeName);
+            if (document.kind() != DefinitionKind.FORCED && ImGui.button("Rename node and references")) operation(() -> {
+                EditorContentTools.renameNode(document, selectedNode, nodeName.get());
+                selectedNode = nodeName.get();
+                nodeSelection.clear(); nodeSelection.add(selectedNode);
+                refresh();
+                setPointer(documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+            });
+            var incoming = EditorContentTools.usages(document, selectedNode);
+            ImGui.textWrapped(incoming.size() + " incoming connections");
+            for (var edge : incoming) if (ImGui.selectable((edge.from().isBlank() ? "File settings" : "From " + edge.from()) + "##usage" + edge.pointer())) operation(() -> {
+                selectedNode = edge.from(); nodeSelection.clear();
+                if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+                setPointer(edge.pointer());
+            });
+            if (document.kind() == DefinitionKind.FORCED) ImGui.textWrapped("Deleting a follow-up also removes its owning player response.");
+            if (ImGui.button("Duplicate node")) operation(() -> { DialogueGraph.duplicateNode(document, selectedNode, nextNodeId()); refresh(); });
+            String deleteLabel = selectedNodes().size() > 1 ? "Delete selected nodes" : "Delete node";
+            EditorWidgets.sameLineFor(deleteLabel);
+            if (ImGui.button(deleteLabel)) operation(this::requestDeleteNodes);
+            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED);
+            if (ImGui.button("Start here")) operation(() -> { DialogueGraph.setEntry(document, selectedNode); refresh(); });
+            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.QUEST ? "Start the quest at this stage."
+                    : "Change the first entry or topic to start at this node. Other entries are preserved.");
+            ImGui.endDisabled();
+            EditorWidgets.sameLineFor("End here");
+            if (ImGui.button("End here")) operation(() -> { DialogueGraph.setTerminal(document, selectedNode, true); refresh(); });
+            if (ImGui.isItemHovered()) ImGui.setTooltip(document.kind() == DefinitionKind.CONVERSATION || document.kind() == DefinitionKind.FORCED
+                    ? "End this node. Remove existing player choices first; they will not be discarded automatically." : "End this node.");
+        }
+    }
+
     private void inspector() {
         panel(DETAIL_PANEL);
         if (activeDiagnostic != null) diagnosticNavigation();
@@ -1678,7 +1725,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
-        if (ImGui.button("File settings", -1, 0)) operation(() -> { selectedNode = ""; setPointer(""); });
+        if (ImGui.button("File settings", -1, 0)) operation(() -> { selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer(""); });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
                     && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation", -1, 0)) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
@@ -1708,6 +1755,7 @@ final class ImGuiAuthoringEditor {
             if (pendingFields.pending()) try { pendingFields.validate(document); }
             catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
             guidedObjective();
+            nodeActions();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
                 | ClassCastException | UnsupportedOperationException exception) {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
@@ -3264,9 +3312,11 @@ final class ImGuiAuthoringEditor {
 
     private void changeHistory(boolean redo) {
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
+        String label = redo ? history.redoLabel() : history.undoLabel();
         boolean changed = redo ? history.redo() : history.undo();
         if (!changed) throw new IllegalStateException(redo ? "No change can be redone." : "No change can be undone.");
         refresh();
+        status = (redo ? "Redid: " : "Undid: ") + label + ".";
     }
 
     private void refresh() {

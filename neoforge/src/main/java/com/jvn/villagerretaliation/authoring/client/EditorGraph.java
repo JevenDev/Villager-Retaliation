@@ -178,8 +178,9 @@ final class EditorGraph {
         }
         Map<String, float[]> result = new LinkedHashMap<>();
         Map<Integer, Float> heights = new LinkedHashMap<>();
-        for (var card : cards) {
-            int column = columns.get(card.node().id());
+        for (String id : columns.keySet()) {
+            var card = byId.get(id);
+            int column = columns.get(id);
             float y = heights.getOrDefault(column, 0f);
             result.put(card.node().id(), new float[] {column * (WIDTH + 90), y});
             heights.put(column, y + card.height() + 40);

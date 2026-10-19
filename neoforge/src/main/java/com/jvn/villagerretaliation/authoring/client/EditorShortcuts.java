@@ -57,7 +57,7 @@ final class EditorShortcuts {
         if (code == null) throw new IllegalArgumentException("Use A-Z, F1-F12, Tab, Delete, Home, End or an arrow key");
         if (key.equals("SPACE")) throw new IllegalArgumentException("Space is reserved for activating focused controls");
         if (key.equals("F9") || key.equals("F11")) throw new IllegalArgumentException("F9 opens the editor and F11 toggles Minecraft fullscreen");
-        if (!ctrl && !alt && !key.startsWith("F")) throw new IllegalArgumentException("Use Ctrl or Alt with this key");
+        if (!ctrl && !alt && !key.startsWith("F") && !key.equals("DELETE")) throw new IllegalArgumentException("Use Ctrl or Alt with this key");
         String label = key.length() == 1 || key.startsWith("F") ? key : key.substring(0, 1) + key.substring(1).toLowerCase(Locale.ROOT);
         return new Binding(ctrl, alt, shift, code, label);
     }
