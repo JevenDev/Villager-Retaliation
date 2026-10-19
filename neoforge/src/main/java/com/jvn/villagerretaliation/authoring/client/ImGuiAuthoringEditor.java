@@ -67,6 +67,9 @@ final class ImGuiAuthoringEditor {
     private final EditorOpenFiles openFiles = new EditorOpenFiles();
     private final EditorSession sessions = new EditorSession(MC.gameDirectory.toPath().resolve("config/authoring-editor-sessions.json"));
     private final EditorCommands commandPalette = new EditorCommands();
+    private final EditorShortcuts shortcuts = new EditorShortcuts();
+    private String focusMode = "";
+    private float focusX, focusY, focusWidth, focusHeight;
     private float detailsScroll, restoreDetailsScroll = Float.NaN;
     private boolean snapGrid, fitSelection, boxSelecting, boxAdditive;
     private float boxX, boxY;
@@ -166,6 +169,10 @@ final class ImGuiAuthoringEditor {
     private String graphFocus = "";
     private final java.util.Set<String> nodeSelection = new java.util.LinkedHashSet<>();
     private final EditorGraphClipboard graphClipboard = new EditorGraphClipboard();
+    private final EditorGraphOrganization graphOrganization = new EditorGraphOrganization();
+    private String contextNode = "", contextOutput = "";
+    private float contextX, contextY;
+    private final ImString graphSnippetName = new ImString(256);
     private final ImString replaceText = new ImString(1024);
     private final ImString replaceFind = new ImString(1024);
     private EditorWordingReplacement.Preview replacementPreview;
@@ -252,55 +259,35 @@ final class ImGuiAuthoringEditor {
             if (!selectedEdge.isEmpty()) {
                 selectedEdge = "";
                 wireDragMoved = false;
-            } else screen.onClose();
+            } else if (!focusMode.isEmpty()) focusMode = "";
+            else screen.onClose();
             return;
         }
         recordLocation();
         rendering = true;
         pushEditorStyle();
         try {
-            if (ImGui.getIO().getKeyCtrl()) {
-                if (ImGui.isKeyPressed(ImGuiKey.S)) operation(this::save);
-                if (document != null && !ImGui.getIO().getWantTextInput()) {
-                    if (ImGui.isKeyPressed(ImGuiKey.Z)) operation(() -> changeHistory(false));
-                    if (ImGui.isKeyPressed(ImGuiKey.Y)) operation(() -> changeHistory(true));
-                }
-            }
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
-                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
-                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.P)) {
-                    if (ImGui.getIO().getKeyShift()) commandPalette.open(); else requestQuickOpen = true;
-                }
-                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.Tab)) {
-                    int direction = ImGui.getIO().getKeyShift() ? -1 : 1;
-                    operation(() -> cycleOpenFile(direction));
-                }
-                if (ImGui.getIO().getKeyCtrl() && ImGui.getIO().getKeyAlt()) {
-                    if (ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateHistory(-1));
-                    if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateHistory(1));
-                }
-                if (workspace != null && ImGui.getIO().getKeyAlt() && ImGui.isKeyPressed(ImGuiKey.UpArrow) && !activePath().isEmpty()) operation(this::navigateUp);
+                shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
+                        library, this::operation, ImGui.getIO().getWantTextInput());
                 if (ImGui.isMouseClicked(3)) operation(() -> navigateHistory(-1));
                 if (ImGui.isMouseClicked(4)) operation(() -> navigateHistory(1));
-            }
-            if (document != null && view == 0 && !ImGui.getIO().getWantTextInput() && !showRecovery && !confirmClose) {
-                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.C)) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
-                if (ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.V)) operation(this::pasteNodes);
-                if (ImGui.getIO().getKeyAlt() && !ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateNode(1));
-                if (ImGui.getIO().getKeyAlt() && !ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateNode(-1));
             }
             if (view == 3) { playtest(); return; }
             shell();
             ImGui.beginDisabled(showRecovery || confirmClose);
-            browser();
-            if (view == 0) graph();
-            else if (view == 1) preview();
-            else if (view == 4) files();
-            else diagnostics();
-            inspector();
+            if (focusMode.isEmpty() || focusMode.equals(CONTENT_PANEL)) browser();
+            if (focusMode.isEmpty() || focusMode.equals(WORK_PANEL)) {
+                if (view == 0) graph();
+                else if (view == 1) preview();
+                else if (view == 4) files();
+                else diagnostics();
+            }
+            if (focusMode.isEmpty() || focusMode.equals(DETAIL_PANEL)) inspector();
             quickOpen();
-            if (commandPalette.active()) commandPalette.render(commands(), this::operation, preferences.textScale());
+            if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
             referencePopup();
+            shortcuts.popup(commands(), library, this::operation);
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
@@ -346,6 +333,8 @@ final class ImGuiAuthoringEditor {
         recoveryControls();
         guide();
         ImGui.separator();
+        focusX = ImGui.getCursorScreenPosX(); focusY = ImGui.getCursorScreenPosY();
+        focusWidth = ImGui.getContentRegionAvailX(); focusHeight = ImGui.getContentRegionAvailY();
         int dock = ImGui.getID("VR_AuthoringDock");
         boolean compact = EditorLayout.forWidth(ImGui.getContentRegionAvailX() / preferences.textScale()).compact();
         if (!initializedLayout || resetLayout || compact != compactLayout) {
@@ -405,6 +394,16 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button(guideStep < 0 ? "Quick guide" : "Hide guide")) {
             if (guideStep < 0) guideStep = 0;
             else dismissGuide();
+        }
+        sameLineFor("Shortcuts");
+        if (ImGui.button("Shortcuts")) shortcuts.open();
+        sameLineFor("Focus");
+        ImGui.setNextItemWidth(150);
+        if (ImGui.beginCombo("##focus_panel", focusMode.isEmpty() ? "Focus pane..." : "Restore panes")) {
+            if (ImGui.selectable("Restore panes", focusMode.isEmpty())) focusMode = "";
+            for (String title : List.of(WORK_PANEL, DETAIL_PANEL, CONTENT_PANEL))
+                if (ImGui.selectable(title.substring(0, title.indexOf("###")), focusMode.equals(title))) focusMode = title;
+            ImGui.endCombo();
         }
         sameLineFor("Reset layout");
         if (ImGui.button("Reset layout")) resetLayout = true;
@@ -471,7 +470,11 @@ final class ImGuiAuthoringEditor {
 
     private void panel(String title) {
         if (title.equals(focusPanel)) { ImGui.setNextWindowFocus(); focusPanel = ""; }
-        ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
+        if (focusMode.equals(title)) {
+            ImGui.setNextWindowPos(focusX, focusY); ImGui.setNextWindowSize(focusWidth, focusHeight);
+            ImGui.begin(title.substring(0, title.indexOf("###")) + "###VR_Focused", ImGuiWindowFlags.NoCollapse
+                    | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
+        } else ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
         if (title.equals(WORK_PANEL)) {
             if (!Float.isNaN(restoreWorkScroll)) { ImGui.setScrollY(restoreWorkScroll); restoreWorkScroll = Float.NaN; }
             workScroll = ImGui.getScrollY();
@@ -748,6 +751,7 @@ final class ImGuiAuthoringEditor {
         float[] scale = {preferences.textScale()};
         if (ImGui.sliderFloat("Editor text size", scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
         graphTools();
+        shortcuts.render(commands(), library, this::operation);
         if (document != null) coverage.render(document, id -> operation(() -> {
             selectedNode = id; graphFocus = id; view = 0; nodeSelection.clear(); nodeSelection.add(id);
             setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
@@ -902,11 +906,23 @@ final class ImGuiAuthoringEditor {
     }
 
     private List<EditorCommands.Command> commands() {
-        boolean graph = graphDocument(), selected = graph && !selectedNode.isEmpty();
+        boolean graph = graphDocument() && view != 3, selected = graph && !selectedNode.isEmpty();
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         var result = new java.util.ArrayList<EditorCommands.Command>();
         result.add(new EditorCommands.Command("Save drafts", "Ctrl+S", workspace != null, this::save));
-        result.add(new EditorCommands.Command("Quick open file", "Ctrl+P", workspace != null, () -> requestQuickOpen = true));
+        result.add(new EditorCommands.Command("Customize keyboard shortcuts", "", view != 3, shortcuts::open));
+        result.add(new EditorCommands.Command("Open commands", "Ctrl+Shift+P", view != 3, commandPalette::open));
+        result.add(new EditorCommands.Command("Find content", "Ctrl+F", workspace != null && view != 3, () -> { focusMode = ""; focusSearch = true; }));
+        result.add(new EditorCommands.Command("Navigate back", "Ctrl+Alt+Left", view != 3, () -> navigateHistory(-1)));
+        result.add(new EditorCommands.Command("Navigate forward", "Ctrl+Alt+Right", view != 3, () -> navigateHistory(1)));
+        result.add(new EditorCommands.Command("Parent folder", "Alt+Up", workspace != null && view != 3 && !activePath().isEmpty(), this::navigateUp));
+        result.add(new EditorCommands.Command("Copy nodes", "Ctrl+C", graph && view == 0 && !selectedNodes().isEmpty(), () -> graphClipboard.copy(workspace, document, selectedNodes())));
+        result.add(new EditorCommands.Command("Paste nodes", "Ctrl+V", graph && view == 0, this::pasteNodes));
+        result.add(new EditorCommands.Command("Next node", "Alt+Right", graph && view == 0, () -> navigateNode(1)));
+        result.add(new EditorCommands.Command("Previous node", "Alt+Left", graph && view == 0, () -> navigateNode(-1)));
+        result.add(new EditorCommands.Command("Focus work area", "F11", true, () -> focusMode = focusMode.equals(WORK_PANEL) ? "" : WORK_PANEL));
+        result.add(new EditorCommands.Command("Focus properties", "Shift+F11", view != 3, () -> focusMode = focusMode.equals(DETAIL_PANEL) ? "" : DETAIL_PANEL));
+        result.add(new EditorCommands.Command("Quick open file", "Ctrl+P", workspace != null && view != 3, () -> requestQuickOpen = true));
         result.add(new EditorCommands.Command("Next open file", "Ctrl+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(1)));
         result.add(new EditorCommands.Command("Previous open file", "Ctrl+Shift+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(-1)));
         result.add(new EditorCommands.Command("Pin or unpin current file", "", workspace != null && workspace.filePaths().contains(activePath()), () -> openFiles.pin(workspace, activePath())));
@@ -1280,6 +1296,8 @@ final class ImGuiAuthoringEditor {
         ImDrawList draw = ImGui.getWindowDrawList();
         draw.pushClipRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, true);
         draw.addRectFilled(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, 0xff242321);
+        graphOrganization.draw(draw, document, cards, positions, canvasX + panX, canvasY + panY, zoom);
+        var highlighted = graphOrganization.highlighted(document, selectedNodes());
         for (var card : cards) {
             float[] from = positions.get(card.node().id());
             for (int i = 0; i < card.blocks().size(); i++) {
@@ -1291,7 +1309,7 @@ final class ImGuiAuthoringEditor {
                 if (to != null) {
                     float x2 = canvasX + panX + to[0] * zoom;
                     float y2 = canvasY + panY + (to[1] + EditorGraph.HEADER / 2) * zoom;
-                    wire(draw, x1, y1, x2, y2, coverage.visible() && coverageSnapshot.chosen(edge.pointer()) ? 0xff94c697 : 0xffb2a68c);
+                    wire(draw, x1, y1, x2, y2, !highlighted.contains(edge.from()) || !highlighted.contains(edge.to()) ? 0xff524e46 : coverage.visible() && coverageSnapshot.chosen(edge.pointer()) ? 0xff94c697 : 0xffb2a68c);
                 }
                 if (edge.pointer().equals(selectedEdge))
                     wire(draw, x1, y1, ImGui.getIO().getMousePosX(), ImGui.getIO().getMousePosY(), 0xff81c9ed);
@@ -1405,6 +1423,7 @@ final class ImGuiAuthoringEditor {
                 nextStage.set("");
                 if (!showBranch) focusPanel = DETAIL_PANEL;
             });
+            if (!highlighted.contains(node.id())) draw.addRectFilled(x, y, x + w, y + h, 0x99000000, 4);
             if (node.id().equals(draggingNode) && ImGui.isMouseDragging(0)) {
                 nodeDragMoved = true;
                 for (String id : selectedNodes()) {
@@ -1435,6 +1454,7 @@ final class ImGuiAuthoringEditor {
         }
         if (showMinimap && !cards.isEmpty()) minimap(draw, cards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
         draw.popClipRect();
+        graphContext(cards, canvasX, canvasY, hover);
         if (ImGui.isMouseReleased(0)) {
             wireDragMoved = false;
             if (draggingNode != null) {
@@ -1446,6 +1466,104 @@ final class ImGuiAuthoringEditor {
             }
         }
         ImGui.end();
+    }
+
+    private void graphContext(List<EditorGraph.Card> cards, float canvasX, float canvasY, boolean hover) {
+        float mx = ImGui.getMousePosX(), my = ImGui.getMousePosY();
+        float gx = (mx - canvasX - panX) / zoom, gy = (my - canvasY - panY) / zoom;
+        var underMouse = cards.stream().filter(card -> {
+            var point = positions.get(card.node().id());
+            return gx >= point[0] - 12 / zoom && gx <= point[0] + EditorGraph.WIDTH + 12 / zoom
+                    && gy >= point[1] - 12 / zoom && gy <= point[1] + card.height() + 12 / zoom;
+        }).findFirst();
+        boolean dropped = hover && wireDragMoved && ImGui.isMouseReleased(0) && !selectedEdge.isEmpty() && underMouse.isEmpty();
+        if (hover && ImGui.isMouseClicked(1) || dropped) {
+            contextX = gx; contextY = gy;
+            contextNode = underMouse.map(card -> card.node().id()).orElse("");
+            contextOutput = dropped ? selectedEdge : "";
+            if (!dropped) for (var card : cards) {
+                var point = positions.get(card.node().id());
+                for (int i = 0; i < card.blocks().size(); i++) {
+                    var edge = card.blocks().get(i).output();
+                    if (edge == null) continue;
+                    float x1 = canvasX + panX + (point[0] + EditorGraph.WIDTH) * zoom;
+                    float y1 = canvasY + panY + (point[1] + card.outputY(i)) * zoom;
+                    var target = positions.get(edge.to());
+                    if (EditorGraphHit.port(mx, my, x1, y1, EditorGraph.ROW * zoom)
+                            || underMouse.isEmpty() && target != null && EditorGraphHit.wire(mx, my, x1, y1,
+                                    canvasX + panX + target[0] * zoom, canvasY + panY + (target[1] + EditorGraph.HEADER / 2) * zoom, zoom))
+                        contextOutput = edge.pointer();
+                }
+            }
+            nextStage.set(""); nodeName.set(contextNode); graphSnippetName.set(contextNode.isEmpty() ? "Branch" : contextNode);
+            if (!contextNode.isEmpty()) {
+                String id = contextNode;
+                operation(() -> {
+                    if (!selectedNodes().contains(id)) { nodeSelection.clear(); nodeSelection.add(id); }
+                    selectedNode = id;
+                    setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
+                });
+            }
+            boxSelecting = false; draggingNode = null;
+            ImGui.openPopup("Graph actions");
+        }
+        if (!ImGui.beginPopup("Graph actions")) return;
+        if (!contextOutput.isEmpty()) {
+            String output = contextOutput;
+            boolean connected = DialogueGraph.edges(document).stream().anyMatch(edge -> edge.pointer().equals(output) && !edge.to().isEmpty());
+            if (ImGui.menuItem(connected ? "Insert node into connection" : "Create connected node")) operation(() -> createGraphAt(output, connected));
+            if (connected && ImGui.menuItem("Reconnect destination")) { selectedEdge = output; wireDragMoved = false; }
+            if (ImGui.menuItem("Cancel connection")) selectedEdge = "";
+        } else if (!contextNode.isEmpty()) {
+            String id = contextNode;
+            if (ImGui.menuItem("Add response or connection")) { showBranch = true; nextStage.set(""); }
+            if (ImGui.menuItem("Copy selected nodes")) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
+            if (ImGui.menuItem("Duplicate node")) operation(() -> {
+                DialogueGraph.duplicateNode(document, id, nextNodeId()); refresh();
+            });
+            if (ImGui.menuItem("Highlight upstream")) graphOrganization.focus("Upstream");
+            if (ImGui.menuItem("Highlight downstream")) graphOrganization.focus("Downstream");
+            if (ImGui.menuItem("Show all paths")) graphOrganization.focus("All nodes");
+            ImGui.separator();
+            if (document.kind() != DefinitionKind.FORCED) {
+                ImGui.inputText("New node ID", nodeName);
+                if (ImGui.button("Rename node and references")) {
+                    operation(() -> { EditorContentTools.renameNode(document, id, nodeName.get()); selectedNode = nodeName.get(); nodeSelection.clear(); nodeSelection.add(selectedNode); refresh(); });
+                    ImGui.closeCurrentPopup();
+                }
+            }
+            if (ImGui.beginCombo("Redirect incoming links", nextStage.get().isEmpty() ? "Choose destination..." : nextStage.get())) {
+                for (var node : DialogueGraph.nodes(document)) if (!node.id().equals(id) && ImGui.selectable(node.id())) nextStage.set(node.id());
+                ImGui.endCombo();
+            }
+            if (ImGui.button("Delete node")) {
+                operation(() -> { EditorContentTools.deleteNode(document, id, nextStage.get()); selectedNode = ""; nodeSelection.clear(); setPointer(""); refresh(); });
+                ImGui.closeCurrentPopup();
+            }
+            if (document.kind() != DefinitionKind.FORCED) {
+                ImGui.inputText("Snippet name", graphSnippetName);
+                if (ImGui.button("Save selection as snippet")) {
+                    operation(() -> library.saveSnippet(graphSnippetName.get(), EditorSnippets.nodes(workspace, document, selectedNodes())));
+                    ImGui.closeCurrentPopup();
+                }
+            }
+        } else {
+            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
+            if (ImGui.menuItem(document.kind() == DefinitionKind.QUEST ? "Add stage here" : "Add node here")) operation(() -> createGraphAt("", false));
+            ImGui.endDisabled();
+            if (ImGui.menuItem("Paste nodes")) operation(this::pasteNodes);
+            if (ImGui.menuItem("Fit graph")) { fitSelection = false; fitGraph = true; }
+            if (ImGui.menuItem("Show all paths")) graphOrganization.focus("All nodes");
+            if (ImGui.menuItem("Comment groups")) showGraphTools = true;
+        }
+        ImGui.endPopup();
+    }
+
+    private void createGraphAt(String output, boolean insert) {
+        selectedNode = EditorGraphActions.create(document, output, nextNodeId(), insert, contextX, contextY);
+        selectedEdge = ""; refresh();
+        nodeSelection.clear(); nodeSelection.add(selectedNode);
+        setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
     }
 
     private void minimap(ImDrawList draw, List<EditorGraph.Card> cards, float canvasX, float canvasY, float width, float height, boolean hovered) {
@@ -1772,6 +1890,11 @@ final class ImGuiAuthoringEditor {
 
     private void graphTools() {
         if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest()) return;
+        graphOrganization.render(document, selectedNodes(), this::operation, ids -> operation(() -> {
+            nodeSelection.clear(); nodeSelection.addAll(ids);
+            selectedNode = ids.isEmpty() ? "" : ids.iterator().next();
+            setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
+        }));
         if (ImGui.checkbox("Show minimap", showMinimap)) { showMinimap = !showMinimap; saveViewPreferences(); }
         ImGui.textWrapped("Drag empty space to box-select. Ctrl adds to the selection. Drag selected headers to move the group.");
         ImGui.textWrapped("Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
@@ -2259,7 +2382,7 @@ final class ImGuiAuthoringEditor {
         float height = viewport.getWorkSizeY();
         float fraction = PlaytestLayout.clampFraction(playtestFraction, width, preferences.textScale());
         EditorPlaytestViewport.fraction(fraction);
-        float split = Math.round(width * fraction);
+        float split = focusMode.equals(WORK_PANEL) ? 0 : Math.round(width * fraction);
         ImGui.setNextWindowPos(viewport.getWorkPosX() + split - 3, viewport.getWorkPosY());
         ImGui.setNextWindowSize(6, height);
         ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
@@ -2270,7 +2393,7 @@ final class ImGuiAuthoringEditor {
                 ImGui.getWindowPosX() + 6, ImGui.getWindowPosY() + height, 0xff505050);
         ImGui.invisibleButton("##resize_playtest", 6, Math.max(1, ImGui.getContentRegionAvailY()));
         if (ImGui.isItemHovered() || ImGui.isItemActive()) ImGui.setMouseCursor(imgui.flag.ImGuiMouseCursor.ResizeEW);
-        if (ImGui.isItemActive()) {
+        if (!focusMode.equals(WORK_PANEL) && ImGui.isItemActive()) {
             playtestFraction = Math.clamp(PlaytestLayout.clampFraction((ImGui.getMousePosX() - viewport.getWorkPosX()) / width,
                     width, preferences.textScale()), .2F, .9F);
         }
@@ -2294,6 +2417,8 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Save")) operation(this::save);
         ImGui.sameLine();
         if (ImGui.button("Stop playtest")) operation(() -> leavePlaytest(0));
+        ImGui.sameLine();
+        if (ImGui.button(focusMode.equals(WORK_PANEL) ? "Restore game view" : "Focus test controls")) focusMode = focusMode.equals(WORK_PANEL) ? "" : WORK_PANEL;
         navigationControls();
         ImGui.textWrapped("Click the game to play. F9 returns control to this panel.");
         recoveryControls();

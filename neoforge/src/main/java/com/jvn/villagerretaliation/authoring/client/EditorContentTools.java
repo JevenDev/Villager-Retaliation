@@ -105,6 +105,10 @@ final class EditorContentTools {
                 var positions = metadata.getAsJsonObject("node_positions");
                 if (positions.has(id)) positions.add(replacement, positions.remove(id));
             }
+            for (var group : EditorSchema.object(metadata.get("graph_groups")).entrySet()) {
+                var members = group.getValue().getAsJsonObject().getAsJsonArray("nodes");
+                for (int i = 0; i < members.size(); i++) if (members.get(i).getAsString().equals(id)) members.set(i, new JsonPrimitive(replacement));
+            }
             if (metadata.has("bookmarks")) {
                 var bookmarks = metadata.getAsJsonArray("bookmarks");
                 for (int i = 0; i < bookmarks.size(); i++) if (bookmarks.get(i).getAsString().equals(id)) bookmarks.set(i, new JsonPrimitive(replacement));

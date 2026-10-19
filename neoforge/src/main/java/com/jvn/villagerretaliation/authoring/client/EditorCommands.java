@@ -9,7 +9,9 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 final class EditorCommands {
-    record Command(String name, String shortcut, boolean enabled, ImGuiAuthoringEditor.EditorOperation action) { }
+    record Command(String name, String shortcut, boolean enabled, ImGuiAuthoringEditor.EditorOperation action) {
+        String id() { return name.startsWith("Undo:") ? "Undo" : name.startsWith("Redo:") ? "Redo" : name; }
+    }
     private final ImString query = new ImString(256);
     private int selected;
     private boolean requested;

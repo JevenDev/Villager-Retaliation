@@ -26,7 +26,7 @@ final class EditorLibrary {
         writable = false;
         try {
             JsonObject loaded = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            for (String field : List.of("resources", "snippets"))
+            for (String field : List.of("resources", "snippets", "shortcuts"))
                 if (loaded.has(field) && !loaded.get(field).isJsonObject()) throw new IllegalArgumentException("Invalid " + field);
             for (var group : EditorSchema.object(loaded.get("resources")).entrySet()) {
                 JsonObject values = group.getValue().getAsJsonObject();
@@ -37,6 +37,11 @@ final class EditorLibrary {
             for (var snippet : EditorSchema.object(loaded.get("snippets")).entrySet()) {
                 if (!snippet.getValue().isJsonObject()) throw new IllegalArgumentException("Invalid snippet " + snippet.getKey());
                 EditorSnippets.validate(snippet.getValue().getAsJsonObject());
+            }
+            for (var shortcut : EditorSchema.object(loaded.get("shortcuts")).entrySet()) {
+                if (!shortcut.getValue().isJsonPrimitive() || !shortcut.getValue().getAsJsonPrimitive().isString())
+                    throw new IllegalArgumentException("Invalid shortcut");
+                EditorShortcuts.parse(shortcut.getValue().getAsString());
             }
             data = loaded; writable = true;
         } catch (IllegalArgumentException | IllegalStateException | com.google.gson.JsonParseException exception) {
@@ -155,6 +160,22 @@ final class EditorLibrary {
         });
         return imported.size();
     }
+
+    java.util.Map<String, String> shortcuts() {
+        var result = new java.util.LinkedHashMap<String, String>();
+        EditorSchema.object(data.get("shortcuts")).entrySet().forEach(entry -> result.put(entry.getKey(), entry.getValue().getAsString()));
+        return java.util.Map.copyOf(result);
+    }
+
+    void shortcut(String command, String binding) throws IOException {
+        EditorShortcuts.parse(binding);
+        update(root -> {
+            if (!root.has("shortcuts")) root.add("shortcuts", new JsonObject());
+            root.getAsJsonObject("shortcuts").addProperty(command, binding);
+        });
+    }
+
+    void resetShortcuts() throws IOException { update(root -> root.remove("shortcuts")); }
 
     void removeSnippet(String name) throws IOException {
         update(root -> EditorSchema.object(root.get("snippets")).remove(name));
