@@ -89,6 +89,10 @@ public final class AuthoringFilesGameTests {
             boolean rejected = false;
             try { workspace.applyFileMove(preview); } catch (IllegalStateException expected) { rejected = true; }
             helper.assertTrue(rejected && quest.id().equals("test:quest"), "stale move previews cannot overwrite newer edits");
+            quest.edit("Broken metadata", value -> value.remove("metadata"));
+            rejected = false;
+            try { workspace.previewFileMove("data/test/quests/authored/quest", "data/test/quests/authored/next"); } catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected && quest.id().equals("test:quest"), "malformed quest metadata produces a recoverable move error");
             helper.succeed();
         } finally { cleanup(root); }
     }

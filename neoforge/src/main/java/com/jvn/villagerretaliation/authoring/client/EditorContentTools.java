@@ -35,6 +35,11 @@ final class EditorContentTools {
         return null;
     }
 
+    static AuthoringDocument contentScope(AuthoringWorkspace workspace, String path) {
+        return workspace.documents().stream().filter(value -> value.kind().campaignManifest()
+                && (path + "/").startsWith(DefinitionKind.contentRoot(value.resourcePath()))).findFirst().orElse(null);
+    }
+
     static boolean matches(AuthoringDocument document, String query) {
         String term = query.strip().toLowerCase(Locale.ROOT);
         return term.isEmpty() || (document.id() + " " + document.resourcePath() + " " + document.json())

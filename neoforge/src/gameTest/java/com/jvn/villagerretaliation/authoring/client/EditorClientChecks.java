@@ -10,6 +10,7 @@ public final class EditorClientChecks {
     private EditorClientChecks() { }
 
     public static int run() throws java.io.IOException {
+        packFileTreeKeepsAncestorFolders();
         playtestRespectsCampaignAndAddonSelection();
         campaignAddonFormsExposeRuntimeSettings();
         schemaFormsResolveNestedVariantsAndRequiredFields();
@@ -54,7 +55,64 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 44;
+        return 45;
+    }
+
+    private static void packFileTreeKeepsAncestorFolders() throws java.io.IOException {
+        var tree = EditorPackFiles.tree(java.util.List.of("pack.mcmeta", "data/test/quests/line/quest/quest.json", "data/test/quests/line/quest/locales/en_us.json", "assets/test/textures/cover.png"), "locales");
+        check(tree.children.size() == 1 && tree.children.get("data").children.get("test").children.get("quests") != null, "file search keeps the ancestor folders of matching files");
+        check(EditorPackFiles.textFile("description.md") && !EditorPackFiles.textFile("structure.nbt"), "text and binary assets use separate inspectors");
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-folder-scope"));
+        var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+        check(EditorContentTools.contentScope(workspace, "data/test/campaign_addons/addon") == addon, "selecting an addon folder supplies the creation scope");
+        check(EditorContentTools.contentScope(workspace, "data/test/campaign_addons/addon/quests/authored/example/quest.json") == addon, "descendant files retain their addon scope");
+        check(EditorContentTools.contentScope(workspace, "data/test/quests") == null, "ordinary folders use the default content scope");
+    }
+
+    public static void packFileEditorsPreservePendingEdits() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-file-edits"));
+        var metadata = workspace.packMetadata();
+        var files = new EditorPackFiles();
+        var state = new JsonObject(); state.addProperty("path", "pack.mcmeta");
+        var changed = metadata.deepCopy(); changed.getAsJsonObject("pack").addProperty("description", "Edited in Files");
+        state.addProperty("text", changed.toString());
+        files.recover(workspace, state);
+        check(files.pending(), "file editor recovery retains pending text");
+        boolean rejected = false;
+        try { files.select("data/test"); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && files.pending(), "changing file selection cannot drop pending edits");
+        var recovery = files.recovery();
+        files.apply(workspace);
+        check(workspace.packMetadata().equals(changed) && !files.pending(), "applying file edits updates pack metadata");
+        files.recover(workspace, recovery);
+        changed.getAsJsonObject("pack").addProperty("description", "New external change");
+        workspace.setPackMetadata(changed);
+        state.addProperty("text", metadata.toString());
+        files.recover(workspace, state);
+        var newest = changed.deepCopy(); newest.getAsJsonObject("pack").addProperty("description", "Newest change");
+        workspace.setPackMetadata(newest);
+        rejected = false;
+        try { files.apply(workspace); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && workspace.packMetadata().equals(newest), "stale file buffers cannot overwrite newer metadata");
+        files.close();
+    }
+
+    public static void packFinalizationPreservesAdvancedMetadataAndRecovery() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-pack-settings"));
+        var metadata = workspace.packMetadata(); metadata.add("filter", json("{\"block\":[]}")); workspace.setPackMetadata(metadata);
+        var build = new EditorPackBuild(); build.load(workspace);
+        var edits = json("{\"description\":\"Release pack\",\"format\":48}");
+        build.recover(edits);
+        check(build.pending() && build.recovery().equals(edits), "pack settings participate in recovery");
+        build.apply();
+        check(workspace.packMetadata().has("filter") && workspace.packMetadata().getAsJsonObject("pack").get("description").getAsString().equals("Release pack"), "finalization keeps advanced metadata fields");
+        build.recover(json("{\"description\":\"Pending settings\",\"format\":48}"));
+        metadata = workspace.packMetadata(); metadata.getAsJsonObject("pack").addProperty("description", "Changed through pack.mcmeta"); workspace.setPackMetadata(metadata);
+        boolean rejected = false;
+        try { build.apply(); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && build.pending(), "pack settings reject stale edits without losing the buffer");
+        build.reload();
+        check(!build.pending(), "discard reloads current metadata");
     }
 
     private static void playtestRespectsCampaignAndAddonSelection() throws java.io.IOException {

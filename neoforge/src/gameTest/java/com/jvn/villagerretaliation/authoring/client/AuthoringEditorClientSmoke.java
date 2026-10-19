@@ -124,6 +124,7 @@ public final class AuthoringEditorClientSmoke {
             EditorBlocks.append(document, "/nodes/finish", EditorBlocks.Kind.EXPERIENCE);
             editor = field(null, "INSTANCE");
             set("workspace", workspace);
+            set("filesMode", false);
             set("status", "Test workspace opened.");
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
             ImGuiAuthoringEditor.open();
@@ -206,7 +207,7 @@ public final class AuthoringEditorClientSmoke {
                     "Leaving the graph releases its styled preview textures.");
             capture("07-preview");
         });
-        click(() -> toolbar("Check & export"));
+        click(() -> toolbar("Build pack"));
         STEPS.add(() -> {
             require((int) field(editor, "view") == 2, "Check toolbar control switches the rendered view.");
             capture("08-validation");
@@ -331,12 +332,13 @@ public final class AuthoringEditorClientSmoke {
         });
         choosePreview("Return to editor");
         buildCameraSteps();
-        click(() -> toolbar("Check & export"));
-        click(() -> screenPoint(340, 209));
-        replaceText(() -> screenPoint(600, 305), () -> output().resolve("setup-export").toString());
-        click(() -> screenPoint(350, 345));
+        click(() -> toolbar("Build pack"));
         STEPS.add(() -> {
-            require(field(editor, "status").toString().startsWith("Exported datapack to "), "Save and export reports success.");
+            ((imgui.type.ImString) field(editor, "exportPath")).set(output().resolve("setup-export").toString());
+            invoke("buildPackage", new Class<?>[] {});
+        });
+        STEPS.add(() -> {
+            require(field(editor, "status").toString().startsWith("Built pack at "), "Save and export reports success.");
             try {
                 Path exported = output().resolve("setup-export");
                 require(Files.isRegularFile(exported.resolve("pack.mcmeta")), "Export writes pack metadata.");
@@ -418,13 +420,21 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildCampaignSteps() {
+        STEPS.add(() -> {
+            try {
+                EditorClientChecks.packFileEditorsPreservePendingEdits();
+                EditorClientChecks.packFinalizationPreservesAdvancedMetadataAndRecovery();
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
         var originalWorkspace = new AuthoringWorkspace[1];
         var originalDocument = new AuthoringDocument[1];
         var originalName = new String[1];
+        var originalOutput = new String[1];
         STEPS.add(() -> {
             originalWorkspace[0] = workspace;
             originalDocument[0] = document;
             originalName[0] = ((imgui.type.ImString) field(editor, "newId")).get();
+            originalOutput[0] = ((imgui.type.ImString) field(editor, "exportPath")).get();
             try {
                 workspace = AuthoringWorkspace.create(output().resolve("addon-drafts"));
                 document = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:editor_addon");
@@ -454,6 +464,55 @@ public final class AuthoringEditorClientSmoke {
             invoke("createContent", new Class<?>[] {DefinitionKind.class}, DefinitionKind.QUEST);
             require(workspace.documents().stream().anyMatch(value -> value.resourcePath().equals(
                     "data/test/campaign_addons/editor_addon/quests/authored/addon_quest/quest.json")), "Editor creation uses the selected addon folder.");
+            set("showCreate", false);
+            invoke("openPackFile", new Class<?>[] {String.class}, "data/test/campaign_addons/editor_addon");
+        });
+        pause(250);
+        STEPS.add(() -> {
+            capture("02c-pack-file-tree");
+            var files = field(editor, "packFiles");
+            ((imgui.type.ImString) field(files, "name")).set("renamed_addon");
+            var plan = workspace.previewFileMove("data/test/campaign_addons/editor_addon", "data/test/campaign_addons/renamed_addon");
+            setField(files, "preview", plan);
+        });
+        pause(250);
+        STEPS.add(() -> {
+            capture("02d-folder-move-preview");
+            workspace.applyFileMove((AuthoringWorkspace.FileMove) field(field(editor, "packFiles"), "preview"));
+            document = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.CAMPAIGN_ADDON).findFirst().orElseThrow();
+            String description = "data/" + document.json().get("description_file").getAsString().replace(":", "/");
+            invoke("openPackFile", new Class<?>[] {String.class}, description);
+        });
+        pause(250);
+        STEPS.add(() -> capture("02e-description-file"));
+        replaceText(() -> screenPoint(600, 330), () -> "# Edited in the file browser");
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            var addon = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.CAMPAIGN_ADDON).findFirst().orElseThrow();
+            try { require(workspace.campaignDescription(addon).equals("# Edited in the file browser"), "Native file editing saves Markdown attachments."); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        click(() -> toolbar("Build pack"));
+        pause(250);
+        STEPS.add(() -> capture("02f-pack-finalization"));
+        replaceText(() -> screenPoint(600, 285), () -> "Village Stories release");
+        STEPS.add(() -> {
+            setField(field(editor, "packBuild"), "zip", true);
+            ((imgui.type.ImString) field(editor, "exportPath")).set(output().resolve("village-stories.zip").toString());
+        });
+        pause(250);
+        click(() -> screenPoint(375, 812));
+        pause(250);
+        STEPS.add(() -> {
+            try (var zip = new java.util.zip.ZipFile(output().resolve("village-stories.zip").toFile())) {
+                require(zip.getEntry("pack.mcmeta") != null && zip.getEntry("data/test/campaign_addons/renamed_addon/addon.json") != null,
+                        "Finalization builds a shareable ZIP containing the renamed addon.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            capture("02g-built-package");
+            setField(field(editor, "packBuild"), "zip", false);
+            ((imgui.type.ImString) field(editor, "exportPath")).set(originalOutput[0]);
+            set("filesMode", false);
+            set("view", 0);
             workspace = originalWorkspace[0];
             document = originalDocument[0];
             set("workspace", workspace);
@@ -1265,8 +1324,8 @@ public final class AuthoringEditorClientSmoke {
     private static float[] toolbar(String target) {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
-        for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Check & export",
-                (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Close"}) {
+        for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
+                (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close"}) {
             float width = ImGui.calcTextSize(label).x * scale + 16;
             if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};
             x += width + 8;
@@ -1348,6 +1407,14 @@ public final class AuthoringEditorClientSmoke {
             var field = (target == null ? ImGuiAuthoringEditor.class : target instanceof Class<?> type ? type : target.getClass()).getDeclaredField(name);
             field.setAccessible(true);
             return field.get(target instanceof Class<?> ? null : target);
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+    }
+
+    private static void setField(Object target, String name, Object value) {
+        try {
+            var member = target.getClass().getDeclaredField(name);
+            member.setAccessible(true);
+            member.set(target, value);
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 

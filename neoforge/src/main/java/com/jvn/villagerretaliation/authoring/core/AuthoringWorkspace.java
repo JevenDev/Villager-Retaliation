@@ -159,7 +159,10 @@ public final class AuthoringWorkspace {
         JsonObject pack = value.getAsJsonObject("pack");
         if (!pack.has("pack_format") || !pack.get("pack_format").isJsonPrimitive() || !pack.getAsJsonPrimitive("pack_format").isNumber()
                 || !pack.get("pack_format").getAsString().matches("[1-9][0-9]*")) throw new IllegalArgumentException("Pack format must be a positive whole number");
-        if (!pack.has("description") || pack.get("description").isJsonNull()) throw new IllegalArgumentException("Enter a pack description");
+        try { if (pack.get("pack_format").getAsBigDecimal().intValueExact() <= 0) throw new ArithmeticException(); }
+        catch (ArithmeticException exception) { throw new IllegalArgumentException("Pack format must be a positive whole number within the integer range"); }
+        if (!pack.has("description") || pack.get("description").isJsonNull()
+                || pack.get("description").isJsonPrimitive() && !pack.getAsJsonPrimitive("description").isString()) throw new IllegalArgumentException("Enter a text or component pack description");
     }
 
     public void writeTextFile(String path, String text) throws IOException {
@@ -252,6 +255,8 @@ public final class AuthoringWorkspace {
             } else if (document.kind() == DefinitionKind.QUEST) {
                 if (moved.length != 6) throw new IllegalArgumentException("Keep quests in quests/<questline>/<id>/quest.json");
                 String id = moved[1] + ":" + moved[4];
+                if (!definition.has("metadata") || !definition.get("metadata").isJsonObject())
+                    throw new IllegalArgumentException("Repair the quest metadata object before moving its folder");
                 definition.addProperty("id", id);
                 definition.getAsJsonObject("metadata").addProperty("questline", moved[3]);
                 if (!id.equals(document.id())) {
@@ -332,6 +337,7 @@ public final class AuthoringWorkspace {
         attachments.clear(); attachments.putAll(restored);
     }
 
+    public boolean hasFileMove() { return undoFileMove != null; }
     public boolean canUndoFileMove() { return undoFileMove != null && movedFingerprint.equals(fileFingerprint()); }
     public void undoFileMove() {
         if (!canUndoFileMove()) throw new IllegalStateException("Undo newer changes before undoing the file move");
