@@ -772,12 +772,13 @@ public final class EditorClientChecks {
     }
 
     private static void automaticLayoutKeepsUsablePaneWidths() {
-        for (float width : new float[] {800, 1024, 1200, 1240, 1280, 1920, 2560}) {
+        for (float width : new float[] {800, 1024, 1200, 1240, 1280, 1360, 1920, 2560}) {
             var layout = EditorLayout.forWidth(width);
             float content = width * layout.contentFraction();
             float remaining = width - content;
             float details = remaining * layout.detailsFraction();
-            check(content >= 200 && content <= 300, "content column stays readable");
+            check(content >= 200 && content <= 380, "content column stays readable");
+            check(layout.compact() || Math.abs(content - details) < 0.01F, "side columns have matching widths");
             check(layout.compact() == (width < 1200), "small windows use tabbed details");
             check(layout.compact() || remaining - details >= 600, "wide layout leaves room for the graph");
         }

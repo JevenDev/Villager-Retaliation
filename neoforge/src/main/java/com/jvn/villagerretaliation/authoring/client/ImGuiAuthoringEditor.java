@@ -340,31 +340,36 @@ final class ImGuiAuthoringEditor {
     private void toolbar() {
         ImGui.beginDisabled(showRecovery || confirmClose);
         if (ImGui.button("Workspace")) showWorkspace = !showWorkspace;
-        ImGui.sameLine();
+        sameLineFor("New");
         ImGui.beginDisabled(workspace == null);
         if (ImGui.button("New")) operation(() -> { chooseCreateScope(); showCreate = !showCreate; view = 0; });
-        ImGui.sameLine();
+        sameLineFor("Save");
         if (ImGui.button("Save")) operation(this::save);
         ImGui.endDisabled();
-        ImGui.sameLine();
+        sameLineFor("Edit");
         if (viewButton("Edit", 0)) operation(() -> { view = 0; focusPanel = WORK_PANEL; });
-        ImGui.sameLine();
+        sameLineFor("Preview");
         if (viewButton("Preview", 1)) operation(() -> { view = 1; focusPanel = WORK_PANEL; });
-        ImGui.sameLine();
+        sameLineFor("Playtest");
         if (viewButton("Playtest", 3)) operation(this::enterPlaytest);
-        ImGui.sameLine();
+        sameLineFor("Build pack");
         if (viewButton("Build pack", 2)) operation(() -> { validate(); view = 2; focusPanel = WORK_PANEL; });
-        if (ImGui.getWindowWidth() > 1000) ImGui.sameLine();
+        sameLineFor(guideStep < 0 ? "Quick guide" : "Hide guide");
         if (ImGui.button(guideStep < 0 ? "Quick guide" : "Hide guide")) {
             if (guideStep < 0) guideStep = 0;
             else dismissGuide();
         }
-        ImGui.sameLine();
+        sameLineFor("Reset layout");
         if (ImGui.button("Reset layout")) resetLayout = true;
-        ImGui.sameLine();
+        sameLineFor("Files");
         if (ImGui.button("Files")) operation(() -> { filesMode = true; view = 4; focusPanel = WORK_PANEL; });
-        ImGui.sameLine();
+        sameLineFor("Close");
         if (ImGui.button("Close")) screen.onClose();
+        sameLineFor("Up");
+        ImGui.beginDisabled(workspace == null || activePath().isEmpty() || EditorTestWorld.applying());
+        if (ImGui.button("Up##navigation_up")) operation(this::navigateUp);
+        ImGui.endDisabled();
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Open containing folder (Alt+Up)");
         navigationControls();
         breadcrumbs();
         ImGui.endDisabled();
@@ -1192,14 +1197,6 @@ final class ImGuiAuthoringEditor {
             return;
         }
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
-        ImGui.beginDisabled(!(historyDocument == null ? document : historyDocument).canUndo() || rawModified);
-        if (ImGui.button("Undo")) operation(() -> changeHistory(false));
-        ImGui.endDisabled();
-        ImGui.sameLine();
-        ImGui.beginDisabled(!(historyDocument == null ? document : historyDocument).canRedo() || rawModified);
-        if (ImGui.button("Redo")) operation(() -> changeHistory(true));
-        ImGui.endDisabled();
-        ImGui.sameLine();
         if (ImGui.button("File settings")) operation(() -> { selectedNode = ""; setPointer(""); });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
@@ -2290,8 +2287,11 @@ final class ImGuiAuthoringEditor {
     }
 
     private void navigationControls() {
+        float width = ImGui.calcTextSize("BackForwardUndoRedo").x + ImGui.getStyle().getFramePaddingX() * 8
+                + ImGui.getStyle().getItemSpacingX() * 3;
         ImGui.sameLine();
-        if (ImGui.getContentRegionAvailX() < ImGui.calcTextSize("BackForwardUp").x + 64) ImGui.newLine();
+        if (ImGui.getContentRegionAvailX() < width) ImGui.newLine();
+        ImGui.setCursorPosX(ImGui.getCursorPosX() + ImGui.getContentRegionAvailX() - width);
         ImGui.beginDisabled(showRecovery || confirmClose || EditorTestWorld.applying());
         var back = navigation.target(-1);
         ImGui.beginDisabled(back == null);
@@ -2305,10 +2305,16 @@ final class ImGuiAuthoringEditor {
         ImGui.endDisabled();
         if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Forward (Ctrl+Alt+Right)" + (forward == null ? "" : "\n" + forward.label()));
         ImGui.sameLine();
-        ImGui.beginDisabled(workspace == null || activePath().isEmpty());
-        if (ImGui.button("Up##navigation_up")) operation(this::navigateUp);
+        AuthoringDocument history = historyDocument == null ? document : historyDocument;
+        ImGui.beginDisabled(history == null || !history.canUndo() || rawModified);
+        if (ImGui.button("Undo")) operation(() -> changeHistory(false));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Open containing folder (Alt+Up)");
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo (Ctrl+Z)");
+        ImGui.sameLine();
+        ImGui.beginDisabled(history == null || !history.canRedo() || rawModified);
+        if (ImGui.button("Redo")) operation(() -> changeHistory(true));
+        ImGui.endDisabled();
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo (Ctrl+Y)");
         ImGui.endDisabled();
     }
 

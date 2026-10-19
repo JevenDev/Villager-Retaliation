@@ -170,11 +170,11 @@ public final class AuthoringEditorClientSmoke {
             require(DialogueGraph.edges(document).getFirst().to().equals("other"), "Input click reconnects the actual response.");
             require(field(editor, "selectedEdge").equals(""), "Successful connection clears the pending wire.");
             capture("03-connected-blocks");
-            invoke("changeHistory", new Class<?>[] {boolean.class}, false);
-            require(DialogueGraph.edges(document).getFirst().to().equals("finish"), "Undo restores the connection.");
-            invoke("changeHistory", new Class<?>[] {boolean.class}, true);
-            require(DialogueGraph.edges(document).getFirst().to().equals("other"), "Redo restores the new connection.");
         });
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(DialogueGraph.edges(document).getFirst().to().equals("finish"), "Navbar Undo restores the connection."));
+        click(() -> toolbar("Redo"));
+        STEPS.add(() -> require(DialogueGraph.edges(document).getFirst().to().equals("other"), "Navbar Redo restores the new connection."));
         STEPS.add(() -> originalPosition = positions().get("finish").clone());
         move(() -> point("finish", 100, 18), false);
         move(() -> point("finish", 100, 18), true);
@@ -243,8 +243,8 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSetupSteps() {
         click(() -> toolbar("Workspace"));
-        replaceText(() -> screenPoint(120, 277), () -> output().resolve("setup-drafts").toString());
-        click(() -> screenPoint(200, 317));
+        replaceText(() -> screenPoint(120, 257), () -> output().resolve("setup-drafts").toString());
+        click(() -> screenPoint(200, 297));
         STEPS.add(() -> {
             workspace = (AuthoringWorkspace) field(editor, "workspace");
             require(workspace.directory().equals(output().resolve("setup-drafts")), "Create new opens the typed workspace folder.");
@@ -354,7 +354,7 @@ public final class AuthoringEditorClientSmoke {
             capture("14-exported-pack");
         });
         click(() -> toolbar("Workspace"));
-        click(() -> screenPoint(85, 317));
+        click(() -> screenPoint(85, 297));
         STEPS.add(() -> {
             workspace = (AuthoringWorkspace) field(editor, "workspace");
             require(workspace.documents().size() == 1, "Open folder reloads the saved workspace.");
@@ -1136,8 +1136,8 @@ public final class AuthoringEditorClientSmoke {
         });
         click(() -> screenPoint(140, 310));
         click(() -> toolbar("Workspace"));
-        replaceText(() -> screenPoint(120, 277), () -> output().resolve("import-drafts").toString());
-        click(() -> screenPoint(200, 317));
+        replaceText(() -> screenPoint(120, 257), () -> output().resolve("import-drafts").toString());
+        click(() -> screenPoint(200, 297));
         click(() -> screenPoint(140, 153));
         STEPS.add(() -> capture("17-empty-import-workspace"));
         click(() -> screenPoint(140, 330));
@@ -1160,7 +1160,7 @@ public final class AuthoringEditorClientSmoke {
     private static void buildStyledGraphSteps() {
         STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
         click(() -> point("start", 80, EditorGraph.HEADER + 12));
-        move(() -> screenPoint(1400, 900), false);
+        move(() -> screenPoint(1300, 900), false);
         STEPS.add(() -> {
             require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
                     "Styled blocks retain direct text editing.");
@@ -1193,7 +1193,7 @@ public final class AuthoringEditorClientSmoke {
                             + ", texture height: " + field(tooltip, "renderedHeight") + ", scale: " + field(tooltip, "renderedScale"));
             capture("11b-styled-graph-tooltip");
         });
-        move(() -> screenPoint(1400, 900), false);
+        move(() -> screenPoint(1300, 900), false);
         STEPS.add(() -> mouseWheel = -2);
         STEPS.add(() -> {
             require((float) field(editor, "zoom") < 1, "Mouse wheel zooms the graph out.");
@@ -1525,8 +1525,16 @@ public final class AuthoringEditorClientSmoke {
     private static float[] toolbar(String target) {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
-        for (String label : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
-                (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close", "Back", "Forward", "Up"}) {
+        boolean navigation = List.of("Back", "Forward", "Undo", "Redo").contains(target);
+        String[] labels = navigation ? new String[] {"Back", "Forward", "Undo", "Redo"}
+                : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
+                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close", "Up"};
+        if (navigation) {
+            x = ImGui.getMainViewport().getWorkPosX() + ImGui.getMainViewport().getWorkSizeX() - 14;
+            for (String label : labels) x -= ImGui.calcTextSize(label).x * scale + 24;
+            x += 8;
+        }
+        for (String label : labels) {
             float width = ImGui.calcTextSize(label).x * scale + 16;
             if (label.equals(target)) return new float[] {x + width / 2, ImGui.getMainViewport().getWorkPosY() + 14 + (ImGui.getFontSize() * scale + 12) / 2};
             x += width + 8;
