@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 final class EditorBulkEdit {
-    private static final Set<String> REFERENCES = Set.of("id", "key", "next", "transition", "stage", "success", "failure", "outcome", "check", "responses", "options", "follow_up");
+    private static final Set<String> REFERENCES = Set.of("type", "id", "key", "next", "transition", "stage", "success", "failure", "outcome", "check", "responses", "options", "follow_up");
     private final ImString value = new ImString(8192);
     private AuthoringDocument owner;
     private Set<String> selection = Set.of();
@@ -42,7 +42,10 @@ final class EditorBulkEdit {
         first.forEach((path, initial) -> {
             var paths = nodes.stream().map(node -> node.pointer() + path).toList();
             boolean common = paths.stream().allMatch(candidate -> {
-                try { return sameType(initial, JsonPointers.get(root, candidate)); }
+                try {
+                    return sameType(initial, JsonPointers.get(root, candidate))
+                            && compatibleBlocks(JsonPointers.get(root, nodes.getFirst().pointer()), JsonPointers.get(root, candidate.substring(0, candidate.length() - path.length())), path);
+                }
                 catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException exception) { return false; }
             });
             if (common) result.put(path, paths);
@@ -55,7 +58,19 @@ final class EditorBulkEdit {
         else if (value.isJsonObject()) value.getAsJsonObject().entrySet().stream().filter(entry -> !REFERENCES.contains(entry.getKey()))
                 .forEach(entry -> scalars(entry.getValue(), path + "/" + JsonPointers.escape(entry.getKey()), result));
         else if (value.isJsonArray()) for (int i = 0; i < value.getAsJsonArray().size(); i++)
-            if (value.getAsJsonArray().get(i).isJsonPrimitive()) scalars(value.getAsJsonArray().get(i), path + "/" + i, result);
+            scalars(value.getAsJsonArray().get(i), path + "/" + i, result);
+    }
+
+    private static boolean compatibleBlocks(JsonElement first, JsonElement other, String path) {
+        String parent = path.substring(0, path.lastIndexOf('/'));
+        while (!parent.isEmpty()) {
+            var a = JsonPointers.get(first, parent);
+            var b = JsonPointers.get(other, parent);
+            if (a.isJsonObject() && a.getAsJsonObject().has("type")
+                    && (!b.isJsonObject() || !a.getAsJsonObject().get("type").equals(b.getAsJsonObject().get("type")))) return false;
+            parent = parent.substring(0, parent.lastIndexOf('/'));
+        }
+        return true;
     }
 
     private static boolean sameType(JsonElement first, JsonElement second) {

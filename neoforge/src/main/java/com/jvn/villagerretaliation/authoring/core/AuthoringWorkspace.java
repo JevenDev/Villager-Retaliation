@@ -1143,6 +1143,14 @@ public final class AuthoringWorkspace {
         return List.copyOf(result);
     }
 
+    public void editDocuments(String label, Map<AuthoringDocument, JsonObject> replacements) {
+        for (var document : replacements.keySet())
+            if (!documents.contains(document)) throw new IllegalArgumentException("A selected file is no longer in this workspace");
+        var changed = replacements.entrySet().stream().filter(entry -> !entry.getKey().json().equals(entry.getValue())).toList();
+        changed.forEach(entry -> entry.getKey().edit(label, root -> replaceObject(root, entry.getValue())));
+        if (changed.size() > 1) AuthoringDocument.groupLatestChanges(changed.stream().map(Map.Entry::getKey).toList(), () -> { }, () -> { });
+    }
+
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
         if (!documents.contains(document)) throw new IllegalArgumentException("Choose a document in this workspace");
         Map<AuthoringDocument, JsonObject> updates = new LinkedHashMap<>();

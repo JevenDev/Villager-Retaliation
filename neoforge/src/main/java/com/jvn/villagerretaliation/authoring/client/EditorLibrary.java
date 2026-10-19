@@ -86,6 +86,76 @@ final class EditorLibrary {
         });
     }
 
+    void renameSnippet(String name, String replacement) throws IOException {
+        snippet(name);
+        String key = replacement.strip();
+        if (key.isEmpty()) throw new IllegalArgumentException("Enter a snippet name");
+        if (name.equals(key)) return;
+        if (snippets().contains(key)) throw new IllegalArgumentException("A snippet already uses that name");
+        update(root -> {
+            var snippets = root.getAsJsonObject("snippets");
+            snippets.add(key, snippets.remove(name));
+        });
+    }
+
+    void updateSnippet(String name, JsonObject value) throws IOException {
+        JsonObject previous = snippet(name);
+        EditorSnippets.validate(value);
+        if (previous.has("category")) value.add("category", previous.get("category").deepCopy());
+        update(root -> root.getAsJsonObject("snippets").add(name, value.deepCopy()));
+    }
+
+    void categorizeSnippet(String name, String category) throws IOException {
+        snippet(name);
+        update(root -> {
+            var snippet = root.getAsJsonObject("snippets").getAsJsonObject(name);
+            if (category.isBlank()) snippet.remove("category");
+            else snippet.addProperty("category", category.strip());
+        });
+    }
+
+    List<String> snippets(String query, String category) {
+        String term = query.strip().toLowerCase(java.util.Locale.ROOT);
+        return snippets().stream().filter(name -> {
+            var value = snippet(name);
+            String group = value.has("category") ? value.get("category").getAsString() : "";
+            return (category.isEmpty() || category.equals(group))
+                    && (name + " " + group).toLowerCase(java.util.Locale.ROOT).contains(term);
+        }).toList();
+    }
+
+    void exportSnippets(Path destination) throws IOException {
+        JsonObject exported = new JsonObject(); exported.addProperty("version", 1);
+        exported.add("snippets", EditorSchema.object(data.get("snippets")).deepCopy());
+        Files.writeString(destination, AuthoringDocument.JSON.toJson(exported), java.nio.file.StandardOpenOption.CREATE_NEW);
+    }
+
+    int importSnippets(Path source) throws IOException {
+        JsonObject imported;
+        try {
+            JsonObject root = JsonParser.parseString(Files.readString(source)).getAsJsonObject();
+            if (!root.has("version") || root.get("version").getAsInt() != 1 || !root.has("snippets") || !root.get("snippets").isJsonObject())
+                throw new IllegalArgumentException("Expected an exported snippet library");
+            imported = root.getAsJsonObject("snippets");
+            for (var entry : imported.entrySet()) {
+                if (entry.getKey().isBlank() || !entry.getValue().isJsonObject()) throw new IllegalArgumentException("Invalid snippet name or payload");
+                EditorSnippets.validate(entry.getValue().getAsJsonObject());
+            }
+        } catch (IllegalArgumentException | IllegalStateException | com.google.gson.JsonParseException exception) {
+            throw new IOException("Cannot import snippet library: " + exception.getMessage(), exception);
+        }
+        update(root -> {
+            if (!root.has("snippets")) root.add("snippets", new JsonObject());
+            var snippets = root.getAsJsonObject("snippets");
+            imported.entrySet().forEach(entry -> {
+                String name = entry.getKey(); int suffix = 2;
+                while (snippets.has(name)) name = entry.getKey() + " (imported " + suffix++ + ")";
+                snippets.add(name, entry.getValue().deepCopy());
+            });
+        });
+        return imported.size();
+    }
+
     void removeSnippet(String name) throws IOException {
         update(root -> EditorSchema.object(root.get("snippets")).remove(name));
     }

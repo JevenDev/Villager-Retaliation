@@ -146,7 +146,7 @@ public final class AuthoringDocument {
     private record HistoryGroup(java.util.List<AuthoringDocument> documents, Runnable beforeUndo, Runnable beforeRedo) {
         boolean undo() {
             if (documents.stream().anyMatch(document -> document.undo.isEmpty() || document.undo.peek().group() != this)) {
-                throw new IllegalStateException("Undo newer edits in the other affected documents before undoing this bundle rename");
+                throw new IllegalStateException("Undo newer edits in the other affected documents before undoing this grouped edit");
             }
             beforeUndo.run();
             for (AuthoringDocument document : documents) {
@@ -158,7 +158,7 @@ public final class AuthoringDocument {
 
         boolean redo() {
             if (documents.stream().anyMatch(document -> document.redo.isEmpty() || document.redo.peek().group() != this)) {
-                throw new IllegalStateException("This bundle rename cannot be redone because another affected document has newer edits");
+                throw new IllegalStateException("This grouped edit cannot be redone because another affected document has newer edits");
             }
             beforeRedo.run();
             for (AuthoringDocument document : documents) {

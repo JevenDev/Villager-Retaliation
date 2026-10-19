@@ -20,10 +20,12 @@ final class EditorFileDialog {
                 chooser.setSelectedFile(new File(current));
                 boolean image = label.startsWith("PNG");
                 boolean markdown = label.startsWith("Markdown");
-                chooser.setFileSelectionMode(image || markdown ? JFileChooser.FILES_ONLY : label.startsWith("Pack") ? JFileChooser.FILES_AND_DIRECTORIES : JFileChooser.DIRECTORIES_ONLY);
+                boolean json = label.startsWith("JSON");
+                chooser.setFileSelectionMode(image || markdown || json ? JFileChooser.FILES_ONLY : label.startsWith("Pack") ? JFileChooser.FILES_AND_DIRECTORIES : JFileChooser.DIRECTORIES_ONLY);
                 if (markdown) chooser.setFileFilter(new FileNameExtensionFilter("Markdown description", "md"));
+                if (json) chooser.setFileFilter(new FileNameExtensionFilter("Snippet library", "json"));
                 if (image) chooser.setFileFilter(new FileNameExtensionFilter("PNG image", "png"));
-                if (chooser.showDialog(null, "Choose") == JFileChooser.APPROVE_OPTION) selected.accept(chooser.getSelectedFile().getAbsolutePath());
+                if ((label.startsWith("JSON export") ? chooser.showSaveDialog(null) : chooser.showDialog(null, "Choose")) == JFileChooser.APPROVE_OPTION) selected.accept(chooser.getSelectedFile().getAbsolutePath());
             } finally {
                 open = false;
             }

@@ -169,6 +169,7 @@ final class ImGuiAuthoringEditor {
     private final ImString replaceText = new ImString(1024);
     private final ImString replaceFind = new ImString(1024);
     private EditorWordingReplacement.Preview replacementPreview;
+    private final EditorWorkspaceReplacement workspaceReplacement = new EditorWorkspaceReplacement();
     private boolean showRecovery;
     private boolean confirmClose;
     private long nextRecovery;
@@ -781,6 +782,7 @@ final class ImGuiAuthoringEditor {
         catch (IOException exception) { ImGui.textWrapped("Could not read saved changes: " + exception.getMessage()); }
         if (document != null && ImGui.button("Find usages across workspace")) findUsages();
         replacementTools();
+        workspaceReplacement.render(workspace, this::operation, changed -> { refresh(); historyDocument = changed; });
     }
 
     private void replacementTools() {
