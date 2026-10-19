@@ -26,11 +26,11 @@ public final class AuthoringPackBuild {
             Path archive = staging.resolve("pack.zip");
             try (var output = new ZipOutputStream(Files.newOutputStream(archive))) {
                 try (var files = Files.walk(pack)) {
-                    for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
-                        var entry = new ZipEntry(pack.relativize(file).toString().replace('\\', '/'));
+                    for (Path file : files.filter(path -> !path.equals(pack)).sorted().toList()) {
+                        var entry = new ZipEntry(pack.relativize(file).toString().replace('\\', '/') + (Files.isDirectory(file) ? "/" : ""));
                         entry.setTime(0);
                         output.putNextEntry(entry);
-                        Files.copy(file, output);
+                        if (Files.isRegularFile(file)) Files.copy(file, output);
                         output.closeEntry();
                     }
                 }

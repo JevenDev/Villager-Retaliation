@@ -157,6 +157,86 @@ public final class AuthoringFilesGameTests {
         } finally { cleanup(root); }
     }
 
+    @GameTest(template = "empty", batch = "authoring")
+    public static void emptyFoldersPersistMoveAndExport(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-empty-folders-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            workspace.createFolder("data/test/drafts/nested");
+            helper.assertTrue(workspace.dirty() && workspace.folderPaths().contains("data/test/drafts"), "new empty folders mark the workspace dirty and expose parents");
+            workspace.save();
+            workspace = AuthoringWorkspace.open(workspace.directory());
+            helper.assertTrue(!workspace.dirty() && workspace.folderPaths().contains("data/test/drafts/nested"), "empty folders survive reopening");
+            var move = workspace.previewFileMove("data/test/drafts", "data/test/renamed");
+            workspace.applyFileMove(move);
+            helper.assertTrue(workspace.folderPaths().contains("data/test/renamed/nested") && !workspace.folderPaths().contains("data/test/drafts"), "folder moves include empty descendants");
+            workspace.undoFileMove();
+            helper.assertTrue(!workspace.dirty() && workspace.folderPaths().contains("data/test/drafts/nested"), "empty folder moves undo completely");
+            workspace.createFolder("assets/test/textures/new");
+            workspace.saveRecovery(new com.google.gson.JsonObject());
+            var recovered = AuthoringWorkspace.recover(workspace.directory());
+            helper.assertTrue(recovered.folderPaths().contains("assets/test/textures/new"), "recovery preserves new folders");
+            Path folder = root.resolve("pack");
+            AuthoringPackBuild.build(recovered, folder, false);
+            helper.assertTrue(Files.isDirectory(folder.resolve("data/test/drafts/nested")), "folder exports retain empty directories");
+            Path zip = root.resolve("pack.zip");
+            AuthoringPackBuild.build(recovered, zip, true);
+            try (var archive = new ZipFile(zip.toFile())) {
+                helper.assertTrue(archive.getEntry("assets/test/textures/new/").isDirectory(), "ZIP builds retain empty directories");
+            }
+            helper.succeed();
+        } finally { cleanup(root); }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void folderCreationRejectsUnsafeAndOccupiedPaths(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-folder-safety-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest");
+            workspace.createFolder("data/test/empty");
+            for (String path : List.of("../outside", "data/test/UPPER", "data/test/con", "pack.mcmeta", "other/test/folder", "data/test/empty", "data/test/quests", quest.resourcePath(), quest.resourcePath() + "/child")) {
+                boolean rejected = false;
+                try { workspace.createFolder(path); } catch (IllegalArgumentException expected) { rejected = true; }
+                helper.assertTrue(rejected, "unsafe or occupied folder creation is rejected: " + path);
+            }
+            for (String path : List.of("data/test/quests", "data/test/empty/child", "data/other/empty", quest.resourcePath(), quest.resourcePath() + "/child")) {
+                boolean rejected = false;
+                try { workspace.previewFileMove("data/test/empty", path); } catch (IllegalArgumentException expected) { rejected = true; }
+                helper.assertTrue(rejected, "empty folders honor the same move protections: " + path);
+            }
+            var preview = workspace.previewFileMove("data/test/empty", "data/test/next");
+            workspace.createFolder("data/test/newer");
+            boolean rejected = false;
+            try { workspace.applyFileMove(preview); } catch (IllegalStateException expected) { rejected = true; }
+            helper.assertTrue(rejected && workspace.folderPaths().contains("data/test/empty"), "folder changes invalidate move previews");
+            helper.succeed();
+        } finally { cleanup(root); }
+    }
+
+    @GameTest(template = "empty", batch = "authoring")
+    public static void bundleOperationsKeepEmptyFoldersTogether(GameTestHelper helper) throws IOException {
+        Path root = Files.createTempDirectory("vr-bundle-folders-");
+        try {
+            var workspace = AuthoringWorkspace.create(root.resolve("workspace"));
+            var addon = workspace.createDocument(DefinitionKind.CAMPAIGN_ADDON, "test:addon");
+            String source = "data/test/campaign_addons/addon";
+            workspace.createFolder(source + "/artwork/empty");
+            workspace.applyFileMove(workspace.previewFileMove(source, "data/test/campaign_addons/moved"));
+            helper.assertTrue(workspace.folderPaths().contains("data/test/campaign_addons/moved/artwork/empty"), "bundle file moves include empty folders");
+            addon.undo();
+            helper.assertTrue(workspace.folderPaths().contains(source + "/artwork/empty"), "document history restores empty folders with bundle moves");
+            workspace.rename(addon, "test:renamed");
+            helper.assertTrue(workspace.folderPaths().contains("data/test/campaign_addons/renamed/artwork/empty"), "content rename keeps folder structure");
+            addon.undo();
+            workspace.remove(addon);
+            helper.assertTrue(!workspace.folderPaths().contains(source + "/artwork/empty"), "deleted bundles remove their empty folders");
+            workspace.restoreDeleted(0);
+            helper.assertTrue(workspace.folderPaths().contains(source + "/artwork/empty"), "restoring bundles restores their empty folders");
+            helper.succeed();
+        } finally { cleanup(root); }
+    }
+
     private static void cleanup(Path root) throws IOException {
         try (var paths = Files.walk(root)) { for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.delete(path); }
     }

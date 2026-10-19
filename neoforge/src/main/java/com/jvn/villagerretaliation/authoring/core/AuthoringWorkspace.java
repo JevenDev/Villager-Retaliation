@@ -27,6 +27,7 @@ public final class AuthoringWorkspace {
     private static final String RECOVERY = "workspace.recovery.json";
     private List<AuthoringDocument> savedDocuments = List.of();
     private Map<String, byte[]> savedAttachments = Map.of();
+    private java.util.Set<String> savedFolders = java.util.Set.of();
     private JsonObject savedPack;
     private boolean recovered;
     private JsonObject recoveryBuffers = new JsonObject();
@@ -37,6 +38,7 @@ public final class AuthoringWorkspace {
     private final Path directory;
     private final List<AuthoringDocument> documents = new ArrayList<>();
     private final Map<String, byte[]> attachments = new LinkedHashMap<>();
+    private final java.util.Set<String> folders = new java.util.TreeSet<>();
     private JsonObject packMetadata = JsonParser.parseString("""
             {"pack":{"pack_format":48,"description":"Villager Retaliation authored content"}}
             """).getAsJsonObject();
@@ -113,6 +115,15 @@ public final class AuthoringWorkspace {
                     result.attachments.put(path, Base64.getDecoder().decode(entry.getValue().getAsString()));
                 }
             }
+            if (state.has("folders")) {
+                if (!state.get("folders").isJsonArray()) throw new IOException("Invalid authoring workspace: /folders must be an array");
+                for (JsonElement folder : state.getAsJsonArray("folders")) {
+                    if (!folder.isJsonPrimitive() || !folder.getAsJsonPrimitive().isString()) throw new IOException("Workspace folder paths must be strings");
+                    String path = folder.getAsString();
+                    result.validateFolder(path);
+                    if (!result.folders.add(path)) throw new IOException("Duplicate workspace folder " + path);
+                }
+            }
             if (state.has("pack")) {
                 if (!state.get("pack").isJsonObject()) throw new IOException("Invalid authoring workspace: /pack must be an object");
                 result.packMetadata = state.getAsJsonObject("pack").deepCopy();
@@ -135,6 +146,31 @@ public final class AuthoringWorkspace {
         documents.forEach(document -> paths.add(document.resourcePath()));
         paths.add("pack.mcmeta");
         return List.copyOf(paths);
+    }
+
+    public List<String> folderPaths() {
+        var paths = new java.util.TreeSet<>(folders);
+        var entries = new ArrayList<>(filePaths());
+        entries.addAll(folders);
+        for (String entry : entries) for (int slash = entry.lastIndexOf('/'); slash >= 0; slash = entry.lastIndexOf('/', slash - 1))
+            paths.add(entry.substring(0, slash));
+        return List.copyOf(paths);
+    }
+
+    public void createFolder(String path) {
+        validateFolder(path);
+        if (folderPaths().stream().anyMatch(folder -> folder.equalsIgnoreCase(path))) throw new IllegalArgumentException("Folder already exists: " + path);
+        folders.add(path);
+    }
+
+    private void validateFolder(String path) {
+        safeRelativePath(path);
+        String[] parts = path.split("/", 3);
+        if (!List.of("data", "assets").contains(parts[0]) || !path.matches("[a-z0-9_./-]+")
+                || parts.length > 1 && net.minecraft.resources.ResourceLocation.tryParse(parts[1] + ":" + (parts.length > 2 ? parts[2] : "_")) == null)
+            throw new IllegalArgumentException("Use lowercase folders inside data or assets and their resource namespace");
+        for (String file : filePaths()) if (path.equalsIgnoreCase(file) || path.toLowerCase(java.util.Locale.ROOT).startsWith(file.toLowerCase(java.util.Locale.ROOT) + "/"))
+            throw new IllegalArgumentException("A file occupies this folder path: " + file);
     }
 
     public byte[] readFile(String path) throws IOException {
@@ -182,7 +218,7 @@ public final class AuthoringWorkspace {
         public FileMove { paths = Map.copyOf(paths); changes = List.copyOf(changes); }
     }
 
-    private record Relocation(Map<AuthoringDocument, JsonObject> definitions, Map<String, byte[]> assets, FileMove move) { }
+    private record Relocation(Map<AuthoringDocument, JsonObject> definitions, Map<String, byte[]> assets, java.util.Set<String> folders, FileMove move) { }
     private Runnable undoFileMove;
     private String movedFingerprint = "";
 
@@ -203,7 +239,21 @@ public final class AuthoringWorkspace {
         Map<String, String> paths = new LinkedHashMap<>();
         for (String path : filePaths()) if (path.equals(source) || path.startsWith(source + "/"))
             paths.put(path, destination + path.substring(source.length()));
-        if (paths.isEmpty()) throw new IllegalArgumentException("No files found at " + source);
+        String targetFolder = destination;
+        boolean folder = folderPaths().contains(source);
+        if (paths.isEmpty() && !folder) throw new IllegalArgumentException("No file or folder found at " + source);
+        if (!folder && folderPaths().stream().anyMatch(path -> path.equalsIgnoreCase(targetFolder))) throw new IllegalArgumentException("A folder occupies " + destination);
+        if (folder && folderPaths().stream().anyMatch(path -> path.equalsIgnoreCase(targetFolder))) throw new IllegalArgumentException("Folder already exists: " + destination);
+        var nextFolders = new java.util.TreeSet<String>();
+        for (String path : folders) nextFolders.add(path.equals(source) || path.startsWith(source + "/") ? destination + path.substring(source.length()) : path);
+        for (String path : folderPaths()) if (path.equals(source) || path.startsWith(source + "/")) {
+            String target = destination + path.substring(source.length());
+            String[] before = path.split("/", 3), after = target.split("/", 3);
+            if (before.length < 3 || after.length < 3 || !before[0].equals(after[0]) || !before[1].equals(after[1]))
+                throw new IllegalArgumentException("Keep folders inside their data or assets namespace");
+            if (net.minecraft.resources.ResourceLocation.tryParse(after[1] + ":" + after[2]) == null)
+                throw new IllegalArgumentException("Use lowercase resource folder names");
+        }
         var occupied = new HashSet<String>();
         for (String path : filePaths()) {
             String target = paths.getOrDefault(path, path);
@@ -221,6 +271,12 @@ public final class AuthoringWorkspace {
             for (int slash = path.lastIndexOf('/'); slash >= 0; slash = path.lastIndexOf('/', slash - 1))
                 if (occupied.contains(path.substring(0, slash))) throw new IllegalArgumentException("A file occupies the parent folder of " + path);
         }
+        for (String path : nextFolders) {
+            if (occupied.contains(path.toLowerCase(java.util.Locale.ROOT))) throw new IllegalArgumentException("A file occupies the folder " + path);
+            for (int slash = path.lastIndexOf('/'); slash >= 0; slash = path.lastIndexOf('/', slash - 1))
+                if (occupied.contains(path.substring(0, slash).toLowerCase(java.util.Locale.ROOT))) throw new IllegalArgumentException("A file occupies the parent folder of " + path);
+        }
+        if (folder) for (String path : occupied) if (path.equals(targetFolder.toLowerCase(java.util.Locale.ROOT))) throw new IllegalArgumentException("A file occupies the folder " + targetFolder);
         Map<String, String> resources = new LinkedHashMap<>();
         paths.forEach((from, to) -> resources.put(from.split("/", 3)[1] + ":" + from.split("/", 3)[2], to.split("/", 3)[1] + ":" + to.split("/", 3)[2]));
         Map<String, Map<String, String>> idsByScope = new LinkedHashMap<>();
@@ -304,7 +360,7 @@ public final class AuthoringWorkspace {
             }
             assets.put(paths.getOrDefault(path, path), content);
         });
-        return new Relocation(definitions, assets, new FileMove(source, destination, paths, changes, fileFingerprint()));
+        return new Relocation(definitions, assets, java.util.Set.copyOf(nextFolders), new FileMove(source, destination, paths, changes, fileFingerprint()));
     }
 
     public void applyFileMove(FileMove move) {
@@ -313,6 +369,7 @@ public final class AuthoringWorkspace {
         if (!planned.move().paths().equals(move.paths())) throw new IllegalStateException("The move preview is stale");
         Map<AuthoringDocument, String> beforePaths = new LinkedHashMap<>(), afterPaths = new LinkedHashMap<>();
         Map<String, byte[]> beforeAssets = new LinkedHashMap<>(attachments);
+        var beforeFolders = java.util.Set.copyOf(folders);
         planned.definitions().forEach((document, definition) -> {
             beforePaths.put(document, document.resourcePath());
             String target = move.paths().getOrDefault(document.resourcePath(), document.resourcePath());
@@ -320,21 +377,25 @@ public final class AuthoringWorkspace {
             afterPaths.put(document, target);
         });
         attachments.clear(); attachments.putAll(planned.assets());
+        folders.clear(); folders.addAll(planned.folders());
         if (!beforePaths.isEmpty()) {
             AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
-                    () -> restoreFileMove(beforePaths, planned.assets(), beforeAssets),
-                    () -> restoreFileMove(afterPaths, beforeAssets, planned.assets()));
+                    () -> restoreFileMove(beforePaths, planned.assets(), beforeAssets, planned.folders(), beforeFolders),
+                    () -> restoreFileMove(afterPaths, beforeAssets, planned.assets(), beforeFolders, planned.folders()));
             undoFileMove = () -> beforePaths.keySet().iterator().next().undo();
-        } else undoFileMove = () -> restoreFileMove(Map.of(), planned.assets(), beforeAssets);
+        } else undoFileMove = () -> restoreFileMove(Map.of(), planned.assets(), beforeAssets, planned.folders(), beforeFolders);
         movedFingerprint = fileFingerprint();
     }
 
-    private void restoreFileMove(Map<AuthoringDocument, String> paths, Map<String, byte[]> expected, Map<String, byte[]> restored) {
+    private void restoreFileMove(Map<AuthoringDocument, String> paths, Map<String, byte[]> expected, Map<String, byte[]> restored,
+            java.util.Set<String> expectedFolders, java.util.Set<String> restoredFolders) {
+        if (!folders.equals(expectedFolders)) throw new IllegalStateException("Folders changed after the move");
         if (!attachments.keySet().equals(expected.keySet()) || expected.entrySet().stream().anyMatch(entry -> !java.util.Arrays.equals(attachments.get(entry.getKey()), entry.getValue())))
             throw new IllegalStateException("An affected asset changed after the move");
         for (var entry : paths.entrySet()) if (documents.stream().anyMatch(document -> !paths.containsKey(document) && document.resourcePath().equalsIgnoreCase(entry.getValue())))
             throw new IllegalStateException("Another document occupies " + entry.getValue());
         attachments.clear(); attachments.putAll(restored);
+        folders.clear(); folders.addAll(restoredFolders);
     }
 
     public boolean hasFileMove() { return undoFileMove != null; }
@@ -409,7 +470,8 @@ public final class AuthoringWorkspace {
     }
 
     private boolean containsPath(String path) {
-        return attachments.keySet().stream().anyMatch(key -> key.equalsIgnoreCase(path))
+        return folderPaths().stream().anyMatch(folder -> folder.equalsIgnoreCase(path))
+                || attachments.keySet().stream().anyMatch(key -> key.equalsIgnoreCase(path))
                 || documents.stream().anyMatch(document -> document.resourcePath().equalsIgnoreCase(path));
     }
 
@@ -669,6 +731,12 @@ public final class AuthoringWorkspace {
         for (String path : List.copyOf(attachments.keySet())) {
             if (bundle != null && path.startsWith(bundle)) files.addProperty(path, Base64.getEncoder().encodeToString(attachments.remove(path)));
         }
+        JsonArray directories = new JsonArray();
+        if (bundle != null) for (String folder : List.copyOf(folders)) if ((folder + "/").startsWith(bundle)) {
+            directories.add(folder);
+            folders.remove(folder);
+        }
+        entry.add("folders", directories);
         entry.add("documents", values);
         entry.add("attachments", files);
         deleted.add(entry);
@@ -695,7 +763,14 @@ public final class AuthoringWorkspace {
             if (containsPath(path)) throw new IllegalArgumentException("Restore would overwrite " + path);
             files.put(path, Base64.getDecoder().decode(file.getValue().getAsString()));
         }
+        var restoredFolders = new java.util.TreeSet<String>();
+        if (entry.has("folders")) for (JsonElement folder : entry.getAsJsonArray("folders")) {
+            String path = folder.getAsString();
+            validateFolder(path);
+            restoredFolders.add(path);
+        }
         documents.addAll(restored);
+        folders.addAll(restoredFolders);
         attachments.putAll(files);
         deleted.remove(index);
     }
@@ -707,6 +782,8 @@ public final class AuthoringWorkspace {
         if (id.substring(id.indexOf(':') + 1).contains("/")) throw new IllegalArgumentException("Campaign and addon IDs require a single path segment");
         String source = DefinitionKind.contentRoot(campaign.resourcePath());
         String destination = DefinitionKind.contentRoot(target);
+        var beforeFolders = java.util.Set.copyOf(folders);
+        var afterFolders = relocatedFolders(source, destination, copy);
         List<AuthoringDocument> members = documents.stream().filter(value -> value.resourcePath().startsWith(source)).toList();
         Map<String, byte[]> assets = new LinkedHashMap<>();
         attachments.forEach((path, bytes) -> { if (path.startsWith(source)) assets.put(path.substring(source.length()), bytes.clone()); });
@@ -764,12 +841,13 @@ public final class AuthoringWorkspace {
             assets.keySet().forEach(asset -> attachments.remove(source + asset));
         }
         relocatedAssets.forEach((asset, bytes) -> attachments.put(destination + asset, bytes.clone()));
+        folders.clear(); folders.addAll(afterFolders);
         if (!copy) {
             Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
             beforePaths.keySet().forEach(value -> afterPaths.put(value, value.resourcePath()));
             AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
-                    () -> restoreBundlePaths(beforePaths, destination, source, relocatedAssets, assets),
-                    () -> restoreBundlePaths(afterPaths, source, destination, assets, relocatedAssets));
+                    () -> restoreFolders(afterFolders, beforeFolders, () -> restoreBundlePaths(beforePaths, destination, source, relocatedAssets, assets)),
+                    () -> restoreFolders(beforeFolders, afterFolders, () -> restoreBundlePaths(afterPaths, source, destination, assets, relocatedAssets)));
         }
         return result;
     }
@@ -810,6 +888,8 @@ public final class AuthoringWorkspace {
         String destination = "data/" + identity[0] + (bundled ? "/" + originalPath[2] + "/" + originalPath[3] : "")
                 + "/quests/" + originalPath[bundled ? 5 : 3] + "/" + identity[1] + "/";
         List<AuthoringDocument> members = documents.stream().filter(value -> value.resourcePath().startsWith(source)).toList();
+        var beforeFolders = java.util.Set.copyOf(folders);
+        var afterFolders = relocatedFolders(source, destination, copy);
         List<String> binaryMembers = attachments.keySet().stream().filter(path -> path.startsWith(source)).toList();
         for (AuthoringDocument member : members) {
             String target = destination + member.resourcePath().substring(source.length());
@@ -850,6 +930,7 @@ public final class AuthoringWorkspace {
                 member.relocate(target, definition);
             }
         }
+        folders.clear(); folders.addAll(afterFolders);
         for (String binary : binaryMembers) {
             byte[] bytes = attachments.get(binary);
             if (!copy) attachments.remove(binary);
@@ -867,10 +948,29 @@ public final class AuthoringWorkspace {
             Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
             beforePaths.keySet().forEach(document -> afterPaths.put(document, document.resourcePath()));
             AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
-                    () -> restoreBundlePaths(beforePaths, destination, source, movedAttachments),
-                    () -> restoreBundlePaths(afterPaths, source, destination, movedAttachments));
+                    () -> restoreFolders(afterFolders, beforeFolders, () -> restoreBundlePaths(beforePaths, destination, source, movedAttachments)),
+                    () -> restoreFolders(beforeFolders, afterFolders, () -> restoreBundlePaths(afterPaths, source, destination, movedAttachments)));
         }
         return result;
+    }
+
+    private java.util.Set<String> relocatedFolders(String source, String destination, boolean copy) {
+        String from = source.endsWith("/") ? source.substring(0, source.length() - 1) : source;
+        String to = destination.endsWith("/") ? destination.substring(0, destination.length() - 1) : destination;
+        var result = new java.util.TreeSet<>(folders);
+        for (String folder : folders) if (folder.equals(from) || folder.startsWith(from + "/")) {
+            String target = to + folder.substring(from.length());
+            validateFolder(target);
+            if (!copy) result.remove(folder);
+            result.add(target);
+        }
+        return java.util.Set.copyOf(result);
+    }
+
+    private void restoreFolders(java.util.Set<String> expected, java.util.Set<String> restored, Runnable action) {
+        if (!folders.equals(expected)) throw new IllegalStateException("Folders changed after the bundle move");
+        action.run();
+        folders.clear(); folders.addAll(restored);
     }
 
     private void restoreBundlePaths(Map<AuthoringDocument, String> restoredPaths, String source, String destination,
@@ -1238,6 +1338,9 @@ public final class AuthoringWorkspace {
         JsonObject files = new JsonObject();
         attachments.forEach((path, bytes) -> files.addProperty(path, Base64.getEncoder().encodeToString(bytes)));
         root.add("attachments", files);
+        JsonArray directories = new JsonArray();
+        folders.forEach(directories::add);
+        root.add("folders", directories);
         root.add("pack", packMetadata.deepCopy());
         JsonArray trash = new JsonArray();
         deleted.forEach(value -> trash.add(value.deepCopy()));
@@ -1258,6 +1361,7 @@ public final class AuthoringWorkspace {
         documents.forEach(AuthoringDocument::markSaved);
         savedDocuments = List.copyOf(documents);
         savedAttachments = Map.copyOf(attachments);
+        savedFolders = java.util.Set.copyOf(folders);
         savedPack = packMetadata.deepCopy();
         savedDeleted = deleted.size();
         recovered = false;
@@ -1265,7 +1369,7 @@ public final class AuthoringWorkspace {
 
     public boolean dirty() {
         return recovered || !documents.equals(savedDocuments) || documents.stream().anyMatch(AuthoringDocument::dirty)
-                || !attachments.equals(savedAttachments) || !packMetadata.equals(savedPack) || deleted.size() != savedDeleted;
+                || !attachments.equals(savedAttachments) || !folders.equals(savedFolders) || !packMetadata.equals(savedPack) || deleted.size() != savedDeleted;
     }
 
     public boolean recoveryAvailable() { return Files.isRegularFile(directory.resolve(RECOVERY), LinkOption.NOFOLLOW_LINKS); }
@@ -1307,6 +1411,7 @@ public final class AuthoringWorkspace {
                         AuthoringDocument.JSON.toJson(document.json()).getBytes(StandardCharsets.UTF_8));
             }
             for (var attachment : attachments.entrySet()) atomicWrite(staging.resolve(safeRelativePath(attachment.getKey())), attachment.getValue());
+            for (String folder : folders) Files.createDirectories(staging.resolve(safeRelativePath(folder)));
             moveExportWithRetry(staging, target);
         } finally {
             if (Files.exists(staging)) {
