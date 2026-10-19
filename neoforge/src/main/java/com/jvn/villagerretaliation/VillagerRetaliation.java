@@ -201,5 +201,8 @@ public class VillagerRetaliation {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerSocialGraphService::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerReputationEvents::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, PlayerRaidService::onLivingDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, com.jvn.villagerretaliation.progress.PlayerHistoryService::died);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.progress.PlayerHistoryService::advancementEarned);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.progress.PlayerHistoryService::dimensionChanged);
     }
 }

@@ -178,6 +178,7 @@ public final class QuestPresentationService {
             ServerPlayer player, QuestDefinition definition, QuestProgressSnapshot progress,
             QuestDefinition.Objective objective, boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
         Map<String, String> values = new LinkedHashMap<>();
+        values.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(player));
         values.put("quest", questTitle(player, definition, Map.of()));
         values.put("quest_id", definition.id().toString());
         values.put("target", targetName(definition));
@@ -226,6 +227,7 @@ public final class QuestPresentationService {
             QuestProgressSnapshot progress,
             QuestDefinition.Objective objective, boolean activeConditionsMet, boolean hasRequiredProof, ObjectiveState state) {
         Map<String, String> values = new LinkedHashMap<>();
+        values.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(context.player()));
         values.put("quest", questTitle(context, definition, Map.of()));
         values.put("quest_id", definition.id().toString());
         values.put("target", targetName(definition));
@@ -260,6 +262,7 @@ public final class QuestPresentationService {
             String issuer,
             String issuerLocation) {
         Map<String, String> values = new LinkedHashMap<>();
+        values.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(player));
         values.put("quest", questTitle(player, definition, Map.of()));
         values.put("quest_id", definition.id().toString());
         values.put("target", targetName(definition));

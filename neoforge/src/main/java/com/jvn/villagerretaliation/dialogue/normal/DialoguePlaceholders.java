@@ -13,6 +13,7 @@ public final class DialoguePlaceholders {
         Map<String, String> values = new LinkedHashMap<>();
         if (context.level() != null) values.putAll(time(context.level().getDayTime()));
         values.put("player", context.player().getName().getString());
+        values.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(context.player()));
         if (context.villager() == null) {
             values.put("villager", "");
             return Map.copyOf(values);

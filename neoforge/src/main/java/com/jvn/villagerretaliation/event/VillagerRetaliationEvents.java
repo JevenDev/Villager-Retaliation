@@ -527,6 +527,7 @@ public final class VillagerRetaliationEvents {
             com.jvn.villagerretaliation.settlement.SettlementProjectileService.onChanged(projectile);
         }
         if (entity instanceof ServerPlayer player) {
+            com.jvn.villagerretaliation.progress.PlayerHistoryService.tick(player);
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
             com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryService.tick(player);

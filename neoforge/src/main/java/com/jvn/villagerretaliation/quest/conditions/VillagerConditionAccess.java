@@ -110,6 +110,8 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check check)
+            return check.reference().evaluate(this.level, this.player);
         if (condition instanceof DialogueCondition.WorkState work && work.reference().check().equals("eligible"))
             return this.live == null ? ConditionOutcome.UNKNOWN : result(com.jvn.villagerretaliation.quest.tutorial.TutorialService.eligible(this.live, work.reference().role()));
         if (condition instanceof DialogueCondition.WorkState work)
@@ -145,6 +147,8 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public String unavailableReason(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check check)
+            return check.reference().reason(this.level, this.player);
         if (condition instanceof DialogueCondition.WorkState work)
             return work.reference().evaluate(this.level, this.player).reason();
         if (condition instanceof DialogueCondition.SelectedChoice || condition instanceof DialogueCondition.StageHistory)
