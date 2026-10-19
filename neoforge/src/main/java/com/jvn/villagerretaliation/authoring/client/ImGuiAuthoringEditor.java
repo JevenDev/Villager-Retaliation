@@ -116,6 +116,8 @@ final class ImGuiAuthoringEditor {
     private final Map<String, ImString> fields = new HashMap<>();
     private final EditorTextField textFields = new EditorTextField();
     private final EditorGraphText graphText = new EditorGraphText();
+    private final EditorDocumentCache documentCache = new EditorDocumentCache();
+    private final EditorGraphModel graphModel = new EditorGraphModel();
     private final EditorFieldEdits pendingFields = new EditorFieldEdits();
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
@@ -271,7 +273,7 @@ final class ImGuiAuthoringEditor {
         pushEditorStyle();
         try {
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
-                shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
+                if (shortcuts.pressed()) shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
                         library, this::operation, ImGui.getIO().getWantTextInput());
                 if (ImGui.isMouseClicked(3)) operation(() -> navigateHistory(-1));
                 if (ImGui.isMouseClicked(4)) operation(() -> navigateHistory(1));
@@ -520,6 +522,8 @@ final class ImGuiAuthoringEditor {
         AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
                 : AuthoringWorkspace.open(Path.of(workspacePath.get()));
         workspace = next;
+        documentCache.clear();
+        graphModel.clear();
         packFiles.reset();
         packBuild.load(next);
         createScope = null;
@@ -761,7 +765,7 @@ final class ImGuiAuthoringEditor {
         shortcuts.render(commands(), library, this::operation);
         if (document != null) coverage.render(document, id -> operation(() -> {
             selectedNode = id; graphFocus = id; view = 0; nodeSelection.clear(); nodeSelection.add(id);
-            setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
+            setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
         }));
         input("Editing language", locale);
         if (ImGui.button("Use language")) operation(() -> {
@@ -806,7 +810,7 @@ final class ImGuiAuthoringEditor {
         ImGui.endDisabled();
         var preview = replacementPreview;
         if (preview == null || preview.document() != document) return;
-        boolean current = preview.find().equals(replaceFind.get()) && preview.replacement().equals(replaceText.get()) && preview.baseline().equals(document.json());
+        boolean current = preview.find().equals(replaceFind.get()) && preview.replacement().equals(replaceText.get()) && preview.baseline().equals(documentCache.json(document));
         String summary = preview.occurrences() + (preview.occurrences() == 1 ? " replacement in " : " replacements in ")
                 + preview.changes().size() + (preview.changes().size() == 1 ? " field" : " fields");
         ImGui.textWrapped(summary + " of " + document.id());
@@ -935,7 +939,7 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Close current file", "", workspace != null && workspace.filePaths().contains(activePath()), () -> closeOpenFile(activePath())));
         result.add(new EditorCommands.Command("Undo" + (history == null ? "" : ": " + history.undoLabel()), "Ctrl+Z", history != null && history.canUndo(), () -> changeHistory(false)));
         result.add(new EditorCommands.Command("Redo" + (history == null ? "" : ": " + history.redoLabel()), "Ctrl+Y", history != null && history.canRedo(), () -> changeHistory(true)));
-        result.add(new EditorCommands.Command("Add node or stage", "", graph && (document.kind() != DefinitionKind.FORCED || document.json().has("entries")), this::addGraphNode));
+        result.add(new EditorCommands.Command("Add node or stage", "", graph && (document.kind() != DefinitionKind.FORCED || documentCache.json(document).has("entries")), this::addGraphNode));
         result.add(new EditorCommands.Command("Add response or connection", "", selected, () -> { view = 0; showBranch = true; nextStage.set(""); }));
         result.add(new EditorCommands.Command("Duplicate selected node", "", selected && document.kind() != DefinitionKind.FORCED, () -> {
             DialogueGraph.duplicateNode(document, selectedNode, nextNodeId()); refresh();
@@ -1012,7 +1016,7 @@ final class ImGuiAuthoringEditor {
     private List<EditorReferences.Location> selectedDefinitions() {
         if (document == null || workspace == null) return List.of();
         String path = EditorDiagnosticLocation.resolve(document, pointer.get()).pointer();
-        JsonElement value = JsonPointers.get(document.json(), path);
+        JsonElement value = JsonPointers.get(documentCache.json(document), path);
         if (value.isJsonObject() && value.getAsJsonObject().has("key")) {
             var key = value.getAsJsonObject().get("key");
             if (key.isJsonPrimitive() && key.getAsJsonPrimitive().isString())
@@ -1074,8 +1078,8 @@ final class ImGuiAuthoringEditor {
     private void addGraphNode() {
         String id = nextNodeId();
         DialogueGraph.addNode(document, id);
-        var added = document.kind() == DefinitionKind.FORCED ? DialogueGraph.nodes(document).getLast()
-                : DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
+        var added = document.kind() == DefinitionKind.FORCED ? documentCache.nodes(document).getLast()
+                : documentCache.nodes(document).stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
         selectedNode = added.id(); setPointer(added.pointer()); showBranch = false;
         refresh(); nodeSelection.clear(); nodeSelection.add(selectedNode);
         view = 0; focusPanel = DETAIL_PANEL;
@@ -1107,10 +1111,12 @@ final class ImGuiAuthoringEditor {
         }
         List<DialogueGraph.Node> nodes;
         List<EditorGraph.Card> cards;
+        EditorGraphModel.Snapshot model;
         var coverageSnapshot = coverage.snapshot(document);
         try {
-            nodes = DialogueGraph.nodes(document);
-            cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, locale.get()));
+            model = graphModel.get(workspace, document, locale.get());
+            nodes = model.nodes();
+            cards = model.cards();
         } catch (IllegalArgumentException | IllegalStateException | ClassCastException
                 | UnsupportedOperationException | IndexOutOfBoundsException exception) {
             ImGui.textWrapped("Repair the definition in Advanced full JSON: " + exception.getMessage());
@@ -1118,7 +1124,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         ImGui.textUnformatted(document.kind() == DefinitionKind.QUEST ? "Quest stages" : "Dialogue");
-        ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
+        ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !documentCache.json(document).has("entries"));
         if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Add stage" : "Add node")) operation(this::addGraphNode);
         ImGui.endDisabled();
         boolean selected = nodes.stream().anyMatch(node -> node.id().equals(selectedNode));
@@ -1150,7 +1156,7 @@ final class ImGuiAuthoringEditor {
                 EditorContentTools.renameNode(document, selectedNode, nodeName.get());
                 selectedNode = nodeName.get();
                 refresh();
-                setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+                setPointer(documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
             });
             var incoming = EditorContentTools.usages(document, selectedNode);
             ImGui.textWrapped(incoming.size() + " incoming connections");
@@ -1232,7 +1238,7 @@ final class ImGuiAuthoringEditor {
             if (ImGui.smallButton("Create connected node")) operation(() -> {
                 selectedNode = EditorContentTools.createConnected(document, selectedEdge, nextNodeId());
                 selectedEdge = ""; refresh();
-                setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+                setPointer(documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
                 graphFocus = selectedNode; nodeSelection.clear(); nodeSelection.add(selectedNode);
             });
             EditorWidgets.sameLineFor("Cancel connection");
@@ -1255,8 +1261,7 @@ final class ImGuiAuthoringEditor {
         boolean hover = ImGui.isItemHovered();
         boolean minimapHover = showMinimap && hover && ImGui.isMouseHoveringRect(canvasX + canvasWidth - 190, canvasY + canvasHeight - 130, canvasX + canvasWidth, canvasY + canvasHeight);
         if (minimapHover) hover = false;
-        Map<String, float[]> defaults = EditorGraph.arrange(cards);
-        for (var card : cards) positions.putIfAbsent(card.node().id(), defaults.get(card.node().id()));
+        model.placeMissing(positions);
         if (!graphFocus.isEmpty() && positions.containsKey(graphFocus)) {
             var point = positions.get(graphFocus);
             panX = canvasWidth / 2 - (point[0] + EditorGraph.WIDTH / 2) * zoom;
@@ -1273,7 +1278,7 @@ final class ImGuiAuthoringEditor {
                 maxX = Math.max(maxX, point[0] + EditorGraph.WIDTH);
                 maxY = Math.max(maxY, point[1] + card.height());
             }
-            float padding = EditorSchema.object(document.metadata().get("graph_groups")).isEmpty() ? 25 : 60;
+            float padding = EditorSchema.object(documentCache.metadata(document).get("graph_groups")).isEmpty() ? 25 : 60;
             zoom = Math.clamp(Math.min((canvasWidth - padding * 2) / (maxX - minX), (canvasHeight - padding * 2) / (maxY - minY)), .35f, 1f);
             panX = padding - minX * zoom;
             panY = padding - minY * zoom;
@@ -1309,7 +1314,7 @@ final class ImGuiAuthoringEditor {
         draw.pushClipRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, true);
         draw.addRectFilled(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, 0xff242321);
         graphOrganization.draw(draw, document, cards, positions, canvasX + panX, canvasY + panY, zoom);
-        var highlighted = graphOrganization.highlighted(document, selectedNodes());
+        var highlighted = graphOrganization.highlighted(model, selectedNodes());
         for (var card : cards) {
             float[] from = positions.get(card.node().id());
             for (int i = 0; i < card.blocks().size(); i++) {
@@ -1334,6 +1339,9 @@ final class ImGuiAuthoringEditor {
             float y = canvasY + panY + position[1] * zoom;
             float w = EditorGraph.WIDTH * zoom;
             float h = card.height() * zoom;
+            float margin = Math.max(12, 10 * zoom);
+            if (x + w + margin < canvasX || x - margin > canvasX + canvasWidth
+                    || y + h + margin < canvasY || y - margin > canvasY + canvasHeight) continue;
             draw.addRectFilled(x, y, x + w, y + h, 0xff39352f, 4);
             draw.addRectFilled(x, y, x + w, y + EditorGraph.HEADER * zoom,
                     selectedNode.equals(node.id()) || nodeSelection.contains(node.id()) ? 0xff65513d : 0xff494037, 4);
@@ -1436,14 +1444,14 @@ final class ImGuiAuthoringEditor {
                 if (!showBranch) focusPanel = DETAIL_PANEL;
             });
             if (!highlighted.contains(node.id())) draw.addRectFilled(x, y, x + w, y + h, 0x99000000, 4);
-            if (node.id().equals(draggingNode) && ImGui.isMouseDragging(0)) {
-                nodeDragMoved = true;
-                for (String id : selectedNodes()) {
-                    float[] point = positions.get(id);
-                    if (point == null) continue;
-                    point[0] += ImGui.getIO().getMouseDeltaX() / zoom;
-                    point[1] += ImGui.getIO().getMouseDeltaY() / zoom;
-                }
+        }
+        if (draggingNode != null && positions.containsKey(draggingNode) && ImGui.isMouseDragging(0)) {
+            nodeDragMoved = true;
+            for (String id : selectedNodes()) {
+                float[] point = positions.get(id);
+                if (point == null) continue;
+                point[0] += ImGui.getIO().getMouseDeltaX() / zoom;
+                point[1] += ImGui.getIO().getMouseDeltaY() / zoom;
             }
         }
         if (boxSelecting) {
@@ -1513,7 +1521,7 @@ final class ImGuiAuthoringEditor {
                 operation(() -> {
                     if (!selectedNodes().contains(id)) { nodeSelection.clear(); nodeSelection.add(id); }
                     selectedNode = id;
-                    setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
+                    setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
                 });
             }
             boxSelecting = false; draggingNode = null;
@@ -1549,7 +1557,7 @@ final class ImGuiAuthoringEditor {
                 }
             }
             if (ImGui.beginCombo(EditorWidgets.field("Redirect incoming links"), nextStage.get().isEmpty() ? "Choose destination..." : nextStage.get())) {
-                for (var node : DialogueGraph.nodes(document)) if (!node.id().equals(id) && ImGui.selectable(node.id())) nextStage.set(node.id());
+                for (var node : documentCache.nodes(document)) if (!node.id().equals(id) && ImGui.selectable(node.id())) nextStage.set(node.id());
                 ImGui.endCombo();
             }
             if (ImGui.button("Delete node")) {
@@ -1564,7 +1572,7 @@ final class ImGuiAuthoringEditor {
                 }
             }
         } else {
-            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
+            ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !documentCache.json(document).has("entries"));
             if (ImGui.menuItem(document.kind() == DefinitionKind.QUEST ? "Add stage here" : "Add node here")) operation(() -> createGraphAt("", false));
             ImGui.endDisabled();
             if (ImGui.menuItem("Paste nodes")) operation(this::pasteNodes);
@@ -1579,7 +1587,7 @@ final class ImGuiAuthoringEditor {
         selectedNode = EditorGraphActions.create(document, output, nextNodeId(), insert, contextX, contextY);
         selectedEdge = ""; refresh();
         nodeSelection.clear(); nodeSelection.add(selectedNode);
-        setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+        setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
     }
 
     private void minimap(ImDrawList draw, List<EditorGraph.Card> cards, float canvasX, float canvasY, float width, float height, boolean hovered) {
@@ -1627,19 +1635,19 @@ final class ImGuiAuthoringEditor {
     }
 
     private String nextNodeId() {
-        var nodes = DialogueGraph.nodes(document);
+        var nodes = documentCache.nodes(document);
         int index = nodes.size() + 1;
         while (true) {
             String id = "node_" + index++;
             if (nodes.stream().noneMatch(node -> node.id().equals(id))
-                    && (!document.json().has("nodes") || !document.json().get("nodes").isJsonObject()
-                        || !document.json().getAsJsonObject("nodes").has(id))) return id;
+                    && (!documentCache.json(document).has("nodes") || !documentCache.json(document).get("nodes").isJsonObject()
+                        || !documentCache.json(document).getAsJsonObject("nodes").has(id))) return id;
         }
     }
 
     private String nextResponseId() {
-        var node = DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow();
-        JsonObject owner = JsonPointers.get(document.json(), node.pointer()).getAsJsonObject();
+        var node = documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow();
+        JsonObject owner = JsonPointers.get(documentCache.json(document), node.pointer()).getAsJsonObject();
         JsonArray responses = DialogueGraph.array(owner, document.kind() == DefinitionKind.FORCED ? "options" : "responses");
         int index = responses.size() + 1;
         while (true) {
@@ -1771,7 +1779,7 @@ final class ImGuiAuthoringEditor {
         }
         boolean addon = path.length == 5 && path[2].equals("campaign_addons");
         if (addon) ImGui.textWrapped("Campaign addon: " + path[1] + ":" + path[3] + " (from folder)");
-        String owner = DialogueGraph.string(document.json(), "world_campaign");
+        String owner = DialogueGraph.string(documentCache.json(document), "world_campaign");
         String fallback = addon ? "All supported campaigns" : "Default VR";
         if (ImGui.beginCombo(EditorWidgets.field(addon ? "Campaign filter" : "World campaign"), owner.isBlank() ? fallback : owner)) {
             if (ImGui.selectable(fallback, owner.isBlank())) operation(() -> {
@@ -1791,7 +1799,7 @@ final class ImGuiAuthoringEditor {
             ImGui.endCombo();
         }
         if (document.kind() == DefinitionKind.QUEST) {
-            ImString arc = new ImString(DialogueGraph.string(document.json(), "story_arc"), 512);
+            ImString arc = new ImString(DialogueGraph.string(documentCache.json(document), "story_arc"), 512);
             if (ImGui.inputText(EditorWidgets.field("Story arc (optional)"), arc)) document.edit("Set story arc", root -> {
                 if (arc.get().isBlank()) root.remove("story_arc");
                 else root.addProperty("story_arc", arc.get());
@@ -1800,7 +1808,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void campaignCard() {
-        JsonObject value = document.json();
+        JsonObject value = documentCache.json(document);
         ImGui.textUnformatted(DialogueGraph.string(value, "name"));
         try { ImGui.textWrapped(workspace.campaignDescription(document)); }
         catch (IOException exception) { ImGui.textWrapped(exception.getMessage()); }
@@ -1893,11 +1901,11 @@ final class ImGuiAuthoringEditor {
         if (added.isEmpty()) return;
         nodeSelection.clear(); nodeSelection.addAll(added);
         selectedNode = added.getFirst(); graphFocus = selectedNode;
-        setPointer(DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
+        setPointer(documentCache.nodes(document).stream().filter(value -> value.id().equals(selectedNode)).findFirst().orElseThrow().pointer());
     }
 
     private void navigateNode(int offset) {
-        var nodes = DialogueGraph.nodes(document);
+        var nodes = documentCache.nodes(document);
         if (nodes.isEmpty()) return;
         int index = 0;
         for (int i = 0; i < nodes.size(); i++) if (nodes.get(i).id().equals(selectedNode)) index = i;
@@ -1911,7 +1919,7 @@ final class ImGuiAuthoringEditor {
         graphOrganization.render(document, selectedNodes(), this::operation, ids -> operation(() -> {
             nodeSelection.clear(); nodeSelection.addAll(ids);
             selectedNode = ids.isEmpty() ? "" : ids.iterator().next();
-            setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
+            setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(selectedNode)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
         }));
         if (ImGui.checkbox("Show minimap", showMinimap)) { showMinimap = !showMinimap; saveViewPreferences(); }
         ImGui.textWrapped("Drag empty space to box-select. Ctrl adds to the selection. Drag selected headers to move the group.");
@@ -1932,10 +1940,10 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Paste nodes")) operation(this::pasteNodes);
         if (!EditorWidgets.section("Graph outline and bookmarks")) return;
         input("Find node or wording", nodeFilter);
-        JsonObject metadata = document.metadata();
+        JsonObject metadata = documentCache.metadata(document);
         var bookmarks = metadata.has("bookmarks") ? metadata.getAsJsonArray("bookmarks") : new JsonArray();
-        for (var node : DialogueGraph.nodes(document)) {
-            if (!(node.id() + JsonPointers.get(document.json(), node.pointer())).toLowerCase(Locale.ROOT).contains(nodeFilter.get().toLowerCase(Locale.ROOT))) continue;
+        for (var node : documentCache.nodes(document)) {
+            if (!(node.id() + JsonPointers.get(documentCache.json(document), node.pointer())).toLowerCase(Locale.ROOT).contains(nodeFilter.get().toLowerCase(Locale.ROOT))) continue;
             boolean bookmarked = bookmarks.asList().stream().anyMatch(value -> value.getAsString().equals(node.id()));
             if (ImGui.selectable((bookmarked ? "* " : "") + node.id(), selectedNode.equals(node.id()))) operation(() -> {
                 selectedNode = node.id(); setPointer(node.pointer()); graphFocus = node.id(); nodeSelection.clear(); nodeSelection.add(node.id());
@@ -1990,7 +1998,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void selectedDetails() {
-        JsonElement selected = JsonPointers.get(document.json(), pointer.get());
+        JsonElement selected = JsonPointers.get(documentCache.json(document), pointer.get());
         if (!selected.isJsonObject()) {
             inspectValue(selected, pointer.get(), "Value", 0);
             return;
@@ -2021,7 +2029,7 @@ final class ImGuiAuthoringEditor {
 
     private void schemaObjectTools(JsonObject value, String path) {
         if (propertySchema == null) return;
-        JsonObject rule = propertySchema.at(document.json(), path);
+        JsonObject rule = propertySchema.at(documentCache.json(document), path);
         JsonObject properties = EditorSchema.object(rule.get("properties"));
         var required = propertySchema.required(rule);
         ImGui.textUnformatted("Add property");
@@ -2105,7 +2113,7 @@ final class ImGuiAuthoringEditor {
                 ImGui.textWrapped(workspace.resolveText(document, reference, "en_us"));
                 return;
             }
-            JsonElement text = JsonPointers.get(location.document().json(), location.pointer());
+            JsonElement text = JsonPointers.get(documentCache.json(location.document()), location.pointer());
             if (text.isJsonPrimitive() && text.getAsJsonPrimitive().isString()) {
                 String bufferId = location.document().resourcePath() + location.pointer();
                 ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
@@ -2158,7 +2166,7 @@ final class ImGuiAuthoringEditor {
                 JsonObject condition = new JsonObject();
                 condition.addProperty("type", descriptor.id());
                 operation(() -> {
-                    if (!pointer.get().endsWith("/conditions") || !JsonPointers.get(document.json(), pointer.get()).isJsonArray())
+                    if (!pointer.get().endsWith("/conditions") || !JsonPointers.get(documentCache.json(document), pointer.get()).isJsonArray())
                         throw new IllegalArgumentException("Focus a conditions list first");
                     var schema = new EditorSchema(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
                     JsonObject rule = schema.effective(com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions().getAsJsonObject("condition"), condition);
@@ -2231,7 +2239,7 @@ final class ImGuiAuthoringEditor {
             if (depth == 0 ? EditorWidgets.treeSection(title) : ImGui.treeNode(title)) {
                 if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
-                JsonObject rule = propertySchema.at(document.json(), path);
+                JsonObject rule = propertySchema.at(documentCache.json(document), path);
                 if (ImGui.beginCombo(EditorWidgets.field("Add entry"), "Choose an entry type...")) {
                     for (var choice : propertySchema.choices(EditorSchema.object(rule.get("items"))).entrySet())
                         if (ImGui.selectable(choice.getKey())) editArray(path, values -> values.add(choice.getValue().deepCopy()));
@@ -2327,7 +2335,7 @@ final class ImGuiAuthoringEditor {
                     && diagnostic.severity() == AuthoringDiagnostic.Severity.ERROR) return diagnostic.message();
         if (pendingFields.contains(path)) value = pendingFields.candidate(document, path);
         if (!value.isJsonPrimitive() && !value.isJsonNull()) return "";
-        var messages = propertySchema.scalarIssues(document.json(), path, value);
+        var messages = propertySchema.scalarIssues(documentCache.json(document), path, value);
         return messages.isEmpty() ? "" : messages.getFirst();
     }
 
@@ -2370,7 +2378,7 @@ final class ImGuiAuthoringEditor {
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
             default -> EditorProgressConditions.resources(field);
         };
-        var parent = JsonPointers.get(document.json(), path.substring(0, path.lastIndexOf('/')));
+        var parent = JsonPointers.get(documentCache.json(document), path.substring(0, path.lastIndexOf('/')));
         if (field.equals("target") && parent.isJsonObject()) {
             var type = parent.getAsJsonObject().get("type");
             if (type != null && type.isJsonPrimitive() && type.getAsJsonPrimitive().isString()) {
@@ -2378,7 +2386,7 @@ final class ImGuiAuthoringEditor {
                 else if (type.getAsString().equals("event_history")) choices = EditorProgressConditions.historyTargets(parent.getAsJsonObject());
             }
         }
-        JsonObject rule = propertySchema.at(document.json(), path);
+        JsonObject rule = propertySchema.at(documentCache.json(document), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);
@@ -2462,7 +2470,7 @@ final class ImGuiAuthoringEditor {
             }
             if (document != null) {
                 ImGui.separatorText("Steps");
-                for (var node : DialogueGraph.nodes(document)) {
+                for (var node : documentCache.nodes(document)) {
                     String running = document.kind() == DefinitionKind.QUEST ? EditorLiveQuestTest.snapshot().stage()
                             : AuthoringDialoguePreview.cursor() == null ? "" : AuthoringDialoguePreview.cursor().node();
                     if (ImGui.selectable((node.id().equals(running) ? "> " : "") + node.id(), node.id().equals(selectedNode))) operation(() -> {
@@ -2508,7 +2516,7 @@ final class ImGuiAuthoringEditor {
         playtestLocale = locale.get();
         playtestReplacements = Map.copyOf(replacements);
         EditorPlaytestPresentation.update(workspace, document, EditorTestWorld.appliedContent(workspace), replacements, locale.get(), conditions.speakers());
-        if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(document.json()));
+        if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(documentCache.json(document)));
     }
 
     private void applyPlaytestDraft() throws IOException {
@@ -2549,7 +2557,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Jump / replay selected step")) startPreview(selectedNode);
         if (AuthoringDialoguePreview.active()) {
             if (!com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(AuthoringDialoguePreview.definition())
-                    .equals(com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(document.json())))
+                    .equals(com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(documentCache.json(document))))
                 ImGui.textWrapped("Logic changes pending. Visual edits update automatically.");
             if (ImGui.button("Apply & replay")) operation(this::applyPlaytestDraft);
         }
@@ -2583,7 +2591,7 @@ final class ImGuiAuthoringEditor {
         }
         if (EditorWidgets.section("Dialogue context")) {
             EditorPreviewConditions.time(conditions);
-            EditorPreviewConditions.render(conditions, document.json());
+            EditorPreviewConditions.render(conditions, documentCache.json(document));
         }
         if (EditorWidgets.section("Dialogue log")) for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
     }
@@ -2695,7 +2703,7 @@ final class ImGuiAuthoringEditor {
         ImGui.endDisabled();
         if (target == null) ImGui.textDisabled("Select a target to play.");
         else EditorCameraPanel.render(document, pointer.get(), target, screen, this::refresh, this::operation);
-        EditorPreviewConditions.render(conditions, document == null ? null : document.json());
+        EditorPreviewConditions.render(conditions, document == null ? null : documentCache.json(document));
         previewScenarios();
         if (EditorWidgets.section("Preview log"))
             for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
@@ -2735,7 +2743,7 @@ final class ImGuiAuthoringEditor {
             for (String line : questPreview.log()) ImGui.textWrapped(line);
         }
         EditorPreviewConditions.time(conditions);
-        EditorPreviewConditions.render(conditions, document.json());
+        EditorPreviewConditions.render(conditions, documentCache.json(document));
         previewScenarios();
         liveQuestTest();
     }
@@ -2778,7 +2786,7 @@ final class ImGuiAuthoringEditor {
                 metadata.getAsJsonObject("preview_scenarios").add(scenarioName.get(), conditions.snapshot());
             });
         });
-        JsonObject metadata = document.metadata();
+        JsonObject metadata = documentCache.metadata(document);
         if (metadata.has("preview_scenarios")) for (var entry : metadata.getAsJsonObject("preview_scenarios").entrySet()) {
             if (ImGui.button("Load " + entry.getKey())) operation(() -> { scenarioName.set(entry.getKey()); conditions.restore(entry.getValue().getAsJsonObject()); EditorPreviewConditions.sync(conditions); questPreview = null; });
             EditorWidgets.sameLineFor("Remove##scenario");
@@ -2802,7 +2810,7 @@ final class ImGuiAuthoringEditor {
         String destination = id;
         selectedNode = id;
         nodeSelection.clear(); if (!id.isEmpty()) nodeSelection.add(id);
-        setPointer(DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(destination)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
+        setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(destination)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
         graphFocus = id; view = 0; focusMode = ""; focusPanel = WORK_PANEL;
     }
 
@@ -2810,7 +2818,7 @@ final class ImGuiAuthoringEditor {
         operation(() -> {
             if (rawModified) throw new IllegalArgumentException("Apply or discard the JSON buffer before preview.");
             if (document.kind() == DefinitionKind.RESOURCE) {
-                JsonElement selected = JsonPointers.get(document.json(), node);
+                JsonElement selected = JsonPointers.get(documentCache.json(document), node);
                 if (!selected.isJsonObject() || java.util.Collections.disjoint(selected.getAsJsonObject().keySet(),
                         List.of("text", "line", "lines", "variants", "text_key", "line_key", "exchanges", "options", "responses", "entries"))) {
                     throw new IllegalArgumentException("Select a dialogue-bearing object in Properties, then play selected object.");
@@ -3274,8 +3282,8 @@ final class ImGuiAuthoringEditor {
         graphText.clear();
         positions.clear();
         if (document != null) {
-            JsonElement savedPositions = document.metadata().get("node_positions");
-            if (document.metadata().has("graph_card_layout") && savedPositions != null && savedPositions.isJsonObject()) {
+            JsonElement savedPositions = documentCache.metadata(document).get("node_positions");
+            if (documentCache.metadata(document).has("graph_card_layout") && savedPositions != null && savedPositions.isJsonObject()) {
                 for (var entry : savedPositions.getAsJsonObject().entrySet()) {
                     if (!entry.getValue().isJsonObject()) continue;
                     JsonObject point = entry.getValue().getAsJsonObject();
@@ -3290,13 +3298,13 @@ final class ImGuiAuthoringEditor {
             }
         }
         if (document != null) {
-            jsonText.set(JSON.toJson(document.json()));
+            jsonText.set(JSON.toJson(documentCache.json(document)));
             try {
-                var ids = DialogueGraph.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet());
+                var ids = documentCache.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet());
                 nodeSelection.retainAll(ids);
                 if (!selectedNode.isEmpty() && !ids.contains(selectedNode)) {
                     playtestStepRemoved = view == 3;
-                    var entry = DialogueGraph.nodes(document).stream().filter(DialogueGraph.Node::entry).findFirst();
+                    var entry = documentCache.nodes(document).stream().filter(DialogueGraph.Node::entry).findFirst();
                     selectedNode = entry.map(DialogueGraph.Node::id).orElse("");
                     pointer.set(entry.map(DialogueGraph.Node::pointer).orElse(""));
                     if (playtestStepRemoved) status = "Selected step was removed. Entry selected. Replay explicitly to continue.";
@@ -3344,11 +3352,11 @@ final class ImGuiAuthoringEditor {
             if (expected != document) throw new IllegalStateException("Selection changed before the operation could run.");
             if (rawModified) throw new IllegalStateException("Apply or discard the JSON buffer before other operations.");
             applyPendingFields();
-            JsonObject before = document == null ? null : document.json();
-            JsonObject beforeMetadata = document == null ? null : document.metadata();
+            JsonObject before = document == null ? null : documentCache.json(document);
+            JsonObject beforeMetadata = document == null ? null : documentCache.metadata(document);
             action.run();
             if (document != null && document == expected
-                    && (!document.json().equals(before) || !document.metadata().equals(beforeMetadata))) historyDocument = document;
+                    && (!documentCache.json(document).equals(before) || !documentCache.metadata(document).equals(beforeMetadata))) historyDocument = document;
         });
     }
 

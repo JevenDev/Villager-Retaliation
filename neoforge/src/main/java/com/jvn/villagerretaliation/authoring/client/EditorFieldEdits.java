@@ -55,7 +55,7 @@ public final class EditorFieldEdits {
     public Map<String, String> issues(AuthoringDocument document) {
         var result = new LinkedHashMap<String, String>();
         for (var entry : edits.entrySet()) {
-            try { applyField(document.json(), entry.getKey(), entry.getValue()); }
+            try { replacement(document.value(entry.getKey()), entry.getKey(), entry.getValue()); }
             catch (IllegalArgumentException | IllegalStateException exception) { result.put(entry.getKey(), exception.getMessage()); }
         }
         return result;
@@ -65,14 +65,13 @@ public final class EditorFieldEdits {
 
     public String issue(AuthoringDocument document, String path) {
         if (!edits.containsKey(path)) return "";
-        try { applyField(document.json(), path, edits.get(path)); return ""; }
+        try { replacement(document.value(path), path, edits.get(path)); return ""; }
         catch (IllegalArgumentException | IllegalStateException exception) { return exception.getMessage(); }
     }
 
     public JsonElement candidate(AuthoringDocument document, String path) {
-        JsonObject copy = document.json();
-        if (edits.containsKey(path)) applyField(copy, path, edits.get(path));
-        return JsonPointers.get(copy, path);
+        JsonElement current = document.value(path);
+        return edits.containsKey(path) ? replacement(current, path, edits.get(path)) : current;
     }
 
     private void applyTo(JsonObject root) {
@@ -80,7 +79,11 @@ public final class EditorFieldEdits {
     }
 
     private static void applyField(JsonObject root, String path, Edit edit) {
-        if (!JsonPointers.get(root, path).equals(edit.original()))
+        JsonPointers.set(root, path, replacement(JsonPointers.get(root, path), path, edit));
+    }
+
+    private static JsonElement replacement(JsonElement current, String path, Edit edit) {
+        if (!current.equals(edit.original()))
             throw new IllegalStateException("The field changed since editing began: " + path);
         JsonElement value;
         try {
@@ -93,7 +96,8 @@ public final class EditorFieldEdits {
         if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
                 && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
             throw new IllegalArgumentException("Expected a number at " + path);
-        JsonPointers.set(root, path, value);
+        if (path.isEmpty()) throw new IllegalArgumentException("Replace the document to edit its root");
+        return value;
     }
 
     private record Edit(JsonElement original, String text, boolean string) { }

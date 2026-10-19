@@ -33,9 +33,11 @@ final class EditorGraph {
         List<Card> cards = new ArrayList<>();
         JsonObject root = document.json();
         List<DialogueGraph.Edge> outputs = DialogueGraph.outputs(document).stream().distinct().toList();
+        Map<String, List<DialogueGraph.Edge>> byNode = outputs.stream().collect(java.util.stream.Collectors.groupingBy(DialogueGraph.Edge::from));
         java.util.Set<String> ids = new java.util.HashSet<>();
         for (var node : DialogueGraph.nodes(document)) {
             if (!ids.add(node.id())) throw new IllegalArgumentException("Duplicate node ID: " + node.id());
+            List<DialogueGraph.Edge> nodeOutputs = byNode.getOrDefault(node.id(), List.of());
             JsonObject value = JsonPointers.get(root, node.pointer()).getAsJsonObject();
             List<Block> blocks = new ArrayList<>();
             for (String field : List.of("conditions", "available_when", "availability", "objectives", "on_enter", "entry_actions", "actions", "effects",
@@ -99,13 +101,13 @@ final class EditorGraph {
                         if (!checks.get(c).isJsonObject() || !checkId.equals(DialogueGraph.string(checks.get(c).getAsJsonObject(), "id"))) continue;
                         String checkPath = "/checks/" + c;
                         blocks.add(new Block(checkPath, "Check", checkId, null));
-                        for (var edge : outputs) {
+                        for (var edge : nodeOutputs) {
                             if (edge.from().equals(node.id()) && edge.pointer().startsWith(checkPath + "/"))
                                 blocks.add(new Block(path, edge.label().equals("success") ? "Pass" : "Fail", edge.to(), edge));
                         }
                     }
                 } else {
-                    var output = outputs.stream().filter(edge -> edge.from().equals(node.id()) && edge.pointer().startsWith(path + "/"))
+                    var output = nodeOutputs.stream().filter(edge -> edge.pointer().startsWith(path + "/"))
                             .findFirst().orElse(null);
                     blocks.add(new Block(path, output != null && output.to().isEmpty() ? "End choice" : "Choice", label, output));
                 }
@@ -118,7 +120,7 @@ final class EditorGraph {
                     }
                 }
             }
-            for (var edge : outputs) {
+            for (var edge : nodeOutputs) {
                 if (edge.from().equals(node.id()) && (edge.pointer().startsWith(node.pointer() + "/next") || edge.pointer().startsWith(node.pointer() + "/transition")))
                     blocks.add(new Block(node.pointer(), "Then", edge.to().isEmpty() ? terminalLabel(value) : edge.to(), edge));
             }

@@ -17,6 +17,8 @@ import org.lwjgl.opengl.GL30;
 
 final class EditorTextPreview {
     private static final List<EditorTextPreview> RETIRED = new ArrayList<>();
+    private static volatile long resourceGeneration;
+    private long renderedResources = -1;
     private TextureTarget target;
     private float scroll;
     private int contentHeight;
@@ -79,9 +81,11 @@ final class EditorTextPreview {
                 });
     }
 
+    static void resourcesReloaded() { resourceGeneration++; }
+
     private void draw(int width, int height, float scale, int background, boolean singleLine) {
-        long tick = (long) (ImGui.getTime() * (animated ? 20 : 1));
-        if (target != null && tick == renderedTick && renderedWidth == width && renderedHeight == height
+        long tick = animated ? (long) (ImGui.getTime() * 20) : 0;
+        if (target != null && renderedResources == resourceGeneration && tick == renderedTick && renderedWidth == width && renderedHeight == height
                 && renderedScale == scale && renderedScroll == scroll && renderedBackground == background
                 && renderedSingleLine == singleLine) return;
         int framebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
@@ -116,6 +120,7 @@ final class EditorTextPreview {
             }
             graphics.flush();
             renderedTick = tick;
+            renderedResources = resourceGeneration;
             renderedWidth = width;
             renderedHeight = height;
             renderedScale = scale;

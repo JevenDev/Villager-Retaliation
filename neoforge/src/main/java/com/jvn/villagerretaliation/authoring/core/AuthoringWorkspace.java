@@ -1340,11 +1340,11 @@ public final class AuthoringWorkspace {
                 .thenComparing(AuthoringDocument::resourcePath)).toList();
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
             for (AuthoringDocument document : candidates) {
-                JsonObject root = document.json();
                 if (document.resourcePath().endsWith("/locales/" + language + ".json")) {
-                    JsonElement payload = QuestLocaleCatalog.read(root).messages().get(key);
+                    JsonElement payload = QuestLocaleCatalog.read(document.json()).messages().get(key);
                     if (payload != null) return resolveText(owner, payload, language, variant, eligible, visited);
                 } else if (document.resourcePath().contains("/dialogue/" + language + "/")) {
+                    JsonObject root = document.json();
                     List<JsonObject> messages = new ArrayList<>();
                     for (JsonElement message : DialogueGraph.array(root, "messages")) {
                         if (!message.isJsonObject()) continue;

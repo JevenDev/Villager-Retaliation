@@ -165,6 +165,7 @@ public final class AuthoringEditorClientSmoke {
         buildLayoutSteps();
         buildVariableSteps();
         buildPanelSteps();
+        buildPerformanceSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
@@ -580,6 +581,57 @@ public final class AuthoringEditorClientSmoke {
             ImGui.end();
         }
         panelSections.clear();
+    }
+
+    private static Object graphPreview() {
+        var previews = (Map<?, ?>) field(field(editor, "graphText"), "previews");
+        Object cached = previews.get("/nodes/start/lines");
+        require(cached != null, "The visible graph has a text preview.");
+        return field(cached, "preview");
+    }
+
+    private static void buildPerformanceSteps() {
+        var model = new Object[1]; var texture = new Object[1]; var ticks = new long[2];
+        STEPS.add(() -> {
+            model[0] = field(field(editor, "graphModel"), "snapshot");
+            Object preview = graphPreview(); texture[0] = field(preview, "target");
+            ticks[0] = (long) field(preview, "renderedTick"); ticks[1] = (long) field(preview, "renderedResources");
+            require(!(boolean) field(preview, "animated"), "The idle graph fixture uses static text.");
+            var organization = (EditorGraphOrganization) field(editor, "graphOrganization");
+            var graph = (EditorGraphModel.Snapshot) model[0];
+            organization.focus("Downstream");
+            var highlighted = organization.highlighted(graph, java.util.Set.of("start"));
+            require(highlighted == organization.highlighted(graph, java.util.Set.of("start")) && highlighted.size() == 3,
+                    "Idle graph frames reuse branch reachability without losing connected nodes.");
+            require(organization.highlighted(graph, java.util.Set.of("finish")).equals(java.util.Set.of("finish")), "Changing the selection refreshes branch reachability.");
+            organization.focus("All nodes");
+        });
+        pause(1250);
+        STEPS.add(() -> {
+            Object preview = graphPreview();
+            require(model[0] == field(field(editor, "graphModel"), "snapshot"), "Idle editor frames reuse the graph model.");
+            require(texture[0] == field(preview, "target") && ticks[0] == (long) field(preview, "renderedTick"), "Static graph text keeps its rasterized texture beyond one second.");
+            EditorTextPreview.resourcesReloaded();
+        });
+        pause(250);
+        STEPS.add(() -> {
+            require(ticks[1] != (long) field(graphPreview(), "renderedResources"), "Resource changes invalidate static graph text.");
+            document.edit("Animate line", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("<wave>Animated</wave>")));
+            invoke("refresh", new Class<?>[0]);
+        });
+        pause(250);
+        STEPS.add(() -> {
+            Object preview = graphPreview();
+            require((boolean) field(preview, "animated"), "Graph text keeps animated effects.");
+            ticks[0] = (long) field(preview, "renderedTick");
+        });
+        pause(250);
+        STEPS.add(() -> {
+            require(ticks[0] < (long) field(graphPreview(), "renderedTick"), "Animated graph text continues updating.");
+            document.undo(); invoke("refresh", new Class<?>[0]);
+            capture("77-editor-performance");
+        });
+        pause(250);
     }
 
     private static void finishSteps(String details) {

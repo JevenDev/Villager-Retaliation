@@ -13,6 +13,8 @@ public final class AuthoringEditorClient {
         if (!ModList.get().isLoaded("imguimc")) return;
         modBus.addListener((net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) ->
                 event.register(ImGuiAuthoringEditor.OPEN_EDITOR));
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) ->
+                event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> EditorTextPreview.resourcesReloaded()));
         ImGuiAuthoringEditor.initialize();
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Post event) -> {
             ImGuiAuthoringEditor.tick();

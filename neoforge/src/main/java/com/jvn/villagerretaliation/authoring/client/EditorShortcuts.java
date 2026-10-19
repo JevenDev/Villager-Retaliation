@@ -81,6 +81,11 @@ final class EditorShortcuts {
         return commands.stream().map(command -> new EditorCommands.Command(command.name(), binding(command, overrides), command.enabled(), command.action())).toList();
     }
 
+    boolean pressed() {
+        for (int key : KEYS.values()) if (ImGui.isKeyPressed(key, false)) return true;
+        return false;
+    }
+
     void dispatch(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run, boolean typing) {
         var overrides = library.shortcuts();
         var matches = commands.stream().filter(command -> {

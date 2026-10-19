@@ -18,14 +18,19 @@ final class EditorGraphOrganization {
     private String mode = "All nodes";
     private String selectedGroup = "";
     private AuthoringDocument owner;
+    private Highlight highlight;
+    private record Highlight(EditorGraphModel.Snapshot graph, String mode, Set<String> selection, Set<String> nodes) { }
 
     void focus(String value) { mode = value; }
 
     static Set<String> branch(AuthoringDocument document, Set<String> selection, boolean upstream) {
         Set<String> known = new LinkedHashSet<>();
         DialogueGraph.nodes(document).forEach(node -> known.add(node.id()));
+        return branch(known, DialogueGraph.edges(document), selection, upstream);
+    }
+
+    private static Set<String> branch(Set<String> known, List<DialogueGraph.Edge> edges, Set<String> selection, boolean upstream) {
         Set<String> result = new LinkedHashSet<>(selection); result.retainAll(known);
-        var edges = DialogueGraph.edges(document);
         boolean changed;
         do {
             changed = false;
@@ -40,6 +45,13 @@ final class EditorGraphOrganization {
     Set<String> highlighted(AuthoringDocument document, Set<String> selection) {
         return mode.equals("All nodes") || selection.isEmpty() ? DialogueGraph.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet())
                 : branch(document, selection, mode.equals("Upstream"));
+    }
+
+    Set<String> highlighted(EditorGraphModel.Snapshot graph, Set<String> selection) {
+        if (mode.equals("All nodes") || selection.isEmpty()) return graph.ids();
+        if (highlight == null || highlight.graph() != graph || !highlight.mode().equals(mode) || !highlight.selection().equals(selection))
+            highlight = new Highlight(graph, mode, Set.copyOf(selection), branch(graph.ids(), graph.edges(), selection, mode.equals("Upstream")));
+        return highlight.nodes();
     }
 
     static void saveGroup(AuthoringDocument document, String previous, String name, String comment, Set<String> members) {

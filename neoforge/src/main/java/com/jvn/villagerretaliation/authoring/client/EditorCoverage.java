@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 final class EditorCoverage {
     private final java.util.Map<AuthoringDocument, Entry> entries = new WeakHashMap<>();
     private boolean show = true;
-    private record Entry(JsonElement logic, Set<String> nodes, Set<String> choices) { }
+    private record Entry(long revision, JsonElement logic, Set<String> nodes, Set<String> choices) { }
     record Snapshot(Set<String> nodes, Set<String> choices) {
         boolean visited(String path) { return nodes.contains(path); }
         boolean chosen(String pointer) { return choices.stream().anyMatch(path -> pointer.equals(path) || pointer.startsWith(path + "/")); }
@@ -25,19 +25,22 @@ final class EditorCoverage {
     Snapshot snapshot(AuthoringDocument document) { var entry = entry(document); return new Snapshot(entry.nodes(), entry.choices()); }
 
     private Entry entry(AuthoringDocument document) {
-        JsonElement logic = PlaytestDrafts.logic(document.json());
         Entry current = entries.get(document);
-        if (current == null || !current.logic().equals(logic)) {
-            current = new Entry(logic, new LinkedHashSet<>(), new LinkedHashSet<>()); entries.put(document, current);
-        }
+        if (current != null && current.revision() == document.revision()) return current;
+        JsonElement logic = PlaytestDrafts.logic(document.json());
+        current = current != null && current.logic().equals(logic)
+                ? new Entry(document.revision(), current.logic(), current.nodes(), current.choices())
+                : new Entry(document.revision(), logic, new LinkedHashSet<>(), new LinkedHashSet<>());
+        entries.put(document, current);
         return current;
     }
 
     Consumer<PreviewCoverage> observe(AuthoringDocument document) {
-        JsonElement logic = PlaytestDrafts.logic(document.json());
+        JsonElement logic = entry(document).logic();
         return batch -> {
-            if (!PlaytestDrafts.logic(document.json()).equals(logic)) return;
-            Entry current = entry(document); current.nodes().addAll(batch.nodes()); current.choices().addAll(batch.choices());
+            Entry current = entry(document);
+            if (!current.logic().equals(logic)) return;
+            current.nodes().addAll(batch.nodes()); current.choices().addAll(batch.choices());
         };
     }
 

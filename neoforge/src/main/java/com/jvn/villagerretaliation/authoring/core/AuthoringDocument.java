@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.authoring.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.ArrayDeque;
@@ -17,6 +18,9 @@ public final class AuthoringDocument {
     private JsonObject json;
     private JsonObject metadata = new JsonObject();
     private State saved;
+    private long revision;
+    private long dirtyRevision = -1;
+    private boolean dirty;
     private final Deque<HistoryEntry> undo = new ArrayDeque<>();
     private final Deque<HistoryEntry> redo = new ArrayDeque<>();
 
@@ -29,6 +33,7 @@ public final class AuthoringDocument {
     public DefinitionKind kind() { return kind; }
     public String resourcePath() { return resourcePath; }
     public JsonObject json() { return json.deepCopy(); }
+    public JsonElement value(String pointer) { return JsonPointers.get(json, pointer).deepCopy(); }
     public JsonObject metadata() { return metadata.deepCopy(); }
     public String id() {
         if (json.has("id") && json.get("id").isJsonPrimitive()) return json.get("id").getAsString();
@@ -42,7 +47,14 @@ public final class AuthoringDocument {
     }
     public boolean canUndo() { return !undo.isEmpty(); }
     public boolean canRedo() { return !redo.isEmpty(); }
-    public boolean dirty() { return !state().equals(saved); }
+    public long revision() { return revision; }
+    public boolean dirty() {
+        if (dirtyRevision != revision) {
+            dirty = saved == null || !resourcePath.equals(saved.path()) || !json.equals(saved.json()) || !metadata.equals(saved.metadata());
+            dirtyRevision = revision;
+        }
+        return dirty;
+    }
     public String undoLabel() { return undo.isEmpty() ? "" : undo.peek().label(); }
     public String redoLabel() { return redo.isEmpty() ? "" : redo.peek().label(); }
     public java.util.List<String> undoLabels() { return undo.stream().map(HistoryEntry::label).toList(); }
@@ -53,7 +65,7 @@ public final class AuthoringDocument {
         edit.accept(changed);
         if (changed.equals(json)) return;
         remember(label);
-        json = changed;
+        json = changed.deepCopy();
     }
 
     public void edit(String label, Consumer<JsonObject> edit, Consumer<JsonObject> editorEdit) {
@@ -63,8 +75,8 @@ public final class AuthoringDocument {
         editorEdit.accept(changedMetadata);
         if (changed.equals(json) && changedMetadata.equals(metadata)) return;
         remember(label);
-        json = changed;
-        metadata = changedMetadata;
+        json = changed.deepCopy();
+        metadata = changedMetadata.deepCopy();
     }
 
     public void replaceJson(String text) {
@@ -80,7 +92,7 @@ public final class AuthoringDocument {
         edit.accept(changed);
         if (changed.equals(metadata)) return;
         remember(label);
-        metadata = changed;
+        metadata = changed.deepCopy();
     }
 
     public boolean undo() {
@@ -112,8 +124,8 @@ public final class AuthoringDocument {
         json = definition.deepCopy();
     }
 
-    void loadMetadata(JsonObject value) { metadata = value.deepCopy(); }
-    void markSaved() { saved = state(); }
+    void loadMetadata(JsonObject value) { metadata = value.deepCopy(); revision++; }
+    void markSaved() { saved = state(); dirty = false; dirtyRevision = revision; }
     String savedPath() { return saved == null ? null : saved.path(); }
     JsonObject savedJson() { return saved == null ? null : saved.json().deepCopy(); }
 
@@ -121,6 +133,7 @@ public final class AuthoringDocument {
         undo.push(new HistoryEntry(state(), null, label == null || label.isBlank() ? "Edit document" : label));
         while (undo.size() > HISTORY_LIMIT) undo.removeLast();
         redo.clear();
+        revision++;
     }
 
     private State state() { return new State(resourcePath, json.deepCopy(), metadata.deepCopy()); }
@@ -128,6 +141,7 @@ public final class AuthoringDocument {
         resourcePath = state.path();
         json = state.json().deepCopy();
         metadata = state.metadata().deepCopy();
+        revision++;
     }
     static void groupLatestChanges(java.util.List<AuthoringDocument> documents, Runnable beforeUndo, Runnable beforeRedo) {
         HistoryGroup group = new HistoryGroup(java.util.List.copyOf(documents), beforeUndo, beforeRedo);
