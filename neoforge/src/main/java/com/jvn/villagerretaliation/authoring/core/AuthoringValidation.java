@@ -214,7 +214,8 @@ public final class AuthoringValidation {
         } else if (value.isJsonObject()) {
             var object = value.getAsJsonObject();
             if (object.has("type") && object.get("type").isJsonPrimitive() && Set.of("player_stat", "event_history", "personal_trade",
-                    "settlement_need", "settlement_contribution").contains(object.get("type").getAsString())) {
+                    "settlement_need", "settlement_contribution", "player_structure_visited", "player_settlement_visited",
+                    "player_destination_count", "player_item_possessed").contains(object.get("type").getAsString())) {
                 var parsed = com.jvn.villagerretaliation.dialogue.DialogueCondition.readObjects(
                         ResourceLocation.withDefaultNamespace("authoring_validation"), pointer, List.of(object), null);
                 if (parsed.getFirst() instanceof com.jvn.villagerretaliation.dialogue.DialogueCondition.Invalid)

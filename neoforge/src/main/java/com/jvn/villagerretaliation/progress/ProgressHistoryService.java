@@ -41,6 +41,7 @@ public final class ProgressHistoryService {
                         BuiltInRegistries.ITEM.getKey(payment.getItem()).toString(), count, quantity);
         }
         var result = offer.getResult();
+        ExplorationHistoryService.observeItem(player, result);
         long quantity = (long) count * result.getCount();
         data.record(level, player.getUUID(), villager.getUUID(), town, event("trade_item_received"),
                 BuiltInRegistries.ITEM.getKey(result.getItem()).toString(), count, quantity);

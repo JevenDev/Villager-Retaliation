@@ -66,7 +66,12 @@ public final class AuthoringEditorClientSmoke {
         if (System.getProperty(OUTPUT) == null || finished) return;
         var minecraft = Minecraft.getInstance();
         if (started == 0) started = Util.getMillis();
-        require(Util.getMillis() - started < 360_000, "Editor client test timed out after " + frames + " frames.");
+        require(Util.getMillis() - started < 360_000, "Editor client test timed out after " + frames + " frames with "
+                + STEPS.size() + " steps remaining on " + (minecraft.screen == null ? "the game" : minecraft.screen.getClass().getSimpleName()) + ".");
+        long window = minecraft.getWindow().getWindow();
+        if (GLFW.glfwGetWindowAttrib(window, GLFW.GLFW_VISIBLE) == GLFW.GLFW_FALSE) GLFW.glfwShowWindow(window);
+        if (GLFW.glfwGetWindowAttrib(window, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE) GLFW.glfwRestoreWindow(window);
+        if (GLFW.glfwGetWindowAttrib(window, GLFW.GLFW_FOCUSED) == GLFW.GLFW_FALSE) GLFW.glfwFocusWindow(window);
         minecraft.setWindowActive(true);
         minecraft.options.pauseOnLostFocus = false;
         if (installed || minecraft.player == null || minecraft.level == null || minecraft.screen != null) return;
@@ -442,7 +447,13 @@ public final class AuthoringEditorClientSmoke {
             GLFW.glfwRestoreWindow(handle); GLFW.glfwSetWindowSize(handle, 1280, 720);
         });
         pause(400);
-        STEPS.add(() -> { Minecraft.getInstance().resizeDisplay(); capture("24-small-window-large-text"); });
+        STEPS.add(() -> {
+            Minecraft.getInstance().resizeDisplay(); capture("24-small-window-large-text");
+            GLFW.glfwIconifyWindow(Minecraft.getInstance().getWindow().getWindow());
+        });
+        pause(250);
+        STEPS.add(() -> require(GLFW.glfwGetWindowAttrib(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_ICONIFIED) == GLFW.GLFW_FALSE,
+                "The smoke harness restores a minimized test window."));
         STEPS.add(() -> ((net.minecraft.client.gui.screens.Screen) field(editor, "screen")).onClose());
         pause(250);
         STEPS.add(() -> {
@@ -702,6 +713,7 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             original[0] = (AuthoringDocument) field(editor, "document");
             require(EditorProgressConditions.resources("dimension").contains("minecraft:the_nether"), "Dimension selectors use the connected world.");
+            require(EditorProgressConditions.resources("structure").contains("minecraft:monument"), "Structure selectors use the server registry.");
             require(EditorProgressConditions.resources("biome").contains("minecraft:plains"), "Biome selectors use the connected registry.");
             require(EditorProgressConditions.resources("damage_type").contains("minecraft:fall"), "Damage selectors include vanilla damage types.");
             require(EditorProgressConditions.resources("damage_type").contains("player_history:arcane"), "Damage selectors include fixture-defined mod damage types.");
@@ -730,12 +742,14 @@ public final class AuthoringEditorClientSmoke {
             capture("28-progress-latest-death");
         });
         for (var kind : List.of(EditorBlocks.Kind.PLAYER_STAT, EditorBlocks.Kind.EVENT_HISTORY, EditorBlocks.Kind.PERSONAL_TRADE,
-                EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION)) {
+                EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION,
+                EditorBlocks.Kind.PLAYER_STRUCTURE_VISITED, EditorBlocks.Kind.PLAYER_SETTLEMENT_VISITED,
+                EditorBlocks.Kind.PLAYER_DESTINATION_COUNT, EditorBlocks.Kind.PLAYER_ITEM_POSSESSED)) {
             STEPS.add(() -> {
                 String path = EditorBlocks.append(progress[0], "/nodes/start", kind);
                 progress[0].edit("Configure progress check", root -> {
                     var value = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(root, path).getAsJsonObject();
-                    value.addProperty("max", 100);
+                    if (kind != EditorBlocks.Kind.PLAYER_ITEM_POSSESSED) value.addProperty("max", 100);
                     if (kind == EditorBlocks.Kind.EVENT_HISTORY) {
                         value.addProperty("since", "last");
                         value.addProperty("max_age_ticks", 24000);

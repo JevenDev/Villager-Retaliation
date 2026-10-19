@@ -25,6 +25,10 @@ final class EditorProgressConditions {
             case "player_deaths" -> "Total player deaths";
             case "player_kills" -> "Total player kills (PvP)";
             case "player_stat" -> "Player statistic threshold";
+            case "player_structure_visited" -> "Player has visited structures";
+            case "player_settlement_visited" -> "Player has visited settlements";
+            case "player_destination_count" -> "Distinct destinations visited";
+            case "player_item_possessed" -> "Player has ever possessed items";
             case "event_history" -> "Event count and timing";
             case "personal_trade" -> "Trade history with this villager";
             case "settlement_need" -> "Settlement needs and population";
@@ -37,6 +41,19 @@ final class EditorProgressConditions {
     static JsonObject seed(String type) {
         var condition = new JsonObject();
         condition.addProperty("type", type);
+        if (type.equals("player_structure_visited") || type.equals("player_item_possessed")) {
+            var ids = new JsonArray();
+            ids.add(type.equals("player_structure_visited") ? "minecraft:monument" : "minecraft:diamond");
+            condition.add(type.equals("player_structure_visited") ? "structures" : "items", ids);
+            condition.addProperty("all", true);
+            return condition;
+        }
+        if (type.equals("player_settlement_visited") || type.equals("player_destination_count")) {
+            condition.addProperty(type.equals("player_settlement_visited") ? "settlement" : "destination",
+                    type.equals("player_settlement_visited") ? "current" : "structures");
+            condition.addProperty("min", 1);
+            return condition;
+        }
         if (type.equals("player_stat")) {
             condition.addProperty("category", "custom");
             condition.addProperty("target", "minecraft:mob_kills");
@@ -92,7 +109,7 @@ final class EditorProgressConditions {
         if (!value.has("type") || !value.get("type").isJsonPrimitive()) return false;
         if (value.has("all") && (!value.get("all").isJsonPrimitive() || !value.getAsJsonPrimitive("all").isBoolean())) return false;
         String type = value.get("type").getAsString();
-        if (type.equals("advancement") || type.equals("advancements")) return true;
+        if (type.equals("advancement") || type.equals("advancements") || type.equals("player_structure_visited") || type.equals("player_item_possessed")) return true;
         for (var kind : PlayerHistoryConditions.Kind.values())
             if (kind.id().equals(type)) return !kind.count() && kind != PlayerHistoryConditions.Kind.PLAYER_LAST_DEATH;
         return false;
@@ -103,6 +120,7 @@ final class EditorProgressConditions {
         String field = parts[parts.length - 1];
         if (field.matches("[0-9]+") && parts.length > 1) field = parts[parts.length - 2];
         return switch (field) {
+            case "structures" -> "structure";
             case "dimensions" -> "dimension";
             case "biomes" -> "biome";
             case "advancements" -> "advancement";
@@ -135,6 +153,7 @@ final class EditorProgressConditions {
         if (event.endsWith(":dimension_entered")) return resources("dimension");
         if (event.endsWith(":biome_discovered")) return resources("biome");
         if (event.endsWith(":advancement_earned")) return resources("advancement");
+        if (event.endsWith(":structure_visited")) return resources("structure");
         return net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList();
     }
 
@@ -145,7 +164,7 @@ final class EditorProgressConditions {
             var events = new java.util.TreeSet<String>();
             for (var tag : com.jvn.villagerretaliation.village.VillageEventMemory.EventTag.values())
                 events.add(com.jvn.villagerretaliation.village.VillageEventMemory.idFor(tag).toString());
-            for (String name : List.of("dimension_entered", "advancement_earned", "biome_discovered", "player_died", "entity_killed",
+            for (String name : List.of("structure_visited", "settlement_visited", "item_discovered", "dimension_entered", "advancement_earned", "biome_discovered", "player_died", "entity_killed",
                     "trade_completed", "trade_item_paid", "trade_item_received", "trade_currency_paid", "trade_currency_received",
                     "contribution_items", "contribution_food", "contribution_equipment", "contribution_currency",
                     "contribution_defense", "contribution_construction", "contribution_storage")) events.add("villagerretaliation:" + name);
@@ -153,6 +172,10 @@ final class EditorProgressConditions {
         }
         if (minecraft == null || minecraft.getConnection() == null) return List.of();
         return switch (field) {
+            case "structure" -> minecraft.getSingleplayerServer() != null
+                    ? minecraft.getSingleplayerServer().registryAccess().registryOrThrow(Registries.STRUCTURE).keySet().stream().map(Object::toString).sorted().toList()
+                    : minecraft.level == null ? List.of() : minecraft.level.registryAccess().registry(Registries.STRUCTURE)
+                            .map(registry -> registry.keySet().stream().map(Object::toString).sorted().toList()).orElseGet(List::of);
             case "dimension" -> minecraft.getConnection().levels().stream().map(key -> key.location().toString()).sorted().toList();
             case "biome" -> minecraft.level == null ? List.of() : minecraft.level.registryAccess()
                     .registryOrThrow(Registries.BIOME).keySet().stream().map(Object::toString).sorted().toList();

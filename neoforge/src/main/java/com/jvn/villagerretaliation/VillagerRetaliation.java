@@ -204,5 +204,6 @@ public class VillagerRetaliation {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, com.jvn.villagerretaliation.progress.PlayerHistoryService::died);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.progress.PlayerHistoryService::advancementEarned);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.progress.PlayerHistoryService::dimensionChanged);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.progress.ExplorationHistoryService::pickedUp);
     }
 }

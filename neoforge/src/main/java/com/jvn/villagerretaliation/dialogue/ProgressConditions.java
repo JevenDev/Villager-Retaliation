@@ -81,7 +81,7 @@ public final class ProgressConditions {
         private boolean inRange(long value) { return value >= min && (max == null || value <= max); }
     }
 
-    private static VillageAllegianceId settlement(ServerLevel level, ServerPlayer player, DialogueContext live,
+    public static VillageAllegianceId settlement(ServerLevel level, ServerPlayer player, DialogueContext live,
                                                   VillagerQuestSavedData.QuestProgress progress) {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         if (live != null && live.villager() != null) {

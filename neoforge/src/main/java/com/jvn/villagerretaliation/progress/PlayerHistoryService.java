@@ -50,6 +50,7 @@ public final class PlayerHistoryService {
 
     public static void tick(ServerPlayer player) {
         if (!player.isAlive()) return;
+        ExplorationHistoryService.tick(player);
         var data = PlayerHistorySavedData.get(player.serverLevel());
         player.serverLevel().getBiome(player.blockPosition()).unwrapKey()
                 .ifPresent(key -> {

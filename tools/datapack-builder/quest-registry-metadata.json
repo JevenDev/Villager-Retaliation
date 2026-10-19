@@ -5,6 +5,228 @@
   "registries": {
     "conditions": [
       {
+        "id": "player_structure_visited",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "StructureVisited",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "structures"
+          ],
+          "properties": {
+            "type": {
+              "const": "player_structure_visited"
+            },
+            "structures": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:monument"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1,
+              "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      },
+      {
+        "id": "player_settlement_visited",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "SettlementVisited",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "player_settlement_visited"
+            },
+            "settlement": {
+              "enum": [
+                "current",
+                "any",
+                "id"
+              ],
+              "description": "Current means the speaker's settlement, the saved quest issuer's settlement, or your current settlement for player-only checks. Any matches all recorded settlements. Use id to select a durable settlement UUID."
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1,
+              "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      },
+      {
+        "id": "player_destination_count",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "DestinationCount",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "destination"
+          ],
+          "properties": {
+            "type": {
+              "const": "player_destination_count"
+            },
+            "structures": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:monument"
+              }
+            },
+            "destination": {
+              "enum": [
+                "structures",
+                "structure_types",
+                "settlements"
+              ],
+              "description": "Count distinct structure instances, registered structure types, or canonical settlements. Instances use dimension and start chunk. Settlement merges combine identities. Optional structures filters structure counts."
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      },
+      {
+        "id": "player_item_possessed",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "ItemPossessed",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "items"
+          ],
+          "properties": {
+            "type": {
+              "const": "player_item_possessed"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:diamond"
+              },
+              "description": "Item types observed in your inventory, equipment or cursor remain known after loss. Unopened containers and recipe previews do not establish possession."
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      },
+      {
         "id": "event_history",
         "aliases": [],
         "capabilities": [
@@ -6309,6 +6531,66 @@
         }
       },
       {
+        "id": "villagerretaliation:player_destination_count",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player destination count",
+        "description": "Built-in Player destination count type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_destination_count"
+            },
+            "structures": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:monument"
+              }
+            },
+            "destination": {
+              "enum": [
+                "structures",
+                "structure_types",
+                "settlements"
+              ],
+              "description": "Count distinct structure instances, registered structure types, or canonical settlements. Instances use dimension and start chunk. Settlement merges combine identities. Optional structures filters structure counts."
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "type",
+            "destination"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:player_died_from",
         "aliases": [],
         "live_capabilities": [
@@ -6409,6 +6691,48 @@
         "description": "Built-in Player item type.",
         "browser_available": true,
         "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_item_possessed",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player item possessed",
+        "description": "Built-in Player item possessed type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_item_possessed"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:diamond"
+              },
+              "description": "Item types observed in your inventory, equipment or cursor remain known after loss. Unopened containers and recipe previews do not establish possession."
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
           "type": "object"
         }
       },
@@ -6592,6 +6916,77 @@
         }
       },
       {
+        "id": "villagerretaliation:player_settlement_visited",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player settlement visited",
+        "description": "Built-in Player settlement visited type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_settlement_visited"
+            },
+            "settlement": {
+              "enum": [
+                "current",
+                "any",
+                "id"
+              ],
+              "description": "Current means the speaker's settlement, the saved quest issuer's settlement, or your current settlement for player-only checks. Any matches all recorded settlements. Use id to select a durable settlement UUID."
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1,
+              "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:player_stat",
         "aliases": [],
         "live_capabilities": [
@@ -6645,6 +7040,79 @@
             "type",
             "category",
             "target"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_structure_visited",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player structure visited",
+        "description": "Built-in Player structure visited type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_structure_visited"
+            },
+            "structures": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:monument"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            },
+            "dimension": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 1,
+              "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "since": {
+              "enum": [
+                "last",
+                "first"
+              ]
+            },
+            "min_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "max_age_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "type",
+            "structures"
           ],
           "type": "object"
         }
@@ -7792,14 +8260,18 @@
         "player_biome_visited",
         "player_crafted_item",
         "player_deaths",
+        "player_destination_count",
         "player_died_from",
         "player_dimension_visited",
         "player_item",
+        "player_item_possessed",
         "player_killed_by_entity",
         "player_killed_entity",
         "player_kills",
         "player_last_death",
+        "player_settlement_visited",
         "player_stat",
+        "player_structure_visited",
         "player_used_item",
         "quest",
         "quest_choice_selected",

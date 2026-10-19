@@ -44,7 +44,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
         DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
         DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState,
-        com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check {
+        com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check, ExplorationConditions.Check {
 
     boolean matches(DialogueContext context);
 
@@ -994,6 +994,22 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
     final class ConditionRegistry {
         private static final List<ConditionTypeRegistration> REGISTRATIONS = List.of(
+                register("player_structure_visited", ExplorationConditions.StructureVisited.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN, ConditionCapability.PLAYER_LIVE),
+                        (source, pointer, value, quest) -> ExplorationConditions.read(source, pointer, value, ExplorationConditions.Kind.STRUCTURE),
+                        ExplorationConditions.schema(ExplorationConditions.Kind.STRUCTURE)),
+                register("player_settlement_visited", ExplorationConditions.SettlementVisited.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN, ConditionCapability.PLAYER_LIVE),
+                        (source, pointer, value, quest) -> ExplorationConditions.read(source, pointer, value, ExplorationConditions.Kind.SETTLEMENT),
+                        ExplorationConditions.schema(ExplorationConditions.Kind.SETTLEMENT)),
+                register("player_destination_count", ExplorationConditions.DestinationCount.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN, ConditionCapability.PLAYER_LIVE),
+                        (source, pointer, value, quest) -> ExplorationConditions.read(source, pointer, value, ExplorationConditions.Kind.DESTINATIONS),
+                        ExplorationConditions.schema(ExplorationConditions.Kind.DESTINATIONS)),
+                register("player_item_possessed", ExplorationConditions.ItemPossessed.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN, ConditionCapability.PLAYER_LIVE),
+                        (source, pointer, value, quest) -> ExplorationConditions.read(source, pointer, value, ExplorationConditions.Kind.POSSESSION),
+                        ExplorationConditions.schema(ExplorationConditions.Kind.POSSESSION)),
                 register("event_history", ProgressConditions.History.class, Set.of(),
                         capabilities(ConditionCapability.WORLD_KNOWN),
                         (source, pointer, value, quest) -> ProgressConditions.read(source, pointer, value, ProgressConditions.Kind.HISTORY),

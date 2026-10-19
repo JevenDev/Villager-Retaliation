@@ -55,6 +55,7 @@ public final class ServerRuntimeState {
         VillageCombatAuthorizationService.clearRuntimeState();
         VillagerDisciplineService.clearRuntimeState();
 
+        com.jvn.villagerretaliation.progress.ExplorationHistoryService.clear();
         VillagerDataWarmup.clearCaches();
         VillagerTaskNavigationUtil.clearRuntimeState();
         VillagerRetaliationVillagerEquipment.clearRuntimeState();

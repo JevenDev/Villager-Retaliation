@@ -172,6 +172,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        com.jvn.villagerretaliation.progress.ExplorationHistoryService.clear(event.getEntity().getUUID());
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
         if (event.getEntity() instanceof ServerPlayer player) {
             com.jvn.villagerretaliation.duel.DuelService.onPlayerLogout(player);
@@ -205,6 +206,7 @@ public final class VillagerRetaliationEvents {
     public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack stack = event.getCrafting();
+            com.jvn.villagerretaliation.progress.ExplorationHistoryService.observeItem(player, stack);
             VillagerQuestService.onCriterion(
                     player.serverLevel(),
                     player,
@@ -218,6 +220,7 @@ public final class VillagerRetaliationEvents {
     public static void onItemSmelted(PlayerEvent.ItemSmeltedEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack stack = event.getSmelting();
+            com.jvn.villagerretaliation.progress.ExplorationHistoryService.observeItem(player, stack);
             VillagerQuestService.onCriterion(
                     player.serverLevel(),
                     player,

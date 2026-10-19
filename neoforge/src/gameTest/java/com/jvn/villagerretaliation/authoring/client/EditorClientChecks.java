@@ -832,7 +832,9 @@ public final class EditorClientChecks {
         var choices = forms.choices(root.getAsJsonObject("$defs").getAsJsonObject("condition"));
         var preview = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
         for (var kind : java.util.List.of(EditorBlocks.Kind.PLAYER_STAT, EditorBlocks.Kind.EVENT_HISTORY,
-                EditorBlocks.Kind.PERSONAL_TRADE, EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION)) {
+                EditorBlocks.Kind.PERSONAL_TRADE, EditorBlocks.Kind.SETTLEMENT_NEED, EditorBlocks.Kind.SETTLEMENT_CONTRIBUTION,
+                EditorBlocks.Kind.PLAYER_STRUCTURE_VISITED, EditorBlocks.Kind.PLAYER_SETTLEMENT_VISITED,
+                EditorBlocks.Kind.PLAYER_DESTINATION_COUNT, EditorBlocks.Kind.PLAYER_ITEM_POSSESSED)) {
             check(choices.containsKey(kind.label), "new checks appear in schema forms and the behavior palette");
             String path = EditorBlocks.append(document, "/nodes/start", kind);
             var condition = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(document.json(), path).getAsJsonObject();

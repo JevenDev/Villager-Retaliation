@@ -63,6 +63,8 @@
     "PanicGoalMixin",
     "ReactToBellMixin",
     "ServerPlayerDuelDropMixin",
+    "PlayerPossessionInventoryMixin",
+    "PlayerPossessionMenuMixin",
     "SetHiddenStateMixin",
     "ResetProfessionMixin",
     "SetRaidStatusMixin",

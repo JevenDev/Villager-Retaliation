@@ -6343,14 +6343,18 @@
             "player_biome_visited",
             "player_crafted_item",
             "player_deaths",
+            "player_destination_count",
             "player_died_from",
             "player_dimension_visited",
             "player_item",
+            "player_item_possessed",
             "player_killed_by_entity",
             "player_killed_entity",
             "player_kills",
             "player_last_death",
+            "player_settlement_visited",
             "player_stat",
+            "player_structure_visited",
             "player_used_item",
             "quest",
             "quest_choice_selected",
@@ -6394,6 +6398,252 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_structure_visited"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "structures"
+            ],
+            "properties": {
+              "type": {
+                "const": "player_structure_visited"
+              },
+              "structures": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:monument"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true
+              },
+              "dimension": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 1,
+                "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "since": {
+                "enum": [
+                  "last",
+                  "first"
+                ]
+              },
+              "min_age_ticks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "max_age_ticks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_settlement_visited"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "player_settlement_visited"
+              },
+              "settlement": {
+                "enum": [
+                  "current",
+                  "any",
+                  "id"
+                ],
+                "description": "Current means the speaker's settlement, the saved quest issuer's settlement, or your current settlement for player-only checks. Any matches all recorded settlements. Use id to select a durable settlement UUID."
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "dimension": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 1,
+                "description": "Completed entries into the selected destination. Staying inside or reconnecting inside does not add a visit. Age bounds measure server ticks, 20 per second."
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "since": {
+                "enum": [
+                  "last",
+                  "first"
+                ]
+              },
+              "min_age_ticks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "max_age_ticks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_destination_count"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "destination"
+            ],
+            "properties": {
+              "type": {
+                "const": "player_destination_count"
+              },
+              "structures": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:monument"
+                }
+              },
+              "destination": {
+                "enum": [
+                  "structures",
+                  "structure_types",
+                  "settlements"
+                ],
+                "description": "Count distinct structure instances, registered structure types, or canonical settlements. Instances use dimension and start chunk. Settlement merges combine identities. Optional structures filters structure counts."
+              },
+              "dimension": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "default": 1
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_item_possessed"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "items"
+            ],
+            "properties": {
+              "type": {
+                "const": "player_item_possessed"
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:diamond"
+                },
+                "description": "Item types observed in your inventory, equipment or cursor remain known after loss. Unopened containers and recipe previews do not establish possession."
+              },
+              "all": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
