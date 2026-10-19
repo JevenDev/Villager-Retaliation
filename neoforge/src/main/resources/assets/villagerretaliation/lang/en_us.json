@@ -3812,5 +3812,12 @@
   "screen.villagerretaliation.campaign.permanent": "Your campaign cannot be changed after creation.",
   "screen.villagerretaliation.campaign.empty": "No campaigns are available in the selected datapacks.",
   "screen.villagerretaliation.campaign.coming_soon": "Coming soon",
+  "screen.villagerretaliation.campaign.coming_soon_label": "Coming\nsoon",
+  "screen.villagerretaliation.campaign.expand": "Expand %s",
+  "screen.villagerretaliation.campaign.collapse": "Collapse %s",
+  "screen.villagerretaliation.campaign.previous": "Previous campaigns",
+  "screen.villagerretaliation.campaign.next": "Next campaigns",
+  "screen.villagerretaliation.campaign.reloaded": "Campaign content reloaded.",
+  "screen.villagerretaliation.campaign.reload_failed": "Campaign reload failed. See the log for details.",
   "screen.villagerretaliation.campaign.error": "Campaigns could not be loaded"
 }

@@ -1,9 +1,11 @@
 {
   "schema": "villagerretaliation:world_campaign/v1",
   "id": "villagerretaliation:vr",
-  "name": "Campaign VR",
-  "description": "The Villager Retaliation campaign. Coming soon.",
-  "image": "villagerretaliation:mod_icon",
+  "name": "§eKingdoms Campaign",
+  "description": "The Kingdoms: Villager Retaliation campaign. Coming soon.",
+  "description_file": "villagerretaliation:world_campaigns/vr/description.md",
+  "authors": ["§7jvn"],
+  "image": "villagerretaliation:world_campaigns/vr/cover.png",
   "locked": true,
   "include_default_content": true
 }

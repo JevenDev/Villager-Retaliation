@@ -31,6 +31,7 @@ public final class WorldCampaignChecks {
         resources.add("test:dialogue/en_us/shared.json", "{\"world_campaign\":\"villagerretaliation:shared\",\"entries\":[{\"id\":\"shared\"}]}");
         resources.add("test:dialogue/en_us/mixed.json", "{\"entries\":[{\"id\":\"a\",\"world_campaign\":\"test:alpha\"},{\"id\":\"b\",\"world_campaign\":\"test:beta\"}]}");
         var catalog = WorldCampaignCatalog.load(resources);
+        check(catalog.require(id("test:alpha"), false).image().equals(WorldCampaign.CARD_FALLBACK), "missing card artwork uses the fallback");
         WorldCampaign alpha = catalog.require(id("test:alpha"), true);
         reject(() -> catalog.require(id("test:beta"), true));
         reject(() -> catalog.require(id("test:missing"), false));
@@ -131,9 +132,56 @@ public final class WorldCampaignChecks {
         quest.add("ui", new JsonObject());
         check(!QuestJsonSchema.validate(quest, QuestV3Schema.export()).isEmpty(), "V2 aliases are rejected in V3");
         System.out.println("PASS campaign ownership, permanent selection, and V3 lowering checks");
-        return 25 + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
+        return 26 + markdownDescriptions() + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
     }
 
+
+    private static int markdownDescriptions() {
+        var resources = new MemoryResources();
+        var root = JsonParser.parseString(manifest("alpha", false)).getAsJsonObject();
+        root.addProperty("description_file", "test:world_campaigns/alpha/description.md");
+        resources.add("test:world_campaigns/alpha/campaign.json", root.toString());
+        String markdown = "# Village stories\n\n**Trust** and caf\u00e9 conversations.\n![Cover](cover.png)\n";
+        resources.add("test:world_campaigns/alpha/description.md", markdown);
+        var campaign = WorldCampaignCatalog.load(resources).require(id("test:alpha"), true);
+        check(campaign.description().equals(markdown), "Markdown files retain headings, formatting, image references and UTF-8 text");
+        check(campaign.name().equals("alpha") && !campaign.locked(), "Markdown descriptions preserve campaign identity and availability");
+        root.remove("description");
+        check(QuestJsonSchema.validate(root, WorldCampaignSchema.export()).isEmpty(), "the exported schema accepts a Markdown reference without inline text");
+        check(WorldCampaign.read(root).description().isEmpty(), "Markdown-only manifests have no inline description");
+        resources.add("test:world_campaigns/alpha/campaign.json", root.toString());
+        check(WorldCampaignCatalog.load(resources).require(id("test:alpha"), true).description().equals(markdown),
+                "Markdown-only manifests load their referenced description");
+        root.addProperty("description", false);
+        reject(() -> WorldCampaign.read(root));
+        root.add("description", com.google.gson.JsonNull.INSTANCE);
+        reject(() -> WorldCampaign.read(root));
+        root.remove("description");
+        var neither = root.deepCopy();
+        neither.remove("description_file");
+        check(!QuestJsonSchema.validate(neither, WorldCampaignSchema.export()).isEmpty(), "the exported schema requires at least one description source");
+        reject(() -> WorldCampaign.read(neither));
+        resources.add("override", "test:world_campaigns/alpha/description.md", "# Updated description");
+        check(WorldCampaignCatalog.load(resources).require(id("test:alpha"), true).description().equals("# Updated description"),
+                "datapacks can override referenced Markdown descriptions");
+        resources.add("test:world_campaigns/alpha/description.md", "x".repeat(4096));
+        check(WorldCampaignCatalog.load(resources).require(id("test:alpha"), true).description().length() == 4096,
+                "Markdown descriptions accept the existing character limit");
+        resources.add("test:world_campaigns/alpha/description.md", "x".repeat(4097));
+        reject(() -> WorldCampaignCatalog.load(resources));
+        resources.values.remove(id("test:world_campaigns/alpha/description.md"));
+        reject(() -> WorldCampaignCatalog.load(resources));
+        root.addProperty("description_file", "test:world_campaigns/alpha/description.json");
+        reject(() -> WorldCampaign.read(root));
+        root.addProperty("description_file", true);
+        reject(() -> WorldCampaign.read(root));
+        resources.add("override", "test:world_campaigns/alpha/campaign.json", manifest("alpha", false));
+        resources.add("test:world_campaigns/alpha/description.md", "# Unreferenced description");
+        check(WorldCampaignCatalog.load(resources).require(id("test:alpha"), true).description().equals("Test campaign"),
+                "inline descriptions remain authoritative without a Markdown reference");
+        System.out.println("PASS campaign Markdown descriptions and resource validation");
+        return 16;
+    }
 
     private static int malformedLayers() throws Exception {
         var resources = new MemoryResources();

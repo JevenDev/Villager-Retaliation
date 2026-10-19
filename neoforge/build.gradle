@@ -66,6 +66,7 @@ neoForge {
     runs {
         client {
             client()
+            systemProperty 'villagerretaliation.campaignSourceResources', file('src/main/resources').absolutePath
         }
 
         campaignSelectionClientSmoke {
@@ -73,6 +74,7 @@ neoForge {
             sourceSet = sourceSets.gameTest
             gameDirectory.set(campaignSelectionClientSmokeDirectory)
             systemProperty 'villagerretaliation.campaignSelectionClientSmoke', campaignSelectionClientSmokeDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.campaignSourceResources', new File(campaignSelectionClientSmokeDirectory.get().asFile, 'campaign-source-resources').absolutePath
             programArguments.addAll '--width', '1280', '--height', '800'
         }
 
@@ -608,6 +610,12 @@ tasks.named('runCampaignSelectionClientSmoke') {
     doFirst {
         def directory = campaignSelectionClientSmokeDirectory.get().asFile
         directory.mkdirs()
+        copy {
+            from('src/main/resources') {
+                include 'pack.mcmeta', 'data/**/world_campaigns/**'
+            }
+            into new File(directory, 'campaign-source-resources')
+        }
         new File(directory, 'options.txt').text =
                 'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
     }

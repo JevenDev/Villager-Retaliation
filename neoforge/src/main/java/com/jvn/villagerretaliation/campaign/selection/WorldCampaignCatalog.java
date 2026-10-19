@@ -18,10 +18,16 @@ public record WorldCampaignCatalog(Map<ResourceLocation, WorldCampaign> campaign
         resources.listResources("world_campaigns", id -> id.getPath().endsWith("/campaign.json") && id.getPath().split("/").length == 3)
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
                     try (var reader = entry.getValue().openAsReader()) {
-                        WorldCampaign campaign = WorldCampaign.read(JsonParser.parseReader(reader).getAsJsonObject());
+                        var root = JsonParser.parseReader(reader).getAsJsonObject();
+                        WorldCampaign campaign = WorldCampaign.read(root);
                         String expected = "world_campaigns/" + campaign.id().getPath() + "/campaign.json";
                         if (!entry.getKey().getNamespace().equals(campaign.id().getNamespace()) || !expected.equals(entry.getKey().getPath())) {
                             throw new IllegalArgumentException("Campaign ID must match its namespace and folder");
+                        }
+                        if (root.has("description_file")) {
+                            ResourceLocation description = ResourceLocation.parse(root.get("description_file").getAsString());
+                            campaign = new WorldCampaign(campaign.id(), campaign.name(), readDescription(resources, description),
+                                    campaign.authors(), campaign.image(), campaign.locked(), campaign.includeDefaultContent());
                         }
                         if (result.putIfAbsent(campaign.id(), campaign) != null) throw new IllegalArgumentException("Duplicate campaign ID " + campaign.id());
                     } catch (IOException | IllegalArgumentException | IllegalStateException exception) {
@@ -30,6 +36,19 @@ public record WorldCampaignCatalog(Map<ResourceLocation, WorldCampaign> campaign
                     }
                 });
         return new WorldCampaignCatalog(result);
+    }
+
+    private static String readDescription(ResourceManager resources, ResourceLocation id) throws IOException {
+        try (var reader = resources.getResourceOrThrow(id).openAsReader()) {
+            StringBuilder text = new StringBuilder();
+            char[] buffer = new char[1024];
+            int count;
+            while ((count = reader.read(buffer)) != -1) {
+                if (text.length() + count > 4096) throw new IOException("Campaign description " + id + " exceeds 4096 characters");
+                text.append(buffer, 0, count);
+            }
+            return text.toString();
+        }
     }
 
     public WorldCampaign require(ResourceLocation id, boolean creating) {

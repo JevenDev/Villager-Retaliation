@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.mixin.client;
 import com.jvn.villagerretaliation.campaign.CampaignWorldModeSavedData;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaign;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaignCatalog;
+import com.jvn.villagerretaliation.client.campaign.CampaignResources;
 import com.jvn.villagerretaliation.client.campaign.CampaignSelectScreen;
 import com.mojang.datafixers.util.Pair;
 import java.io.IOException;
@@ -14,9 +15,7 @@ import net.minecraft.client.gui.screens.AlertScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.PackRepository;
-import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
@@ -49,9 +48,10 @@ public abstract class CreateWorldCampaignMixin {
         try {
             var packs = getDataPackSelectionSettings(uiState.getSettings().dataConfiguration());
             if (packs == null) throw new IllegalStateException("Could not open the selected datapacks");
-            try (var resources = new MultiPackResourceManager(PackType.SERVER_DATA, packs.getSecond().openAllSelected())) {
+            try (var resources = CampaignResources.open(packs.getSecond())) {
                 var catalog = WorldCampaignCatalog.load(resources);
-                minecraft.setScreen(new CampaignSelectScreen(parent, catalog, resources, campaign -> {
+                minecraft.setScreen(new CampaignSelectScreen(parent, catalog, resources,
+                        () -> CampaignResources.open(packs.getSecond()), campaign -> {
                     villagerretaliation$campaign = campaign;
                     villagerretaliation$confirmed = true;
                     minecraft.setScreen(parent);

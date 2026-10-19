@@ -1,9 +1,10 @@
 {
   "schema": "villagerretaliation:world_campaign/v1",
   "id": "villagerretaliation:default",
-  "name": "Default VR",
+  "name": "§eDefault",
   "description": "The default Villager Retaliation experience.",
-  "image": "villagerretaliation:mod_icon",
+  "description_file": "villagerretaliation:world_campaigns/default/description.md",
+  "authors": ["§7jvn"],
   "locked": false,
   "include_default_content": true
 }

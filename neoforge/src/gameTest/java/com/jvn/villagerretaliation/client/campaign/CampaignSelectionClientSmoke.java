@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -24,6 +25,8 @@ public final class CampaignSelectionClientSmoke {
     private static int step;
     private static int frames;
     private static CreateWorldScreen setup;
+    private static CampaignSelectScreen selection;
+    private static CampaignSelectScreen alphaSelection;
     private static String previousScreen = "";
 
     private CampaignSelectionClientSmoke() { }
@@ -59,17 +62,84 @@ public final class CampaignSelectionClientSmoke {
             require(minecraft.screen instanceof CampaignSelectScreen, "Create opens campaign selection");
             step = 2;
         } else if (step == 2 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 15) {
-            require(button(screen, "Default VR").active, "Default VR is available");
-            require(!button(screen, "Campaign VR").active, "Campaign VR is locked");
+            require(campaignButton(screen, "default").active, "Default VR is available");
+            require(!campaignButton(screen, "vr").active, "Campaign VR is locked");
             require(!button(screen, Component.translatable("selectWorld.create").getString()).active, "Creation requires a selection");
             Screenshot.grab(output().toFile(), "campaign-select.png", minecraft.getMainRenderTarget(), ignored -> { });
+            selection = screen;
+            CampaignDiskReloadChecks.start(screen);
+            step = 11;
+            frames = 0;
+        } else if (step == 11 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 5) {
+            CampaignDiskReloadChecks.verify(screen, false);
+            Screenshot.grab(output().toFile(), "campaign-disk-reload-before.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignDiskReloadChecks.edit(screen);
+            step = 12;
+            frames = 0;
+        } else if (step == 12 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 5) {
+            CampaignDiskReloadChecks.verify(screen, true);
+            Screenshot.grab(output().toFile(), "campaign-disk-reload-after.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignDiskReloadChecks.restore(screen);
+            minecraft.setScreen(CampaignCardClientChecks.fixture(screen));
+            step = 7;
+            frames = 0;
+        } else if (step == 7 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 10) {
+            require(CampaignCardClientChecks.cards(screen) == 3, "At most three campaign cards are visible");
+            CampaignCardClientChecks.authors(screen);
+            CampaignCardClientChecks.comingSoon(screen);
+            Button first = button(screen, "Campaign 1");
+            require(first.getWidth() == 128 && first.getHeight() == 192, "Collapsed frame uses its native 128x192 GUI size");
+            Button last = button(screen, "Campaign 3");
+            require(Math.abs(first.getX() + last.getRight() - screen.width) <= 2, "Cards distribute around the screen center");
+            Screenshot.grab(output().toFile(), "campaign-three-cards.png", minecraft.getMainRenderTarget(), ignored -> { });
+            Button expand = button(screen, "Expand Campaign 1");
+            require(screen.mouseClicked(expand.getX() + 1, expand.getY() + 1, 0), "Caret accepts clicks outside its visible pixels");
+            require(CampaignCardClientChecks.cards(screen) == 1, "Expansion opens only the chosen card");
+            step = 8;
+            frames = 0;
+        } else if (step == 8 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 15) {
+            Screenshot.grab(output().toFile(), "campaign-expanded.png", minecraft.getMainRenderTarget(), ignored -> { });
+            Button card = button(screen, "Campaign 1");
+            double scale = card.getHeight() / 192.0;
+            require(screen.mouseScrolled(card.getX() + 150 * scale, card.getY() + 20 * scale, 0, -3), "Description accepts wheel scrolling");
+            require(CampaignCardClientChecks.scroll(screen) > 0, "Long descriptions scroll");
+            screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN, 0, 0);
+            require(CampaignCardClientChecks.scroll(screen) > 54, "Descriptions support keyboard scrolling");
+            alphaSelection = screen;
+            minecraft.setScreen(CampaignCardClientChecks.alphaScreen(screen));
+            step = 10;
+            frames = 0;
+        } else if (step == 10 && ++frames >= 5) {
+            CampaignCardClientChecks.verifyAlpha(alphaSelection);
+            Screenshot.grab(output().toFile(), "campaign-alpha.png", minecraft.getMainRenderTarget(), ignored -> { });
+            minecraft.setScreen(alphaSelection);
+            step = 9;
+            frames = 0;
+        } else if (step == 9 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 10) {
+            Screenshot.grab(output().toFile(), "campaign-description-scrolled.png", minecraft.getMainRenderTarget(), ignored -> { });
+            CampaignCardClientChecks.reload(screen);
+            screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(CampaignCardClientChecks.cards(screen) == 3, "Escape collapses the expanded card");
+            button(screen, "Expand Campaign 2").onPress();
+            require(!button(screen, Component.translatable("selectWorld.create").getString()).active, "Locked cards can expand without enabling creation");
+            button(screen, "Collapse Campaign 2").onPress();
+            button(screen, ">").onPress();
+            require(CampaignCardClientChecks.cards(screen) == 3 && button(screen, "Campaign 4").active, "Second page contains the next three cards");
+            button(screen, ">").onPress();
+            require(CampaignCardClientChecks.cards(screen) == 1, "Final page contains the remaining card");
+            Button single = button(screen, "Campaign 7");
+            require(Math.abs(single.getX() + single.getRight() - screen.width) <= 2, "Single card stays centered");
+            button(screen, "<").onPress();
+            require(button(screen, "Campaign 4").active, "Previous page restores the preceding cards");
             screen.onClose();
+            require(minecraft.screen == selection, "Fixture returns to selection");
+            selection.onClose();
             require(minecraft.screen == setup, "Back preserves the world setup screen");
             button(setup, Component.translatable("selectWorld.create").getString()).onPress();
             step = 3;
             frames = 0;
         } else if (step == 3 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 5) {
-            button(screen, "Default VR").onPress();
+            campaignButton(screen, "default").onPress();
             Button create = button(screen, Component.translatable("selectWorld.create").getString());
             require(create.active, "Selecting an available campaign enables creation");
             create.onPress();
@@ -81,10 +151,21 @@ public final class CampaignSelectionClientSmoke {
             var selection = CampaignWorldModeSavedData.readSelection(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), server.registryAccess());
             require(WorldCampaign.DEFAULT.equals(selection.worldCampaign()), "Created world persists Default VR");
             require(selection.includeDefaultContent(), "Created world retains default content");
-            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: cards, locked state, Back, creation, and permanent saved selection.\n");
+            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: centered cards, paging, expansion, accessible carets, Markdown and Minecraft color codes, transparent PNG/GIF media, F5 disk edits to campaign titles, authors, PNG covers, Markdown, and GIFs, selected datapack priority, campaign catalog reload, failed reload recovery, scrolling, locked state, Back, creation, and permanent saved selection.\n");
             step = 6;
             minecraft.stop();
         }
+    }
+
+    private static Button campaignButton(CampaignSelectScreen screen, String path) throws ReflectiveOperationException {
+        var field = CampaignSelectScreen.class.getDeclaredField("campaigns");
+        field.setAccessible(true);
+        var id = ResourceLocation.fromNamespaceAndPath("villagerretaliation", path);
+        for (var value : (java.util.List<?>) field.get(screen)) {
+            var campaign = (WorldCampaign) value;
+            if (campaign.id().equals(id)) return button(screen, campaign.name());
+        }
+        throw new IllegalStateException("Missing campaign: " + id);
     }
 
     private static Button button(Screen screen, String label) {
