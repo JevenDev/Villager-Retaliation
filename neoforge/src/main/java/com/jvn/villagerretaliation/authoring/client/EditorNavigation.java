@@ -7,7 +7,11 @@ import java.util.List;
 
 final class EditorNavigation {
     record Location(AuthoringDocument document, String path, int view, boolean filesMode, String pointer,
-                    float panX, float panY, float zoom, float scroll) {
+                    float panX, float panY, float zoom, float scroll, float detailsScroll) {
+        Location(AuthoringDocument document, String path, int view, boolean filesMode, String pointer,
+                 float panX, float panY, float zoom, float scroll) {
+            this(document, path, view, filesMode, pointer, panX, panY, zoom, scroll, 0);
+        }
         String currentPath() { return document == null ? path : document.resourcePath(); }
 
         boolean samePlace(Location other) {
@@ -65,6 +69,29 @@ final class EditorNavigation {
         if (owner != workspace) return List.of();
         return recentFiles.stream().filter(location -> location.exists(owner))
                 .map(Location::currentPath).filter(owner.filePaths()::contains).distinct().toList();
+    }
+
+    List<Location> rememberedLocations(AuthoringWorkspace owner) {
+        if (owner != workspace) return List.of();
+        return java.util.stream.Stream.concat(documentPositions.values().stream(), filePositions.values().stream())
+                .filter(location -> location.exists(owner)).limit(512).toList();
+    }
+
+    void restore(AuthoringWorkspace owner, List<Location> remembered, List<String> recent) {
+        workspace = owner;
+        locations.clear(); cursor = -1;
+        documentPositions.clear(); filePositions.clear(); recentFiles.clear();
+        for (var location : remembered) {
+            if (!location.exists(owner)) continue;
+            if (location.document() != null && location.view() == 0) documentPositions.put(location.document(), location);
+            else if (location.view() == 4) filePositions.put(location.currentPath(), location);
+        }
+        for (String path : recent) {
+            if (recentFiles.size() >= 20 || !owner.filePaths().contains(path)) continue;
+            var document = owner.documents().stream().filter(candidate -> candidate.resourcePath().equals(path)).findFirst().orElse(null);
+            var location = document == null ? filePositions.get(path) : documentPositions.get(document);
+            if (location != null) recentFiles.add(location);
+        }
     }
 
     Location target(int direction) {

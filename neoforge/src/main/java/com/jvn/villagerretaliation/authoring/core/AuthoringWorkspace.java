@@ -1159,19 +1159,37 @@ public final class AuthoringWorkspace {
         String namespace = owner.resourcePath().split("/", 3)[1];
         String resolvedKey = key;
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
-            var candidates = documents.stream().filter(candidate -> candidate.resourcePath().endsWith("/locales/" + language + ".json"))
+            var candidates = documents.stream().filter(candidate -> candidate.resourcePath().endsWith("/locales/" + language + ".json")
+                    || candidate.resourcePath().contains("/dialogue/" + language + "/"))
                     .sorted(Comparator.comparingInt((AuthoringDocument candidate) -> candidate.resourcePath().startsWith(bundle) && !bundle.isEmpty() ? 0
                             : candidate.resourcePath().startsWith(DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/") ? 1
                             : candidate.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
                             .thenComparing(AuthoringDocument::resourcePath)).toList();
             for (var candidate : candidates) {
                 JsonObject root = candidate.json();
-                JsonObject messages = root.has("messages") && root.get("messages").isJsonObject() ? root.getAsJsonObject("messages") : root;
-                if (messages.has(resolvedKey)) return new TextLocation(candidate,
-                        (messages == root ? "" : "/messages") + "/" + JsonPointers.escape(resolvedKey));
+                if (candidate.resourcePath().endsWith("/locales/" + language + ".json")) {
+                    JsonObject messages = root.has("messages") && root.get("messages").isJsonObject() ? root.getAsJsonObject("messages") : root;
+                    if (messages.has(resolvedKey)) return new TextLocation(candidate,
+                            (messages == root ? "" : "/messages") + "/" + JsonPointers.escape(resolvedKey));
+                } else if (!isRemoval(root)) {
+                    JsonArray messages = DialogueGraph.array(root, "messages");
+                    for (int i = 0; i < messages.size(); i++) {
+                        var entry = messages.get(i);
+                        if (entry.isJsonObject() && resolvedKey.equals(DialogueGraph.string(entry.getAsJsonObject(), "key")) && !isRemoval(entry.getAsJsonObject()))
+                            return messageLocation(candidate, entry.getAsJsonObject(), "/messages/" + i);
+                    }
+                    if (candidate.resourcePath().contains("/messages/") && resolvedKey.equals(DialogueGraph.string(root, "key")))
+                        return messageLocation(candidate, root, "");
+                }
             }
         }
         return null;
+    }
+
+    private static TextLocation messageLocation(AuthoringDocument document, JsonObject message, String pointer) {
+        for (String field : List.of("variants", "lines", "line", "text"))
+            if (message.has(field)) return new TextLocation(document, pointer + "/" + field);
+        return new TextLocation(document, pointer + "/key");
     }
 
     public void addDialogueResponse(AuthoringDocument document, String nodeId, String responseId, String text, String targetId) {

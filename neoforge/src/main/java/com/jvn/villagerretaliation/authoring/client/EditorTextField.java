@@ -15,6 +15,9 @@ import java.util.Map;
 final class EditorTextField {
     private final Map<String, Selection> selections = new HashMap<>();
     private final Map<String, Size> sizes = new HashMap<>();
+    private String focus = "";
+
+    void focus(String id) { focus = id; }
 
     void clear() {
         selections.values().forEach(selection -> selection.preview.retire());
@@ -32,6 +35,7 @@ final class EditorTextField {
             if (prior != null) prior.preview.retire();
             return new Selection(buffer);
         });
+        if (focus.equals(id)) { focus = ""; selection.sourceMode = true; selection.requestFocus = true; }
         ImGui.pushID(id);
         if (formatting) {
             formatButton("B", "Bold", "b", selection);

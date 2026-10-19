@@ -51,6 +51,9 @@ public final class AuthoringEditorClientSmoke {
     private static int reloadExperience, playtestLogSize;
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
+    private static boolean workflowControls, workflowLists;
+    private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
+    private static float[] workflowFieldPoint;
     private static boolean qualityControls;
     private static String qualityResource = "minecraft:stone";
     private static float[] qualityPickerPoint;
@@ -134,12 +137,16 @@ public final class AuthoringEditorClientSmoke {
             buildSteps();
             ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(AuthoringEditorClientSmoke::frame);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
+            buildWorkflowSteps(); finishSteps("Focused editor workflow controls passed."); return;
+        }
         STEPS.add(() -> {
             try { EditorClientChecks.questSimulationUsesRuntimeCompletionRules(); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
@@ -378,15 +385,177 @@ public final class AuthoringEditorClientSmoke {
         buildCreatorToolsSteps();
         buildProgressConditionSteps();
         buildQualityOfLifeSteps();
+        buildWorkflowSteps();
+        finishSteps("Full editor graph, pack, camera, playtest, recovery and workflow checks passed.");
+    }
+
+    private static void finishSteps(String details) {
         STEPS.add(() -> {
-            try {
-                Files.writeString(output().resolve("result.txt"),
-                        "Authoring editor client smoke passed\nGraph interactions, automatic layout, onboarding, and full setup through native controls.\n"
-                        + "Created an empty workspace, typed a dialogue ID, wrote and revised text, added a node and response, saved, played the entry and response, returned to the editor, checked drafts, exported, and reopened the saved draft. Variables, formatting, response substitution, afternoon and midnight previews, free-camera positioning, shot capture, camera restoration, import protection, and reimport into a new workspace. Separate world creation, automatic test pack activation, real inventory objectives, live entry actions and rewards, original world preservation, and stale snapshot rejection.\n");
-            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            try { Files.writeString(output().resolve("result.txt"), "Authoring editor client smoke passed\n" + details + "\n"); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
             finished = true;
             Minecraft.getInstance().stop();
         });
+    }
+
+    private static void buildWorkflowSteps() {
+        var controls = new AuthoringDocument[1];
+        var quest = new AuthoringDocument[1];
+        var conversation = new AuthoringDocument[1];
+        var graph = new AuthoringDocument[1];
+        var groupOffset = new float[2];
+        STEPS.add(() -> {
+            set("activeDiagnostic", null); set("view", 0); set("guideStep", -1); set("showWorkspace", false); set("showCreate", false);
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            GLFW.glfwSetWindowSize(Minecraft.getInstance().getWindow().getWindow(), 1920, 1080);
+            document = workspace.createDocument(DefinitionKind.TREE, "test:workflow_graph");
+            DialogueGraph.addNode(document, "second"); DialogueGraph.addNode(document, "third");
+            graph[0] = document;
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("resetLayout", true); set("fitGraph", true); set("showGraphTools", false);
+        });
+        pause(400);
+        STEPS.add(() -> { Minecraft.getInstance().resizeDisplay(); locateCanvas(); });
+        move(() -> new float[] {canvas[0] + 4, canvas[1] + 4}, false);
+        move(() -> new float[] {canvas[0] + 4, canvas[1] + 4}, true);
+        move(() -> new float[] {canvas[2] - 4, canvas[3] - 4}, true);
+        STEPS.add(() -> mouseDown = false);
+        STEPS.add(() -> {
+            require(((java.util.Set<?>) field(editor, "nodeSelection")).size() == 3, "Box selection selects the nodes inside the graph rectangle.");
+            groupOffset[0] = positions().get("second")[0] - positions().get("start")[0];
+            groupOffset[1] = positions().get("second")[1] - positions().get("start")[1];
+            set("snapGrid", true); capture("44-workflow-box-selection");
+        });
+        move(() -> point("start", 90, 18), false);
+        move(() -> point("start", 90, 18), true);
+        STEPS.add(() -> { mouseX += 27; mouseY += 19; });
+        STEPS.add(() -> mouseDown = false);
+        STEPS.add(() -> {
+            var start = positions().get("start"); var second = positions().get("second");
+            require(start[0] % 16 == 0 && start[1] % 16 == 0, "Group dragging snaps its anchor to the optional grid.");
+            require(Math.abs(second[0] - start[0] - groupOffset[0]) < .01f && Math.abs(second[1] - start[1] - groupOffset[1]) < .01f,
+                    "Group snapping preserves node offsets.");
+        });
+        workflowCommand("Align top");
+        STEPS.add(() -> {
+            float y = positions().get("start")[1];
+            require(positions().values().stream().allMatch(point -> point[1] == y), "The command palette aligns the selected nodes.");
+            require(document.undoLabel().equals("Move node"), "The resulting edit has a named undo entry.");
+            capture("45-workflow-aligned-selection");
+            controls[0] = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/workflow_controls.json",
+                    JsonParser.parseString("{\"count\":2,\"values\":[{\"id\":\"first\"},{\"id\":\"second\"},{\"id\":\"third\"}]}").getAsJsonObject());
+            workspace.add(controls[0]); document = controls[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 4); workflowLists = true; workflowControls = true;
+        });
+        pause(250);
+        move(() -> workflowHandles[0], false);
+        move(() -> workflowHandles[0], true);
+        STEPS.add(() -> mouseX += 10);
+        move(() -> workflowTargets[2], true);
+        STEPS.add(() -> mouseDown = false);
+        STEPS.add(() -> {
+            require(controls[0].json().getAsJsonArray("values").get(2).getAsJsonObject().get("id").getAsString().equals("first"), "Native drag-and-drop reorders list entries.");
+            capture("46-workflow-list-reorder");
+            invoke("changeHistory", new Class<?>[] {boolean.class}, false);
+            require(controls[0].json().getAsJsonArray("values").get(0).getAsJsonObject().get("id").getAsString().equals("first"), "One undo restores the original list order.");
+            workflowLists = false;
+        });
+        pause(250);
+        replaceText(() -> workflowFieldPoint, () -> "\"wrong type\"");
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(controls[0].json().get("count").getAsInt() == 2 && ((EditorFieldEdits) field(editor, "pendingFields")).pending(),
+                    "Saving an invalid field preserves the pending buffer and the original value.");
+            require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/count"), "Save focuses the first invalid field.");
+            capture("47-workflow-inline-error");
+        });
+        replaceText(() -> workflowFieldPoint, () -> "3");
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(controls[0].json().get("count").getAsInt() == 3, "Correcting the focused field allows saving.");
+            workflowControls = false;
+            var files = (EditorOpenFiles) field(editor, "openFiles");
+            files.restore(workspace, new com.google.gson.JsonArray());
+            files.open(workspace, controls[0].resourcePath()); files.open(workspace, graph[0].resourcePath());
+        });
+        workflowCommand("Pin or unpin current file");
+        STEPS.add(() -> require(((EditorOpenFiles) field(editor, "openFiles")).entries(workspace).stream()
+                .anyMatch(entry -> entry.currentPath().equals(controls[0].resourcePath()) && entry.pinned()), "The palette can pin the current file."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        STEPS.add(() -> require(field(editor, "document") == graph[0], "Ctrl+Tab opens the next file."));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        chord(ImGuiKey.ImGuiMod_Shift, ImGuiKey.Tab);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        STEPS.add(() -> {
+            require(field(editor, "document") == controls[0], "Ctrl+Shift+Tab switches back.");
+            quest[0] = workspace.createDocument(DefinitionKind.QUEST, "test:workflow_quest");
+            conversation[0] = workspace.createDocument(DefinitionKind.CONVERSATION, "test:workflow_conversation");
+            conversation[0].edit("Assign quest", root -> root.addProperty("quest", quest[0].id()));
+            document = conversation[0]; invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            ((imgui.type.ImString) field(editor, "pointer")).set("/quest"); set("view", 0);
+        });
+        workflowCommand("Go to definition");
+        STEPS.add(() -> require(field(editor, "document") == quest[0], "Go to definition follows a quest reference across files."));
+        workflowCommand("Find usages");
+        STEPS.add(() -> {
+            var references = (java.util.List<?>) field(editor, "referenceResults");
+            require(references.contains(new EditorReferences.Location(conversation[0], "/quest")), "Find usages lists references from other files.");
+            capture("48-workflow-references");
+        });
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> {
+            document = graph[0]; invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            ((imgui.type.ImString) field(editor, "pointer")).set("/nodes/start/lines");
+            set("selectedNode", "start"); set("panX", 135f); set("panY", 95f); set("zoom", .85f); set("fitGraph", false);
+            ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
+            invoke("saveSession", new Class<?>[0]);
+            invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
+            workspace = (AuthoringWorkspace) field(editor, "workspace"); document = (AuthoringDocument) field(editor, "document");
+            require(document != graph[0] && document.resourcePath().equals(graph[0].resourcePath())
+                    && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines")
+                    && (float) field(editor, "panX") == 135f && (float) field(editor, "zoom") == .85f,
+                    "Reloading a workspace restores its saved editing context against newly loaded documents.");
+            require(((EditorOpenFiles) field(editor, "openFiles")).entries(workspace).stream().anyMatch(EditorOpenFiles.Entry::pinned),
+                    "Pinned files survive workspace reload.");
+        });
+        pause(250);
+        STEPS.add(() -> capture("49-workflow-restored-session"));
+    }
+
+    private static void workflowCommand(String query) {
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        chord(ImGuiKey.ImGuiMod_Shift, ImGuiKey.P);
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        type(query);
+        STEPS.add(() -> capture("workflow-command-palette"));
+        key(ImGuiKey.Enter);
+        pause(100);
+    }
+
+    private static void renderWorkflowControls() {
+        if (!workflowControls) return;
+        ImGui.setNextWindowPos(450, 150); ImGui.setNextWindowSize(800, 600);
+        ImGui.begin("Editor workflow acceptance");
+        if (workflowLists) {
+            var values = ((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("values");
+            for (int i = 0; i < values.size(); i++) {
+                ImGui.pushID(i); ImGui.beginGroup();
+                float x = ImGui.getCursorScreenPosX(), y = ImGui.getCursorScreenPosY();
+                ImGui.textUnformatted(values.get(i).getAsJsonObject().get("id").getAsString());
+                invoke("listReorderHandle", new Class<?>[] {String.class, int.class, com.google.gson.JsonArray.class}, "/values", i, values);
+                if (!mouseDown) workflowHandles[i] = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2, (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+                workflowTargets[i] = new float[] {x + 15, y + ImGui.getFrameHeight() / 2};
+                ImGui.endGroup();
+                invoke("listDropTarget", new Class<?>[] {String.class, int.class}, "/values", i);
+                ImGui.dummy(0, 24); ImGui.popID();
+            }
+        } else {
+            workflowFieldPoint = new float[] {ImGui.getCursorScreenPosX() + 100, ImGui.getCursorScreenPosY() + ImGui.getTextLineHeightWithSpacing() + ImGui.getFrameHeight() / 2};
+            var value = ((AuthoringDocument) field(editor, "document")).json().get("count");
+            invoke("inspectValue", new Class<?>[] {com.google.gson.JsonElement.class, String.class, String.class, int.class}, value, "/count", "Count", 0);
+        }
+        ImGui.end();
     }
 
     private static void buildQualityOfLifeSteps() {
@@ -1666,7 +1835,7 @@ public final class AuthoringEditorClientSmoke {
             }
             require(pixels > 50_000 && right - left > 600, "Automatically docked graph has visible usable space.");
             require(left > 200 && right < image.getWidth() - 250, "Content and Details flank the graph automatically.");
-            canvas = new float[] {left + ImGui.getMainViewport().getPosX(), top + ImGui.getMainViewport().getPosY()};
+            canvas = new float[] {left + ImGui.getMainViewport().getPosX(), top + ImGui.getMainViewport().getPosY(), right + ImGui.getMainViewport().getPosX(), bottom + ImGui.getMainViewport().getPosY()};
         }
     }
 

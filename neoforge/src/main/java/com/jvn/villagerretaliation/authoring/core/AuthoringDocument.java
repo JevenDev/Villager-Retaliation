@@ -43,12 +43,16 @@ public final class AuthoringDocument {
     public boolean canUndo() { return !undo.isEmpty(); }
     public boolean canRedo() { return !redo.isEmpty(); }
     public boolean dirty() { return !state().equals(saved); }
+    public String undoLabel() { return undo.isEmpty() ? "" : undo.peek().label(); }
+    public String redoLabel() { return redo.isEmpty() ? "" : redo.peek().label(); }
+    public java.util.List<String> undoLabels() { return undo.stream().map(HistoryEntry::label).toList(); }
+    public java.util.List<String> redoLabels() { return redo.stream().map(HistoryEntry::label).toList(); }
 
     public void edit(String label, Consumer<JsonObject> edit) {
         JsonObject changed = json.deepCopy();
         edit.accept(changed);
         if (changed.equals(json)) return;
-        remember();
+        remember(label);
         json = changed;
     }
 
@@ -58,7 +62,7 @@ public final class AuthoringDocument {
         edit.accept(changed);
         editorEdit.accept(changedMetadata);
         if (changed.equals(json) && changedMetadata.equals(metadata)) return;
-        remember();
+        remember(label);
         json = changed;
         metadata = changedMetadata;
     }
@@ -75,14 +79,14 @@ public final class AuthoringDocument {
         JsonObject changed = metadata.deepCopy();
         edit.accept(changed);
         if (changed.equals(metadata)) return;
-        remember();
+        remember(label);
         metadata = changed;
     }
 
     public boolean undo() {
         if (undo.isEmpty()) return false;
         if (undo.peek().group() != null) return undo.peek().group().undo();
-        redo.push(new HistoryEntry(state(), null));
+        redo.push(new HistoryEntry(state(), null, undo.peek().label()));
         restore(undo.pop().state());
         return true;
     }
@@ -90,20 +94,20 @@ public final class AuthoringDocument {
     public boolean redo() {
         if (redo.isEmpty()) return false;
         if (redo.peek().group() != null) return redo.peek().group().redo();
-        undo.push(new HistoryEntry(state(), null));
+        undo.push(new HistoryEntry(state(), null, redo.peek().label()));
         restore(redo.pop().state());
         return true;
     }
 
     void rename(String path, String id) {
-        remember();
+        remember("Rename file");
         resourcePath = AuthoringWorkspace.safeRelativePath(path);
         if (kind != DefinitionKind.RESOURCE && kind != DefinitionKind.FORCED) json.addProperty("id", id);
     }
 
     void relocate(String path, JsonObject definition) {
         String safePath = AuthoringWorkspace.safeRelativePath(path);
-        remember();
+        remember("Move file");
         resourcePath = safePath;
         json = definition.deepCopy();
     }
@@ -111,8 +115,8 @@ public final class AuthoringDocument {
     void loadMetadata(JsonObject value) { metadata = value.deepCopy(); }
     void markSaved() { saved = state(); }
 
-    private void remember() {
-        undo.push(new HistoryEntry(state(), null));
+    private void remember(String label) {
+        undo.push(new HistoryEntry(state(), null, label == null || label.isBlank() ? "Edit document" : label));
         while (undo.size() > HISTORY_LIMIT) undo.removeLast();
         redo.clear();
     }
@@ -127,14 +131,14 @@ public final class AuthoringDocument {
         HistoryGroup group = new HistoryGroup(java.util.List.copyOf(documents), beforeUndo, beforeRedo);
         for (AuthoringDocument document : documents) {
             HistoryEntry latest = document.undo.pop();
-            document.undo.push(new HistoryEntry(latest.state(), group));
+            document.undo.push(new HistoryEntry(latest.state(), group, latest.label()));
         }
     }
 
     private record State(String path, JsonObject json, JsonObject metadata) {
     }
 
-    private record HistoryEntry(State state, HistoryGroup group) {
+    private record HistoryEntry(State state, HistoryGroup group, String label) {
     }
 
     private record HistoryGroup(java.util.List<AuthoringDocument> documents, Runnable beforeUndo, Runnable beforeRedo) {
@@ -144,7 +148,7 @@ public final class AuthoringDocument {
             }
             beforeUndo.run();
             for (AuthoringDocument document : documents) {
-                document.redo.push(new HistoryEntry(document.state(), this));
+                document.redo.push(new HistoryEntry(document.state(), this, document.undo.peek().label()));
                 document.restore(document.undo.pop().state());
             }
             return true;
@@ -156,7 +160,7 @@ public final class AuthoringDocument {
             }
             beforeRedo.run();
             for (AuthoringDocument document : documents) {
-                document.undo.push(new HistoryEntry(document.state(), this));
+                document.undo.push(new HistoryEntry(document.state(), this, document.redo.peek().label()));
                 document.restore(document.redo.pop().state());
             }
             return true;

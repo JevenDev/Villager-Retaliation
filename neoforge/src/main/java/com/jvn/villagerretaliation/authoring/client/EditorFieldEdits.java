@@ -52,24 +52,48 @@ public final class EditorFieldEdits {
         if (!edits.isEmpty()) applyTo(document.json());
     }
 
-    private void applyTo(com.google.gson.JsonObject root) {
+    public Map<String, String> issues(AuthoringDocument document) {
+        var result = new LinkedHashMap<String, String>();
         for (var entry : edits.entrySet()) {
-            Edit edit = entry.getValue();
-            if (!JsonPointers.get(root, entry.getKey()).equals(edit.original()))
-                throw new IllegalStateException("The field changed since editing began: " + entry.getKey());
-            JsonElement value;
-            try {
-                value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
-            } catch (com.google.gson.JsonParseException exception) {
-                throw new IllegalArgumentException("Invalid JSON at " + entry.getKey() + ": " + exception.getMessage(), exception);
-            }
-            if (!edit.string() && !value.isJsonPrimitive() && !value.isJsonNull())
-                throw new IllegalArgumentException("Use advanced JSON to change the scalar field at " + entry.getKey() + " into an object or array.");
-            if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
-                    && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
-                throw new IllegalArgumentException("Expected a number at " + entry.getKey());
-            JsonPointers.set(root, entry.getKey(), value);
+            try { applyField(document.json(), entry.getKey(), entry.getValue()); }
+            catch (IllegalArgumentException | IllegalStateException exception) { result.put(entry.getKey(), exception.getMessage()); }
         }
+        return result;
+    }
+
+    public boolean contains(String path) { return edits.containsKey(path); }
+
+    public String issue(AuthoringDocument document, String path) {
+        if (!edits.containsKey(path)) return "";
+        try { applyField(document.json(), path, edits.get(path)); return ""; }
+        catch (IllegalArgumentException | IllegalStateException exception) { return exception.getMessage(); }
+    }
+
+    public JsonElement candidate(AuthoringDocument document, String path) {
+        JsonObject copy = document.json();
+        if (edits.containsKey(path)) applyField(copy, path, edits.get(path));
+        return JsonPointers.get(copy, path);
+    }
+
+    private void applyTo(JsonObject root) {
+        edits.forEach((path, edit) -> applyField(root, path, edit));
+    }
+
+    private static void applyField(JsonObject root, String path, Edit edit) {
+        if (!JsonPointers.get(root, path).equals(edit.original()))
+            throw new IllegalStateException("The field changed since editing began: " + path);
+        JsonElement value;
+        try {
+            value = edit.string() ? new JsonPrimitive(edit.text()) : JsonParser.parseString(edit.text());
+        } catch (com.google.gson.JsonParseException exception) {
+            throw new IllegalArgumentException("Invalid JSON at " + path + ": " + exception.getMessage(), exception);
+        }
+        if (!edit.string() && !value.isJsonPrimitive() && !value.isJsonNull())
+            throw new IllegalArgumentException("Use advanced JSON to change the scalar field at " + path + " into an object or array.");
+        if (edit.original().isJsonPrimitive() && edit.original().getAsJsonPrimitive().isNumber()
+                && (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()))
+            throw new IllegalArgumentException("Expected a number at " + path);
+        JsonPointers.set(root, path, value);
     }
 
     private record Edit(JsonElement original, String text, boolean string) { }

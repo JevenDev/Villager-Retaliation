@@ -62,7 +62,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 52;
+        return 52 + EditorWorkflowChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {

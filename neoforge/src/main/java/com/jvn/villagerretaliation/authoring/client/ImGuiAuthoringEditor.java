@@ -64,6 +64,16 @@ final class ImGuiAuthoringEditor {
     private final EditorPackFiles packFiles = new EditorPackFiles();
     private final EditorPackBuild packBuild = new EditorPackBuild();
     private final EditorNavigation navigation = new EditorNavigation();
+    private final EditorOpenFiles openFiles = new EditorOpenFiles();
+    private final EditorSession sessions = new EditorSession(MC.gameDirectory.toPath().resolve("config/authoring-editor-sessions.json"));
+    private final EditorCommands commandPalette = new EditorCommands();
+    private float detailsScroll, restoreDetailsScroll = Float.NaN;
+    private boolean snapGrid, fitSelection, boxSelecting, boxAdditive;
+    private float boxX, boxY;
+    private String fieldFocus = "";
+    private boolean requestReferences;
+    private String referenceTitle = "";
+    private List<EditorReferences.Location> referenceResults = List.of();
     private final EditorResourcePicker resourcePicker = new EditorResourcePicker();
     private boolean requestQuickOpen;
     private final ImString quickQuery = new ImString(256);
@@ -247,7 +257,13 @@ final class ImGuiAuthoringEditor {
             }
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
                 if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
-                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.P)) requestQuickOpen = true;
+                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.P)) {
+                    if (ImGui.getIO().getKeyShift()) commandPalette.open(); else requestQuickOpen = true;
+                }
+                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.Tab)) {
+                    int direction = ImGui.getIO().getKeyShift() ? -1 : 1;
+                    operation(() -> cycleOpenFile(direction));
+                }
                 if (ImGui.getIO().getKeyCtrl() && ImGui.getIO().getKeyAlt()) {
                     if (ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateHistory(-1));
                     if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateHistory(1));
@@ -272,6 +288,8 @@ final class ImGuiAuthoringEditor {
             else diagnostics();
             inspector();
             quickOpen();
+            if (commandPalette.active()) commandPalette.render(commands(), this::operation, preferences.textScale());
+            referencePopup();
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
@@ -447,6 +465,10 @@ final class ImGuiAuthoringEditor {
             if (!Float.isNaN(restoreWorkScroll)) { ImGui.setScrollY(restoreWorkScroll); restoreWorkScroll = Float.NaN; }
             workScroll = ImGui.getScrollY();
         }
+        if (title.equals(DETAIL_PANEL)) {
+            if (!Float.isNaN(restoreDetailsScroll)) { ImGui.setScrollY(restoreDetailsScroll); restoreDetailsScroll = Float.NaN; }
+            detailsScroll = ImGui.getScrollY();
+        }
         ImGui.setWindowFontScale(preferences.textScale());
     }
 
@@ -474,7 +496,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void openWorkspace(boolean create) throws IOException {
-        if (workspace != null) workspace.save();
+        if (workspace != null) { saveSession(); workspace.save(); }
         AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
                 : AuthoringWorkspace.open(Path.of(workspacePath.get()));
         workspace = next;
@@ -491,6 +513,7 @@ final class ImGuiAuthoringEditor {
         preferences = preferences.withWorkspace(workspace.directory().toString());
         savePreferences();
         showRecovery = !create && workspace.recoveryAvailable();
+        restoreSession(!showRecovery);
         if (guideStep == 0) guideStep = 1;
         status = create ? "Workspace created." : "Workspace opened.";
     }
@@ -737,6 +760,10 @@ final class ImGuiAuthoringEditor {
             });
         }
         if (ImGui.button("Quick open (Ctrl+P)")) requestQuickOpen = true;
+        if (ImGui.button("Commands (Ctrl+Shift+P)")) commandPalette.open();
+        openFileTools();
+        historyTools();
+        if (document != null && ImGui.button("Find usages across workspace")) findUsages();
         replacementTools();
     }
 
@@ -852,6 +879,169 @@ final class ImGuiAuthoringEditor {
         ImGui.endPopup();
     }
 
+    private boolean graphDocument() {
+        return document != null && document.kind() != DefinitionKind.RESOURCE && !document.kind().campaignManifest();
+    }
+
+    private List<EditorCommands.Command> commands() {
+        boolean graph = graphDocument(), selected = graph && !selectedNode.isEmpty();
+        AuthoringDocument history = historyDocument == null ? document : historyDocument;
+        var result = new java.util.ArrayList<EditorCommands.Command>();
+        result.add(new EditorCommands.Command("Save drafts", "Ctrl+S", workspace != null, this::save));
+        result.add(new EditorCommands.Command("Quick open file", "Ctrl+P", workspace != null, () -> requestQuickOpen = true));
+        result.add(new EditorCommands.Command("Next open file", "Ctrl+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(1)));
+        result.add(new EditorCommands.Command("Previous open file", "Ctrl+Shift+Tab", workspace != null && !openFiles.entries(workspace).isEmpty(), () -> cycleOpenFile(-1)));
+        result.add(new EditorCommands.Command("Pin or unpin current file", "", workspace != null && workspace.filePaths().contains(activePath()), () -> openFiles.pin(workspace, activePath())));
+        result.add(new EditorCommands.Command("Close current file", "", workspace != null && workspace.filePaths().contains(activePath()), () -> closeOpenFile(activePath())));
+        result.add(new EditorCommands.Command("Undo" + (history == null ? "" : ": " + history.undoLabel()), "Ctrl+Z", history != null && history.canUndo(), () -> changeHistory(false)));
+        result.add(new EditorCommands.Command("Redo" + (history == null ? "" : ": " + history.redoLabel()), "Ctrl+Y", history != null && history.canRedo(), () -> changeHistory(true)));
+        result.add(new EditorCommands.Command("Add node or stage", "", graph && (document.kind() != DefinitionKind.FORCED || document.json().has("entries")), this::addGraphNode));
+        result.add(new EditorCommands.Command("Add response or connection", "", selected, () -> { view = 0; showBranch = true; nextStage.set(""); }));
+        result.add(new EditorCommands.Command("Duplicate selected node", "", selected && document.kind() != DefinitionKind.FORCED, () -> {
+            DialogueGraph.duplicateNode(document, selectedNode, nextNodeId()); refresh();
+        }));
+        result.add(new EditorCommands.Command("Fit graph", "", graph, () -> { view = 0; fitSelection = false; fitGraph = true; }));
+        result.add(new EditorCommands.Command("Frame selected nodes", "", selected, () -> { view = 0; fitSelection = true; fitGraph = true; }));
+        for (String action : List.of("Align left", "Align top", "Space horizontally", "Space vertically", "Arrange selection"))
+            result.add(new EditorCommands.Command(action, "", graph && selectedNodes().size() > 1, () -> alignNodes(action)));
+        result.add(new EditorCommands.Command("Validate workspace", "", workspace != null, () -> { validate(); view = 2; focusPanel = WORK_PANEL; }));
+        result.add(new EditorCommands.Command("Go to definition", "", document != null && !selectedDefinitions().isEmpty(), this::goToDefinition));
+        result.add(new EditorCommands.Command("Find usages", "", document != null, this::findUsages));
+        result.add(new EditorCommands.Command("Preview content", "", graph, () -> { view = 1; focusPanel = WORK_PANEL; }));
+        result.add(new EditorCommands.Command("Playtest content", "", graph, this::enterPlaytest));
+        result.add(new EditorCommands.Command("Reset editor layout", "", true, () -> resetLayout = true));
+        return result;
+    }
+
+    private void openFileTools() {
+        if (!ImGui.collapsingHeader("Open and pinned files")) return;
+        ImGui.textWrapped("Ctrl+Tab switches files. Ctrl+Shift+Tab switches back.");
+        if (workspace.filePaths().contains(activePath()) && ImGui.button("Pin or unpin current file")) operation(() -> openFiles.pin(workspace, activePath()));
+        var listed = openFiles.entries(workspace).stream().sorted(java.util.Comparator.comparing(entry -> !entry.pinned())).toList();
+        for (int i = 0; i < listed.size(); i++) {
+            var entry = listed.get(i);
+            String path = entry.currentPath();
+            ImGui.pushID(i);
+            if (ImGui.smallButton(entry.pinned() ? "Unpin" : "Pin")) operation(() -> openFiles.pin(workspace, path));
+            ImGui.sameLine();
+            if (ImGui.smallButton("Close")) operation(() -> closeOpenFile(path));
+            if (ImGui.selectable(shortText(path, 45), path.equals(activePath()))) operation(() -> openPackFile(path));
+            if (ImGui.isItemHovered()) ImGui.setTooltip(path);
+            ImGui.popID();
+        }
+    }
+
+    private void cycleOpenFile(int direction) {
+        String next = openFiles.cycle(workspace, activePath(), direction);
+        if (!next.isEmpty()) openPackFile(next);
+    }
+
+    private void closeOpenFile(String path) {
+        String next = openFiles.cycle(workspace, path, 1);
+        if (activePath().equals(path)) {
+            if (!next.isEmpty() && !next.equals(path)) openPackFile(next);
+            else { select(null); packFiles.select(""); view = 4; workScroll = 0; restoreWorkScroll = 0; }
+        }
+        openFiles.close(workspace, path);
+        status = "Closed file. Its draft remains in the workspace.";
+    }
+
+    private void historyTools() {
+        if (!ImGui.collapsingHeader("Edit history")) return;
+        AuthoringDocument history = historyDocument == null ? document : historyDocument;
+        if (history == null) { ImGui.textWrapped("Select a content file to view its edit history."); return; }
+        ImGui.beginDisabled(!history.canUndo());
+        if (ImGui.button("Undo: " + history.undoLabel())) operation(() -> changeHistory(false));
+        ImGui.endDisabled(); ImGui.beginDisabled(!history.canRedo());
+        if (ImGui.button("Redo: " + history.redoLabel())) operation(() -> changeHistory(true));
+        ImGui.endDisabled();
+        ImGui.textDisabled("Most recent changes first");
+        ImGui.beginChild("##edit_history", 0, 140, true);
+        for (String label : history.undoLabels().stream().limit(20).toList()) ImGui.textWrapped(label);
+        for (String label : history.redoLabels().stream().limit(10).toList()) ImGui.textDisabled("Redo: " + label);
+        ImGui.endChild();
+    }
+
+    private List<EditorReferences.Location> selectedDefinitions() {
+        if (document == null || workspace == null) return List.of();
+        String path = EditorDiagnosticLocation.resolve(document, pointer.get()).pointer();
+        JsonElement value = JsonPointers.get(document.json(), path);
+        if (value.isJsonObject() && value.getAsJsonObject().has("key")) {
+            var key = value.getAsJsonObject().get("key");
+            if (key.isJsonPrimitive() && key.getAsJsonPrimitive().isString())
+                return EditorReferences.definitions(workspace, document, path + "/key", key.getAsString(), locale.get());
+        }
+        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString())
+            return EditorReferences.definitions(workspace, document, path, value.getAsString(), locale.get());
+        return List.of();
+    }
+
+    private void goToDefinition() {
+        var targets = selectedDefinitions();
+        if (targets.size() == 1) navigateReference(targets.getFirst());
+        else showReferences("Choose a definition", targets);
+    }
+
+    private void findUsages() {
+        var definitions = selectedDefinitions();
+        var target = definitions.isEmpty() ? new EditorReferences.Location(document, document.kind() == DefinitionKind.RESOURCE ? pointer.get() : "") : definitions.getFirst();
+        showReferences("Usages of " + target.label(), EditorReferences.usages(workspace, target, locale.get()));
+    }
+
+    private void showReferences(String title, List<EditorReferences.Location> results) {
+        referenceTitle = title; referenceResults = results; requestReferences = true;
+    }
+
+    private void navigateReference(EditorReferences.Location location) {
+        openSearchHit(new EditorSearch.Hit(location.document(), location.pointer(), ""));
+    }
+
+    private void referenceButtons(String path, String value) {
+        var targets = EditorReferences.definitions(workspace, document, path, value, locale.get());
+        for (int i = 0; i < targets.size(); i++) {
+            var target = targets.get(i);
+            ImGui.pushID("reference_" + i);
+            if (ImGui.smallButton("Go to definition")) operation(() -> navigateReference(target));
+            ImGui.sameLine();
+            if (ImGui.smallButton("Find usages")) operation(() -> showReferences("Usages of " + target.label(), EditorReferences.usages(workspace, target, locale.get())));
+            ImGui.popID();
+        }
+    }
+
+    private void referencePopup() {
+        if (requestReferences) { requestReferences = false; ImGui.openPopup("References###workspace_references"); }
+        ImGui.setNextWindowSize(680, 380, ImGuiCond.Appearing);
+        if (!ImGui.beginPopup("References###workspace_references")) return;
+        ImGui.setWindowFontScale(preferences.textScale());
+        ImGui.textWrapped(referenceTitle);
+        if (referenceResults.isEmpty()) ImGui.textWrapped("No matching references.");
+        ImGui.beginChild("##reference_results", 0, 0, false);
+        for (int i = 0; i < referenceResults.size(); i++) {
+            var location = referenceResults.get(i);
+            ImGui.pushID(i);
+            if (ImGui.selectable(location.label())) { operation(() -> navigateReference(location)); ImGui.closeCurrentPopup(); }
+            ImGui.textDisabled(location.document().resourcePath());
+            ImGui.popID();
+        }
+        ImGui.endChild(); ImGui.endPopup();
+    }
+
+    private void addGraphNode() {
+        String id = nextNodeId();
+        DialogueGraph.addNode(document, id);
+        var added = document.kind() == DefinitionKind.FORCED ? DialogueGraph.nodes(document).getLast()
+                : DialogueGraph.nodes(document).stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
+        selectedNode = added.id(); setPointer(added.pointer()); showBranch = false;
+        refresh(); nodeSelection.clear(); nodeSelection.add(selectedNode);
+        view = 0; focusPanel = DETAIL_PANEL;
+    }
+
+    private void alignNodes(String action) {
+        var cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, locale.get()));
+        persistPositions(EditorGraphSelection.layout(cards, positions, selectedNodes(), action));
+        refresh();
+    }
+
     private void graph() {
         panel(WORK_PANEL);
         if (document == null) {
@@ -883,18 +1073,7 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.textUnformatted(document.kind() == DefinitionKind.QUEST ? "Quest stages" : "Dialogue");
         ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED && !document.json().has("entries"));
-        if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Add stage" : "Add node")) operation(() -> {
-            String id = nextNodeId();
-            DialogueGraph.addNode(document, id);
-            var added = document.kind() == DefinitionKind.FORCED ? DialogueGraph.nodes(document).getLast()
-                    : DialogueGraph.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow();
-            selectedNode = added.id();
-            setPointer(added.pointer());
-            showBranch = false;
-            refresh();
-            nodeSelection.clear(); nodeSelection.add(selectedNode);
-            focusPanel = DETAIL_PANEL;
-        });
+        if (ImGui.button(document.kind() == DefinitionKind.QUEST ? "Add stage" : "Add node")) operation(this::addGraphNode);
         ImGui.endDisabled();
         boolean selected = nodes.stream().anyMatch(node -> node.id().equals(selectedNode));
         sameLineFor(document.kind() == DefinitionKind.QUEST ? "Connect stage" : "Add response");
@@ -905,7 +1084,7 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.endDisabled();
         sameLineFor("Fit graph");
-        if (ImGui.button("Fit graph")) fitGraph = true;
+        if (ImGui.button("Fit graph")) { fitSelection = false; fitGraph = true; }
         sameLineFor("Arrange nodes");
         if (ImGui.button("Arrange nodes")) operation(() -> {
             persistPositions(EditorGraph.arrange(cards));
@@ -1038,9 +1217,10 @@ final class ImGuiAuthoringEditor {
             panY = canvasHeight / 2 - (point[1] + EditorGraph.HEADER) * zoom;
             graphFocus = ""; fitGraph = false;
         }
-        if (fitGraph && !cards.isEmpty()) {
+        var fitCards = fitSelection ? cards.stream().filter(card -> selectedNodes().contains(card.node().id())).toList() : cards;
+        if (fitGraph && !fitCards.isEmpty()) {
             float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
-            for (var card : cards) {
+            for (var card : fitCards) {
                 float[] point = positions.get(card.node().id());
                 minX = Math.min(minX, point[0]);
                 minY = Math.min(minY, point[1]);
@@ -1050,7 +1230,7 @@ final class ImGuiAuthoringEditor {
             zoom = Math.clamp(Math.min((canvasWidth - 50) / (maxX - minX), (canvasHeight - 50) / (maxY - minY)), .35f, 1f);
             panX = 25 - minX * zoom;
             panY = 25 - minY * zoom;
-            fitGraph = false;
+            fitGraph = false; fitSelection = false;
         }
         if (resetZoom) {
             panX = canvasWidth / 2 - (canvasWidth / 2 - panX) / zoom;
@@ -1068,6 +1248,14 @@ final class ImGuiAuthoringEditor {
             float my = ImGui.getIO().getMousePosY() - canvasY;
             panX = mx - (mx - panX) * zoom / oldZoom;
             panY = my - (my - panY) * zoom / oldZoom;
+        }
+        if (hover && selectedEdge.isEmpty() && draggingNode == null && ImGui.isMouseClicked(0)) {
+            float mx = (ImGui.getMousePosX() - canvasX - panX) / zoom, my = (ImGui.getMousePosY() - canvasY - panY) / zoom;
+            boolean overCard = cards.stream().anyMatch(card -> {
+                float[] point = positions.get(card.node().id());
+                return mx >= point[0] - 10 && mx <= point[0] + EditorGraph.WIDTH + 10 && my >= point[1] - 10 && my <= point[1] + card.height() + 10;
+            });
+            if (!overCard) { boxSelecting = true; boxAdditive = ImGui.getIO().getKeyCtrl(); boxX = mx; boxY = my; }
         }
         if (!selectedEdge.isEmpty() && ImGui.isMouseDragging(0)) wireDragMoved = true;
         ImDrawList draw = ImGui.getWindowDrawList();
@@ -1205,11 +1393,30 @@ final class ImGuiAuthoringEditor {
                 }
             }
         }
+        if (boxSelecting) {
+            float mx = (ImGui.getMousePosX() - canvasX - panX) / zoom, my = (ImGui.getMousePosY() - canvasY - panY) / zoom;
+            float left = canvasX + panX + Math.min(boxX, mx) * zoom, top = canvasY + panY + Math.min(boxY, my) * zoom;
+            float right = canvasX + panX + Math.max(boxX, mx) * zoom, bottom = canvasY + panY + Math.max(boxY, my) * zoom;
+            draw.addRectFilled(left, top, right, bottom, 0x337bc5eb);
+            draw.addRect(left, top, right, bottom, 0xff7bc5eb);
+            if (ImGui.isMouseReleased(0)) {
+                var boxed = EditorGraphSelection.box(cards, positions, boxX, boxY, mx, my);
+                boolean additive = boxAdditive;
+                operation(() -> {
+                    if (!additive) nodeSelection.clear();
+                    nodeSelection.addAll(boxed);
+                    selectedNode = nodeSelection.isEmpty() ? "" : nodeSelection.iterator().next();
+                    setPointer(nodes.stream().filter(node -> node.id().equals(selectedNode)).map(DialogueGraph.Node::pointer).findFirst().orElse(""));
+                });
+                boxSelecting = false;
+            }
+        }
         if (showMinimap && !cards.isEmpty()) minimap(draw, cards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
         draw.popClipRect();
         if (ImGui.isMouseReleased(0)) {
             wireDragMoved = false;
             if (draggingNode != null) {
+                if (snapGrid && nodeDragMoved) EditorGraphSelection.snap(positions, selectedNodes(), draggingNode, 16);
                 Map<String, float[]> movedPositions = new HashMap<>();
                 positions.forEach((id, position) -> movedPositions.put(id, position.clone()));
                 if (nodeDragMoved) operation(() -> { persistPositions(movedPositions); refresh(); });
@@ -1339,7 +1546,7 @@ final class ImGuiAuthoringEditor {
             ImGui.textWrapped("Select an existing JSON object or field: " + exception.getMessage());
         }
         if (hasPendingFields()) {
-            if (ImGui.button("Apply field edits")) operation(() -> { });
+            if (ImGui.button("Apply field edits")) operation(this::focusFirstError);
             ImGui.sameLine();
             if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); textFields.clear(); });
         }
@@ -1495,8 +1702,16 @@ final class ImGuiAuthoringEditor {
             packBuild.load(workspace);
             packBuild.apply();
         }
-        if (document != null) pendingFields.validate(document);
-        translatedFields.forEach((owner, edits) -> edits.validate(owner));
+        if (document != null) {
+            var issues = pendingFields.issues(document);
+            if (!issues.isEmpty()) focusField(document, issues.keySet().iterator().next());
+            pendingFields.validate(document);
+        }
+        for (var entry : translatedFields.entrySet()) {
+            var issues = entry.getValue().issues(entry.getKey());
+            if (!issues.isEmpty()) focusField(entry.getKey(), issues.keySet().iterator().next());
+            entry.getValue().validate(entry.getKey());
+        }
         if (pendingFields.apply(document)) { historyDocument = document; changed = true; }
         for (var entry : translatedFields.entrySet()) {
             if (entry.getValue().apply(entry.getKey())) { historyDocument = entry.getKey(); changed = true; }
@@ -1528,7 +1743,19 @@ final class ImGuiAuthoringEditor {
     private void graphTools() {
         if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest()) return;
         if (ImGui.checkbox("Show minimap", showMinimap)) { showMinimap = !showMinimap; saveViewPreferences(); }
-        ImGui.textWrapped("Ctrl-click headers to select nodes. Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
+        ImGui.textWrapped("Drag empty space to box-select. Ctrl adds to the selection. Drag selected headers to move the group.");
+        ImGui.textWrapped("Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
+        if (ImGui.checkbox("Snap group to 16-unit grid", snapGrid)) { snapGrid = !snapGrid; attempt(this::saveSession); }
+        ImGui.beginDisabled(selectedNodes().isEmpty());
+        if (ImGui.button("Frame selection")) { fitSelection = true; fitGraph = true; }
+        ImGui.endDisabled();
+        ImGui.beginDisabled(selectedNodes().size() < 2);
+        if (ImGui.beginCombo("Arrange selected nodes", "Choose alignment or spacing...")) {
+            for (String action : List.of("Align left", "Align top", "Space horizontally", "Space vertically", "Arrange selection"))
+                if (ImGui.selectable(action)) operation(() -> alignNodes(action));
+            ImGui.endCombo();
+        }
+        ImGui.endDisabled();
         if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
         if (ImGui.button("Paste nodes")) operation(this::pasteNodes);
         if (!ImGui.collapsingHeader("Graph outline and bookmarks")) return;
@@ -1711,7 +1938,9 @@ final class ImGuiAuthoringEditor {
                 ImGui.endDisabled();
                 translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
                         .update(location.pointer(), text, buffer.get());
+                if (fieldFocus.equals(bufferId)) { fieldFocus = ""; ImGui.setScrollHereY(.25f); textFields.focus(bufferId); }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(locale.get() + " wording. The localization reference is preserved.");
+                referenceButtons(path + "/key", key);
                 return;
             }
             ImGui.textWrapped(workspace.resolveText(document, reference, locale.get()));
@@ -1770,6 +1999,9 @@ final class ImGuiAuthoringEditor {
     private void inspectValue(JsonElement value, String path, String label, int depth) {
         if (depth > 16) { ImGui.textUnformatted("Use advanced JSON for deeper nesting."); return; }
         ImGui.pushID(path);
+        boolean scalar = value.isJsonPrimitive() || value.isJsonNull();
+        String error = scalar ? fieldMessage(path, value) : "";
+        if (!error.isEmpty()) ImGui.pushStyleColor(ImGuiCol.FrameBg, .32f, .12f, .12f, 1);
         if (value.isJsonObject() && value.getAsJsonObject().has("key")
                 && value.getAsJsonObject().get("key").isJsonPrimitive() && workspace != null
                 && (path.endsWith("/text") || path.endsWith("/label") || path.endsWith("/title"))) {
@@ -1794,6 +2026,7 @@ final class ImGuiAuthoringEditor {
             for (int i = 0; i < lines.size(); i++) {
                 int index = i;
                 ImGui.pushID(i);
+                ImGui.beginGroup();
                 inspectValue(lines.get(i), path + "/" + i, lines.size() == 1 ? "Dialogue text" : "Line " + (i + 1), depth + 1);
                 ImGui.beginDisabled(lines.size() == 1);
                 if (ImGui.smallButton("Remove line")) editArray(path, values -> values.remove(index));
@@ -1808,6 +2041,9 @@ final class ImGuiAuthoringEditor {
                         values.set(index, previous);
                     });
                 }
+                listReorderHandle(path, i, lines);
+                ImGui.endGroup();
+                listDropTarget(path, i);
                 ImGui.popID();
             }
         } else if (value.isJsonArray()) {
@@ -1825,6 +2061,7 @@ final class ImGuiAuthoringEditor {
                 for (int i = 0; i < array.size(); i++) {
                     final int index = i;
                     ImGui.pushID(i);
+                    ImGui.beginGroup();
                     inspectValue(array.get(i), path + "/" + i, "[" + i + "]", depth + 1);
                     if (ImGui.smallButton("Remove")) editArray(path, values -> values.remove(index));
                     ImGui.sameLine();
@@ -1837,6 +2074,9 @@ final class ImGuiAuthoringEditor {
                             values.set(index, previous);
                         });
                     }
+                    listReorderHandle(path, i, array);
+                    ImGui.endGroup();
+                    listDropTarget(path, i);
                     ImGui.popID();
                 }
                 ImGui.treePop();
@@ -1851,19 +2091,80 @@ final class ImGuiAuthoringEditor {
             ImGui.setNextItemWidth(-1);
             boolean text = value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
             boolean apply = false;
+            if (fieldFocus.equals(path)) {
+                fieldFocus = ""; ImGui.setScrollHereY(.25f);
+                if (text) textFields.focus(path);
+                ImGui.setKeyboardFocusHere();
+            }
             if (text && (path.contains("/lines/") || path.contains("/variants/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true);
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false);
             else {
-                apply = ImGui.inputText("##value", input, ImGuiInputTextFlags.EnterReturnsTrue);
+                ImGui.inputText("##value", input);
+                apply = ImGui.isItemDeactivatedAfterEdit() && ImGui.isKeyPressed(ImGuiKey.Enter);
                 if (text) propertyPicker(path, input);
             }
             ImGui.endDisabled();
             pendingFields.update(path, value, input.get());
+            if (text) referenceButtons(path, input.get());
             if (apply) operation(() -> { });
         }
+        if (!error.isEmpty()) ImGui.popStyleColor();
+        if (scalar) {
+            String message = fieldMessage(path, value);
+            if (!message.isEmpty()) { ImGui.pushStyleColor(ImGuiCol.Text, 1, .4f, .35f, 1); ImGui.textWrapped(message); ImGui.popStyleColor(); }
+        }
         ImGui.popID();
+    }
+
+    private void listReorderHandle(String path, int index, JsonArray baseline) {
+        ImGui.sameLine();
+        ImGui.smallButton("::");
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Drag to reorder this entry");
+        if (ImGui.beginDragDropSource()) {
+            ImGui.setDragDropPayload(new EditorArrayOrder.Drag(document, path, index, baseline.deepCopy()));
+            ImGui.textUnformatted("Move entry " + (index + 1));
+            ImGui.endDragDropSource();
+        }
+    }
+
+    private void listDropTarget(String path, int index) {
+        if (!ImGui.beginDragDropTarget()) return;
+        var drag = ImGui.acceptDragDropPayload(EditorArrayOrder.Drag.class);
+        if (drag != null && drag.document() == document && drag.pointer().equals(path)) operation(() -> {
+            EditorArrayOrder.move(document, path, drag.index(), index, drag.baseline()); refresh();
+        });
+        ImGui.endDragDropTarget();
+    }
+
+    private String fieldMessage(String path, JsonElement value) {
+        String issue = pendingFields.issue(document, path);
+        if (!issue.isEmpty()) return issue;
+        if (!pendingFields.contains(path)) for (var diagnostic : diagnostics)
+            if (diagnostic.resourcePath().equals(document.resourcePath()) && diagnostic.pointer().equals(path)
+                    && diagnostic.severity() == AuthoringDiagnostic.Severity.ERROR) return diagnostic.message();
+        if (pendingFields.contains(path)) value = pendingFields.candidate(document, path);
+        if (!value.isJsonPrimitive() && !value.isJsonNull()) return "";
+        var messages = propertySchema.scalarIssues(document.json(), path, value);
+        return messages.isEmpty() ? "" : messages.getFirst();
+    }
+
+    private void focusField(AuthoringDocument owner, String path) {
+        if (owner == document) {
+            var location = EditorDiagnosticLocation.resolve(owner, path);
+            selectedNode = location.nodeId(); setPointer(location.pointer()); fieldFocus = location.pointer();
+        } else {
+            fieldFocus = owner.resourcePath() + path;
+            textFields.focus(fieldFocus);
+        }
+        focusPanel = DETAIL_PANEL;
+    }
+
+    private void focusFirstError() {
+        var issue = diagnostics.stream().filter(value -> value.severity() == AuthoringDiagnostic.Severity.ERROR
+                && document != null && value.resourcePath().equals(document.resourcePath())).findFirst().orElse(null);
+        if (issue != null) focusField(document, issue.pointer());
     }
 
     private void matchMode(JsonObject condition, String path) {
@@ -2340,12 +2641,14 @@ final class ImGuiAuthoringEditor {
         recordLocation();
         select(content);
         packFiles.select(path);
+        openFiles.open(workspace, path);
         filesMode = true;
         saveViewPreferences();
         if (content == null) {
             var remembered = navigation.remembered(workspace, null, path);
             workScroll = remembered == null ? 0 : remembered.scroll();
-            restoreWorkScroll = workScroll;
+            detailsScroll = remembered == null ? 0 : remembered.detailsScroll();
+            restoreWorkScroll = workScroll; restoreDetailsScroll = detailsScroll;
         }
         view = content == null ? 4 : 0;
         focusPanel = WORK_PANEL;
@@ -2356,7 +2659,35 @@ final class ImGuiAuthoringEditor {
     }
 
     private void recordLocation() {
-        navigation.record(workspace, new EditorNavigation.Location(document, packFiles.selected(), view, filesMode, pointer.get(), panX, panY, zoom, workScroll));
+        navigation.record(workspace, currentLocation());
+        if (workspace != null && !activePath().isEmpty()) openFiles.open(workspace, activePath());
+    }
+
+    private EditorNavigation.Location currentLocation() {
+        return new EditorNavigation.Location(document, packFiles.selected(), view, filesMode, pointer.get(), panX, panY, zoom, workScroll, detailsScroll);
+    }
+
+    private void saveSession() throws IOException {
+        if (workspace == null || showRecovery) return;
+        recordLocation();
+        sessions.save(workspace, EditorSession.snapshot(workspace, navigation, openFiles, currentLocation(), snapGrid));
+    }
+
+    private void restoreSession(boolean active) throws IOException {
+        JsonObject saved = sessions.read(workspace);
+        var recent = saved.has("recent") ? saved.getAsJsonArray("recent").asList().stream().map(JsonElement::getAsString).toList() : List.<String>of();
+        navigation.restore(workspace, EditorSession.positions(workspace, saved), recent);
+        openFiles.restore(workspace, saved.has("open_files") ? saved.getAsJsonArray("open_files") : new JsonArray());
+        snapGrid = saved.has("snap_grid") && saved.get("snap_grid").getAsBoolean();
+        if (!active || !saved.has("current")) return;
+        var current = EditorSession.location(workspace, saved.getAsJsonObject("current"));
+        if (current == null) return;
+        if (current.document() != null) select(current.document());
+        else if (current.view() == 4) openPackFile(current.currentPath());
+        filesMode = current.filesMode();
+        view = current.view();
+        restoreDocumentPosition(current);
+        focusPanel = WORK_PANEL;
     }
 
     private void navigateHistory(int direction) {
@@ -2411,12 +2742,12 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(history == null || !history.canUndo() || rawModified);
         if (ImGui.button("Undo")) operation(() -> changeHistory(false));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo (Ctrl+Z)");
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo" + (history == null || history.undoLabel().isEmpty() ? "" : ": " + history.undoLabel()) + " (Ctrl+Z)");
         ImGui.sameLine();
         ImGui.beginDisabled(history == null || !history.canRedo() || rawModified);
         if (ImGui.button("Redo")) operation(() -> changeHistory(true));
         ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo (Ctrl+Y)");
+        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo" + (history == null || history.redoLabel().isEmpty() ? "" : ": " + history.redoLabel()) + " (Ctrl+Y)");
         ImGui.endDisabled();
     }
 
@@ -2554,6 +2885,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void writeRecovery() throws IOException {
+        saveSession();
         if (workspace == null || showRecovery || !(workspace.dirty() || hasPendingFields() || rawModified)) return;
         JsonObject buffers = new JsonObject();
         if (document != null) buffers.addProperty("document", document.resourcePath());
@@ -2574,6 +2906,7 @@ final class ImGuiAuthoringEditor {
             ImGui.textWrapped("Recovered drafts are available. Choose a version before continuing.");
             if (ImGui.button("Recover drafts")) attempt(() -> {
                 workspace = AuthoringWorkspace.recover(workspace.directory());
+                restoreSession(false);
                 packFiles.reset();
                 packBuild.load(workspace);
                 JsonObject buffers = workspace.recoveryBuffers();
@@ -2607,7 +2940,7 @@ final class ImGuiAuthoringEditor {
                 status = "Drafts recovered. Save when ready.";
             });
             ImGui.sameLine();
-            if (ImGui.button("Keep saved version")) attempt(() -> { workspace.discardRecovery(); showRecovery = false; });
+            if (ImGui.button("Keep saved version")) attempt(() -> { workspace.discardRecovery(); showRecovery = false; restoreSession(true); });
         }
         if (confirmClose) {
             ImGui.textWrapped("You have unsaved drafts. Save them or keep a recovery copy before closing.");
@@ -2620,6 +2953,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void closeEditor() {
+        attempt(this::saveSession);
         confirmClose = false;
         EditorPlaytestPresentation.clear();
         EditorLiveQuestTest.stop();
@@ -2637,6 +2971,7 @@ final class ImGuiAuthoringEditor {
         packBuild.load(workspace);
         packBuild.apply();
         workspace.save();
+        validate(); focusFirstError();
         status = "Drafts saved.";
     }
 
@@ -2664,7 +2999,7 @@ final class ImGuiAuthoringEditor {
         playtestStepRemoved = false;
         document = next;
         questPreview = null;
-        fitGraph = true;
+        fitGraph = true; fitSelection = false; boxSelecting = false;
         historyDocument = next;
         selectedNode = "";
         nodeSelection.clear();
@@ -2686,12 +3021,13 @@ final class ImGuiAuthoringEditor {
                 status = "This draft needs repair in Advanced editing: " + exception.getMessage();
             }
         }
-        if (next != null) packFiles.select(next.resourcePath());
+        if (next != null) { packFiles.select(next.resourcePath()); openFiles.open(workspace, next.resourcePath()); }
         refresh();
         if (changed) {
             var remembered = navigation.remembered(workspace, next, next == null ? "" : next.resourcePath());
             workScroll = remembered == null ? 0 : remembered.scroll();
-            restoreWorkScroll = workScroll;
+            detailsScroll = remembered == null ? 0 : remembered.detailsScroll();
+            restoreWorkScroll = workScroll; restoreDetailsScroll = detailsScroll;
             if (remembered != null) restoreDocumentPosition(remembered);
         }
     }
@@ -2706,6 +3042,7 @@ final class ImGuiAuthoringEditor {
         panX = location.panX(); panY = location.panY(); zoom = location.zoom();
         fitGraph = false; graphFocus = "";
         workScroll = location.scroll(); restoreWorkScroll = workScroll;
+        detailsScroll = location.detailsScroll(); restoreDetailsScroll = detailsScroll;
     }
 
     private void changeHistory(boolean redo) {

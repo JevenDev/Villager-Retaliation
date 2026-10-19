@@ -54,6 +54,13 @@ final class EditorSchema {
         return effective(rule, value);
     }
 
+    List<String> scalarIssues(JsonObject document, String pointer, JsonElement value) {
+        JsonObject rule = at(document, pointer), scalar = new JsonObject();
+        for (String field : List.of("type", "enum", "const", "minimum", "maximum", "minLength", "maxLength", "pattern"))
+            if (rule.has(field)) scalar.add(field, rule.get(field));
+        return QuestJsonSchema.validate(value, scalar).stream().map(QuestJsonSchema.Issue::message).toList();
+    }
+
     JsonObject effective(JsonObject rule, JsonElement value) {
         return effective(rule, value, 0);
     }
