@@ -58,9 +58,19 @@ public final class CampaignSelectionClientSmoke {
             CreateWorldScreen.openFresh(minecraft, minecraft.screen);
         } else if (step == 1 && minecraft.screen instanceof CreateWorldScreen screen) {
             setup = screen;
-            button(screen, Component.translatable("selectWorld.create").getString()).onPress();
-            require(minecraft.screen instanceof CampaignSelectScreen, "Create opens campaign selection");
+            CampaignLoadingClientChecks.start(screen);
+            step = 16;
+            frames = 0;
+        } else if (step == 16 && ++frames >= 5) {
+            CampaignLoadingClientChecks.cancel();
+            step = 17;
+            frames = 0;
+        } else if (step == 17 && ++frames >= 5) {
+            CampaignLoadingClientChecks.verifyCanceled();
+            button(setup, Component.translatable("selectWorld.create").getString()).onPress();
+            require(minecraft.screen instanceof CampaignLoadingScreen, "Create prepares campaigns without blocking the menu render thread");
             step = 2;
+            frames = 0;
         } else if (step == 2 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 15) {
             require(campaignButton(screen, "default").active, "Default VR is available");
             require(!campaignButton(screen, "vr").active, "Campaign VR is locked");
@@ -92,9 +102,25 @@ public final class CampaignSelectionClientSmoke {
             Button last = button(screen, "Campaign 3");
             require(Math.abs(first.getX() + last.getRight() - screen.width) <= 2, "Cards distribute around the screen center");
             Screenshot.grab(output().toFile(), "campaign-three-cards.png", minecraft.getMainRenderTarget(), ignored -> { });
+            minecraft.setScreen(CampaignAnimationClientChecks.start(screen));
+            step = 13;
+            frames = 0;
+        } else if (step == 13 && ++frames >= 20) {
+            CampaignAnimationClientChecks.hover();
+            step = 14;
+            frames = 0;
+        } else if (step == 14 && ++frames >= 20) {
+            CampaignAnimationClientChecks.verifyHover();
+            Screenshot.grab(output().toFile(), "campaign-hover.png", minecraft.getMainRenderTarget(), ignored -> { });
+            var screen = CampaignAnimationClientChecks.finish();
+            minecraft.setScreen(screen);
             Button expand = button(screen, "Expand Campaign 1");
             require(screen.mouseClicked(expand.getX() + 1, expand.getY() + 1, 0), "Caret accepts clicks outside its visible pixels");
             require(CampaignCardClientChecks.cards(screen) == 1, "Expansion opens only the chosen card");
+            step = 15;
+            frames = 0;
+        } else if (step == 15 && minecraft.screen instanceof CampaignSelectScreen && ++frames >= 1) {
+            Screenshot.grab(output().toFile(), "campaign-expansion-transition.png", minecraft.getMainRenderTarget(), ignored -> { });
             step = 8;
             frames = 0;
         } else if (step == 8 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 15) {
@@ -105,6 +131,7 @@ public final class CampaignSelectionClientSmoke {
             require(CampaignCardClientChecks.scroll(screen) > 0, "Long descriptions scroll");
             screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN, 0, 0);
             require(CampaignCardClientChecks.scroll(screen) > 54, "Descriptions support keyboard scrolling");
+            CampaignAnimationClientChecks.scrolling(screen, false);
             alphaSelection = screen;
             minecraft.setScreen(CampaignCardClientChecks.alphaScreen(screen));
             step = 10;
@@ -116,6 +143,7 @@ public final class CampaignSelectionClientSmoke {
             step = 9;
             frames = 0;
         } else if (step == 9 && minecraft.screen instanceof CampaignSelectScreen screen && ++frames >= 10) {
+            CampaignAnimationClientChecks.scrolling(screen, true);
             Screenshot.grab(output().toFile(), "campaign-description-scrolled.png", minecraft.getMainRenderTarget(), ignored -> { });
             CampaignCardClientChecks.reload(screen);
             screen.keyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE, 0, 0);
@@ -151,7 +179,7 @@ public final class CampaignSelectionClientSmoke {
             var selection = CampaignWorldModeSavedData.readSelection(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), server.registryAccess());
             require(WorldCampaign.DEFAULT.equals(selection.worldCampaign()), "Created world persists Default VR");
             require(selection.includeDefaultContent(), "Created world retains default content");
-            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: centered cards, paging, expansion, accessible carets, Markdown and Minecraft color codes, transparent PNG/GIF media, F5 disk edits to campaign titles, authors, PNG covers, Markdown, and GIFs, selected datapack priority, campaign catalog reload, failed reload recovery, scrolling, locked state, Back, creation, and permanent saved selection.\n");
+            Files.writeString(output().resolve("result.txt"), "Campaign selection client smoke passed: centered cards, responsive background loading and cancellation, continuous panorama handoff, animated paging and expansion, cursor tilt, cover-only tooltips, parallax hover slowdown, moving hit areas, accessible carets, Markdown and Minecraft color codes, transparent PNG/GIF media, F5 disk edits to campaign titles, authors, PNG covers, Markdown, and GIFs, selected datapack priority, campaign catalog reload, failed reload recovery, scrolling, locked state, Back, creation, and permanent saved selection.\n");
             step = 6;
             minecraft.stop();
         }

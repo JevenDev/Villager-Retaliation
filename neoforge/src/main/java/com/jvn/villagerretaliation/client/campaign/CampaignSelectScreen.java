@@ -3,8 +3,11 @@ package com.jvn.villagerretaliation.client.campaign;
 import com.google.gson.JsonParseException;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaign;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaignCatalog;
+import com.jvn.villagerretaliation.mixin.client.PanoramaRendererAccessor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
+import com.mojang.math.Axis;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +19,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +46,13 @@ public final class CampaignSelectScreen extends Screen {
     private final Map<ResourceLocation, List<CampaignDescription.Block>> descriptions = new LinkedHashMap<>();
     private Component reloadStatus;
     private long reloadStatusUntil;
+    private final CampaignMotion backgroundMotion = new CampaignMotion();
+    private boolean backgroundStarted;
+    private final Map<ResourceLocation, CampaignMotion.Card> cardMotion = new LinkedHashMap<>();
+    private final Map<ResourceLocation, Card> cards = new LinkedHashMap<>();
+    private final List<Card> departingCards = new ArrayList<>();
+    private int pageDirection;
+    private boolean fadeDepartures = true;
     private WorldCampaign selected;
     private WorldCampaign expanded;
     private Button createButton;
@@ -51,6 +62,7 @@ public final class CampaignSelectScreen extends Screen {
     private int contentTop;
     private int descriptionHeight;
     private double descriptionScroll;
+    private double visibleDescriptionScroll;
 
     public CampaignSelectScreen(Screen parent, WorldCampaignCatalog catalog, ResourceManager resources,
                                 Supplier<CloseableResourceManager> reloadResources, Consumer<WorldCampaign> create) {
@@ -72,6 +84,12 @@ public final class CampaignSelectScreen extends Screen {
         }
     }
 
+    void prepareFirstPage() {
+        for (var campaign : campaigns.subList(0, Math.min(PAGE_SIZE, campaigns.size()))) {
+            images.get(campaign.image()).prepare(campaign.locked());
+        }
+    }
+
     private static ResourceLocation texture(String name) {
         return ResourceLocation.fromNamespaceAndPath("villagerretaliation", "textures/gui/campaign_select_screen/" + name + ".png");
     }
@@ -85,10 +103,27 @@ public final class CampaignSelectScreen extends Screen {
         cardScale = Math.max(0.1F, Math.min(1, Math.min((width - 8F) / groupWidth, (height - 75F) / CARD_HEIGHT)));
         contentLeft = Math.round((width - groupWidth * cardScale) / 2);
         contentTop = Math.round(26 + (height - 75 - CARD_HEIGHT * cardScale) / 2);
-        if (expanded != null) addCard(expanded, contentLeft, true);
-        else for (int index = 0; index < count; index++) {
-            addCard(campaigns.get(page * PAGE_SIZE + index), contentLeft + Math.round(index * (CARD_WIDTH + 16) * cardScale), false);
+        long now = Util.getMillis();
+        List<WorldCampaign> visible = expanded != null ? List.of(expanded) : campaigns.subList(page * PAGE_SIZE, page * PAGE_SIZE + count);
+        var visibleIds = visible.stream().map(WorldCampaign::id).toList();
+        if (pageDirection != 0 || !fadeDepartures) departingCards.clear();
+        for (var card : cards.values()) {
+            if (visibleIds.contains(card.campaign.id())) continue;
+            if (pageDirection == 0 && fadeDepartures) {
+                card.setFocused(false);
+                card.motion.target(card.motion.x(), card.motion.y() + 4 * card.motion.scale(), card.motion.scale(), false, 0, now, 0);
+                departingCards.add(card);
+            } else cardMotion.remove(card.campaign.id());
         }
+        departingCards.removeIf(card -> visibleIds.contains(card.campaign.id()));
+        cards.clear();
+        for (int index = 0; index < visible.size(); index++) {
+            int x = contentLeft + (expanded != null ? 0 : Math.round(index * (CARD_WIDTH + 16) * cardScale));
+            addCard(visible.get(index), x, expanded != null, now, index * 25);
+        }
+        cardMotion.keySet().removeIf(id -> !cards.containsKey(id) && departingCards.stream().noneMatch(card -> card.campaign.id().equals(id)));
+        pageDirection = 0;
+        fadeDepartures = true;
         int y = height - 28;
         int buttonWidth = expanded == null && pages > 1 ? Math.min(150, (width - 104) / 2) : 150;
         addRenderableWidget(Button.builder(CommonComponents.GUI_BACK, button -> onClose()).bounds(width / 2 - buttonWidth - 4, y, buttonWidth, 20).build());
@@ -96,20 +131,30 @@ public final class CampaignSelectScreen extends Screen {
                 .bounds(width / 2 + 4, y, buttonWidth, 20).build());
         createButton.active = selected != null;
         if (expanded == null && pages > 1) {
-            Button previous = addRenderableWidget(Button.builder(Component.literal("<"), button -> { page--; rebuildWidgets(); })
+            Button previous = addRenderableWidget(Button.builder(Component.literal("<"), button -> changePage(-1))
                     .bounds(16, y, 20, 20).build());
             previous.setTooltip(Tooltip.create(Component.translatable("screen.villagerretaliation.campaign.previous")));
             previous.active = page > 0;
-            Button next = addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuildWidgets(); })
+            Button next = addRenderableWidget(Button.builder(Component.literal(">"), button -> changePage(1))
                     .bounds(width - 36, y, 20, 20).build());
             next.setTooltip(Tooltip.create(Component.translatable("screen.villagerretaliation.campaign.next")));
             next.active = page + 1 < pages;
         }
     }
 
-    private void addCard(WorldCampaign campaign, int x, boolean isExpanded) {
-        addRenderableWidget(new Card(x, campaign, isExpanded));
-        addRenderableWidget(new Caret(x, campaign, isExpanded));
+    private void addCard(WorldCampaign campaign, int x, boolean isExpanded, long now, int delay) {
+        boolean entering = !cardMotion.containsKey(campaign.id());
+        var motion = cardMotion.computeIfAbsent(campaign.id(), id -> new CampaignMotion.Card(x + pageDirection * 8, contentTop + 6 * cardScale, cardScale, isExpanded, now));
+        motion.target(x, contentTop, cardScale, isExpanded, 1, now, entering ? delay : 0);
+        Card card = addRenderableWidget(new Card(x, campaign, isExpanded, motion));
+        cards.put(campaign.id(), card);
+        addRenderableWidget(new Caret(x, campaign, isExpanded, motion));
+    }
+
+    private void changePage(int direction) {
+        page += direction;
+        pageDirection = direction;
+        rebuildWidgets();
     }
 
     private void select(WorldCampaign campaign) {
@@ -123,11 +168,32 @@ public final class CampaignSelectScreen extends Screen {
             select(campaign);
         } else expanded = null;
         descriptionScroll = 0;
+        visibleDescriptionScroll = 0;
         rebuildWidgets();
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        long now = Util.getMillis();
+        if (!backgroundStarted) {
+            backgroundMotion.start(((PanoramaRendererAccessor) PANORAMA).villagerretaliation$getSpin());
+            backgroundStarted = true;
+        }
+        boolean hovering = cards.values().stream().anyMatch(card -> card.motion.contains(mouseX, mouseY));
+        backgroundMotion.update(now, mouseX, mouseY, width, height, hovering, minecraft.options.panoramaSpeed().get());
+        visibleDescriptionScroll += (descriptionScroll - visibleDescriptionScroll) * (1 - Math.exp(-backgroundMotion.delta() * 14));
+        for (var entry : cardMotion.entrySet()) {
+            var card = cards.get(entry.getKey());
+            entry.getValue().update(now, backgroundMotion.delta(), card != null && (card.motion.contains(mouseX, mouseY) || card.isFocused()),
+                    selected != null && selected.id().equals(entry.getKey()));
+            entry.getValue().tilt(mouseX, mouseY, backgroundMotion.delta());
+        }
+        departingCards.removeIf(card -> !card.motion.visible());
+        cardMotion.keySet().removeIf(id -> !cards.containsKey(id) && departingCards.stream().noneMatch(card -> card.campaign.id().equals(id)));
+        for (var child : children()) {
+            if (child instanceof Card card) card.updateBounds();
+            else if (child instanceof Caret caret) caret.updateBounds();
+        }
         super.render(graphics, mouseX, mouseY, partialTick);
         for (var child : children()) {
             if (child instanceof Button button && (button instanceof Card || button instanceof Caret)
@@ -143,9 +209,28 @@ public final class CampaignSelectScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        for (var card : departingCards) card.render(graphics, -1, -1, partialTick);
+    }
+
+    @Override
+    protected void renderPanorama(GuiGraphics graphics, float partialTick) {
+        CUBE_MAP.render(minecraft, backgroundMotion.pitch(), backgroundMotion.yaw(), 1);
+        ((PanoramaRendererAccessor) PANORAMA).villagerretaliation$setSpin(-backgroundMotion.yaw());
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.blit(PanoramaRenderer.PANORAMA_OVERLAY, 0, 0, width, height, 0, 0, 16, 128, 16, 128);
+        RenderSystem.disableBlend();
+        RenderSystem.disableDepthTest();
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (expanded != null && mouseX >= contentLeft + 132 * cardScale && mouseX < contentLeft + 365 * cardScale
-                && mouseY >= contentTop + 9 * cardScale && mouseY < contentTop + 183 * cardScale) {
+        Card card = expanded == null ? null : cards.get(expanded.id());
+        if (card != null && mouseX >= card.motion.x() + 132 * card.motion.scale()
+                && mouseX < card.motion.x() + Math.min(365, card.motion.width() - 9) * card.motion.scale()
+                && mouseY >= card.motion.y() + 9 * card.motion.scale() && mouseY < card.motion.y() + 183 * card.motion.scale()) {
             descriptionScroll = Math.clamp(descriptionScroll - scrollY * 18, 0, Math.max(0, descriptionHeight - 174));
             return true;
         }
@@ -220,7 +305,9 @@ public final class CampaignSelectScreen extends Screen {
         expanded = expanded == null ? null : catalog.campaigns().get(expanded.id());
         if (expanded != null) page = campaigns.indexOf(expanded) / PAGE_SIZE;
         descriptionScroll = 0;
+        visibleDescriptionScroll = 0;
         descriptionHeight = 0;
+        fadeDepartures = false;
         rebuildWidgets();
         reloadStatus = Component.translatable("screen.villagerretaliation.campaign.reloaded");
         reloadStatusUntil = Util.getMillis() + 2_500;
@@ -253,16 +340,16 @@ public final class CampaignSelectScreen extends Screen {
 
     private final class Card extends Button {
         private final WorldCampaign campaign;
-        private final boolean isExpanded;
+        private final CampaignMotion.Card motion;
         private final String authorText;
         private final Tooltip authorTooltip;
         private final Tooltip cardTooltip;
 
-        private Card(int x, WorldCampaign campaign, boolean isExpanded) {
+        private Card(int x, WorldCampaign campaign, boolean isExpanded, CampaignMotion.Card motion) {
             super(x, contentTop, Math.round((isExpanded ? EXPANDED_WIDTH : CARD_WIDTH) * cardScale), Math.round(CARD_HEIGHT * cardScale),
                     Component.literal(campaign.name()), button -> select(campaign), DEFAULT_NARRATION);
             this.campaign = campaign;
-            this.isExpanded = isExpanded;
+            this.motion = motion;
             active = !campaign.locked();
             Component tooltip = Component.literal(campaign.name());
             if (campaign.locked()) tooltip = tooltip.copy().append("\n").append(Component.translatable("screen.villagerretaliation.campaign.coming_soon"));
@@ -272,35 +359,60 @@ public final class CampaignSelectScreen extends Screen {
             setTooltip(cardTooltip);
         }
 
+        private void updateBounds() {
+            setX(Math.round(motion.x()));
+            setY(Math.round(motion.y()));
+            setWidth(Math.round(motion.width() * motion.scale()));
+            setHeight(Math.round(CARD_HEIGHT * motion.scale()));
+        }
+
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (mouseX >= getX() + 111 * cardScale && mouseX < getX() + 128 * cardScale
-                    && mouseY >= getY() + 82 * cardScale && mouseY < getY() + 110 * cardScale) return false;
+            if (motion.overCaret(mouseX, mouseY)) return false;
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
         @Override
+        protected boolean clicked(double mouseX, double mouseY) {
+            return active && visible && motion.contains(mouseX, mouseY);
+        }
+
+        @Override
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            return active && visible && motion.contains(mouseX, mouseY);
+        }
+
+        @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            if (!motion.visible()) return;
+            float scale = motion.scale();
+            graphics.setColor(1, 1, 1, motion.opacity());
+            isHovered = motion.contains(mouseX, mouseY);
+            int margin = Math.max(1, Math.round(4 * scale));
+            graphics.enableScissor(getX() - margin, getY() - margin, getRight() + margin, getBottom() + margin);
             graphics.pose().pushPose();
-            graphics.pose().translate(getX(), getY(), 0);
-            graphics.pose().scale(cardScale, cardScale, 1);
+            applyCardPose(graphics, motion);
             CampaignMedia image = images.get(campaign.image());
             if (image != null && image.available()) {
                 if (WorldCampaign.CARD_FALLBACK.equals(campaign.image())) image.render(graphics, 0, 0, CARD_WIDTH, CARD_HEIGHT, campaign.locked());
                 else image.render(graphics, 4, 4, 120, 184, campaign.locked());
             } else {
                 float brightness = campaign.locked() ? 0.8F : 1;
-                graphics.setColor(brightness, brightness, brightness, 1);
+                graphics.setColor(brightness, brightness, brightness, motion.opacity());
                 blit(graphics, WorldCampaign.CARD_FALLBACK, 0, 0, CARD_WIDTH, CARD_HEIGHT);
-                graphics.setColor(1, 1, 1, 1);
+                graphics.setColor(1, 1, 1, motion.opacity());
             }
-            blit(graphics, isExpanded ? EXPANDED : CARD, 0, 0, isExpanded ? EXPANDED_WIDTH : CARD_WIDTH, CARD_HEIGHT);
-            if (selected != null && selected.id().equals(campaign.id())) graphics.renderOutline(2, 2, 124, 188, 0xfff2cd83);
-            else if (isHoveredOrFocused() && active) graphics.renderOutline(2, 2, 124, 188, 0xffeeeeee);
-            boolean overAuthors = !authorText.isEmpty() && mouseX >= getX() + 7 * cardScale
-                    && mouseX < getX() + (7 + font.width(authorText)) * cardScale
-                    && mouseY >= getY() + AUTHOR_Y * cardScale && mouseY < getY() + (AUTHOR_Y + font.lineHeight) * cardScale;
-            setTooltip(overAuthors ? authorTooltip : cardTooltip);
+            renderFrame(graphics);
+            int selectionAlpha = Math.round(motion.selection() * 255);
+            int hoverAlpha = Math.round(motion.hover() * (1 - motion.selection()) * 255);
+            if (selectionAlpha > 0) graphics.renderOutline(2, 2, 124, 188, selectionAlpha << 24 | 0xf2cd83);
+            if (hoverAlpha > 0 && active) graphics.renderOutline(2, 2, 124, 188, hoverAlpha << 24 | 0xeeeeee);
+            double localX = motion.localX(mouseX, mouseY);
+            double localY = motion.localY(mouseX, mouseY);
+            boolean overCover = localX >= 0 && localX < CARD_WIDTH && localY >= 0 && localY < CARD_HEIGHT;
+            boolean overAuthors = !authorText.isEmpty() && localX >= 7 && localX < 7 + font.width(authorText)
+                    && localY >= AUTHOR_Y && localY < AUTHOR_Y + font.lineHeight;
+            setTooltip(overAuthors ? authorTooltip : overCover ? cardTooltip : null);
             graphics.drawString(font, authorText, 7, AUTHOR_Y, 0xffffff, true);
             var titleLines = font.split(Component.literal(campaign.name()), 57);
             titleLines = titleLines.subList(0, Math.min(3, titleLines.size()));
@@ -318,35 +430,87 @@ public final class CampaignSelectScreen extends Screen {
                     graphics.drawString(font, line, (CARD_WIDTH - font.width(line)) / 2, top + index * font.lineHeight, 0xffffff, true);
                 }
             }
-            if (isExpanded) renderDescription(graphics, campaign);
+            if (motion.width() > 141 && motion.descriptionOpacity() > 0.005F) {
+                graphics.setColor(1, 1, 1, motion.opacity() * motion.descriptionOpacity());
+                renderDescription(graphics, campaign, getX(), getY(), scale, motion.width());
+            }
             graphics.pose().popPose();
+            graphics.disableScissor();
+            graphics.setColor(1, 1, 1, 1);
+        }
+
+        private void renderFrame(GuiGraphics graphics) {
+            int width = motion.width();
+            if (width == CARD_WIDTH) blit(graphics, CARD, 0, 0, CARD_WIDTH, CARD_HEIGHT);
+            else if (width == EXPANDED_WIDTH) blit(graphics, EXPANDED, 0, 0, EXPANDED_WIDTH, CARD_HEIGHT);
+            else {
+                // reveal the native texture and move its right edge without stretching or layering its alpha
+                graphics.enableScissor(getX() - 1, getY() - 1, Math.round(motion.x() + (width - 3) * motion.scale()), getBottom() + 1);
+                blit(graphics, EXPANDED, 0, 0, EXPANDED_WIDTH, CARD_HEIGHT);
+                graphics.disableScissor();
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+                graphics.blit(EXPANDED, width - 3, 0, EXPANDED_WIDTH - 3, 0, 3, CARD_HEIGHT, EXPANDED_WIDTH, CARD_HEIGHT);
+                RenderSystem.disableBlend();
+            }
         }
     }
 
     private final class Caret extends Button {
         private final boolean isExpanded;
+        private final CampaignMotion.Card motion;
+        private float highlight;
 
-        private Caret(int cardX, WorldCampaign campaign, boolean isExpanded) {
+        private Caret(int cardX, WorldCampaign campaign, boolean isExpanded, CampaignMotion.Card motion) {
             super(cardX + Math.round(111 * cardScale), contentTop + Math.round(82 * cardScale), Math.max(1, Math.round(17 * cardScale)),
                     Math.max(1, Math.round(28 * cardScale)), Component.translatable("screen.villagerretaliation.campaign." + (isExpanded ? "collapse" : "expand"), campaign.name()),
                     button -> toggle(campaign), DEFAULT_NARRATION);
             this.isExpanded = isExpanded;
+            this.motion = motion;
             setTooltip(Tooltip.create(getMessage()));
+        }
+
+        private void updateBounds() {
+            setX(Math.round(motion.x() + 111 * motion.scale()));
+            setY(Math.round(motion.y() + 82 * motion.scale()));
+            setWidth(Math.max(1, Math.round(17 * motion.scale())));
+            setHeight(Math.max(1, Math.round(28 * motion.scale())));
+        }
+
+        @Override
+        protected boolean clicked(double mouseX, double mouseY) {
+            return active && visible && motion.overCaret(mouseX, mouseY);
+        }
+
+        @Override
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            return active && visible && motion.overCaret(mouseX, mouseY);
         }
 
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            if (!motion.visible()) return;
+            isHovered = motion.overCaret(mouseX, mouseY);
+            highlight += ((isHoveredOrFocused() ? 1 : 0) - highlight) * (1 - (float) Math.exp(-backgroundMotion.delta() * 14));
             graphics.pose().pushPose();
-            graphics.pose().translate(getX(), getY(), 0);
-            graphics.pose().scale(cardScale, cardScale, 1);
-            if (isHoveredOrFocused()) graphics.setColor(1, 0.8F, 0.4F, 1);
+            applyCardPose(graphics, motion);
+            graphics.pose().translate(111, 82, 0);
+            graphics.setColor(1, 1 - 0.2F * highlight, 1 - 0.6F * highlight, motion.opacity());
             blit(graphics, isExpanded ? COLLAPSE : CARET, 5, 9, 7, 10);
             graphics.setColor(1, 1, 1, 1);
             graphics.pose().popPose();
         }
     }
 
-    private void renderDescription(GuiGraphics graphics, WorldCampaign campaign) {
+    private static void applyCardPose(GuiGraphics graphics, CampaignMotion.Card motion) {
+        graphics.pose().translate(motion.x(), motion.y(), 0);
+        graphics.pose().scale(motion.scale(), motion.scale(), 1);
+        graphics.pose().translate(64, 96, 0);
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(motion.tilt()));
+        graphics.pose().translate(-64, -96, 0);
+    }
+
+    private void renderDescription(GuiGraphics graphics, WorldCampaign campaign, int x, int top, float scale, int revealWidth) {
         int rightPadding = 9;
         int frameRight = EXPANDED_WIDTH - 3;
         int scrollbarRight = EXPANDED_WIDTH - rightPadding;
@@ -354,8 +518,8 @@ public final class CampaignSelectScreen extends Screen {
         int scrollbarGap = frameRight - scrollbarRight;
         int contentRight = scrollbarLeft - scrollbarGap;
         int areaWidth = contentRight - 132;
-        graphics.enableScissor(contentLeft + Math.round(132 * cardScale), contentTop + Math.round(9 * cardScale),
-                contentLeft + Math.round(contentRight * cardScale), contentTop + Math.round(183 * cardScale));
+        graphics.enableScissor(x + Math.round(132 * scale), top + Math.round(9 * scale),
+                x + Math.round(Math.min(contentRight, revealWidth - 9) * scale), top + Math.round(183 * scale));
         int y = 0;
         for (var block : descriptions.get(campaign.id())) {
             if (block.image() != null) {
@@ -363,14 +527,14 @@ public final class CampaignSelectScreen extends Screen {
                 CampaignMedia image = descriptionImages.get(id);
                 if (image != null && image.available()) {
                     int imageHeight = image.height(areaWidth);
-                    image.render(graphics, 132, 9 + y - (int) descriptionScroll, areaWidth, imageHeight);
+                    image.render(graphics, 132, 9 + y - (int) visibleDescriptionScroll, areaWidth, imageHeight);
                     y += imageHeight + 4;
                     continue;
                 }
             }
             var lines = font.split(block.text(), (int) (areaWidth / block.scale()));
             graphics.pose().pushPose();
-            graphics.pose().translate(132, 9 + y - (int) descriptionScroll, 0);
+            graphics.pose().translate(132, 9 + y - (int) visibleDescriptionScroll, 0);
             graphics.pose().scale(block.scale(), block.scale(), 1);
             for (int index = 0; index < lines.size(); index++) graphics.drawString(font, lines.get(index), 0, index * font.lineHeight, 0xffffff, false);
             graphics.pose().popPose();
@@ -380,8 +544,8 @@ public final class CampaignSelectScreen extends Screen {
         descriptionHeight = y;
         if (descriptionHeight > 174) {
             int thumb = Math.max(8, 174 * 174 / descriptionHeight);
-            int top = 9 + (int) (descriptionScroll * (174 - thumb) / (descriptionHeight - 174));
-            graphics.fill(scrollbarLeft, top, scrollbarRight, top + thumb, 0xfff2cd83);
+            int thumbTop = 9 + (int) (visibleDescriptionScroll * (174 - thumb) / (descriptionHeight - 174));
+            graphics.fill(scrollbarLeft, thumbTop, scrollbarRight, thumbTop + thumb, 0xfff2cd83);
         }
     }
 

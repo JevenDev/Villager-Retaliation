@@ -401,6 +401,7 @@ final class CampaignCardClientChecks {
         return new Screen(Component.literal("Campaign alpha verification")) {
             @Override
             public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+                CampaignAnimationClientChecks.tooltips(screen, graphics, partialTick);
                 graphics.fill(0, 0, width, height, 0xffc85028);
                 screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
                         .forEach(button -> {

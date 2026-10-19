@@ -26,6 +26,7 @@ final class CampaignMedia implements AutoCloseable {
     private final byte[] bytes;
     private final ResourceLocation source;
     private final List<NativeImage> frames = new ArrayList<>();
+    private final List<NativeImage> mutedFrames = new ArrayList<>();
     private final List<Integer> durations = new ArrayList<>();
     private ResourceLocation texture;
     private DynamicTexture dynamic;
@@ -64,6 +65,22 @@ final class CampaignMedia implements AutoCloseable {
         return !frames.isEmpty();
     }
 
+    void prepare(boolean muted) {
+        if (!available() || !muted || !mutedFrames.isEmpty()) return;
+        for (var frame : frames) {
+            NativeImage pixels = new NativeImage(width, height, false);
+            for (int row = 0; row < height; row++) {
+                for (int column = 0; column < width; column++) {
+                    int rgba = frame.getPixelRGBA(column, row);
+                    int gray = ((rgba & 255) * 54 + (rgba >> 8 & 255) * 183 + (rgba >> 16 & 255) * 19) / 256;
+                    gray = gray * 4 / 5;
+                    pixels.setPixelRGBA(column, row, (rgba & 0xff000000) | gray | gray << 8 | gray << 16);
+                }
+            }
+            mutedFrames.add(pixels);
+        }
+    }
+
     int height(int availableWidth) {
         return Math.max(1, Math.round(height * Math.min(1, availableWidth / (float) width)));
     }
@@ -92,18 +109,10 @@ final class CampaignMedia implements AutoCloseable {
         while (frame + 1 < frames.size() && time >= durations.get(frame)) time -= durations.get(frame++);
         if (frame != (muted ? mutedFrame : currentFrame)) {
             NativeImage pixels = target.getPixels();
-            pixels.copyFrom(frames.get(frame));
-            if (muted) {
-                for (int row = 0; row < height; row++) {
-                    for (int column = 0; column < width; column++) {
-                        int rgba = pixels.getPixelRGBA(column, row);
-                        int gray = ((rgba & 255) * 54 + (rgba >> 8 & 255) * 183 + (rgba >> 16 & 255) * 19) / 256;
-                        gray = gray * 4 / 5;
-                        pixels.setPixelRGBA(column, row, (rgba & 0xff000000) | gray | gray << 8 | gray << 16);
-                    }
-                }
-                mutedFrame = frame;
-            } else currentFrame = frame;
+            prepare(muted);
+            pixels.copyFrom((muted ? mutedFrames : frames).get(frame));
+            if (muted) mutedFrame = frame;
+            else currentFrame = frame;
             target.upload();
         }
         float scale = Math.min(availableWidth / (float) width, availableHeight / (float) height);
@@ -214,6 +223,8 @@ final class CampaignMedia implements AutoCloseable {
         if (mutedTexture != null) Minecraft.getInstance().getTextureManager().release(mutedTexture);
         frames.forEach(NativeImage::close);
         frames.clear();
+        mutedFrames.forEach(NativeImage::close);
+        mutedFrames.clear();
         durations.clear();
         duration = 0;
         currentFrame = -1;

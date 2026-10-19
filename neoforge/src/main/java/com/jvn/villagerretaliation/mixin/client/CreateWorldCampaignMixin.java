@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.mixin.client;
 import com.jvn.villagerretaliation.campaign.CampaignWorldModeSavedData;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaign;
 import com.jvn.villagerretaliation.campaign.selection.WorldCampaignCatalog;
+import com.jvn.villagerretaliation.client.campaign.CampaignLoadingScreen;
 import com.jvn.villagerretaliation.client.campaign.CampaignResources;
 import com.jvn.villagerretaliation.client.campaign.CampaignSelectScreen;
 import com.mojang.datafixers.util.Pair;
@@ -48,16 +49,18 @@ public abstract class CreateWorldCampaignMixin {
         try {
             var packs = getDataPackSelectionSettings(uiState.getSettings().dataConfiguration());
             if (packs == null) throw new IllegalStateException("Could not open the selected datapacks");
-            try (var resources = CampaignResources.open(packs.getSecond())) {
-                var catalog = WorldCampaignCatalog.load(resources);
-                minecraft.setScreen(new CampaignSelectScreen(parent, catalog, resources,
-                        () -> CampaignResources.open(packs.getSecond()), campaign -> {
-                    villagerretaliation$campaign = campaign;
-                    villagerretaliation$confirmed = true;
-                    minecraft.setScreen(parent);
-                    onCreate();
-                }));
-            }
+            minecraft.setScreen(new CampaignLoadingScreen(parent, () -> {
+                try (var resources = CampaignResources.open(packs.getSecond())) {
+                    var catalog = WorldCampaignCatalog.load(resources);
+                    return new CampaignSelectScreen(parent, catalog, resources,
+                            () -> CampaignResources.open(packs.getSecond()), campaign -> {
+                        villagerretaliation$campaign = campaign;
+                        villagerretaliation$confirmed = true;
+                        minecraft.setScreen(parent);
+                        onCreate();
+                    });
+                }
+            }));
         } catch (IllegalArgumentException | IllegalStateException exception) {
             minecraft.setScreen(new AlertScreen(() -> minecraft.setScreen(parent),
                     Component.translatable("screen.villagerretaliation.campaign.error"), Component.literal(exception.getMessage())));
