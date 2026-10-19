@@ -16,10 +16,9 @@ final class EditorShortcuts {
 
     void open() { requested = true; }
 
-    void popup(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run) {
+    void popup(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run, float textScale) {
         if (requested) { requested = false; ImGui.openPopup("Customize shortcuts"); }
-        ImGui.setNextWindowSize(620, 620, imgui.flag.ImGuiCond.Appearing);
-        if (!ImGui.beginPopup("Customize shortcuts")) return;
+        if (!EditorWidgets.beginPopup("Customize shortcuts", 620, 620, textScale)) return;
         ImGui.setNextItemOpen(true); render(commands, library, run);
         ImGui.endPopup();
     }
@@ -103,10 +102,10 @@ final class EditorShortcuts {
             ImGui.pushID(command.id());
             var field = fields.computeIfAbsent(command.id(), ignored -> new ImString(binding(command, overrides), 128));
             ImGui.textUnformatted(command.id());
-            ImGui.setNextItemWidth(Math.max(70, ImGui.getContentRegionAvailX() - 75));
+            ImGui.setNextItemWidth(EditorWidgets.inputWidth("Assign"));
             ImGui.inputText("##binding", field);
-            ImGui.sameLine();
-            if (ImGui.smallButton("Assign")) run.accept(() -> {
+            EditorWidgets.sameLineFor("Assign");
+            if (ImGui.button("Assign")) run.accept(() -> {
                 var parsed = parse(field.get());
                 String value = parsed == null ? "" : parsed.label();
                 var changed = new LinkedHashMap<>(library.shortcuts()); changed.put(command.id(), value);

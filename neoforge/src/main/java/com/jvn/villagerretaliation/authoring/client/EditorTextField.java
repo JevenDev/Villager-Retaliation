@@ -8,6 +8,7 @@ import imgui.callback.ImGuiInputTextCallback;
 import imgui.flag.ImGuiCol;
 import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiMouseCursor;
+import imgui.flag.ImGuiStyleVar;
 import imgui.type.ImString;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,13 +38,14 @@ final class EditorTextField {
         });
         if (focus.equals(id)) { focus = ""; selection.sourceMode = true; selection.requestFocus = true; }
         ImGui.pushID(id);
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
         if (formatting) {
             formatButton("B", "Bold", "b", selection);
-            ImGui.sameLine();
+            EditorWidgets.sameLineFor("I");
             formatButton("I", "Italic", "i", selection);
-            ImGui.sameLine();
+            EditorWidgets.sameLineFor("U");
             formatButton("U", "Underline", "u", selection);
-            ImGui.sameLine();
+            EditorWidgets.sameLineFor("Insert variable");
         }
         if (ImGui.smallButton("Insert variable")) ImGui.openPopup("variables");
         if (ImGui.beginPopup("variables")) {
@@ -70,7 +72,7 @@ final class EditorTextField {
             ImGui.endPopup();
         }
         if (formatting) {
-            ImGui.sameLine();
+            EditorWidgets.sameLineFor("Style");
             if (ImGui.smallButton("Style")) ImGui.openPopup("styles");
             if (ImGui.beginPopup("styles")) {
                 if (ImGui.beginMenu("Color")) {
@@ -86,6 +88,7 @@ final class EditorTextField {
                 ImGui.endPopup();
             }
         }
+        ImGui.popStyleVar();
         float defaultHeight = formatting ? 112 : 64;
         Size size = sizes.computeIfAbsent(id, ignored -> new Size(defaultHeight));
         float available = Math.max(1, ImGui.getContentRegionAvailX());

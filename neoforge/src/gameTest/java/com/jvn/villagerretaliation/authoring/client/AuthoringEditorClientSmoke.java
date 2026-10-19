@@ -55,6 +55,9 @@ public final class AuthoringEditorClientSmoke {
     private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
     private static float[] workflowFieldPoint;
     private static boolean qualityControls;
+    private static boolean layoutChecks;
+    private static float[] shortcutPopupSize;
+    private static int shortcutPopupFrames;
     private static int featureStage = -1;
     private static float[] featureActionPoint;
     private static String qualityResource = "minecraft:stone";
@@ -141,12 +144,14 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::checkShortcutPopup);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
     }
 
     private static void buildSteps() {
+        buildLayoutSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
@@ -392,6 +397,63 @@ public final class AuthoringEditorClientSmoke {
         buildFeatureSteps();
         buildProductivitySteps();
         finishSteps("Full editor graph, pack, camera, playtest, recovery and workflow checks passed.");
+    }
+
+    private static void buildLayoutSteps() {
+        for (int variant : new int[] {1, 2, 3}) {
+            float scale = variant == 1 ? 1 : 2;
+            STEPS.add(() -> {
+                if (variant == 3) {
+                    long window = Minecraft.getInstance().getWindow().getWindow();
+                    GLFW.glfwRestoreWindow(window);
+                    GLFW.glfwSetWindowSize(window, 1280, 800);
+                    Minecraft.getInstance().resizeDisplay();
+                }
+                set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(scale));
+                shortcutPopupSize = null;
+                shortcutPopupFrames = 0;
+                layoutChecks = true;
+            });
+            if (variant == 1) click(() -> toolbar("Shortcuts"));
+            else STEPS.add(() -> ((EditorShortcuts) field(editor, "shortcuts")).open());
+            pause(1200);
+            STEPS.add(() -> {
+                require(shortcutPopupFrames >= 20, "The actual Shortcuts popup remains open across frames.");
+                capture(variant == 1 ? "64-shortcuts-popup" : variant == 2 ? "65-shortcuts-popup-large-text" : "66-shortcuts-popup-compact");
+                layoutChecks = false;
+            });
+            key(ImGuiKey.Escape);
+        }
+        STEPS.add(() -> {
+            GLFW.glfwMaximizeWindow(Minecraft.getInstance().getWindow().getWindow());
+            Minecraft.getInstance().resizeDisplay();
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            set("resetLayout", true);
+        });
+        pause(250);
+        STEPS.add(() -> capture("67-details-panel-alignment"));
+    }
+
+    private static void checkShortcutPopup() {
+        if (!layoutChecks) return;
+        float baseFontSize = ImGui.getTextLineHeight();
+        if (!ImGui.beginPopup("Customize shortcuts")) return;
+        try {
+            float width = ImGui.getWindowWidth(), height = ImGui.getWindowHeight();
+            if (++shortcutPopupFrames > 3) {
+                if (shortcutPopupSize == null) shortcutPopupSize = new float[] {width, height};
+                require(Math.abs(width - shortcutPopupSize[0]) < 1 && Math.abs(height - shortcutPopupSize[1]) < 1,
+                        "The actual Shortcuts popup keeps a stable size across frames: " + width + " x " + height);
+                var viewport = ImGui.getMainViewport();
+                require(width <= viewport.getWorkSizeX() && height <= viewport.getWorkSizeY(), "The Shortcuts popup fits the viewport.");
+                require(ImGui.getScrollMaxY() > 0, "The shortcut list scrolls inside its popup.");
+                float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
+                require(Math.abs(ImGui.getTextLineHeight() - baseFontSize * scale) <= 1,
+                        "The Shortcuts popup uses the editor text scale: font=" + ImGui.getTextLineHeight() + ", base=" + baseFontSize + ", scale=" + scale);
+            }
+        } finally {
+            ImGui.endPopup();
+        }
     }
 
     private static void finishSteps(String details) {

@@ -288,11 +288,11 @@ final class ImGuiAuthoringEditor {
             quickOpen();
             if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
             referencePopup();
-            shortcuts.popup(commands(), library, this::operation);
+            shortcuts.popup(commands(), library, this::operation, preferences.textScale());
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
-            ImGui.popStyleColor(13);
+            ImGui.popStyleColor(14);
             ImGui.popStyleVar(5);
             rendering = false;
             while (!operations.isEmpty()) runOperation(operations.removeFirst());
@@ -307,6 +307,7 @@ final class ImGuiAuthoringEditor {
         ImGui.pushStyleVar(ImGuiStyleVar.FrameRounding, 3);
         ImGui.pushStyleVar(ImGuiStyleVar.WindowRounding, 0);
         ImGui.pushStyleColor(ImGuiCol.WindowBg, 0.10F, 0.10F, 0.11F, 1);
+        ImGui.pushStyleColor(ImGuiCol.PopupBg, 0.10F, 0.10F, 0.11F, 1);
         ImGui.pushStyleColor(ImGuiCol.FrameBg, 0.17F, 0.17F, 0.19F, 1);
         ImGui.pushStyleColor(ImGuiCol.FrameBgHovered, 0.23F, 0.23F, 0.25F, 1);
         ImGui.pushStyleColor(ImGuiCol.FrameBgActive, 0.27F, 0.27F, 0.29F, 1);
@@ -399,8 +400,8 @@ final class ImGuiAuthoringEditor {
         }
         sameLineFor("Shortcuts");
         if (ImGui.button("Shortcuts")) shortcuts.open();
-        sameLineFor("Focus");
-        ImGui.setNextItemWidth(150);
+        EditorWidgets.sameLineFor(150 * preferences.textScale());
+        ImGui.setNextItemWidth(150 * preferences.textScale());
         if (ImGui.beginCombo("##focus_panel", focusMode.isEmpty() ? "Focus pane..." : "Restore panes")) {
             if (ImGui.selectable("Restore panes", focusMode.isEmpty())) focusMode = "";
             for (String title : List.of(WORK_PANEL, DETAIL_PANEL, CONTENT_PANEL))
@@ -491,10 +492,10 @@ final class ImGuiAuthoringEditor {
     private static void input(String label, ImString value) {
         ImGui.textUnformatted(label);
         boolean browse = label.toLowerCase(Locale.ROOT).contains("folder") || label.toLowerCase(Locale.ROOT).contains("path");
-        ImGui.setNextItemWidth(browse ? Math.max(60, ImGui.getContentRegionAvailX() - 86) : -1);
+        ImGui.setNextItemWidth(browse ? EditorWidgets.inputWidth("Browse") : -1);
         ImGui.inputText("##" + label, value);
         if (browse) {
-            ImGui.sameLine();
+            sameLineFor("Browse");
             if (ImGui.button("Browse##" + label)) EditorFileDialog.choose(label, value.get(), selected -> MC.execute(() -> value.set(selected)));
         }
     }
@@ -633,10 +634,10 @@ final class ImGuiAuthoringEditor {
         }
         ImGui.setNextItemWidth(-1);
         if (focusSearch) { ImGui.setKeyboardFocusHere(); focusSearch = false; }
-        ImGui.setNextItemWidth(Math.max(40, ImGui.getContentRegionAvailX() - ImGui.calcTextSize("Clear").x - 24));
+        ImGui.setNextItemWidth(EditorWidgets.inputWidth("Clear"));
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
         if (ImGui.isItemHovered()) ImGui.setTooltip("Find content: " + keyHint("Find content") + ". Quick open: " + keyHint("Quick open file") + ".");
-        ImGui.sameLine();
+        sameLineFor("Clear");
         ImGui.beginDisabled(filter.get().isEmpty());
         if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
         ImGui.endDisabled();
@@ -871,8 +872,7 @@ final class ImGuiAuthoringEditor {
             requestQuickOpen = false; quickQuery.set(""); quickIndex = 0;
             ImGui.openPopup("Quick open###quick_open");
         }
-        ImGui.setNextWindowSize(640, 420, ImGuiCond.Appearing);
-        if (!ImGui.beginPopup("Quick open###quick_open")) return;
+        if (!EditorWidgets.beginPopup("Quick open###quick_open", 640, 420, preferences.textScale())) return;
         if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere();
         String before = quickQuery.get();
         ImGui.setNextItemWidth(-1);
@@ -889,7 +889,7 @@ final class ImGuiAuthoringEditor {
             String path = matches.get(quickIndex);
             operation(() -> openPackFile(path)); ImGui.closeCurrentPopup();
         }
-        ImGui.textDisabled(quickQuery.get().isBlank() ? "Recent files first. Enter to open, Escape to close." : matches.size() + " matching files");
+        ImGui.textWrapped(quickQuery.get().isBlank() ? "Recent files first. Enter to open, Escape to close." : matches.size() + " matching files");
         ImGui.beginChild("##quick_files", 0, 0, false);
         for (int i = 0; i < matches.size(); i++) {
             String path = matches.get(i);
@@ -1053,9 +1053,7 @@ final class ImGuiAuthoringEditor {
 
     private void referencePopup() {
         if (requestReferences) { requestReferences = false; ImGui.openPopup("References###workspace_references"); }
-        ImGui.setNextWindowSize(680, 380, ImGuiCond.Appearing);
-        if (!ImGui.beginPopup("References###workspace_references")) return;
-        ImGui.setWindowFontScale(preferences.textScale());
+        if (!EditorWidgets.beginPopup("References###workspace_references", 680, 380, preferences.textScale())) return;
         ImGui.textWrapped(referenceTitle);
         if (referenceResults.isEmpty()) ImGui.textWrapped("No matching references.");
         ImGui.beginChild("##reference_results", 0, 0, false);
@@ -1604,7 +1602,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private static void sameLineFor(String label) {
-        if (ImGui.getItemRectMaxX() + ImGui.calcTextSize(label).x + 32 < ImGui.getWindowPosX() + ImGui.getWindowWidth() - 14) ImGui.sameLine();
+        EditorWidgets.sameLineFor(label);
     }
 
     private void wire(ImDrawList draw, float x1, float y1, float x2, float y2, int color) {
@@ -1664,14 +1662,15 @@ final class ImGuiAuthoringEditor {
             return;
         }
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
-        if (ImGui.button("File settings")) operation(() -> { selectedNode = ""; setPointer(""); });
+        if (ImGui.button("File settings", -1, 0)) operation(() -> { selectedNode = ""; setPointer(""); });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
-                    && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation")) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
+                    && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation", -1, 0)) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
         }
         try {
             bulkEdit.render(workspace, document, selectedNodes(), this::operation, this::refresh);
             var availableBlocks = EditorBlocks.available(document, pointer.get());
+            if (!availableBlocks.isEmpty()) ImGui.setNextItemWidth(-1);
             if (!availableBlocks.isEmpty() && ImGui.beginCombo("##add_block", "Add behavior block...")) {
                 for (var block : availableBlocks) {
                     if (ImGui.selectable(block.label)) operation(() -> {
@@ -1703,8 +1702,8 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); textFields.clear(); });
         }
         ImGui.separator();
-        if (ImGui.collapsingHeader("Advanced editing")) {
-            ImGui.inputText("JSON pointer", pointer);
+        if (EditorWidgets.section("Advanced editing")) {
+            input("JSON pointer", pointer);
             if (ImGui.button("Inspect pointer")) operation(() -> { });
             if (!pointer.get().isEmpty() && ImGui.button("Remove selected field")) operation(() -> {
                 document.edit("Remove field", root -> JsonPointers.remove(root, pointer.get()));
@@ -1714,8 +1713,9 @@ final class ImGuiAuthoringEditor {
             tutorialObjectiveCatalog();
             conditionCatalog();
             ImGui.textWrapped("Add an object field or append to an array. JSON values preserve their types.");
-            ImGui.inputText("Field name", fieldName);
-            ImGui.inputTextMultiline("Value JSON", fieldValue, -1, 80);
+            input("Field name", fieldName);
+            ImGui.textUnformatted("Value JSON");
+            ImGui.inputTextMultiline("##field_value_json", fieldValue, -1, 80);
             if (ImGui.button("Add field / append")) operation(() -> {
                 JsonElement value = JsonParser.parseString(fieldValue.get());
                 document.edit("Add field", root -> {
@@ -1731,7 +1731,7 @@ final class ImGuiAuthoringEditor {
                 });
                 refresh();
             });
-            if (ImGui.collapsingHeader("Advanced full JSON")) {
+            if (EditorWidgets.section("Advanced full JSON")) {
                 ImGui.beginDisabled(hasPendingFields());
                 if (ImGui.inputTextMultiline("##raw", jsonText, -1, 260)) rawModified = true;
                 ImGui.endDisabled();
@@ -1940,7 +1940,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void guidedObjective() {
-        if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !ImGui.collapsingHeader("Add quest objective")) return;
+        if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !EditorWidgets.section("Add quest objective")) return;
         if (ImGui.beginCombo("Objective", objectiveType.replace('_', ' '))) {
             for (String type : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry.descriptors().stream().map(value -> value.id()).sorted().toList())
                 if (ImGui.selectable(type.replace('_', ' '), objectiveType.equals(type))) objectiveType = type;
@@ -2001,13 +2001,13 @@ final class ImGuiAuthoringEditor {
             shown = true;
         }
         if (!shown && object.isEmpty()) ImGui.textWrapped("This block is empty. Select the node header to add dialogue or behavior.");
-        if (!shown || ImGui.collapsingHeader("More properties")) {
+        if (!shown || EditorWidgets.section("More properties")) {
             for (var entry : object.entrySet()) {
                 if (main.contains(entry.getKey()) || matchMode && entry.getKey().equals("all")) continue;
                 inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
             }
         }
-        if (ImGui.treeNode("Guided properties")) { schemaObjectTools(object, pointer.get()); ImGui.treePop(); }
+        if (EditorWidgets.section("Guided properties")) schemaObjectTools(object, pointer.get());
     }
 
     private void schemaObjectTools(JsonObject value, String path) {
@@ -2015,7 +2015,9 @@ final class ImGuiAuthoringEditor {
         JsonObject rule = propertySchema.at(document.json(), path);
         JsonObject properties = EditorSchema.object(rule.get("properties"));
         var required = propertySchema.required(rule);
-        if (ImGui.beginCombo("Add property##" + path, "Choose a field...")) {
+        ImGui.textUnformatted("Add property");
+        ImGui.setNextItemWidth(-1);
+        if (ImGui.beginCombo("##add_property" + path, "Choose a field...")) {
             for (var entry : properties.entrySet()) {
                 if (value.has(entry.getKey())) continue;
                 if (ImGui.beginMenu(friendlyLabel(entry.getKey()) + (required.contains(entry.getKey()) ? " (required)" : ""))) {
@@ -2027,7 +2029,9 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.endCombo();
         }
-        if (ImGui.beginCombo("Remove property##" + path, "Choose an optional field...")) {
+        ImGui.textUnformatted("Remove property");
+        ImGui.setNextItemWidth(-1);
+        if (ImGui.beginCombo("##remove_property" + path, "Choose an optional field...")) {
             for (String name : value.keySet()) if (!required.contains(name) && ImGui.selectable(friendlyLabel(name)))
                 operation(() -> { document.edit("Remove property", root -> JsonPointers.remove(root, path + "/" + escape(name))); refresh(); });
             ImGui.endCombo();
@@ -2171,7 +2175,7 @@ final class ImGuiAuthoringEditor {
             localizedField(value.getAsJsonObject(), label, path);
         } else if (value.isJsonObject()) {
             if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
-            if (ImGui.treeNode(label)) {
+            if (depth == 0 ? EditorWidgets.treeSection(label) : ImGui.treeNode(label)) {
                 if (ImGui.smallButton("Focus this item")) operation(() -> setPointer(path));
                 boolean matchMode = EditorProgressConditions.hasMatchMode(value.getAsJsonObject());
                 if (matchMode) matchMode(value.getAsJsonObject(), path);
@@ -2191,13 +2195,14 @@ final class ImGuiAuthoringEditor {
                 ImGui.pushID(i);
                 ImGui.beginGroup();
                 inspectValue(lines.get(i), path + "/" + i, lines.size() == 1 ? "Dialogue text" : "Line " + (i + 1), depth + 1);
+                ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
                 ImGui.beginDisabled(lines.size() == 1);
                 if (ImGui.smallButton("Remove line")) editArray(path, values -> values.remove(index));
                 ImGui.endDisabled();
-                ImGui.sameLine();
+                sameLineFor("Duplicate line");
                 if (ImGui.smallButton("Duplicate line")) editArray(path, values -> values.add(values.get(index).deepCopy()));
                 if (i > 0) {
-                    ImGui.sameLine();
+                    sameLineFor("Move up");
                     if (ImGui.smallButton("Move up")) editArray(path, values -> {
                         JsonElement previous = values.get(index - 1);
                         values.set(index - 1, values.get(index));
@@ -2205,6 +2210,7 @@ final class ImGuiAuthoringEditor {
                     });
                 }
                 listReorderHandle(path, i, lines);
+                ImGui.popStyleVar();
                 ImGui.endGroup();
                 listDropTarget(path, i);
                 ImGui.popID();
@@ -2212,7 +2218,8 @@ final class ImGuiAuthoringEditor {
         } else if (value.isJsonArray()) {
             if (depth == 0 && (!path.endsWith("/responses") && !path.endsWith("/options") || pointer.get().equals(path)))
                 ImGui.setNextItemOpen(true, ImGuiCond.Once);
-            if (ImGui.treeNode(label + " [" + value.getAsJsonArray().size() + "]")) {
+            String title = label + " [" + value.getAsJsonArray().size() + "]";
+            if (depth == 0 ? EditorWidgets.treeSection(title) : ImGui.treeNode(title)) {
                 if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
                 JsonObject rule = propertySchema.at(document.json(), path);
@@ -2226,6 +2233,7 @@ final class ImGuiAuthoringEditor {
                     ImGui.pushID(i);
                     ImGui.beginGroup();
                     inspectValue(array.get(i), path + "/" + i, "[" + i + "]", depth + 1);
+                    ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
                     if (ImGui.smallButton("Remove")) editArray(path, values -> values.remove(index));
                     ImGui.sameLine();
                     if (ImGui.smallButton("Duplicate")) editArray(path, values -> values.add(values.get(index).deepCopy()));
@@ -2238,6 +2246,7 @@ final class ImGuiAuthoringEditor {
                         });
                     }
                     listReorderHandle(path, i, array);
+                    ImGui.popStyleVar();
                     ImGui.endGroup();
                     listDropTarget(path, i);
                     ImGui.popID();
@@ -2282,7 +2291,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void listReorderHandle(String path, int index, JsonArray baseline) {
-        ImGui.sameLine();
+        sameLineFor("::");
         ImGui.smallButton("::");
         if (ImGui.isItemHovered()) ImGui.setTooltip("Drag to reorder this entry");
         if (ImGui.beginDragDropSource()) {
@@ -2913,7 +2922,7 @@ final class ImGuiAuthoringEditor {
                 + ImGui.getStyle().getItemSpacingX() * 3;
         ImGui.sameLine();
         if (ImGui.getContentRegionAvailX() < width) ImGui.newLine();
-        ImGui.setCursorPosX(ImGui.getCursorPosX() + ImGui.getContentRegionAvailX() - width);
+        ImGui.setCursorPosX(ImGui.getCursorPosX() + Math.max(0, ImGui.getContentRegionAvailX() - width));
         ImGui.beginDisabled(showRecovery || confirmClose || EditorTestWorld.applying());
         var back = navigation.target(-1);
         ImGui.beginDisabled(back == null);

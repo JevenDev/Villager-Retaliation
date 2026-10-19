@@ -126,7 +126,7 @@ final class EditorSnippets {
 
     void render(EditorLibrary library, AuthoringWorkspace workspace, AuthoringDocument document, Set<String> nodes, String pointer,
                 Consumer<ImGuiAuthoringEditor.EditorOperation> run, Consumer<List<String>> inserted) {
-        if (!ImGui.collapsingHeader("Reusable snippets")) return;
+        if (!EditorWidgets.section("Reusable snippets")) return;
         ImGui.inputText("Snippet name", name);
         ImGui.beginDisabled(document.kind() == DefinitionKind.FORCED || nodes.isEmpty() || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest());
         if (ImGui.button("Save selected nodes as snippet")) run.accept(() -> library.saveSnippet(name.get(), nodes(workspace, document, nodes)));

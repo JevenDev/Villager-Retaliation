@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.authoring.client;
 
 import imgui.ImGui;
-import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiKey;
 import imgui.type.ImString;
 import java.util.List;
@@ -26,9 +25,7 @@ final class EditorCommands {
 
     void render(List<Command> commands, Consumer<ImGuiAuthoringEditor.EditorOperation> run, float textScale) {
         if (requested) { requested = false; query.set(""); selected = 0; ImGui.openPopup("Commands###editor_commands"); }
-        ImGui.setNextWindowSize(640, 420, ImGuiCond.Appearing);
-        if (!ImGui.beginPopup("Commands###editor_commands")) return;
-        ImGui.setWindowFontScale(textScale);
+        if (!EditorWidgets.beginPopup("Commands###editor_commands", 640, 420, textScale)) return;
         if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere();
         String before = query.get();
         ImGui.setNextItemWidth(-1); ImGui.inputTextWithHint("##query", "Find an editor action...", query);
@@ -41,7 +38,7 @@ final class EditorCommands {
         if (ImGui.isKeyPressed(ImGuiKey.Enter) && !matches.isEmpty() && matches.get(selected).enabled()) {
             run.accept(matches.get(selected).action()); ImGui.closeCurrentPopup();
         }
-        ImGui.textDisabled("Enter runs the selected action. Escape closes this list.");
+        ImGui.textWrapped("Enter runs the selected action. Escape closes this list.");
         ImGui.beginChild("##actions", 0, 0, false);
         for (int i = 0; i < matches.size(); i++) {
             var command = matches.get(i);
