@@ -20,6 +20,7 @@ import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiInputTextFlags;
+import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiCol;
 import imgui.flag.ImGuiDir;
@@ -1091,7 +1092,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void alignNodes(String action) {
-        var cards = EditorGraph.cards(document, value -> workspace.resolveText(document, value, locale.get()));
+        var cards = graphModel.get(workspace, document, locale.get()).cards();
         persistPositions(EditorGraphSelection.layout(cards, positions, selectedNodes(), action));
         refresh();
     }
@@ -1212,7 +1213,7 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Cancel connection")) showBranch = false;
         }
         ImGui.textWrapped(!selectedEdge.isEmpty() ? "Choose an input dot on the left of a node. Escape cancels the connection."
-                : selectedNodes().isEmpty() ? "Click a block to edit. Connect right output dots to left input dots. Drag empty space to select."
+                : selectedNodes().isEmpty() ? "Edit text and values inside nodes. Drag headers to move. Connect right dots to left dots."
                 : selectedNodes().size() + " selected. Drag headers to move. " + keyHint("Delete selected nodes") + " to delete. " + keyHint("Undo") + " to undo.");
         if (!selectedEdge.isEmpty()) {
             if (ImGui.smallButton("Create connected node")) operation(() -> {
@@ -1233,12 +1234,17 @@ final class ImGuiAuthoringEditor {
                 });
             }
         } else ImGui.dummy(0, ImGui.getTextLineHeight());
-        float canvasX = ImGui.getCursorScreenPosX();
-        float canvasY = ImGui.getCursorScreenPosY();
         float canvasWidth = Math.max(100, ImGui.getContentRegionAvailX());
         float canvasHeight = Math.max(100, ImGui.getContentRegionAvailY());
+        ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
+        ImGui.beginChild("graph_view", canvasWidth, canvasHeight, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        ImGui.popStyleVar();
+        float canvasX = ImGui.getCursorScreenPosX();
+        float canvasY = ImGui.getCursorScreenPosY();
+        ImGui.setNextItemAllowOverlap();
         ImGui.invisibleButton("graph_canvas", canvasWidth, canvasHeight);
-        boolean hover = ImGui.isItemHovered();
+        boolean hover = ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
+        var canvasEnd = ImGui.getCursorScreenPos();
         boolean minimapHover = showMinimap && hover && ImGui.isMouseHoveringRect(canvasX + canvasWidth - 190, canvasY + canvasHeight - 130, canvasX + canvasWidth, canvasY + canvasHeight);
         if (minimapHover) hover = false;
         model.placeMissing(positions);
@@ -1273,7 +1279,16 @@ final class ImGuiAuthoringEditor {
             panX += ImGui.getIO().getMouseDeltaX();
             panY += ImGui.getIO().getMouseDeltaY();
         }
-        if (hover && ImGui.getIO().getMouseWheel() != 0) {
+        boolean overField = cards.stream().anyMatch(card -> {
+            float[] point = positions.get(card.node().id());
+            float gx = (ImGui.getMousePosX() - canvasX - panX) / zoom - point[0];
+            float gy = (ImGui.getMousePosY() - canvasY - panY) / zoom - point[1];
+            for (int i = 0; i < card.blocks().size(); i++)
+                if (!card.blocks().get(i).fields().isEmpty() && gx >= 10 && gx <= EditorGraph.WIDTH - 10
+                        && gy >= card.blockY(i) + 28 && gy <= card.blockY(i) + card.blocks().get(i).height() - 6) return true;
+            return false;
+        });
+        if (hover && !overField && !ImGui.isAnyItemActive() && ImGui.getIO().getMouseWheel() != 0) {
             float oldZoom = zoom;
             zoom = Math.clamp(zoom * (float) Math.pow(1.15, ImGui.getIO().getMouseWheel()), .35f, 2f);
             float mx = ImGui.getIO().getMousePosX() - canvasX;
@@ -1291,7 +1306,7 @@ final class ImGuiAuthoringEditor {
         }
         if (!selectedEdge.isEmpty() && ImGui.isMouseDragging(0)) wireDragMoved = true;
         ImDrawList draw = ImGui.getWindowDrawList();
-        draw.pushClipRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, true);
+        ImGui.pushClipRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, true);
         draw.addRectFilled(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, 0xff242321);
         graphOrganization.draw(draw, document, cards, positions, canvasX + panX, canvasY + panY, zoom);
         var highlighted = graphOrganization.highlighted(model, selectedNodes());
@@ -1362,21 +1377,26 @@ final class ImGuiAuthoringEditor {
             });
             for (int i = 0; i < card.blocks().size(); i++) {
                 var block = card.blocks().get(i);
-                float rowY = y + (EditorGraph.HEADER + i * EditorGraph.ROW) * zoom;
+                float rowY = y + card.blockY(i) * zoom;
+                float rowHeight = block.height() * zoom;
                 float centerY = y + card.outputY(i) * zoom;
                 float outputX = x + w;
                 boolean outputHover = block.output() != null && hover
                         && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), outputX, centerY, EditorGraph.ROW * zoom);
-                boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + EditorGraph.ROW * zoom);
+                boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + rowHeight);
                 boolean testedChoice = coverage.visible() && coverageSnapshot.chosen(block.pointer());
                 int background = blockHover ? 0xff514a40 : testedChoice ? 0xff3b5540 : block.output() != null ? 0xff403c32 : 0xff35322e;
-                draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, background, 3);
+                draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + rowHeight - 2 * zoom, background, 3);
                 if (selectedNode.equals(node.id()) && pointer.get().equals(block.pointer()))
-                    draw.addRect(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + (EditorGraph.ROW - 2) * zoom, 0xff9cc6a2, 3);
-                if (block.styledText() == null) {
+                    draw.addRect(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + rowHeight - 2 * zoom, 0xff9cc6a2, 3);
+                if (!block.fields().isEmpty()) {
+                    graphText(draw, x + 12 * zoom, rowY + 7 * zoom, 0xffd9d2c7,
+                            block.title() + (block.styledText() == null ? ": " + block.text() : ""), EditorGraph.WIDTH - 58);
+                    renderGraphFields(node, block, x, rowY);
+                } else if (block.styledText() == null) {
                     graphText(draw, x + 12 * zoom, rowY + 9 * zoom, block.output() == null ? 0xffd9d2c7 : 0xffded8ad,
                             block.title() + ": " + block.text(), EditorGraph.WIDTH - 34);
-                } else if (x + w > canvasX && x < canvasX + canvasWidth && rowY + EditorGraph.ROW * zoom > canvasY
+                } else if (x + w > canvasX && x < canvasX + canvasWidth && rowY + rowHeight > canvasY
                         && rowY < canvasY + canvasHeight) {
                     String label = block.title() + ":";
                     float labelWidth = ImGui.calcTextSize(label).x + 4;
@@ -1384,7 +1404,7 @@ final class ImGuiAuthoringEditor {
                     graphText.draw(block, x + (12 + labelWidth) * zoom, rowY + 3 * zoom,
                             (EditorGraph.WIDTH - 26 - labelWidth) * zoom, 28 * zoom, zoom, background);
                 }
-                if (blockHover) {
+                if (blockHover && (block.fields().isEmpty() || ImGui.getMousePosY() < rowY + 26 * zoom && ImGui.getMousePosX() < x + w - 48 * zoom)) {
                     if (block.styledText() == null) ImGui.setTooltip(block.title() + ": " + block.text() + "\nClick to edit");
                     else graphText.tooltip(block);
                     if (ImGui.isMouseClicked(0)) operation(() -> {
@@ -1454,7 +1474,9 @@ final class ImGuiAuthoringEditor {
             }
         }
         if (showMinimap && !cards.isEmpty()) minimap(draw, cards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
-        draw.popClipRect();
+        ImGui.popClipRect();
+        ImGui.setCursorScreenPos(canvasEnd.x, canvasEnd.y);
+        ImGui.dummy(0, 0);
         graphContext(cards, canvasX, canvasY, hover);
         if (ImGui.isMouseReleased(0)) {
             wireDragMoved = false;
@@ -1466,7 +1488,68 @@ final class ImGuiAuthoringEditor {
                 draggingNode = null;
             }
         }
+        ImGui.endChild();
         ImGui.end();
+    }
+
+    private void renderGraphFields(DialogueGraph.Node node, EditorGraph.Block block, float x, float y) {
+        ImGui.pushID("graph_inline:" + node.id() + ":" + block.pointer());
+        ImGui.setWindowFontScale(zoom);
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4 * zoom, 3 * zoom);
+        ImGui.setCursorScreenPos(x + (EditorGraph.WIDTH - 40) * zoom, y + 3 * zoom);
+        if (ImGui.smallButton("...")) operation(() -> {
+            selectedNode = node.id(); nodeSelection.clear(); nodeSelection.add(node.id());
+            setPointer(block.pointer()); focusPanel = DETAIL_PANEL;
+        });
+        if (ImGui.isItemHovered()) ImGui.setTooltip("More settings in Details");
+        float fieldY = y + 28 * zoom;
+        for (var field : block.fields()) {
+            ImGui.pushID(field.document().resourcePath() + field.pointer());
+            ImGui.setCursorScreenPos(x + 12 * zoom, fieldY);
+            ImGui.textUnformatted(field.label());
+            ImGui.setCursorScreenPos(x + 12 * zoom, fieldY + 20 * zoom);
+            float width = (EditorGraph.WIDTH - 24) * zoom;
+            ImString buffer = fields.computeIfAbsent(field.bufferId(document), ignored -> new ImString(
+                    field.value().getAsJsonPrimitive().isString() ? field.value().getAsString() : field.value().toString(), 65536));
+            ImGui.beginDisabled(rawModified || !field.editable());
+            boolean changed = false, activated = false, apply = false;
+            if (field.value().getAsJsonPrimitive().isBoolean()) {
+                if (ImGui.checkbox("##value", Boolean.parseBoolean(buffer.get()))) {
+                    buffer.set(Boolean.toString(!Boolean.parseBoolean(buffer.get()))); changed = true;
+                }
+            } else if (field.multiline()) {
+                var edit = textFields.inline("graph:" + node.id() + ":" + block.pointer() + ":" + field.pointer(), buffer, width, 76 * zoom);
+                activated = edit.activated(); apply = edit.apply();
+            } else {
+                ImGui.setNextItemWidth(width);
+                if (!field.options().isEmpty()) {
+                    if (ImGui.beginCombo("##value", buffer.get())) {
+                        for (String option : field.options()) if (ImGui.selectable(option, option.equals(buffer.get()))) {
+                            buffer.set(option); changed = true;
+                        }
+                        ImGui.endCombo();
+                    }
+                } else ImGui.inputText("##value", buffer);
+            }
+            apply |= changed || ImGui.isItemDeactivatedAfterEdit();
+            if (activated || ImGui.isItemActivated()) {
+                selectedNode = node.id(); nodeSelection.clear(); nodeSelection.add(node.id());
+                setPointer(block.pointer()); selectedEdge = ""; showBranch = false;
+            }
+            ImGui.endDisabled();
+            if (field.editable()) {
+                var edits = field.document() == document ? pendingFields : translatedFields.computeIfAbsent(field.document(), ignored -> new EditorFieldEdits());
+                edits.update(field.pointer(), field.value(), buffer.get());
+                String issue = edits.issue(field.document(), field.pointer());
+                if (!issue.isEmpty() && ImGui.isItemHovered()) ImGui.setTooltip(issue);
+                if (apply) operation(() -> { });
+            } else if (ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Open Details to create or repair the translation.");
+            ImGui.popID();
+            fieldY += field.height() * zoom;
+        }
+        ImGui.popStyleVar();
+        ImGui.setWindowFontScale(1);
+        ImGui.popID();
     }
 
     private void graphContext(List<EditorGraph.Card> cards, float canvasX, float canvasY, boolean hover) {

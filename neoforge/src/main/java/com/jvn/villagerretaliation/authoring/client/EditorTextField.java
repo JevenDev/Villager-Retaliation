@@ -31,6 +31,36 @@ final class EditorTextField {
         if (!visible) selections.values().forEach(selection -> selection.preview.close());
     }
 
+    record InlineEdit(boolean activated, boolean apply) { }
+
+    InlineEdit inline(String id, ImString buffer, float width, float height) {
+        Selection selection = selections.compute(id, (key, prior) -> {
+            if (prior != null && prior.buffer == buffer) return prior;
+            if (prior != null) prior.preview.retire();
+            return new Selection(buffer);
+        });
+        ImGui.pushID(id);
+        boolean activated = false, apply = false;
+        if (!selection.sourceMode) {
+            if (selection.preview.render(buffer.get(), width, height)) {
+                selection.sourceMode = true; selection.requestFocus = true; activated = true;
+            }
+        } else {
+            if (selection.requestFocus) {
+                ImGui.setKeyboardFocusHere(); selection.requestFocus = false;
+                selection.focusFrame = ImGui.getFrameCount();
+            }
+            ImGui.inputTextMultiline("##text", buffer, width, height,
+                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
+            activated = ImGui.isItemActivated();
+            apply = ImGui.isItemDeactivatedAfterEdit();
+            selection.editing = ImGui.isItemActive();
+            if (!selection.editing && ImGui.getFrameCount() > selection.focusFrame + 1) selection.sourceMode = false;
+        }
+        ImGui.popID();
+        return new InlineEdit(activated, apply);
+    }
+
     void render(String id, ImString buffer, DefinitionKind kind, boolean formatting, float textScale) {
         Selection selection = selections.compute(id, (key, prior) -> {
             if (prior != null && prior.buffer == buffer) return prior;

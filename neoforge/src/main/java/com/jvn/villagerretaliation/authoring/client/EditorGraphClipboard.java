@@ -222,7 +222,9 @@ final class EditorGraphClipboard {
             nodes.forEach(node -> rewriteStrings(node, "key", keyNames));
             rewriteStrings(addedChecks, "key", keyNames); rewriteStrings(addedOutcomes, "key", keyNames); rewriteStrings(addedTopics, "key", keyNames);
         }
-        var defaultPositions = EditorGraph.arrange(EditorGraph.cards(snapshot, value -> value == null ? "" : value.toString()));
+        var cards = workspace == null ? EditorGraph.cards(snapshot, value -> value == null ? "" : value.toString())
+                : EditorGraph.cards(workspace, snapshot, "en_us");
+        var defaultPositions = EditorGraph.arrange(cards);
         AuthoringDocument draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
         draft.editMetadata("Copy layout", metadata -> document.metadata().entrySet().forEach(entry -> metadata.add(entry.getKey(), entry.getValue())));
         draft.edit("Paste nodes", root -> {

@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.authoring.client;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
+import com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace;
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
 import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
 import com.jvn.villagerretaliation.authoring.core.JsonPointers;
@@ -13,25 +14,44 @@ import java.util.Map;
 import java.util.function.Function;
 
 final class EditorGraph {
-    static final float WIDTH = 280;
+    static final float WIDTH = 340;
     static final float HEADER = 38;
     static final float ROW = 34;
 
     private EditorGraph() { }
 
-    record Block(String pointer, String title, String text, DialogueGraph.Edge output, String styledText) {
-        Block(String pointer, String title, String text, DialogueGraph.Edge output) {
-            this(pointer, title, text, output, null);
+    record Block(String pointer, String title, String text, DialogueGraph.Edge output, String styledText, List<EditorGraphInline.Field> fields) {
+        Block(String pointer, String title, String text, DialogueGraph.Edge output, String styledText) {
+            this(pointer, title, text, output, styledText, List.of());
         }
+        Block(String pointer, String title, String text, DialogueGraph.Edge output) {
+            this(pointer, title, text, output, null, List.of());
+        }
+        float height() { return fields.isEmpty() ? ROW : 28 + (float) fields.stream().mapToDouble(EditorGraphInline.Field::height).sum() + 6; }
     }
     record Card(DialogueGraph.Node node, List<Block> blocks) {
-        float height() { return HEADER + blocks.size() * ROW + 34; }
-        float outputY(int index) { return HEADER + index * ROW + ROW / 2; }
+        float height() { return blockY(blocks.size()) + 34; }
+        float blockY(int index) {
+            float y = HEADER;
+            for (int i = 0; i < index; i++) y += blocks.get(i).height();
+            return y;
+        }
+        float outputY(int index) { return blockY(index) + blocks.get(index).height() / 2; }
     }
 
     static List<Card> cards(AuthoringDocument document, Function<JsonElement, String> wording) {
+        return cards(null, document, wording, "en_us");
+    }
+
+    static List<Card> cards(AuthoringWorkspace workspace, AuthoringDocument document, String locale) {
+        return cards(workspace, document, value -> workspace.resolveText(document, value, locale), locale);
+    }
+
+    private static List<Card> cards(AuthoringWorkspace workspace, AuthoringDocument document,
+                                    Function<JsonElement, String> wording, String locale) {
         List<Card> cards = new ArrayList<>();
         JsonObject root = document.json();
+        var schema = EditorSchema.forDocument(document);
         List<DialogueGraph.Edge> outputs = DialogueGraph.outputs(document).stream().distinct().toList();
         Map<String, List<DialogueGraph.Edge>> byNode = outputs.stream().collect(java.util.stream.Collectors.groupingBy(DialogueGraph.Edge::from));
         java.util.Set<String> ids = new java.util.HashSet<>();
@@ -41,7 +61,7 @@ final class EditorGraph {
             JsonObject value = JsonPointers.get(root, node.pointer()).getAsJsonObject();
             List<Block> blocks = new ArrayList<>();
             for (String field : List.of("conditions", "available_when", "availability", "objectives", "on_enter", "entry_actions", "actions", "effects",
-                    "line", "lines", "variants", "exchanges", "scenes", "dialogue", "camera", "rewards", "on_exit", "exit_actions")) {
+                    "text", "line", "lines", "variants", "exchanges", "scenes", "dialogue", "camera", "rewards", "on_exit", "exit_actions")) {
                 if (!value.has(field)) continue;
                 JsonElement item = value.get(field);
                 if (item.isJsonArray() && item.getAsJsonArray().isEmpty()) continue;
@@ -50,7 +70,7 @@ final class EditorGraph {
                     case "on_enter", "entry_actions" -> "On entry";
                     case "on_exit", "exit_actions" -> "On exit";
                     case "actions", "effects" -> "Do";
-                    case "line", "lines", "variants" -> "Say";
+                    case "text", "line", "lines", "variants" -> "Say";
                     case "exchanges" -> "Conversation";
                     default -> Character.toUpperCase(field.charAt(0)) + field.substring(1);
                 };
@@ -64,7 +84,7 @@ final class EditorGraph {
                 }
                 String text;
                 String styledText = null;
-                if (List.of("line", "lines", "variants", "exchanges").contains(field)) {
+                if (List.of("text", "line", "lines", "variants", "exchanges").contains(field)) {
                     if (!field.equals("exchanges") && item.isJsonArray() && item.getAsJsonArray().size() > 1) title = "Say one of";
                     JsonElement first = item.isJsonArray() ? item.getAsJsonArray().get(0) : item;
                     styledText = wording.apply(first);
@@ -126,7 +146,8 @@ final class EditorGraph {
             }
             if (blocks.stream().noneMatch(block -> block.output() != null))
                 blocks.add(new Block(node.pointer(), "End", terminalLabel(value), null));
-            cards.add(new Card(node, List.copyOf(blocks)));
+            cards.add(new Card(node, blocks.stream().map(block -> new Block(block.pointer(), block.title(), block.text(), block.output(),
+                    block.styledText(), EditorGraphInline.fields(workspace, document, root, block, locale, schema))).toList()));
         }
         return List.copyOf(cards);
     }

@@ -32,7 +32,7 @@ final class EditorGraphModel {
         for (int i = 0; current && i < documents.size(); i++)
             current = dependencies.get(i) == documents.get(i) && revisions[i] == documents.get(i).revision();
         if (current) return snapshot;
-        var cards = EditorGraph.cards(selected, value -> owner.resolveText(selected, value, language));
+        var cards = EditorGraph.cards(owner, selected, language);
         var nodes = cards.stream().map(EditorGraph.Card::node).toList();
         var next = new Snapshot(cards, nodes, nodes.stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toUnmodifiableSet()),
                 DialogueGraph.edges(selected), EditorGraph.arrange(cards));

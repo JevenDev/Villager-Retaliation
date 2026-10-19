@@ -52,6 +52,7 @@ public final class AuthoringEditorClientSmoke {
     private static int reloadExperience, playtestLogSize;
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
+    private static int keyRelease = -1;
     private static boolean workflowControls, workflowLists;
     private static boolean deletionTyping, deletionFocus;
     private static final imgui.type.ImString deletionText = new imgui.type.ImString("Keep typing", 128);
@@ -165,6 +166,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        buildInlineSteps();
         buildLayoutSteps();
         buildVariableSteps();
         buildPanelSteps();
@@ -192,7 +194,7 @@ public final class AuthoringEditorClientSmoke {
             locateCanvas();
         });
         buildCampaignSteps();
-        click(() -> point("start", 80, EditorGraph.HEADER + EditorGraph.ROW + 12));
+        click(() -> blockDetails("start", "/nodes/start/lines"));
         STEPS.add(() -> require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
                 "Clicking the Say block opens its editable lines."));
         click(() -> port("start"));
@@ -652,10 +654,10 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static Object graphPreview() {
-        var previews = (Map<?, ?>) field(field(editor, "graphText"), "previews");
-        Object cached = previews.get("/nodes/start/lines");
-        require(cached != null, "The visible graph has a text preview.");
-        return field(cached, "preview");
+        var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
+        Object selection = selections.get("graph:start:/nodes/start/lines:/nodes/start/lines/0");
+        require(selection != null, "The visible graph has a text preview.");
+        return field(selection, "preview");
     }
 
     private static void buildPerformanceSteps() {
@@ -2005,12 +2007,12 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
                     "Styled blocks retain direct text editing.");
-            var previews = (Map<?, ?>) field(field(editor, "graphText"), "previews");
-            require(field(field(previews.get("/nodes/start/lines"), "preview"), "text").equals(GREETING),
+            require(field(graphPreview(), "text").equals(GREETING),
                     "The visible graph uses the authored formatting source.");
             try (var image = renderedImage()) {
                 float[] min = point("start", 0, EditorGraph.HEADER);
-                float[] max = point("start", EditorGraph.WIDTH, EditorGraph.HEADER + EditorGraph.ROW);
+                var card = EditorGraph.cards(workspace, document, "en_us").stream().filter(value -> value.node().id().equals("start")).findFirst().orElseThrow();
+                float[] max = point("start", EditorGraph.WIDTH, card.blockY(1));
                 int gold = 0;
                 for (int y = Math.max(0, (int) (min[1] - ImGui.getMainViewport().getPosY()));
                         y < Math.min(image.getHeight(), max[1] - ImGui.getMainViewport().getPosY()); y++) {
@@ -2153,9 +2155,7 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> ImGui.getIO().addMouseWheelEvent(0, -4));
         pause(200);
         STEPS.add(() -> {
-            var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
-            var selection = selections.values().stream().filter(value ->
-                    ((imgui.type.ImString) field(value, "buffer")).get().contains("A longer styled line")).findFirst().orElseThrow();
+            var selection = greetingSelection();
             require((float) field(field(selection, "preview"), "scroll") > 0, "Long styled text scrolls inside its field.");
             capture("10f-scrolled-styled-field");
         });
@@ -2171,15 +2171,14 @@ public final class AuthoringEditorClientSmoke {
 
     private static Object greetingSelection() {
         var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
-        return selections.values().stream().filter(value ->
-                ((imgui.type.ImString) field(value, "buffer")).get().contains("Welcome")).findFirst().orElseThrow();
+        Object selection = selections.get("/nodes/start/lines/0");
+        require(selection != null, "The Details panel has the greeting field.");
+        return selection;
     }
 
     private static void expectCaret(String expected) {
         STEPS.add(() -> {
-            var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
-            var selection = selections.values().stream().filter(value ->
-                    ((imgui.type.ImString) field(value, "buffer")).get().contains("Welcome")).findFirst().orElseThrow();
+            var selection = greetingSelection();
             String actual = ((imgui.type.ImString) field(selection, "buffer")).get();
             require(actual.equals(expected) && (int) field(selection, "start") == EditorTextEdit.bytes(expected)
                     && (int) field(selection, "end") == EditorTextEdit.bytes(expected),
@@ -2208,11 +2207,79 @@ public final class AuthoringEditorClientSmoke {
         return "Welcome, " + Minecraft.getInstance().player.getName().getString() + "! It is " + time + " (" + phase + "), day 1.";
     }
 
+    private static void buildInlineSteps() {
+        var originalWorkspace = new AuthoringWorkspace[1];
+        var originalDocument = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            originalWorkspace[0] = workspace; originalDocument[0] = document;
+            try { workspace = AuthoringWorkspace.create(output().resolve("inline-drafts")); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            set("workspace", workspace);
+            document = workspace.createDocument(DefinitionKind.TREE, "test:inline_controls");
+            DialogueGraph.addNode(document, "finish");
+            DialogueGraph.addResponse(document, "start", "continue", "Tell me more.", "finish");
+            EditorBlocks.append(document, "/nodes/start", EditorBlocks.Kind.REPUTATION_GATE);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("zoom", 1f); set("panX", 25f); set("panY", 25f); set("fitGraph", false);
+            locateCanvas();
+        });
+        click(() -> inlinePoint("start", "/nodes/start/lines/0"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("Written inside the node.\nSecond line.");
+        STEPS.add(() -> {
+            require(ImGui.getIO().getWantTextInput(), "Inline dialogue takes keyboard focus.");
+            capture("02-inline-typing");
+        });
+        click(() -> point("finish", 100, 18));
+        STEPS.add(() -> require(document.value("/nodes/start/lines/0").getAsString().equals("Written inside the node.\nSecond line."), "Leaving an inline field applies its wording."));
+        click(() -> inlinePoint("start", "/nodes/start/responses/0/label"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("Ask about the village.");
+        click(() -> point("finish", 100, 18));
+        STEPS.add(() -> require(document.value("/nodes/start/responses/0/label").getAsString().equals("Ask about the village."), "Response wording edits inside the node."));
+        click(() -> inlinePoint("start", "/nodes/start/conditions/0/min"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("12");
+        click(() -> point("finish", 100, 18));
+        STEPS.add(() -> {
+            require(document.value("/nodes/start/conditions/0/min").getAsInt() == 12, "Inline condition values apply as numbers.");
+            require(DialogueGraph.edges(document).getFirst().to().equals("finish"), "Inline editing preserves the response connection.");
+            capture("02-inline-edited-nodes");
+        });
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(document.value("/nodes/start/conditions/0/min").getAsInt() == 0, "Inline numeric edits undo normally."));
+        click(() -> toolbar("Redo"));
+        STEPS.add(() -> {
+            require(document.value("/nodes/start/conditions/0/min").getAsInt() == 12, "Inline numeric edits redo normally.");
+            workspace = originalWorkspace[0]; document = originalDocument[0];
+            set("workspace", workspace);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+        });
+    }
+
+    private static float[] inlinePoint(String node, String path) {
+        var card = EditorGraph.cards(workspace, document, "en_us").stream().filter(value -> value.node().id().equals(node)).findFirst().orElseThrow();
+        for (int i = 0; i < card.blocks().size(); i++) {
+            float y = card.blockY(i) + 28;
+            for (var field : card.blocks().get(i).fields()) {
+                if (field.pointer().equals(path)) return point(node, 90, y + 35);
+                y += field.height();
+            }
+        }
+        throw new AssertionError("Missing inline field: " + path);
+    }
+
+    private static float[] blockDetails(String node, String path) {
+        var card = EditorGraph.cards(workspace, document, "en_us").stream().filter(value -> value.node().id().equals(node)).findFirst().orElseThrow();
+        for (int i = 0; i < card.blocks().size(); i++) if (card.blocks().get(i).pointer().equals(path))
+            return point(node, EditorGraph.WIDTH - 28, card.blockY(i) + 12);
+        throw new AssertionError("Missing graph block: " + path);
+    }
+
     private static void type(String text) { STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8(text)); }
 
     private static void key(int key) {
-        STEPS.add(() -> ImGui.getIO().addKeyEvent(key, true));
-        STEPS.add(() -> ImGui.getIO().addKeyEvent(key, false));
+        STEPS.add(() -> { ImGui.getIO().addKeyEvent(key, true); keyRelease = key; });
     }
 
     private static void chord(int modifier, int key) {
@@ -2296,6 +2363,7 @@ public final class AuthoringEditorClientSmoke {
         if (finished || stepping) return;
         stepping = true;
         try {
+            if (keyRelease >= 0) { ImGui.getIO().addKeyEvent(keyRelease, false); keyRelease = -1; }
             if (++frames % 12 == 0 && Util.getMillis() >= resumeAt && !STEPS.isEmpty()) STEPS.removeFirst().run();
             var io = ImGui.getIO();
             io.setMouseWheel(mouseWheel);
@@ -2384,7 +2452,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static float[] port(String node) {
-        var card = EditorGraph.cards(document, value -> workspace.resolveText(document, value, "en_us")).stream()
+        var card = EditorGraph.cards(workspace, document, "en_us").stream()
                 .filter(candidate -> candidate.node().id().equals(node)).findFirst().orElseThrow();
         for (int i = 0; i < card.blocks().size(); i++)
             if (card.blocks().get(i).output() != null) return point(node, EditorGraph.WIDTH, card.outputY(i));
