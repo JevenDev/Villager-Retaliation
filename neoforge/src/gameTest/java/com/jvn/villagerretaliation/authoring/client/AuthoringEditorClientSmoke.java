@@ -306,10 +306,14 @@ public final class AuthoringEditorClientSmoke {
         editLine("node_2", FOLLOW_UP);
         click(() -> point("start", 80, 18));
         click(() -> screenPoint(430, 181));
-        replaceText(() -> screenPoint(450, 330), () -> RESPONSE);
-        click(() -> screenPoint(450, 417));
-        click(() -> screenPoint(320, 515));
-        click(() -> screenPoint(350, 457));
+        STEPS.add(() -> capture("10g-response-editor"));
+        replaceText(() -> screenPoint(450, 285), () -> RESPONSE);
+        click(() -> screenPoint(450, 365));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
+        click(() -> screenPoint(350, 405));
         STEPS.add(() -> {
             require(DialogueGraph.edges(document).size() == 1, "Add connection creates a response.");
             require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "The response leads to the chosen node.");
@@ -1285,7 +1289,7 @@ public final class AuthoringEditorClientSmoke {
             ((imgui.type.ImString) field(editor, "exportPath")).set(output().resolve("village-stories.zip").toString());
         });
         pause(250);
-        click(() -> screenPoint(375, 812));
+        click(() -> screenPoint(375, 840));
         pause(250);
         STEPS.add(() -> {
             try (var zip = new java.util.zip.ZipFile(output().resolve("village-stories.zip").toFile())) {
@@ -1328,12 +1332,12 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals(addon + "/drafts"), "Rename targets the right-clicked folder."));
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
         STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8("release"));
-        click(() -> screenPoint(350, 558));
+        click(() -> screenPoint(350, 586));
         STEPS.add(() -> {
             var plan = (AuthoringWorkspace.FileMove) field(field(editor, "packFiles"), "preview");
             require(plan != null && plan.destination().equals(addon + "/release"), "Rename edits create the expected folder move preview.");
         });
-        click(() -> screenPoint(350, 662));
+        click(() -> screenPoint(350, 690));
         STEPS.add(() -> require(workspace.folderPaths().contains(addon + "/release"), "Apply move renames an empty folder."));
         move(() -> screenPoint(180, 471), false);
         move(() -> screenPoint(180, 471), true);
@@ -1350,7 +1354,7 @@ public final class AuthoringEditorClientSmoke {
             require(plan != null && plan.source().equals(addon + "/release") && plan.destination().equals(addon + "/quests/release"), "Dragging a folder onto another folder prepares a safe move preview.");
             capture("02c3-drag-drop-preview");
         });
-        click(() -> screenPoint(350, 662));
+        click(() -> screenPoint(350, 690));
         STEPS.add(() -> {
             require(workspace.folderPaths().contains(addon + "/quests/release"), "Drag-and-drop moves preserve empty folders.");
             invoke("openPackFile", new Class<?>[] {String.class}, addon);
@@ -1865,10 +1869,10 @@ public final class AuthoringEditorClientSmoke {
             capture("13c-camera-controls");
             cameraGuiBefore = Minecraft.getInstance().options.hideGui;
         });
-        click(() -> screenPoint(365, 533));
+        click(() -> screenPoint(365, 561));
         STEPS.add(() -> require(cameraSession() != null && cameraSession().active() && Minecraft.getInstance().options.hideGui, "Begin camera session starts the native camera with a clean viewport."));
-        click(() -> screenPoint(350, 653));
-        click(() -> screenPoint(365, 693));
+        click(() -> screenPoint(350, 709));
+        click(() -> screenPoint(365, 749));
         STEPS.add(() -> {
             require(cameraSession().ownsScreen(Minecraft.getInstance().screen), "Position free camera opens native positioning controls.");
             cameraBefore = cameraSession().pose();
@@ -1885,7 +1889,7 @@ public final class AuthoringEditorClientSmoke {
             capture("13d-free-camera");
             Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
         });
-        click(() -> screenPoint(500, 693));
+        click(() -> screenPoint(500, 749));
         STEPS.add(() -> {
             var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(document.json().getAsJsonObject("nodes").getAsJsonObject("start"));
             require(camera != null && camera.shots().size() == 1 && camera.shots().getFirst().orientation() != null,
@@ -1897,8 +1901,8 @@ public final class AuthoringEditorClientSmoke {
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             capture("13e-captured-shot");
         });
-        click(() -> screenPoint(375, 773));
-        click(() -> screenPoint(560, 533));
+        click(() -> screenPoint(375, 829));
+        click(() -> screenPoint(560, 561));
         STEPS.add(() -> require(cameraSession() == null
                 && !com.jvn.villagerretaliation.client.interaction.DialogueCameraController.active()
                 && !Minecraft.getInstance().mouseHandler.isMouseGrabbed()
@@ -2142,7 +2146,7 @@ public final class AuthoringEditorClientSmoke {
     private static float[] textTool(String target) {
         float x = ImGui.getMainViewport().getWorkSizeX() - 380;
         for (String label : new String[] {"B", "I", "U", "Insert variable", "Style"}) {
-            float width = ImGui.calcTextSize(label).x + 16;
+            float width = ImGui.calcTextSize(label).x + 8;
             if (label.equals(target)) return screenPoint(x + width / 2, 283);
             x += width + 8;
         }

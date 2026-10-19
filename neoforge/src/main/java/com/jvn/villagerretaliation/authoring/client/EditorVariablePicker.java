@@ -24,6 +24,11 @@ final class EditorVariablePicker {
     String render(DefinitionKind kind, float textScale) {
         if (ImGui.smallButton("Insert variable")) ImGui.openPopup("variables");
         if (!EditorWidgets.beginPopup("variables", 660, 580, textScale)) return null;
+        if (ImGui.isKeyPressed(ImGuiKey.Escape, false)) {
+            ImGui.closeCurrentPopup();
+            ImGui.endPopup();
+            return null;
+        }
         if (ImGui.isWindowAppearing()) {
             search.set(""); custom.set(""); selected = 0;
             ImGui.setKeyboardFocusHere();

@@ -94,7 +94,8 @@ final class EditorShortcuts {
         }).toList();
         if (matches.size() != 1) return;
         var command = matches.getFirst();
-        boolean textSafe = List.of("Save drafts", "Quick open file", "Find content", "Open commands", "Focus work area", "Focus properties").contains(command.id());
+        boolean textSafe = List.of("Save drafts", "Quick open file", "Find content", "Open commands", "Focus work area", "Focus properties",
+                "Navigate back", "Navigate forward", "Parent folder", "Next open file", "Previous open file").contains(command.id());
         if (command.enabled() && (!typing || textSafe)) run.accept(command.action());
     }
 
