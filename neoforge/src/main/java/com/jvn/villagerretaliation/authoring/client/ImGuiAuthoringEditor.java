@@ -1532,13 +1532,10 @@ final class ImGuiAuthoringEditor {
         if (simple) {
             if (!objectiveType.equals("trade")) {
                 input("Resource ID", objectiveResource);
-                ImGui.setNextItemWidth(-1);
-                if (ImGui.beginCombo("Choose resource", objectiveResource.get())) {
-                    var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                            : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
-                    for (var id : registry.keySet().stream().sorted().toList()) if (ImGui.selectable(id.toString(), objectiveResource.get().equals(id.toString()))) objectiveResource.set(id.toString());
-                    ImGui.endCombo();
-                }
+                var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                        : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
+                resourcePicker.render("objective_resource", objectiveResource.get(), objectiveResource.get(),
+                        registry.keySet().stream().map(Object::toString).sorted().toList(), objectiveResource::set);
             }
             ImGui.inputInt("Required count", objectiveCount);
         } else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
@@ -2343,15 +2340,7 @@ final class ImGuiAuthoringEditor {
         String path = target.currentPath();
         packFiles.select(target.view() != 4 && !path.isEmpty() && !workspace.filePaths().contains(path) && !workspace.folderPaths().contains(path) ? "" : path);
         filesMode = target.filesMode();
-        if (target.document() != null) {
-            var location = EditorDiagnosticLocation.resolve(target.document(), target.pointer());
-            selectedNode = location.nodeId(); pointer.set(location.pointer());
-            nodeSelection.clear();
-            if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
-        }
-        panX = target.panX(); panY = target.panY(); zoom = target.zoom();
-        fitGraph = false; graphFocus = "";
-        restoreWorkScroll = target.scroll();
+        restoreDocumentPosition(target);
         if (target.view() == 3 && view != 3) enterPlaytest();
         else view = target.view();
         focusPanel = view == 3 ? "Playtest###VR_Playtest" : WORK_PANEL;
@@ -2591,6 +2580,7 @@ final class ImGuiAuthoringEditor {
             status = "Apply or discard the JSON buffer before changing selection.";
             return;
         }
+        if (document == next && next != null) return;
         boolean changed = document != next;
         if (changed) {
             recordLocation();

@@ -28,18 +28,41 @@ final class EditorNavigation {
     private AuthoringWorkspace workspace;
     private final List<Location> locations = new ArrayList<>();
     private int cursor = -1;
+    private final java.util.Map<AuthoringDocument, Location> documentPositions = new java.util.IdentityHashMap<>();
+    private final java.util.Map<String, Location> filePositions = new java.util.HashMap<>();
+    private final List<Location> recentFiles = new ArrayList<>();
 
     void record(AuthoringWorkspace owner, Location next) {
         if (workspace != owner) {
             workspace = owner;
             locations.clear(); cursor = -1;
+            documentPositions.clear(); filePositions.clear(); recentFiles.clear();
         }
-        if (owner == null) return;
+        if (owner == null || !next.exists(owner)) return;
+        if (next.view() == 0 && next.document() != null) documentPositions.put(next.document(), next);
+        if (next.view() == 4) filePositions.put(next.currentPath(), next);
+        if (!next.currentPath().isEmpty() && owner.filePaths().contains(next.currentPath())) {
+            recentFiles.removeIf(location -> next.document() != null ? location.document() == next.document() : location.currentPath().equals(next.currentPath()));
+            recentFiles.addFirst(next);
+            if (recentFiles.size() > 20) recentFiles.removeLast();
+        }
         if (cursor >= 0 && locations.get(cursor).samePlace(next)) { locations.set(cursor, next); return; }
         locations.subList(cursor + 1, locations.size()).clear();
         locations.add(next);
         if (locations.size() > 128) locations.removeFirst();
         cursor = locations.size() - 1;
+    }
+
+    Location remembered(AuthoringWorkspace owner, AuthoringDocument document, String path) {
+        if (owner != workspace) return null;
+        Location location = document == null ? filePositions.get(path) : documentPositions.get(document);
+        return location != null && location.exists(owner) ? location : null;
+    }
+
+    List<String> recentFiles(AuthoringWorkspace owner) {
+        if (owner != workspace) return List.of();
+        return recentFiles.stream().filter(location -> location.exists(owner))
+                .map(Location::currentPath).filter(owner.filePaths()::contains).distinct().toList();
     }
 
     Location target(int direction) {

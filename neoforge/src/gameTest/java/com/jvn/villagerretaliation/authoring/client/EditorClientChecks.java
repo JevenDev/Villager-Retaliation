@@ -56,7 +56,69 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 46;
+        resourcePickersFilterWithoutChangingIdentifiers();
+        filePositionsSurviveSelectionAndHistoryBranches();
+        searchLocatesWordingAndLocalizedNodes();
+        quickOpenRanksRecentFilesAndResourceIds();
+        return 50;
+    }
+
+    private static void resourcePickersFilterWithoutChangingIdentifiers() {
+        var choices = java.util.List.of("minecraft:stone", "minecraft:redstone", "test:Stone_Brick");
+        check(EditorResourcePicker.matching(choices, " STONE ").equals(choices), "picker filtering ignores case and surrounding whitespace");
+        check(EditorResourcePicker.matching(choices, "test:").equals(java.util.List.of("test:Stone_Brick")), "picker results preserve the exact identifier");
+        check(EditorResourcePicker.matching(choices, "missing").isEmpty(), "pickers can represent an empty result");
+    }
+
+    private static void filePositionsSurviveSelectionAndHistoryBranches() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-file-positions"));
+        var first = workspace.createDocument(DefinitionKind.TREE, "test:first");
+        var second = workspace.createDocument(DefinitionKind.TREE, "test:second");
+        var navigation = new EditorNavigation();
+        var position = new EditorNavigation.Location(first, first.resourcePath(), 0, false, "/nodes/start/lines", 123, 45, .75f, 90);
+        navigation.record(workspace, position);
+        var other = new EditorNavigation.Location(second, second.resourcePath(), 0, false, "/nodes/start", 0, 0, 1, 0);
+        navigation.record(workspace, other);
+        navigation.accept(position);
+        navigation.record(workspace, new EditorNavigation.Location(null, "pack.mcmeta", 4, true, "", 0, 0, 1, 60));
+        check(navigation.remembered(workspace, second, second.resourcePath()).equals(other), "file positions survive a discarded forward-history branch");
+        check(navigation.remembered(workspace, first, first.resourcePath()).equals(position), "graph selection, pan, zoom and scroll remain attached to each document");
+        check(navigation.remembered(workspace, null, "pack.mcmeta").scroll() == 60, "supporting files retain their scroll position");
+        workspace.rename(first, "test:renamed");
+        check(navigation.remembered(workspace, first, first.resourcePath()).equals(position), "positions follow renamed document identities");
+        workspace.remove(second);
+        check(navigation.remembered(workspace, second, second.resourcePath()) == null, "deleted documents cannot restore a stale position");
+        check(!navigation.recentFiles(workspace).contains(second.resourcePath()), "deleted files leave the recent-file list");
+    }
+
+    private static void searchLocatesWordingAndLocalizedNodes() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-search"));
+        var dialogue = workspace.createDocument(DefinitionKind.TREE, "test:search");
+        dialogue.edit("Set wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Meet at the village gate")));
+        var hits = EditorSearch.find(workspace, "VILLAGE", "en_us", 200);
+        var hit = hits.stream().filter(value -> value.document() == dialogue).findFirst().orElseThrow();
+        check(hit.pointer().equals("/nodes/start/lines/0") && hit.text().contains("village"), "search retains the exact matching wording field");
+        check(EditorDiagnosticLocation.resolve(dialogue, hit.pointer()).nodeId().equals("start"), "a wording hit resolves to its graph node");
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:localized_search");
+        var conversation = workspace.createDocument(DefinitionKind.CONVERSATION, "test:localized_search");
+        conversation.edit("Assign quest", root -> root.addProperty("quest", quest.id()));
+        DialogueGraph.addNode(conversation, "finish");
+        workspace.addDialogueResponse(conversation, "start", "gate", "Localized gate wording", "finish");
+        var localized = EditorSearch.find(workspace, "Localized gate", "en_us", 200).stream().filter(value -> value.document() == conversation).findFirst().orElseThrow();
+        check(localized.pointer().endsWith("/label") && EditorDiagnosticLocation.resolve(conversation, localized.pointer()).nodeId().equals("start"), "localized wording jumps back to its owning conversation node");
+        check(EditorSearch.find(workspace, "gate", "en_us", 1).size() == 1 && EditorSearch.find(workspace, "", "en_us", 200).isEmpty(), "search respects limits and empty queries");
+        String longText = "x".repeat(200) + "needle" + "y".repeat(200);
+        check(EditorSearch.snippet(longText, "needle").contains("needle") && EditorSearch.snippet(longText, "needle").length() <= 166, "snippets keep distant matches in view");
+    }
+
+    private static void quickOpenRanksRecentFilesAndResourceIds() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-quick-open"));
+        var dialogue = workspace.createDocument(DefinitionKind.TREE, "test:quick_open");
+        var recent = java.util.List.of(dialogue.resourcePath(), "pack.mcmeta");
+        check(EditorSearch.files(workspace, "", recent).subList(0, 2).equals(recent), "quick open puts recent files ahead of other paths");
+        check(EditorSearch.files(workspace, "TEST:QUICK_OPEN", recent).contains(dialogue.resourcePath()), "quick open searches resource IDs regardless of case");
+        check(EditorSearch.files(workspace, "pack.mcmeta", recent).equals(java.util.List.of("pack.mcmeta")), "quick open includes supporting pack files");
+        check(EditorSearch.files(workspace, "missing", recent).isEmpty(), "quick open does not invent missing paths");
     }
 
     private static void navigationKeepsContextBranchesAndWorkspaceBoundaries() throws java.io.IOException {
@@ -706,6 +768,13 @@ public final class EditorClientChecks {
     }
 
     private static void editorPreferencesSurviveRestart() throws java.io.IOException {
+        var viewsPath = java.nio.file.Files.createTempDirectory("vr-view-prefs").resolve("preferences.json");
+        var views = new EditorPreferences.ViewSettings(true, false, true, true, "Quest");
+        EditorPreferences.defaults().withViews(views).withWorkspace("workspace").withLocale("fr_fr").withScale(1.2f)
+                .withPlaytestFraction(.6f).withGuide(true).withLayout(3).withExport("export").save(viewsPath);
+        check(EditorPreferences.load(viewsPath).views().equals(views), "view preferences survive every preference update and restart");
+        java.nio.file.Files.writeString(viewsPath, "{\"workspace\":\"old\"}");
+        check(EditorPreferences.load(viewsPath).views().equals(EditorPreferences.ViewSettings.defaults()), "old preference files receive compatible view defaults");
         var directory = java.nio.file.Files.createTempDirectory("vr-editor-preferences-");
         var path = directory.resolve("settings.json");
         try {
