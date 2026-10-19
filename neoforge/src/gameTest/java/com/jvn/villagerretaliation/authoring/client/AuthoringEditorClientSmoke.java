@@ -641,9 +641,9 @@ public final class AuthoringEditorClientSmoke {
         click(() -> toolbar("Forward"));
         click(() -> toolbar("Forward"));
         STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Forward reopens the metadata file."));
-        click(() -> toolbar("Up"));
+        click(() -> breadcrumb(""));
         STEPS.add(() -> {
-            require(field(field(editor, "packFiles"), "selected").equals(""), "Up opens the containing pack root for pack.mcmeta.");
+            require(field(field(editor, "packFiles"), "selected").equals(""), "The root breadcrumb opens the pack root from pack.mcmeta.");
             capture("02i-pack-root-navigation");
         });
         STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
@@ -689,7 +689,9 @@ public final class AuthoringEditorClientSmoke {
         float x = ImGui.getMainViewport().getWorkPosX() + 14;
         float scale = ((EditorPreferences) field(editor, "preferences")).textScale();
         String root = workspace.directory().getFileName().toString();
-        x += ImGui.calcTextSize(root).x * scale + 16;
+        float rootWidth = ImGui.calcTextSize(root).x * scale + 16;
+        if (target.isEmpty()) return new float[] {x + rootWidth / 2, ImGui.getMainViewport().getWorkPosY() + 64};
+        x += rootWidth;
         String path = (String) field(field(editor, "packFiles"), "selected");
         for (String folder : EditorNavigation.ancestors(path)) {
             x += ImGui.calcTextSize("/").x * scale + 16;
@@ -1528,7 +1530,7 @@ public final class AuthoringEditorClientSmoke {
         boolean navigation = List.of("Back", "Forward", "Undo", "Redo").contains(target);
         String[] labels = navigation ? new String[] {"Back", "Forward", "Undo", "Redo"}
                 : new String[] {"Workspace", "New", "Save", "Edit", "Preview", "Playtest", "Build pack",
-                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close", "Up"};
+                    (int) field(editor, "guideStep") < 0 ? "Quick guide" : "Hide guide", "Reset layout", "Files", "Close"};
         if (navigation) {
             x = ImGui.getMainViewport().getWorkPosX() + ImGui.getMainViewport().getWorkSizeX() - 14;
             for (String label : labels) x -= ImGui.calcTextSize(label).x * scale + 24;

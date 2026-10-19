@@ -64,6 +64,12 @@ final class ImGuiAuthoringEditor {
     private final EditorPackFiles packFiles = new EditorPackFiles();
     private final EditorPackBuild packBuild = new EditorPackBuild();
     private final EditorNavigation navigation = new EditorNavigation();
+    private final EditorResourcePicker resourcePicker = new EditorResourcePicker();
+    private boolean requestQuickOpen;
+    private final ImString quickQuery = new ImString(256);
+    private int quickIndex;
+    private String searchQuery = "", searchLocale = "";
+    private List<EditorSearch.Hit> searchHits = List.of();
     private float workScroll, restoreWorkScroll = Float.NaN;
     private boolean showBranch;
     private boolean fitGraph = true;
@@ -200,6 +206,11 @@ final class ImGuiAuthoringEditor {
             if (!preferences.exportFolder().isBlank()) exportPath.set(preferences.exportFolder());
             locale.set(preferences.locale());
             playtestFraction = preferences.playtestFraction();
+            var views = preferences.views();
+            showMinimap = views.minimap(); filesMode = views.filesMode(); groupContent = views.groupContent();
+            showResources = views.showResources();
+            contentKind = views.contentKind().equals("All") || java.util.Arrays.stream(DefinitionKind.values()).anyMatch(kind -> kindLabel(kind).equals(views.contentKind()))
+                    ? views.contentKind() : "All";
         } catch (IOException exception) {
             status = exception.getMessage();
         }
@@ -231,6 +242,7 @@ final class ImGuiAuthoringEditor {
             }
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
                 if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.F)) focusSearch = true;
+                if (workspace != null && view != 3 && ImGui.getIO().getKeyCtrl() && ImGui.isKeyPressed(ImGuiKey.P)) requestQuickOpen = true;
                 if (ImGui.getIO().getKeyCtrl() && ImGui.getIO().getKeyAlt()) {
                     if (ImGui.isKeyPressed(ImGuiKey.LeftArrow)) operation(() -> navigateHistory(-1));
                     if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) operation(() -> navigateHistory(1));
@@ -254,6 +266,7 @@ final class ImGuiAuthoringEditor {
             else if (view == 4) files();
             else diagnostics();
             inspector();
+            quickOpen();
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
@@ -362,14 +375,9 @@ final class ImGuiAuthoringEditor {
         sameLineFor("Reset layout");
         if (ImGui.button("Reset layout")) resetLayout = true;
         sameLineFor("Files");
-        if (ImGui.button("Files")) operation(() -> { filesMode = true; view = 4; focusPanel = WORK_PANEL; });
+        if (ImGui.button("Files")) operation(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
         sameLineFor("Close");
         if (ImGui.button("Close")) screen.onClose();
-        sameLineFor("Up");
-        ImGui.beginDisabled(workspace == null || activePath().isEmpty() || EditorTestWorld.applying());
-        if (ImGui.button("Up##navigation_up")) operation(this::navigateUp);
-        ImGui.endDisabled();
-        if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Open containing folder (Alt+Up)");
         navigationControls();
         breadcrumbs();
         ImGui.endDisabled();
@@ -422,6 +430,11 @@ final class ImGuiAuthoringEditor {
 
     private void savePreferences() throws IOException { preferences.save(preferencesPath); }
 
+    private void saveViewPreferences() {
+        preferences = preferences.withViews(new EditorPreferences.ViewSettings(showMinimap, filesMode, groupContent, showResources, contentKind));
+        attempt(this::savePreferences);
+    }
+
     private void panel(String title) {
         if (title.equals(focusPanel)) { ImGui.setNextWindowFocus(); focusPanel = ""; }
         ImGui.begin(title, ImGuiWindowFlags.NoCollapse);
@@ -463,6 +476,7 @@ final class ImGuiAuthoringEditor {
         packFiles.reset();
         packBuild.load(next);
         createScope = null;
+        searchQuery = ""; searchHits = List.of();
         select(null);
         showWorkspace = false;
         view = 0;
@@ -536,13 +550,8 @@ final class ImGuiAuthoringEditor {
             if (createKind == DefinitionKind.CONVERSATION) {
                 ImGui.textUnformatted("Associated quest");
                 ImGui.setNextItemWidth(-1);
-                if (ImGui.beginCombo("##linked_quest", linkedQuest.get().isEmpty() ? "Choose a quest" : linkedQuest.get())) {
-                    for (var candidate : workspace.documents()) {
-                        if (candidate.kind() == DefinitionKind.QUEST && ImGui.selectable(candidate.id() + "##" + candidate.resourcePath(), linkedQuest.get().equals(candidate.id())))
-                            linkedQuest.set(candidate.id());
-                    }
-                    ImGui.endCombo();
-                }
+                resourcePicker.render("linked_quest", linkedQuest.get().isEmpty() ? "Choose a quest" : linkedQuest.get(), linkedQuest.get(),
+                        workspace.documents().stream().filter(candidate -> candidate.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList(), linkedQuest::set);
                 if (workspace.documents().stream().noneMatch(candidate -> candidate.kind() == DefinitionKind.QUEST))
                     ImGui.textWrapped("Create a quest first, or choose Dialogue tree for standalone dialogue.");
             }
@@ -585,12 +594,14 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(filter.get().isEmpty());
         if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
         ImGui.endDisabled();
+        if (!filter.get().isBlank()) contextualSearch();
+        if (ImGui.smallButton("Quick open (Ctrl+P)")) requestQuickOpen = true;
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
             packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
-            if (ImGui.smallButton("Use content list")) filesMode = false;
+            if (ImGui.smallButton("Use content list")) { filesMode = false; saveViewPreferences(); }
         } else {
-            if (ImGui.checkbox("Supporting files", showResources)) showResources = !showResources;
+            if (ImGui.checkbox("Supporting files", showResources)) { showResources = !showResources; saveViewPreferences(); }
             int visible = 0;
             String previousGroup = "";
             var listed = groupContent ? workspace.documents().stream().sorted(java.util.Comparator.comparing(this::contentGroup).thenComparing(AuthoringDocument::id)).toList() : workspace.documents();
@@ -693,7 +704,7 @@ final class ImGuiAuthoringEditor {
 
     private void contentTools() {
         if (!ImGui.collapsingHeader("Content tools")) return;
-        if (ImGui.checkbox("Group by campaign, addon and type", groupContent)) groupContent = !groupContent;
+        if (ImGui.checkbox("Group by campaign, addon and type", groupContent)) { groupContent = !groupContent; saveViewPreferences(); }
         float[] scale = {preferences.textScale()};
         if (ImGui.sliderFloat("Editor text size", scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
         graphTools();
@@ -704,8 +715,8 @@ final class ImGuiAuthoringEditor {
             preferences = preferences.withLocale(locale.get()); savePreferences(); refresh();
         });
         if (ImGui.beginCombo("Content type", contentKind)) {
-            if (ImGui.selectable("All", contentKind.equals("All"))) contentKind = "All";
-            for (var kind : DefinitionKind.values()) if (ImGui.selectable(kindLabel(kind), contentKind.equals(kindLabel(kind)))) contentKind = kindLabel(kind);
+            if (ImGui.selectable("All", contentKind.equals("All"))) { contentKind = "All"; saveViewPreferences(); }
+            for (var kind : DefinitionKind.values()) if (ImGui.selectable(kindLabel(kind), contentKind.equals(kindLabel(kind)))) { contentKind = kindLabel(kind); saveViewPreferences(); }
             ImGui.endCombo();
         }
         if (ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.directory().toFile());
@@ -741,6 +752,77 @@ final class ImGuiAuthoringEditor {
             } else if (!List.of("metadata", "conditions", "actions", "effects").contains(field)) replaceWording(entry.getValue(), find, replacement);
         }
         else if (value.isJsonArray()) for (var child : value.getAsJsonArray()) replaceWording(child, find, replacement);
+    }
+
+    private void contextualSearch() {
+        if (!searchQuery.equals(filter.get()) || !searchLocale.equals(locale.get())) {
+            searchQuery = filter.get(); searchLocale = locale.get();
+            searchHits = EditorSearch.find(workspace, searchQuery, searchLocale, 200);
+        }
+        ImGui.setNextItemOpen(true, ImGuiCond.Once);
+        if (!ImGui.collapsingHeader("Search matches (" + searchHits.size() + (searchHits.size() == 200 ? "+" : "") + ")###search_matches")) return;
+        ImGui.beginChild("##search_results", 0, Math.min(220, Math.max(1, searchHits.size()) * 76), true);
+        for (int i = 0; i < searchHits.size(); i++) {
+            var hit = searchHits.get(i);
+            ImGui.pushID(i);
+            if (ImGui.selectable(shortText(hit.document().id(), 48) + "##hit")) operation(() -> openSearchHit(hit));
+            ImGui.textDisabled(hit.pointer().isEmpty() ? "File settings" : hit.pointer());
+            ImGui.textWrapped(EditorSearch.snippet(hit.text(), searchQuery));
+            if (ImGui.isItemHovered()) ImGui.setTooltip(hit.document().resourcePath() + hit.pointer() + "\n" + hit.text());
+            ImGui.separator();
+            ImGui.popID();
+        }
+        if (searchHits.isEmpty()) ImGui.textWrapped("No matching content or wording.");
+        ImGui.endChild();
+    }
+
+    private void openSearchHit(EditorSearch.Hit hit) {
+        if (!workspace.documents().contains(hit.document())) throw new IllegalStateException("This search result is no longer available");
+        select(hit.document());
+        var location = EditorDiagnosticLocation.resolve(document, hit.pointer());
+        selectedNode = location.nodeId(); setPointer(location.pointer());
+        nodeSelection.clear();
+        if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+        graphFocus = selectedNode;
+        fitGraph = false;
+        view = 0; focusPanel = DETAIL_PANEL;
+        status = document.resourcePath() + hit.pointer();
+    }
+
+    private void quickOpen() {
+        if (requestQuickOpen) {
+            requestQuickOpen = false; quickQuery.set(""); quickIndex = 0;
+            ImGui.openPopup("Quick open###quick_open");
+        }
+        ImGui.setNextWindowSize(640, 420, ImGuiCond.Appearing);
+        if (!ImGui.beginPopup("Quick open###quick_open")) return;
+        if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere();
+        String before = quickQuery.get();
+        ImGui.setNextItemWidth(-1);
+        boolean enter = ImGui.inputTextWithHint("##quick_query", "Find a file or resource ID...", quickQuery, ImGuiInputTextFlags.EnterReturnsTrue);
+        if (!before.equals(quickQuery.get())) quickIndex = 0;
+        var recent = navigation.recentFiles(workspace);
+        var matches = EditorSearch.files(workspace, quickQuery.get(), recent);
+        boolean moved = false;
+        if (ImGui.isKeyPressed(ImGuiKey.DownArrow)) { quickIndex++; moved = true; }
+        if (ImGui.isKeyPressed(ImGuiKey.UpArrow)) { quickIndex--; moved = true; }
+        quickIndex = Math.clamp(quickIndex, 0, Math.max(0, matches.size() - 1));
+        if (enter && !matches.isEmpty()) {
+            String path = matches.get(quickIndex);
+            operation(() -> openPackFile(path)); ImGui.closeCurrentPopup();
+        }
+        ImGui.textDisabled(quickQuery.get().isBlank() ? "Recent files first. Enter to open, Escape to close." : matches.size() + " matching files");
+        ImGui.beginChild("##quick_files", 0, 0, false);
+        for (int i = 0; i < matches.size(); i++) {
+            String path = matches.get(i);
+            ImGui.pushID(i);
+            if (ImGui.selectable(path, i == quickIndex)) { operation(() -> openPackFile(path)); ImGui.closeCurrentPopup(); }
+            if (moved && i == quickIndex) ImGui.setScrollHereY();
+            ImGui.popID();
+        }
+        if (matches.isEmpty()) ImGui.textWrapped("No matching files.");
+        ImGui.endChild();
+        ImGui.endPopup();
     }
 
     private void graph() {
@@ -1417,7 +1499,7 @@ final class ImGuiAuthoringEditor {
 
     private void graphTools() {
         if (document == null || document.kind() == DefinitionKind.RESOURCE || document.kind().campaignManifest()) return;
-        if (ImGui.checkbox("Show minimap", showMinimap)) showMinimap = !showMinimap;
+        if (ImGui.checkbox("Show minimap", showMinimap)) { showMinimap = !showMinimap; saveViewPreferences(); }
         ImGui.textWrapped("Ctrl-click headers to select nodes. Ctrl+C copies, Ctrl+V pastes, Alt+Left/Right selects nodes. Shared localization stays linked.");
         if (ImGui.button("Copy selected nodes")) operation(() -> graphClipboard.copy(workspace, document, selectedNodes()));
         if (ImGui.button("Paste nodes")) operation(this::pasteNodes);
@@ -1792,11 +1874,7 @@ final class ImGuiAuthoringEditor {
         JsonObject rule = propertySchema.at(document.json(), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
-        ImGui.setNextItemWidth(-1);
-        if (!choices.isEmpty() && ImGui.beginCombo("##choose_" + field, "Choose " + field + "...")) {
-            for (String choice : choices) if (ImGui.selectable(choice, input.get().equals(choice))) input.set(choice);
-            ImGui.endCombo();
-        }
+        resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set);
     }
 
     private void enterPlaytest() {
@@ -2234,10 +2312,16 @@ final class ImGuiAuthoringEditor {
 
     private void openPackFile(String path) {
         var content = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(path)).findFirst().orElse(null);
+        recordLocation();
         select(content);
         packFiles.select(path);
         filesMode = true;
-        restoreWorkScroll = 0;
+        saveViewPreferences();
+        if (content == null) {
+            var remembered = navigation.remembered(workspace, null, path);
+            workScroll = remembered == null ? 0 : remembered.scroll();
+            restoreWorkScroll = workScroll;
+        }
         view = content == null ? 4 : 0;
         focusPanel = WORK_PANEL;
     }
@@ -2507,7 +2591,9 @@ final class ImGuiAuthoringEditor {
             status = "Apply or discard the JSON buffer before changing selection.";
             return;
         }
-        if (document != next) {
+        boolean changed = document != next;
+        if (changed) {
+            recordLocation();
             EditorLiveQuestTest.stop();
             EditorPlaytestPresentation.clear();
             AuthoringDialoguePreview.stop();
@@ -2542,6 +2628,24 @@ final class ImGuiAuthoringEditor {
         }
         if (next != null) packFiles.select(next.resourcePath());
         refresh();
+        if (changed) {
+            var remembered = navigation.remembered(workspace, next, next == null ? "" : next.resourcePath());
+            workScroll = remembered == null ? 0 : remembered.scroll();
+            restoreWorkScroll = workScroll;
+            if (remembered != null) restoreDocumentPosition(remembered);
+        }
+    }
+
+    private void restoreDocumentPosition(EditorNavigation.Location location) {
+        if (document != null) {
+            var resolved = EditorDiagnosticLocation.resolve(document, location.pointer());
+            selectedNode = resolved.nodeId(); pointer.set(resolved.pointer());
+            nodeSelection.clear();
+            if (!selectedNode.isEmpty()) nodeSelection.add(selectedNode);
+        }
+        panX = location.panX(); panY = location.panY(); zoom = location.zoom();
+        fitGraph = false; graphFocus = "";
+        workScroll = location.scroll(); restoreWorkScroll = workScroll;
     }
 
     private void changeHistory(boolean redo) {
@@ -2552,6 +2656,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void refresh() {
+        searchQuery = "";
         packFiles.invalidate();
         packBuild.invalidate();
         propertySchema = document == null ? null : EditorSchema.forDocument(document);
