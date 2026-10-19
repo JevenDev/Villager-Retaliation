@@ -43,6 +43,7 @@ public final class EditorClientChecks {
         questPortsReplaceTerminalTransitions();
         graphArrangementHandlesCyclesAndLargeCards();
         behaviorBlocksRejectUnsupportedOwners();
+        progressConditionsKeepListsModesAndPreviewOverrides();
         textToolsPreserveUnicodeSelectionAndToggleStyles();
         timeVariablesFollowWorldClockAndPreviewConditions();
         graphSummariesKeepFormattingOutOfTheFlow();
@@ -50,7 +51,7 @@ public final class EditorClientChecks {
         diagnosticsLocateMissingFieldsAndTheirOwningNodes();
         malformedFieldErrorsKeepLocationsAndPendingContent();
         endingNodesDoesNotSilentlyDeleteAuthoredChoices();
-        return 40;
+        return 41;
     }
 
     private static void schemaFormsResolveNestedVariantsAndRequiredFields() throws java.io.IOException {
@@ -819,6 +820,75 @@ public final class EditorClientChecks {
         var effects = conversation.json().getAsJsonArray("nodes").get(0).getAsJsonObject().getAsJsonArray("effects");
         check(!effects.get(0).getAsJsonObject().get("id").equals(effects.get(1).getAsJsonObject().get("id")),
                 "conversation effect IDs remain unique");
+    }
+
+    private static void progressConditionsKeepListsModesAndPreviewOverrides() throws java.io.IOException {
+        var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
+        var forms = new EditorSchema(root);
+        var conditionSchema = root.getAsJsonObject("$defs").getAsJsonObject("condition");
+        var choices = forms.choices(conditionSchema);
+        for (var kind : com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.values()) {
+            var seeded = EditorProgressConditions.seed(kind.id());
+            check(choices.containsKey(EditorProgressConditions.label(kind.id())), "guided condition choices use creator wording");
+            check(com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(seeded,
+                    com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.schema(kind)).isEmpty(), "new presets match their runtime schema");
+            var parsed = com.jvn.villagerretaliation.dialogue.DialogueCondition.readObjects(
+                    net.minecraft.resources.ResourceLocation.parse("test:history"), "test", java.util.List.of(seeded), null).getFirst();
+            check(!(parsed instanceof com.jvn.villagerretaliation.dialogue.DialogueCondition.Invalid), "editor presets parse at runtime");
+            if (!kind.count() && kind != com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_LAST_DEATH)
+                check(seeded.get("all").getAsBoolean() && EditorProgressConditions.hasMatchMode(seeded), "resource lists start in All mode");
+        }
+        var unrelated = json("{\"type\":\"object\",\"required\":[\"type\",\"grant\"],\"properties\":{\"type\":{\"enum\":[\"advancement\"]},\"grant\":{\"type\":\"boolean\"}}}");
+        check(forms.choices(unrelated).get("advancement").getAsJsonObject().has("grant"), "condition presets do not replace unrelated typed objects");
+        check(com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(
+                json("{\"advancements\":[\"story/mine_stone\"]}"), com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.advancementSchema()).isEmpty(),
+                "declared advancement fields retain existing default-namespace support");
+        check(!EditorProgressConditions.hasMatchMode(json("{\"type\":\"player_died_from\",\"all\":[]}")),
+                "malformed modes stay in the ordinary field editor for repair");
+        check(EditorProgressConditions.seed("advancements").has("advancements"), "existing advancement aliases receive complete presets");
+        var advancement = EditorProgressConditions.seed("advancement");
+        check(forms.effective(conditionSchema, advancement).getAsJsonObject("properties").has("advancements"), "existing advancements expose declared list fields");
+        for (var entry : java.util.Map.of("dimensions", "dimension", "entities", "entity", "damage_types", "damage_type",
+                "biomes", "biome", "advancements", "advancement", "items", "item").entrySet())
+            check(EditorProgressConditions.resourceField("/nodes/start/conditions/0/" + entry.getKey() + "/1").equals(entry.getValue()),
+                    "list entries retain their resource selector");
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-progress-editor"));
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:progress_editor");
+        String path = EditorBlocks.append(document, "/nodes/start", EditorBlocks.Kind.PLAYER_DIED_FROM);
+        var before = document.json();
+        document.edit("Choose death causes", value -> {
+            var selected = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(value, path).getAsJsonObject();
+            selected.getAsJsonArray("damage_types").add("modded:arcane");
+            selected.addProperty("all", false);
+        });
+        var edited = document.json();
+        document.undo();
+        check(document.json().equals(before), "resource lists and match mode undo together");
+        document.redo();
+        check(document.json().equals(edited), "resource lists and match mode redo together");
+        var preview = new com.jvn.villagerretaliation.authoring.preview.PreviewConditions();
+        var parsed = com.jvn.villagerretaliation.dialogue.DialogueCondition.readObjects(net.minecraft.resources.ResourceLocation.parse("test:preview"),
+                "test", java.util.List.of(com.jvn.villagerretaliation.authoring.core.JsonPointers.get(document.json(), path)), null);
+        check(preview.evaluate(parsed) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNKNOWN, "preview does not read real progress");
+        preview.override("player_died_from", com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
+        preview.placeholder("last_death_message", "Fell into a ravine");
+        var savedPreview = preview.snapshot();
+        preview.override("player_died_from", com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNMET);
+        preview.restore(savedPreview);
+        check(preview.evaluate(parsed) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED
+                && preview.placeholders().get("last_death_message").equals("Fell into a ravine"), "preview history overrides and death text survive scenario reload");
+        check(document.json().equals(edited), "simulation never edits the real draft");
+        var pack = java.nio.file.Files.createTempDirectory("vr-progress-pack").resolve("export");
+        workspace.exportPack(pack);
+        var imported = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-progress-import"));
+        imported.importPack(pack);
+        var restored = imported.documents().stream().filter(value -> value.kind() == DefinitionKind.TREE && value.id().equals(document.id())).findFirst().orElseThrow();
+        check(com.jvn.villagerretaliation.authoring.core.JsonPointers.get(restored.json(), path)
+                .equals(com.jvn.villagerretaliation.authoring.core.JsonPointers.get(edited, path)), "export and reimport retain custom IDs and Any mode");
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:death_objective");
+        String objective = EditorContentTools.appendObjective(quest, "start", EditorProgressConditions.deathObjective());
+        check(com.jvn.villagerretaliation.authoring.core.JsonPointers.get(quest.json(), objective).getAsJsonObject()
+                .get("criterion").getAsString().equals("villagerretaliation:player_died"), "death shortcut creates a native criterion objective");
     }
 
     private static AuthoringDocument tree() {

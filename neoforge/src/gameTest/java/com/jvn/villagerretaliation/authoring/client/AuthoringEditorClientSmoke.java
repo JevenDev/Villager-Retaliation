@@ -345,6 +345,7 @@ public final class AuthoringEditorClientSmoke {
         buildPlaytestDialogueSteps();
         buildImportSteps();
         buildCreatorToolsSteps();
+        buildProgressConditionSteps();
         STEPS.add(() -> {
             try {
                 Files.writeString(output().resolve("result.txt"),
@@ -692,6 +693,42 @@ public final class AuthoringEditorClientSmoke {
     private static void waitUntil(java.util.function.BooleanSupplier ready) {
         STEPS.add(new Runnable() {
             @Override public void run() { if (!ready.getAsBoolean()) STEPS.addFirst(this); }
+        });
+    }
+
+    private static void buildProgressConditionSteps() {
+        var original = new AuthoringDocument[1];
+        var progress = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            original[0] = (AuthoringDocument) field(editor, "document");
+            require(EditorProgressConditions.resources("dimension").contains("minecraft:the_nether"), "Dimension selectors use the connected world.");
+            require(EditorProgressConditions.resources("biome").contains("minecraft:plains"), "Biome selectors use the connected registry.");
+            require(EditorProgressConditions.resources("damage_type").contains("minecraft:fall"), "Damage selectors include vanilla damage types.");
+            require(EditorProgressConditions.resources("damage_type").contains("player_history:arcane"), "Damage selectors include fixture-defined mod damage types.");
+            require(EditorProgressConditions.resources("advancement").contains("minecraft:story/mine_stone"), "Advancement selectors use the connected server.");
+            progress[0] = ((AuthoringWorkspace) field(editor, "workspace")).createDocument(DefinitionKind.TREE, "test:progress_checks");
+            set("view", 0);
+            String visited = EditorBlocks.append(progress[0], "/nodes/start", EditorBlocks.Kind.PLAYER_DIMENSION_VISITED);
+            String latest = EditorBlocks.append(progress[0], "/nodes/start", EditorBlocks.Kind.PLAYER_LAST_DEATH);
+            progress[0].edit("Choose dimensions and death causes", root -> {
+                var dimensions = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(root, visited).getAsJsonObject();
+                dimensions.getAsJsonArray("dimensions").add("minecraft:the_end");
+                var death = com.jvn.villagerretaliation.authoring.core.JsonPointers.get(root, latest).getAsJsonObject();
+                death.getAsJsonArray("damage_types").add("player_history:arcane");
+                death.add("entities", JsonParser.parseString("[\"minecraft:player\",\"minecraft:skeleton\"]"));
+            });
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, progress[0]);
+            invoke("setPointer", new Class<?>[] {String.class}, visited);
+        });
+        pause(400);
+        STEPS.add(() -> {
+            capture("27-progress-dimension-lists");
+            invoke("setPointer", new Class<?>[] {String.class}, "/nodes/start/conditions/1");
+        });
+        pause(400);
+        STEPS.add(() -> {
+            capture("28-progress-latest-death");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, original[0]);
         });
     }
 

@@ -110,12 +110,16 @@ final class EditorSchema {
         JsonObject fields = object(rule.get("properties"));
         JsonObject discriminator = object(fields.get("type"));
         if (discriminator.has("enum")) {
+            boolean conditionTypes = discriminator.getAsJsonArray("enum").contains(new JsonPrimitive("player_dimension_visited"));
             for (var type : discriminator.getAsJsonArray("enum")) {
                 JsonObject value = new JsonObject();
                 value.add("type", type.deepCopy());
                 JsonObject resolved = effective(rule, value);
                 fillRequired(value, resolved, 0);
-                result.put(type.getAsString().replace('_', ' '), value);
+                JsonObject progress = conditionTypes ? EditorProgressConditions.seed(type.getAsString()) : null;
+                if (progress != null) value = progress;
+                String name = conditionTypes ? EditorProgressConditions.label(type.getAsString()) : type.getAsString();
+                result.put(name.replace('_', ' '), value);
             }
         } else if (rule.has("enum")) {
             for (var value : rule.getAsJsonArray("enum")) result.put(value.getAsString(), value.deepCopy());

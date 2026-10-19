@@ -6338,7 +6338,17 @@
             "not",
             "or",
             "physical_state",
+            "player_biome_visited",
+            "player_crafted_item",
+            "player_deaths",
+            "player_died_from",
+            "player_dimension_visited",
             "player_item",
+            "player_killed_by_entity",
+            "player_killed_entity",
+            "player_kills",
+            "player_last_death",
+            "player_used_item",
             "quest",
             "quest_choice_selected",
             "quest_counter",
@@ -6372,11 +6382,524 @@
             "villager_mood",
             "visited_stage",
             "weather",
-            "work_state"
+            "work_state",
+            "world_advancement",
+            "world_dimension_unlocked"
           ]
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_dimension_visited"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_dimension_visited"
+              },
+              "dimensions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:the_nether"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "dimensions"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "world_dimension_unlocked"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "world_dimension_unlocked"
+              },
+              "dimensions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:the_nether"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "dimensions"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "world_advancement"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "world_advancement"
+              },
+              "advancements": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:story/mine_stone"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "advancements"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_killed_entity"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_killed_entity"
+              },
+              "entities": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:zombie"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "entities"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_killed_by_entity"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_killed_by_entity"
+              },
+              "entities": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:zombie"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "entities"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_died_from"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_died_from"
+              },
+              "damage_types": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:fall"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "damage_types"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_last_death"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+              {
+                "required": [
+                  "damage_types"
+                ]
+              },
+              {
+                "required": [
+                  "entities"
+                ]
+              }
+            ],
+            "properties": {
+              "type": {
+                "const": "player_last_death"
+              },
+              "damage_types": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:fall"
+                }
+              },
+              "entities": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:zombie"
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_biome_visited"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_biome_visited"
+              },
+              "biomes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:plains"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "biomes"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_crafted_item"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_crafted_item"
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:crafting_table"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "items"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_used_item"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_used_item"
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                  "default": "minecraft:crafting_table"
+                }
+              },
+              "all": {
+                "type": "boolean",
+                "default": true,
+                "description": "Match all selected entries. Disable to match any selected entry."
+              }
+            },
+            "required": [
+              "type",
+              "items"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_deaths"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_deaths"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647,
+                "default": 1
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "type"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "player_kills"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "const": "player_kills"
+              },
+              "min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647,
+                "default": 1
+              },
+              "max": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "type"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -7240,6 +7763,56 @@
                 "minimum": 1,
                 "maximum": 256,
                 "default": 12
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "advancement",
+                  "advancements"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "advancements": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "default": "minecraft:story/mine_stone"
+                }
+              },
+              "ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "default": "minecraft:story/mine_stone"
+                }
+              },
+              "advancement": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              },
+              "id": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              },
+              "all": {
+                "type": "boolean",
+                "default": true
               }
             }
           }

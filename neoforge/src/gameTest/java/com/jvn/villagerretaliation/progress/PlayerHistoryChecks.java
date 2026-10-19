@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class PlayerHistoryChecks {
     private PlayerHistoryChecks() { }
 
-    public static int run() {
+    public static int run() throws java.io.IOException {
         UUID first = UUID.randomUUID(), second = UUID.randomUUID();
         var nether = id("minecraft:the_nether");
         var end = id("minecraft:the_end");
@@ -65,7 +65,18 @@ public final class PlayerHistoryChecks {
             var conditions = DialogueCondition.readObjects(id("test:invalid"), "test", java.util.List.of(raw), null);
             check(conditions.size() == 1 && conditions.getFirst() instanceof DialogueCondition.Invalid, "invalid checks fail closed");
         }
-        return 54;
+        var root = java.nio.file.Path.of("").toAbsolutePath();
+        while (root != null && !java.nio.file.Files.isDirectory(root.resolve("tools/datapack-builder"))) root = root.getParent();
+        check(root != null, "schema artifact directory is available");
+        var artifacts = root.resolve("tools/datapack-builder");
+        var gson = new com.google.gson.GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+        check(java.nio.file.Files.readString(artifacts.resolve("quest-v2.schema.json")).replace("\r\n", "\n")
+                .equals(com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema.exportJson().replace("\r\n", "\n")), "quest v2 artifact matches the exact runtime export");
+        check(java.nio.file.Files.readString(artifacts.resolve("quest-v3.schema.json")).replace("\r\n", "\n")
+                .equals(gson.toJson(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export()) + "\n"), "quest v3 artifact matches the exact runtime export");
+        check(java.nio.file.Files.readString(artifacts.resolve("quest-registry-metadata.json")).replace("\r\n", "\n")
+                .equals(com.jvn.villagerretaliation.quest.QuestRegistryMetadata.exportJson().replace("\r\n", "\n")), "registry metadata matches the exact runtime export");
+        return 58;
     }
 
     private static ResourceLocation id(String value) { return ResourceLocation.parse(value); }

@@ -1335,6 +1335,10 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.inputInt("Required count", objectiveCount);
         } else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
+        if (ImGui.button("Track a player death")) operation(() -> {
+            String added = EditorContentTools.appendObjective(document, selectedNode, EditorProgressConditions.deathObjective());
+            refresh(); setPointer(added);
+        });
         ImGui.textWrapped("The objective is added to this stage's completion requirements.");
         if (ImGui.button("Add objective")) operation(() -> {
             String added;
@@ -1361,6 +1365,10 @@ final class ImGuiAuthoringEditor {
             return;
         }
         JsonObject object = selected.getAsJsonObject();
+        boolean matchMode = EditorProgressConditions.hasMatchMode(object);
+        if (matchMode) matchMode(object, pointer.get());
+        if (object.has("type") && object.get("type").isJsonPrimitive() && object.get("type").getAsString().equals("player_last_death"))
+            ImGui.textWrapped("Each list matches any entry. If both lists are set, they must match the same death.");
         List<String> main = List.of("name", "description", "authors", "image", "locked", "include_default_content", "display", "title", "label", "text", "line", "lines", "variants", "exchanges", "response", "responses", "options", "objectives");
         boolean shown = false;
         for (String field : main) {
@@ -1371,7 +1379,7 @@ final class ImGuiAuthoringEditor {
         if (!shown && object.isEmpty()) ImGui.textWrapped("This block is empty. Select the node header to add dialogue or behavior.");
         if (!shown || ImGui.collapsingHeader("More properties")) {
             for (var entry : object.entrySet()) {
-                if (main.contains(entry.getKey())) continue;
+                if (main.contains(entry.getKey()) || matchMode && entry.getKey().equals("all")) continue;
                 inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
             }
         }
@@ -1503,7 +1511,7 @@ final class ImGuiAuthoringEditor {
         if (!ImGui.collapsingHeader("Runtime condition catalog")) return;
         ImGui.textWrapped("Select a conditions list, then choose a runtime condition. Guided properties supplies its declared fields.");
         for (var descriptor : com.jvn.villagerretaliation.dialogue.DialogueCondition.descriptors()) {
-            if (ImGui.selectable(descriptor.id())) {
+            if (ImGui.selectable(EditorProgressConditions.label(descriptor.id()) + "##" + descriptor.id())) {
                 JsonObject condition = new JsonObject();
                 condition.addProperty("type", descriptor.id());
                 operation(() -> {
@@ -1511,7 +1519,8 @@ final class ImGuiAuthoringEditor {
                         throw new IllegalArgumentException("Focus a conditions list first");
                     var schema = new EditorSchema(com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
                     JsonObject rule = schema.effective(com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions().getAsJsonObject("condition"), condition);
-                    JsonObject seeded = schema.seed(rule).getAsJsonObject();
+                    JsonObject template = EditorProgressConditions.seed(descriptor.id());
+                    JsonObject seeded = template == null ? schema.seed(rule).getAsJsonObject() : template;
                     seeded.addProperty("type", descriptor.id());
                     editArray(pointer.get(), values -> values.add(seeded));
                 });
@@ -1531,7 +1540,10 @@ final class ImGuiAuthoringEditor {
             if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
             if (ImGui.treeNode(label)) {
                 if (ImGui.smallButton("Focus this item")) operation(() -> setPointer(path));
+                boolean matchMode = EditorProgressConditions.hasMatchMode(value.getAsJsonObject());
+                if (matchMode) matchMode(value.getAsJsonObject(), path);
                 for (var entry : value.getAsJsonObject().entrySet()) {
+                    if (matchMode && entry.getKey().equals("all")) continue;
                     inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), depth + 1);
                 }
                 schemaObjectTools(value.getAsJsonObject(), path);
@@ -1616,8 +1628,17 @@ final class ImGuiAuthoringEditor {
         ImGui.popID();
     }
 
+    private void matchMode(JsonObject condition, String path) {
+        boolean all = !condition.has("all") || condition.get("all").getAsBoolean();
+        if (ImGui.beginCombo("Match entries", all ? "All" : "Any")) {
+            if (ImGui.selectable("All", all)) operation(() -> replaceValue(path + "/all", new JsonPrimitive(true)));
+            if (ImGui.selectable("Any", !all)) operation(() -> replaceValue(path + "/all", new JsonPrimitive(false)));
+            ImGui.endCombo();
+        }
+    }
+
     private void propertyPicker(String path, ImString input) {
-        String field = path.substring(path.lastIndexOf('/') + 1);
+        String field = EditorProgressConditions.resourceField(path);
         List<String> choices = switch (field) {
             case "time" -> List.of("morning", "afternoon", "evening", "night");
             case "weather" -> List.of("clear", "rain", "thunder");
@@ -1627,7 +1648,7 @@ final class ImGuiAuthoringEditor {
             case "block" -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.keySet().stream().map(Object::toString).sorted().toList();
             case "quest", "quest_id" -> workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList();
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
-            default -> List.of();
+            default -> EditorProgressConditions.resources(field);
         };
         JsonObject rule = propertySchema.at(document.json(), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();

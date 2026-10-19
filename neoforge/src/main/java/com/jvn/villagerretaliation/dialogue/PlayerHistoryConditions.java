@@ -212,6 +212,28 @@ public final class PlayerHistoryConditions {
         return schema;
     }
 
+    public static JsonObject advancementSchema() {
+        var schema = new JsonObject();
+        schema.addProperty("type", "object");
+        schema.addProperty("additionalProperties", true);
+        var properties = new JsonObject();
+        var ids = resourceList("advancements");
+        ids.getAsJsonObject("items").remove("pattern");
+        properties.add("advancements", ids);
+        properties.add("ids", ids.deepCopy());
+        var single = new JsonObject();
+        single.addProperty("type", "string");
+        single.addProperty("default", "minecraft:story/mine_stone");
+        properties.add("advancement", single);
+        properties.add("id", single.deepCopy());
+        var all = new JsonObject();
+        all.addProperty("type", "boolean");
+        all.addProperty("default", true);
+        properties.add("all", all);
+        schema.add("properties", properties);
+        return schema;
+    }
+
     private static JsonObject countField() {
         var field = new JsonObject();
         field.addProperty("type", "integer");

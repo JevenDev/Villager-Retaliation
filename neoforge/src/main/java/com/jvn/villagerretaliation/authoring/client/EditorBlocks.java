@@ -12,6 +12,19 @@ import java.util.List;
 
 final class EditorBlocks {
     enum Kind {
+        PLAYER_DIMENSION_VISITED("Player has entered dimensions", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_DIMENSION_VISITED),
+        WORLD_DIMENSION_UNLOCKED("World has unlocked dimensions", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.WORLD_DIMENSION_UNLOCKED),
+        WORLD_ADVANCEMENT("World has obtained advancements", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.WORLD_ADVANCEMENT),
+        PLAYER_KILLED_ENTITY("Player has killed entities", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_KILLED_ENTITY),
+        PLAYER_KILLED_BY_ENTITY("Player has been killed by entities", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_KILLED_BY_ENTITY),
+        PLAYER_DIED_FROM("Player has died from damage types", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_DIED_FROM),
+        PLAYER_LAST_DEATH("Most recent player death", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_LAST_DEATH),
+        PLAYER_BIOME_VISITED("Player has visited biomes", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_BIOME_VISITED),
+        PLAYER_CRAFTED_ITEM("Player has crafted items", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_CRAFTED_ITEM),
+        PLAYER_USED_ITEM("Player has used items", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_USED_ITEM),
+        PLAYER_DEATHS("Total player deaths", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_DEATHS),
+        PLAYER_KILLS("Total player kills", com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind.PLAYER_KILLS),
+        ADVANCEMENT_GATE("Player has obtained advancements", true, "{\"type\":\"advancement\",\"advancements\":[\"minecraft:story/mine_stone\"],\"all\":true}"),
         REPUTATION_GATE("Require reputation", true, "{\"type\":\"reputation\",\"min\":0}"),
         ITEM_GATE("Require an item", true, "{\"type\":\"player_item\",\"item\":\"minecraft:emerald\"}"),
         TIME_GATE("Require time of day", true, "{\"type\":\"time\",\"time\":\"morning\"}"),
@@ -24,6 +37,10 @@ final class EditorBlocks {
         final String label;
         final boolean condition;
         final String json;
+
+        Kind(String label, com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Kind kind) {
+            this(label, true, EditorProgressConditions.seed(kind.id()).toString());
+        }
 
         Kind(String label, boolean condition, String json) {
             this.label = label;

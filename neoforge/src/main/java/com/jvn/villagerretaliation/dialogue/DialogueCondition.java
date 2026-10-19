@@ -1309,7 +1309,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         Advancement.class,
                         aliases("advancements"),
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.WORLD_KNOWN),
-                        (location, context, condition, defaultQuestId) -> readAdvancement(location, context, condition)),
+                        (location, context, condition, defaultQuestId) -> readAdvancement(location, context, condition),
+                        PlayerHistoryConditions.advancementSchema()),
                 register(
                         "scoreboard",
                         Scoreboard.class,

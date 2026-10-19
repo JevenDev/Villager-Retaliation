@@ -5,6 +5,443 @@
   "registries": {
     "conditions": [
       {
+        "id": "player_dimension_visited",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerDimensionVisited",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_dimension_visited"
+            },
+            "dimensions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:the_nether"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "dimensions"
+          ]
+        }
+      },
+      {
+        "id": "world_dimension_unlocked",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "WorldDimensionUnlocked",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "world_dimension_unlocked"
+            },
+            "dimensions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:the_nether"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "dimensions"
+          ]
+        }
+      },
+      {
+        "id": "world_advancement",
+        "aliases": [],
+        "capabilities": [
+          "world_known"
+        ],
+        "implementation": "WorldAdvancement",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "world_advancement"
+            },
+            "advancements": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "advancements"
+          ]
+        }
+      },
+      {
+        "id": "player_killed_entity",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerKilledEntity",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_killed_entity"
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "entities"
+          ]
+        }
+      },
+      {
+        "id": "player_killed_by_entity",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerKilledByEntity",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_killed_by_entity"
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "entities"
+          ]
+        }
+      },
+      {
+        "id": "player_died_from",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerDiedFrom",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_died_from"
+            },
+            "damage_types": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:fall"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "damage_types"
+          ]
+        }
+      },
+      {
+        "id": "player_last_death",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerLastDeath",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "damage_types"
+              ]
+            },
+            {
+              "required": [
+                "entities"
+              ]
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "player_last_death"
+            },
+            "damage_types": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:fall"
+              }
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
+      {
+        "id": "player_biome_visited",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerBiomeVisited",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_biome_visited"
+            },
+            "biomes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:plains"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "biomes"
+          ]
+        }
+      },
+      {
+        "id": "player_crafted_item",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerCraftedItem",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_crafted_item"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:crafting_table"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ]
+        }
+      },
+      {
+        "id": "player_used_item",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerUsedItem",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_used_item"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:crafting_table"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ]
+        }
+      },
+      {
+        "id": "player_deaths",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerDeaths",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_deaths"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
+      {
+        "id": "player_kills",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "PlayerKills",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_kills"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
+      {
         "id": "work_state",
         "aliases": [],
         "capabilities": [
@@ -954,7 +1391,41 @@
           "player_live",
           "world_known"
         ],
-        "implementation": "Advancement"
+        "implementation": "Advancement",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "advancements": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "advancement": {
+              "type": "string",
+              "default": "minecraft:story/mine_stone"
+            },
+            "id": {
+              "type": "string",
+              "default": "minecraft:story/mine_stone"
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
       },
       {
         "id": "scoreboard",
@@ -4441,6 +4912,37 @@
         "description": "Built-in Advancement type.",
         "browser_available": true,
         "schema": {
+          "additionalProperties": true,
+          "properties": {
+            "advancements": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "advancement": {
+              "type": "string",
+              "default": "minecraft:story/mine_stone"
+            },
+            "id": {
+              "type": "string",
+              "default": "minecraft:story/mine_stone"
+            },
+            "all": {
+              "type": "boolean",
+              "default": true
+            }
+          },
           "type": "object"
         }
       },
@@ -5234,6 +5736,212 @@
         }
       },
       {
+        "id": "villagerretaliation:player_biome_visited",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player biome visited",
+        "description": "Built-in Player biome visited type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_biome_visited"
+            },
+            "biomes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:plains"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "biomes"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_crafted_item",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player crafted item",
+        "description": "Built-in Player crafted item type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_crafted_item"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:crafting_table"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_deaths",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player deaths",
+        "description": "Built-in Player deaths type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_deaths"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_died_from",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player died from",
+        "description": "Built-in Player died from type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_died_from"
+            },
+            "damage_types": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:fall"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "damage_types"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_dimension_visited",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player dimension visited",
+        "description": "Built-in Player dimension visited type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_dimension_visited"
+            },
+            "dimensions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:the_nether"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "dimensions"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:player_item",
         "aliases": [
           "villagerretaliation:held_item",
@@ -5250,6 +5958,227 @@
         "description": "Built-in Player item type.",
         "browser_available": true,
         "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_killed_by_entity",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player killed by entity",
+        "description": "Built-in Player killed by entity type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_killed_by_entity"
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "entities"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_killed_entity",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player killed entity",
+        "description": "Built-in Player killed entity type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_killed_entity"
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "entities"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_kills",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player kills",
+        "description": "Built-in Player kills type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_kills"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_last_death",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player last death",
+        "description": "Built-in Player last death type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "damage_types"
+              ]
+            },
+            {
+              "required": [
+                "entities"
+              ]
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "player_last_death"
+            },
+            "damage_types": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:fall"
+              }
+            },
+            "entities": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:zombie"
+              }
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_used_item",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player used item",
+        "description": "Built-in Player used item type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "player_used_item"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:crafting_table"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
           "type": "object"
         }
       },
@@ -5780,6 +6709,88 @@
           ],
           "type": "object"
         }
+      },
+      {
+        "id": "villagerretaliation:world_advancement",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "World advancement",
+        "description": "Built-in World advancement type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "world_advancement"
+            },
+            "advancements": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:story/mine_stone"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "advancements"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:world_dimension_unlocked",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "World dimension unlocked",
+        "description": "Built-in World dimension unlocked type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "world_dimension_unlocked"
+            },
+            "dimensions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "default": "minecraft:the_nether"
+              }
+            },
+            "all": {
+              "type": "boolean",
+              "default": true,
+              "description": "Match all selected entries. Disable to match any selected entry."
+            }
+          },
+          "required": [
+            "type",
+            "dimensions"
+          ],
+          "type": "object"
+        }
       }
     ],
     "public_quest_triggers": [
@@ -6144,7 +7155,17 @@
         "not",
         "or",
         "physical_state",
+        "player_biome_visited",
+        "player_crafted_item",
+        "player_deaths",
+        "player_died_from",
+        "player_dimension_visited",
         "player_item",
+        "player_killed_by_entity",
+        "player_killed_entity",
+        "player_kills",
+        "player_last_death",
+        "player_used_item",
         "quest",
         "quest_choice_selected",
         "quest_counter",
@@ -6178,7 +7199,9 @@
         "villager_mood",
         "visited_stage",
         "weather",
-        "work_state"
+        "work_state",
+        "world_advancement",
+        "world_dimension_unlocked"
       ]
     },
     "action_type": {

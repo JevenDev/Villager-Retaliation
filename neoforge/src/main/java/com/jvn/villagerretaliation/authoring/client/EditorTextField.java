@@ -50,6 +50,10 @@ final class EditorTextField {
             variable("Time of day (morning)", "time_of_day", selection);
             variable("Day number (1)", "day", selection);
             ImGui.separator();
+            variable("Last death message", "last_death_message", selection);
+            variable("Last death killer", "last_death_killer", selection);
+            variable("Last death dimension", "last_death_dimension", selection);
+            ImGui.separator();
             if (kind != DefinitionKind.FORCED) {
                 variable("Villager's name (possessive)", "villager_possessive", selection);
                 variable("Profession", "profession", selection);

@@ -77,6 +77,7 @@ public final class QuestPresentationService {
         String issuerLocation = "Current location: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
                 + " in " + dimensionDisplayName(context.level().dimension());
         Map<String, String> replacements = new LinkedHashMap<>();
+        replacements.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(player));
         replacements.put("quest", definition.title());
         replacements.put("issuer", issuer);
         replacements.put("issuer_name", context.villager() == null ? "" : VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString());

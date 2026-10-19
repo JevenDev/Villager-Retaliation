@@ -29,7 +29,7 @@ public final class PlayerDeathQuestGameTests {
     public static void reloadedDeathNotificationAdvancesAnActiveQuestOnlyOnce(GameTestHelper helper) {
         var raw = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"player_history:death_quest",
-                 "metadata":{"title":"Remember a fall"},"provider":{"type":"villagerretaliation:villager"},
+                 "metadata":{"title":"Remember a fall","description":"Your last death: {last_death_message}"},"provider":{"type":"villagerretaliation:villager"},
                  "availability":{"repeatable":true},"entry_stage":"work","stages":[
                   {"id":"work","objectives":[{"id":"deaths","type":"criterion",
                    "criterion":"villagerretaliation:player_died","match":{"damage_type":"minecraft:fall"},"count":2}],
@@ -53,6 +53,9 @@ public final class PlayerDeathQuestGameTests {
                     player.blockPosition(), level.getGameTime(), "Fell");
             var data = PlayerHistorySavedData.get(level);
             data.recordDeath(player.getUUID(), death);
+            var available = com.jvn.villagerretaliation.quest.tracking.QuestPresentationService.availableEntry(
+                    player, context, compiled.asQuestDefinition(), List.of());
+            helper.assertValueEqual(available.description(), "Your last death: Fell", "quest text and dialogue use the same saved death message");
             var loaded = PlayerHistorySavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
             level.getServer().overworld().getDataStorage().set("villagerretaliation_player_history", loaded);
             player.setHealth(0);

@@ -173,6 +173,16 @@ public final class PlayerHistoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "player_history_artifacts")
+    public static void questSchemaArtifactIncludesTheProgressConditions(GameTestHelper helper) {
+        com.jvn.villagerretaliation.gametest.VillagerQuestGameTests.questV2SchemaArtifactMatchesJavaExport(helper);
+    }
+
+    @GameTest(template = "empty", batch = "player_history_artifacts")
+    public static void registryArtifactIncludesTheRegisteredProgressConditions(GameTestHelper helper) {
+        com.jvn.villagerretaliation.gametest.VillagerQuestGameTests.questRegistryMetadataArtifactMatchesJavaExport(helper);
+    }
+
     private static DialogueCondition condition(String type, String field, String... ids) {
         var value = new com.google.gson.JsonObject();
         value.addProperty("type", type);

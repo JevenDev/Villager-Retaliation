@@ -158,7 +158,8 @@ final class EditorPreviewConditions {
         for (var descriptor : DialogueCondition.descriptors()) {
             if (!used.contains(descriptor.id())) continue;
             ConditionOutcome selected = conditions.overrides().get(descriptor.id());
-            if (ImGui.beginCombo(descriptor.id(), selected == null ? "Evaluate simulated context" : selected.name())) {
+            if (ImGui.beginCombo(EditorProgressConditions.label(descriptor.id()) + "##" + descriptor.id(),
+                    selected == null ? "Evaluate simulated context" : selected.name())) {
                 if (ImGui.selectable("Evaluate simulated context", selected == null)) conditions.override(descriptor.id(), null);
                 for (ConditionOutcome outcome : ConditionOutcome.values()) {
                     if (ImGui.selectable(outcome.name(), outcome == selected)) conditions.override(descriptor.id(), outcome);
