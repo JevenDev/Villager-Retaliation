@@ -561,7 +561,7 @@ final class ImGuiAuthoringEditor {
         ImGui.inputTextWithHint("##search", "Find content or wording...", filter);
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
-            packFiles.renderTree(workspace, filter.get(), path -> operation(() -> openPackFile(path)));
+            packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
             if (ImGui.smallButton("Use content list")) filesMode = false;
         } else {
             if (ImGui.checkbox("Supporting files", showResources)) showResources = !showResources;

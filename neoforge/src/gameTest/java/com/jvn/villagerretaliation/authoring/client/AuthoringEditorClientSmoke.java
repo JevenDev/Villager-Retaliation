@@ -52,7 +52,7 @@ public final class AuthoringEditorClientSmoke {
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
-    private static boolean cameraGuiBefore;
+    private static boolean cameraGuiBefore, rightDown, previousRightDown;
     private static float mouseX = -100, mouseY = -100, previousX = -100, previousY = -100, downX, downY;
     private static float mouseWheel;
     private static float[] canvas;
@@ -468,6 +468,7 @@ public final class AuthoringEditorClientSmoke {
             invoke("openPackFile", new Class<?>[] {String.class}, "data/test/campaign_addons/editor_addon");
         });
         pause(250);
+        buildFileTreeSteps();
         STEPS.add(() -> {
             capture("02c-pack-file-tree");
             var files = field(editor, "packFiles");
@@ -524,6 +525,72 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(AuthoringEditorClientSmoke::locateCanvas);
+    }
+
+    private static void buildFileTreeSteps() {
+        String addon = "data/test/campaign_addons/editor_addon";
+        rightClick(() -> screenPoint(180, 415));
+        STEPS.add(() -> capture("02c1-file-context-menu"));
+        click(() -> screenPoint(230, 541));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "folderParent").equals(addon), "Right-click creates folders in the chosen tree folder."));
+        STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8("drafts"));
+        key(ImGuiKey.Enter);
+        pause(250);
+        STEPS.add(() -> {
+            require(workspace.folderPaths().contains(addon + "/drafts"), "The native new-folder dialog creates an empty draft folder.");
+            capture("02c2-new-folder");
+        });
+        rightClick(() -> screenPoint(180, 443));
+        click(() -> screenPoint(230, 513));
+        STEPS.add(() -> require(field(field(editor, "packFiles"), "selected").equals(addon + "/drafts"), "Rename targets the right-clicked folder."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        STEPS.add(() -> ImGui.getIO().addInputCharactersUTF8("release"));
+        click(() -> screenPoint(350, 558));
+        STEPS.add(() -> {
+            var plan = (AuthoringWorkspace.FileMove) field(field(editor, "packFiles"), "preview");
+            require(plan != null && plan.destination().equals(addon + "/release"), "Rename edits create the expected folder move preview.");
+        });
+        click(() -> screenPoint(350, 662));
+        STEPS.add(() -> require(workspace.folderPaths().contains(addon + "/release"), "Apply move renames an empty folder."));
+        move(() -> screenPoint(180, 471), false);
+        move(() -> screenPoint(180, 471), true);
+        move(() -> screenPoint(200, 478), true);
+        STEPS.add(() -> {
+            Object drag = field(field(editor, "packFiles"), "dragging");
+            require(drag != null && field(drag, "source").equals(addon + "/release"), "Dragging uses the renamed folder as its source.");
+        });
+        move(() -> screenPoint(180, 443), true);
+        STEPS.add(() -> mouseDown = false);
+        pause(250);
+        STEPS.add(() -> {
+            var plan = (AuthoringWorkspace.FileMove) field(field(editor, "packFiles"), "preview");
+            require(plan != null && plan.source().equals(addon + "/release") && plan.destination().equals(addon + "/quests/release"), "Dragging a folder onto another folder prepares a safe move preview.");
+            capture("02c3-drag-drop-preview");
+        });
+        click(() -> screenPoint(350, 662));
+        STEPS.add(() -> {
+            require(workspace.folderPaths().contains(addon + "/quests/release"), "Drag-and-drop moves preserve empty folders.");
+            invoke("openPackFile", new Class<?>[] {String.class}, addon);
+        });
+        pause(250);
+        move(() -> screenPoint(180, 555), false);
+        move(() -> screenPoint(180, 555), true);
+        move(() -> screenPoint(200, 562), true);
+        move(() -> screenPoint(180, 443), true);
+        STEPS.add(() -> mouseDown = false);
+        pause(250);
+        STEPS.add(() -> {
+            String source = "data/" + document.json().get("description_file").getAsString().replace(":", "/");
+            var plan = (AuthoringWorkspace.FileMove) field(field(editor, "packFiles"), "preview");
+            require(plan != null && plan.source().equals(source) && plan.destination().startsWith(addon + "/quests/"), "Dragging a file prepares a move into the target folder.");
+            capture("02c4-file-drop-preview");
+        });
+        click(() -> screenPoint(350, 984));
+        STEPS.add(() -> {
+            require(document.json().get("description_file").getAsString().contains("/quests/"), "Applying file drops updates campaign asset references.");
+            invoke("openPackFile", new Class<?>[] {String.class}, addon);
+        });
+        pause(250);
     }
 
     private static void buildCreatorToolsSteps() {
@@ -1295,6 +1362,15 @@ public final class AuthoringEditorClientSmoke {
             imgui.internal.ImGui.updateHoveredWindowAndCaptureFlags(mouseX, mouseY);
             previousX = mouseX;
             previousY = mouseY;
+            io.setMouseDown(1, rightDown);
+            io.setMouseClicked(1, rightDown && !previousRightDown);
+            io.setMouseReleased(1, !rightDown && previousRightDown);
+            io.setMouseDownOwned(1, true);
+            io.setMouseDownOwnedUnlessPopupClose(1, true);
+            io.setMouseDownDurationPrev(1, io.getMouseDownDuration(1));
+            io.setMouseDownDuration(1, rightDown ? previousRightDown ? .5f : 0 : -1);
+            io.setMouseClickedCount(1, rightDown && !previousRightDown ? 1 : 0);
+            previousRightDown = rightDown;
             previousDown = mouseDown;
         } catch (RuntimeException exception) {
             capture("failure");
@@ -1302,6 +1378,12 @@ public final class AuthoringEditorClientSmoke {
         } finally {
             stepping = false;
         }
+    }
+
+    private static void rightClick(Supplier<float[]> point) {
+        move(point, false);
+        STEPS.add(() -> rightDown = true);
+        STEPS.add(() -> rightDown = false);
     }
 
     private static void click(Supplier<float[]> point) {

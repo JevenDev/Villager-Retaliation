@@ -28,6 +28,8 @@ final class EditorPackFiles implements AutoCloseable {
         Node(String path) { this.path = path; }
     }
 
+    private record FileDrag(Path workspace, String source) { }
+
     private String selected = "";
     private String loaded = "";
     private String originalText = "";
@@ -35,26 +37,39 @@ final class EditorPackFiles implements AutoCloseable {
     private final ImString name = new ImString(512);
     private final ImString parent = new ImString(4096);
     private AuthoringWorkspace.FileMove preview;
-    private boolean editable, reveal;
+    private boolean editable, reveal, revealMove;
     private DynamicTexture image;
     private int size;
     private byte[] baseline = new byte[0];
     private Node cachedTree;
     private List<String> cachedPaths = List.of();
     private String cachedSearch = "";
+    private List<String> cachedFolders = List.of();
+    private final ImString folderName = new ImString(512);
+    private String folderParent = "";
+    private String folderError = "";
+    private boolean requestFolderPopup, closeFolderPopup;
+    private int focusMove;
+    private FileDrag dragging;
+    private String pressedFolder = "";
     private Map<String, AuthoringDocument> treeDocuments = Map.of();
 
     static Node tree(List<String> paths, String search) {
+        return tree(paths, List.of(), search);
+    }
+
+    static Node tree(List<String> paths, List<String> folders, String search) {
         Node root = new Node("");
+        var files = new java.util.HashSet<>(paths);
         String term = search.strip().toLowerCase(Locale.ROOT);
-        for (String path : paths) {
+        for (String path : java.util.stream.Stream.concat(paths.stream(), folders.stream()).toList()) {
             if (!path.toLowerCase(Locale.ROOT).contains(term)) continue;
             Node node = root;
             for (String part : path.split("/")) {
                 String child = node.path.isEmpty() ? part : node.path + "/" + part;
                 node = node.children.computeIfAbsent(part, ignored -> new Node(child));
             }
-            node.file = true;
+            node.file = files.contains(path);
         }
         return root;
     }
@@ -84,7 +99,8 @@ final class EditorPackFiles implements AutoCloseable {
 
     void reset() {
         close(); selected = ""; loaded = ""; editable = false; text.set(""); originalText = ""; preview = null;
-        cachedTree = null; cachedPaths = List.of(); treeDocuments = Map.of(); baseline = new byte[0];
+        closeFolderPopup = true; requestFolderPopup = false; focusMove = 0; pressedFolder = ""; dragging = null; revealMove = false;
+        cachedTree = null; cachedPaths = List.of(); cachedFolders = List.of(); treeDocuments = Map.of(); baseline = new byte[0];
     }
 
     void apply(AuthoringWorkspace workspace) throws IOException {
@@ -108,24 +124,35 @@ final class EditorPackFiles implements AutoCloseable {
         text.set(state.get("text").getAsString());
     }
 
-    void renderTree(AuthoringWorkspace workspace, String search, Consumer<String> open) {
+    void renderTree(AuthoringWorkspace workspace, String search, Consumer<String> open, Consumer<String> manage,
+                    Consumer<ImGuiAuthoringEditor.EditorOperation> schedule, Runnable changed) {
         var paths = workspace.filePaths();
-        if (cachedTree == null || !cachedPaths.equals(paths) || !cachedSearch.equals(search)) {
+        var folders = workspace.folderPaths();
+        if (cachedTree == null || !cachedPaths.equals(paths) || !cachedFolders.equals(folders) || !cachedSearch.equals(search)) {
             treeDocuments = workspace.documents().stream().collect(java.util.stream.Collectors.toMap(AuthoringDocument::resourcePath, document -> document));
-            var matching = paths.stream().filter(path -> path.toLowerCase(Locale.ROOT).contains(search.strip().toLowerCase(Locale.ROOT))
+            String term = search.strip().toLowerCase(Locale.ROOT);
+            var matching = paths.stream().filter(path -> path.toLowerCase(Locale.ROOT).contains(term)
                     || treeDocuments.containsKey(path) && EditorContentTools.matches(treeDocuments.get(path), search)).toList();
-            cachedTree = tree(matching, ""); cachedPaths = paths; cachedSearch = search;
+            cachedTree = tree(matching, folders.stream().filter(path -> path.toLowerCase(Locale.ROOT).contains(term)).toList(), "");
+            cachedPaths = paths; cachedFolders = folders; cachedSearch = search;
         }
+        if (ImGui.selectable("Pack root##pack_root", selected.isEmpty())) schedule.accept(() -> manage.accept(""));
+        contextMenu("", false, workspace, open, manage, schedule);
+        ImGui.textDisabled("Drag to move.\nRight-click for actions.");
         if (cachedTree.children.isEmpty()) ImGui.textWrapped("No files match this search.");
-        for (var entry : cachedTree.children.entrySet()) renderNode(entry.getKey(), entry.getValue(), workspace, !search.isBlank(), 0, open);
+        for (var entry : cachedTree.children.entrySet()) renderNode(entry.getKey(), entry.getValue(), workspace, !search.isBlank(), 0, open, manage, schedule);
         reveal = false;
+        if (ImGui.isMouseReleased(0)) pressedFolder = "";
+        folderPopup(workspace, manage, schedule, changed);
     }
 
-    private void renderNode(String label, Node node, AuthoringWorkspace workspace, boolean searching, int depth, Consumer<String> open) {
+    private void renderNode(String label, Node node, AuthoringWorkspace workspace, boolean searching, int depth,
+                            Consumer<String> open, Consumer<String> manage, Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
         if (node.file) {
             AuthoringDocument document = treeDocuments.get(node.path);
-            if (ImGui.selectable((document != null && document.dirty() ? "* " : "") + fileLabel(label) + "##file:" + node.path, node.path.equals(selected))) open.accept(node.path);
+            if (ImGui.selectable((document != null && document.dirty() ? "* " : "") + fileLabel(label) + "##file:" + node.path, node.path.equals(selected))) schedule.accept(() -> open.accept(node.path));
             if (ImGui.isItemHovered()) ImGui.setTooltip(node.path + (document == null ? "" : "\n" + document.id()));
+            treeActions(node, workspace, open, manage, schedule);
             return;
         }
         int flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick | ImGuiTreeNodeFlags.SpanAvailWidth;
@@ -133,13 +160,95 @@ final class EditorPackFiles implements AutoCloseable {
         if (searching || reveal && (selected.equals(node.path) || selected.startsWith(node.path + "/"))) ImGui.setNextItemOpen(true);
         else if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
         boolean expanded = ImGui.treeNodeEx(label + "##folder:" + node.path, flags);
-        if (ImGui.isItemClicked() && !ImGui.isItemToggledOpen()) open.accept(node.path);
+        if (ImGui.isItemClicked()) pressedFolder = ImGui.isItemToggledOpen() ? "" : node.path;
+        if (node.path.equals(pressedFolder) && ImGui.isItemHovered() && ImGui.isMouseReleased(0)) {
+            var delta = ImGui.getMouseDragDelta(0);
+            if (delta.x == 0 && delta.y == 0) schedule.accept(() -> open.accept(node.path));
+        }
         if (ImGui.isItemHovered()) ImGui.setTooltip(node.path + "/");
+        treeActions(node, workspace, open, manage, schedule);
         if (expanded) {
-            node.children.entrySet().stream().filter(entry -> !entry.getValue().file).forEach(entry -> renderNode(entry.getKey(), entry.getValue(), workspace, searching, depth + 1, open));
-            node.children.entrySet().stream().filter(entry -> entry.getValue().file).forEach(entry -> renderNode(entry.getKey(), entry.getValue(), workspace, searching, depth + 1, open));
+            node.children.entrySet().stream().filter(entry -> !entry.getValue().file).forEach(entry -> renderNode(entry.getKey(), entry.getValue(), workspace, searching, depth + 1, open, manage, schedule));
+            node.children.entrySet().stream().filter(entry -> entry.getValue().file).forEach(entry -> renderNode(entry.getKey(), entry.getValue(), workspace, searching, depth + 1, open, manage, schedule));
             ImGui.treePop();
         }
+    }
+
+    static String moveSource(AuthoringWorkspace workspace, String path) {
+        var owner = workspace.documents().stream().filter(document -> document.resourcePath().equals(path)).findFirst().orElse(null);
+        return owner != null && (owner.kind().campaignManifest() || owner.kind() == com.jvn.villagerretaliation.authoring.core.DefinitionKind.QUEST)
+                ? path.substring(0, path.lastIndexOf('/')) : path;
+    }
+
+    static String dropDestination(AuthoringWorkspace workspace, String path, String folder) {
+        if (!workspace.folderPaths().contains(folder)) throw new IllegalArgumentException("Drop onto a folder in this pack");
+        String source = moveSource(workspace, path);
+        return folder + "/" + source.substring(source.lastIndexOf('/') + 1);
+    }
+
+    private void treeActions(Node node, AuthoringWorkspace workspace, Consumer<String> open, Consumer<String> manage,
+                             Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
+        String source = moveSource(workspace, node.path);
+        if (source.split("/").length >= 3 && ImGui.beginDragDropSource()) {
+            dragging = new FileDrag(workspace.directory(), source);
+            ImGui.setDragDropPayload(dragging);
+            ImGui.textUnformatted(source);
+            ImGui.textDisabled("Drop on a folder to preview the move");
+            ImGui.endDragDropSource();
+        }
+        if (!node.file && ImGui.beginDragDropTarget()) {
+            FileDrag drag = ImGui.acceptDragDropPayload(FileDrag.class);
+            if (drag != null && drag.workspace().equals(workspace.directory())) schedule.accept(() -> {
+                String destination = dropDestination(workspace, drag.source(), node.path);
+                var plan = workspace.previewFileMove(drag.source(), destination);
+                manage.accept(drag.source());
+                setMoveSource(destination);
+                preview = plan; focusMove = 2; revealMove = true;
+            });
+            ImGui.endDragDropTarget();
+        }
+        contextMenu(node.path, node.file, workspace, open, manage, schedule);
+    }
+
+    private void contextMenu(String path, boolean file, AuthoringWorkspace workspace, Consumer<String> open, Consumer<String> manage,
+                             Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
+        if (!ImGui.beginPopupContextItem("file_actions:" + path)) return;
+        ImGui.textDisabled(path.isEmpty() ? "Pack root" : path);
+        if (ImGui.menuItem("Open")) schedule.accept(() -> open.accept(path));
+        String source = moveSource(workspace, path);
+        ImGui.beginDisabled(source.split("/").length < 3);
+        if (ImGui.menuItem("Rename...")) schedule.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 1; });
+        if (ImGui.menuItem("Move...")) schedule.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 2; });
+        ImGui.endDisabled();
+        if (ImGui.menuItem("New folder...")) schedule.accept(() -> {
+            folderParent = file ? path.substring(0, Math.max(0, path.lastIndexOf('/'))) : path;
+            folderName.set(""); folderError = ""; closeFolderPopup = false; requestFolderPopup = true;
+        });
+        if (ImGui.menuItem("Copy pack path")) Minecraft.getInstance().keyboardHandler.setClipboard(path);
+        ImGui.endPopup();
+    }
+
+    private void folderPopup(AuthoringWorkspace workspace, Consumer<String> manage, Consumer<ImGuiAuthoringEditor.EditorOperation> schedule, Runnable changed) {
+        if (requestFolderPopup) { ImGui.openPopup("New folder##pack_folder"); requestFolderPopup = false; }
+        if (!ImGui.beginPopupModal("New folder##pack_folder", imgui.flag.ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (closeFolderPopup) { ImGui.closeCurrentPopup(); closeFolderPopup = false; }
+        ImGui.textUnformatted(folderParent.isEmpty() ? "In: pack root (data or assets)" : "In: " + folderParent);
+        ImGui.setNextItemWidth(400);
+        if (ImGui.isWindowAppearing()) ImGui.setKeyboardFocusHere();
+        boolean create = ImGui.inputText("Folder name", folderName, ImGuiInputTextFlags.EnterReturnsTrue);
+        if (!folderError.isEmpty()) ImGui.textWrapped(folderError);
+        if (ImGui.button("Create folder") || create) schedule.accept(() -> {
+            String name = folderName.get().strip();
+            try {
+                if (name.isEmpty() || name.contains("/") || name.contains("\\")) throw new IllegalArgumentException("Enter a single folder name");
+                String target = folderParent.isEmpty() ? name : folderParent + "/" + name;
+                workspace.createFolder(target);
+                manage.accept(target); changed.run(); closeFolderPopup = true;
+            } catch (IllegalArgumentException exception) { folderError = exception.getMessage(); throw exception; }
+        });
+        ImGui.sameLine();
+        if (ImGui.button("Cancel")) ImGui.closeCurrentPopup();
+        ImGui.endPopup();
     }
 
     private static String fileLabel(String name) {
@@ -209,7 +318,7 @@ final class EditorPackFiles implements AutoCloseable {
         }
         if (selected.isEmpty() || selected.equals("pack.mcmeta") || selected.equals("pack.png")) return;
         ImGui.separator();
-        String source = selected;
+        String source = moveSource(workspace, selected);
         var owner = workspace.documents().stream().filter(value -> value.resourcePath().equals(selected)).findFirst().orElse(null);
         if (owner != null && (owner.kind().campaignManifest() || owner.kind() == com.jvn.villagerretaliation.authoring.core.DefinitionKind.QUEST)) {
             source = selected.substring(0, selected.lastIndexOf('/'));
@@ -219,13 +328,13 @@ final class EditorPackFiles implements AutoCloseable {
         ImGui.textUnformatted("Move or rename");
         ImGui.textDisabled("From: " + source);
         ImGui.textUnformatted("Name"); ImGui.setNextItemWidth(-1);
+        if (focusMove == 1) { ImGui.setKeyboardFocusHere(); focusMove = 0; }
         if (ImGui.inputText("##move_name", name)) preview = null;
         ImGui.textUnformatted("Destination folder in pack"); ImGui.setNextItemWidth(-1);
+        if (focusMove == 2) { ImGui.setKeyboardFocusHere(); focusMove = 0; }
         if (ImGui.inputText("##move_parent", parent)) preview = null;
         if (ImGui.beginCombo("Choose folder", "Existing folders...")) {
-            var folders = new java.util.TreeSet<String>();
-            for (String file : workspace.filePaths()) for (int slash = file.lastIndexOf('/'); slash >= 0; slash = file.lastIndexOf('/', slash - 1)) folders.add(file.substring(0, slash));
-            for (String folder : folders) if (ImGui.selectable(folder)) { parent.set(folder); preview = null; }
+            for (String folder : workspace.folderPaths()) if (ImGui.selectable(folder)) { parent.set(folder); preview = null; }
             ImGui.endCombo();
         }
         String from = source;
@@ -234,12 +343,13 @@ final class EditorPackFiles implements AutoCloseable {
             preview = workspace.previewFileMove(from, parent.get().isBlank() ? name.get() : parent.get() + "/" + name.get());
         });
         if (preview != null) {
-            ImGui.textWrapped(preview.paths().size() + " files will move to " + preview.destination());
+            ImGui.textWrapped((preview.paths().isEmpty() ? "Empty folder" : preview.paths().size() + " files") + " will move to " + preview.destination());
             for (String change : preview.changes()) ImGui.textWrapped(change);
             if (ImGui.collapsingHeader("Affected files")) preview.paths().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> ImGui.textWrapped(entry.getKey() + " -> " + entry.getValue()));
             if (ImGui.button("Apply move")) schedule.accept(() -> {
                 var plan = preview; workspace.applyFileMove(plan); select(plan.destination()); changed.run();
             });
+            if (revealMove) { ImGui.setScrollHereY(1); revealMove = false; }
         }
         ImGui.beginDisabled(!workspace.hasFileMove());
         if (ImGui.button("Undo last file move")) schedule.accept(() -> { workspace.undoFileMove(); reset(); changed.run(); });

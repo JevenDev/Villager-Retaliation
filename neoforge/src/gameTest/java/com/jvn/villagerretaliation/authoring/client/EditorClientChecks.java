@@ -67,6 +67,18 @@ public final class EditorClientChecks {
         check(EditorContentTools.contentScope(workspace, "data/test/campaign_addons/addon") == addon, "selecting an addon folder supplies the creation scope");
         check(EditorContentTools.contentScope(workspace, "data/test/campaign_addons/addon/quests/authored/example/quest.json") == addon, "descendant files retain their addon scope");
         check(EditorContentTools.contentScope(workspace, "data/test/quests") == null, "ordinary folders use the default content scope");
+        workspace.createFolder("data/test/campaign_addons/addon/artwork/empty");
+        tree = EditorPackFiles.tree(workspace.filePaths(), workspace.folderPaths(), "empty");
+        check(!tree.children.get("data").children.get("test").children.get("campaign_addons").children.get("addon").children.get("artwork").children.get("empty").file, "empty folders remain folders in filtered trees");
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:quest", addon);
+        workspace.createFolder("data/test/quests");
+        String bundle = quest.resourcePath().substring(0, quest.resourcePath().lastIndexOf('/'));
+        check(EditorPackFiles.moveSource(workspace, quest.resourcePath()).equals(bundle), "dragging quest manifests includes their companion folder");
+        check(EditorPackFiles.moveSource(workspace, addon.resourcePath()).equals("data/test/campaign_addons/addon"), "dragging addon manifests includes their content folder");
+        check(EditorPackFiles.dropDestination(workspace, quest.resourcePath(), "data/test/quests").equals("data/test/quests/quest"), "drops preserve the owning folder name");
+        boolean rejected = false;
+        try { EditorPackFiles.dropDestination(workspace, bundle, addon.resourcePath()); } catch (IllegalArgumentException expected) { rejected = true; }
+        check(rejected, "files cannot be used as drop destinations");
     }
 
     public static void packFileEditorsPreservePendingEdits() throws java.io.IOException {
