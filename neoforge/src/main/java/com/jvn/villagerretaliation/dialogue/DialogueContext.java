@@ -99,6 +99,13 @@ public record DialogueContext(
                 com.jvn.villagerretaliation.quest.VillagerQuestService.conditionQueries(this));
     }
 
+    private static final com.jvn.villagerretaliation.action.NarrativeActions ACTIONS =
+            com.jvn.villagerretaliation.action.NarrativeActions.adapt((context, action, replacements) ->
+                    com.jvn.villagerretaliation.action.VillagerActionRegistry.execute((DialogueContext) context, action, replacements));
+
+    @Override
+    public com.jvn.villagerretaliation.action.NarrativeActions actions() { return ACTIONS; }
+
     @Override
     public Villager speaker() {
         return this.villager;

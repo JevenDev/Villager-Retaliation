@@ -2012,29 +2012,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             Integer max) implements DialogueCondition {
         @Override
         public boolean matches(DialogueContext context) {
-            QuestScopeKey scopeKey = this.scope.scope(context, this.questId);
-            if (scopeKey.isBlank()) {
-                return false;
-            }
-            VillagerQuestFacts facts = VillagerQuestFacts.get(context.level());
-            if (!this.tags.isEmpty() && this.tags.stream().noneMatch(tag -> facts.hasTag(scopeKey, tag))) {
-                return false;
-            }
-            if (this.key == null || this.key.isBlank()) {
-                return !this.tags.isEmpty();
-            }
-            Optional<String> variable = facts.variable(scopeKey, this.key);
-            if (!this.values.isEmpty() && variable.stream().noneMatch(this.values::contains)) {
-                return false;
-            }
-            int counter = facts.counter(scopeKey, this.key);
-            if (this.min != null && counter < this.min) {
-                return false;
-            }
-            if (this.max != null && counter > this.max) {
-                return false;
-            }
-            return !this.values.isEmpty() || this.min != null || this.max != null || variable.isPresent() || counter != 0;
+            return com.jvn.villagerretaliation.dialogue.conditions.FactConditions.matches(this,
+                    VillagerQuestFacts.get(context.level()), this.scope.scopeKey(context, this.questId));
         }
 
         @Override

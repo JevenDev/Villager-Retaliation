@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
@@ -35,6 +35,14 @@ public record QuestScopeKey(
                 : new QuestScopeKey(Kind.QUEST, playerId, questId, null, "");
     }
 
+    public UUID entityId() { return this.villagerId; }
+    public String groupKey() { return this.villageKey; }
+    public static QuestScopeKey entity(UUID entityId) { return villager(entityId); }
+    public static QuestScopeKey group(String groupKey) {
+        return groupKey == null || groupKey.isBlank() ? EMPTY
+                : village(groupKey.startsWith("village:") ? groupKey : "village:" + groupKey);
+    }
+
     public static QuestScopeKey villager(UUID villagerId) {
         return villagerId == null ? EMPTY : new QuestScopeKey(Kind.VILLAGER, null, null, villagerId, "");
     }
@@ -46,7 +54,7 @@ public record QuestScopeKey(
     }
 
     public static QuestScopeKey fromFactScope(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             QuestFactScope scope,
             ResourceLocation questId) {
         if (context == null) {
@@ -58,12 +66,12 @@ public record QuestScopeKey(
             case WORLD -> WORLD;
             case QUEST -> quest(context.player().getUUID(), questId);
             case VILLAGER -> villager(context.providerId());
-            case VILLAGE -> village(context.villageKey());
+            case VILLAGE -> group(context.groupKey());
         };
     }
 
     public static QuestScopeKey fromCompletionScope(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             QuestDefinition.CompletionScope scope,
             ResourceLocation questId) {
         if (context == null) {
@@ -77,7 +85,7 @@ public record QuestScopeKey(
             case PLAYER_WORLD -> playerWorld(context.player().getUUID());
             case WORLD -> WORLD;
             case VILLAGER -> villager(context.providerId());
-            case VILLAGE -> village(context.villageKey());
+            case VILLAGE -> group(context.groupKey());
         };
     }
 

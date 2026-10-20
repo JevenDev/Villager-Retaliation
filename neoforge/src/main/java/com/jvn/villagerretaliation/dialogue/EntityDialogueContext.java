@@ -12,8 +12,13 @@ public record EntityDialogueContext(
         ServerPlayer player,
         LivingEntity speaker,
         String locale,
-        String groupKey
+        String groupKey,
+        com.jvn.villagerretaliation.action.NarrativeActions actions
 ) implements DialogueRuntimeContext {
+    public EntityDialogueContext(ServerLevel level, ServerPlayer player, LivingEntity speaker, String locale, String groupKey) {
+        this(level, player, speaker, locale, groupKey, com.jvn.villagerretaliation.action.NarrativeActions.common());
+    }
+
     public EntityDialogueContext {
         Objects.requireNonNull(level, "dialogue level");
         Objects.requireNonNull(player, "dialogue player");
@@ -22,6 +27,7 @@ public record EntityDialogueContext(
         }
         locale = locale == null || locale.isBlank() ? "en_us" : locale;
         groupKey = groupKey == null ? "" : groupKey;
+        actions = actions == null ? com.jvn.villagerretaliation.action.NarrativeActions.common() : actions;
     }
 
     @Override

@@ -23,6 +23,10 @@ public interface DialogueRuntimeContext {
 
     ConditionContext conditions();
 
+    default com.jvn.villagerretaliation.action.NarrativeActions actions() {
+        return com.jvn.villagerretaliation.action.NarrativeActions.common();
+    }
+
     default RandomSource random() {
         return speaker() == null ? player().getRandom() : speaker().getRandom();
     }

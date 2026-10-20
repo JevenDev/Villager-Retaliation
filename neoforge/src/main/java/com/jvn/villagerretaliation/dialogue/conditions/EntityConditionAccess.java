@@ -16,8 +16,23 @@ import net.minecraft.world.entity.LivingEntity;
 
 public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Entity provider) implements ConditionLeafAccess {
     public static ConditionContext forDialogue(DialogueRuntimeContext context) {
-        return context(context.level(), context.player(), context.speaker(), context.providerId(),
+        var common = context(context.level(), context.player(), context.speaker(), context.providerId(),
                 context.groupKey(), null, null);
+        return new ConditionContext(common.playerId(), common.providerId(), common.savedProvider(), common.liveProvider(),
+                common.questRun(), common.capabilities(), (condition, trigger) -> {
+                    if (condition instanceof DialogueCondition.Reputation reputation) {
+                        var score = context.actions().reputation(context);
+                        if (score.isEmpty() || !reputation.levels().isEmpty()) return ConditionOutcome.UNKNOWN;
+                        return result((reputation.minReputation() == null || score.getAsInt() >= reputation.minReputation())
+                                && (reputation.maxReputation() == null || score.getAsInt() <= reputation.maxReputation()));
+                    }
+                    if (condition instanceof DialogueCondition.QuestFact fact) {
+                        var facts = context.actions().facts();
+                        return facts.isEmpty() ? ConditionOutcome.UNKNOWN
+                                : result(FactConditions.matches(fact, facts.orElseThrow(), fact.scope().scopeKey(context, fact.questId())));
+                    }
+                    return common.queries().evaluate(condition, trigger);
+                });
     }
 
     public static ConditionContext forQuest(QuestExecutionContext context, com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {

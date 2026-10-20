@@ -20,7 +20,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
-public class VillagerQuestFacts extends SavedData {
+public class VillagerQuestFacts extends SavedData implements com.jvn.villagerretaliation.quest.runtime.QuestFactStore {
     public static final int CURRENT_DATA_VERSION = 2;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quest_facts";

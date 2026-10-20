@@ -81,6 +81,13 @@ public final class ActionSequenceRunner {
                 : ActionResult.alreadySatisfied("sequence complete", capabilities, result), sequence.size());
     }
 
+    public static Result run(com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context,
+            List<VillagerActionDefinition> actions, int firstAction, Map<String, String> replacements,
+            Runnable trackerFlashHandler, BiConsumer<Integer, ActionResult> observer, IntConsumer beforeAction) {
+        return run(actions, firstAction, replacements, trackerFlashHandler, observer, beforeAction,
+                (action, inherited) -> context.actions().execute(context, action, inherited));
+    }
+
     private static Result paused(Pause pause, int next, boolean ran, String lineId, List<String> text,
             Map<String, String> replacements, boolean flash, Set<ActionCapability> capabilities) {
         var result = pause.outcome;

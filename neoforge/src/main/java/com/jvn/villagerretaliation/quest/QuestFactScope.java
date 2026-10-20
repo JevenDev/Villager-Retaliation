@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.Locale;
 import net.minecraft.resources.ResourceLocation;
 
@@ -23,11 +23,11 @@ public enum QuestFactScope {
         };
     }
 
-    public String scopeKey(DialogueContext context, ResourceLocation questId) {
+    public String scopeKey(DialogueRuntimeContext context, ResourceLocation questId) {
         return scope(context, questId).asString();
     }
 
-    public QuestScopeKey scope(DialogueContext context, ResourceLocation questId) {
+    public QuestScopeKey scope(DialogueRuntimeContext context, ResourceLocation questId) {
         if (context == null) {
             return QuestScopeKey.EMPTY;
         }

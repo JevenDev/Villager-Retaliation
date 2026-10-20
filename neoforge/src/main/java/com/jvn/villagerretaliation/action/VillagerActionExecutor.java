@@ -11,12 +11,9 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
-import com.jvn.villagerretaliation.quest.QuestFactScope;
-import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
-import com.jvn.villagerretaliation.quest.content.reward.QuestRewardResolver;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.scene.SceneLaunchService;
@@ -25,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 
 public final class VillagerActionExecutor {
@@ -75,10 +71,10 @@ public final class VillagerActionExecutor {
             case MEMORY -> rememberMemory(context, action.memoryTag(), action.memoryScope())
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case LOOT -> grantLoot(context, action.lootTable()).resolved() ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
-            case SET_TAG -> executeSetFactTag(context, action, replacements);
-            case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
-            case SET_VARIABLE -> executeSetFactVariable(context, action, replacements);
-            case COUNTER -> executeCounter(context, action, replacements);
+            case SET_TAG -> executeFact(context, action, replacements);
+            case CLEAR_TAG -> executeFact(context, action, replacements);
+            case SET_VARIABLE -> executeFact(context, action, replacements);
+            case COUNTER -> executeFact(context, action, replacements);
             case DRAW_WEAPON -> VillagerWeaponDrawService.draw(context.villager(), action.amount())
                     ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case START_SCENE -> SceneLaunchService.launch(context, action).accepted()
@@ -88,11 +84,7 @@ public final class VillagerActionExecutor {
     }
 
     public static boolean awardExperience(DialogueContext context, int amount) {
-        if (context == null || amount <= 0) {
-            return false;
-        }
-        context.player().giveExperiencePoints(amount);
-        return true;
+        return NarrativeActions.awardExperience(context, amount);
     }
 
     public static boolean changeReputation(DialogueContext context, int amount) {
@@ -148,30 +140,11 @@ public final class VillagerActionExecutor {
     }
 
     private static LootGrant grantLoot(DialogueContext context, ResourceLocation lootTableId) {
-        if (context == null || lootTableId == null) {
-            return new LootGrant(false, false);
-        }
-        QuestRewardResolver.RollResult roll = QuestRewardResolver.roll(
-                context.level(), context.player().getLuck(), lootTableId, context.random());
-        if (!roll.resolution().resolved()) {
-            LOGGER.warn("{}", roll.resolution().diagnostic());
-            return new LootGrant(false, false);
-        }
-
-        boolean gaveAny = false;
-        for (ItemStack stack : roll.items()) {
-            if (stack.isEmpty()) {
-                continue;
-            }
-            ItemStack reward = stack.copy();
-            ItemStack noticeStack = reward.copy();
-            if (!context.player().addItem(reward) && !reward.isEmpty()) {
-                context.player().drop(reward, false);
-            }
-            if (context.villager() != null) VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), noticeStack);
-            gaveAny = true;
-        }
-        return new LootGrant(true, gaveAny);
+        var grant = NarrativeActions.grantLoot(context, lootTableId, stack -> {
+            if (context.villager() != null) VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), stack);
+        });
+        if (!grant.resolved()) LOGGER.warn("{}", grant.diagnostic());
+        return new LootGrant(grant.resolved(), grant.gaveAny());
     }
 
     private record LootGrant(boolean resolved, boolean gaveAny) {
@@ -250,55 +223,10 @@ public final class VillagerActionExecutor {
                 .orElse(VillagerActionResult.EMPTY);
     }
 
-    private static VillagerActionResult executeSetFactTag(
-            DialogueContext context,
-            VillagerActionDefinition action,
-            Map<String, String> inheritedReplacements) {
-        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
-        boolean changed = VillagerQuestFacts.get(context.level()).setTag(scopeKey, action.factTag());
-        return changed
-                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
-                : VillagerActionResult.EMPTY;
-    }
-
-    private static VillagerActionResult executeClearFactTag(
-            DialogueContext context,
-            VillagerActionDefinition action,
-            Map<String, String> inheritedReplacements) {
-        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
-        boolean changed = VillagerQuestFacts.get(context.level()).clearTag(scopeKey, action.factTag());
-        return changed
-                ? factResult(action, inheritedReplacements, scopeKey.asString(), "", 0)
-                : VillagerActionResult.EMPTY;
-    }
-
-    private static VillagerActionResult executeSetFactVariable(
-            DialogueContext context,
-            VillagerActionDefinition action,
-            Map<String, String> inheritedReplacements) {
-        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
-        String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
-        if ("stage".equals(action.factKey()) && action.factScope() == QuestFactScope.QUEST) {
-            String source = action.questId() != null && action.questId().toString().equals(inheritedReplacements.get("execution_quest"))
-                    ? inheritedReplacements.getOrDefault("execution_stage", "") : "";
-            return VillagerQuestService.syncQuestStage(context, action.questId(), value, source)
-                    ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
-                    : VillagerActionResult.EMPTY;
-        }
-
-        boolean changed = VillagerQuestFacts.get(context.level()).setVariable(scopeKey, action.factKey(), value);
-        return changed
-                ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
-                : VillagerActionResult.EMPTY;
-    }
-
-    private static VillagerActionResult executeCounter(
-            DialogueContext context,
-            VillagerActionDefinition action,
-            Map<String, String> inheritedReplacements) {
-        QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
-        int value = VillagerQuestFacts.get(context.level()).addCounter(scopeKey, action.factKey(), action.amount());
-        return factResult(action, inheritedReplacements, scopeKey.asString(), Integer.toString(value), value);
+    private static VillagerActionResult executeFact(DialogueContext context, VillagerActionDefinition action,
+            Map<String, String> replacements) {
+        return FactActions.execute(context, action, replacements, VillagerQuestFacts.get(context.level()),
+                (runtime, quest, stage, source) -> VillagerQuestService.syncQuestStage(context, quest, stage, source));
     }
 
     static VillagerActionResult factResult(
@@ -307,20 +235,6 @@ public final class VillagerActionExecutor {
             String scopeKey,
             String value,
             int counterValue) {
-        if (scopeKey == null || scopeKey.isBlank()) {
-            return VillagerActionResult.EMPTY;
-        }
-        Map<String, String> replacements = new LinkedHashMap<>(inheritedReplacements);
-        replacements.put("quest_fact_scope", action.factScope().name().toLowerCase(java.util.Locale.ROOT));
-        replacements.put("quest_fact_scope_key", scopeKey);
-        replacements.put("quest_fact_tag", action.factTag() == null ? "" : action.factTag().toString());
-        replacements.put("quest_fact_key", action.factKey());
-        replacements.put("quest_fact_value", value == null ? "" : value);
-        replacements.put("quest_fact_counter", Integer.toString(counterValue));
-        if ("stage".equals(action.factKey())) {
-            replacements.put("quest_stage", value == null ? "" : value);
-            replacements.put("current_stage", value == null ? "" : value);
-        }
-        return new VillagerActionResult(true, "", "", replacements, action.flashTracker());
+        return FactActions.result(action, inheritedReplacements, scopeKey, value, counterValue);
     }
 }
