@@ -28,7 +28,7 @@ final class ConversationResponseTimers {
         ConversationService.require(player.getUUID().equals(session.controller) && ConversationService.member(player, session)
                 && ConversationService.canControl(player, session), "The conversation controller must return to resolve its deadline.");
         var character = ConversationService.character(player, session);
-        ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character),
+        ConversationService.require(!ConversationActors.interrupted(player, character),
                 "Wait for the current interruption to finish.");
         ConversationService.require(ConversationService.near(player, character),
                 "Return to the conversation to resolve its deadline.");

@@ -5,6 +5,20 @@ import java.util.List;
 public final class DialogueAvailability {
     private DialogueAvailability() { }
 
+    public static String reason(DialogueRuntimeContext context, List<DialogueCondition> conditions) {
+        if (context instanceof DialogueContext legacy) return reason(legacy, conditions);
+        for (var condition : conditions) {
+            String issue = condition.unavailableReason(context);
+            if (!issue.isBlank()) return issue;
+            if (condition.matches(context)) continue;
+            if (condition instanceof DialogueCondition.AllOf all) return reason(context, all.conditions());
+            if (condition instanceof DialogueCondition.PlayerItem) return "Requires the requested item.";
+            if (condition instanceof DialogueCondition.Reputation) return "Requires a different level of trust.";
+            return "This response's requirements are not currently met.";
+        }
+        return "";
+    }
+
     public static String reason(DialogueContext context, List<DialogueCondition> conditions) {
         for (var condition : conditions) {
             String issue = condition.unavailableReason(context);

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.campaign;
 
+import com.jvn.villagerretaliation.dialogue.EntityDialogueContext;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationResources;
 import com.jvn.villagerretaliation.dialogue.conversation.ConversationService;
@@ -189,6 +190,51 @@ public final class OrdinaryConversationGameTests {
             helper.assertTrue(ambiguous.session() == null && !ambiguous.diagnostic().isBlank(), "ambiguous cast is rejected");
             helper.assertValueEqual(player.totalExperience, experience, "no effects were applied");
             helper.assertFalse(ConversationService.isCharacterReserved(fixture.mentor), "failed casting leaves no reservation");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "ordinary_entity_conversations")
+    public static void registeredMobConversationsRetainReceiptsAndSpeakerIdentity(GameTestHelper helper) throws IOException {
+        try (var fixture = new CampaignConversationGameTests.Fixture(helper);
+                var actors = com.jvn.villagerretaliation.dialogue.NarrativeActors.register(ResourceLocation.parse("minecraft:cow"),
+                        (level, player, actor) -> new EntityDialogueContext(level, player, actor, "en_us", ""));
+                var conversations = com.jvn.villagerretaliation.dialogue.conversation.ConversationActors.register(ResourceLocation.parse("minecraft:cow"),
+                        (player, definition, actor) -> definition.id().equals(ID))) {
+            fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject().add("effects",
+                    JsonParser.parseString("[{\"id\":\"gift\",\"action\":{\"type\":\"experience\",\"amount\":7,\"required\":true}}]"));
+            install(fixture);
+            fixture.base.mode("legacy");
+            var player = fixture.player();
+            var cow = helper.spawn(EntityType.COW, 1, 1, 1);
+            cow.setNoAi(true);
+            cow.setCustomName(net.minecraft.network.chat.Component.literal("Scout"));
+            player.teleportTo(cow.getX(), cow.getY(), cow.getZ());
+            var wolf = helper.spawn(EntityType.WOLF, 2, 1, 1);
+            var unsupported = ConversationService.start(player, ID, "guidance", UUID.randomUUID(), wolf);
+            helper.assertTrue(unsupported.session() == null, "unregistered mobs cannot become conversation providers");
+            int before = player.totalExperience;
+            var result = ConversationService.start(player, ID, "guidance", UUID.randomUUID(), cow);
+            helper.assertTrue(result.session() != null && result.diagnostic().isBlank(), "registered mob starts: " + result.diagnostic());
+            helper.assertValueEqual(player.totalExperience, before + 7, "generic actor applies its personal effect");
+            helper.assertValueEqual(result.session().transcript().getFirst().speaker(), cow.getUUID(), "the mob speaks its authored line");
+            helper.assertTrue(ConversationService.isCharacterReserved(cow), "the mob is reserved during its conversation");
+            UUID id = result.session().identity().id();
+            fixture.storage.reload();
+            result = ConversationService.view(player, id);
+            helper.assertValueEqual(player.totalExperience, before + 7, "saved effect receipt prevents replay");
+            helper.assertValueEqual(result.session().speakers().get("provider").entity(), cow.getUUID(), "mob binding survives reload");
+            var otherPlayer = fixture.player();
+            otherPlayer.teleportTo(cow.getX(), cow.getY(), cow.getZ());
+            var denied = ConversationService.start(otherPlayer, ID, "guidance", UUID.randomUUID(), cow);
+            helper.assertTrue(denied.session() == null, "another player cannot borrow the reserved actor");
+            cow.discard();
+            var replacement = helper.spawn(EntityType.COW, 1, 1, 1);
+            result = ConversationService.view(player, id);
+            helper.assertTrue(!result.diagnostic().isBlank(), "a missing mob pauses the saved conversation");
+            helper.assertValueEqual(result.session().speakers().get("provider").entity(), cow.getUUID(), "a replacement cannot impersonate the original mob");
+            replacement.discard();
+            wolf.discard();
         }
         helper.succeed();
     }

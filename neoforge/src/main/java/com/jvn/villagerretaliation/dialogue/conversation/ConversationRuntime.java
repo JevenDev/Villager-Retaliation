@@ -1,12 +1,12 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +37,7 @@ final class ConversationRuntime {
             var definition = ConversationService.definition(player.server, session);
             var character = ConversationService.character(player, session);
             ConversationService.require(ConversationService.near(player, character), "Return to the conversation to continue.");
-            ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character), "Wait for the current interruption to finish.");
+            ConversationService.require(!ConversationActors.interrupted(player, character), "Wait for the current interruption to finish.");
             boolean nodeEffects = session.phase == ConversationSession.Phase.NODE_EFFECTS;
             if (!nodeEffects && session.phase != ConversationSession.Phase.RESPONSE_EFFECTS) return;
             var node = definition.nodes().get(session.node);
@@ -67,7 +67,7 @@ final class ConversationRuntime {
     }
 
     static void advanceExchange(ServerPlayer player, ConversationSession session, ConversationDefinition.Node node, int start) {
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
+        var context = ConversationActors.context(player, ConversationService.character(player, session));
         for (int index = start; index < node.exchanges().size(); index++) {
             var exchange = node.exchanges().get(index);
             boolean enabled = true;
@@ -108,11 +108,11 @@ final class ConversationRuntime {
             UUID owner = ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), speaker);
             ConversationService.require(owner == null || owner.equals(session.identity.id()), "This speaker is taking part in another conversation. Resume when it finishes.");
             ConversationService.require(speakerEntity.level() == player.serverLevel(), "This speaker is in another dimension. Resume at its location.");
-            ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(speakerEntity),
+            ConversationService.require(!ConversationActors.interrupted(player, speakerEntity),
                     "This speaker is taking part in an ordinary conversation. Resume when it finishes.");
             session.speakers.putIfAbsent(role, new ConversationSession.Speaker(role, speaker, speakerEntity.level().dimension().location(), name));
         }
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
+        var context = ConversationActors.context(player, ConversationService.character(player, session));
         var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
                 com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), session.replacements);
         String text = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
@@ -127,7 +127,7 @@ final class ConversationRuntime {
         var receipt = session.receipts.get(key);
         boolean execute = receipt == null;
         if (receipt != null && receipt.state() == ConversationSession.ReceiptState.PREPARED) {
-            ConversationService.require(execution.recoverable(receipt.action()), "Effect " + effect.id() + " has no completion receipt. Inspect its effects before repairing this conversation.");
+            ConversationService.require(execution.recoverable(ConversationActors.context(controller, ConversationService.character(controller, session)), receipt.action()), "Effect " + effect.id() + " has no completion receipt. Inspect its effects before repairing this conversation.");
             execute = true;
         }
         if (receipt != null && receipt.state() == ConversationSession.ReceiptState.RESOLVED) {
@@ -167,11 +167,15 @@ final class ConversationRuntime {
         ConversationService.require(!sharedOutcome || run != null, "The deciding player's original quest run is unavailable.");
         String authority = ConversationService.controlIssue(controller, actorId, session.identity);
         ConversationService.require(authority.isBlank(), authority);
-        var context = VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, character);
-        var controllerContext = VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character);
-        var access = CampaignQuestAcceptanceService.resumeAccess(controllerContext, actorId, session.consent);
-        ConversationService.require(access.allowed(), access.diagnostic());
-        session.consent = CampaignQuestAcceptanceService.remainingConsent(context, actorId, session.consent);
+        var context = ConversationActors.context(actor, character);
+        var controllerContext = ConversationActors.context(controller, character);
+        if (controllerContext instanceof DialogueContext legacyController
+                && context instanceof DialogueContext legacy) {
+            var access = CampaignQuestAcceptanceService.resumeAccess(legacyController, actorId, session.consent);
+            ConversationService.require(access.allowed(), access.diagnostic());
+            session.consent = CampaignQuestAcceptanceService.remainingConsent(legacy, actorId, session.consent);
+        } else ConversationService.require(session.consent.isEmpty() && session.identity.campaign() == null,
+                "Campaign consent requires its campaign actor adapter.");
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.PREPARED,
                 ActionResult.unavailable("Effect completion has not been saved.", VillagerActionRegistry.capabilities(action), VillagerActionResult.EMPTY));
         session.receipts.put(key, receipt);
@@ -181,7 +185,8 @@ final class ConversationRuntime {
                 action, session.replacements, session.consent, participants));
         if (outcome.suspended() && outcome.suspensionId() == null) outcome = ActionResult.failed("Suspended effect has no persistent dependency.", outcome.capabilities());
         session = data.session(session.identity.id());
-        session.consent = CampaignQuestAcceptanceService.remainingConsent(context, actorId, session.consent);
+        if (context instanceof DialogueContext legacy)
+            session.consent = CampaignQuestAcceptanceService.remainingConsent(legacy, actorId, session.consent);
         receipt = new ConversationSession.Receipt(key, actorId, run, action, ConversationSession.ReceiptState.RESOLVED, outcome);
         session.receipts.put(key, receipt);
         session.replacements.putAll(outcome.legacyResult().replacements());

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
@@ -18,6 +19,15 @@ final class VrConversationEffects implements ConversationEffects {
     private VrConversationEffects() { }
 
     @Override public ActionResult apply(Operation operation) {
+        if (!(operation.context() instanceof DialogueContext legacy)) {
+            if (!operation.consent().isEmpty() || !operation.participants().isEmpty()
+                    || operation.action().kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) {
+                return ActionResult.unavailable("Campaign effects require their campaign actor adapter.",
+                        java.util.Set.of(), VillagerActionResult.EMPTY);
+            }
+            return ConversationSceneExecution.withEffect(operation.identity().id(), operation.effect(),
+                    () -> operation.context().actions().execute(operation.context(), operation.action(), operation.replacements()));
+        }
         var applied = new ActionResult[1];
         var outcomeActor = operation.action().kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
                 ? new CampaignOutcomeService.Actor(operation.actor(), operation.questRun()) : null;
@@ -25,7 +35,7 @@ final class VrConversationEffects implements ConversationEffects {
                 ConversationSceneExecution.withEffect(operation.identity().id(), operation.effect(),
                         () -> CampaignDecisionParticipants.withParticipants(operation.participants(),
                                 () -> ConversationService.withController(operation.controller(), operation.actor(), operation.identity(),
-                                        () -> VillagerActionRegistry.execute(operation.context(), operation.action(), new java.util.LinkedHashMap<>(operation.replacements()), outcomeActor)))));
+                                        () -> VillagerActionRegistry.execute(legacy, operation.action(), new java.util.LinkedHashMap<>(operation.replacements()), outcomeActor)))));
         return applied[0];
     }
 

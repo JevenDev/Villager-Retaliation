@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.action.ActionResult;
@@ -29,6 +30,13 @@ import static com.jvn.villagerretaliation.dialogue.conversation.ConversationServ
 
 public final class ConversationNestedConfirmations {
     private ConversationNestedConfirmations() { }
+
+    public static Gate beforeScene(SceneExecutionContext execution,
+            DialogueRuntimeContext context, String actionId, VillagerActionDefinition action) {
+        if (context == null || context instanceof DialogueContext) return beforeScene(execution, (DialogueContext) context, actionId, action);
+        return !execution.instance().campaignConsent().isEmpty() || action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME
+                ? new Gate("Campaign confirmation requires its campaign actor adapter.", null, false) : Gate.PASS;
+    }
 
     public static Gate beforeScene(SceneExecutionContext execution, DialogueContext context, String actionId, VillagerActionDefinition action) {
         var scene = execution.instance();

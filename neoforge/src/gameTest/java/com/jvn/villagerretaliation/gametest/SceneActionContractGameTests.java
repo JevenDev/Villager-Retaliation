@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.gametest;
 
+import com.jvn.villagerretaliation.dialogue.EntityDialogueContext;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.ActionResult;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -182,6 +184,39 @@ public final class SceneActionContractGameTests {
                     "cancelled parent settles its pending wait");
             helper.assertValueEqual(fixture.data.compactTerminalHistory(later, 8), 1,
                     "cancelled parent no longer retains child history");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "entity_scene_context")
+    public static void registeredMobScenesUseActorConditionsAndDurableActionReceipts(GameTestHelper helper) {
+        try (Fixture fixture = new Fixture(helper);
+                var actors = com.jvn.villagerretaliation.dialogue.NarrativeActors.register(ResourceLocation.parse("minecraft:cow"),
+                        (level, player, actor) -> new EntityDialogueContext(level, player, actor, "en_us", ""))) {
+            var cow = helper.spawn(EntityType.COW, 1, 1, 1);
+            cow.setNoAi(true);
+            var definition = scene("mob_condition", "wait_condition",
+                    "{\"conditions\":[{\"type\":\"health\",\"subject\":\"speaker\",\"max\":0.5}]}");
+            var execution = fixture.execution(definition, true);
+            var binding = SceneActorBinding.entity("provider", VillagerRetaliation.id("entity"), cow.getUUID(),
+                    ResourceLocation.parse("minecraft:cow"), cow.level().dimension().location(), cow.blockPosition(), "Scout", true);
+            execution.instance().replaceBinding("provider", binding);
+            var executor = SceneStepExecutors.get(execution.step().type()).orElseThrow();
+            helper.assertValueEqual(executor.apply(execution).outcome(), SceneStepResult.Outcome.WAIT, "healthy mob does not satisfy its injury condition");
+            cow.setHealth(cow.getMaxHealth() / 4);
+            helper.assertValueEqual(executor.apply(execution).outcome(), SceneStepResult.Outcome.APPLIED, "scene conditions read the mob's health");
+            definition = scene("mob_actions", "action_batch", "{\"actions\":[{\"id\":\"gift\",\"type\":\"experience\",\"amount\":7,\"required\":true}]}");
+            execution = fixture.execution(definition, true);
+            execution.instance().replaceBinding("provider", binding);
+            executor = SceneStepExecutors.get(execution.step().type()).orElseThrow();
+            int before = fixture.context.player().totalExperience;
+            helper.assertValueEqual(executor.apply(execution).outcome(), SceneStepResult.Outcome.APPLIED, "mob scene executes registered common actions");
+            helper.assertValueEqual(fixture.context.player().totalExperience, before + 7, "mob scene grants its reward");
+            var restored = fixture.reload();
+            var replay = fixture.execution(definition, restored.get(execution.instance().id()).orElseThrow(), false);
+            helper.assertValueEqual(executor.reconcile(replay).outcome(), SceneStepResult.Outcome.APPLIED, "mob scene reconciles its saved receipt");
+            helper.assertValueEqual(fixture.context.player().totalExperience, before + 7, "mob scene never repeats its settled reward");
+            cow.discard();
         }
         helper.succeed();
     }

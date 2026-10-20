@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.campaign.CampaignQuestAcceptanceService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -11,11 +11,15 @@ final class ConversationConfirmations {
     private ConversationConfirmations() { }
 
     static boolean prepare(ServerPlayer player, ConversationSession session, List<ConversationDefinition.Effect> effects, UUID choice) throws IOException {
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
+        var context = ConversationActors.context(player, ConversationService.character(player, session));
         if (session.questRun != null) ConversationService.require(session.questRun.equals(
                 ConversationService.questRun(player.server, session.actingPlayer, session.identity.quest())),
                 "The original quest run changed. Repair this conversation before reviewing its remaining effects.");
-        var prepared = CampaignQuestAcceptanceService.prepareActions(context, session.actingPlayer,
+        if (!(context instanceof DialogueContext legacy)) {
+            ConversationService.require(session.identity.campaign() == null, "Campaign consequences require their campaign actor adapter.");
+            return false;
+        }
+        var prepared = CampaignQuestAcceptanceService.prepareActions(legacy, session.actingPlayer,
                 effects.stream().map(ConversationDefinition.Effect::action).toList());
         ConversationService.require(prepared.diagnostic().isBlank(), prepared.diagnostic());
         if (prepared.confirmation() == null) return false;
@@ -29,8 +33,10 @@ final class ConversationConfirmations {
     static String confirm(ServerPlayer player, ConversationSession session, ConversationDefinition definition, String id) {
         if (session.nestedDecision != null) return ConversationNestedConfirmations.confirm(player, session, id);
         requirePending(session, id);
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, ConversationService.character(player, session));
-        var access = CampaignQuestAcceptanceService.confirmationAccess(context, session.actingPlayer, session.confirmation);
+        var context = ConversationActors.context(player, ConversationService.character(player, session));
+        if (!(context instanceof DialogueContext legacy))
+            return "Campaign confirmation requires its campaign actor adapter.";
+        var access = CampaignQuestAcceptanceService.confirmationAccess(legacy, session.actingPlayer, session.confirmation);
         if (!access.allowed()) {
             if (!access.paused()) {
                 boolean entry = session.pendingChoice == null;

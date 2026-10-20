@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import net.minecraft.world.entity.LivingEntity;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.campaign.CampaignBindingQueries;
 import com.jvn.villagerretaliation.campaign.CampaignSavedData;
@@ -7,15 +8,12 @@ import com.jvn.villagerretaliation.campaign.CampaignWorldMode;
 import com.jvn.villagerretaliation.campaign.CampaignWorldModeSavedData;
 import com.jvn.villagerretaliation.campaign.content.CampaignResources;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.interaction.VillagerConversationService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.entity.npc.Villager;
 
 public final class ConversationTopicInspection {
     private ConversationTopicInspection() { }
@@ -32,7 +30,7 @@ public final class ConversationTopicInspection {
         else report.gate("authority", definition.campaign() == null || CampaignAuthority.canControl(player), CampaignAuthority.controlIssue(player));
         var data = ConversationSavedData.get(server.overworld());
         if (!data.diagnostic().isBlank()) return report.block("storage", data.diagnostic());
-        Villager provider;
+        LivingEntity provider;
         if (definition.campaign() == null) {
             if (player == null) {
                 report.gates.add(new Gate("provider", GateState.UNKNOWN, "Load the player near a matching quest provider to inspect this topic."));
@@ -89,14 +87,14 @@ public final class ConversationTopicInspection {
                     ? "An authorized member present at the character must take control to continue."
                     : controller.getUUID().equals(playerId) ? "This player controls the saved conversation."
                     : "The current controller must hand over explicitly before this player can advance."));
-            report.gate("interruption", !VillagerConversationService.isConversing(provider), "Wait for the current interruption to finish.");
+            report.gate("interruption", !ConversationActors.interrupted(player, provider), "Wait for the current interruption to finish.");
             if (!session.diagnostic.isBlank()) report.gates.add(new Gate("continuation", GateState.BLOCKED, session.diagnostic));
             return report.finish(Status.EXISTING_SESSION);
         }
-        report.gate("ordinary_conversation", !VillagerConversationService.isConversing(provider),
+        report.gate("ordinary_conversation", !ConversationActors.interrupted(player, provider),
                 "This character is already taking part in an ordinary conversation.");
         if (!declared.conditions().isEmpty() && player != null && player.serverLevel() == provider.level()) {
-            report.context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+            report.context = ConversationActors.context(player, provider);
         }
         report.evaluate = true;
         return report.finish(Status.AVAILABLE);
@@ -120,7 +118,7 @@ public final class ConversationTopicInspection {
         final UUID player;
         final ConversationDefinition definition;
         final List<Gate> gates = new ArrayList<>();
-        DialogueContext context;
+        DialogueRuntimeContext context;
         ConversationSession.Snapshot session;
         boolean evaluate;
 

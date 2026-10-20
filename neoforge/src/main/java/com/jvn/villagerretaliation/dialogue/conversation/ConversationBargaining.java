@@ -1,10 +1,11 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.campaign.CampaignTransaction;
 import com.jvn.villagerretaliation.campaign.CampaignTransactionSavedData;
 import com.jvn.villagerretaliation.campaign.CampaignTransactions;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.skill.player.PlayerSocialAward;
 import java.io.IOException;
 import java.util.UUID;
@@ -24,7 +25,10 @@ final class ConversationBargaining {
         ConversationService.require(ConversationService.near(buyer, character), "The buyer must return to the seller before bargaining.");
         ConversationService.require(session.questRun != null && session.questRun.equals(ConversationService.questRun(buyer, session.identity.quest())),
                 "The buyer's original quest run changed. Repair this conversation before bargaining.");
-        var context = VillagerInteractionService.createDialogueContext(buyer.serverLevel(), buyer, character);
+        var runtime = ConversationActors.context(buyer, character);
+        ConversationService.require(runtime instanceof DialogueContext,
+                "Campaign bargaining requires its campaign actor adapter.");
+        var context = (DialogueContext) runtime;
         var reading = CampaignTransactions.read(context, session.identity.quest(), definition.transaction());
         ConversationService.require(reading.available(), reading.diagnostic());
         var source = new CampaignTransaction.Source(session.identity.id(), session.identity.conversation(),
@@ -44,7 +48,7 @@ final class ConversationBargaining {
         }
     }
 
-    static String paymentIssue(com.jvn.villagerretaliation.dialogue.DialogueContext context, ConversationSession session,
+    static String paymentIssue(DialogueRuntimeContext context, ConversationSession session,
             net.minecraft.resources.ResourceLocation quest, String transaction) {
         try {
             ConversationService.definition(context.player().server, session);

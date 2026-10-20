@@ -22,6 +22,10 @@ public final class NarrativeActors {
         return new Registration(entityType, factory);
     }
 
+    public static synchronized boolean isRegistered(LivingEntity entity) {
+        return FACTORIES.containsKey(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()));
+    }
+
     public static synchronized boolean hasRegistrations() { return !FACTORIES.isEmpty(); }
 
     public static Optional<DialogueRuntimeContext> context(ServerLevel level, ServerPlayer player, LivingEntity entity) {

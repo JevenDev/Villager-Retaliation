@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +18,7 @@ public record ConversationCheckModifier(String id, String labelKey, String label
             throw new IllegalArgumentException("Invalid saved conversation modifier");
     }
 
-    static List<ConversationCheckModifier> capture(DialogueContext context, ConversationDefinition.Check check) {
+    static List<ConversationCheckModifier> capture(DialogueRuntimeContext context, ConversationDefinition.Check check) {
         var result = new ArrayList<ConversationCheckModifier>();
         for (var modifier : check.modifiers()) {
             boolean applied = true;

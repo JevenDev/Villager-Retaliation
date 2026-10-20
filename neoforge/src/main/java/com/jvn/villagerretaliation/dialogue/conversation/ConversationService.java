@@ -1,10 +1,10 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import net.minecraft.world.entity.LivingEntity;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.campaign.CampaignSavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
@@ -28,6 +28,10 @@ public final class ConversationService {
     }
 
     public static Result start(ServerPlayer player, ResourceLocation conversation, String topicId, UUID request, Villager provider) {
+        return start(player, conversation, topicId, request, (LivingEntity) provider);
+    }
+
+    public static Result start(ServerPlayer player, ResourceLocation conversation, String topicId, UUID request, LivingEntity provider) {
         if (!player.server.isSameThread()) return new Result(null, List.of(), "Conversation requests require the server thread.");
         var data = ConversationSavedData.get(player.serverLevel());
         try {
@@ -51,11 +55,11 @@ public final class ConversationService {
                         "This character is already taking part in another conversation.");
                 return view(player, active);
             }
-            require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character),
+            require(!ConversationActors.interrupted(player, character),
                     "This character is already taking part in an ordinary conversation.");
             var topic = definition.topics().get(topicId);
             require(topic != null, "Unknown conversation topic.");
-            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
+            var context = ConversationActors.context(player, character);
             require(conditions(context, topic.conditions()), "This topic is not currently available.");
             var instance = definition.campaign() == null ? null : CampaignSavedData.get(player.serverLevel()).instances().get(definition.campaign());
             require(definition.campaign() == null || instance != null, "Campaign instance is unavailable.");
@@ -121,9 +125,9 @@ public final class ConversationService {
             } else if (intent == ConversationSession.Intent.TAKE_CONTROL || intent == ConversationSession.Intent.HAND_OVER) {
                 changeController(player, session, intent, argument);
             } else {
-                require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character), "Wait for the current interruption to finish.");
+                require(!ConversationActors.interrupted(player, character), "Wait for the current interruption to finish.");
                 require(player.getUUID().equals(session.controller) && canControl(player, session), "An authorized controller must advance this conversation.");
-                var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
+                var context = ConversationActors.context(player, character);
                 switch (intent) {
                     case ADVANCE -> advance(player, session, definition);
                     case CHOOSE -> {
@@ -195,7 +199,7 @@ public final class ConversationService {
             if (session.phase == ConversationSession.Phase.RESPONSES) {
                 var controller = player.getUUID().equals(session.controller) ? player : session.controller == null ? null : player.server.getPlayerList().getPlayer(session.controller);
                 boolean authorized = controller != null && member(controller, session) && canControl(controller, session) && near(controller, character);
-                var context = authorized ? VillagerInteractionService.createDialogueContext(controller.serverLevel(), controller, character) : null;
+                var context = authorized ? ConversationActors.context(controller, character) : null;
                 for (var response : definition.nodes().get(session.node).responses().values()) {
                     if (authorized && !response.showUnavailable() && !conditions(context, response.conditions())) continue;
                     responses.add(new Response(response.id(),
@@ -218,7 +222,7 @@ public final class ConversationService {
 
     static void choose(ServerPlayer player, ConversationSession session, ConversationDefinition definition, UUID request, String id) throws IOException {
         var response = definition.nodes().get(session.node).responses().get(id);
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character(player, session));
+        var context = ConversationActors.context(player, character(player, session));
         require(response != null && conditions(context, response.conditions()), "This response is no longer available.");
         for (var effect : response.effects()) if (effect.action().campaignPayment() != null) {
             String issue = ConversationBargaining.paymentIssue(context, session, effect.action().questId(), effect.action().campaignPayment().transaction());
@@ -237,7 +241,7 @@ public final class ConversationService {
         session.questRun = questRun(player, session.identity.quest());
         captureDecisionParticipants(player, session, request);
         var authored = definition(player.server, session).nodes().get(session.node).responses().get(response);
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character(player, session));
+        var context = ConversationActors.context(player, character(player, session));
         var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
                 com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), session.replacements);
         String label = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
@@ -317,7 +321,7 @@ public final class ConversationService {
         return definition;
     }
 
-    static Villager character(ServerPlayer player, ConversationSession session) {
+    static LivingEntity character(ServerPlayer player, ConversationSession session) {
         return ConversationBinding.speaker(player, session, session.identity.characterRole());
     }
 
@@ -343,9 +347,8 @@ public final class ConversationService {
         return identity.campaign() == null ? work.get() : CampaignAuthority.withController(controller, actor, work);
     }
 
-    static boolean near(ServerPlayer player, Villager character) {
-        return player.isAlive() && player.serverLevel() == character.level() && player.distanceToSqr(character) <= 256.0
-                && VillagerInteractionService.shouldStayConversable(player, character);
+    static boolean near(ServerPlayer player, LivingEntity character) {
+        return ConversationActors.near(player, character);
     }
 
     static UUID questRun(ServerPlayer player, ResourceLocation quest) {
@@ -357,7 +360,7 @@ public final class ConversationService {
         return progress == null ? null : progress.questRunId();
     }
 
-    static boolean conditions(DialogueContext context, List<DialogueCondition> conditions) {
+    static boolean conditions(DialogueRuntimeContext context, List<DialogueCondition> conditions) {
         return conditions.stream().allMatch(condition -> condition.unavailableReason(context).isBlank() && condition.matches(context));
     }
 
@@ -431,6 +434,10 @@ public final class ConversationService {
     }
 
     public static boolean isCharacterReserved(Villager character) {
+        return isCharacterReserved((LivingEntity) character);
+    }
+
+    public static boolean isCharacterReserved(LivingEntity character) {
         return character.level() instanceof net.minecraft.server.level.ServerLevel level
                 && ConversationCharacters.active(level.getServer(), ConversationSavedData.get(level), character.getUUID()) != null;
     }

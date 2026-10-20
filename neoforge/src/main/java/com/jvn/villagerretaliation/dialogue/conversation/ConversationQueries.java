@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import net.minecraft.world.entity.LivingEntity;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.campaign.CampaignCharacterSavedData;
 import com.jvn.villagerretaliation.campaign.CampaignCharacterService;
@@ -8,9 +10,7 @@ import com.jvn.villagerretaliation.campaign.CampaignWorldMode;
 import com.jvn.villagerretaliation.campaign.CampaignWorldModeSavedData;
 import com.jvn.villagerretaliation.campaign.content.CampaignResources;
 import com.jvn.villagerretaliation.dialogue.DialogueAvailability;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.interaction.VillagerConversationService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import java.util.ArrayList;
@@ -24,6 +24,10 @@ public final class ConversationQueries {
     private ConversationQueries() { }
 
     public static UUID active(ServerPlayer player, Villager character) {
+        return active(player, (LivingEntity) character);
+    }
+
+    public static UUID active(ServerPlayer player, LivingEntity character) {
         return ConversationCharacters.active(player.server, ConversationSavedData.get(player.serverLevel()), character.getUUID());
     }
 
@@ -38,9 +42,13 @@ public final class ConversationQueries {
     }
 
     public static List<Topic> topics(ServerPlayer player, Villager character) {
+        return topics(player, (LivingEntity) character);
+    }
+
+    public static List<Topic> topics(ServerPlayer player, LivingEntity character) {
         var topics = new ArrayList<Topic>();
         var binding = CampaignCharacterSavedData.get(player.serverLevel()).forEntity(character.getUUID());
-        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character);
+        var context = ConversationActors.context(player, character);
         if (binding != null && CampaignWorldModeSavedData.get(player.serverLevel()).mode() == CampaignWorldMode.CAMPAIGN) {
             var content = CampaignResources.current(player.server).campaigns().get(binding.campaign());
             boolean compatible = content != null && CampaignSavedData.get(player.serverLevel()).compatibility(content.definition()).isBlank();
@@ -63,7 +71,7 @@ public final class ConversationQueries {
         return List.copyOf(topics);
     }
 
-    private static void appendTopics(ServerPlayer player, DialogueContext context, ConversationDefinition definition,
+    private static void appendTopics(ServerPlayer player, DialogueRuntimeContext context, ConversationDefinition definition,
             boolean authority, List<Topic> topics) {
         var group = topicGroup(context, definition.quest());
         for (var topic : definition.topics().values()) {
@@ -90,7 +98,7 @@ public final class ConversationQueries {
         catch (ConversationService.Unavailable unavailable) { valid = false; }
         boolean authority = ConversationService.canControl(player, saved) && ConversationService.member(player, saved);
         boolean control = valid && saved.active() && authority && player.getUUID().equals(snapshot.controller())
-                && !VillagerConversationService.isConversing(primary);
+                && !ConversationActors.interrupted(player, primary);
         var controller = snapshot.controller() == null ? null : player.server.getPlayerList().getPlayer(snapshot.controller());
         boolean takeover = valid && saved.active() && authority && !control && (controller == null || !ConversationService.member(controller, saved)
                 || !ConversationService.canControl(controller, saved) || !ConversationService.near(controller, primary));
@@ -115,13 +123,14 @@ public final class ConversationQueries {
         return cache == null ? id.toString() : cache.get(id).map(com.mojang.authlib.GameProfile::getName).orElse(id.toString());
     }
 
-    private static TopicGroup topicGroup(DialogueContext context, ResourceLocation quest) {
+    private static TopicGroup topicGroup(DialogueRuntimeContext context, ResourceLocation quest) {
+        if (!(context instanceof DialogueContext legacy)) return TopicGroup.GENERAL;
         if (quest == null) return TopicGroup.GENERAL;
-        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("ready")))
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(legacy, quest, java.util.Set.of("ready")))
             return TopicGroup.REPORTING_BACK;
-        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("active")))
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(legacy, quest, java.util.Set.of("active")))
             return TopicGroup.CURRENT_OBJECTIVES;
-        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(context, quest, java.util.Set.of("completed")))
+        if (com.jvn.villagerretaliation.quest.VillagerQuestService.matchesState(legacy, quest, java.util.Set.of("completed")))
             return TopicGroup.FOLLOW_UPS;
         return TopicGroup.NEW_BUSINESS;
     }

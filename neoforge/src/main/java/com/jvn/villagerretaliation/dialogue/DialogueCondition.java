@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.QuestIds;
-import com.jvn.villagerretaliation.quest.QuestScopeKey;
 import com.jvn.villagerretaliation.quest.QuestTriggerContext;
 import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
@@ -29,7 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
 public sealed interface DialogueCondition permits DialogueCondition.Invalid, DialogueCondition.AllOf, DialogueCondition.AnyOf,
@@ -47,6 +45,16 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check, ExplorationConditions.Check {
 
     boolean matches(DialogueContext context);
+
+    default boolean matches(DialogueRuntimeContext context) {
+        if (context instanceof DialogueContext legacy) return matches(legacy);
+        return ConditionEvaluator.evaluate(context == null ? null : context.conditions(), null, this) == ConditionOutcome.MATCHED;
+    }
+
+    default String unavailableReason(DialogueRuntimeContext context) {
+        if (context instanceof DialogueContext legacy) return unavailableReason(legacy);
+        return ConditionEvaluator.unavailableReason(ConditionRegistry.trace(context, this));
+    }
 
     default boolean matches(DialogueContext context, QuestTriggerContext triggerContext) {
         return matches(context);

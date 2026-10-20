@@ -1,8 +1,9 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
@@ -13,7 +14,11 @@ interface ConversationEffects {
     ActionResult poll(ServerPlayer controller, ActionResult waiting);
     boolean recoverable(VillagerActionDefinition action);
 
-    record Operation(DialogueContext context, ServerPlayer controller, ConversationSession.Identity identity,
+    default boolean recoverable(DialogueRuntimeContext context, VillagerActionDefinition action) {
+        return context instanceof DialogueContext && recoverable(action);
+    }
+
+    record Operation(DialogueRuntimeContext context, ServerPlayer controller, ConversationSession.Identity identity,
             String effect, UUID actor, UUID questRun, VillagerActionDefinition action, Map<String, String> replacements,
             CompoundTag consent, CompoundTag participants) {
         public Operation {

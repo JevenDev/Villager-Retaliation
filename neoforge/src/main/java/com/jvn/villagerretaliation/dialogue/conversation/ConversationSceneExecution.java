@@ -1,11 +1,12 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
+import net.minecraft.world.entity.LivingEntity;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants;
 import com.jvn.villagerretaliation.campaign.CampaignSceneApproval;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
@@ -138,7 +139,7 @@ public final class ConversationSceneExecution {
             ConversationService.require(issue.isBlank(), issue);
             var character = ConversationService.character(controller, session);
             ConversationService.require(ConversationService.near(controller, character), "The controller must return to the conversation before its scene continues.");
-            ConversationService.require(!com.jvn.villagerretaliation.interaction.VillagerConversationService.isConversing(character),
+            ConversationService.require(!ConversationActors.interrupted(controller, character),
                     "The conversation scene is waiting for its interruption to finish.");
             return new Access(controller, actor, "", session.identity.campaign() != null);
         } catch (ConversationService.Unavailable | IllegalArgumentException exception) {
@@ -148,9 +149,16 @@ public final class ConversationSceneExecution {
 
     public static DialogueContext context(MinecraftServer server, SceneInstance scene, VillagerActionDefinition action,
             net.minecraft.world.entity.npc.Villager provider) {
+        var context = runtimeContext(server, scene, action, provider);
+        return context instanceof DialogueContext legacy ? legacy : null;
+    }
+
+    public static DialogueRuntimeContext runtimeContext(
+            MinecraftServer server, SceneInstance scene, VillagerActionDefinition action,
+            LivingEntity provider) {
         var access = resolve(server, scene);
         if (!access.diagnostic().isBlank()) return null;
-        DialogueContext approved;
+        DialogueRuntimeContext approved;
         if (!scene.campaignConsent().isEmpty()) {
             approved = CampaignSceneApproval.resolve(server, scene).context();
             if (approved == null) return null;
@@ -159,12 +167,12 @@ public final class ConversationSceneExecution {
             var session = ConversationSavedData.get(server.overworld()).session(source.session());
             if (provider == null) provider = ConversationService.character(access.controller(), session);
             if (provider.level() != access.controller().serverLevel()) return null;
-            approved = VillagerInteractionService.createDialogueContext(access.controller().serverLevel(), access.controller(), provider);
+            approved = ConversationActors.context(access.controller(), provider);
         }
         if (action != null && action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME) return approved;
         var actor = server.getPlayerList().getPlayer(access.actor());
         return actor == null || actor.serverLevel() != approved.level() ? null
-                : VillagerInteractionService.createDialogueContext(actor.serverLevel(), actor, approved.villager());
+                : ConversationActors.context(actor, approved.speaker());
     }
 
     public record Access(ServerPlayer controller, UUID actor, String diagnostic, boolean campaign) {

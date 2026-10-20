@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.conversation;
 
+import net.minecraft.world.entity.LivingEntity;
 import com.jvn.villagerretaliation.campaign.CampaignBindingQueries;
 import com.jvn.villagerretaliation.campaign.CampaignCharacterBinding;
 import com.jvn.villagerretaliation.campaign.CampaignCharacterReplacements;
@@ -9,7 +10,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.entity.npc.Villager;
 
 final class ConversationCharacters {
     private ConversationCharacters() { }
@@ -65,8 +65,8 @@ final class ConversationCharacters {
         return null;
     }
 
-    static Villager primary(net.minecraft.server.level.ServerPlayer player, ConversationSession session) {
+    static LivingEntity primary(net.minecraft.server.level.ServerPlayer player, ConversationSession session) {
         var speaker = session.speakers.get(session.identity.characterRole());
-        return speaker != null && player.serverLevel().getEntity(speaker.entity()) instanceof Villager villager ? villager : null;
+        return speaker != null && player.serverLevel().getEntity(speaker.entity()) instanceof LivingEntity actor && ConversationActors.supports(actor) ? actor : null;
     }
 }
