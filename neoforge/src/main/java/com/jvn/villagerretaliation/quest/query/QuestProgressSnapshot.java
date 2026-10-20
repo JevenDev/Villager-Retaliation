@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest.query;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestState;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressModel;
 import com.jvn.villagerretaliation.quest.runtime.QuestProgressState;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -51,11 +52,11 @@ public record QuestProgressSnapshot(QuestState state, UUID questRunId, UUID star
         activeStages = Set.copyOf(activeStages);
     }
 
-    public static QuestProgressSnapshot capture(QuestProgressState progress) {
+    public static QuestProgressSnapshot capture(QuestProgressModel progress) {
         return capture(progress, null);
     }
 
-    public static QuestProgressSnapshot capture(QuestProgressState progress, QuestDefinition definition) {
+    public static QuestProgressSnapshot capture(QuestProgressModel progress, QuestDefinition definition) {
         if (progress == null) return null;
         var items = new LinkedHashMap<String, ResourceLocation>();
         var completed = new LinkedHashSet<String>();
@@ -64,10 +65,10 @@ public record QuestProgressSnapshot(QuestState state, UUID questRunId, UUID star
             if (item != null) items.put(objective.id(), item);
             if (progress.objectiveComplete(objective.id())) completed.add(objective.id());
         }
-        return new QuestProgressSnapshot(progress.state(), progress.questRunId(), progress.startedVillagerId(),
+        return new QuestProgressSnapshot(QuestState.valueOf(progress.status().name()), progress.questRunId(), progress.startedVillagerId(),
                 progress.startedGameTime(), progress.completedGameTime(), progress.completionCount(), progress.consumedReason(),
                 progress.currentStage(), progress.visitedTarget(), progress.targetDimension(), progress.targetPos(), progress.targetObjectiveId(),
-                progress.issuerName(), progress.issuerProfession(), progress.issuerDimension(), progress.issuerPos(), items, completed, definition == null ? Map.of() : progress.remainingTimers(definition), progress.activeStages());
+                progress.issuerName(), progress instanceof QuestProgressState legacy ? legacy.issuerProfession() : "", progress.issuerDimension(), progress.issuerPos(), items, completed, definition == null ? Map.of() : progress.remainingTimers(definition), progress.activeStages());
     }
 
     public boolean objectiveComplete(String id) { return id != null && completedObjectives.contains(id); }
@@ -84,4 +85,13 @@ public record QuestProgressSnapshot(QuestState state, UUID questRunId, UUID star
         return progress == null || definition.stages().isEmpty() ? definition.objectives()
                 : progress.activeStages().stream().flatMap(stage -> QuestObjectiveQuery.stageObjectives(definition, stage).stream()).distinct().toList();
     }
+
+    public static QuestProgressSnapshot capture(QuestProgressState progress) {
+        return capture((com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static QuestProgressSnapshot capture(QuestProgressState progress, QuestDefinition definition) {
+        return capture((com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, definition);
+    }
+
 }

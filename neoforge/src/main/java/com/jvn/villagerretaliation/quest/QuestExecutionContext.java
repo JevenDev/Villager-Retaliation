@@ -113,6 +113,13 @@ public record QuestExecutionContext(
                 : this.providerType.conditions(this, progress);
     }
 
+    public com.jvn.villagerretaliation.dialogue.conditions.ConditionContext conditions(
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
+        return this.providerType == null
+                ? com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(this, progress)
+                : this.providerType.conditions(this, progress);
+    }
+
     public Optional<QuestProviderBinding> providerBinding() {
         return Optional.ofNullable(this.binding);
     }

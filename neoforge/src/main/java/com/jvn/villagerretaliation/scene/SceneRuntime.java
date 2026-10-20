@@ -198,6 +198,8 @@ public final class SceneRuntime {
             if (entity != null) {
                 result.put(actor.alias(), SceneActorBinding.entity(actor.alias(), actor.actorType(), entity.getUUID(),
                         actor.bindingSource() == SceneActorDeclaration.BindingSource.QUEST_PROVIDER
+                                && entity instanceof net.minecraft.world.entity.npc.Villager villager
+                                && !com.jvn.villagerretaliation.dialogue.NarrativeActors.isRegistered(villager)
                                 ? VillagerRetaliation.id("villager") : actor.actorType(),
                         entity.level().dimension().location(), entity.blockPosition(), entity.getDisplayName().getString(), true));
             } else if (entityId != null) {

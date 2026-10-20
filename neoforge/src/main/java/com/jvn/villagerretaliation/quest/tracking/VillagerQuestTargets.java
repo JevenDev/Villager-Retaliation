@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.quest.tracking;
 
 import com.jvn.villagerretaliation.campaign.CampaignLocationService;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
@@ -119,7 +118,7 @@ public final class VillagerQuestTargets {
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         if (!definition.target().hasStructureTarget()) {
             return false;
         }
@@ -136,7 +135,7 @@ public final class VillagerQuestTargets {
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition.Objective objective,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         if (objective.structure() == null
                 || progress == null
                 || !objective.id().equals(progress.targetObjectiveId())) {
@@ -214,7 +213,7 @@ public final class VillagerQuestTargets {
     private static boolean isAtStructureTarget(
             ServerLevel level,
             BlockPos playerPos,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress,
             ResourceLocation structureId,
             int discoveryRadius,
             List<String> expectedPieces) {
@@ -273,4 +272,21 @@ public final class VillagerQuestTargets {
             return new com.jvn.villagerretaliation.quest.runtime.QuestTarget(dimension, pos, objectiveId);
         }
     }
+
+    public static boolean isAtQuestTarget(
+            ServerLevel level,
+            BlockPos playerPos,
+            QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return isAtQuestTarget(level, playerPos, definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static boolean isAtObjectiveTarget(
+            ServerLevel level,
+            BlockPos playerPos,
+            QuestDefinition.Objective objective,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return isAtObjectiveTarget(level, playerPos, objective, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
 }

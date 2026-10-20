@@ -5,10 +5,8 @@ import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionCheckpoint;
 import com.jvn.villagerretaliation.quest.runtime.QuestRewardDelivery;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
-import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
-import com.jvn.villagerretaliation.util.WorldLocation;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,15 +15,10 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.nio.charset.StandardCharsets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -43,10 +36,10 @@ import org.slf4j.Logger;
 public class VillagerQuestSavedData extends SavedData implements com.jvn.villagerretaliation.quest.runtime.QuestProgressStore<VillagerQuestSavedData.QuestProgress> {
     public static final int CURRENT_DATA_VERSION = 11;
     public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
-    public static final int MAX_CHOICE_HISTORY = 256;
-    public static final int MAX_COMPLETION_HISTORY = 128;
-    public static final int MAX_PROVIDER_REBIND_HISTORY = 64;
-    public static final int MAX_PENDING_TRIGGER_EVENTS = 64;
+    public static final int MAX_CHOICE_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_CHOICE_HISTORY;
+    public static final int MAX_COMPLETION_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_COMPLETION_HISTORY;
+    public static final int MAX_PROVIDER_REBIND_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_PROVIDER_REBIND_HISTORY;
+    public static final int MAX_PENDING_TRIGGER_EVENTS = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_PENDING_TRIGGER_EVENTS;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
@@ -617,7 +610,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
     public static class QuestProgress extends com.jvn.villagerretaliation.quest.runtime.QuestProgressState {
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
-            progress.state = QuestState.byName(tag.getString(TAG_STATE));
+            progress.state = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.QuestState.valueOf(QuestState.byName(tag.getString(TAG_STATE)).name());
             if (tag.hasUUID(TAG_STARTED_VILLAGER)) {
                 progress.startedVillagerId = tag.getUUID(TAG_STARTED_VILLAGER);
             }
@@ -730,7 +723,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
                 ListTag historyTag = tag.getList(TAG_CHOICE_HISTORY, Tag.TAG_COMPOUND);
                 for (Tag rawChoice : historyTag) {
                     if (rawChoice instanceof CompoundTag choiceTag) {
-                        addBounded(progress.choiceHistory, ChoiceHistoryEntry.load(choiceTag),
+                        addBounded(progress.choiceHistory, sharedChoice(ChoiceHistoryEntry.load(choiceTag)),
                                 MAX_CHOICE_HISTORY);
                     }
                 }
@@ -739,7 +732,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
                 ListTag historyTag = tag.getList(TAG_COMPLETION_HISTORY, Tag.TAG_COMPOUND);
                 for (Tag rawCompletion : historyTag) {
                     if (rawCompletion instanceof CompoundTag completionTag) {
-                        addBounded(progress.completionHistory, CompletionHistoryEntry.load(completionTag),
+                        addBounded(progress.completionHistory, sharedCompletion(CompletionHistoryEntry.load(completionTag)),
                                 MAX_COMPLETION_HISTORY);
                     }
                 }
@@ -747,7 +740,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             if (tag.contains(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_LIST)) {
                 for (Tag rawRebind : tag.getList(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_COMPOUND)) {
                     if (rawRebind instanceof CompoundTag rebindTag) {
-                        addBounded(progress.providerRebindHistory, ProviderRebindHistoryEntry.load(rebindTag),
+                        addBounded(progress.providerRebindHistory, sharedRebind(ProviderRebindHistoryEntry.load(rebindTag)),
                                 MAX_PROVIDER_REBIND_HISTORY);
                     }
                 }
@@ -908,21 +901,21 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             }
             if (!this.choiceHistory.isEmpty()) {
                 ListTag historyTag = new ListTag();
-                for (ChoiceHistoryEntry entry : this.choiceHistory) {
+                for (ChoiceHistoryEntry entry : choiceHistory()) {
                     historyTag.add(entry.save());
                 }
                 tag.put(TAG_CHOICE_HISTORY, historyTag);
             }
             if (!this.completionHistory.isEmpty()) {
                 ListTag historyTag = new ListTag();
-                for (CompletionHistoryEntry entry : this.completionHistory) {
+                for (CompletionHistoryEntry entry : completionHistory()) {
                     historyTag.add(entry.save());
                 }
                 tag.put(TAG_COMPLETION_HISTORY, historyTag);
             }
             if (!this.providerRebindHistory.isEmpty()) {
                 ListTag historyTag = new ListTag();
-                this.providerRebindHistory.stream().map(ProviderRebindHistoryEntry::save).forEach(historyTag::add);
+                providerRebindHistory().stream().map(ProviderRebindHistoryEntry::save).forEach(historyTag::add);
                 tag.put(TAG_PROVIDER_REBIND_HISTORY, historyTag);
             }
             if (!this.pendingLifecycleEvents.isEmpty()) {

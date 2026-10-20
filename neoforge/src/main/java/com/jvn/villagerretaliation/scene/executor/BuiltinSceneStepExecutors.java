@@ -19,7 +19,6 @@ import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.scene.model.SceneQuestTransition;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
@@ -375,7 +374,7 @@ public final class BuiltinSceneStepExecutors {
         if (authority != null && !authority.diagnostic().isBlank()) return com.jvn.villagerretaliation.action.ActionResult.unavailable(authority.diagnostic(),
                 VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
         var progress = authority == null || action.questId() == null ? null
-                : com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(context.level()).get(authority.actor(), action.questId());
+                : com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(context.level(), authority.actor(), action.questId());
         boolean shared = authority != null && action.kind() == VillagerActionDefinition.Kind.CAMPAIGN_OUTCOME;
         if (shared && progress == null) return com.jvn.villagerretaliation.action.ActionResult.unavailable("The deciding player's original quest run is unavailable.",
                 VillagerActionRegistry.capabilities(action), com.jvn.villagerretaliation.action.VillagerActionResult.EMPTY);
@@ -514,8 +513,8 @@ public final class BuiltinSceneStepExecutors {
             action.addProperty("quest", transition.questId().toString());
             if (transition.target() == SceneQuestTransition.Target.STAGE) {
                 var progress =
-                        VillagerQuestSavedData.get(dialogue.level())
-                                .get(dialogue.player().getUUID(), transition.questId());
+                        com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(dialogue.level(),
+                                dialogue.player().getUUID(), transition.questId());
                 action.addProperty("type", "quest_transition");
                 action.addProperty("target_stage", transition.targetStage());
                 String fromStage = c.record().durableValues().get("quest_transition_stage");
@@ -672,6 +671,12 @@ public final class BuiltinSceneStepExecutors {
     }
 
     private static LivingEntity firstActor(SceneExecutionContext c) {
+        for (var declaration : c.definition().actors().values()) {
+            if (declaration.bindingSource() != SceneActorDeclaration.BindingSource.QUEST_PROVIDER) continue;
+            var binding = c.instance().actorBindings().get(declaration.alias());
+            if (binding != null && !binding.sourceType().equals(VillagerRetaliation.id("villager")))
+                return find(c, binding) instanceof LivingEntity living && ConversationActors.supports(living) ? living : null;
+        }
         for (SceneActorBinding binding : c.instance().actorBindings().values()) {
             if (find(c, binding) instanceof Villager villager) return villager;
         }

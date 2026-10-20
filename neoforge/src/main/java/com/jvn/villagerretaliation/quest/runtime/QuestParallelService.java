@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.quest.runtime;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +13,7 @@ public final class QuestParallelService {
 
     private QuestParallelService() { }
 
-    public static void enter(QuestDefinition definition, QuestProgressState progress, String stageId, long time) {
+    public static void enter(QuestDefinition definition, QuestProgressModel progress, String stageId, long time) {
         progress.parallelPaths.clear();
         var stage = definition.stages().get(stageId);
         if (stage == null) return;
@@ -24,12 +23,12 @@ public final class QuestParallelService {
         }
     }
 
-    public static boolean complete(QuestDefinition.Stage stage, QuestProgressState progress) {
+    public static boolean complete(QuestDefinition.Stage stage, QuestProgressModel progress) {
         return stage.parallel().isEmpty() || progress.parallelPaths.keySet().equals(Set.copyOf(stage.parallel()))
                 && progress.parallelPaths.values().stream().allMatch(path -> path.phase() == QuestParallelPath.Phase.ARRIVED);
     }
 
-    public static boolean request(QuestDefinition definition, QuestProgressState progress, String from, String target) {
+    public static boolean request(QuestDefinition definition, QuestProgressModel progress, String from, String target) {
         var parent = definition.stages().get(progress.currentStage());
         if (parent == null || parent.parallel().isEmpty() || !definition.stages().containsKey(target)) return false;
         for (var entry : progress.parallelPaths.entrySet()) {
@@ -43,7 +42,7 @@ public final class QuestParallelService {
         return false;
     }
 
-    public static boolean advance(QuestDefinition definition, QuestProgressState progress, long time,
+    public static boolean advance(QuestDefinition definition, QuestProgressModel progress, long time,
             Predicate<QuestDefinition.Objective> objectiveComplete, Predicate<List<DialogueCondition>> conditionsMet,
             Actions actions, java.util.function.Consumer<String> entered) {
         var parent = definition.stages().get(progress.currentStage());
@@ -51,14 +50,14 @@ public final class QuestParallelService {
         boolean changed = false;
         for (String branch : parent.parallel()) {
             for (int step = 0; step < MAX_ADVANCES; step++) {
-                if (!progress.currentStage().equals(parent.id()) || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return changed;
+                if (!progress.currentStage().equals(parent.id()) || progress.status() != QuestProgressTypes.QuestState.ACTIVE) return changed;
                 var path = progress.parallelPaths.get(branch);
                 var stage = definition.stages().get(path.stage());
                 if (stage == null || path.phase() == QuestParallelPath.Phase.ARRIVED) break;
                 String key = "parallel/" + pathSegment(branch) + "/" + pathSegment(stage.id()) + "/";
                 if (path.phase() == QuestParallelPath.Phase.ENTERING) {
                     if (!actions.run(stage.id(), key + "entry", stage.entryActions())) break;
-                    if (!progress.currentStage().equals(parent.id()) || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return true;
+                    if (!progress.currentStage().equals(parent.id()) || progress.status() != QuestProgressTypes.QuestState.ACTIVE) return true;
                     String requested = progress.parallelPaths.get(branch).target();
                     progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), requested,
                             requested.isBlank() ? QuestParallelPath.Phase.ACTIVE : QuestParallelPath.Phase.EXITING));
@@ -76,7 +75,7 @@ public final class QuestParallelService {
                         progress.claimBonus(stage.id(), bonus.id());
                         changed = true;
                     }
-                    if (!progress.currentStage().equals(parent.id()) || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return true;
+                    if (!progress.currentStage().equals(parent.id()) || progress.status() != QuestProgressTypes.QuestState.ACTIVE) return true;
                     if (progress.parallelPaths.get(branch).phase() != QuestParallelPath.Phase.ACTIVE) continue;
                     if (blocked || stage.next().isBlank() || !ready(definition, progress, stage, objectiveComplete, conditionsMet)) break;
                     progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), stage.next(), QuestParallelPath.Phase.EXITING));
@@ -98,7 +97,7 @@ public final class QuestParallelService {
         return changed;
     }
 
-    private static boolean ready(QuestDefinition definition, QuestProgressState progress, QuestDefinition.Stage stage,
+    private static boolean ready(QuestDefinition definition, QuestProgressModel progress, QuestDefinition.Stage stage,
             Predicate<QuestDefinition.Objective> objectives, Predicate<List<DialogueCondition>> conditions) {
         if (!QuestTimers.allowsStage(stage, progress)) return false;
         return stage.completeWhen().isEmpty() ? stage.objectives().isEmpty()
@@ -112,4 +111,22 @@ public final class QuestParallelService {
     }
 
     public interface Actions { boolean run(String stage, String key, List<VillagerActionDefinition> actions); }
+    public static void enter(QuestDefinition definition, QuestProgressState progress, String stageId, long time) {
+        enter(definition, (QuestProgressModel) progress, stageId, time);
+    }
+
+    public static boolean complete(QuestDefinition.Stage stage, QuestProgressState progress) {
+        return complete(stage, (QuestProgressModel) progress);
+    }
+
+    public static boolean request(QuestDefinition definition, QuestProgressState progress, String from, String target) {
+        return request(definition, (QuestProgressModel) progress, from, target);
+    }
+
+    public static boolean advance(QuestDefinition definition, QuestProgressState progress, long time,
+            Predicate<QuestDefinition.Objective> objectiveComplete, Predicate<List<DialogueCondition>> conditionsMet,
+            Actions actions, java.util.function.Consumer<String> entered) {
+        return advance(definition, (QuestProgressModel) progress, time, objectiveComplete, conditionsMet, actions, entered);
+    }
+
 }

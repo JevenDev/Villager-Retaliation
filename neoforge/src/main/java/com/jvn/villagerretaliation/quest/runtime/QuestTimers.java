@@ -14,7 +14,7 @@ public final class QuestTimers {
 
     public record Entry(String key, QuestTimer definition, QuestTimerState state) { }
 
-    public static void enter(QuestDefinition definition, QuestProgressState progress, String stageId, long time) {
+    public static void enter(QuestDefinition definition, QuestProgressModel progress, String stageId, long time) {
         var stage = definition.stages().get(stageId);
         if (stage == null) return;
         if (stage.timer() != null) progress.timers.put(stageKey(stageId), new QuestTimerState(time));
@@ -23,7 +23,7 @@ public final class QuestTimers {
                 progress.timers.put(objectiveKey(objective.id()), new QuestTimerState(time));
     }
 
-    public static List<Entry> active(QuestDefinition definition, QuestProgressState progress) {
+    public static List<Entry> active(QuestDefinition definition, QuestProgressModel progress) {
         var result = new ArrayList<Entry>();
         for (String id : progress.activeStages()) {
             var stage = definition.stages().get(id);
@@ -35,12 +35,12 @@ public final class QuestTimers {
         return List.copyOf(result);
     }
 
-    private static void add(List<Entry> entries, QuestProgressState progress, String key, QuestTimer timer) {
+    private static void add(List<Entry> entries, QuestProgressModel progress, String key, QuestTimer timer) {
         var state = progress.timers.get(key);
         if (state != null) entries.add(new Entry(key, timer, state));
     }
 
-    public static boolean update(QuestDefinition definition, QuestProgressState progress, long time, boolean active) {
+    public static boolean update(QuestDefinition definition, QuestProgressModel progress, long time, boolean active) {
         boolean changed = false;
         for (String id : progress.activeStages()) {
             var stage = definition.stages().get(id);
@@ -60,11 +60,11 @@ public final class QuestTimers {
         return changed;
     }
 
-    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressState progress) {
+    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressModel progress) {
         return allowsObjective(objective, progress, Long.MIN_VALUE);
     }
 
-    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressState progress, long time) {
+    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressModel progress, long time) {
         if (objective.timer() == null) return true;
         var timer = progress.timer(objectiveKey(objective.id()));
         if (timer == null) return false;
@@ -72,7 +72,7 @@ public final class QuestTimers {
                 : !timer.elapsedAt(objective.timer(), time);
     }
 
-    public static boolean allowsStage(QuestDefinition.Stage stage, QuestProgressState progress) {
+    public static boolean allowsStage(QuestDefinition.Stage stage, QuestProgressModel progress) {
         if (stage.timer() == null) return true;
         var timer = progress.timer(stageKey(stage.id()));
         if (timer == null) return false;
@@ -95,4 +95,28 @@ public final class QuestTimers {
 
     public static String stageKey(String id) { return "stage/" + id; }
     public static String objectiveKey(String id) { return "objective/" + id; }
+    public static void enter(QuestDefinition definition, QuestProgressState progress, String stageId, long time) {
+        enter(definition, (QuestProgressModel) progress, stageId, time);
+    }
+
+    public static List<Entry> active(QuestDefinition definition, QuestProgressState progress) {
+        return active(definition, (QuestProgressModel) progress);
+    }
+
+    public static boolean update(QuestDefinition definition, QuestProgressState progress, long time, boolean active) {
+        return update(definition, (QuestProgressModel) progress, time, active);
+    }
+
+    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressState progress) {
+        return allowsObjective(objective, (QuestProgressModel) progress);
+    }
+
+    public static boolean allowsObjective(QuestDefinition.Objective objective, QuestProgressState progress, long time) {
+        return allowsObjective(objective, (QuestProgressModel) progress, time);
+    }
+
+    public static boolean allowsStage(QuestDefinition.Stage stage, QuestProgressState progress) {
+        return allowsStage(stage, (QuestProgressModel) progress);
+    }
+
 }

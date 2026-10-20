@@ -21,8 +21,8 @@ public final class QuestObjectiveDispatchService {
     public static boolean poll(QuestObjectiveEvaluationContext context, boolean executionAllowed,
             Consumer<QuestDefinition.Objective> completed) {
         if (!executionAllowed) return false;
-        return QuestObjectiveDispatcher.poll(context.state(),
-                QuestObjectiveQuery.activeObjectives(context.definition(), context.state()), executionAllowed,
+        return QuestObjectiveDispatcher.poll(context.model(),
+                QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), executionAllowed,
                 objective -> isComplete(context, objective), completed);
     }
 
@@ -40,15 +40,15 @@ public final class QuestObjectiveDispatchService {
                                 + " event=" + update.eventKind().name().toLowerCase(Locale.ROOT)
                                 + " counter_delta=" + update.counterDelta()
                                 + " complete_delta=" + update.completed()) : null;
-        return QuestObjectiveDispatcher.dispatch(context.state(),
-                QuestObjectiveQuery.activeObjectives(context.definition(), context.state()), true, event.kind(),
+        return QuestObjectiveDispatcher.dispatch(context.model(),
+                QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), true, event.kind(),
                 objective -> QuestObjectiveRegistry.matchesEvent(context, objective, event),
                 objective -> isComplete(context, objective), completed, observer);
     }
 
     private static boolean executionAllowed(QuestObjectiveEvaluationContext context) {
         if (context.definition().campaign() == null) return true;
-        return context.state() instanceof com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestProgress progress
+        return context.model() instanceof com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestProgress progress
                 && CampaignQuestAccess.executionIssue(context.level(), context.player() == null ? null : context.player().getUUID(),
                         context.definition(), progress).isBlank();
     }

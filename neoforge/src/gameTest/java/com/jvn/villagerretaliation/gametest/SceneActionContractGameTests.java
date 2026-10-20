@@ -196,16 +196,23 @@ public final class SceneActionContractGameTests {
             var cow = helper.spawn(EntityType.COW, 1, 1, 1);
             cow.setNoAi(true);
             var definition = scene("mob_condition", "wait_condition",
-                    "{\"conditions\":[{\"type\":\"health\",\"subject\":\"speaker\",\"max\":0.5}]}");
+                    "{\"conditions\":[{\"type\":\"health\",\"subject\":\"speaker\",\"max\":0.5}]}",
+                    "[{\"alias\":\"provider\",\"type\":\"villagerretaliation:living_entity\",\"binding_source\":\"quest_provider\"}]");
             var execution = fixture.execution(definition, true);
-            var binding = SceneActorBinding.entity("provider", VillagerRetaliation.id("entity"), cow.getUUID(),
+            var binding = SceneActorBinding.entity("provider", VillagerRetaliation.id("living_entity"), cow.getUUID(),
                     ResourceLocation.parse("minecraft:cow"), cow.level().dimension().location(), cow.blockPosition(), "Scout", true);
             execution.instance().replaceBinding("provider", binding);
+            var bystander = fixture.context.villager();
+            execution.instance().replaceBinding("bystander", SceneActorBinding.entity("bystander", VillagerRetaliation.id("villager"),
+                    bystander.getUUID(), VillagerRetaliation.id("villager"), bystander.level().dimension().location(),
+                    bystander.blockPosition(), "Bystander", true));
+            var conditionExecution = execution;
             var executor = SceneStepExecutors.get(execution.step().type()).orElseThrow();
             helper.assertValueEqual(executor.apply(execution).outcome(), SceneStepResult.Outcome.WAIT, "healthy mob does not satisfy its injury condition");
             cow.setHealth(cow.getMaxHealth() / 4);
             helper.assertValueEqual(executor.apply(execution).outcome(), SceneStepResult.Outcome.APPLIED, "scene conditions read the mob's health");
-            definition = scene("mob_actions", "action_batch", "{\"actions\":[{\"id\":\"gift\",\"type\":\"experience\",\"amount\":7,\"required\":true}]}");
+            definition = scene("mob_actions", "action_batch", "{\"actions\":[{\"id\":\"gift\",\"type\":\"experience\",\"amount\":7,\"required\":true}]}",
+                    "[{\"alias\":\"provider\",\"type\":\"villagerretaliation:living_entity\",\"binding_source\":\"quest_provider\"}]");
             execution = fixture.execution(definition, true);
             execution.instance().replaceBinding("provider", binding);
             executor = SceneStepExecutors.get(execution.step().type()).orElseThrow();
@@ -217,16 +224,24 @@ public final class SceneActionContractGameTests {
             helper.assertValueEqual(executor.reconcile(replay).outcome(), SceneStepResult.Outcome.APPLIED, "mob scene reconciles its saved receipt");
             helper.assertValueEqual(fixture.context.player().totalExperience, before + 7, "mob scene never repeats its settled reward");
             cow.discard();
+            bystander.setHealth(bystander.getMaxHealth() / 4);
+            var conditionExecutor = SceneStepExecutors.get(conditionExecution.step().type()).orElseThrow();
+            helper.assertValueEqual(conditionExecutor.apply(conditionExecution).outcome(), SceneStepResult.Outcome.BLOCK,
+                    "a missing generic provider cannot be replaced by a nearby villager");
         }
         helper.succeed();
     }
 
     private static CompiledScene scene(String id, String type, String data) {
+        return scene(id, type, data, "[]");
+    }
+
+    private static CompiledScene scene(String id, String type, String data, String actors) {
         var raw = JsonParser.parseString("""
-                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:%s","entry_step":"action","actors":[],"steps":[
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:%s","entry_step":"action","actors":%s,"steps":[
                   {"id":"action","type":"villagerretaliation:%s","data":%s,"next":"done"},
                   {"id":"done","type":"villagerretaliation:scene_complete"}]}
-                """.formatted(id, type, data)).getAsJsonObject();
+                """.formatted(id, actors, type, data)).getAsJsonObject();
         var result = SceneCompiler.compile(SceneParser.parse(VillagerRetaliation.id(id), raw).resource());
         if (!result.valid()) throw new IllegalStateException(result.diagnostics().toString());
         return result.scene();

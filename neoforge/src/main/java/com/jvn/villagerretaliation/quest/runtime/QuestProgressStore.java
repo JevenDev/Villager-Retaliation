@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
-public interface QuestProgressStore<P extends QuestProgressState> {
+public interface QuestProgressStore<P extends QuestProgressState> extends QuestModelStore<P> {
     P get(UUID playerId, ResourceLocation questId);
     P getOrCreate(UUID playerId, ResourceLocation questId);
     List<Map.Entry<ResourceLocation, P>> activeProgress(UUID playerId);

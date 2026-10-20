@@ -4,6 +4,10 @@ import com.jvn.villagerretaliation.action.*;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.quest.*;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressModel;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes;
+import com.jvn.villagerretaliation.quest.runtime.QuestRuntimeAccess;
+import com.jvn.villagerretaliation.quest.runtime.QuestRuntimes;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import java.util.*;
@@ -36,16 +40,17 @@ public final class QuestFollowerService {
         Objects.requireNonNull(policy);
         if (context == null || action.follower() == null || action.questId() == null) return blocked("Follower action requires an active quest.");
         var data = QuestFollowerSavedData.get(context.level());
-        var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
-        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return blocked("Follower quest is not active.");
+        var runtime = QuestRuntimes.forQuest(action.questId());
+        var progress = runtime.progress(context.level()).get(context.player().getUUID(), action.questId());
+        if (progress == null || progress.status() != QuestProgressTypes.QuestState.ACTIVE) return blocked("Follower quest is not active.");
         var directive = action.follower();
-        var previous = data.entries.values().stream().filter(value -> value.quest.equals(action.questId())
+        var previous = data.entries.values().stream().filter(value -> value.runtime.equals(runtime.id()) && value.quest.equals(action.questId())
                 && value.run.equals(progress.questRunId()) && value.directive.actor().alias().equals(directive.actor().alias())).findFirst().orElse(null);
         if (directive.command().equals("release")) {
             if (previous != null) release(context.level(), previous.actor);
             return ActionResult.success(VillagerActionResult.success(), Set.of());
         }
-        var entity = previous == null ? resolve(context, action.questId(), progress, directive.actor())
+        var entity = previous == null ? resolve(context, action.questId(), progress, directive.actor(), runtime)
                 : find(context.level().getServer(), previous.actor);
         if (!(entity instanceof PathfinderMob mob) || !entity.isAlive()) {
             if (!directive.actor().required() && directive.actor().missingActorPolicy() == SceneActorDeclaration.MissingActorPolicy.SKIP)
@@ -64,12 +69,13 @@ public final class QuestFollowerService {
         String policyIssue = policy.issue(mob, context.player());
         if (policyIssue != null && !policyIssue.isBlank()) return blocked(policyIssue);
         var existing = data.entries.get(mob.getUUID());
-        if (existing != null && (!existing.quest.equals(action.questId()) || !existing.run.equals(progress.questRunId())))
+        if (existing != null && (!existing.runtime.equals(runtime.id()) || !existing.quest.equals(action.questId()) || !existing.run.equals(progress.questRunId())))
             return blocked("Follower actor is controlled by another quest.");
         var entry = new QuestFollowerSavedData.Entry(context.player().getUUID(), action.questId(), progress.questRunId(),
                 mob.getUUID(), previous == null ? context.player().getUUID() : previous.target, directive,
                 directive.stageScoped() ? progress.currentStage() : "", directive.command().equals("wait") ? "wait" : "follow",
                 mob.blockPosition(), mob.level().dimension().location().toString());
+        entry.runtime = runtime.id();
         data.entries.put(mob.getUUID(), entry);
         data.setDirty();
         install(mob);
@@ -81,16 +87,14 @@ public final class QuestFollowerService {
         return ActionResult.unavailable(message, Set.of(), VillagerActionResult.EMPTY);
     }
 
-    private static Entity resolve(DialogueRuntimeContext context, ResourceLocation quest, VillagerQuestSavedData.QuestProgress progress,
-            SceneActorDeclaration actor) {
+    private static Entity resolve(DialogueRuntimeContext context, ResourceLocation quest, QuestProgressModel progress,
+            SceneActorDeclaration actor, QuestRuntimeAccess runtime) {
         var server = context.level().getServer();
         return switch (actor.bindingSource()) {
             case QUEST_PROVIDER -> context.speaker();
             case UUID -> find(server, UUID.fromString(actor.bindingReference()));
             case CAMPAIGN_ROLE -> {
-                var definition = VillagerQuestResources.quest(server, quest).orElse(null);
-                yield definition == null || definition.campaign() == null ? null
-                        : com.jvn.villagerretaliation.campaign.CampaignCharacterService.resolve(server, definition.campaign(), actor.bindingReference()).entity();
+                yield runtime.campaignActor(server, quest, actor.bindingReference()).orElse(null);
             }
             case ENTITY_TAG -> {
                 var matches = context.level().getEntitiesOfClass(PathfinderMob.class, context.player().getBoundingBox().inflate(64),
@@ -127,9 +131,11 @@ public final class QuestFollowerService {
     }
 
     private static boolean valid(ServerLevel level, QuestFollowerSavedData.Entry entry) {
-        var quest = VillagerQuestResources.quest(level.getServer(), entry.quest).orElse(null);
-        var progress = VillagerQuestSavedData.get(level).get(entry.player, entry.quest);
-        return quest != null && progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+        var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+        if (runtime == null) return false;
+        var quest = runtime.content(level.getServer()).quest(entry.quest).orElse(null);
+        var progress = runtime.progress(level).get(entry.player, entry.quest);
+        return quest != null && progress != null && progress.status() == QuestProgressTypes.QuestState.ACTIVE
                 && entry.run.equals(progress.questRunId()) && (entry.stage.isEmpty() || entry.stage.equals(progress.currentStage()));
     }
 
@@ -145,7 +151,8 @@ public final class QuestFollowerService {
         var level = server.overworld();
         var data = QuestFollowerSavedData.get(level);
         for (var entry : List.copyOf(data.entries.values())) {
-            if (VillagerQuestResources.quest(server, entry.quest).isEmpty()) continue;
+            var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+            if (runtime == null || runtime.content(server).quest(entry.quest).isEmpty()) continue;
             if (!valid(level, entry)) { release(level, entry.actor); continue; }
             var actor = find(server, entry.actor);
             if (actor != null && !actor.isAlive()) entry.dead = true;
@@ -164,12 +171,10 @@ public final class QuestFollowerService {
                     && declaration.missingActorPolicy() == SceneActorDeclaration.MissingActorPolicy.FAIL
                     || timeout && declaration.missingActorPolicy() == SceneActorDeclaration.MissingActorPolicy.WAIT_UNTIL_TIMEOUT;
             if (fail) {
-                var progress = VillagerQuestSavedData.get(level).get(entry.player, entry.quest);
-                var provider = progress == null ? null : find(server, progress.startedVillagerId());
-                var context = provider instanceof net.minecraft.world.entity.npc.Villager villager
-                        ? com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(
-                                (ServerLevel) villager.level(), player, villager) : DialogueContext.forPlayer(player);
-                VillagerQuestService.performAction(context, entry.quest, VillagerActionDefinition.QuestAction.FAIL);
+                if (!runtime.fail(player, entry.quest, entry.run) && !entry.diagnostic.equals("Follower quest failure is unavailable.")) {
+                    entry.diagnostic = "Follower quest failure is unavailable.";
+                    data.setDirty();
+                }
             } else if (declaration.missingActorPolicy() == SceneActorDeclaration.MissingActorPolicy.SKIP
                     && declaration.deathPolicy() == SceneActorDeclaration.DeathPolicy.APPLY_MISSING_POLICY) release(level, entry.actor);
         }
@@ -197,13 +202,13 @@ public final class QuestFollowerService {
         var data = QuestFollowerSavedData.get(level);
         var entry = data.entries.get(mob.getUUID());
         if (entry == null) return;
-        if (VillagerQuestResources.quest(level.getServer(), entry.quest).isEmpty()) { mob.getNavigation().stop(); return; }
+        var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+        if (runtime == null || runtime.content(level.getServer()).quest(entry.quest).isEmpty()) { mob.getNavigation().stop(); return; }
         if (!valid(level, entry)) { release(level, mob.getUUID()); return; }
         if (com.jvn.villagerretaliation.interaction.NarrativeActorReservations.scene(level, mob.getUUID())) return;
         install(mob);
-        if (!com.jvn.villagerretaliation.campaign.CampaignQuestAccess.executionIssue(level, entry.player,
-                VillagerQuestResources.quest(level.getServer(), entry.quest).orElseThrow(),
-                VillagerQuestSavedData.get(level).get(entry.player, entry.quest)).isBlank()) {
+        if (!runtime.executionIssue(level, entry.player, entry.quest,
+                runtime.progress(level).get(entry.player, entry.quest)).isBlank()) {
             mob.getNavigation().stop();
             return;
         }
@@ -267,8 +272,9 @@ public final class QuestFollowerService {
     }
 
     private static boolean authorized(ServerPlayer player, QuestFollowerSavedData.Entry entry) {
-        var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), entry.quest);
-        return progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE && entry.run.equals(progress.questRunId());
+        var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+        var progress = runtime == null ? null : runtime.progress(player.serverLevel()).get(player.getUUID(), entry.quest);
+        return progress != null && progress.status() == QuestProgressTypes.QuestState.ACTIVE && entry.run.equals(progress.questRunId());
     }
 
     private static boolean mayControlPet(Mob mob, ServerPlayer player) {
@@ -292,7 +298,8 @@ public final class QuestFollowerService {
         if (target == null) return false;
         for (var entry : QuestFollowerSavedData.get(level).entries.values()) {
             if (!entry.quest.equals(quest) || !entry.directive.actor().alias().equals(alias)) continue;
-            var progress = VillagerQuestSavedData.get(level).get(player, quest);
+            var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+            var progress = runtime == null ? null : runtime.progress(level).get(player, quest);
             if (progress == null || !entry.run.equals(progress.questRunId())) continue;
             var mob = find(level.getServer(), entry.actor);
             return mob != null && mob.isAlive() && mob.level().dimension().equals(dimension == null ? level.dimension() : dimension)

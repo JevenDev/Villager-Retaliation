@@ -17,7 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class QuestRewardDeliveryService {
     private QuestRewardDeliveryService() { }
 
-    public static ActionResult deliver(QuestProgressState progress, QuestDefinition.Rewards rewardsToDeliver,
+    public static ActionResult deliver(QuestProgressModel progress, QuestDefinition.Rewards rewardsToDeliver,
             Map<String, String> replacements,
             BiFunction<VillagerActionDefinition, Map<String, String>, ActionResult> executor,
             BiConsumer<VillagerActionDefinition, ActionResult> observer, Runnable checkpoint) {
@@ -93,6 +93,13 @@ public final class QuestRewardDeliveryService {
                 "",
                 false,
                 false);
+    }
+
+    public static ActionResult deliver(QuestProgressState progress, QuestDefinition.Rewards rewardsToDeliver,
+            Map<String, String> replacements,
+            BiFunction<VillagerActionDefinition, Map<String, String>, ActionResult> executor,
+            BiConsumer<VillagerActionDefinition, ActionResult> observer, Runnable checkpoint) {
+        return deliver((QuestProgressModel) progress, rewardsToDeliver, replacements, executor, observer, checkpoint);
     }
 
 }

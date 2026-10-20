@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.scene;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
@@ -27,8 +26,8 @@ public final class SceneLaunchService {
         }
         UUID runId = null;
         if (action.questId() != null) {
-            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(context.level())
-                    .get(context.player().getUUID(), action.questId());
+            var progress = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(
+                    context.level(), context.player().getUUID(), action.questId());
             runId = progress == null ? null : progress.questRunId();
         }
         return launcher.launch(new LaunchRequest(context.level().getServer(), action.sceneId(), action.sceneOperationId(),

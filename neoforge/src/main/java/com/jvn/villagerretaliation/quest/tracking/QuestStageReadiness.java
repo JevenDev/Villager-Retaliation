@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.tracking;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressModel;
 import com.jvn.villagerretaliation.quest.runtime.QuestProgressState;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -24,13 +25,13 @@ public record QuestStageReadiness(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
-        return forCurrentStage(context, definition, (QuestProgressState) progress, objectiveComplete);
+        return forCurrentStage(context, definition, (QuestProgressModel) progress, objectiveComplete);
     }
 
     public static QuestStageReadiness forCurrentStage(
             DialogueContext context,
             QuestDefinition definition,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
         return forCurrentStage(definition, progress, objectiveComplete, conditions ->
                 context != null && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(context.player(), definition.id(), progress.currentStage())
@@ -40,11 +41,11 @@ public record QuestStageReadiness(
     public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<java.util.List<DialogueCondition>> conditionsMet) {
-        return forCurrentStage(definition, (QuestProgressState) progress, objectiveComplete, conditionsMet);
+        return forCurrentStage(definition, (QuestProgressModel) progress, objectiveComplete, conditionsMet);
     }
 
     public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
-            QuestProgressState progress, Predicate<QuestDefinition.Objective> objectiveComplete,
+            QuestProgressModel progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (definition == null || progress == null || definition.stages().isEmpty()) {
             return notReady("", "", "stage context unavailable");
@@ -135,4 +136,19 @@ public record QuestStageReadiness(
         }
         return conditionsMet.test(predicate.conditions());
     }
+
+    public static QuestStageReadiness forCurrentStage(
+            DialogueContext context,
+            QuestDefinition definition,
+            QuestProgressState progress,
+            Predicate<QuestDefinition.Objective> objectiveComplete) {
+        return forCurrentStage(context, definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, objectiveComplete);
+    }
+
+    public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
+            QuestProgressState progress, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
+        return forCurrentStage(definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, objectiveComplete, conditionsMet);
+    }
+
 }

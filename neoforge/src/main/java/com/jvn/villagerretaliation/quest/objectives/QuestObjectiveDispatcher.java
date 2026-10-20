@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest.objectives;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressModel;
 import com.jvn.villagerretaliation.quest.runtime.QuestProgressState;
 import java.util.List;
 import java.util.function.Consumer;
@@ -24,7 +25,7 @@ public final class QuestObjectiveDispatcher {
     }
 
 
-    public static boolean poll(QuestProgressState progress, List<QuestDefinition.Objective> objectives,
+    public static boolean poll(QuestProgressModel progress, List<QuestDefinition.Objective> objectives,
             boolean executionAllowed, Predicate<QuestDefinition.Objective> complete,
             Consumer<QuestDefinition.Objective> completed) {
         if (!executionAllowed) return false;
@@ -39,7 +40,7 @@ public final class QuestObjectiveDispatcher {
         return changed;
     }
 
-    public static boolean dispatch(QuestProgressState progress, List<QuestDefinition.Objective> objectives,
+    public static boolean dispatch(QuestProgressModel progress, List<QuestDefinition.Objective> objectives,
             boolean executionAllowed, QuestObjectiveEventKind eventKind,
             Predicate<QuestDefinition.Objective> matchesEvent, Predicate<QuestDefinition.Objective> complete,
             Consumer<QuestDefinition.Objective> completed, Consumer<ObjectiveUpdate> observed) {
@@ -67,11 +68,24 @@ public final class QuestObjectiveDispatcher {
         return changed;
     }
 
-    private static void clearCompletedTarget(QuestProgressState progress, QuestDefinition.Objective objective) {
+    private static void clearCompletedTarget(QuestProgressModel progress, QuestDefinition.Objective objective) {
         if (objective.id().equals(progress.targetObjectiveId()) && progress.objectiveComplete(objective.id())) {
             progress.setTarget(progress.startedVillagerId(), progress.targetDimension(), null, "");
         }
     }
 
     public record ObjectiveUpdate(String objectiveId, QuestObjectiveEventKind eventKind, int counterDelta, boolean completed) { }
+    public static boolean poll(QuestProgressState progress, List<QuestDefinition.Objective> objectives,
+            boolean executionAllowed, Predicate<QuestDefinition.Objective> complete,
+            Consumer<QuestDefinition.Objective> completed) {
+        return poll((com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, objectives, executionAllowed, complete, completed);
+    }
+
+    public static boolean dispatch(QuestProgressState progress, List<QuestDefinition.Objective> objectives,
+            boolean executionAllowed, QuestObjectiveEventKind eventKind,
+            Predicate<QuestDefinition.Objective> matchesEvent, Predicate<QuestDefinition.Objective> complete,
+            Consumer<QuestDefinition.Objective> completed, Consumer<ObjectiveUpdate> observed) {
+        return dispatch((com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, objectives, executionAllowed, eventKind, matchesEvent, complete, completed, observed);
+    }
+
 }

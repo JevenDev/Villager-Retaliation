@@ -33,10 +33,10 @@ public final class QuestProgressionService {
     }
 
     public static boolean advanceSaved(QuestDefinition definition,
-            QuestProgressState progress, long gameTime, Predicate<QuestDefinition.Objective> objectiveComplete,
+            QuestProgressModel progress, long gameTime, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<List<DialogueCondition>> conditionsMet) {
         if (definition.campaign() != null || progress.completionPending()
-                || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                || progress.status() != QuestProgressTypes.QuestState.ACTIVE
                 || !progress.pendingStageEntry().isBlank() || !progress.pendingStageTransition().isBlank()
                 || progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents()
                 || progress.stageActions().values().stream().anyMatch(checkpoint -> !checkpoint.outcome().success())
@@ -59,4 +59,11 @@ public final class QuestProgressionService {
                 .anyMatch(QuestObjectiveRegistry::requiresLocatedTarget)) progress.requestStageEntry(next.id());
         return true;
     }
+
+    public static boolean advanceSaved(QuestDefinition definition,
+            QuestProgressState progress, long gameTime, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<List<DialogueCondition>> conditionsMet) {
+        return advanceSaved(definition, (QuestProgressModel) progress, gameTime, objectiveComplete, conditionsMet);
+    }
+
 }

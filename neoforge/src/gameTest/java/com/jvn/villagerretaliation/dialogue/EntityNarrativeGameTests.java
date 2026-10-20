@@ -37,6 +37,29 @@ public final class EntityNarrativeGameTests {
     private EntityNarrativeGameTests() { }
 
     @GameTest(template = "empty", batch = "entity_narrative_boundary")
+    public static void explicitlyRegisteredActorsOverrideDefaultVillagerAdapters(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var actor = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        try (var factory = NarrativeActors.register(ResourceLocation.parse("minecraft:villager"),
+                (level, viewer, speaker) -> new EntityDialogueContext(level, viewer, speaker, "en_us", ""));
+                var access = com.jvn.villagerretaliation.dialogue.conversation.ConversationActors.register(ResourceLocation.parse("minecraft:villager"),
+                        new com.jvn.villagerretaliation.dialogue.conversation.ConversationActors.Access() {
+                            @Override public boolean matches(net.minecraft.server.level.ServerPlayer viewer,
+                                    com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition definition,
+                                    net.minecraft.world.entity.LivingEntity speaker) { return false; }
+                            @Override public boolean interrupted(net.minecraft.server.level.ServerPlayer viewer,
+                                    net.minecraft.world.entity.LivingEntity speaker) { return true; }
+                        })) {
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.conversation.ConversationActors.context(player, actor) instanceof EntityDialogueContext,
+                    "an explicit entity factory takes precedence over the VR context adapter");
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.conversation.ConversationActors.interrupted(player, actor),
+                    "an explicit conversation adapter takes precedence over VR defaults");
+        }
+        actor.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "entity_narrative_boundary")
     public static void mobDialogueSelectsTextAndResolvesEverySpeakerKind(GameTestHelper helper) {
         var level = helper.getLevel();
         var player = helper.makeMockServerPlayerInLevel();

@@ -49,7 +49,7 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
                 });
     }
 
-    public static ConditionContext forQuest(QuestExecutionContext context, com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+    public static ConditionContext forQuest(QuestExecutionContext context, com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         var binding = context.binding();
         var snapshot = binding == null ? null : new ConditionContext.ProviderSnapshot(
                 binding.level(), binding.dimension(), binding.pos(), binding.villageKey());
@@ -136,4 +136,9 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
     private static ConditionOutcome result(boolean matched) {
         return matched ? ConditionOutcome.MATCHED : ConditionOutcome.UNMET;
     }
+
+    public static ConditionContext forQuest(QuestExecutionContext context, com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return forQuest(context, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
 }

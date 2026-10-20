@@ -12,9 +12,9 @@ import net.minecraft.resources.ResourceLocation;
 public final class QuestObservationDispatcher {
     private QuestObservationDispatcher() { }
 
-    public static <P extends QuestProgressState> Result dispatch(QuestContentAccess content,
-            QuestProgressStore<P> store, UUID playerId, QuestObjectiveEvent observation,
-            Set<ResourceLocation> excludedQuestIds, Access<P> access) {
+    public static <P extends QuestProgressModel> Result dispatch(QuestContentAccess content,
+            QuestModelStore<P> store, UUID playerId, QuestObjectiveEvent observation,
+            Set<ResourceLocation> excludedQuestIds, ModelAccess<P> access) {
         Set<ResourceLocation> candidates = candidates(content, observation);
         var event = QuestObjectiveDispatcher.triggerEventFor(observation.kind());
         boolean changed = false;
@@ -50,7 +50,22 @@ public final class QuestObservationDispatcher {
         return content.questIdsForObjectiveEvent(event.kind());
     }
 
-    public interface Access<P extends QuestProgressState> {
+    public static <P extends QuestProgressState> Result dispatch(QuestContentAccess content,
+            QuestProgressStore<P> store, UUID playerId, QuestObjectiveEvent observation,
+            Set<ResourceLocation> excludedQuestIds, Access<P> access) {
+        return dispatch(content, (QuestModelStore<P>) store, playerId, observation, excludedQuestIds, (ModelAccess<P>) access);
+    }
+
+    public interface Access<P extends QuestProgressState> extends ModelAccess<P> {
+        boolean active(QuestDefinition definition, P progress);
+        boolean objectives(QuestDefinition definition, P progress, QuestObjectiveEvent observation);
+        boolean triggers(QuestDefinition definition, P progress, QuestDefinition.TriggerEvent event,
+                QuestObjectiveEvent observation);
+        void advance(QuestDefinition definition, P progress);
+        void updated(QuestDefinition definition, P progress);
+    }
+
+    public interface ModelAccess<P extends QuestProgressModel> {
         boolean active(QuestDefinition definition, P progress);
         boolean objectives(QuestDefinition definition, P progress, QuestObjectiveEvent observation);
         boolean triggers(QuestDefinition definition, P progress, QuestDefinition.TriggerEvent event,

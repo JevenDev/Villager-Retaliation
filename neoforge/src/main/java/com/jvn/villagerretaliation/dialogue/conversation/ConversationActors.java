@@ -28,7 +28,7 @@ public final class ConversationActors {
     }
 
     public static DialogueRuntimeContext context(ServerPlayer player, LivingEntity actor) {
-        if (actor instanceof Villager villager) return VrConversationActors.context(player, villager);
+        if (actor instanceof Villager villager && !NarrativeActors.isRegistered(actor)) return VrConversationActors.context(player, villager);
         return NarrativeActors.context(player.serverLevel(), player, actor)
                 .orElseThrow(() -> new ConversationService.Unavailable("This conversation actor is unavailable."));
     }
@@ -53,8 +53,8 @@ public final class ConversationActors {
 
     private static synchronized Access access(LivingEntity actor) {
         if (actor == null) return null;
-        if (actor instanceof Villager) return VrConversationActors.INSTANCE;
-        return ACCESS.get(BuiltInRegistries.ENTITY_TYPE.getKey(actor.getType()));
+        var configured = ACCESS.get(BuiltInRegistries.ENTITY_TYPE.getKey(actor.getType()));
+        return configured != null ? configured : actor instanceof Villager ? VrConversationActors.INSTANCE : null;
     }
 
     @FunctionalInterface

@@ -16,7 +16,7 @@ public record QuestObjectiveEvaluationContext(
         DialogueRuntimeContext runtimeContext,
         ServerLevel level,
         QuestDefinition definition,
-        com.jvn.villagerretaliation.quest.runtime.QuestProgressState state,
+        com.jvn.villagerretaliation.quest.runtime.QuestProgressModel model,
         ToIntFunction<QuestDefinition.Objective> itemCounter,
         BiPredicate<QuestDefinition.Objective, ItemStack> itemMatcher,
         ToIntFunction<QuestDefinition.Objective> reputationValue,
@@ -24,12 +24,32 @@ public record QuestObjectiveEvaluationContext(
         Predicate<QuestDefinition.Objective> conditionMatcher,
         Function<QuestDefinition.Objective, QuestObjectiveDebugState> debugState
 ) {
+    public QuestObjectiveEvaluationContext(
+        ServerPlayer player,
+        DialogueRuntimeContext runtimeContext,
+        ServerLevel level,
+        QuestDefinition definition,
+        com.jvn.villagerretaliation.quest.runtime.QuestProgressState state,
+        ToIntFunction<QuestDefinition.Objective> itemCounter,
+        BiPredicate<QuestDefinition.Objective, ItemStack> itemMatcher,
+        ToIntFunction<QuestDefinition.Objective> reputationValue,
+        Predicate<QuestDefinition.Objective> factMatcher,
+        Predicate<QuestDefinition.Objective> conditionMatcher,
+        Function<QuestDefinition.Objective, QuestObjectiveDebugState> debugState
+    ) {
+        this(player, runtimeContext, level, definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) state, itemCounter, itemMatcher, reputationValue, factMatcher, conditionMatcher, debugState);
+    }
+
+    public com.jvn.villagerretaliation.quest.runtime.QuestProgressState state() {
+        return this.model instanceof com.jvn.villagerretaliation.quest.runtime.QuestProgressState legacy ? legacy : null;
+    }
+
     public com.jvn.villagerretaliation.dialogue.DialogueContext dialogueContext() {
         return this.runtimeContext instanceof com.jvn.villagerretaliation.dialogue.DialogueContext context ? context : null;
     }
 
     public VillagerQuestSavedData.QuestProgress progress() {
-        return this.state instanceof VillagerQuestSavedData.QuestProgress progress ? progress : null;
+        return this.model instanceof VillagerQuestSavedData.QuestProgress progress ? progress : null;
     }
 
     public QuestObjectiveEvaluationContext(ServerPlayer player, com.jvn.villagerretaliation.dialogue.DialogueContext context,

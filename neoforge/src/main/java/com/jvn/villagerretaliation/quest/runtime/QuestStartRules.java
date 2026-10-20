@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.quest.runtime;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.IntSupplier;
@@ -9,10 +8,10 @@ import java.util.function.IntSupplier;
 public final class QuestStartRules {
     private QuestStartRules() { }
 
-    public static boolean canStart(QuestDefinition definition, QuestProgressState progress, UUID providerId,
+    public static boolean canStart(QuestDefinition definition, QuestProgressModel progress, UUID providerId,
             long gameTime, IntSupplier scopedCompletionCount) {
         if (progress != null && (progress.completionPending() || progress.pendingPartyReward())) return false;
-        if (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED) {
+        if (progress == null || progress.status() == QuestProgressTypes.QuestState.NOT_STARTED) {
             return withinStartLimit(definition, progress)
                     && withinCompletionLimit(definition, progress, scopedCompletionCount);
         }
@@ -20,7 +19,7 @@ public final class QuestStartRules {
                 && !Objects.equals(providerId, progress.startedVillagerId())) return false;
         if (!withinStartLimit(definition, progress)
                 || !withinCompletionLimit(definition, progress, scopedCompletionCount)) return false;
-        return switch (progress.state()) {
+        return switch (progress.status()) {
             case ACTIVE, CONSUMED -> false;
             case COMPLETED -> definition.rules().repeatable()
                     && cooldownElapsed(gameTime, progress.completedGameTime(), definition.rules().completionCooldownTicks());
@@ -35,12 +34,12 @@ public final class QuestStartRules {
         };
     }
 
-    public static boolean withinStartLimit(QuestDefinition definition, QuestProgressState progress) {
+    public static boolean withinStartLimit(QuestDefinition definition, QuestProgressModel progress) {
         int maxStarts = definition.rules().maxStarts();
         return maxStarts <= 0 || progress == null || progress.startCount() < maxStarts;
     }
 
-    public static boolean withinCompletionLimit(QuestDefinition definition, QuestProgressState progress,
+    public static boolean withinCompletionLimit(QuestDefinition definition, QuestProgressModel progress,
             IntSupplier scopedCompletionCount) {
         int maxCompletions = definition.rules().maxCompletions();
         if (maxCompletions <= 0) return true;
@@ -57,4 +56,19 @@ public final class QuestStartRules {
     public static boolean cooldownElapsed(long gameTime, long eventTime, long cooldownTicks) {
         return cooldownTicks <= 0L || eventTime < 0L || gameTime - eventTime >= cooldownTicks;
     }
+
+    public static boolean canStart(QuestDefinition definition, QuestProgressState progress, UUID providerId,
+            long gameTime, IntSupplier scopedCompletionCount) {
+        return canStart(definition, (QuestProgressModel) progress, providerId, gameTime, scopedCompletionCount);
+    }
+
+    public static boolean withinStartLimit(QuestDefinition definition, QuestProgressState progress) {
+        return withinStartLimit(definition, (QuestProgressModel) progress);
+    }
+
+    public static boolean withinCompletionLimit(QuestDefinition definition, QuestProgressState progress,
+            IntSupplier scopedCompletionCount) {
+        return withinCompletionLimit(definition, (QuestProgressModel) progress, scopedCompletionCount);
+    }
+
 }

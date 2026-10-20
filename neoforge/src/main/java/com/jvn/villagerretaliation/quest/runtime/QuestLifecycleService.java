@@ -20,12 +20,12 @@ public final class QuestLifecycleService {
             long gameTime,
             UUID playerId,
             UUID sharedRunId) {
-        return start(questId, (QuestProgressState) progress, providerBinding, target, gameTime, playerId, sharedRunId);
+        return start(questId, (QuestProgressModel) progress, providerBinding, target, gameTime, playerId, sharedRunId);
     }
 
     public static LifecycleEvent start(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             QuestProviderBinding providerBinding,
             VillagerQuestTargets.LocatedTarget target,
             long gameTime,
@@ -43,12 +43,12 @@ public final class QuestLifecycleService {
             UUID playerId,
             UUID sharedRunId,
             boolean forceRestart) {
-        return start(questId, (QuestProgressState) progress, providerBinding, target, gameTime, playerId, sharedRunId, forceRestart);
+        return start(questId, (QuestProgressModel) progress, providerBinding, target, gameTime, playerId, sharedRunId, forceRestart);
     }
 
     public static LifecycleEvent start(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             QuestProviderBinding providerBinding,
             VillagerQuestTargets.LocatedTarget target,
             long gameTime,
@@ -58,15 +58,15 @@ public final class QuestLifecycleService {
         if (providerBinding == null) return event(LifecycleEventType.NONE, questId, progress, gameTime, "missing_start_context");
         var result = start(questId, progress, providerBinding.snapshot(), target == null ? null : target.snapshot(),
                 gameTime, playerId, sharedRunId, forceRestart);
-        if (result.type() == LifecycleEventType.STARTED) {
-            progress.setIssuer(providerBinding.providerId(), providerBinding.displayName(),
+        if (result.type() == LifecycleEventType.STARTED && progress instanceof QuestProgressState legacy) {
+            legacy.setIssuer(providerBinding.providerId(), providerBinding.displayName(),
                     providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
                     providerBinding.level(), providerBinding.dimension(), providerBinding.pos(), providerBinding.villageKey());
         }
         return result;
     }
 
-    public static LifecycleEvent start(ResourceLocation questId, QuestProgressState progress,
+    public static LifecycleEvent start(ResourceLocation questId, QuestProgressModel progress,
             com.jvn.villagerretaliation.quest.provider.QuestProviderSnapshot provider, QuestTarget target,
             long gameTime, UUID playerId, UUID sharedRunId, boolean forceRestart) {
         if (progress == null || provider == null) {
@@ -77,8 +77,7 @@ public final class QuestLifecycleService {
                 gameTime, forceRestart);
         if (!result.dirty()) return blockedEvent(questId, progress, gameTime, result);
         progress.beginRun(playerId, questId, sharedRunId);
-        progress.providerType(provider.type());
-        progress.setIssuer(provider.id(), provider.name(), "", 0, provider.dimension(), provider.position(), provider.groupKey());
+        progress.setProvider(provider);
         if (target != null && !target.objective().isBlank()) {
             progress.setTarget(provider.id(), target.dimension(), target.position(), target.objective());
         }
@@ -89,12 +88,12 @@ public final class QuestLifecycleService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime) {
-        return initializeStage(definition, (QuestProgressState) progress, gameTime);
+        return initializeStage(definition, (QuestProgressModel) progress, gameTime);
     }
 
     public static StageTransition initializeStage(
             QuestDefinition definition,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime) {
         return initializeStage(definition, progress, gameTime, initialStage(definition));
     }
@@ -104,12 +103,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             String entryStage) {
-        return initializeStage(definition, (QuestProgressState) progress, gameTime, entryStage);
+        return initializeStage(definition, (QuestProgressModel) progress, gameTime, entryStage);
     }
 
     public static StageTransition initializeStage(
             QuestDefinition definition,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             String entryStage) {
         if (entryStage == null || entryStage.isBlank()) {
@@ -122,12 +121,12 @@ public final class QuestLifecycleService {
             CompiledQuest quest,
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime) {
-        return initializeStage(quest, (QuestProgressState) progress, gameTime);
+        return initializeStage(quest, (QuestProgressModel) progress, gameTime);
     }
 
     public static StageTransition initializeStage(
             CompiledQuest quest,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime) {
         if (quest == null) {
             return StageTransition.skipped(progress == null ? "" : progress.currentStage());
@@ -155,15 +154,15 @@ public final class QuestLifecycleService {
     public static boolean canTransitionStage(
             VillagerQuestSavedData.QuestProgress progress,
             String stage) {
-        return canTransitionStage((QuestProgressState) progress, stage);
+        return canTransitionStage((QuestProgressModel) progress, stage);
     }
 
     public static boolean canTransitionStage(
-            QuestProgressState progress,
+            QuestProgressModel progress,
             String stage) {
         String nextStage = normalizeStage(stage);
         return progress != null
-                && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && VillagerQuestSavedData.QuestState.valueOf(progress.status().name()) == VillagerQuestSavedData.QuestState.ACTIVE
                 && !nextStage.isBlank()
                 && !progress.currentStage().equals(nextStage);
     }
@@ -173,12 +172,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             String stage,
             long gameTime) {
-        return transitionStage(definition, (QuestProgressState) progress, stage, gameTime);
+        return transitionStage(definition, (QuestProgressModel) progress, stage, gameTime);
     }
 
     public static StageTransition transitionStage(
             QuestDefinition definition,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             String stage,
             long gameTime) {
         String nextStage = normalizeStage(stage);
@@ -190,7 +189,7 @@ public final class QuestLifecycleService {
 
     private static StageTransition setStage(
             QuestDefinition definition,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             String stage,
             long gameTime,
             boolean allowUnchanged) {
@@ -221,12 +220,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        return complete(questId, (QuestProgressState) progress, gameTime, consume);
+        return complete(questId, (QuestProgressModel) progress, gameTime, consume);
     }
 
     public static LifecycleEvent complete(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             boolean consume) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.complete(progress, gameTime, consume);
@@ -241,12 +240,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        return abandon(questId, (QuestProgressState) progress, gameTime, consume);
+        return abandon(questId, (QuestProgressModel) progress, gameTime, consume);
     }
 
     public static LifecycleEvent abandon(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             boolean consume) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.abandon(progress, gameTime, consume);
@@ -261,12 +260,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             String reason) {
-        return fail(questId, (QuestProgressState) progress, gameTime, reason);
+        return fail(questId, (QuestProgressModel) progress, gameTime, reason);
     }
 
     public static LifecycleEvent fail(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             String reason) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.fail(progress, gameTime, reason);
@@ -281,12 +280,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             long gameTime,
             boolean consume) {
-        return expire(questId, (QuestProgressState) progress, gameTime, consume);
+        return expire(questId, (QuestProgressModel) progress, gameTime, consume);
     }
 
     public static LifecycleEvent expire(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             boolean consume) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.expire(progress, gameTime, consume);
@@ -301,12 +300,12 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             String reason,
             long gameTime) {
-        return consume(questId, (QuestProgressState) progress, reason, gameTime);
+        return consume(questId, (QuestProgressModel) progress, reason, gameTime);
     }
 
     public static LifecycleEvent consume(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             String reason,
             long gameTime) {
         QuestStateMachine.TransitionResult result = QuestStateMachine.consume(progress, reason);
@@ -318,7 +317,7 @@ public final class QuestLifecycleService {
 
     private static LifecycleEvent blockedEvent(
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             QuestStateMachine.TransitionResult result) {
         return event(LifecycleEventType.NONE, questId, progress, gameTime, result.blockerCode());
@@ -331,13 +330,13 @@ public final class QuestLifecycleService {
     private static LifecycleEvent event(
             LifecycleEventType type,
             ResourceLocation questId,
-            QuestProgressState progress,
+            QuestProgressModel progress,
             long gameTime,
             String reason) {
         return new LifecycleEvent(
                 type,
                 questId,
-                progress == null ? null : progress.state(),
+                progress == null ? null : VillagerQuestSavedData.QuestState.valueOf(progress.status().name()),
                 gameTime,
                 progress == null ? "" : progress.currentStage(),
                 reason == null ? "" : reason);
@@ -378,4 +377,110 @@ public final class QuestLifecycleService {
             return new StageTransition(false, previousStage == null ? "" : previousStage, "", null);
         }
     }
+
+    public static LifecycleEvent start(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            QuestProviderBinding providerBinding,
+            VillagerQuestTargets.LocatedTarget target,
+            long gameTime,
+            UUID playerId,
+            UUID sharedRunId) {
+        return start(questId, (QuestProgressModel) progress, providerBinding, target, gameTime, playerId, sharedRunId);
+    }
+
+    public static LifecycleEvent start(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            QuestProviderBinding providerBinding,
+            VillagerQuestTargets.LocatedTarget target,
+            long gameTime,
+            UUID playerId,
+            UUID sharedRunId,
+            boolean forceRestart) {
+        return start(questId, (QuestProgressModel) progress, providerBinding, target, gameTime, playerId, sharedRunId, forceRestart);
+    }
+
+    public static LifecycleEvent start(ResourceLocation questId, QuestProgressState progress,
+            com.jvn.villagerretaliation.quest.provider.QuestProviderSnapshot provider, QuestTarget target,
+            long gameTime, UUID playerId, UUID sharedRunId, boolean forceRestart) {
+        return start(questId, (QuestProgressModel) progress, provider, target, gameTime, playerId, sharedRunId, forceRestart);
+    }
+
+    public static StageTransition initializeStage(
+            QuestDefinition definition,
+            QuestProgressState progress,
+            long gameTime) {
+        return initializeStage(definition, (QuestProgressModel) progress, gameTime);
+    }
+
+    public static StageTransition initializeStage(
+            QuestDefinition definition,
+            QuestProgressState progress,
+            long gameTime,
+            String entryStage) {
+        return initializeStage(definition, (QuestProgressModel) progress, gameTime, entryStage);
+    }
+
+    public static StageTransition initializeStage(
+            CompiledQuest quest,
+            QuestProgressState progress,
+            long gameTime) {
+        return initializeStage(quest, (QuestProgressModel) progress, gameTime);
+    }
+
+    public static boolean canTransitionStage(
+            QuestProgressState progress,
+            String stage) {
+        return canTransitionStage((QuestProgressModel) progress, stage);
+    }
+
+    public static StageTransition transitionStage(
+            QuestDefinition definition,
+            QuestProgressState progress,
+            String stage,
+            long gameTime) {
+        return transitionStage(definition, (QuestProgressModel) progress, stage, gameTime);
+    }
+
+    public static LifecycleEvent complete(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
+        return complete(questId, (QuestProgressModel) progress, gameTime, consume);
+    }
+
+    public static LifecycleEvent abandon(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
+        return abandon(questId, (QuestProgressModel) progress, gameTime, consume);
+    }
+
+    public static LifecycleEvent fail(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            long gameTime,
+            String reason) {
+        return fail(questId, (QuestProgressModel) progress, gameTime, reason);
+    }
+
+    public static LifecycleEvent expire(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            long gameTime,
+            boolean consume) {
+        return expire(questId, (QuestProgressModel) progress, gameTime, consume);
+    }
+
+    public static LifecycleEvent consume(
+            ResourceLocation questId,
+            QuestProgressState progress,
+            String reason,
+            long gameTime) {
+        return consume(questId, (QuestProgressModel) progress, reason, gameTime);
+    }
+
 }

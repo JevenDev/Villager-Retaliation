@@ -31,6 +31,14 @@ public interface QuestProviderType {
         return com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(context, progress);
     }
 
+    default ConditionContext conditions(QuestExecutionContext context,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
+        if (progress == null || progress instanceof com.jvn.villagerretaliation.quest.runtime.QuestProgressState)
+            return conditions(context, (com.jvn.villagerretaliation.quest.runtime.QuestProgressState) progress);
+
+        return com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(context, progress);
+    }
+
     default boolean matchesProviderLock(QuestExecutionContext context, QuestDefinition definition,
             com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         if (progress != null && !progress.issuerProviderType().isBlank()
@@ -41,8 +49,18 @@ public interface QuestProviderType {
         return matchesIdentityLock(context, definition, progress);
     }
 
+    default boolean matchesProviderLock(QuestExecutionContext context, QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
+        if (progress == null || progress instanceof com.jvn.villagerretaliation.quest.runtime.QuestProgressState)
+            return matchesProviderLock(context, definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressState) progress);
+
+        if (progress != null && !progress.issuerProviderType().isBlank()
+                && !id().toString().equals(progress.issuerProviderType())) return false;
+        return matchesIdentityLock(context, definition, progress);
+    }
+
     private boolean matchesIdentityLock(QuestExecutionContext context, QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         if (progress == null || !definition.rules().lockedToVillager() || progress.startedVillagerId() == null) return true;
         return context.providerBinding().map(binding -> binding.matchesProviderId(progress.startedVillagerId())
                 || definition.rules().crossVillagerCompatible() && matchesOffer(context, definition)).orElse(false);

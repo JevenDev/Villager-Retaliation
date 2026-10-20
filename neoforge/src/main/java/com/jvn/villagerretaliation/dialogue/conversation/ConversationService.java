@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.campaign.CampaignSavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.party.PartyService;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -356,7 +355,7 @@ public final class ConversationService {
     }
 
     static UUID questRun(MinecraftServer server, UUID player, ResourceLocation quest) {
-        var progress = quest == null ? null : VillagerQuestSavedData.get(server.overworld()).get(player, quest);
+        var progress = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(server.overworld(), player, quest);
         return progress == null ? null : progress.questRunId();
     }
 

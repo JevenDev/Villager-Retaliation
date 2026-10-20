@@ -70,8 +70,8 @@ public final class SceneContinuationService {
         }
         int suspendedIndex = sequence.nextActionIndex() - (result.retryOnResume() ? 0 : 1);
         var action = actions.get(suspendedIndex);
-        var progress = action.questId() == null ? null : VillagerQuestSavedData.get(context.level())
-                .get(context.player().getUUID(), action.questId());
+        var progress = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(
+                context.level(), context.player().getUUID(), action.questId());
         var continuation = data.suspendContinuation(target.scene(), context.player().getUUID(), context.providerId(),
                 pointer(base, action, suspendedIndex), actions, sequence.nextActionIndex(), result.legacyResult().replacements(),
                 action.questId(), progress == null ? null : progress.questRunId());
@@ -143,7 +143,8 @@ public final class SceneContinuationService {
         if (resolved.isEmpty()) return;
         var context = resolved.orElseThrow();
         if (continuation.questId() != null && continuation.questRunId() != null) {
-            var progress = VillagerQuestSavedData.get(context.level()).get(continuation.playerId(), continuation.questId());
+            var progress = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(
+                    context.level(), continuation.playerId(), continuation.questId());
             if (progress == null || !continuation.questRunId().equals(progress.questRunId())) {
                 continuation.finish(ActionResult.unavailable("quest run changed", Set.of(), VillagerActionResult.EMPTY));
                 data.changed();

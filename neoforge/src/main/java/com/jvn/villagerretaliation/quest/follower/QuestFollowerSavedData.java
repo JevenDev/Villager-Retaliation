@@ -33,6 +33,11 @@ public final class QuestFollowerSavedData extends SavedData {
                 var entry = new Entry(tag.getUUID("Player"), quest, tag.getUUID("Run"), tag.getUUID("Actor"),
                         tag.hasUUID("Target") ? tag.getUUID("Target") : tag.getUUID("Player"), directive, tag.getString("Stage"),
                         tag.getString("Command"), BlockPos.of(tag.getLong("Anchor")), tag.getString("Dimension"));
+                if (tag.contains("Runtime")) {
+                    if (!tag.contains("Runtime", Tag.TAG_STRING) || ResourceLocation.tryParse(tag.getString("Runtime")) == null)
+                        throw new IllegalArgumentException("Invalid quest follower runtime identity");
+                    entry.runtime = ResourceLocation.parse(tag.getString("Runtime"));
+                }
                 entry.diagnostic = tag.getString("Diagnostic");
                 entry.dead = tag.getBoolean("Dead");
                 entry.missingSince = tag.contains("MissingSince") ? tag.getLong("MissingSince") : -1;
@@ -54,6 +59,8 @@ public final class QuestFollowerSavedData extends SavedData {
             tag.putUUID("Actor", entry.actor);
             tag.putUUID("Target", entry.target);
             tag.putString("Quest", entry.quest.toString());
+            if (!entry.runtime.equals(com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.defaultId()))
+                tag.putString("Runtime", entry.runtime.toString());
             tag.putString("Directive", entry.directive.data().toString());
             tag.putString("Stage", entry.stage);
             tag.putString("Command", entry.command);
@@ -71,6 +78,7 @@ public final class QuestFollowerSavedData extends SavedData {
     static final class Entry {
         final UUID player;
         final ResourceLocation quest;
+        ResourceLocation runtime = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.defaultId();
         final UUID run;
         final UUID actor;
         UUID target;

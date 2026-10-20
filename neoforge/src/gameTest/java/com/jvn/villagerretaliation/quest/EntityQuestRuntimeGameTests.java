@@ -76,7 +76,7 @@ public final class EntityQuestRuntimeGameTests {
         cow.setNoAi(true);
         var context = new EntityDialogueContext(level, player, cow, "en_us", "");
         var definition = definition();
-        var progress = new QuestProgressState();
+        var progress = new com.jvn.villagerretaliation.quest.runtime.QuestProgressModel();
         progress.start(cow.getUUID(), level.dimension(), null, level.getGameTime());
         progress.setCurrentStage("active");
         var evaluation = new QuestObjectiveEvaluationContext(player, context, level, definition, progress,
@@ -114,6 +114,40 @@ public final class EntityQuestRuntimeGameTests {
         helper.assertTrue(restored.providerSnapshot(VillagerQuestProviderType.ID).isEmpty(), "invalid explicit types cannot become the fallback provider");
         helper.assertTrue(VillagerQuestProviderType.INSTANCE.bindingFromProgress(helper.getLevel(), restored).isEmpty(),
                 "the villager adapter also rejects an invalid explicit type");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void compatibilityAdapterRetainsLegacyStateAndHistorySaveContracts(GameTestHelper helper) throws ReflectiveOperationException {
+        var data = new VillagerQuestSavedData();
+        var player = UUID.randomUUID();
+        helper.assertValueEqual(com.jvn.villagerretaliation.quest.runtime.QuestProgressStore.class
+                .getMethod("get", UUID.class, ResourceLocation.class).getReturnType(), QuestProgressState.class,
+                "legacy stores retain their public method descriptor");
+        helper.assertValueEqual(com.jvn.villagerretaliation.quest.runtime.QuestObservationDispatcher.Access.class
+                .getMethod("active", QuestDefinition.class, QuestProgressState.class).getReturnType(), boolean.class,
+                "legacy observation callbacks retain their public method descriptor");
+        var id = ResourceLocation.parse("test:history_compatibility");
+        var progress = data.getOrCreate(player, id);
+        var first = UUID.randomUUID();
+        var second = UUID.randomUUID();
+        progress.start(first, helper.getLevel().dimension(), null, 10);
+        progress.setIssuer(first, "Keeper", "minecraft:librarian", 3, helper.getLevel().dimension(), net.minecraft.core.BlockPos.ZERO, "village");
+        var choice = progress.recordChoice("story", "reply", "first", "second", 11);
+        progress.complete(12, false);
+        progress.rebindProvider(new QuestProviderBinding(VillagerQuestProviderType.ID, second, "Guide",
+                helper.getLevel().dimension(), net.minecraft.core.BlockPos.ZERO, "other", true), 13, "operator rebind");
+        var tag = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        var restored = VillagerQuestSavedData.load(tag, helper.getLevel().registryAccess()).get(player, id);
+        helper.assertValueEqual(restored.state(), VillagerQuestSavedData.QuestState.COMPLETED, "the legacy enum type and value remain available");
+        helper.assertValueEqual(restored.lastChoice(), choice, "the legacy choice record survives the shared model");
+        helper.assertValueEqual(restored.completionHistory(), progress.completionHistory(), "completion history keeps legacy metadata");
+        helper.assertValueEqual(restored.providerRebindHistory(), progress.providerRebindHistory(), "provider rebind history keeps legacy metadata");
+        helper.assertValueEqual(restored.completionHistory().getFirst().issuerProfession(), "minecraft:librarian", "profession metadata stays in the VR adapter");
+        helper.assertValueEqual(restored.providerRebindHistory().getFirst().previousLevel(), 3, "prior provider level remains intact");
+        helper.assertValueEqual(data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                VillagerQuestSavedData.load(tag, helper.getLevel().registryAccess()).save(new CompoundTag(), helper.getLevel().registryAccess()),
+                "legacy quest NBT round trips without rewriting its format");
         helper.succeed();
     }
 

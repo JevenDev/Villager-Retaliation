@@ -7,7 +7,6 @@ import com.jvn.villagerretaliation.campaign.CampaignDecisionParticipants;
 import com.jvn.villagerretaliation.campaign.CampaignSceneApproval;
 import com.jvn.villagerretaliation.campaign.CampaignAuthority;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
@@ -125,7 +124,7 @@ public final class ConversationSceneExecution {
             if (receipt.questRun() != null) ConversationService.require(receipt.questRun().equals(ConversationService.questRun(server, actor, receipt.action().questId())),
                     "The suspended effect's original quest run changed.");
             if (questRun != null && quest != null) {
-                var progress = VillagerQuestSavedData.get(server.overworld()).get(actor, quest);
+                var progress = com.jvn.villagerretaliation.quest.runtime.QuestRuntimes.progress(server.overworld(), actor, quest);
                 ConversationService.require(progress != null && questRun.equals(progress.questRunId()), "The suspended action's original quest run changed.");
             }
             var decision = participants.isEmpty() ? null : CampaignDecisionParticipants.load(participants);

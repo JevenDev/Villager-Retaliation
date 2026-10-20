@@ -58,7 +58,7 @@ public final class QuestAvailabilityService {
     }
 
     public static boolean canStart(QuestExecutionContext context,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress, boolean bypassOfferRequirements,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress, boolean bypassOfferRequirements,
             java.util.function.Predicate<net.minecraft.resources.ResourceLocation> prerequisiteCompleted,
             java.util.function.IntSupplier scopedCompletions) {
         if (context == null || context.quest() == null || context.player() == null || context.level() == null
@@ -113,4 +113,12 @@ public final class QuestAvailabilityService {
     public interface ScopedCompletionCounter {
         int countScopedCompletions(DialogueContext context, QuestDefinition definition);
     }
+
+    public static boolean canStart(QuestExecutionContext context,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress, boolean bypassOfferRequirements,
+            java.util.function.Predicate<net.minecraft.resources.ResourceLocation> prerequisiteCompleted,
+            java.util.function.IntSupplier scopedCompletions) {
+        return canStart(context, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, bypassOfferRequirements, prerequisiteCompleted, scopedCompletions);
+    }
+
 }

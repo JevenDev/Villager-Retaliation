@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.quest.objectives;
 
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,7 @@ public final class QuestObjectiveQuery {
 
     public static ResourceLocation resolvedItem(
             QuestDefinition.Objective objective,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         if (objective == null) {
             return null;
         }
@@ -35,7 +34,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> activeObjectives(
             QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         if (definition == null || definition.objectives().isEmpty()) {
             return List.of();
         }
@@ -75,7 +74,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> requiredObjectives(
             QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         return activeObjectives(definition, progress).stream()
                 .filter(objective -> !objective.optional())
                 .toList();
@@ -89,7 +88,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> requiredItemHandIns(
             QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress) {
         return requiredObjectives(definition, progress).stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
                 .toList();
@@ -108,7 +107,7 @@ public final class QuestObjectiveQuery {
 
     public static Optional<QuestDefinition.Objective> firstIncompleteRequired(
             QuestDefinition definition,
-            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressModel progress,
             Predicate<QuestDefinition.Objective> complete) {
         if (complete == null) {
             return Optional.empty();
@@ -126,4 +125,36 @@ public final class QuestObjectiveQuery {
                 .filter(objective -> objective.type() == QuestDefinition.ObjectiveType.CHOICE)
                 .toList();
     }
+
+    public static ResourceLocation resolvedItem(
+            QuestDefinition.Objective objective,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return resolvedItem(objective, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static List<QuestDefinition.Objective> activeObjectives(
+            QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return activeObjectives(definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static List<QuestDefinition.Objective> requiredObjectives(
+            QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return requiredObjectives(definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static List<QuestDefinition.Objective> requiredItemHandIns(
+            QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        return requiredItemHandIns(definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress);
+    }
+
+    public static Optional<QuestDefinition.Objective> firstIncompleteRequired(
+            QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress,
+            Predicate<QuestDefinition.Objective> complete) {
+        return firstIncompleteRequired(definition, (com.jvn.villagerretaliation.quest.runtime.QuestProgressModel) progress, complete);
+    }
+
 }
