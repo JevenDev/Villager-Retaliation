@@ -1,6 +1,9 @@
 ﻿import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const { V2, V3, runtime } = createRequire(import.meta.url)("../../tools/quest-v3-format.js");
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..", "..");
@@ -28,7 +31,7 @@ function questBundleFiles() {
 }
 
 function localizedMessageKey(prefix, key) {
-  return key.startsWith("#") ? `${prefix}${key.slice(1)}` : key;
+  return key.startsWith("#") ? prefix + (key.length === 1 ? "" : "." + key.slice(1)) : key;
 }
 
 function localizedPayloadStrings(payload) {
@@ -38,6 +41,7 @@ function localizedPayloadStrings(payload) {
   if (Object.hasOwn(payload, "lines")) return localizedPayloadStrings(payload.lines);
   if (Object.hasOwn(payload, "line")) return localizedPayloadStrings(payload.line);
   if (Object.hasOwn(payload, "text")) return localizedPayloadStrings(payload.text);
+  if (Object.hasOwn(payload, "variants")) return localizedPayloadStrings(payload.variants);
   return [];
 }
 
@@ -48,7 +52,7 @@ function materializeLocalizedReferences(value, prefix, messages, field = "") {
   if (!value || typeof value !== "object") return value;
   if (typeof value.key === "string" && Object.keys(value).every((key) => key === "key")) {
     const payload = messages[localizedMessageKey(prefix, value.key)];
-    if (payload == null) return "";
+    if (payload == null) throw new Error(`Missing English quest message: ${localizedMessageKey(prefix, value.key)}`);
     const strings = localizedPayloadStrings(payload);
     if (field === "lines") return strings;
     return strings.length <= 1 ? (strings[0] || "") : strings;
@@ -62,8 +66,11 @@ function materializeLocalizedReferences(value, prefix, messages, field = "") {
 function readBundleQuest(file) {
   const quest = readJson(file);
   const localeFile = path.join(path.dirname(file), "locales", "en_us.json");
-  const messages = fs.existsSync(localeFile) ? readJson(localeFile).messages || {} : {};
-  return materializeLocalizedReferences(quest, quest.localization_prefix || "", messages);
+  const messages = readJson(localeFile).messages;
+  const materialized = materializeLocalizedReferences(quest, quest.localization_prefix || "", messages);
+  if (materialized.schema !== V3) return materialized;
+  // the renderer consumes the V2 runtime shape for staged quests
+  return { ...runtime(materialized), schema: V2 };
 }
 
 let bundledRewardTables;

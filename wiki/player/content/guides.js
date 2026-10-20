@@ -1298,6 +1298,10 @@
   }
 
   function renderCommandsGuide() {
+    const escortCommands = [
+      ["/vr escort follow <actor_uuid>", "Ask a living quest escort within 8 blocks to follow you. Your active quest run must control the actor."],
+      ["/vr escort wait <actor_uuid>", "Ask that quest escort to wait at its current position. The same range and quest-control checks apply."]
+    ];
     const partyCommands = [
       ["/vr party create", "Create a player party."],
       ["/vr party invite <player>", "Invite an online player."],
@@ -1338,6 +1342,7 @@
           ["Capitalization", "Command literals are case-sensitive; keep names such as forceStart and inspectHere exactly as shown"]
         ])}
       `)}
+      ${section("Quest Escort Commands", guideTable(["Command", "Use"], escortCommands))}
       ${section("Party Commands", guideTable(["Command", "Use"], partyCommands))}
       ${section("Player Duel Commands", guideTable(["Command", "Use"], duelCommands))}
       ${section("Operator Command Tree", `

@@ -12,6 +12,13 @@ Notation on this page:
 
 ## Player Commands
 
+### Quest Escorts
+
+| Command | Purpose |
+| --- | --- |
+| `/vr escort follow <actor_uuid>` | Ask a quest escort to follow you. The actor must be alive, within 8 blocks, and controlled by your active quest run. |
+| `/vr escort wait <actor_uuid>` | Ask the quest escort to wait at its current position. The same range and quest-control checks apply. |
+
 ### Parties
 
 | Command | Purpose |
@@ -77,12 +84,21 @@ The `<villager>` argument supports a UUID, a normal entity selector, or an exact
 | Command | Purpose |
 | --- | --- |
 | `/vr admin village inspectHere` | Inspect the tracked village at the operator's position. |
+| `/vr admin village removeHere` | Remove the ordinary tracked village at your position. Managed settlements must use their settlement commands. |
 | `/vr admin village renameHere <name>` | Rename the local tracked village; the rest of the line is used as the name. |
 | `/vr admin village list` | List tracked villages. |
 | `/vr admin village registry inspect [limit]` | Inspect up to 10 registry entries by default, or 1-50 when supplied. |
 | `/vr admin village registry pruneOlderThan <ticks>` | Prune eligible registry data older than the non-negative tick age. |
 | `/vr admin village registry suggestMerges [radius] [limit]` | Suggest registry-key merges using bounded radius and 1-50 result limits. |
 | `/vr admin village registry merge <source_key> <target_key>` | Merge two suggested registry keys. Quote keys when needed. |
+
+### Settlement Recovery Diagnostics
+
+| Command | Purpose |
+| --- | --- |
+| `/vr admin settlement recovery` | Show whether settlement data is healthy, contains quarantined records, or is read-only, along with recovery diagnostics and the count of usable settlements. |
+
+The command reports the required recovery steps. Back up `data/villagerretaliation_settlements.dat` before repairing or restoring it. Quarantined identities and plots remain reserved.
 
 ### Datapack And Dialogue Diagnostics
 

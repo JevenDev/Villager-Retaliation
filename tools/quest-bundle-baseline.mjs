@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { projectLegacyQuest, checkFrozenLocale } from "./quest-bundle-compatibility.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
@@ -9,6 +10,8 @@ const fixtureRoot = path.join(root, "tools", "quest-bundle-baseline");
 const sourceCommit = "6e5913766bc93eede34185e0b87eaa428e53b0e6";
 const frozenManifest = JSON.parse(
   await readFile(path.join(fixtureRoot, "compatibility-manifest.json"), "utf8"));
+const frozenEquivalence = JSON.parse(
+  await readFile(path.join(fixtureRoot, "compiled-equivalence.json"), "utf8"));
 const frozenAuthoredMessages = new Set(frozenManifest.ids.messages);
 const frozenLocaleKeys = new Set(frozenManifest.locale_keys.map(entry => entry.key));
 const roots = {
@@ -21,7 +24,7 @@ const roots = {
 };
 
 const textFields = new Set([
-  "title", "description", "label", "text", "lines", "tracker_text",
+  "title", "tracker_title", "description", "label", "text", "lines", "tracker_text",
   "tracker_complete_text", "complete_text", "custom_name", "trophy_name",
   "boss_bar_title", "location_message"
 ]);
@@ -516,6 +519,9 @@ async function loadBundleMessages(directory) {
     throw new Error("Effective English locale key set lost frozen keys: missing="
       + missing.join(","));
   }
+  for (const [key, expected] of Object.entries(frozenEquivalence.effective_en_us)) {
+    checkFrozenLocale(key, expected, result.get(key));
+  }
   return new Map(sortedEntries(new Map(
     [...result].filter(([key]) => frozenAuthoredMessages.has(key)))));
 }
@@ -542,7 +548,15 @@ async function loadQuests(directory) {
     const id = loaded.data?.id;
     if (!id) throw new Error(relative(entry.file) + " has no stable quest id");
     if (result.has(id)) throw new Error("Duplicate stable quest id " + id);
+    const frozen = frozenEquivalence.structures[id];
+    if (!frozen) continue;
+    if (loaded.data.schema === "villagerretaliation:quest/v3") {
+      loaded.data = projectLegacyQuest(loaded.data, frozen);
+    }
     result.set(id, loaded);
+  }
+  for (const id of frozenManifest.ids.quests) {
+    if (!result.has(id)) throw new Error("Missing frozen quest " + id);
   }
   return new Map(sortedEntries(result));
 }

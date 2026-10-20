@@ -69,7 +69,9 @@ for (const role of roles) {
     const firstOutcome=quest.stages.findIndex(stage=>lessons.get(role).checkpoints[stage.id]?.some(check=>["outcome","completed"].includes(check.check)));
     assert(firstOutcome<0||authIndex<firstOutcome,`${role}: authorize finite work before waiting for its outcome`);
   }
-  assert(Object.keys(locale).length>0);
+  assert.equal(locale.schema,"villagerretaliation:quest_locale/v1",`${role}: locale must declare the public bundle schema`);
+  assert(locale.messages&&typeof locale.messages==="object"&&!Array.isArray(locale.messages));
+  assert(Object.keys(locale.messages).length>0);
   for(const sequence of lessons.get(role).steps.flatMap(step=>step.sequences)) {
     assert(quest.stages.some(stage=>stage.id===sequence.id),`${role}/${sequence.id} must be playable`);
     assert(lessons.get(role).checkpoints[sequence.id]?.length,`${role}/${sequence.id} needs a server checkpoint`);
