@@ -20,13 +20,28 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 public final class MapFogRenderer {
     private static final ResourceLocation CLOUDS = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
     private static ShaderInstance shader;
-    private static DynamicTexture cloudRegions;
+    private static DynamicTexture clouds, cloudRegions;
     private MapFogRenderer() { }
     public static void registerShaders(RegisterShadersEvent event) {
         try {
             try (var stream = event.getResourceProvider().getResourceOrThrow(CLOUDS).open(); var source = NativeImage.read(stream)) {
-                int width = source.getWidth(), height = source.getHeight();
-                int[] regions = MapCloudRegions.anchors(width, height, index -> source.getPixelRGBA(index % width, index / width) >>> 24 != 0);
+                int width = (source.getWidth() + 3) / 4, height = (source.getHeight() + 3) / 4;
+                var silhouettes = new NativeImage(width, height, false);
+                try {
+                    for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) {
+                        int opaque = 0, samples = 0;
+                        for (int sy = y * 4; sy < Math.min(y * 4 + 4, source.getHeight()); sy++)
+                            for (int sx = x * 4; sx < Math.min(x * 4 + 4, source.getWidth()); sx++) {
+                                if (source.getPixelRGBA(sx, sy) >>> 24 != 0) opaque++;
+                                samples++;
+                            }
+                        silhouettes.setPixelRGBA(x, y, opaque * 3 >= samples ? 0xffffffff : 0);
+                    }
+                    var replacement = new DynamicTexture(silhouettes);
+                    if (clouds != null) clouds.close();
+                    clouds = replacement;
+                } catch (RuntimeException | Error exception) { silhouettes.close(); throw exception; }
+                int[] regions = MapCloudRegions.anchors(width, height, index -> clouds.getPixels().getPixelRGBA(index % width, index / width) >>> 24 != 0);
                 var image = new NativeImage(width, height * 2, false);
                 try {
                     for (int y = 0; y < height * 2; y++) for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, regions[y * width + x]);
@@ -52,11 +67,11 @@ public final class MapFogRenderer {
                     (float)(pages.originZ(2) - view.z()), (float)(pages.originZ(3) - view.z()));
         }
         shader.safeGetUniform("FirstLevel").set(pages == null ? 4f : (float)view.level());
-        double period = 512;
+        double period = 2048;
         shader.safeGetUniform("CloudPeriod").set((float)period);
         shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), period * 4), wrap(view.z(), period * 4));
         shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
-        RenderSystem.setShaderTexture(1, CLOUDS);
+        RenderSystem.setShaderTexture(1, clouds.getId());
         RenderSystem.setShaderTexture(4, cloudRegions.getId());
         if (pages == null) {
             RenderSystem.setShaderTexture(0, CLOUDS); RenderSystem.setShaderTexture(2, CLOUDS); RenderSystem.setShaderTexture(3, CLOUDS);

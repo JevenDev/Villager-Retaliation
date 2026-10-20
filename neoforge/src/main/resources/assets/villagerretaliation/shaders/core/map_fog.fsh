@@ -58,7 +58,9 @@ float cloudAt(vec2 plane, int layer) {
     vec2 position = (CloudOrigin + plane + vec2(level * 73.0, level * 131.0)) / worldPerPixel;
     ivec2 pixel = ivec2(floor(position));
     ivec2 base = ivec2(floor(position - 0.5));
-    vec2 blend = fract(position - 0.5);
+    // antialias only the screen-pixel fringe so enlarged cloud interiors stay crisp
+    vec2 edge = clamp(fwidth(position) * 0.5, vec2(0.001), vec2(0.5));
+    vec2 blend = smoothstep(0.5 - edge, 0.5 + edge, fract(position - 0.5));
     vec4 alpha = vec4(cloudAlpha(base, size), cloudAlpha(base + ivec2(1, 0), size),
             cloudAlpha(base + ivec2(0, 1), size), cloudAlpha(base + ivec2(1, 1), size));
     float opacity = mix(mix(alpha.x, alpha.y, blend.x), mix(alpha.z, alpha.w, blend.x), blend.y);
@@ -92,7 +94,7 @@ void main() {
     float remaining = 1.0;
     for (int layer = 0; layer < 3; layer++) {
         float opacity = cloudAt(plane, layer);
-        float shade = 1.0 - float(layer) * 0.14;
+        float shade = 0.98 - float(layer) * 0.035;
         color += vec3(shade) * Lighting * opacity * remaining;
         remaining *= 1.0 - opacity;
         if (remaining <= 0.0) { fragColor = vec4(color, 1.0); return; }
@@ -102,6 +104,8 @@ void main() {
         vec4 terrain = texelFetch(Sampler0, pixel, 0);
         vec3 light = mix(Lighting, max(Lighting, vec3(1.0, 0.9, 0.75)), terrain.a * terrain.a);
         color += terrain.rgb * light * remaining;
+    } else {
+        color += Lighting * remaining;
     }
     fragColor = vec4(color, 1.0);
 }

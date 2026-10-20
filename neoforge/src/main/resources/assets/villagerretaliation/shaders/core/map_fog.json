@@ -11,7 +11,7 @@
     {"name": "Viewport", "type": "float", "count": 2, "values": [1, 1]},
     {"name": "WorldSpan", "type": "float", "count": 2, "values": [1, 1]},
     {"name": "CloudOrigin", "type": "float", "count": 2, "values": [0, 0]},
-    {"name": "CloudPeriod", "type": "float", "count": 1, "values": [512]},
+    {"name": "CloudPeriod", "type": "float", "count": 1, "values": [2048]},
     {"name": "Lighting", "type": "float", "count": 3, "values": [1, 1, 1]},
     {"name": "PageX", "type": "float", "count": 4, "values": [0, 0, 0, 0]},
     {"name": "PageZ", "type": "float", "count": 4, "values": [0, 0, 0, 0]},

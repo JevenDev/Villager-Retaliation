@@ -49,7 +49,8 @@ public final class ExploredMapScreen extends Screen {
             graphics.fill(0, 0, width, height, lighting.background());
             graphics.drawCenteredString(font, Component.translatable("map.villagerretaliation.connecting"), width / 2, height / 2, 0xddd7cc);
         }
-        graphics.drawCenteredString(font, title, width / 2, 12, 0xffffff);
+        int titleColor = repository != null && lighting.red() + lighting.green() + lighting.blue() > 2.1f ? 0x40464f : 0xffffff;
+        graphics.drawCenteredString(font, title, width / 2, 12, titleColor);
         super.render(graphics, mouseX, mouseY, partial);
     }
     MapView view() { return new MapView(width, height, centerX, centerZ, zoom); }
