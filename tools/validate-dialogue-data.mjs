@@ -436,7 +436,7 @@ const memoryTags = new Set([
   "player_completed_quest",
   "villager_retaliation_started"
 ]);
-const memorySources = new Set(["any", "self", "this_villager", "villager", "other", "other_villager", "another_villager"]);
+const memorySources = new Set(["any", "self", "this_entity", "entity", "this_villager", "villager", "other", "other_entity", "another_entity", "other_villager", "another_villager"]);
 const familyRelations = new Set([
   "family",
   "any",
@@ -496,7 +496,7 @@ const vanillaVillagerProfessions = new Set([
   "weaponsmith"
 ]);
 const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "gossip", "memory", "loot", "notification", "tracker", "forced_dialogue", "set_tag", "clear_tag", "set_variable", "counter"]);
-const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
+const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "entity", "actor", "villager", "issuer", "quest_giver", "group", "village", "settlement"]);
 const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "low_guts_pursuit_abandoned", "low_guts_counter_completed", "retaliation_target_escaped", "retaliation_search_expired", "player_raid_betrayal", "player_item_proximity", "trade_refresh", "quest"]);
 const forcedDialogueOutputModes = new Set(["forced_dialogue", "chat"]);
 const dialogueTreeActionKeys = new Set([

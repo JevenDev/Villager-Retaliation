@@ -13,10 +13,10 @@ public interface QuestProviderType {
 
     boolean matchesOffer(QuestExecutionContext context, QuestDefinition definition);
 
-    boolean matchesIssuerLock(
-            QuestExecutionContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress);
+    default boolean matchesIssuerLock(QuestExecutionContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return matchesIdentityLock(context, definition, progress);
+    }
 
     default ConditionContext conditions(
             QuestExecutionContext context, VillagerQuestSavedData.QuestProgress progress) {
@@ -33,10 +33,17 @@ public interface QuestProviderType {
 
     default boolean matchesProviderLock(QuestExecutionContext context, QuestDefinition definition,
             com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        if (progress != null && !progress.issuerProviderType().isBlank()
+                && !id().toString().equals(progress.issuerProviderType())) return false;
         if (progress == null || progress instanceof VillagerQuestSavedData.QuestProgress) {
             return matchesIssuerLock(context, definition, (VillagerQuestSavedData.QuestProgress) progress);
         }
-        if (!definition.rules().lockedToVillager() || progress.startedVillagerId() == null) return true;
+        return matchesIdentityLock(context, definition, progress);
+    }
+
+    private boolean matchesIdentityLock(QuestExecutionContext context, QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        if (progress == null || !definition.rules().lockedToVillager() || progress.startedVillagerId() == null) return true;
         return context.providerBinding().map(binding -> binding.matchesProviderId(progress.startedVillagerId())
                 || definition.rules().crossVillagerCompatible() && matchesOffer(context, definition)).orElse(false);
     }

@@ -70,6 +70,34 @@ public final class NarrativeSupportGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void entityTriggersReadSavedEventPayloads(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var cow = helper.spawn(net.minecraft.world.entity.EntityType.COW, 1, 1, 1);
+        var context = new com.jvn.villagerretaliation.dialogue.EntityDialogueContext(helper.getLevel(), player, cow, "en_us", "");
+        var trigger = new com.jvn.villagerretaliation.quest.QuestTriggerContext(
+                com.jvn.villagerretaliation.quest.QuestDefinition.TriggerEvent.BLOCK_BREAK,
+                helper.getLevel().getGameTime(), "active", Map.of("block", "minecraft:stone"), context);
+        var restored = com.jvn.villagerretaliation.quest.QuestTriggerContext.load(trigger.save()).withRuntimeContext(context);
+        helper.assertTrue(restored.runtimeContext() == context && restored.dialogueContext() == null,
+                "generic event snapshots retain the configured runtime without inventing a villager context");
+        var history = new TriggerHistory() {
+            private long last;
+            @Override public long lastRunGameTime(String key) { return this.last; }
+            @Override public void markRun(String key, long time) { this.last = time; }
+        };
+        var condition = new com.jvn.villagerretaliation.dialogue.DialogueCondition.TriggerPayload(java.util.Set.of(),
+                Map.of("block", java.util.Set.of("minecraft:stone")), Map.of(), Map.of(), null, null);
+        var actions = com.jvn.villagerretaliation.action.VillagerActionDefinition.readListOrInline(
+                net.minecraft.resources.ResourceLocation.parse("test:trigger"), "actions",
+                com.google.gson.JsonParser.parseString("{\"type\":\"experience\",\"amount\":3}").getAsJsonObject());
+        int experience = player.totalExperience;
+        helper.assertTrue(new NarrativeTriggerRuntime().fire(context, "stone", true, 0, history, List.of(condition),
+                actions, Map.of(), restored), "entity trigger evaluates its captured event payload");
+        helper.assertValueEqual(player.totalExperience, experience + 3, "matched entity trigger runs its common action");
+        helper.succeed();
+    }
+
     private record Memory(net.minecraft.resources.ResourceLocation tagId, long gameTime, java.util.UUID sourceId,
             java.util.UUID playerId) implements com.jvn.villagerretaliation.memory.EventMemory { }
 

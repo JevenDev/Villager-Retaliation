@@ -36,7 +36,8 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
                         if (access.isEmpty() || memory.kind() != DialogueCondition.MemoryKind.EVENT_TAG) return ConditionOutcome.UNKNOWN;
                         var store = access.orElseThrow();
                         return result(MemoryConditions.matches(memory, context.player().getUUID(), context.providerId(),
-                                store.personal(context.providerId()), store.group(context.groupKey())));
+                                context.providerId() == null ? java.util.List.of() : store.personal(context.providerId()),
+                                context.groupKey().isBlank() ? java.util.List.of() : store.group(context.groupKey())));
                     }
                     return common.queries().evaluate(condition, trigger);
                 });

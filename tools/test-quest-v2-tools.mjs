@@ -415,6 +415,17 @@ try {
     const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
     assert(result.stderr.includes("pointer=/schema"), "Unsupported quest schema diagnostic lost its source pointer.");
   }
+  const entityScopes = structuredClone(conditionFixture);
+  entityScopes.availability.conditions = [
+    { type: "memory", tags: ["test:greeting"], source: "this_entity" },
+    { type: "quest_fact", scope: "entity", tags: ["test:known"] }
+  ];
+  entityScopes.stages[0].on_enter = [
+    { type: "set_tag", scope: "entity", tag: "test:known" },
+    { type: "set_variable", scope: "group", key: "greeting", value: "hello" }
+  ];
+  await writeJson(validQuest, entityScopes);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
   console.log("Quest module v2 tooling smoke test passed.");
 } finally {
   await rm(workspace, { recursive: true, force: true });

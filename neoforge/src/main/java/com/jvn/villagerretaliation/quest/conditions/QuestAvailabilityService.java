@@ -63,6 +63,7 @@ public final class QuestAvailabilityService {
             java.util.function.IntSupplier scopedCompletions) {
         if (context == null || context.quest() == null || context.player() == null || context.level() == null
                 || context.providerType() == null || context.binding() == null) return false;
+        if (!context.providerType().id().equals(context.binding().providerType())) return false;
         var definition = context.quest();
         if (!bypassOfferRequirements && !context.providerType().matchesOffer(context, definition)) return false;
         if (!definition.prerequisites().stream().allMatch(prerequisiteCompleted)) return false;

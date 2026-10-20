@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvent;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,11 +24,29 @@ public record QuestTriggerContext(
         long gameTime,
         String stage,
         Map<String, String> payload,
-        DialogueContext dialogueContext
+        DialogueRuntimeContext runtimeContext
 ) {
     public QuestTriggerContext {
         stage = stage == null ? "" : stage;
         payload = freeze(payload);
+    }
+
+    public QuestTriggerContext(QuestDefinition.TriggerEvent event, long gameTime, String stage,
+            Map<String, String> payload, DialogueContext context) {
+        this(event, gameTime, stage, payload, (DialogueRuntimeContext) context);
+    }
+
+    public DialogueContext dialogueContext() {
+        return this.runtimeContext instanceof DialogueContext context ? context : null;
+    }
+
+    public QuestTriggerContext withRuntimeContext(DialogueRuntimeContext context) {
+        return new QuestTriggerContext(this.event, this.gameTime, this.stage, this.payload, context);
+    }
+
+    public static QuestTriggerContext of(DialogueRuntimeContext context, QuestDefinition.TriggerEvent event,
+            long gameTime, String stage, QuestObjectiveEvent objectiveEvent) {
+        return new QuestTriggerContext(event, gameTime, stage, snapshot(event, objectiveEvent), context);
     }
 
     public static QuestTriggerContext of(

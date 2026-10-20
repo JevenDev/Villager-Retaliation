@@ -46,6 +46,10 @@ public final class EntityQuestRuntimeGameTests {
                 level.getGameTime(), player.getUUID(), null, false);
         helper.assertValueEqual(event.type(), QuestLifecycleService.LifecycleEventType.STARTED, "the shared lifecycle accepts a mob provider");
         QuestLifecycleService.initializeStage(definition, progress, level.getGameTime());
+        helper.assertTrue(provider.matchesProviderLock(context, definition, progress), "a custom provider uses shared issuer locking without a villager hook");
+        progress.providerType(ResourceLocation.parse("test:other_provider"));
+        helper.assertFalse(provider.matchesProviderLock(context, definition, progress), "provider locking rejects the wrong provider type");
+        progress.providerType(provider.id());
         UUID run = progress.questRunId();
         var loaded = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
         var restored = loaded.get(player.getUUID(), definition.id());
@@ -126,10 +130,6 @@ public final class EntityQuestRuntimeGameTests {
             public ResourceLocation id() { return ResourceLocation.parse("test:mob_provider"); }
             public boolean matchesOffer(QuestExecutionContext context, QuestDefinition definition) {
                 return context.binding() != null && id().equals(context.binding().providerType());
-            }
-            public boolean matchesIssuerLock(QuestExecutionContext context, QuestDefinition definition,
-                    VillagerQuestSavedData.QuestProgress progress) {
-                return progress == null || context.binding().matchesProviderId(progress.providerId());
             }
         };
     }

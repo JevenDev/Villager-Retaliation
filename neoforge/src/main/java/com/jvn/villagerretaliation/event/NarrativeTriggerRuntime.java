@@ -31,9 +31,18 @@ public final class NarrativeTriggerRuntime {
     public boolean fire(DialogueRuntimeContext context, String key, boolean repeatable, long cooldown,
             TriggerHistory history, List<DialogueCondition> conditions, List<VillagerActionDefinition> actions,
             Map<String, String> replacements) {
-        if (!DialogueCondition.matchesAll(context, conditions)) return false;
+        return fire(context, key, repeatable, cooldown, history, conditions, actions, replacements, null);
+    }
+
+    public boolean fire(DialogueRuntimeContext context, String key, boolean repeatable, long cooldown,
+            TriggerHistory history, List<DialogueCondition> conditions, List<VillagerActionDefinition> actions,
+            Map<String, String> replacements, com.jvn.villagerretaliation.quest.QuestTriggerContext trigger) {
+        if (com.jvn.villagerretaliation.dialogue.conditions.ConditionEvaluator.all(context.conditions(), trigger, conditions)
+                != DialogueCondition.ConditionOutcome.MATCHED) return false;
+        var values = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
+                com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), replacements);
         return run(key, repeatable, cooldown, context.level().getGameTime(), history, () -> {
-            var outcome = context.runtime().actions(context, actions, replacements, "trigger/" + key, null).outcome();
+            var outcome = context.runtime().actions(context, actions, values, "trigger/" + key, null).outcome();
             return outcome.suspended() || outcome.legacyResult().ran();
         });
     }
