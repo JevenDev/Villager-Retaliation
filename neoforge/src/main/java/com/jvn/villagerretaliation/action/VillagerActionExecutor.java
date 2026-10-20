@@ -279,7 +279,9 @@ public final class VillagerActionExecutor {
         QuestScopeKey scopeKey = action.factScope().scope(context, action.questId());
         String value = VillagerDialogueResources.resolveTemplate(action.factValue(), inheritedReplacements);
         if ("stage".equals(action.factKey()) && action.factScope() == QuestFactScope.QUEST) {
-            return VillagerQuestService.syncQuestStage(context, action.questId(), value)
+            String source = action.questId() != null && action.questId().toString().equals(inheritedReplacements.get("execution_quest"))
+                    ? inheritedReplacements.getOrDefault("execution_stage", "") : "";
+            return VillagerQuestService.syncQuestStage(context, action.questId(), value, source)
                     ? factResult(action, inheritedReplacements, scopeKey.asString(), value, 0)
                     : VillagerActionResult.EMPTY;
         }

@@ -1704,6 +1704,10 @@ public final class VillagerQuestService {
     }
 
     public static boolean syncQuestStage(DialogueContext context, ResourceLocation questId, String stage) {
+        return syncQuestStage(context, questId, stage, "");
+    }
+
+    public static boolean syncQuestStage(DialogueContext context, ResourceLocation questId, String stage, String sourceStage) {
         if (context == null || questId == null || stage == null) {
             return false;
         }
@@ -1717,7 +1721,9 @@ public final class VillagerQuestService {
         if (definition == null || !definition.stages().containsKey(normalizedStage)) {
             return false;
         }
-        boolean changed = changeQuestStage(context, definition, progress, normalizedStage, true, true);
+        boolean changed = sourceStage != null && !sourceStage.isBlank() && !sourceStage.equals(progress.currentStage())
+                ? progress.stageActive(sourceStage) && STAGES.changeParallelStage(context, definition, progress, sourceStage, normalizedStage)
+                : changeQuestStage(context, definition, progress, normalizedStage, true, true);
         if (changed) {
             data.setDirty();
             advanceStageIfComplete(context, definition, progress);
@@ -2851,7 +2857,7 @@ public final class VillagerQuestService {
         for (var timer : com.jvn.villagerretaliation.quest.runtime.QuestTimers.active(definition, progress)) {
             if (timer.state().warn(timer.definition())) {
                 player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                        "villagerretaliation.gui.quest_timer.warning", definition.title(), (timer.state().remaining(timer.definition()) + 19) / 20), false);
+                        "villagerretaliation.gui.quest_timer.warning", QuestPresentationService.questTitle(player, definition, Map.of()), (timer.state().remaining(timer.definition()) + 19) / 20), false);
                 changed = true;
             }
             if (timer.state().handled() || timer.definition().mode() != QuestTimer.Mode.DEADLINE
@@ -3997,6 +4003,8 @@ public final class VillagerQuestService {
         }
         Map<String, String> actionReplacements = new LinkedHashMap<>(replacements(context, definition, progress));
         actionReplacements.putAll(triggerContext.replacements());
+        actionReplacements.put("execution_stage", triggerContext.stage());
+        actionReplacements.put("execution_quest", definition.id().toString());
         return QuestStageActionService.runTrigger(context, definition, progress,
                 "trigger/" + QuestTriggerRegistry.canonicalEventId(triggerContext.event()) + "/" + trigger.id(),
                 trigger.actions(), Map.copyOf(actionReplacements), () -> sendTrackerSync(context.player(), true))
@@ -5928,6 +5936,26 @@ public final class VillagerQuestService {
                 QuestDefinition definition,
                 VillagerQuestSavedData.QuestProgress progress) {
             return VillagerQuestService.dispatchStageChangedTriggers(context, definition, progress);
+        }
+        @Override public boolean dispatchParallelStageChangedTriggers(DialogueContext context, QuestDefinition definition,
+                VillagerQuestSavedData.QuestProgress progress, String stage) {
+            if (DISPATCHING_STAGE_TRIGGERS.get()) return false;
+            DISPATCHING_STAGE_TRIGGERS.set(true);
+            try {
+                var compiled = VillagerQuestResources.compiledQuest(context.level().getServer(), definition.id()).orElse(null);
+                return dispatchQuestTriggers(QuestTriggerContext.of(context, QuestDefinition.TriggerEvent.STAGE_CHANGED,
+                        context.level().getGameTime(), stage, null), compiled, progress);
+            } finally { DISPATCHING_STAGE_TRIGGERS.set(false); }
+        }
+        @Override public ActionResult runParallelStageActions(DialogueContext context, QuestDefinition definition,
+                VillagerQuestSavedData.QuestProgress progress, String stage, String key, List<VillagerActionDefinition> actions) {
+            var values = new LinkedHashMap<>(replacements(context, definition, progress));
+            values.put("execution_stage", stage);
+            values.put("execution_quest", definition.id().toString());
+            values.put("quest_stage", stage);
+            values.put("current_stage", stage);
+            return QuestStageActionService.run(context, definition, progress, key, actions, Map.copyOf(values),
+                    () -> sendTrackerSync(context.player(), true));
         }
         @Override public void sendTrackerSync(ServerPlayer player, boolean flash) {
             VillagerQuestService.sendTrackerSync(player, flash);

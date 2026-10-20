@@ -63,16 +63,16 @@ public final class QuestParallelGameTests {
         QuestLifecycleService.initializeStage(quest, progress, 100);
         var actions = new ArrayList<String>();
         QuestParallelService.advance(quest, progress, 100, objective -> false, conditions -> true,
-                (key, values) -> { actions.add(key); return true; });
+                (stage, key, values) -> { actions.add(key); return true; }, stage -> { });
         QuestParallelService.advance(quest, progress, 101, objective -> true, conditions -> true,
-                (key, values) -> !key.equals("parallel/left/left/exit"));
+                (stage, key, values) -> !key.equals("parallel/left/left/exit"), stage -> { });
         helper.assertTrue(progress.parallelPaths().get("left").phase() == QuestParallelPath.Phase.EXITING,
                 "unfinished exit retains its target before effects run");
         helper.assertTrue(progress.parallelPaths().get("right").phase() == QuestParallelPath.Phase.ARRIVED,
                 "the sibling can finish independently");
         helper.assertTrue(QuestParallelService.request(quest, progress, "left", "join") == false, "pending exits reject stale choices");
         QuestParallelService.advance(quest, progress, 102, objective -> true, conditions -> true,
-                (key, values) -> { actions.add(key); return true; });
+                (stage, key, values) -> { actions.add(key); return true; }, stage -> { });
         helper.assertValueEqual(actions.stream().filter(key -> key.equals("parallel/left/left/entry")).count(), 1L,
                 "resuming an exit does not replay entry effects");
         helper.succeed();
@@ -88,10 +88,74 @@ public final class QuestParallelGameTests {
         progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
         QuestLifecycleService.initializeStage(quest, progress, 100);
         helper.assertValueEqual(progress.parallelPaths().size(), 2, "default stage name still initializes the fork");
-        QuestParallelService.advance(quest, progress, 101, objective -> true, conditions -> true, (key, actions) -> true);
+        QuestParallelService.advance(quest, progress, 101, objective -> true, conditions -> true, (stage, key, actions) -> true, stage -> { });
         QuestLifecycleService.initializeStage(quest, progress, 102);
         helper.assertTrue(progress.parallelPaths().values().stream().allMatch(path -> path.phase() == QuestParallelPath.Phase.ARRIVED),
                 "reinitializing an existing stage cannot reopen its completed paths");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void terminalAndCampaignCatchUpStatesRetireParallelPaths(GameTestHelper helper) {
+        var quest = definition(raw());
+        var progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+        QuestLifecycleService.initializeStage(quest, progress, 100);
+        progress.fail(101, "test");
+        helper.assertTrue(progress.parallelPaths().isEmpty(), "failure retires active branch state");
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 102);
+        QuestLifecycleService.initializeStage(quest, progress, 102);
+        progress.enterCampaignCatchUp("join", null, UUID.randomUUID());
+        helper.assertTrue(progress.parallelPaths().isEmpty(), "catch-up cannot retain paths from the previous stage");
+        helper.assertValueEqual(progress.activeStages(), java.util.Set.of("join"), "catch-up has only its replacement stage");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void entryActionsCanRequestAnIndependentBranchTransition(GameTestHelper helper) {
+        var quest = definition(raw());
+        var progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+        QuestLifecycleService.initializeStage(quest, progress, 100);
+        var entered = new ArrayList<String>();
+        QuestParallelService.advance(quest, progress, 100, objective -> false, conditions -> true,
+                (stage, key, actions) -> {
+                    if (key.equals("parallel/left/left/entry"))
+                        helper.assertTrue(QuestParallelService.request(quest, progress, stage, "join"),
+                                "entry actions can request a transition without reentering their batch");
+                    return true;
+                }, entered::add);
+        helper.assertTrue(progress.parallelPaths().get("left").phase() == QuestParallelPath.Phase.ARRIVED,
+                "entry transition is retained through the exit");
+        helper.assertTrue(progress.parallelPaths().get("right").phase() == QuestParallelPath.Phase.ACTIVE,
+                "entry transition cannot advance its sibling");
+        helper.assertValueEqual(entered, List.of("left", "right"), "each branch emits one entry event");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void pathIdsCannotCollideInDurableOperationKeys(GameTestHelper helper) {
+        var raw = raw();
+        var stages = raw.getAsJsonArray("stages");
+        stages.get(0).getAsJsonObject().add("parallel", JsonParser.parseString("[\"a/b\",\"a\"]"));
+        stages.get(1).getAsJsonObject().addProperty("id", "a/b");
+        stages.get(1).getAsJsonObject().addProperty("next", "c");
+        stages.get(2).getAsJsonObject().addProperty("id", "a");
+        stages.get(2).getAsJsonObject().addProperty("next", "b/c");
+        stages.get(3).getAsJsonObject().addProperty("id", "b/c");
+        for (int index = 1; index < 4; index++) stages.get(index).getAsJsonObject().add("objectives", new com.google.gson.JsonArray());
+        stages.add(JsonParser.parseString("{\"id\":\"c\",\"objectives\":[],\"next\":\"join\"}"));
+        var quest = definition(raw);
+        var progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+        QuestLifecycleService.initializeStage(quest, progress, 100);
+        var operations = new ArrayList<String>();
+        QuestParallelService.advance(quest, progress, 100, objective -> true, conditions -> true,
+                (stage, key, actions) -> { operations.add(key); return true; }, stage -> { });
+        helper.assertValueEqual(operations.stream().distinct().count(), (long) operations.size(),
+                "different branch and stage paths cannot share operation receipts");
+        helper.assertTrue(operations.contains("parallel/a%2Fb/c/entry"), "branch path is escaped");
+        helper.assertTrue(operations.contains("parallel/a/b%2Fc/entry"), "stage path is escaped separately");
         helper.succeed();
     }
 

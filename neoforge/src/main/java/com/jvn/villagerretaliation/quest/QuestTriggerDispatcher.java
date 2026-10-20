@@ -123,7 +123,15 @@ public final class QuestTriggerDispatcher {
         boolean dirty = false;
         for (CompiledQuestTrigger compiledTrigger : ordered) {
             QuestDefinition.Trigger trigger = compiledTrigger.definition();
-            if (actionRunner.run(triggerContext, definition, progress, trigger)) {
+            QuestTriggerContext execution = triggerContext;
+            if (dispatchStage.equals(progress.currentStage()) && !trigger.stages().isEmpty()
+                    && !trigger.stages().contains(dispatchStage)) {
+                var stages = progress.activeStages().stream().filter(trigger.stages()::contains).toList();
+                String stage = stages.size() == 1 ? stages.getFirst() : dispatchStage;
+                execution = new QuestTriggerContext(triggerContext.event(), triggerContext.gameTime(), stage,
+                        triggerContext.payload(), triggerContext.dialogueContext());
+            }
+            if (actionRunner.run(execution, definition, progress, trigger)) {
                 if (triggerContext.dialogueContext() != null && compiledTrigger.source() != null) com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.recordChoice(
                         triggerContext.dialogueContext().player(), definition.id(), compiledTrigger.source().jsonPointer());
                 progress.markTriggerUsed(trigger.id(), triggerContext.gameTime());

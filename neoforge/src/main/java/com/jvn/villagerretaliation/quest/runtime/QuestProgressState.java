@@ -540,6 +540,8 @@ public class QuestProgressState {
                 this.issuerPos,
                 this.issuerVillageKey), MAX_COMPLETION_HISTORY);
         this.consumedReason = consume ? "completion" : "";
+        this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "completed";
     }
 
@@ -555,6 +557,8 @@ public class QuestProgressState {
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
         this.consumedReason = consume ? "abandonment" : "";
+        this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "abandoned";
     }
 
@@ -570,6 +574,8 @@ public class QuestProgressState {
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
         this.consumedReason = "";
+        this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "failed";
     }
 
@@ -584,6 +590,8 @@ public class QuestProgressState {
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
         this.consumedReason = consume ? "expiration" : "";
+        this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "expired";
     }
 
@@ -597,6 +605,8 @@ public class QuestProgressState {
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
         this.consumedReason = reason == null ? "" : reason;
+        this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "branch_lock".equals(this.consumedReason) ? "branch_locked" : "consumed";
     }
 
@@ -723,6 +733,8 @@ public class QuestProgressState {
     }
 
     public void enterCampaignCatchUp(String stage, ResourceLocation waitingQuest, UUID operation) {
+        this.timers.clear();
+        this.parallelPaths.clear();
         clearStageActions();
         this.pendingLifecycleEvents.clear();
         this.pendingTriggerEvents.clear();

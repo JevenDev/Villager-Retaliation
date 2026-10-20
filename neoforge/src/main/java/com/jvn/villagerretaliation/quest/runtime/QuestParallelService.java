@@ -34,8 +34,10 @@ public final class QuestParallelService {
         if (parent == null || parent.parallel().isEmpty() || !definition.stages().containsKey(target)) return false;
         for (var entry : progress.parallelPaths.entrySet()) {
             var path = entry.getValue();
-            if (!path.stage().equals(from) || path.phase() != QuestParallelPath.Phase.ACTIVE || from.equals(target)) continue;
-            progress.parallelPaths.put(entry.getKey(), new QuestParallelPath(from, target, QuestParallelPath.Phase.EXITING));
+            if (!path.stage().equals(from) || path.phase() != QuestParallelPath.Phase.ACTIVE
+                    && path.phase() != QuestParallelPath.Phase.ENTERING || from.equals(target)) continue;
+            progress.parallelPaths.put(entry.getKey(), new QuestParallelPath(from, target, path.phase() == QuestParallelPath.Phase.ENTERING
+                    ? QuestParallelPath.Phase.ENTERING : QuestParallelPath.Phase.EXITING));
             return true;
         }
         return false;
@@ -43,7 +45,7 @@ public final class QuestParallelService {
 
     public static boolean advance(QuestDefinition definition, QuestProgressState progress, long time,
             Predicate<QuestDefinition.Objective> objectiveComplete, Predicate<List<DialogueCondition>> conditionsMet,
-            Actions actions) {
+            Actions actions, java.util.function.Consumer<String> entered) {
         var parent = definition.stages().get(progress.currentStage());
         if (parent == null || parent.parallel().isEmpty() || !progress.parallelPaths.keySet().equals(Set.copyOf(parent.parallel()))) return false;
         boolean changed = false;
@@ -53,12 +55,16 @@ public final class QuestParallelService {
                 var path = progress.parallelPaths.get(branch);
                 var stage = definition.stages().get(path.stage());
                 if (stage == null || path.phase() == QuestParallelPath.Phase.ARRIVED) break;
-                String key = "parallel/" + branch + "/" + stage.id() + "/";
+                String key = "parallel/" + pathSegment(branch) + "/" + pathSegment(stage.id()) + "/";
                 if (path.phase() == QuestParallelPath.Phase.ENTERING) {
-                    if (!actions.run(key + "entry", stage.entryActions())) break;
+                    if (!actions.run(stage.id(), key + "entry", stage.entryActions())) break;
                     if (!progress.currentStage().equals(parent.id()) || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return true;
-                    progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), "", QuestParallelPath.Phase.ACTIVE));
+                    String requested = progress.parallelPaths.get(branch).target();
+                    progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), requested,
+                            requested.isBlank() ? QuestParallelPath.Phase.ACTIVE : QuestParallelPath.Phase.EXITING));
                     changed = true;
+                    entered.accept(stage.id());
+                    if (progress.stageActions().values().stream().anyMatch(checkpoint -> !checkpoint.outcome().success())) return true;
                     continue;
                 }
                 if (path.phase() == QuestParallelPath.Phase.ACTIVE) {
@@ -66,16 +72,18 @@ public final class QuestParallelService {
                     for (var bonus : stage.bonuses()) {
                         if (progress.bonusClaimed(stage.id(), bonus.id()) || !QuestStageReadiness.compositionMet(definition,
                                 bonus.when(), bonus.mode(), bonus.count(), objectiveComplete, conditionsMet)) continue;
-                        if (!actions.run(key + "bonus/" + bonus.id(), bonus.actions())) { blocked = true; break; }
+                        if (!actions.run(stage.id(), key + "bonus/" + bonus.id(), bonus.actions())) { blocked = true; break; }
                         progress.claimBonus(stage.id(), bonus.id());
                         changed = true;
                     }
+                    if (!progress.currentStage().equals(parent.id()) || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) return true;
+                    if (progress.parallelPaths.get(branch).phase() != QuestParallelPath.Phase.ACTIVE) continue;
                     if (blocked || stage.next().isBlank() || !ready(definition, progress, stage, objectiveComplete, conditionsMet)) break;
                     progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), stage.next(), QuestParallelPath.Phase.EXITING));
                     changed = true;
                     continue;
                 }
-                if (!definition.stages().containsKey(path.target()) || !actions.run(key + "exit", stage.exitActions())) break;
+                if (!definition.stages().containsKey(path.target()) || !actions.run(stage.id(), key + "exit", stage.exitActions())) break;
                 if (!progress.currentStage().equals(parent.id())) return true;
                 for (var predicate : stage.completeWhen())
                     definition.objectives().stream().filter(objective -> objective.id().equals(predicate.objective()) && objectiveComplete.test(objective))
@@ -99,5 +107,9 @@ public final class QuestParallelService {
                         stage.completionCount(), objectives, conditions);
     }
 
-    public interface Actions { boolean run(String key, List<VillagerActionDefinition> actions); }
+    private static String pathSegment(String id) {
+        return id.replace("%", "%25").replace("/", "%2F");
+    }
+
+    public interface Actions { boolean run(String stage, String key, List<VillagerActionDefinition> actions); }
 }

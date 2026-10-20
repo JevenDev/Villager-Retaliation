@@ -42,7 +42,7 @@ public final class QuestProgressionService {
                 || progress.stageActions().values().stream().anyMatch(checkpoint -> !checkpoint.outcome().success())
                 || definition.triggers().stream().anyMatch(trigger -> trigger.event() == QuestDefinition.TriggerEvent.STAGE_CHANGED)) return false;
         boolean parallelChanged = QuestParallelService.advance(definition, progress, gameTime, objectiveComplete, conditionsMet,
-                (key, actions) -> actions.isEmpty());
+                (stageId, key, actions) -> actions.isEmpty(), stageId -> { });
         var stage = definition.stages().get(progress.currentStage());
         if (stage == null || !stage.exitActions().isEmpty()
                 || stage.bonuses().stream().anyMatch(bonus -> !progress.bonusClaimed(stage.id(), bonus.id()))) return parallelChanged;

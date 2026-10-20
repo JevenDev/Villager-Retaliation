@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 public final class QuestStageTransitionCoordinator {
     private static final int MAX_STAGE_ADVANCES_PER_CHECK = 8;
     private final Access access;
+    private final java.util.Set<QuestProgressState> advancingParallel = new java.util.HashSet<>();
 
     public QuestStageTransitionCoordinator(Access access) { this.access = access; }
 
@@ -57,7 +58,7 @@ public final class QuestStageTransitionCoordinator {
                 || !QuestStageActionService.ready(context, progress)
                 || !QuestParallelService.request(definition, progress, from, target)) return false;
         VillagerQuestSavedData.get(context.level()).setDirty();
-        advanceParallel(context, definition, progress);
+        if (!advancingParallel.contains(progress)) advanceParallel(context, definition, progress);
         access.ensureStageTarget(context, definition, progress);
         access.sendTrackerSync(context.player(), true);
         return true;
@@ -65,13 +66,21 @@ public final class QuestStageTransitionCoordinator {
 
     private boolean advanceParallel(DialogueContext context, QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (!advancingParallel.add(progress)) return false;
+        try {
+            return advanceParallelPaths(context, definition, progress);
+        } finally { advancingParallel.remove(progress); }
+    }
+
+    private boolean advanceParallelPaths(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
         boolean changed = QuestParallelService.advance(definition, progress, context.level().getGameTime(),
                 objective -> access.objectiveComplete(context.player(), context, context.level(), definition, progress, objective),
                 conditions -> DialogueCondition.matchesAll(context, conditions),
-                (key, actions) -> {
+                (stage, key, actions) -> {
                     VillagerQuestSavedData.get(context.level()).setDirty();
-                    return access.runStageActions(context, definition, progress, key, actions).success();
-                });
+                    return access.runParallelStageActions(context, definition, progress, stage, key, actions).success();
+                }, stage -> access.dispatchParallelStageChangedTriggers(context, definition, progress, stage));
         if (changed) {
             VillagerQuestSavedData.get(context.level()).setDirty();
             access.ensureStageTarget(context, definition, progress);
@@ -140,6 +149,9 @@ public final class QuestStageTransitionCoordinator {
                 || !QuestStageActionService.readyForStageEntry(context, progress)) return false;
         QuestDefinition.Stage stage = definition.stages().get(progress.pendingStageEntry());
         if (stage == null) return false;
+        if (progress.timers.isEmpty()) QuestTimers.enter(definition, progress, stage.id(), context.level().getGameTime());
+        if (!stage.parallel().isEmpty() && progress.parallelPaths().isEmpty())
+            QuestParallelService.enter(definition, progress, stage.id(), context.level().getGameTime());
         progress.requestStageEntry("");
         syncQuestStageFact(context, definition, progress.currentStage());
         access.ensureStageTarget(context, definition, progress);
@@ -290,6 +302,10 @@ public final class QuestStageTransitionCoordinator {
     public interface Access {
         void ensureStageTarget(DialogueContext context, QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress);
         boolean dispatchStageChangedTriggers(DialogueContext context, QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress);
+        boolean dispatchParallelStageChangedTriggers(DialogueContext context, QuestDefinition definition,
+                VillagerQuestSavedData.QuestProgress progress, String stage);
+        ActionResult runParallelStageActions(DialogueContext context, QuestDefinition definition,
+                VillagerQuestSavedData.QuestProgress progress, String stage, String key, List<VillagerActionDefinition> actions);
         void sendTrackerSync(ServerPlayer player, boolean flash);
         String playerQuestScopeKey(ServerPlayer player, QuestDefinition definition);
         boolean objectiveComplete(ServerPlayer player, DialogueContext context, ServerLevel level, QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress, QuestDefinition.Objective objective);
