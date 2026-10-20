@@ -491,7 +491,7 @@ Quest module v2 also carries the full runtime rule set used by v1. Put active-st
 }
 ```
 
-`complete_when` may mix objective references with condition predicates. Objective UI also accepts `tracker_complete_text` and `tracker_complete_text_key`, and reward memory events retain `memory_scope`. The v1-to-v2 migration tool preserves these rules, stage tracker steps, and objective completion copy.
+`complete_when` may mix objective references with condition predicates. Objective UI also accepts `tracker_complete_text` and `tracker_complete_text_key`, and reward memory events retain `memory_scope`. Quest V1 migration is no longer supported. Use the V2-to-V3 converter for existing V2 packs.
 
 ## Definition Revisions And Live-Save Migration
 
@@ -521,7 +521,7 @@ Policies are:
 - `restart`: keep the quest run and provider binding but clear objective, target, and bonus progress and return to the entry stage
 - `fail`: terminate the active quest with a revision-specific failure code and run the normal failure integrations
 
-Legacy saves without a stored revision adopt the current revision without destructive migration. A datapack rollback never re-applies an older revision over a newer persisted one. For v1 files, put `revision` and `migration` at the quest root; the v1-to-v2 migration tool moves them into `metadata`.
+Legacy saves without a stored revision adopt the current revision without destructive migration. A datapack rollback never re-applies an older revision over a newer persisted one. Quest V1 files are no longer supported. Current V3 files put `revision` and `migration` at the quest root.
 
 ```json
 {

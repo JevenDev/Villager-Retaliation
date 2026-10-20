@@ -64,7 +64,7 @@ public record CompiledQuest(
         if (id == null) {
             throw new IllegalArgumentException("compiled quest id must not be null");
         }
-        source = source == null ? new QuestSourcePointer(id, QuestSchemaVersion.V1, "", "") : source;
+        Objects.requireNonNull(source, "compiled quest source");
         metadata = metadata == null
                 ? new CompiledQuestMetadata("", "", "", "", "", java.util.Set.of(), null, null)
                 : metadata;

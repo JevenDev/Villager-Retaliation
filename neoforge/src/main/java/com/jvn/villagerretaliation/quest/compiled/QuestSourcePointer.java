@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest.compiled;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceLocation;
 
@@ -13,7 +14,7 @@ public record QuestSourcePointer(
         String jsonPointer
 ) {
     public QuestSourcePointer {
-        schemaVersion = schemaVersion == null ? QuestSchemaVersion.V1 : schemaVersion;
+        Objects.requireNonNull(schemaVersion, "quest schema version");
         sourcePackId = sourcePackId == null ? "" : sourcePackId;
         jsonPointer = normalizeJsonPointer(jsonPointer);
     }

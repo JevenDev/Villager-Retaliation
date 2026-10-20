@@ -69,7 +69,6 @@ import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
 import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.content.reward.QuestRewardCatalog;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
-import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
@@ -240,21 +239,16 @@ public final class VillagerQuestGameTests {
         for (QuestDefinition quest : quests) {
             CompiledQuest compiled = compiledById.get(quest.id());
             helper.assertTrue(compiled != null, "Missing compiled quest " + quest.id());
-            if (compiled.schemaVersion() == QuestSchemaVersion.V1) {
-                assertCompiledV1QuestMatchesParsed(helper, quest, compiled);
-            } else {
-                assertCompiledQuestKeepsCanonicalDefinition(helper, quest, compiled);
-            }
+            assertCompiledQuestKeepsCanonicalDefinition(helper, quest, compiled);
         }
 
         helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void mixedBuiltInQuestResourcesKeepStableAuthoredIds(GameTestHelper helper) {
+    public static void builtInQuestResourcesKeepStableAuthoredIds(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         Map<ResourceLocation, ResourceLocation> authoredIdsByResource = new LinkedHashMap<>();
-        Set<ResourceLocation> v1Ids = new LinkedHashSet<>();
         Set<ResourceLocation> v3Ids = new LinkedHashSet<>();
         server.getResourceManager()
                 .listResources("quests", location -> VillagerRetaliation.MOD_ID.equals(location.getNamespace())
@@ -264,39 +258,18 @@ public final class VillagerQuestGameTests {
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
                 .forEach(entry -> {
                     JsonObject root = readJsonObject(entry.getKey(), entry.getValue());
-                    helper.assertTrue(root.has("id"), entry.getKey() + " no longer declares its stable v1 id");
+                    helper.assertTrue(root.has("id"), entry.getKey() + " no longer declares its stable authored id");
                     ResourceLocation authoredId = ResourceLocation.tryParse(root.get("id").getAsString());
                     helper.assertTrue(authoredId != null, entry.getKey() + " declares an invalid quest id");
                     QuestResourceEnvelope envelope = QuestResourceEnvelope.read(entry.getKey(), root)
                             .orElseThrow(() -> new GameTestAssertException(entry.getKey() + " did not route to a quest schema"));
-                    if (envelope.schemaVersion() == QuestSchemaVersion.V1) {
-                        helper.assertFalse(root.has("schema"), entry.getKey() + " v1 quest gained a schema marker");
-                        v1Ids.add(authoredId);
-                    } else {
-                        helper.assertValueEqual(
-                                envelope.schemaVersion(),
-                                QuestSchemaVersion.V3,
-                                entry.getKey() + " schema version");
-                        helper.assertValueEqual(
-                                root.get("schema").getAsString(),
-                                QuestSchemaVersion.V3.schemaId(),
-                                entry.getKey() + " v3 schema marker");
-                        v3Ids.add(authoredId);
-                    }
+                    helper.assertValueEqual(envelope.schemaVersion(), QuestSchemaVersion.V3,
+                            entry.getKey() + " quest schema version");
+                    v3Ids.add(authoredId);
                     authoredIdsByResource.put(entry.getKey(), authoredId);
                 });
         helper.assertValueEqual(authoredIdsByResource.size(), EXPECTED_QUEST_COUNT, "built-in quest resource count");
-        helper.assertTrue(v1Ids.isEmpty(), "built-in catalog still contains legacy v1 quests");
-        helper.assertValueEqual(v3Ids.size(), EXPECTED_QUEST_COUNT, "built-in v3 quest count");
-        assertContainsAll(
-                helper,
-                v3Ids,
-                Set.of(
-                        VillagerRetaliation.id("egg_baskets"),
-                        VillagerRetaliation.id("choose_the_horizon"),
-                        VillagerRetaliation.id("first_far_marker"),
-                        VillagerRetaliation.id("tales_of_a_lost_civilization")),
-                "migrated v3 built-in quest ids");
+        helper.assertValueEqual(v3Ids.size(), EXPECTED_QUEST_COUNT, "v3 built-in quest count");
 
         Set<ResourceLocation> loadedIds = quests(helper).stream()
                 .map(QuestDefinition::id)
@@ -304,38 +277,44 @@ public final class VillagerQuestGameTests {
         for (Map.Entry<ResourceLocation, ResourceLocation> entry : authoredIdsByResource.entrySet()) {
             helper.assertTrue(
                     loadedIds.contains(entry.getValue()),
-                    entry.getKey() + " did not load as explicit v1 id " + entry.getValue());
+                    entry.getKey() + " did not load as explicit authored id " + entry.getValue());
         }
         helper.assertFalse(
                 loadedIds.contains(VillagerRetaliation.id("cartographers_atlas/blank_map_promise")),
-                "v1 explicit ids must not be replaced by path-inferred questline ids");
+                "explicit authored ids must not be replaced by path-inferred questline ids");
 
         helper.succeed();
     }
 
     private static boolean isQuestDefinitionResource(ResourceLocation location) {
         String[] parts = location.getPath().split("/");
-        return parts.length == 3 && parts[2].endsWith(".json")
-                || parts.length == 4 && "quest.json".equals(parts[3]);
+        return parts.length == 4 && "quest.json".equals(parts[3]);
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questResourceEnvelopeRoutesVersionedSchemas(GameTestHelper helper) {
         ResourceLocation location = VillagerRetaliation.id("quests/test/envelope.json");
 
-        DatapackDiagnostics.clear();
-        JsonObject absentSchema = new JsonObject();
-        QuestResourceEnvelope v1 = QuestResourceEnvelope.read(location, absentSchema)
-                .orElseThrow(() -> new GameTestAssertException("schema-less quest did not route as v1"));
-        helper.assertValueEqual(v1.schemaVersion(), QuestSchemaVersion.V1, "absent schema version");
-        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "schema-less v1 produced diagnostics");
-
-        JsonObject validV2 = new JsonObject();
-        validV2.addProperty("schema", QuestSchemaVersion.V2.schemaId());
-        QuestResourceEnvelope v2 = QuestResourceEnvelope.read(location, validV2)
-                .orElseThrow(() -> new GameTestAssertException("v2 quest schema was not recognized"));
-        helper.assertValueEqual(v2.schemaVersion(), QuestSchemaVersion.V2, "v2 schema version");
-        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid v2 schema produced diagnostics");
+        for (JsonObject rejected : List.of(new JsonObject(),
+                JsonParser.parseString("{\"schema\":null}").getAsJsonObject(),
+                JsonParser.parseString("{\"schema\":\"\"}").getAsJsonObject(),
+                JsonParser.parseString("{\"schema\":\"villagerretaliation:quest/v1\"}").getAsJsonObject())) {
+            DatapackDiagnostics.clear();
+            helper.assertTrue(QuestResourceEnvelope.read(location, rejected).isEmpty(),
+                    "missing or obsolete quest schema was not rejected");
+            helper.assertFalse(DatapackDiagnostics.recent().isEmpty(), "rejected schema produced no diagnostic");
+        }
+        helper.assertTrue(QuestSchemaVersion.bySchemaId(null).isEmpty(), "null schema was recognized");
+        helper.assertTrue(QuestSchemaVersion.bySchemaId(" ").isEmpty(), "blank schema was recognized");
+        for (QuestSchemaVersion version : QuestSchemaVersion.values()) {
+            DatapackDiagnostics.clear();
+            JsonObject valid = new JsonObject();
+            valid.addProperty("schema", version.schemaId());
+            QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, valid)
+                    .orElseThrow(() -> new GameTestAssertException("supported quest schema was not recognized"));
+            helper.assertValueEqual(envelope.schemaVersion(), version, "schema version");
+            helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid schema produced diagnostics");
+        }
 
         JsonObject malformed = new JsonObject();
         malformed.add("schema", new JsonObject());
@@ -2143,17 +2122,13 @@ public final class VillagerQuestGameTests {
                 .sorted(Comparator.comparing(quest -> quest.id().toString()))
                 .toList();
         Set<ResourceLocation> ids = new LinkedHashSet<>();
-        int v1 = 0;
         int v3 = 0;
         int triggerCount = 0;
         int continuousTriggerCount = 0;
         for (CompiledQuest quest : compiled) {
             helper.assertTrue(ids.add(quest.id()), "duplicate compiled quest id " + quest.id());
-            if (quest.schemaVersion() == QuestSchemaVersion.V1) {
-                v1++;
-            } else if (quest.schemaVersion() == QuestSchemaVersion.V3) {
-                v3++;
-            }
+            helper.assertValueEqual(quest.schemaVersion(), QuestSchemaVersion.V3, quest.id() + " schema");
+            v3++;
             helper.assertValueEqual(
                     quest.objectivesById().size(),
                     quest.objectives().size(),
@@ -2183,7 +2158,6 @@ public final class VillagerQuestGameTests {
             }
         }
         helper.assertValueEqual(compiled.size(), EXPECTED_QUEST_COUNT, "compiled compatibility quest count");
-        helper.assertValueEqual(v1, 0, "compiled catalog still contains v1 quests");
         helper.assertValueEqual(v3, EXPECTED_QUEST_COUNT, "compiled v3 quest count");
         helper.assertTrue(triggerCount > 0, "compiled catalog lost quest triggers");
         helper.assertTrue(continuousTriggerCount > 0, "compiled catalog lost continuous trigger throttles");
@@ -5888,39 +5862,6 @@ public final class VillagerQuestGameTests {
                 compiled.rewards());
     }
 
-    private static void assertCompiledV1QuestMatchesParsed(
-            GameTestHelper helper,
-            QuestDefinition quest,
-            CompiledQuest compiled) {
-        helper.assertValueEqual(compiled.id(), quest.id(), quest.id() + " compiled id");
-        helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V1, quest.id() + " schema");
-        helper.assertValueEqual(compiled.asQuestDefinition(), quest, quest.id() + " compatibility definition");
-        helper.assertValueEqual(compiled.source().jsonPointer(), "", quest.id() + " source pointer");
-        helper.assertValueEqual(compiled.source().resource().getNamespace(), VillagerRetaliation.MOD_ID,
-                quest.id() + " source namespace");
-
-        helper.assertValueEqual(compiled.metadata().title(), quest.title(), quest.id() + " title");
-        helper.assertValueEqual(compiled.metadata().description(), quest.description(), quest.id() + " description");
-        helper.assertValueEqual(compiled.metadata().titleKey(), quest.titleKey(), quest.id() + " title key");
-        helper.assertValueEqual(compiled.metadata().descriptionKey(), quest.descriptionKey(),
-                quest.id() + " description key");
-        helper.assertValueEqual(compiled.metadata().questline(), quest.questline(), quest.id() + " questline");
-        helper.assertValueEqual(compiled.metadata().tags(), quest.tags(), quest.id() + " tags");
-        helper.assertTrue(Objects.equals(compiled.metadata().parent(), quest.parent()), quest.id() + " parent");
-        helper.assertValueEqual(compiled.metadata().dialogue(), quest.metadata(), quest.id() + " dialogue metadata");
-        helper.assertValueEqual(compiled.provider().offer(), quest.offer(), quest.id() + " provider");
-        helper.assertValueEqual(compiled.target(), quest.target(), quest.id() + " target");
-        helper.assertValueEqual(compiled.rules(), quest.rules(), quest.id() + " rules");
-        helper.assertValueEqual(compiled.rewards().definition(), quest.rewards(), quest.id() + " rewards");
-        helper.assertValueEqual(compiled.ui().tracker(), quest.tracker(), quest.id() + " tracker");
-        helper.assertValueEqual(compiled.ui().dialogue(), quest.dialogue(), quest.id() + " dialogue");
-        helper.assertValueEqual(compiled.ui().links(), quest.links(), quest.id() + " links");
-
-        assertCompiledObjectivesMatchParsed(helper, quest, compiled);
-        assertCompiledStagesMatchParsed(helper, quest, compiled);
-        assertCompiledTriggersMatchParsed(helper, quest, compiled);
-    }
-
     private static void assertCompiledQuestKeepsCanonicalDefinition(
             GameTestHelper helper,
             QuestDefinition quest,
@@ -5941,105 +5882,6 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(compiled.objectives().size(), quest.objectives().size(), quest.id() + " objectives");
         helper.assertValueEqual(compiled.stages().size(), quest.stages().size(), quest.id() + " stages");
         helper.assertValueEqual(compiled.triggers().size(), quest.triggers().size(), quest.id() + " triggers");
-    }
-
-    private static void assertCompiledObjectivesMatchParsed(
-            GameTestHelper helper,
-            QuestDefinition quest,
-            CompiledQuest compiled) {
-        List<String> parsedObjectiveIds = quest.objectives().stream()
-                .map(QuestDefinition.Objective::id)
-                .toList();
-        helper.assertValueEqual(
-                compiled.objectives().stream().map(CompiledQuestObjective::id).toList(),
-                parsedObjectiveIds,
-                quest.id() + " objective order");
-        helper.assertValueEqual(
-                new ArrayList<>(compiled.objectivesById().keySet()),
-                parsedObjectiveIds,
-                quest.id() + " objective index order");
-
-        for (int index = 0; index < quest.objectives().size(); index++) {
-            QuestDefinition.Objective parsed = quest.objectives().get(index);
-            CompiledQuestObjective compiledObjective = compiled.objectives().get(index);
-            helper.assertValueEqual(compiledObjective.index(), index, quest.id() + "/" + parsed.id() + " objective index");
-            helper.assertValueEqual(compiledObjective.definition(), parsed, quest.id() + "/" + parsed.id() + " objective");
-            helper.assertTrue(compiledObjective.source().jsonPointer().startsWith("/objectives/"),
-                    quest.id() + "/" + parsed.id() + " objective source pointer");
-            helper.assertValueEqual(
-                    VillagerQuestResources.objectiveSource(helper.getLevel().getServer(), quest.id(), parsed.id())
-                            .orElseThrow(() -> new GameTestAssertException("Missing objective source " + parsed.id())),
-                    compiledObjective.source(),
-                    quest.id() + "/" + parsed.id() + " objective source lookup");
-        }
-    }
-
-    private static void assertCompiledStagesMatchParsed(
-            GameTestHelper helper,
-            QuestDefinition quest,
-            CompiledQuest compiled) {
-        List<String> parsedStageIds = new ArrayList<>(quest.stages().keySet());
-        helper.assertValueEqual(
-                compiled.stages().stream().map(CompiledQuestStage::id).toList(),
-                parsedStageIds,
-                quest.id() + " stage order");
-        helper.assertValueEqual(
-                new ArrayList<>(compiled.stagesById().keySet()),
-                parsedStageIds,
-                quest.id() + " stage index order");
-
-        int index = 0;
-        for (Map.Entry<String, QuestDefinition.Stage> entry : quest.stages().entrySet()) {
-            CompiledQuestStage stage = compiled.stages().get(index);
-            helper.assertValueEqual(stage.index(), index, quest.id() + "/" + entry.getKey() + " stage index");
-            helper.assertValueEqual(stage.definition(), entry.getValue(), quest.id() + "/" + entry.getKey() + " stage");
-            helper.assertValueEqual(
-                    stage.objectives().stream().map(CompiledQuestObjective::id).toList(),
-                    entry.getValue().objectives().stream()
-                            .filter(compiled.objectivesById()::containsKey)
-                            .toList(),
-                    quest.id() + "/" + entry.getKey() + " stage objectives");
-            helper.assertTrue(stage.source().jsonPointer().startsWith("/stages/"),
-                    quest.id() + "/" + entry.getKey() + " stage source pointer");
-            index++;
-        }
-    }
-
-    private static void assertCompiledTriggersMatchParsed(
-            GameTestHelper helper,
-            QuestDefinition quest,
-            CompiledQuest compiled) {
-        List<String> parsedTriggerIds = quest.triggers().stream()
-                .map(QuestDefinition.Trigger::id)
-                .toList();
-        helper.assertValueEqual(
-                compiled.triggers().stream().map(CompiledQuestTrigger::id).toList(),
-                parsedTriggerIds,
-                quest.id() + " trigger order");
-        helper.assertValueEqual(
-                compiled.triggerIndex().triggers().stream().map(CompiledQuestTrigger::id).toList(),
-                parsedTriggerIds,
-                quest.id() + " trigger index order");
-
-        for (int index = 0; index < quest.triggers().size(); index++) {
-            QuestDefinition.Trigger parsed = quest.triggers().get(index);
-            CompiledQuestTrigger trigger = compiled.triggers().get(index);
-            helper.assertValueEqual(trigger.index(), index, quest.id() + "/" + parsed.id() + " trigger index");
-            helper.assertValueEqual(trigger.definition(), parsed, quest.id() + "/" + parsed.id() + " trigger");
-            helper.assertTrue(
-                    compiled.triggersByEvent().getOrDefault(parsed.event(), List.of()).contains(trigger),
-                    quest.id() + "/" + parsed.id() + " trigger event index");
-            helper.assertTrue(
-                    compiled.triggerIndex().triggersByEvent().getOrDefault(parsed.event(), List.of()).contains(trigger),
-                    quest.id() + "/" + parsed.id() + " compiled trigger event index");
-            if (parsed.event().isContinuous()) {
-                helper.assertTrue(
-                        compiled.triggerIndex().continuousTriggers().contains(trigger),
-                        quest.id() + "/" + parsed.id() + " continuous trigger index");
-            }
-            helper.assertTrue(trigger.source().jsonPointer().startsWith("/triggers/"),
-                    quest.id() + "/" + parsed.id() + " trigger source pointer");
-        }
     }
 
     private static JsonObject readJsonObject(ResourceLocation location, Resource resource) {

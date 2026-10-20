@@ -110,7 +110,7 @@ public final class QuestObjectiveDispatchGameTests {
 
     private static QuestDefinition definition(String raw) {
         var id = VillagerRetaliation.id("objective_dispatch");
-        return VillagerQuestResources.readCanonicalQuest(id, JsonParser.parseString(raw).getAsJsonObject(), id);
+        return QuestDefinitionFixtures.read(id, JsonParser.parseString(raw).getAsJsonObject(), id);
     }
 
     private static VillagerQuestSavedData.QuestProgress progress(GameTestHelper helper) {

@@ -10,9 +10,7 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestMetadata;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestRewards;
-import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
-import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
 import java.util.List;
 import java.util.Map;
@@ -71,18 +69,6 @@ public final class CompiledQuestAuthorityGameTests {
                 "existing callers retain their complete definition through the boundary adapter");
         helper.assertValueEqual(legacy.revision().number(), 3, "legacy revision remains explicit in the compiled model");
         helper.assertFalse(legacy.showLockedAdventureHint(), "legacy locked hint policy is preserved");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "campaign_compiled_views")
-    public static void legacyCompilerRetainsAuthoredEntryStage(GameTestHelper helper) {
-        CompiledQuest original = fixture();
-        var envelope = new QuestResourceEnvelope(original.source().resource(), new JsonObject(),
-                QuestSchemaVersion.V1, null);
-        CompiledQuest legacy = QuestV1Compiler.compile(original.asQuestDefinition(), envelope);
-        helper.assertValueEqual(legacy.entryStage(), "offer", "v1 compilation preserves its authored entry stage");
-        helper.assertValueEqual(legacy.asQuestDefinition(), original.asQuestDefinition(),
-                "compiled legacy definitions preserve all gameplay fields");
         helper.succeed();
     }
 

@@ -116,7 +116,7 @@ public final class PartyQuestEnrollmentGameTests {
 
     private static QuestDefinition fixture() {
         var id = VillagerRetaliation.id("party_enrollment_boundary");
-        return VillagerQuestResources.readCanonicalQuest(id, JsonParser.parseString("""
+        return QuestDefinitionFixtures.read(id, JsonParser.parseString("""
                 {"objectives":[{"id":"supplies","type":"item_check","item":"minecraft:wheat","count":6}]}
                 """).getAsJsonObject(), id);
     }

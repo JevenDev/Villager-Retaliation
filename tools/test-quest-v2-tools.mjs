@@ -7,16 +7,11 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspace = await mkdtemp(path.join(tmpdir(), "vr-quest-v2-tools-"));
 
-const conversionParent = path.join(root, "run", "quest-migrations");
-await mkdir(conversionParent, { recursive: true });
-const conversionWorkspace = await mkdtemp(path.join(conversionParent, "tool-test-"));
 try {
   const validRoot = path.join(workspace, "valid");
   const invalidRoot = path.join(workspace, "invalid");
   const validQuest = path.join(validRoot, "quest.json");
   const invalidQuest = path.join(invalidRoot, "quest.json");
-  const v1Quest = path.join(workspace, "migration-source-v1.json");
-  const legacyDialogueTree = path.join(workspace, "migration-dialogue-tree.json");
   await mkdir(validRoot, { recursive: true });
   await mkdir(invalidRoot, { recursive: true });
 
@@ -146,78 +141,6 @@ try {
     }
   });
 
-
-  await writeJson(v1Quest, {
-    id: "villagerretaliation:tool_migrate",
-    campaign: "villagerretaliation:tool_campaign",
-    display: {
-      title: "Tool Migration",
-      description: "Small deterministic migration fixture."
-    },
-    questline: "tooling",
-    offer: {
-      professions: ["minecraft:librarian"]
-    },
-    objectives: [
-      {
-        id: "bring_book",
-        type: "item_check",
-        item: "minecraft:book",
-        count: 1,
-        complete_text: "Book delivered."
-      }
-    ],
-    rules: {
-      repeatable: false,
-      completion_cooldown_ticks: 40,
-      active: {
-        conditions: [],
-        hide_when_unmet: true,
-        pause_progress_when_unmet: false
-      },
-      expiration: {
-        after_ticks: 2400,
-        consume: true
-      },
-      branch: {
-        exclusive_group: "villagerretaliation:tool_route",
-        exclusive_on: "completed"
-      }
-    },
-    rewards: {
-      experience: 5
-    },
-    dialogue: {
-      start: ["Bring a book."],
-      reminder: ["Still looking for the book."],
-      turn_in: ["That book will help."]
-    },
-    tracker: {
-      title: "Tool Migration",
-      steps: {
-        started: {
-          text: "Bring the book.",
-          show_progress: false
-        }
-      }
-    }
-  });
-
-  await writeJson(legacyDialogueTree, {
-    id: "villagerretaliation:tool_migrate",
-    entries: [
-      {
-        id: "offer",
-        start: "offer"
-      }
-    ],
-    nodes: {
-      offer: {
-        lines: ["A legacy extracted offer."],
-        end: true
-      }
-    }
-  });
 
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
 
@@ -449,84 +372,18 @@ try {
       const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
       if (expectFailure) assert(result.stderr.includes("pointer=/stages/0/objectives/0"), "Story objective diagnostic lost its source pointer.");
     }
-    const legacy = path.join(workspace, "legacy-story-objective.json");
-    for (const [owner, fields, expectFailure] of [
-      [true, { story }, false], [false, { story }, true],
-      [true, { story: null }, true], [true, { story, item: "minecraft:paper" }, true],
-      [true, { type: undefined, story }, true], [true, { type: "missing", story }, true]
-    ]) {
-      await writeJson(legacy, { id: "villagerretaliation:legacy_story", ...(owner ? { campaign: "villagerretaliation:tool_campaign" } : {}),
-        objectives: [{ id: "story", type, ...fields }] });
-      run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacy], { expectFailure });
-    }
   }
-  await writeJson(validQuest, conditionFixture);
-
-  const legacyLocationQuest = path.join(workspace, "legacy-campaign-location.json");
-  for (const [owner, expectFailure] of [["villagerretaliation:tool_campaign", false], [undefined, true], [true, true]]) {
-    await writeJson(legacyLocationQuest, { id: "villagerretaliation:legacy_location", campaign: owner,
-      objectives: [{ id: "visit", type: "location_visit", campaign_location: "village" }] });
-    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacyLocationQuest], { expectFailure });
-    if (expectFailure) assert(result.stderr.includes("campaign"), "Legacy location ownership was not validated.");
+  for (const schema of [undefined, null, "", "villagerretaliation:quest/v1"]) {
+    const candidate = structuredClone(conditionFixture);
+    if (schema === undefined) delete candidate.schema;
+    else candidate.schema = schema;
+    await writeJson(validQuest, candidate);
+    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+    assert(result.stderr.includes("pointer=/schema"), "Unsupported quest schema diagnostic lost its source pointer.");
   }
-
-  const legacyCampaignAction = path.join(workspace, "legacy-campaign-action.json");
-  for (const [outcome, expectFailure] of [["spared", false], [null, true]]) {
-    const candidate = JSON.parse(await readFile(v1Quest, "utf8"));
-    delete candidate.campaign;
-    delete candidate.objectives[0].complete_text;
-    delete candidate.rules.active;
-    candidate.triggers = [{ id: "world_choice", event: "started", actions: [
-      { type: "campaign_outcome", milestone: "dragon", outcome, operation_id: "decide" }
-    ] }];
-    await writeJson(legacyCampaignAction, candidate);
-    const result = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", legacyCampaignAction], { expectFailure });
-    if (expectFailure) assert(result.stderr.includes("registered action schema"), "Legacy campaign action fields did not use the exported runtime schema.");
-  }
-
-  const first = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
-  const second = run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree"]);
-  assert(first.stdout === second.stdout, "Migration output is not deterministic.");
-  const migrated = JSON.parse(first.stdout);
-  assert(migrated.metadata.campaign === "villagerretaliation:tool_campaign", "Migration dropped campaign ownership.");
-  assert(migrated.availability.completion_cooldown_ticks === 40, "Migration dropped completion cooldown rules.");
-  assert(migrated.availability.active.hide_when_unmet === true, "Migration dropped active-state rules.");
-  assert(migrated.availability.expiration.after_ticks === 2400, "Migration dropped expiration rules.");
-  assert(migrated.availability.branch.exclusive_on === "completed", "Migration dropped branch lock rules.");
-  assert(migrated.stages[0].objectives[0].tracker.complete_text === "Book delivered.", "Migration dropped objective completion text.");
-  assert(migrated.stages[0].ui.tracker_text === "Bring the book.", "Migration dropped stage tracker text.");
-
-  const conversion = JSON.parse(run("node", [
-    "tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree",
-    "--out-dir", conversionWorkspace
-  ]).stdout);
-  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", conversion.candidate]);
-  assert(conversion.locale.endsWith("/locales/en_us.json"), "Converter did not emit bundle English.");
-  assert(conversion.pack.endsWith("/pack.mcmeta"), "Converter did not emit pack.mcmeta.");
-
-  const check = JSON.parse(run("node", ["tools/migrate-quest-v1-to-v2.mjs", v1Quest, "--no-dialogue-tree", "--check"]).stdout);
-  assert(check.ok === true, "Migration check mode reported unsupported conversions for the simple fixture.");
-  assert(check.comparison.objective_ids_preserved === true, "Migration check did not preserve objective ids.");
-
-  const legacyConversion = run("node", [
-    "tools/migrate-quest-v1-to-v2.mjs", v1Quest,
-    "--dialogue-tree", legacyDialogueTree
-  ]);
-  const legacyCandidate = JSON.parse(legacyConversion.stdout);
-  assert(!JSON.stringify(legacyCandidate).includes('"external'), "Converter emitted a public external-dialogue field.");
-  assert(legacyConversion.stderr.includes("cannot be referenced by a beta.13 quest bundle"),
-    "Converter did not diagnose the legacy external dialogue tree.");
-  const legacyCheck = JSON.parse(run("node", [
-    "tools/migrate-quest-v1-to-v2.mjs", v1Quest,
-    "--dialogue-tree", legacyDialogueTree, "--check"
-  ]).stdout);
-  assert(legacyCheck.ok === false && legacyCheck.report.unsupported.length === 1,
-    "Migration check accepted a legacy external dialogue tree without inlining it.");
-
   console.log("Quest module v2 tooling smoke test passed.");
 } finally {
   await rm(workspace, { recursive: true, force: true });
-  await rm(conversionWorkspace, { recursive: true, force: true });
 }
 
 function run(command, args, options = {}) {

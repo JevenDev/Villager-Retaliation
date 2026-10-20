@@ -123,6 +123,6 @@ public final class QuestInventoryGameTests {
 
     private static QuestDefinition definition(String raw) {
         var id = VillagerRetaliation.id("quest_inventory_boundary");
-        return VillagerQuestResources.readCanonicalQuest(id, JsonParser.parseString(raw).getAsJsonObject(), id);
+        return QuestDefinitionFixtures.read(id, JsonParser.parseString(raw).getAsJsonObject(), id);
     }
 }

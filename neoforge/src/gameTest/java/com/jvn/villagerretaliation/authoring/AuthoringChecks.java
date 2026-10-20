@@ -37,7 +37,8 @@ public final class AuthoringChecks {
         com.jvn.villagerretaliation.campaign.CampaignCompanionAuthoringGameTests.sharedCasesMatchConditionsQuestsConversationsAndScenes(new Assertions());
         com.jvn.villagerretaliation.quest.content.QuestBundleArchitectureGameTests.canonicalOwnersAndPrivateCompanionsAreEnforced(new Assertions());
         com.jvn.villagerretaliation.quest.content.QuestBundleArchitectureGameTests.fingerprintsAndSnapshotsPreserveSemanticIdentity(new Assertions());
-        count += 4;
+        com.jvn.villagerretaliation.gametest.VillagerQuestGameTests.questResourceEnvelopeRoutesVersionedSchemas(new Assertions());
+        count += 5;
         count += com.jvn.villagerretaliation.campaign.WorldCampaignChecks.run();
         count += com.jvn.villagerretaliation.client.interaction.CameraAuthoringChecks.run();
         count += com.jvn.villagerretaliation.authoring.client.EditorClientChecks.run();

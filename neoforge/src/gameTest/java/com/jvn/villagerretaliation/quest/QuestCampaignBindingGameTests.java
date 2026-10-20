@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.campaign.content.CampaignQuestReference;
-import com.jvn.villagerretaliation.quest.compiler.QuestV1Compiler;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
@@ -35,23 +34,6 @@ public final class QuestCampaignBindingGameTests {
         root.getAsJsonObject("metadata").addProperty("campaign", "test:changed");
         helper.assertValueEqual(compiled.metadata().campaign(), CAMPAIGN, "compiled ownership is typed and detached from authoring JSON");
         helper.assertValueEqual(compiled.asQuestDefinition().campaign(), CAMPAIGN, "legacy boundary preserves campaign identity");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "campaign_quest_binding")
-    public static void legacyQuestCompilationRetainsExplicitCampaignReferences(GameTestHelper helper) {
-        var root = JsonParser.parseString("""
-                {"id":"test:campaign_quest","campaign":"test:journey","entry_stage":"offer",
-                 "stages":{"offer":{}},"offer":{},"rewards":{}}
-                """).getAsJsonObject();
-        var definition = VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST);
-        helper.assertTrue(definition != null, "legacy quest with a valid campaign reference loads");
-        var compiled = QuestV1Compiler.compile(definition, QuestResourceEnvelope.read(QUEST, root).orElseThrow());
-        helper.assertValueEqual(compiled.metadata().campaign(), CAMPAIGN, "legacy compilation preserves the typed campaign reference");
-        helper.assertValueEqual(compiled.asQuestDefinition().campaign(), CAMPAIGN, "compiled legacy view retains ownership");
-        root.addProperty("campaign", "invalid campaign");
-        helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null,
-                "invalid campaign references cannot become ordinary quests");
         helper.succeed();
     }
 
@@ -89,17 +71,17 @@ public final class QuestCampaignBindingGameTests {
             var objective = JsonParser.parseString("{\"id\":\"story\",\"type\":\"" + type + "\",\"story\":" + fields + "}").getAsJsonObject();
             var root = JsonParser.parseString("{\"id\":\"test:campaign_quest\",\"campaign\":\"test:journey\",\"objectives\":[]}").getAsJsonObject();
             root.getAsJsonArray("objectives").add(objective);
-            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) != null, "valid legacy story objective loads");
+            helper.assertTrue(QuestDefinitionFixtures.read(QUEST, root, QUEST) != null, "valid legacy story objective loads");
             objective.addProperty("item", "minecraft:paper");
-            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "invalid selector rejects the entire legacy quest");
+            helper.assertTrue(QuestDefinitionFixtures.read(QUEST, root, QUEST) == null, "invalid selector rejects the entire legacy quest");
             objective.remove("item");
             objective.remove("type");
-            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "missing story type rejects the entire quest");
+            helper.assertTrue(QuestDefinitionFixtures.read(QUEST, root, QUEST) == null, "missing story type rejects the entire quest");
             objective.addProperty("type", "missing");
-            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "unknown story type rejects the entire quest");
+            helper.assertTrue(QuestDefinitionFixtures.read(QUEST, root, QUEST) == null, "unknown story type rejects the entire quest");
             objective.addProperty("type", type);
             objective.remove("story");
-            helper.assertTrue(VillagerQuestResources.readCanonicalQuest(QUEST, root, QUEST) == null, "missing story cannot silently disappear");
+            helper.assertTrue(QuestDefinitionFixtures.read(QUEST, root, QUEST) == null, "missing story cannot silently disappear");
         }
         helper.succeed();
     }

@@ -112,7 +112,7 @@ Preferred quest module v2 shape:
 }
 ```
 
-V1 quest files without `schema: "villagerretaliation:quest/v2"` still load. New simple quests should start as one v2 file with inline dialogue, and only extract dialogue trees or forced dialogue when the scene is large or event-driven.
+Current quest bundles require `schema: "villagerretaliation:quest/v3"`. Schema-less V1 quests are rejected. Use inline quest dialogue and the documented bundle layout.
 
 ### 4. Skill Trades Can Power Special Orders
 
@@ -153,7 +153,7 @@ See [Builder Structures](Builder-Structures.md) for remove and replace examples.
 
 1. Leave the pack on beta.11 while you review it.
 2. Move dialogue into folderized beta.12 paths if the current files are large.
-3. Leave working v1 quests in place unless you are intentionally migrating them.
+3. Rebuild V1 quests as V3 owner bundles before loading them.
 4. Convert new or migrated simple quests to quest module v2 first. Extract dialogue trees only when needed.
 5. Replace older helper-heavy logic with `conditions` where practical.
 6. Test each system separately.
@@ -166,7 +166,7 @@ These habits are still correct:
 - Use stable `id` values.
 - Use exact path overrides only when you really want to replace built-in content.
 - Keep notifications, dialogue, and forced dialogue in their own loaders.
-- Keep v1 quest files and dialogue trees when they are still the authoritative source.
+- Retarget V1 quest files to V3 owner bundles. V1 loading and conversion have been removed.
 - Use a resource pack for GUI text and models.
 
 ## When In Doubt

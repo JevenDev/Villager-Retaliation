@@ -24,7 +24,7 @@ public final class QuestV2TypedCompilationGameTests {
     public static void typedCompilationMatchesLegacyQuestContract(GameTestHelper helper) {
         var root = fixture();
         CompiledQuest compiled = compile(root);
-        var legacy = VillagerQuestResources.readCanonicalQuest(VillagerRetaliation.id("quests/typed_parity.json"), json("""
+        var legacy = QuestDefinitionFixtures.read(VillagerRetaliation.id("quests/typed_parity.json"), json("""
                 {"id":"villagerretaliation:typed_parity","display":{"title":"Typed parity","description":"Fixture"},
                  "questline":"fixtures","tags":["test"],"parent":"villagerretaliation:prior",
                  "prerequisites":["villagerretaliation:prior"],"revision":3,

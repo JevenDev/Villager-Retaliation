@@ -184,7 +184,7 @@ public final class ConditionEvaluationGameTests {
 
     private static QuestDefinition fixture() {
         var id = VillagerRetaliation.id("condition_history_boundary");
-        return VillagerQuestResources.readCanonicalQuest(id, JsonParser.parseString("""
+        return QuestDefinitionFixtures.read(id, JsonParser.parseString("""
                 {"objectives":[{"id":"supplies","type":"item_check","item":"minecraft:wheat","count":6}]}
                 """).getAsJsonObject(), id);
     }

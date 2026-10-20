@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
@@ -16,9 +17,7 @@ public record QuestResourceEnvelope(
     private static final String SCHEMA_FIELD = "schema";
 
     public QuestResourceEnvelope {
-        if (schemaVersion == null) {
-            schemaVersion = QuestSchemaVersion.V1;
-        }
+        Objects.requireNonNull(schemaVersion, "quest schema version");
         if (source == null) {
             source = new QuestResourceSource(location, "");
         }
@@ -51,14 +50,16 @@ public record QuestResourceEnvelope(
     private static Optional<QuestSchemaVersion> readSchemaVersion(ResourceLocation location, JsonObject root) {
         JsonElement schema = root.get(SCHEMA_FIELD);
         if (schema == null || schema.isJsonNull()) {
-            return Optional.of(QuestSchemaVersion.V1);
+            DatapackDiagnostics.warnSkippedEntry(location, "quest", "schema",
+                    "schema is required. Use villagerretaliation:quest/v3.");
+            return Optional.empty();
         }
         if (!schema.isJsonPrimitive() || !schema.getAsJsonPrimitive().isString()) {
             DatapackDiagnostics.warnSkippedEntry(
                     location,
                     "quest",
                     "schema",
-                    "schema must be a string such as villagerretaliation:quest/v2.");
+                    "schema must be a string such as villagerretaliation:quest/v3.");
             return Optional.empty();
         }
 
@@ -68,7 +69,7 @@ public record QuestResourceEnvelope(
                     location,
                     "quest",
                     "schema",
-                    "schema must not be blank; omit it for v1 quest resources.");
+                    "schema must not be blank. Use villagerretaliation:quest/v3.");
             return Optional.empty();
         }
         Optional<QuestSchemaVersion> version = QuestSchemaVersion.bySchemaId(schemaId);
