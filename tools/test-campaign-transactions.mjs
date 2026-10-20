@@ -6,7 +6,7 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 import { validateTransactionReferences } from "./campaign-transaction-validation.mjs";
 
 const read = async name => JSON.parse(await readFile(new URL(name, import.meta.url), "utf8"));
-const schema = await read("./datapack-builder/scene-v1.schema.json");
+const schema = await read("./schemas/scene-v1.schema.json");
 const cases = await read("../neoforge/src/gameTest/resources/campaign_fixture/transaction_scene_cases.json");
 for (const entry of cases) {
   const scene = {
@@ -45,8 +45,8 @@ packCampaign.data.transactions = [{ id: "supplies", title_key: "campaign_fixture
 const packScene = resources.at(-1);
 packScene.data.steps[0].type = "villagerretaliation:action_batch";
 packScene.data.steps[0].data = { actions: [{ ...payment, id: "buy" }] };
-const schemas = { scene: schema, campaign: await read("./datapack-builder/campaign-v1.schema.json"),
-  quest: await read("./datapack-builder/quest-v2.schema.json") };
+const schemas = { scene: schema, campaign: await read("./schemas/campaign-v1.schema.json"),
+  quest: await read("./schemas/quest-v2.schema.json") };
 const pack = () => validateCampaignPack(packCampaign.file, packCampaign.data, resources, schemas);
 assert.deepEqual(pack().issues, [], "an owned scene can pay its declared transaction");
 packScene.data.steps[0].data.actions[0].transaction = "missing";

@@ -4,7 +4,7 @@ import path from "node:path";
 import { migrationReceipts } from "./quest-v3-compatibility.mjs";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 const { V2, migrate } = createRequire(import.meta.url)("./quest-v3-format.js");
-const schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(await readFile(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 const args = process.argv.slice(2);
 const check = args.includes("--check");
 const outputIndex = args.indexOf("--out-dir");

@@ -132,7 +132,7 @@ Validate a file offline with:
 node tools/validate-dialogue-data.mjs --skill-trade path/to/trades.json
 ```
 
-The authoritative generated schema is `tools/datapack-builder/skill-trades.schema.json`. Runtime diagnostics identify the resource, entry index or id, field path, reason, and corrective guidance. Invalid siblings are skipped individually. Valid entries in the same file continue loading. Duplicate ids resolve deterministically in resource load order, while `remove` deletes the definition currently associated with that id and root-level `replace` clears definitions loaded earlier.
+The authoritative generated schema is `tools/schemas/skill-trades.schema.json`. Runtime diagnostics identify the resource, entry index or id, field path, reason, and corrective guidance. Invalid siblings are skipped individually. Valid entries in the same file continue loading. Duplicate ids resolve deterministically in resource load order, while `remove` deletes the definition currently associated with that id and root-level `replace` clears definitions loaded earlier.
 
 ## Best Practice
 

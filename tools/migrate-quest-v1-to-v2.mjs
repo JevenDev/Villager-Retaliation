@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
-const questModel = createRequire(import.meta.url)("./quest-builder/quest-model.js");
+const questModel = createRequire(import.meta.url)("./quest-model.js");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const questRoot = path.join(root, "neoforge/src/main/resources/data/villagerretaliation/quests");

@@ -25,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class QuestRegistryMetadata {
     public static final Path TOOLING_METADATA_PATH =
-            Path.of("tools", "datapack-builder", "quest-registry-metadata.json");
+            Path.of("tools", "schemas", "quest-registry-metadata.json");
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
             .setPrettyPrinting()

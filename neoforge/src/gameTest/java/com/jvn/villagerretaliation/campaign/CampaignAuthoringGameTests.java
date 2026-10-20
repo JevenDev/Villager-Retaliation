@@ -108,7 +108,7 @@ public final class CampaignAuthoringGameTests {
     }
 
     private static Path projectFile(String name) throws IOException {
-        var relative = Path.of("tools", "datapack-builder", name);
+        var relative = Path.of("tools", "schemas", name);
         for (int depth = 0; depth <= 3; depth++) {
             if (Files.isRegularFile(relative)) return relative;
             relative = Path.of("..").resolve(relative);

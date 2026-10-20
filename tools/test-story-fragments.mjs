@@ -10,9 +10,9 @@ import { compileStoryProject, loadStoryProject, validateStory, storyPackBytes } 
 import { validateContentSchema } from "./content-schema-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const fixture = path.join(root, "tools/datapack-builder/test-fixtures/story-fragments");
+const fixture = path.join(root, "tools/test-fixtures/story-fragments");
 const runtimeFixture = path.join(root, "neoforge/src/gameTest/resources/campaign_fixture");
-const { readZip } = createRequire(import.meta.url)("./quest-builder/zip-utils.js");
+const { readZip } = createRequire(import.meta.url)("./zip-utils.js");
 const readJson = async file => JSON.parse(await readFile(file, "utf8"));
 const quest = "data/campaign_fixture/quests/campaign_fixture/characters/quest.json";
 const conversation = "data/campaign_fixture/quests/campaign_fixture/characters/conversations/mentor.json";

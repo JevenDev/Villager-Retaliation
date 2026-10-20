@@ -7,12 +7,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const failures = [];
 
 const syntaxFiles = [
-  "tools/datapack-builder/app.js",
-  "tools/datapack-builder/backend.js",
-  "tools/datapack-builder/build-wiki-snapshot.mjs",
-  "tools/quest-builder/app.js",
-  "tools/quest-builder/quest-model.js",
-  "tools/quest-builder/zip-utils.js",
+  "tools/quest-model.js",
+  "tools/zip-utils.js",
   "wiki/shared/search.js",
   "wiki/player/app.js",
   "wiki/player/build-data.mjs",
@@ -31,35 +27,27 @@ const validationScripts = [
   "tools/test-quest-v3-tools.mjs",
   "tools/test-dialogue-contexts.mjs",
   "tools/test-dialogue-authoring.mjs",
-  "tools/test-datapack-builder-schema.mjs",
-  "tools/test-quest-builder-model.mjs",
-  "tools/test-quest-builder-zip.mjs",
-  "tools/test-quest-builder-output.mjs",
+  "tools/test-content-schemas.mjs",
+  "tools/test-quest-model.mjs",
+  "tools/test-zip-utils.mjs",
+  "tools/test-quest-output.mjs",
   "tools/test-wiki-content.mjs"
 ];
 
 const generatedChecks = [
-  ["tools/datapack-builder/build-wiki-snapshot.mjs", "--check"],
   ["wiki/player/build-data.mjs", "--check"],
   ["wiki/dev/build-data.mjs", "--check"]
 ];
 
 const requiredFiles = [
-  "tools/datapack-builder/index.html",
-  "tools/datapack-builder/styles.css",
-  "tools/datapack-builder/app.js",
-  "tools/datapack-builder/wiki-snapshot.js",
-  "tools/datapack-builder/quest-v2.schema.json",
-  "tools/datapack-builder/quest-v3.schema.json",
-  "tools/datapack-builder/quest-locale-v1.schema.json",
-  "tools/datapack-builder/quest-reward-v1.schema.json",
-  "tools/datapack-builder/scene-v1.schema.json",
-  "tools/datapack-builder/encounter-v1.schema.json",
-  "tools/quest-builder/index.html",
-  "tools/quest-builder/styles.css",
-  "tools/quest-builder/app.js",
-  "tools/quest-builder/quest-model.js",
-  "tools/quest-builder/zip-utils.js",
+  "tools/schemas/quest-v2.schema.json",
+  "tools/schemas/quest-v3.schema.json",
+  "tools/schemas/quest-locale-v1.schema.json",
+  "tools/schemas/quest-reward-v1.schema.json",
+  "tools/schemas/scene-v1.schema.json",
+  "tools/schemas/encounter-v1.schema.json",
+  "tools/quest-model.js",
+  "tools/zip-utils.js",
   "wiki/shared/search.js",
   "wiki/shared/villager_retaliation_logo.png",
   "wiki/player/index.html",
@@ -78,7 +66,6 @@ const requiredFiles = [
 ];
 
 const generatedArtifacts = [
-  "tools/datapack-builder/wiki-snapshot.js",
   "wiki/player/site-data.js",
   "wiki/dev/site-data.js"
 ];

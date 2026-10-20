@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const model = require("./quest-builder/quest-model.js");
+const model = require("./quest-model.js");
 
 const registryMetadata = {
   registries: {
@@ -131,7 +131,7 @@ function testPersistentSceneModel() {
 }
 
 function testWorkedSceneExample() {
-  const metadata = JSON.parse(fs.readFileSync("tools/datapack-builder/quest-registry-metadata.json", "utf8"));
+  const metadata = JSON.parse(fs.readFileSync("tools/schemas/quest-registry-metadata.json", "utf8"));
   const scene = JSON.parse(fs.readFileSync("example-packs/cinematic-gate-ambush/data/gate_story/quests/gate_watch/gate_ambush/scenes/gate_ambush.json", "utf8"));
   const errors = model.validateScene(scene, metadata).filter((issue) => issue.severity === "error");
   assert.deepEqual(errors, [], errors.map((issue) => `${issue.code}: ${issue.message}`).join("\n"));
@@ -166,4 +166,4 @@ testFailureAndPrerequisiteContracts();
 testPersistentSceneModel();
 testWorkedSceneExample();
 
-console.log("Quest builder model tests passed.");
+console.log("Quest model tests passed.");

@@ -8,7 +8,7 @@ import { validateConversation } from "./conversation-validation.mjs";
 
 const read = async name => JSON.parse(await readFile(new URL(name, import.meta.url), "utf8"));
 const schemas = Object.fromEntries(await Promise.all(["quest-v3", "conversation-v1", "scene-v1", "campaign-v1"].map(async name =>
-  [name.split("-")[0], await read("./datapack-builder/" + name + ".schema.json")])));
+  [name.split("-")[0], await read("./schemas/" + name + ".schema.json")])));
 const cases = await read("../neoforge/src/gameTest/resources/campaign_fixture/evidence_condition_cases.json");
 const fixture = "../neoforge/src/gameTest/resources/campaign_fixture/data/campaign_fixture/";
 const quest = await read(fixture + "quests/campaign_fixture/investigation/quest.json");

@@ -2339,7 +2339,7 @@ public final class VillagerQuestGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questRegistryMetadataArtifactMatchesJavaExport(GameTestHelper helper) {
-        Path metadataPath = projectPath("tools", "datapack-builder", "quest-registry-metadata.json");
+        Path metadataPath = projectPath("tools", "schemas", "quest-registry-metadata.json");
         String checkedIn;
         try {
             checkedIn = normalizeLineEndings(Files.readString(metadataPath, StandardCharsets.UTF_8));
@@ -4310,7 +4310,7 @@ public final class VillagerQuestGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questV2SchemaArtifactMatchesJavaExport(GameTestHelper helper) {
-        Path schemaPath = projectPath("tools", "datapack-builder", "quest-v2.schema.json");
+        Path schemaPath = projectPath("tools", "schemas", "quest-v2.schema.json");
         String checkedIn;
         try {
             checkedIn = normalizeLineEndings(Files.readString(schemaPath, StandardCharsets.UTF_8));

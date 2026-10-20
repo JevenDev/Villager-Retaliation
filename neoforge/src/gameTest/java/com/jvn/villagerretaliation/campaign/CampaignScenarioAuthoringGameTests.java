@@ -53,7 +53,7 @@ public final class CampaignScenarioAuthoringGameTests {
 
     @GameTest(template = "empty", batch = "campaign_scenario_authoring")
     public static void exportedScenarioSchemaMatchesRuntime(GameTestHelper helper) throws IOException {
-        var artifact = JsonParser.parseString(Files.readString(projectFile("tools/datapack-builder/campaign-scenario-v1.schema.json")));
+        var artifact = JsonParser.parseString(Files.readString(projectFile("tools/schemas/campaign-scenario-v1.schema.json")));
         helper.assertValueEqual(artifact, CampaignScenarioSchema.export(), "scenario schema artifact matches runtime descriptors");
         helper.succeed();
     }

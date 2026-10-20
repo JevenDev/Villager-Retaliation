@@ -70,7 +70,7 @@ async function jsonFiles(directory) {
 }
 
 export async function validateContextDirectory(dataDirectory = builtInData, selectedFiles = null) {
-  const schema = JSON.parse(await readFile(path.join(root, "tools/datapack-builder/quest-v2.schema.json"), "utf8"));
+  const schema = JSON.parse(await readFile(path.join(root, "tools/schemas/quest-v2.schema.json"), "utf8"));
   const effective = new Map();
   const parseErrors = [];
   async function load(directory, file) {

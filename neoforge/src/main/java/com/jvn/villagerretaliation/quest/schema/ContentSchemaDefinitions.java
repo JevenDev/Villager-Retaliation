@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 public final class ContentSchemaDefinitions {
     public static final Path TOOLING_SCHEMA_PATH =
-            Path.of("tools", "datapack-builder", "quest-v2.schema.json");
+            Path.of("tools", "schemas", "quest-v2.schema.json");
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
             .setPrettyPrinting()

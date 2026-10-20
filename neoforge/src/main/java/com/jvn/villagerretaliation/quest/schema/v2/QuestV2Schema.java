@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Set;
 
 public final class QuestV2Schema {
-    public static final Path TOOLING_SCHEMA_PATH = Path.of("tools", "datapack-builder", "quest-v2.schema.json");
+    public static final Path TOOLING_SCHEMA_PATH = Path.of("tools", "schemas", "quest-v2.schema.json");
 
     private QuestV2Schema() { }
 

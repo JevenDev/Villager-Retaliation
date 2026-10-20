@@ -66,9 +66,9 @@ public final class PlayerHistoryChecks {
             check(conditions.size() == 1 && conditions.getFirst() instanceof DialogueCondition.Invalid, "invalid checks fail closed");
         }
         var root = java.nio.file.Path.of("").toAbsolutePath();
-        while (root != null && !java.nio.file.Files.isDirectory(root.resolve("tools/datapack-builder"))) root = root.getParent();
+        while (root != null && !java.nio.file.Files.isDirectory(root.resolve("tools/schemas"))) root = root.getParent();
         check(root != null, "schema artifact directory is available");
-        var artifacts = root.resolve("tools/datapack-builder");
+        var artifacts = root.resolve("tools/schemas");
         var gson = new com.google.gson.GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         check(java.nio.file.Files.readString(artifacts.resolve("quest-v2.schema.json")).replace("\r\n", "\n")
                 .equals(com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema.exportJson().replace("\r\n", "\n")), "quest v2 artifact matches the exact runtime export");

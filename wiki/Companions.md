@@ -88,7 +88,7 @@ These increase the existing permanent skills and their existing gameplay effects
 
 **Blank Map Promise** keeps its existing materials, stages and rewards. Starting it offers optional one-day fieldwork service. Completing it adds free recruitment eligibility (minimum reputation 0), 3 bond and the folio story. Neither starting nor completing it automatically recruits or converts service. Rescue and homecoming stories work outside that quest. Story choices currently use the server chat interface; the existing inventory and skill screens remain in place.
 
-Authors can add or override `data/<namespace>/companion_stories/<id>.json`. Reload validates the entire new registry before replacing it; invalid stories fail reload. The generated `tools/datapack-builder/companion-story.schema.json` describes the format. For example:
+Authors can add or override `data/<namespace>/companion_stories/<id>.json`. Reload validates the entire new registry before replacing it; invalid stories fail reload. The generated `tools/schemas/companion-story.schema.json` describes the format. For example:
 
 ```json
 {
@@ -131,7 +131,7 @@ The 26 pools contain 260 lines: 20 vanilla structure families, three opt-in gene
 
 Homecoming requires a valid registered home, settled presence, at least five minutes of shared loaded-world absence, 256 blocks of shared travel and 30 continuous seconds outside the outer boundary. The inner/outer radii are 24/64 blocks, with five seconds of return dwell. Teleports, offline gaps, idle listeners and short boundary crossings cannot satisfy travel. Only participants recorded on departure can hear that journey's line. Independent arrival/reunion additionally requires dismissal and observed separation. A ready farmer homecoming story takes priority; suppression consumes the encounter without choosing the story or awarding anything. Nearby returns to the same registered home share a persisted arrival episode.
 
-Runtime data lives in `data/villagerretaliation/companion_ambient/default.json`, using `tools/datapack-builder/companion-ambient-v1.schema.json`. Cooldown, quiet periods, observation range, dwell, mappings and pools are datapack fields; home journey thresholds are fixed policy in `CompanionAmbientService`. Unknown fields or invalid content fail reload before replacing the current snapshot.
+Runtime data lives in `data/villagerretaliation/companion_ambient/default.json`, using `tools/schemas/companion-ambient-v1.schema.json`. Cooldown, quiet periods, observation range, dwell, mappings and pools are datapack fields; home journey thresholds are fixed policy in `CompanionAmbientService`. Unknown fields or invalid content fail reload before replacing the current snapshot.
 
 The world stores `data/villagerretaliation_companion_ambient.dat` and its `.identity` receipt together. Back up and restore both from the same snapshot. History has no expiry or size eviction. Missing, corrupt or mismatched receipts suppress callouts and log the problem rather than silently forgetting discoveries. This ledger does not replace companion, party, inventory or story saves.
 
@@ -141,4 +141,4 @@ All 32 remaining ordinary option IDs now have compatible staged player/NPC pairs
 
 The player speaks, the NPC replies, and the normal menu or existing end action follows automatically after readable holds. These pairs do not add Continue entries. Back, replacement notices and stale request tokens cancel queued playback. Existing decision trees retain their own choices and behavior. The server still validates the live conversation and original option, computes consequences once, then chooses presentation from the real outcome. Gift discoveries/reports, weapon durability, order timing, age, reputation, contact history and factual family/relationship records supply context; unresolved or unsafe text falls back to the original response. Pair rotation persists in the existing dialogue usage save.
 
-The runtime format is `data/villagerretaliation/paired_dialogue/<locale>/*.json`, described by `tools/datapack-builder/paired-dialogue-v1.schema.json`. Locale overrides replace matching pair IDs; duplicate IDs within a locale fail loading. Data adds text bindings only, never options or actions.
+The runtime format is `data/villagerretaliation/paired_dialogue/<locale>/*.json`, described by `tools/schemas/paired-dialogue-v1.schema.json`. Locale overrides replace matching pair IDs; duplicate IDs within a locale fail loading. Data adds text bindings only, never options or actions.

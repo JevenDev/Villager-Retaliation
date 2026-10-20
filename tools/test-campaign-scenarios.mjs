@@ -11,7 +11,7 @@ import { loadStoryProject, validateStory } from "./story-authoring.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixture = path.join(root, "neoforge/src/gameTest/resources/campaign_fixture");
 const readJson = async file => JSON.parse(await readFile(file, "utf8"));
-const schema = await readJson(path.join(root, "tools/datapack-builder/campaign-scenario-v1.schema.json"));
+const schema = await readJson(path.join(root, "tools/schemas/campaign-scenario-v1.schema.json"));
 const resources = [];
 async function readResources(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -41,7 +41,7 @@ const relative = "data/campaign_fixture/campaign_scenarios/conversation_success.
 assert.equal(resourceKind(relative), "scenario");
 assert.equal(scenarioPath(path.join(fixture, relative)).id, "campaign_fixture:conversation_success");
 assert.equal(scenarioPath(path.join(fixture, "scenario.json")), null);
-const project = await loadStoryProject(path.join(root, "tools/datapack-builder/test-fixtures/story-fragments/story.json"));
+const project = await loadStoryProject(path.join(root, "tools/test-fixtures/story-fragments/story.json"));
 const manifest = project.sources.get(project.manifestFile);
 const source = structuredClone(scenarios.get("conversation_success").data);
 const choice = source.steps.findIndex(step => step.id === "appeal");

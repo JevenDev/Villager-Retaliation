@@ -4,9 +4,7 @@ This page is the migration note for pack authors, not the player-facing changelo
 
 ## Current Target
 
-The current repo wiki targets `1.0.0-beta.13`. The datapack generator keeps frozen beta.11 and beta.12 documentation snapshots for packs that intentionally remain on those targets.
-
-If you are still maintaining a beta.11 pack, keep using the beta.11 snapshot in `tools/datapack-builder/wiki/1.0.0-beta.11/` until you are ready to retarget manually.
+The current repo wiki targets `1.0.0-beta.13`. Use the [in-game authoring editor](Datapack-Generator.md) for new packs. When updating older packs, review the format changes below before retargeting.
 
 ## Beta.12 To Beta.13 Checklist
 

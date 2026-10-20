@@ -15,8 +15,8 @@ const profilePath = "data/campaign_fixture/quests/_shared/social_progression/tra
 const owner = "data/campaign_fixture/quests/campaign_fixture/characters";
 const conversationPath = owner + "/conversations/social_mentor.json";
 const readJson = async file => JSON.parse(await readFile(file, "utf8"));
-const schema = await readJson(path.join(root, "tools/datapack-builder/social-progression-v1.schema.json"));
-const conversationSchema = await readJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
+const schema = await readJson(path.join(root, "tools/schemas/social-progression-v1.schema.json"));
+const conversationSchema = await readJson(path.join(root, "tools/schemas/conversation-v1.schema.json"));
 const profile = await readJson(path.join(fixture, profilePath));
 const graph = await readJson(path.join(fixture, owner, "conversations/mentor.json"));
 const quest = await readJson(path.join(fixture, owner, "quest.json"));

@@ -8,11 +8,11 @@ import { compileStory, projectPath, resourceKind, authoredLocation, StoryCompile
 import { validateContentSchema } from "./content-schema-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { createZip } = createRequire(import.meta.url)("./quest-builder/zip-utils.js");
+const { createZip } = createRequire(import.meta.url)("./zip-utils.js");
 const schemas = new Map(await Promise.all(Object.entries({
   quest: "quest-v2", campaign: "campaign-v1", conversation: "conversation-v1", scenario: "campaign-scenario-v1", scene: "scene-v1",
   encounter: "encounter-v1", reward: "quest-reward-v1", pool: "quest-pool-v1", locale: "quest-locale-v1", social_progression: "social-progression-v1"
-}).map(async ([kind, name]) => [kind, JSON.parse(await readFile(path.join(root, "tools/datapack-builder", name + ".schema.json"), "utf8"))])));
+}).map(async ([kind, name]) => [kind, JSON.parse(await readFile(path.join(root, "tools/schemas", name + ".schema.json"), "utf8"))])));
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const portable = file => file.replaceAll(path.sep, "/");
 const inside = (directory, file) => {

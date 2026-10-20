@@ -12,8 +12,8 @@ const fixture = path.join(root, "neoforge/src/gameTest/resources/campaign_fixtur
 const data = "data/campaign_fixture/";
 const campaignPath = data + "campaigns/reconciliation/campaign.json";
 const readJson = async file => JSON.parse(await readFile(file, "utf8"));
-const schema = await readJson(path.join(root, "tools/datapack-builder/campaign-v1.schema.json"));
-const scenes = await readJson(path.join(root, "tools/datapack-builder/scene-v1.schema.json"));
+const schema = await readJson(path.join(root, "tools/schemas/campaign-v1.schema.json"));
+const scenes = await readJson(path.join(root, "tools/schemas/scene-v1.schema.json"));
 const cases = await readJson(path.join(fixture, "campaign_authoring_cases.json"));
 const quests = new Map();
 for (const name of ["decision", "dragon", "decision_catch_up", "dragon_catch_up"]) {
@@ -133,7 +133,7 @@ try {
   await rm(temporary, { recursive: true, force: true });
 }
 const standingCases = await readJson(path.join(fixture, "standing_cases.json"));
-const questSchema = await readJson(path.join(root, "tools/datapack-builder/quest-v3.schema.json"));
+const questSchema = await readJson(path.join(root, "tools/schemas/quest-v3.schema.json"));
 for (const test of standingCases) {
   const quest = await readJson(path.join(fixture, data, "quests/campaign_fixture/standing/quest.json"));
   if (test.kind === "action") quest.stages[0].on_enter = [test.input];

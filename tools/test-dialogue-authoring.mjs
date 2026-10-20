@@ -7,7 +7,7 @@ import { validateConversationSchema } from "./conversation-validation.mjs";
 
 const cases = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resources/dialogue_markup/cases.json", import.meta.url), "utf8"));
 for (const entry of cases) assert.equal(markupWarnings(entry.text).length > 0, entry.warning, entry.text);
-const schema = JSON.parse(await readFile(new URL("./datapack-builder/conversation-v1.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(await readFile(new URL("./schemas/conversation-v1.schema.json", import.meta.url), "utf8"));
 const response = { id: "reply", label: { key: "#reply" }, next: "end", unavailable_behavior: "hide" };
 assert.deepEqual(validateConversationSchema(response, { $defs: schema.$defs, $ref: "#/$defs/response" }), []);
 response.unavailable_behavior = "disable";

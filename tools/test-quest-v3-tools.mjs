@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 import { fingerprintJson, migrationReceipts } from "./quest-v3-compatibility.mjs";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 const { V2, V3, migrate, runtime } = createRequire(import.meta.url)("./quest-v3-format.js");
-const schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(await readFile(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 const fingerprints = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resources/quest_v3/migration_fingerprints.json", import.meta.url), "utf8"));
 for (const example of fingerprints.values) assert.equal(fingerprintJson(example.source), example.fingerprint, example.name);
 assert.throws(() => fingerprintJson('{"number":1.}'), SyntaxError);

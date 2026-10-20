@@ -9,7 +9,7 @@ import java.util.List;
 
 public final class QuestV3Schema {
     public static final String ID = "villagerretaliation:quest/v3";
-    public static final Path TOOLING_SCHEMA_PATH = Path.of("tools", "datapack-builder", "quest-v3.schema.json");
+    public static final Path TOOLING_SCHEMA_PATH = Path.of("tools", "schemas", "quest-v3.schema.json");
 
     private QuestV3Schema() { }
 

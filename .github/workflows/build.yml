@@ -62,13 +62,9 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build combined Pages artifact
         run: |
-          mkdir -p _site/datapack-builder
-          mkdir -p _site/quest-builder
           mkdir -p _site/developer-wiki
           mkdir -p _site/shared
           cp -R wiki/player/. _site/
-          cp -R tools/datapack-builder/. _site/datapack-builder/
-          cp -R tools/quest-builder/. _site/quest-builder/
           cp -R wiki/dev/. _site/developer-wiki/
           cp -R wiki/shared/. _site/shared/
           touch _site/.nojekyll

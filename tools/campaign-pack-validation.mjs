@@ -1,6 +1,6 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
-const questV3Schema = JSON.parse(readFileSync(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const questV3Schema = JSON.parse(readFileSync(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 import { validateContentSchema } from "./content-schema-validation.mjs";
 import { validateCampaign } from "./campaign-validation.mjs";
 import { validateStandingReferences } from "./campaign-standing-validation.mjs";

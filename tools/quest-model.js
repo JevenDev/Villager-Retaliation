@@ -5,7 +5,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createQuestModel() {
   "use strict";
 
-  const questFormat = typeof module === "object" && module.exports ? require("../quest-v3-format.js") : globalThis.QuestV3Format;
+  const questFormat = typeof module === "object" && module.exports ? require("./quest-v3-format.js") : globalThis.QuestV3Format;
   const EXPORT_SCHEMA_ID = questFormat.V3;
   const SCHEMA_ID = "villagerretaliation:quest/v2";
   const SCENE_SCHEMA_ID = "villagerretaliation:scene/v1";

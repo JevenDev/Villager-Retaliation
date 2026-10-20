@@ -11,7 +11,7 @@ public final class ConversationSchemaTool {
     }
 
     public static void main(String[] args) throws IOException {
-        Path output = args.length == 0 ? Path.of("tools", "datapack-builder", "conversation-v1.schema.json") : Path.of(args[0]);
+        Path output = args.length == 0 ? Path.of("tools", "schemas", "conversation-v1.schema.json") : Path.of(args[0]);
         Files.createDirectories(output.toAbsolutePath().getParent());
         var gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         Files.writeString(output, gson.toJson(ConversationSchema.export()) + System.lineSeparator(), StandardCharsets.UTF_8);

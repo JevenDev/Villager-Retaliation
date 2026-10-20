@@ -28,4 +28,4 @@ Exact scanning charges one item per complete bed, door or double-height plant, t
 
 Template entities are omitted. Inventories, loot tables, bees, spawner/command data and arbitrary mod block-entity payloads are removed. Sign text, banner patterns and skull appearance are retained. Export empty containers; decorations needing other block-entity data are unsupported and should be checked in preview. Do not put valuable items or entities in a template expecting them to be constructed. The original `.nbt` is never rewritten by scanning.
 
-Schema: [`builder-structures.schema.json`](../../tools/datapack-builder/builder-structures.schema.json). A datapack reload clears the catalog/scanner caches. New projects preserve a fingerprint of their complete output and bill; changed templates wait with a visible reason until cancelled and submitted again.
+Schema: [`builder-structures.schema.json`](../../tools/schemas/builder-structures.schema.json). A datapack reload clears the catalog/scanner caches. New projects preserve a fingerprint of their complete output and bill; changed templates wait with a visible reason until cancelled and submitted again.

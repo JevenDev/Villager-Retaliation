@@ -7,7 +7,7 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const data = path.join(root, "neoforge/src/main/resources/data/villagerretaliation");
 const read = file => JSON.parse(readFileSync(file, "utf8"));
-const schema = name => read(path.join(root, "tools/datapack-builder", `${name}-v1.schema.json`));
+const schema = name => read(path.join(root, "tools/schemas", `${name}-v1.schema.json`));
 const rows = readdirSync(path.join(data, "paired_dialogue/en_us")).flatMap(file => {
   const value = read(path.join(data, "paired_dialogue/en_us", file));
   assert.deepEqual(validateContentSchema(value, schema("paired-dialogue")), [], file);

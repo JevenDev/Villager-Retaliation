@@ -11,7 +11,7 @@ const catalog = [
   ["Pack-Development.md", "Getting Started", "package-open", "Folder layout, namespaces, overrides, reloads, and a safe pack-authoring workflow."],
   ["JSON-Reference.md", "Getting Started", "braces", "Shared IDs, selectors, conditions, quest facts, actions, weights, and message-key rules."],
   ["First-Quest.md", "Getting Started", "route", "Build and test a complete quest module v2 file from the smallest working shape."],
-  ["Datapack-Generator.md", "Getting Started", "hammer", "Use the bundled browser generator and understand which versioned surfaces it writes."],
+  ["Datapack-Generator.md", "Getting Started", "hammer", "Use the in-game authoring editor to edit, validate, preview, and export packs."],
   ["Example-Packs.md", "Getting Started", "folder-down", "Copy complete packs ranging from one focused feature to persistent cinematic encounters."],
   ["Commands.md", "Getting Started", "terminal", "Complete player and operator command syntax for parties, duels, diagnostics, quests, scenes, villagers, villages, and debug tools."],
   ["Dialogue.md", "Dialogue", "message-square-text", "Talk options, rich text variants, durable usage rules, metadata tags, tuning, and conversation text."],

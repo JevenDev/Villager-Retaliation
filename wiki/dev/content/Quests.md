@@ -970,7 +970,7 @@ Absolute existing message IDs remain supported. Other locales may be partial and
 
 ## Capabilities And Live Context
 
-Conditions and actions come from the generated quest registries. The datapack builder reads `tools/datapack-builder/quest-registry-metadata.json`. The Node validator and Java schema generator use the same runtime metadata.
+Conditions and actions come from the generated quest registries. The Node validator reads `tools/schemas/quest-registry-metadata.json`. The Java schema generator uses the same runtime metadata.
 
 Some registry entries need live entities:
 

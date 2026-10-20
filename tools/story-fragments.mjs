@@ -2,7 +2,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 
-const schema = JSON.parse(await readFile(new URL("./datapack-builder/story-authoring-v1.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(await readFile(new URL("./schemas/story-authoring-v1.schema.json", import.meta.url), "utf8"));
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const escape = key => String(key).replaceAll("~", "~0").replaceAll("/", "~1");
 const child = (pointer, key) => pointer + "/" + escape(key);

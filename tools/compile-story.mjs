@@ -36,7 +36,7 @@ try {
       "Validates reusable story fragments and their expanded campaign, quest, and conversation resources.",
       "Without --output, validates only. Output is an ordinary datapack ZIP with a separate story-sources.json map.",
       "Existing outputs are preserved unless --overwrite is supplied. Sources stay inside the manifest directory.",
-      "Authoring schema: tools/datapack-builder/story-authoring-v1.schema.json"
+      "Authoring schema: tools/schemas/story-authoring-v1.schema.json"
     ].join("\n"));
   } else {
     const result = await compileStoryProject(args.manifest, args.options);

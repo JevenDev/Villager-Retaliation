@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { validateContextDocuments, validateContextDirectory } from "./dialogue-context-validation.mjs";
 
-const schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v2.schema.json", import.meta.url), "utf8"));
+const schema = JSON.parse(await readFile(new URL("./schemas/quest-v2.schema.json", import.meta.url), "utf8"));
 const source = id => "/data/test/dialogue_contexts/" + id + ".json";
 const rules = [
   [source("hurt"), { id: "test:hurt", conditions: [{ type: "health", subject: "speaker", max: 0.5 }] }],

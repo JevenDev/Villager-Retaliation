@@ -6,8 +6,8 @@ import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 
 const require = createRequire(import.meta.url);
-const model = require("./quest-builder/quest-model.js");
-const workspace = await mkdtemp(path.join(os.tmpdir(), "vr-quest-builder-output-"));
+const model = require("./quest-model.js");
+const workspace = await mkdtemp(path.join(os.tmpdir(), "vr-quest-output-"));
 
 try {
   const failureQuest = model.createLinearQuest("builder_test");
@@ -37,4 +37,4 @@ try {
   await rm(workspace, { recursive: true, force: true });
 }
 
-console.log("Quest builder output tests passed.");
+console.log("Quest output tests passed.");

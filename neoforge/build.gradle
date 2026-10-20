@@ -641,7 +641,7 @@ tasks.register('generateQuestRegistryMetadata', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.quest.QuestRegistryMetadataTool'
-    args rootProject.file('tools/datapack-builder/quest-registry-metadata.json').absolutePath
+    args rootProject.file('tools/schemas/quest-registry-metadata.json').absolutePath
 }
 
 tasks.register('generateQuestV2Schema', JavaExec) {
@@ -650,7 +650,7 @@ tasks.register('generateQuestV2Schema', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.quest.schema.v2.QuestV2SchemaTool'
-    args rootProject.file('tools/datapack-builder/quest-v2.schema.json').absolutePath
+    args rootProject.file('tools/schemas/quest-v2.schema.json').absolutePath
 }
 
 tasks.register('generateQuestV3Schema', JavaExec) {
@@ -659,7 +659,7 @@ tasks.register('generateQuestV3Schema', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema'
-    args rootProject.file('tools/datapack-builder/quest-v3.schema.json').absolutePath
+    args rootProject.file('tools/schemas/quest-v3.schema.json').absolutePath
 }
 
 tasks.register('generateCampaignSchema', JavaExec) {
@@ -668,7 +668,7 @@ tasks.register('generateCampaignSchema', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.campaign.content.CampaignSchemaTool'
-    args rootProject.file('tools/datapack-builder/campaign-v1.schema.json').absolutePath
+    args rootProject.file('tools/schemas/campaign-v1.schema.json').absolutePath
 }
 
 tasks.register('generateConversationSchema', JavaExec) {
@@ -677,7 +677,7 @@ tasks.register('generateConversationSchema', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.dialogue.conversation.ConversationSchemaTool'
-    args rootProject.file('tools/datapack-builder/conversation-v1.schema.json').absolutePath
+    args rootProject.file('tools/schemas/conversation-v1.schema.json').absolutePath
 }
 
 tasks.register('generateSceneSchemas', JavaExec) {
@@ -686,8 +686,8 @@ tasks.register('generateSceneSchemas', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.scene.schema.SceneSchemaTool'
-    args rootProject.file('tools/datapack-builder/scene-v1.schema.json').absolutePath,
-            rootProject.file('tools/datapack-builder/encounter-v1.schema.json').absolutePath
+    args rootProject.file('tools/schemas/scene-v1.schema.json').absolutePath,
+            rootProject.file('tools/schemas/encounter-v1.schema.json').absolutePath
 }
 
 tasks.register('generateSkillTradeSchema', JavaExec) {
@@ -696,7 +696,7 @@ tasks.register('generateSkillTradeSchema', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.trade.SkillTradeSchemaTool'
-    args rootProject.file('tools/datapack-builder/skill-trades.schema.json').absolutePath
+    args rootProject.file('tools/schemas/skill-trades.schema.json').absolutePath
 }
 
 tasks.named('runGameTestServer') {

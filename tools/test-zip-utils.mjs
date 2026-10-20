@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const zip = require("./quest-builder/zip-utils.js");
-const model = require("./quest-builder/quest-model.js");
+const zip = require("./zip-utils.js");
+const model = require("./quest-model.js");
 const decoder = new TextDecoder();
 
 async function testRoundTrip() {
@@ -48,4 +48,4 @@ await testRoundTrip();
 await testWrappedPackNormalization();
 testUnsafePaths();
 
-console.log("Quest builder zip tests passed.");
+console.log("Quest zip tests passed.");

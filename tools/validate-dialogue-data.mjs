@@ -11,7 +11,7 @@ import { scenarioPath, scenarioContext, validateCampaignScenario } from "./campa
 import { socialProgressionPath, validateSocialProgression, collectSocialProgressions } from "./social-progression-validation.mjs";
 
 const questV3Format = createRequire(import.meta.url)("./quest-v3-format.js");
-const questV3Schema = JSON.parse(await readFile(new URL("./datapack-builder/quest-v3.schema.json", import.meta.url), "utf8"));
+const questV3Schema = JSON.parse(await readFile(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -973,11 +973,11 @@ const skillTradeSchema = await loadSkillTradeSchema();
 validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 const questObjectiveTypes = questV2RegistryIndex.objectives.values;
-const conversationSchema = await parseJson(path.join(root, "tools/datapack-builder/conversation-v1.schema.json"));
-const socialProgressionSchema = await parseJson(path.join(root, "tools/datapack-builder/social-progression-v1.schema.json"));
-const campaignSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-v1.schema.json"));
-const scenarioSchema = await parseJson(path.join(root, "tools/datapack-builder/campaign-scenario-v1.schema.json"));
-const sceneSchema = await parseJson(path.join(root, "tools/datapack-builder/scene-v1.schema.json"));
+const conversationSchema = await parseJson(path.join(root, "tools/schemas/conversation-v1.schema.json"));
+const socialProgressionSchema = await parseJson(path.join(root, "tools/schemas/social-progression-v1.schema.json"));
+const campaignSchema = await parseJson(path.join(root, "tools/schemas/campaign-v1.schema.json"));
+const scenarioSchema = await parseJson(path.join(root, "tools/schemas/campaign-scenario-v1.schema.json"));
+const sceneSchema = await parseJson(path.join(root, "tools/schemas/scene-v1.schema.json"));
 
 if (cli.help) {
   printValidatorHelp();
@@ -1541,7 +1541,7 @@ function formatIssue(issue, fallbackSeverity) {
 }
 
 async function loadQuestRegistryMetadata() {
-  const metadataPath = path.join(root, "tools/datapack-builder/quest-registry-metadata.json");
+  const metadataPath = path.join(root, "tools/schemas/quest-registry-metadata.json");
   try {
     return JSON.parse(await readFile(metadataPath, "utf8"));
   } catch (error) {
@@ -1552,43 +1552,43 @@ async function loadQuestRegistryMetadata() {
 
 function validateQuestRegistryMetadata(metadata) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    errors.push("tools/datapack-builder/quest-registry-metadata.json: root must be an object.");
+    errors.push("tools/schemas/quest-registry-metadata.json: root must be an object.");
     return;
   }
   if (![1, 2].includes(metadata.format_version)) {
-    errors.push("tools/datapack-builder/quest-registry-metadata.json: format_version must be 1 or 2.");
+    errors.push("tools/schemas/quest-registry-metadata.json: format_version must be 1 or 2.");
   }
   const registries = metadata.registries;
   if (!registries || typeof registries !== "object" || Array.isArray(registries)) {
-    errors.push("tools/datapack-builder/quest-registry-metadata.json: registries must be an object.");
+    errors.push("tools/schemas/quest-registry-metadata.json: registries must be an object.");
     return;
   }
   for (const registry of ["conditions", "actions", "objectives", "triggers", "providers"]) {
     if (!Array.isArray(registries[registry]) || registries[registry].length === 0) {
-      errors.push(`tools/datapack-builder/quest-registry-metadata.json: registries.${registry} must be a non-empty array.`);
+      errors.push(`tools/schemas/quest-registry-metadata.json: registries.${registry} must be a non-empty array.`);
     }
   }
   if (metadata.format_version >= 2) {
     for (const registry of ["actor_types", "scene_steps", "encounter_templates", "public_quest_providers", "public_quest_objectives", "public_quest_actions", "public_quest_conditions", "public_quest_triggers"]) {
       if (!Array.isArray(registries[registry]) || registries[registry].length === 0) {
-        errors.push(`tools/datapack-builder/quest-registry-metadata.json: registries.${registry} must be a non-empty array in format v2.`);
+        errors.push(`tools/schemas/quest-registry-metadata.json: registries.${registry} must be a non-empty array in format v2.`);
       }
     }
   }
   const fragments = metadata.schema_fragments;
   if (!fragments || typeof fragments !== "object" || Array.isArray(fragments)) {
-    errors.push("tools/datapack-builder/quest-registry-metadata.json: schema_fragments must be an object.");
+    errors.push("tools/schemas/quest-registry-metadata.json: schema_fragments must be an object.");
     return;
   }
   for (const fragment of ["condition_type", "action_type", "objective_type", "trigger_event", "provider_type"]) {
     if (!fragments[fragment] || !Array.isArray(fragments[fragment].enum) || fragments[fragment].enum.length === 0) {
-      errors.push(`tools/datapack-builder/quest-registry-metadata.json: schema_fragments.${fragment}.enum must be a non-empty array.`);
+      errors.push(`tools/schemas/quest-registry-metadata.json: schema_fragments.${fragment}.enum must be a non-empty array.`);
     }
   }
 }
 
 async function loadQuestV2Schema() {
-  const schemaPath = path.join(root, "tools/datapack-builder/quest-v2.schema.json");
+  const schemaPath = path.join(root, "tools/schemas/quest-v2.schema.json");
   try {
     return JSON.parse(await readFile(schemaPath, "utf8"));
   } catch (error) {
@@ -1598,7 +1598,7 @@ async function loadQuestV2Schema() {
 }
 
 async function loadSkillTradeSchema() {
-  const schemaPath = path.join(root, "tools/datapack-builder/skill-trades.schema.json");
+  const schemaPath = path.join(root, "tools/schemas/skill-trades.schema.json");
   try {
     return JSON.parse(await readFile(schemaPath, "utf8"));
   } catch (error) {
@@ -1608,7 +1608,7 @@ async function loadSkillTradeSchema() {
 }
 
 function validateSkillTradeSchema(schema) {
-  const schemaPath = "tools/datapack-builder/skill-trades.schema.json";
+  const schemaPath = "tools/schemas/skill-trades.schema.json";
   if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
     errors.push(`${schemaPath}: root must be an object.`);
     return;
@@ -1620,7 +1620,7 @@ function validateSkillTradeSchema(schema) {
 }
 
 function validateQuestV2Schema(schema) {
-  const schemaPath = "tools/datapack-builder/quest-v2.schema.json";
+  const schemaPath = "tools/schemas/quest-v2.schema.json";
   if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
     errors.push(`${schemaPath}: root must be an object.`);
     return;
