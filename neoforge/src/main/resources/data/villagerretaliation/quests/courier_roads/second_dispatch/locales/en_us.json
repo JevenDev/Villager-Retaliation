@@ -1,0 +1,63 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "villagerretaliation.quest.second_dispatch.title": "Second Dispatch",
+    "villagerretaliation.quest.second_dispatch.description": "The first courier left without the letters. Bring paper and sealing wax for replacement copies. There is no deadline for making this right.",
+    "villagerretaliation.quest.second_dispatch.copies.paper.text": "Bring 12 paper for replacement letters.",
+    "villagerretaliation.quest.second_dispatch.copies.paper.complete": "The supplies are ready.",
+    "villagerretaliation.quest.second_dispatch.copies.wax.text": "Bring 2 honeycomb to seal the replacement letters.",
+    "villagerretaliation.quest.second_dispatch.copies.wax.complete": "The supplies are ready.",
+    "villagerretaliation.quest.second_dispatch.copies.display": "Bring 12 paper and 2 honeycomb. There is no deadline.",
+    "villagerretaliation.quest.second_dispatch.offer.accept.label": "I will help with the copies.",
+    "villagerretaliation.quest.second_dispatch.offer.accept.player": "Let us get those letters moving again.",
+    "villagerretaliation.quest.second_dispatch.offer.decline.label": "Another time.",
+    "villagerretaliation.quest.second_dispatch.offer.decline.player": "I will return when I can spare the supplies.",
+    "villagerretaliation.quest.second_dispatch.copies.offer.lines": [
+      "The first courier left without the letters. We can still send copies. Bring 12 paper and 2 honeycomb. There is no deadline this time. The work pays 40 experience, 2 reputation and 1 emerald."
+    ],
+    "villagerretaliation.quest.second_dispatch.copies.offer.label": "Second Dispatch",
+    "villagerretaliation.quest.second_dispatch.reminder.leave.label": "I will bring the supplies.",
+    "villagerretaliation.quest.second_dispatch.reminder.leave.player": "I will return with paper and sealing wax.",
+    "villagerretaliation.quest.second_dispatch.copies.reminder.lines": [
+      "Twelve paper and two honeycomb will put the letters back on the road. Take the time you need."
+    ],
+    "villagerretaliation.quest.second_dispatch.copies.reminder.label": "Second Dispatch",
+    "villagerretaliation.quest.second_dispatch.turn_in.complete.label": "Send the replacement letters.",
+    "villagerretaliation.quest.second_dispatch.turn_in.complete.player": "Here is the paper and wax. Let us finish the dispatch.",
+    "villagerretaliation.quest.second_dispatch.turn_in.leave.label": "Not yet.",
+    "villagerretaliation.quest.second_dispatch.turn_in.leave.player": "I will return when I am ready to hand them over.",
+    "villagerretaliation.quest.second_dispatch.copies.turn_in.lines": [
+      "Those supplies are enough to copy and seal every letter."
+    ],
+    "villagerretaliation.quest.second_dispatch.copies.turn_in.label": "Second Dispatch",
+    "villagerretaliation.quest.second_dispatch.scene.start_quest.started": [
+      "Bring 12 paper and 2 honeycomb whenever you can. This dispatch can wait."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.start_quest.unavailable": [
+      "There are no outstanding letters for you to replace."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.start_quest.already_completed": [
+      "The replacement letters are already on their way."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.complete_quest.completed": [
+      "The letters are moving again. You came back and finished the work. That counts."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.complete_quest.missing_objectives": [
+      "I still need 12 paper and 2 honeycomb to copy and seal the letters."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.complete_quest.unavailable": [
+      "This replacement dispatch has already been settled."
+    ],
+    "villagerretaliation.quest.second_dispatch.scene.leave.lines": [
+      "The copying table will be here when you are ready."
+    ],
+    "villagerretaliation.quest.second_dispatch.copies.details.label": "Repeat the supplies.",
+    "villagerretaliation.quest.second_dispatch.copies.details.player": "Please remind me what is still needed.",
+    "villagerretaliation.quest.second_dispatch.copies.details.reminder": [
+      "Bring 12 paper and 2 honeycomb. There is no deadline for the replacement letters."
+    ],
+    "villagerretaliation.quest.second_dispatch.copies.details.unavailable": [
+      "This dispatch is already settled."
+    ]
+  }
+}

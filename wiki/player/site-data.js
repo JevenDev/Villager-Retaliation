@@ -30211,6 +30211,451 @@ window.VR_WIKI_DATA = {
       "questlineOrder": 0
     },
     {
+      "id": "villagerretaliation:second_dispatch",
+      "slug": "second_dispatch",
+      "title": "Second Dispatch",
+      "description": "The first courier left without the letters. Bring paper and sealing wax for replacement copies. There is no deadline for making this right.",
+      "questline": "courier_roads",
+      "questlineLabel": "Courier Roads",
+      "group": "courier_roads",
+      "groupLabel": "Courier Roads",
+      "tags": [
+        "group.courier_roads",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community",
+        "feature.recoverable"
+      ],
+      "relationKey": "questline:courier_roads",
+      "parent": "villagerretaliation:wax_sealed_route",
+      "parentSlug": "wax_sealed_route",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:wax_sealed_route",
+          "slug": "wax_sealed_route"
+        },
+        {
+          "id": "villagerretaliation:urgent_dispatch",
+          "slug": "urgent_dispatch"
+        }
+      ],
+      "branchRequirements": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cartographer",
+          "Fletcher",
+          "Librarian"
+        ],
+        "skills": []
+      },
+      "target": null,
+      "objectives": [
+        "12 Paper",
+        "2 Honeycomb"
+      ],
+      "steps": [
+        {
+          "id": "copies",
+          "label": "Copies",
+          "text": "Bring 12 paper and 2 honeycomb. There is no deadline.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "paper",
+          "label": "Paper",
+          "text": "Bring 12 paper for replacement letters.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "wax",
+          "label": "Wax",
+          "text": "Bring 2 honeycomb to seal the replacement letters.",
+          "progress": null,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 40,
+        "reputation": 2,
+        "gossipReputation": 1,
+        "lootTable": "villagerretaliation:quest/second_dispatch",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Can be completed with another valid villager",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The first courier left without the letters. We can still send copies. Bring 12 paper and 2 honeycomb. There is no deadline this time. The work pays 40 experience, 2 reputation and 1 emerald."
+        ],
+        "accept": "I will help with the copies.",
+        "decline": "Another time.",
+        "started": [
+          "Bring 12 paper and 2 honeycomb whenever you can. This dispatch can wait."
+        ],
+        "reminder": [
+          "Bring 12 paper and 2 honeycomb. There is no deadline for the replacement letters."
+        ],
+        "completed": [
+          "The letters are moving again. You came back and finished the work. That counts."
+        ],
+        "missing": [
+          "I still need 12 paper and 2 honeycomb to copy and seal the letters."
+        ],
+        "stages": [
+          {
+            "stageId": "copies",
+            "label": "Copies",
+            "trackerText": "Bring 12 paper and 2 honeycomb. There is no deadline.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Second Dispatch",
+                "lines": [
+                  "The first courier left without the letters. We can still send copies. Bring 12 paper and 2 honeycomb. There is no deadline this time. The work pays 40 experience, 2 reputation and 1 emerald."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help with the copies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Second Dispatch",
+                "lines": [
+                  "Twelve paper and two honeycomb will put the letters back on the road. Take the time you need."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Second Dispatch",
+                "lines": [
+                  "Those supplies are enough to copy and seal every letter."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Send the replacement letters.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 12 paper and 2 honeycomb whenever you can. This dispatch can wait."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "There are no outstanding letters for you to replace."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The replacement letters are already on their way."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The letters are moving again. You came back and finished the work. That counts."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 12 paper and 2 honeycomb to copy and seal the letters."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This replacement dispatch has already been settled."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 12 paper and 2 honeycomb. There is no deadline for the replacement letters."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The copying table will be here when you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "copies",
+            "label": "Copies",
+            "trackerText": "Bring 12 paper and 2 honeycomb. There is no deadline.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Second Dispatch",
+                "lines": [
+                  "The first courier left without the letters. We can still send copies. Bring 12 paper and 2 honeycomb. There is no deadline this time. The work pays 40 experience, 2 reputation and 1 emerald."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help with the copies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Second Dispatch",
+                "lines": [
+                  "Twelve paper and two honeycomb will put the letters back on the road. Take the time you need."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Second Dispatch",
+                "lines": [
+                  "Those supplies are enough to copy and seal every letter."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Send the replacement letters.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 12 paper and 2 honeycomb whenever you can. This dispatch can wait."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "There are no outstanding letters for you to replace."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The replacement letters are already on their way."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The letters are moving again. You came back and finished the work. That counts."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 12 paper and 2 honeycomb to copy and seal the letters."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "This replacement dispatch has already been settled."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 12 paper and 2 honeycomb. There is no deadline for the replacement letters."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The copying table will be here when you are ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
+    },
+    {
       "id": "villagerretaliation:night_run",
       "slug": "night_run",
       "title": "The Night Run",
@@ -30905,7 +31350,986 @@ window.VR_WIKI_DATA = {
         ],
         "branches": []
       },
-      "questlineOrder": 1
+      "questlineOrder": 2
+    },
+    {
+      "id": "villagerretaliation:urgent_dispatch",
+      "slug": "urgent_dispatch",
+      "title": "Urgent Dispatch",
+      "description": "Supply the courier within two days of accepting. A full delivery pays more. Sending only food, missing the deadline, or reporting failure leaves letters for a Second Dispatch.",
+      "questline": "courier_roads",
+      "questlineLabel": "Courier Roads",
+      "group": "courier_roads",
+      "groupLabel": "Courier Roads",
+      "tags": [
+        "group.courier_roads",
+        "role.side",
+        "activity.deliver",
+        "activity.gather",
+        "destination.village",
+        "tier.mid",
+        "difficulty.easy",
+        "commitment.standard",
+        "theme.community",
+        "feature.recoverable",
+        "activity.choice",
+        "feature.branching"
+      ],
+      "relationKey": "questline:courier_roads",
+      "parent": "villagerretaliation:wax_sealed_route",
+      "parentSlug": "wax_sealed_route",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:wax_sealed_route",
+          "slug": "wax_sealed_route"
+        }
+      ],
+      "branchRequirements": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cartographer",
+          "Fletcher",
+          "Librarian"
+        ],
+        "skills": []
+      },
+      "target": null,
+      "objectives": [
+        "Choose a full dispatch or a food-only delivery before the two-day deadline",
+        "8 Bread",
+        "12 Paper",
+        "2 Honeycomb",
+        "8 Bread"
+      ],
+      "steps": [
+        {
+          "id": "prepare",
+          "label": "Prepare",
+          "text": "Choose your delivery. The courier leaves two days after acceptance.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "delivery",
+          "label": "Delivery",
+          "text": "Choose a full dispatch or a food-only delivery before the two-day deadline.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "full",
+          "label": "Full",
+          "text": "Bring 8 bread, 12 paper and 2 honeycomb before the courier leaves.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "bread",
+          "label": "Bread",
+          "text": "Bring 8 bread for the courier.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "paper",
+          "label": "Paper",
+          "text": "Bring 12 paper for the dispatch copies.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "wax",
+          "label": "Wax",
+          "text": "Bring 2 honeycomb to seal the dispatch.",
+          "progress": null,
+          "hint": ""
+        },
+        {
+          "id": "partial",
+          "label": "Partial",
+          "text": "Bring 8 bread before the courier leaves.",
+          "progress": null,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 60,
+        "reputation": 3,
+        "gossipReputation": 1,
+        "lootTable": "villagerretaliation:quest/urgent_dispatch",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "2",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Can be completed with another valid villager",
+        "Turn-in items are consumed on completion",
+        "Abandoning closes it forever"
+      ],
+      "dialogue": {
+        "offer": [
+          "The courier leaves in two days. Bring 8 bread, 12 paper and 2 honeycomb for the full dispatch. Food alone earns a smaller payment, but the letters will need a Second Dispatch. Once you accept, this departure cannot be restarted."
+        ],
+        "accept": "I will help with this departure.",
+        "decline": "I cannot promise that.",
+        "started": [
+          "Two days from now the courier leaves. Choose your delivery, and bring it here before then."
+        ],
+        "reminder": [
+          "The courier leaves two days after you accepted. Choose the full dispatch or food alone, then bring the supplies here.",
+          "Bring 8 bread, 12 paper and 2 honeycomb before the two-day departure deadline.",
+          "Bring 8 bread before the two-day departure deadline. The letters will need a Second Dispatch."
+        ],
+        "completed": [
+          "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving.",
+          "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+        ],
+        "missing": [
+          "I still need 8 bread before I can pay you.",
+          "I still need 8 bread before I can pay you."
+        ],
+        "stages": [
+          {
+            "stageId": "prepare",
+            "label": "Prepare",
+            "trackerText": "Choose your delivery. The courier leaves two days after acceptance.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier leaves in two days. Bring 8 bread, 12 paper and 2 honeycomb for the full dispatch. Food alone earns a smaller payment, but the letters will need a Second Dispatch. Once you accept, this departure cannot be restarted."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help with this departure.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "I cannot promise that.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "Choose the full dispatch or food alone. This delivery choice is permanent. Full service pays 120 experience, 8 reputation and 4 emeralds. Food alone pays 60 experience, 3 reputation and 2 emeralds."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the deadline.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "full",
+                    "label": "Prepare the full dispatch.",
+                    "lines": [],
+                    "targetStageId": "full",
+                    "destination": "Next: Full"
+                  },
+                  {
+                    "id": "partial",
+                    "label": "Send food. Copy the letters later.",
+                    "lines": [],
+                    "targetStageId": "partial",
+                    "destination": "Next: Partial"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Two days from now the courier leaves. Choose your delivery, and bring it here before then."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "This departure is no longer available."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "This departure has already been settled."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The courier leaves two days after you accepted. Choose the full dispatch or food alone, then bring the supplies here."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will find another way to prepare the courier."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "full",
+            "label": "Full",
+            "trackerText": "Bring 8 bread, 12 paper and 2 honeycomb before the courier leaves.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier still needs 8 bread, 12 paper and 2 honeycomb. The two-day deadline is still running."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The food and letters can leave together."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the full dispatch.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 8 bread before I can pay you."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The departure is already settled. If anything was left behind, ask about a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 bread, 12 paper and 2 honeycomb before the two-day departure deadline."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "partial",
+            "label": "Partial",
+            "trackerText": "Bring 8 bread before the courier leaves.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier still needs 8 bread. The two-day deadline is still running."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier can leave fed, but the letters will stay behind. This is the smaller payment, and a Second Dispatch will be needed."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over food only.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 8 bread before I can pay you."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The departure is already settled. If anything was left behind, ask about a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 bread before the two-day departure deadline. The letters will need a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "prepare",
+            "label": "Prepare",
+            "trackerText": "Choose your delivery. The courier leaves two days after acceptance.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier leaves in two days. Bring 8 bread, 12 paper and 2 honeycomb for the full dispatch. Food alone earns a smaller payment, but the letters will need a Second Dispatch. Once you accept, this departure cannot be restarted."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help with this departure.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "I cannot promise that.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "Choose the full dispatch or food alone. This delivery choice is permanent. Full service pays 120 experience, 8 reputation and 4 emeralds. Food alone pays 60 experience, 3 reputation and 2 emeralds."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the deadline.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "full",
+                    "label": "Prepare the full dispatch.",
+                    "lines": [],
+                    "targetStageId": "full",
+                    "destination": "Next: Full"
+                  },
+                  {
+                    "id": "partial",
+                    "label": "Send food. Copy the letters later.",
+                    "lines": [],
+                    "targetStageId": "partial",
+                    "destination": "Next: Partial"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Two days from now the courier leaves. Choose your delivery, and bring it here before then."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "This departure is no longer available."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "This departure has already been settled."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "The courier leaves two days after you accepted. Choose the full dispatch or food alone, then bring the supplies here."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will find another way to prepare the courier."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "full",
+            "label": "Full",
+            "trackerText": "Bring 8 bread, 12 paper and 2 honeycomb before the courier leaves.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier still needs 8 bread, 12 paper and 2 honeycomb. The two-day deadline is still running."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The food and letters can leave together."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over the full dispatch.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 8 bread before I can pay you."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The departure is already settled. If anything was left behind, ask about a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 bread, 12 paper and 2 honeycomb before the two-day departure deadline."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "partial",
+            "label": "Partial",
+            "trackerText": "Bring 8 bread before the courier leaves.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier still needs 8 bread. The two-day deadline is still running."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              },
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "Urgent Dispatch",
+                "lines": [
+                  "The courier can leave fed, but the letters will stay behind. This is the smaller payment, and a Second Dispatch will be needed."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Hand over food only.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "report_failure",
+                    "label": "I cannot finish in time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Confirm Failure"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I need more time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "I still need 8 bread before I can pay you."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "The departure is already settled. If anything was left behind, ask about a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 bread before the two-day departure deadline. The letters will need a Second Dispatch."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "This dispatch is already settled."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "I will keep watching the departure time."
+                ]
+              },
+              {
+                "sceneId": "confirm_failure",
+                "label": "Scene: Confirm Failure",
+                "lines": [
+                  "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 3
     },
     {
       "id": "villagerretaliation:gilded_debt",
@@ -99459,12 +100883,12 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 82693,
+    "dialogueLinesEstimate": 82758,
     "dialogueLineBreakdown": {
       "dialogue": 76323,
       "forcedDialogue": 561,
       "dialogueTrees": 0,
-      "questModules": 5809
+      "questModules": 5874
     }
   }
 };

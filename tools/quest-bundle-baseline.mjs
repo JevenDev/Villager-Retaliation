@@ -498,7 +498,7 @@ async function loadBundleRewards(directory) {
     if (result.has(id)) throw new Error("Duplicate stable reward id " + id);
     result.set(id, { file: entry.file, data: entry.data.table });
   }
-  return new Map(sortedEntries(result));
+  return new Map(sortedEntries(result).filter(([id]) => frozenManifest.ids.rewards.includes(id)));
 }
 
 async function loadBundleMessages(directory) {

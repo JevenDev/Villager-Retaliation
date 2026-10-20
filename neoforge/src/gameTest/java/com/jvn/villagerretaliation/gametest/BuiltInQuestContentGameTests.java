@@ -61,7 +61,7 @@ public final class BuiltInQuestContentGameTests {
                     "end_city_margin", "eye_of_the_last_room", "first_far_marker",
                     "ink_and_bearings", "ink_in_the_dark_roof", "nether_meridian",
                     "roads_that_remember", "the_atlas_test"),
-            questline("courier_roads", "night_run", "wax_sealed_route"),
+            questline("courier_roads", "night_run", "second_dispatch", "urgent_dispatch", "wax_sealed_route"),
             questline("dangerous_commissions",
                     "gilded_debt", "house_of_ill_omens", "nether_wart_warranty", "trial_chamber_recall"),
             questline("deep_delvers", "below_the_bell", "iron_road", "mark_the_shaft", "timber_brace"),

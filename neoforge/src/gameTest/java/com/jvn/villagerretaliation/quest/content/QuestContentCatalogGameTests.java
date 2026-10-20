@@ -80,7 +80,10 @@ public final class QuestContentCatalogGameTests {
         for (String role : List.of("animal_handling", "brewing", "builder", "combat", "cook", "courier", "craftsman",
                 "farming", "fishing", "hunting", "logging", "mining", "nitwit", "smelter"))
             expected.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", "clipboard_" + role));
-        helper.assertValueEqual(catalog.quests().keySet(), expected, "packaged quests retain the frozen inventory and all worker tutorials");
+        expected.addAll(List.of(ResourceLocation.parse("villagerretaliation:urgent_dispatch"),
+                ResourceLocation.parse("villagerretaliation:second_dispatch")));
+        helper.assertValueEqual(catalog.quests().keySet(), expected,
+                "packaged quests retain the frozen inventory, worker tutorials and courier outcomes");
 
         CompiledQuest bread = catalog.compiledQuest(breadId).orElseThrow();
         CompiledQuest horizon = catalog.compiledQuest(horizonId).orElseThrow();

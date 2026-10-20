@@ -157,7 +157,7 @@ public final class QuestRewardBundleGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         QuestContentCatalogs.invalidate();
         QuestRewardCatalog rewards = QuestContentCatalogs.current(server).rewards();
-        helper.assertValueEqual(rewards.bundled().size(), 91, "migrated reward ID set changed");
+        helper.assertValueEqual(rewards.bundled().size(), 94, "built-in reward ID set changed");
 
         for (Map.Entry<ResourceLocation, BundledQuestReward> entry : rewards.bundled().entrySet()) {
             ResourceLocation rewardId = entry.getKey();

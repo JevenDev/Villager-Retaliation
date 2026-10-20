@@ -1,0 +1,428 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "villagerretaliation:second_dispatch",
+  "localization_prefix": "villagerretaliation.quest.second_dispatch",
+  "metadata": {
+    "parent": "villagerretaliation:wax_sealed_route",
+    "questline": "courier_roads",
+    "tags": [
+      "group.courier_roads",
+      "role.side",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.mid",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community",
+      "feature.recoverable"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:fletcher",
+        "minecraft:librarian"
+      ],
+      "min_villager_level": "apprentice"
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "completion_scope": "player",
+    "locked_to_villager": false,
+    "cross_villager_compatible": true,
+    "consume_on_completion": true,
+    "abandonment": "allow_repickup",
+    "conditions": [
+      {
+        "type": "any",
+        "conditions": [
+          {
+            "type": "all",
+            "conditions": [
+              {
+                "type": "quest",
+                "quest": "villagerretaliation:urgent_dispatch",
+                "states": [
+                  "failed",
+                  "expired",
+                  "abandoned",
+                  "consumed"
+                ]
+              },
+              {
+                "type": "quest",
+                "quest": "villagerretaliation:urgent_dispatch",
+                "state": "not_completed"
+              }
+            ]
+          },
+          {
+            "type": "all",
+            "conditions": [
+              {
+                "type": "quest",
+                "quest": "villagerretaliation:urgent_dispatch",
+                "states": [
+                  "completed"
+                ]
+              },
+              {
+                "type": "quest_fact",
+                "scope": "quest",
+                "quest": "villagerretaliation:urgent_dispatch",
+                "key": "delivery",
+                "value": "partial"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "max_starts": 0,
+    "consume_on_abandonment": false
+  },
+  "entry_stage": "copies",
+  "stages": [
+    {
+      "id": "copies",
+      "objectives": [
+        {
+          "id": "paper",
+          "type": "item_check",
+          "item": "minecraft:paper",
+          "count": 12,
+          "tracker": {
+            "text": {
+              "key": "#copies.paper.text"
+            },
+            "complete_text": {
+              "key": "#copies.paper.complete"
+            },
+            "show_progress": true
+          }
+        },
+        {
+          "id": "wax",
+          "type": "item_check",
+          "item": "minecraft:honeycomb",
+          "count": 2,
+          "tracker": {
+            "text": {
+              "key": "#copies.wax.text"
+            },
+            "complete_text": {
+              "key": "#copies.wax.complete"
+            },
+            "show_progress": true
+          }
+        }
+      ],
+      "complete_when": [
+        "paper",
+        "wax"
+      ],
+      "display": {
+        "tracker_text": {
+          "key": "#copies.display"
+        }
+      },
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#copies.offer.label"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#copies.offer.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#copies.offer.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#offer.accept.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#offer.accept.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#offer.decline.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#offer.decline.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        },
+        "reminder": {
+          "label": {
+            "key": "#copies.reminder.label"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#copies.reminder.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#copies.reminder.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": {
+                "key": "#copies.details.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#copies.details.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#reminder.leave.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#reminder.leave.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        },
+        "turn_in": {
+          "label": {
+            "key": "#copies.turn_in.label"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#copies.turn_in.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#copies.turn_in.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#turn_in.complete.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#turn_in.complete.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "complete_quest"
+              }
+            },
+            {
+              "id": "leave",
+              "label": {
+                "key": "#turn_in.leave.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#turn_in.leave.player"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": {
+                  "key": "#scene.start_quest.started"
+                },
+                "unavailable": {
+                  "key": "#scene.start_quest.unavailable"
+                },
+                "already_completed": {
+                  "key": "#scene.start_quest.already_completed"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#scene.complete_quest.completed"
+                },
+                "missing_objectives": {
+                  "key": "#scene.complete_quest.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#scene.complete_quest.unavailable"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#scene.leave.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#scene.leave.lines"
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#copies.details.reminder"
+                },
+                "unavailable": {
+                  "key": "#copies.details.unavailable"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 40,
+    "reputation": 2,
+    "gossip_reputation": 1,
+    "loot_table": "villagerretaliation:quest/second_dispatch",
+    "memory_event": "villagerretaliation:player_completed_quest"
+  },
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
+    "icon": "minecraft:honeycomb",
+    "color": "#D4A35A"
+  },
+  "lifecycle": {
+    "on_complete": {
+      "actions": [
+        {
+          "type": "set_tag",
+          "scope": "player",
+          "tag": "villagerretaliation:dispatch_repaired"
+        }
+      ]
+    }
+  }
+}

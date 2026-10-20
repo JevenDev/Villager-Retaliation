@@ -1,0 +1,130 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "villagerretaliation.quest.urgent_dispatch.title": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.description": "Supply the courier within two days of accepting. A full delivery pays more. Sending only food, missing the deadline, or reporting failure leaves letters for a Second Dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.tracker": "Choose a full dispatch or a food-only delivery before the two-day deadline.",
+    "villagerretaliation.quest.urgent_dispatch.offer.accept.label": "I will help with this departure.",
+    "villagerretaliation.quest.urgent_dispatch.offer.accept.player": "I understand the deadline and the two delivery options.",
+    "villagerretaliation.quest.urgent_dispatch.offer.decline.label": "I cannot promise that.",
+    "villagerretaliation.quest.urgent_dispatch.offer.decline.player": "Find someone else for this departure.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.offer.lines": [
+      "The courier leaves in two days. Bring 8 bread, 12 paper and 2 honeycomb for the full dispatch. Food alone earns a smaller payment, but the letters will need a Second Dispatch. Once you accept, this departure cannot be restarted."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.prepare.offer.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.prepare.full.label": "Prepare the full dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.full.player": "I will bring all the food and sealing supplies.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.partial.label": "Send food. Copy the letters later.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.partial.player": "I can feed the courier, but the letters will need a later dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.report_failure.label": "I cannot finish in time.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.report_failure.player": "The courier should leave without my supplies.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.leave.label": "I need more time.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.leave.player": "I will return before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.reminder.lines": [
+      "Choose the full dispatch or food alone. This delivery choice is permanent. Full service pays 120 experience, 8 reputation and 4 emeralds. Food alone pays 60 experience, 3 reputation and 2 emeralds."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.prepare.reminder.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.scene.start_quest.started": [
+      "Two days from now the courier leaves. Choose your delivery, and bring it here before then."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.start_quest.unavailable": [
+      "This departure is no longer available."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.start_quest.already_completed": [
+      "This departure has already been settled."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.decline.lines": [
+      "Then I will find another way to prepare the courier."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.leave.lines": [
+      "I will keep watching the departure time."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.failure.confirm.label": "Let the courier leave.",
+    "villagerretaliation.quest.urgent_dispatch.failure.confirm.player": "I understand. We will need another dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.failure.cancel.label": "I will keep trying.",
+    "villagerretaliation.quest.urgent_dispatch.failure.cancel.player": "There is still time. I will keep trying.",
+    "villagerretaliation.quest.urgent_dispatch.scene.confirm_failure.lines": [
+      "Then we will send the courier without them. You will receive no payment for this attempt. Ask me about a Second Dispatch when you can help with the copies."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.prepare.display": "Choose your delivery. The courier leaves two days after acceptance.",
+    "villagerretaliation.quest.urgent_dispatch.full.bread.text": "Bring 8 bread for the courier.",
+    "villagerretaliation.quest.urgent_dispatch.full.bread.complete": "The supplies are ready.",
+    "villagerretaliation.quest.urgent_dispatch.full.paper.text": "Bring 12 paper for the dispatch copies.",
+    "villagerretaliation.quest.urgent_dispatch.full.paper.complete": "The supplies are ready.",
+    "villagerretaliation.quest.urgent_dispatch.full.wax.text": "Bring 2 honeycomb to seal the dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.full.wax.complete": "The supplies are ready.",
+    "villagerretaliation.quest.urgent_dispatch.full.display": "Bring 8 bread, 12 paper and 2 honeycomb before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.report_failure.label": "I cannot finish in time.",
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.report_failure.player": "The courier should leave without my supplies.",
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.leave.label": "I need more time.",
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.leave.player": "I will return before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.lines": [
+      "The courier still needs 8 bread, 12 paper and 2 honeycomb. The two-day deadline is still running."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.full.reminder.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.full.complete.label": "Hand over the full dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.full.complete.player": "Here is the full dispatch.",
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.report_failure.label": "I cannot finish in time.",
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.report_failure.player": "The courier should leave without my supplies.",
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.leave.label": "I need more time.",
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.leave.player": "I will return before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.lines": [
+      "The food and letters can leave together."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.full.turn_in.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.scene.complete_quest.completed": [
+      "The food helped. Here is the smaller payment. Ask about a Second Dispatch to get the letters moving."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.complete_quest.missing_objectives": [
+      "I still need 8 bread before I can pay you."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.scene.complete_quest.unavailable": [
+      "The departure is already settled. If anything was left behind, ask about a Second Dispatch."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.partial.bread.text": "Bring 8 bread for the courier.",
+    "villagerretaliation.quest.urgent_dispatch.partial.bread.complete": "The supplies are ready.",
+    "villagerretaliation.quest.urgent_dispatch.partial.display": "Bring 8 bread before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.report_failure.label": "I cannot finish in time.",
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.report_failure.player": "The courier should leave without my supplies.",
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.leave.label": "I need more time.",
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.leave.player": "I will return before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.lines": [
+      "The courier still needs 8 bread. The two-day deadline is still running."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.partial.reminder.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.partial.complete.label": "Hand over food only.",
+    "villagerretaliation.quest.urgent_dispatch.partial.complete.player": "Here is the food. We will send the letters later.",
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.report_failure.label": "I cannot finish in time.",
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.report_failure.player": "The courier should leave without my supplies.",
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.leave.label": "I need more time.",
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.leave.player": "I will return before the courier leaves.",
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.lines": [
+      "The courier can leave fed, but the letters will stay behind. This is the smaller payment, and a Second Dispatch will be needed."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.partial.turn_in.label": "Urgent Dispatch",
+    "villagerretaliation.quest.urgent_dispatch.prepare.details.label": "Repeat the deadline.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.details.player": "Please remind me what is still needed.",
+    "villagerretaliation.quest.urgent_dispatch.prepare.details.reminder": [
+      "The courier leaves two days after you accepted. Choose the full dispatch or food alone, then bring the supplies here."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.prepare.details.unavailable": [
+      "This dispatch is already settled."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.full.details.label": "Repeat the supplies.",
+    "villagerretaliation.quest.urgent_dispatch.full.details.player": "Please remind me what is still needed.",
+    "villagerretaliation.quest.urgent_dispatch.full.details.reminder": [
+      "Bring 8 bread, 12 paper and 2 honeycomb before the two-day departure deadline."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.full.details.unavailable": [
+      "This dispatch is already settled."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.partial.details.label": "Repeat the supplies.",
+    "villagerretaliation.quest.urgent_dispatch.partial.details.player": "Please remind me what is still needed.",
+    "villagerretaliation.quest.urgent_dispatch.partial.details.reminder": [
+      "Bring 8 bread before the two-day departure deadline. The letters will need a Second Dispatch."
+    ],
+    "villagerretaliation.quest.urgent_dispatch.partial.details.unavailable": [
+      "This dispatch is already settled."
+    ]
+  }
+}
