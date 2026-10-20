@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
-final class VillagerQuestHudRenderer {
+public final class QuestHudRenderer {
     private static final int PANEL_GAP = 4;
     private static final int NOTIFICATION_MIN_HEIGHT = 70;
     private static final int TRACKER_SCROLL_HOLD_TICKS = 54;
@@ -38,10 +38,10 @@ final class VillagerQuestHudRenderer {
                     8,
                     8);
 
-    private VillagerQuestHudRenderer() {
+    private QuestHudRenderer() {
     }
 
-    static int trackerWidth(int screenWidth) {
+    public static int trackerWidth(int screenWidth) {
         return Math.max(
                 VillagerAdaptiveGuiScale.unit(176),
                 Math.min(
@@ -49,11 +49,11 @@ final class VillagerQuestHudRenderer {
                         screenWidth - VillagerAdaptiveGuiScale.unit(24)));
     }
 
-    static int visibleTrackerEntryCount(boolean showRecentQuests, int entryCount) {
+    public static int visibleTrackerEntryCount(boolean showRecentQuests, int entryCount) {
         return showRecentQuests ? Math.min(QuestTrackerSyncPayload.MAX_TRACKER_ENTRIES, entryCount) : 1;
     }
 
-    static int trackerHeight(Font font, List<QuestTrackerSyncPayload.Entry> entries, int entryCount, int width) {
+    public static int trackerHeight(Font font, List<QuestTrackerSyncPayload.Entry> entries, int entryCount, int width) {
         int height = primaryHeight();
         for (int index = 1; index < entryCount; index++) {
             height += secondaryHeight(font, entries.get(index), width) + panelGap();
@@ -61,23 +61,23 @@ final class VillagerQuestHudRenderer {
         return height;
     }
 
-    static int notificationWidth(Font font, QuestTrackerSyncPayload.Entry entry, int screenWidth) {
+    public static int notificationWidth(Font font, QuestTrackerSyncPayload.Entry entry, int screenWidth) {
         return trackerWidth(screenWidth);
     }
 
-    static int panelGap() {
+    public static int panelGap() {
         return VillagerAdaptiveGuiScale.unitAtLeast(PANEL_GAP, 1);
     }
 
-    static int notificationHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width, int screenHeight) {
+    public static int notificationHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width, int screenHeight) {
         return Math.min(primaryHeight(), Math.max(VillagerAdaptiveGuiScale.unit(NOTIFICATION_MIN_HEIGHT), screenHeight - VillagerAdaptiveGuiScale.unit(20)));
     }
 
-    static int primaryHeight() {
+    public static int primaryHeight() {
         return VillagerAdaptiveGuiScale.unit(PRIMARY_HEIGHT);
     }
 
-    static int secondaryHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width) {
+    public static int secondaryHeight(Font font, QuestTrackerSyncPayload.Entry entry, int width) {
         int height = VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
         if (!entry.showProgress() || entry.objective().isBlank()) {
             return height;
@@ -90,11 +90,11 @@ final class VillagerQuestHudRenderer {
         return height + Math.max(0, objectiveLines - 1) * lineStep(font);
     }
 
-    static int slideDistance() {
+    public static int slideDistance() {
         return VillagerAdaptiveGuiScale.unit(SLIDE_DISTANCE);
     }
 
-    static void renderNotification(
+    public static void renderNotification(
             GuiGraphics graphics,
             Font font,
             QuestTrackerSyncPayload.Entry entry,
@@ -175,7 +175,7 @@ final class VillagerQuestHudRenderer {
         return item.label() + " " + current + "/" + item.count();
     }
 
-    static void renderEntry(
+    public static void renderEntry(
             GuiGraphics graphics,
             Font font,
             QuestTrackerSyncPayload.Entry entry,

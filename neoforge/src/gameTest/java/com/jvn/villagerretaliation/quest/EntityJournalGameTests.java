@@ -27,6 +27,29 @@ public final class EntityJournalGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void trackerModelsKeepUpdatesAndHistoryIndependentForEachConsumer(GameTestHelper helper) {
+        var model = new com.jvn.villagerretaliation.client.quest.QuestTrackerModel();
+        var other = new com.jvn.villagerretaliation.client.quest.QuestTrackerModel();
+        var wolf = entry("test:wolf", "Wolf", "active").withQuestUpdate(true);
+        var done = entry("test:done", "Cow", "completed");
+        var entity = java.util.UUID.randomUUID();
+        model.accept(List.of(wolf, done), List.of(wolf.questId()), List.of(), java.util.Map.of(wolf.questId(), entity));
+        helper.assertTrue(model.hasIndicator(entity), "quest indicators use arbitrary entity identities");
+        helper.assertValueEqual(model.trackedEntries(), List.of(wolf), "model tracks the selected provider quest");
+        helper.assertTrue(other.entries().isEmpty(), "another consumer has independent tracker state");
+        model.acknowledge(wolf);
+        helper.assertFalse(model.hasIndicator(entity), "acknowledgement clears the entity indicator");
+        helper.assertFalse(model.entries().getFirst().questUpdate(), "acknowledgement clears the quest update");
+        model.accept(List.of(wolf.withQuestUpdate(false)), List.of(wolf.questId()), List.of(), java.util.Map.of());
+        helper.assertTrue(model.entries().contains(done), "completed quest history survives a later payload");
+        model.reset();
+        helper.assertTrue(model.entries().isEmpty() && model.trackedEntries().isEmpty(), "reset retires all session data");
+        model.accept(List.of(), List.of(), List.of(), java.util.Map.of());
+        helper.assertTrue(model.entries().isEmpty(), "reset also clears completed quest history");
+        helper.succeed();
+    }
+
     private static QuestTrackerSyncPayload.Entry entry(String id, String issuer, String state) {
         return new QuestTrackerSyncPayload.Entry(id, "A task from " + issuer, "Find the trail", "", 0.0F, false,
                 state, "", issuer, "Overworld", List.of());
