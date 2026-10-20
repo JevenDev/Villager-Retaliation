@@ -53,11 +53,16 @@ public record QuestStageReadiness(
         if (stage == null) {
             return notReady(progress.currentStage(), "", "current stage missing");
         }
+        if (!com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsStage(stage, progress)) {
+            return notReady(stage.id(), stage.next(), "stage timer is not ready");
+        }
         if (stage.next().isBlank()) {
             return notReady(stage.id(), "", "stage has no next stage");
         }
         if (stage.completeWhen().isEmpty()) {
-            return notReady(stage.id(), stage.next(), "stage has no readiness predicates");
+            return stage.timer() != null && stage.timer().mode() == com.jvn.villagerretaliation.quest.QuestTimer.Mode.DURATION
+                    ? new QuestStageReadiness(true, stage.id(), stage.next(), "stage duration elapsed")
+                    : notReady(stage.id(), stage.next(), "stage has no readiness predicates");
         }
         if (!definition.stages().containsKey(stage.next())) {
             return notReady(stage.id(), stage.next(), "next stage missing");

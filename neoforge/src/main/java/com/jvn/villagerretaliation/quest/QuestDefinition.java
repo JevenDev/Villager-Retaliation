@@ -308,8 +308,55 @@ public record QuestDefinition(
             List<ItemSelectionEntry> itemSelections,
             ItemSelectionMode itemSelectionMode,
             String campaignLocation,
-            com.jvn.villagerretaliation.campaign.CampaignStoryObjective story
+            com.jvn.villagerretaliation.campaign.CampaignStoryObjective story,
+            QuestTimer timer
     ) {
+        public Objective(
+                String id,
+                ObjectiveType type,
+                boolean optional,
+                ResourceLocation structure,
+                ResourceKey<Level> dimension,
+                BlockPos location,
+                int radius,
+                List<String> pieces,
+                int searchRadius,
+                int discoveryRadius,
+                ResourceLocation item,
+                Set<ResourceLocation> entityTypes,
+                Set<ResourceLocation> entityTags,
+                Set<ResourceLocation> blockTypes,
+                Set<ResourceLocation> blockTags,
+                Set<ResourceLocation> memoryTags,
+                Set<String> giftReactions,
+                Set<VillagerReputationLevel> reputationLevels,
+                Integer minReputation,
+                Integer maxReputation,
+                QuestFactScope factScope,
+                ResourceLocation factQuestId,
+                Set<ResourceLocation> factTags,
+                String factKey,
+                Set<String> factValues,
+                Integer factMin,
+                Integer factMax,
+                ResourceLocation criterion,
+                Map<String, String> criterionData,
+                int count,
+                boolean consume,
+                ItemRequirements itemRequirements,
+                List<DialogueCondition> conditions,
+                ObjectiveTracker tracker,
+                List<ItemSelectionEntry> itemSelections,
+                ItemSelectionMode itemSelectionMode,
+                String campaignLocation,
+                com.jvn.villagerretaliation.campaign.CampaignStoryObjective story
+        ) {
+            this(id, type, optional, structure, dimension, location, radius, pieces, searchRadius, discoveryRadius, item, entityTypes,
+                    entityTags, blockTypes, blockTags, memoryTags, giftReactions, reputationLevels, minReputation, maxReputation, factScope, factQuestId, factTags,
+                    factKey, factValues, factMin, factMax, criterion, criterionData, count, consume, itemRequirements, conditions, tracker,
+                    itemSelections, itemSelectionMode, campaignLocation, story, null);
+        }
+
         public Objective(
                 String id,
                 ObjectiveType type,
@@ -940,8 +987,16 @@ public record QuestDefinition(
             List<VillagerActionDefinition> exitActions,
             List<StageBranch> branches,
             List<BonusOutcome> bonuses,
-            Map<String, String> metadata
+            Map<String, String> metadata,
+            QuestTimer timer
     ) {
+        public Stage(String id, List<String> objectives, List<StagePredicate> completeWhen,
+                CompletionMode completionMode, int completionCount, String next,
+                List<VillagerActionDefinition> entryActions, List<VillagerActionDefinition> exitActions,
+                List<StageBranch> branches, List<BonusOutcome> bonuses, Map<String, String> metadata) {
+            this(id, objectives, completeWhen, completionMode, completionCount, next, entryActions, exitActions, branches, bonuses, metadata, null);
+        }
+
         public Stage {
             id = id == null ? "" : id.trim();
             objectives = objectives == null ? List.of() : List.copyOf(objectives);

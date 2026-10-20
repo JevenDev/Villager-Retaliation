@@ -1151,6 +1151,14 @@ public final class VillagerQuestService {
                                 entry.getKey()));
                 continue;
             }
+            boolean active = !definition.rules().activeState().pauseProgressWhenUnmet()
+                    || activeConditionsState(questContext, player, level, definition, progress) == ConditionMatch.MET;
+            changed |= com.jvn.villagerretaliation.quest.runtime.QuestTimers.update(definition, progress, level.getGameTime(), active);
+            if (updateQuestTimers(player, definition, progress, questContext)) {
+                changed = true;
+                progressNotice = true;
+                if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
+            }
             if (definition.rules().activeState().pauseProgressWhenUnmet()
                     && activeConditionsState(questContext, player, level, definition, progress) != ConditionMatch.MET) {
                 continue;
@@ -2833,6 +2841,43 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         return CampaignQuestAccess.executionIssue(player.serverLevel(), player.getUUID(), definition, progress).isBlank()
                 && activeConditionsStateForPlayer(player, definition, progress) == ConditionMatch.MET;
+    }
+
+    private static boolean updateQuestTimers(ServerPlayer player, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, DialogueContext context) {
+        boolean changed = false;
+        for (var timer : com.jvn.villagerretaliation.quest.runtime.QuestTimers.active(definition, progress)) {
+            if (timer.state().warn(timer.definition())) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                        "villagerretaliation.gui.quest_timer.warning", definition.title(), (timer.state().remaining(timer.definition()) + 19) / 20), false);
+                changed = true;
+            }
+            if (timer.state().handled() || timer.definition().mode() != QuestTimer.Mode.DEADLINE
+                    || !timer.state().elapsed(timer.definition())) continue;
+            if (!timer.definition().timeoutStage().isBlank()) {
+                if (context == null) {
+                    progress.requestStageTransition(timer.definition().timeoutStage());
+                    changed = true;
+                    continue;
+                }
+                if (!STAGES.changeQuestStage(context, definition, progress, timer.definition().timeoutStage(), true, true)) continue;
+                timer.state().handle();
+                return true;
+            }
+            timer.state().handle();
+            if (context != null) failQuest(context, definition, "timer:" + timer.key());
+            else {
+                QuestLifecycleService.fail(definition.id(), progress, player.serverLevel().getGameTime(), "timer:" + timer.key());
+                SceneLifecycleIntegration.onQuestTerminal(player.serverLevel(), player.getUUID(), definition.id(), "failed");
+                markQuestLifecycleFact(player.serverLevel(), player, definition, QUEST_FAILED_FACT, "failed");
+                deferLifecycleEvent(player.serverLevel(), definition, progress, QuestDefinition.TriggerEvent.FAILED);
+                clearTrackedQuestIf(VillagerQuestSavedData.get(player.serverLevel()), player, definition.id());
+                com.jvn.villagerretaliation.party.PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
+                        .ifPresent(party -> PartyQuestService.detachQuest(player.serverLevel(), party, player.getUUID(), definition.id()));
+            }
+            return true;
+        }
+        return changed;
     }
 
     private static boolean expireQuestIfNeeded(
@@ -4913,6 +4958,17 @@ public final class VillagerQuestService {
         if (progress.state() == VillagerQuestSavedData.QuestState.ACTIVE && !activeConditionsMet) {
             presented = presented.withJournal(presented.journal().withBlocker(presented.objective()));
         }
+        for (var timer : com.jvn.villagerretaliation.quest.runtime.QuestTimers.active(definition, progress)) {
+            if (!timer.key().startsWith("stage/") || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
+            String label = QuestPresentationService.resolveGlobalText(player, "quest.tracker.timer",
+                    "Time remaining: {seconds}s", Map.of("seconds", Long.toString((timer.state().remaining(timer.definition()) + 19) / 20)));
+            var steps = new ArrayList<>(presented.objectiveSteps());
+            steps.add(new QuestTrackerSyncPayload.ObjectiveStep(label, false));
+            presented = new QuestTrackerSyncPayload.Entry(presented.questId(), presented.title(), presented.objective(),
+                    presented.description(), presented.metadata(), presented.progress(), presented.showProgress(), presented.state(),
+                    presented.status(), presented.issuer(), presented.issuerLocation(), presented.questItems(), presented.rewardPreviews(),
+                    presented.prerequisites(), steps, presented.questUpdate(), presented.questAvailable()).withJournal(presented.journal());
+        }
         return QuestPresentationService.withRuntimeJournalView(presented, definition, presentationProgress, presentationProgress.completedGameTime());
     }
 
@@ -4964,6 +5020,9 @@ public final class VillagerQuestService {
             boolean complete = objectiveComplete(player, context, level, definition, progress, objective);
             String label = activeObjectiveStepLabel(player, context, definition, progress, presentationProgress, objective, complete);
             if (!label.isBlank()) {
+                Long remaining = presentationProgress.timerRemaining().get(
+                        com.jvn.villagerretaliation.quest.runtime.QuestTimers.objectiveKey(objective.id()));
+                if (!complete && remaining != null) label += " (" + (remaining + 19) / 20 + "s)";
                 steps.add(new QuestTrackerSyncPayload.ObjectiveStep(label, complete));
             }
             if (steps.size() >= QuestTrackerSyncPayload.MAX_OBJECTIVE_STEPS) {

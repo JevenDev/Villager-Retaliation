@@ -301,6 +301,13 @@ public final class QuestV2Parser {
         return new QuestV2Resource.Hook(id, actions, transition, object);
     }
 
+    private static void validateTimer(Validator validator, JsonElement raw, String pointer) {
+        try { com.jvn.villagerretaliation.quest.QuestTimer.read(raw); }
+        catch (IllegalArgumentException exception) {
+            validator.error(pointer, exception.getMessage(), "Use a positive duration and a warning smaller than the duration.", Set.of());
+        }
+    }
+
     private static List<QuestV2Resource.Stage> readStages(Validator validator, JsonElement element) {
         JsonArray array = validator.array(element, "/stages", "stages", true);
         if (array == null) {
@@ -316,6 +323,7 @@ public final class QuestV2Parser {
             validator.expectKeys(object, pointer, STAGE_KEYS);
             String id = readString(object, "id");
             validateId(validator, pointer + "/id", id, "stage id");
+            validateTimer(validator, object.get("timer"), pointer + "/timer");
             List<QuestV2Resource.Objective> objectives = readObjectives(validator, object.get("objectives"), pointer + "/objectives");
             List<String> completeWhen = readObjectiveReferences(validator, object.get("complete_when"), pointer + "/complete_when");
             QuestV2Resource.Transition next = readTransition(validator, object.get("next"), pointer + "/next");
@@ -374,6 +382,7 @@ public final class QuestV2Parser {
                         "Use unique objective ids within each stage.",
                         Set.of(id));
             }
+            validateTimer(validator, object.get("timer"), objectivePointer + "/timer");
             String type = readString(object, "type");
             if (type.isBlank()) {
                 validator.error(objectivePointer + "/type", "objective type is required.", "Use a registered objective type.", Set.of(id));
@@ -813,6 +822,20 @@ public final class QuestV2Parser {
             validator.error("/stages", "at least one stage is required.", "Add an ordered stages array with an entry stage.", Set.of(resource.id().toString()));
             return;
         }
+        for (var stage : resource.stages()) {
+            List<JsonElement> timers = new ArrayList<>();
+            if (stage.data().has("timer")) timers.add(stage.data().get("timer"));
+            stage.objectives().forEach(objective -> { if (objective.data().has("timer")) timers.add(objective.data().get("timer")); });
+            for (var raw : timers) {
+                if (raw.isJsonObject() && raw.getAsJsonObject().has("timeout_stage")
+                        && raw.getAsJsonObject().get("timeout_stage").isJsonPrimitive()) {
+                    String target = raw.getAsJsonObject().get("timeout_stage").getAsString();
+                    if (!resource.stagesById().containsKey(target))
+                        validator.error("/stages/" + stage.id() + "/timer/timeout_stage", "Timer references a missing timeout stage.",
+                                "Declare the timeout stage.", Set.of(target));
+                }
+            }
+        }
         if (resource.entryStage().isBlank()) {
             validator.error("/entry_stage", "entry_stage is required.", "Set entry_stage to the first stage id.", Set.of(resource.id().toString()));
         } else if (!resource.stagesById().containsKey(resource.entryStage())) {
@@ -1031,6 +1054,9 @@ public final class QuestV2Parser {
                 continue;
             }
             enqueueStage(queue, resource, stage.next());
+            if (stage.data().has("timer")) enqueueTimer(queue, resource, stage.data().get("timer"));
+            for (var objective : stage.objectives())
+                if (objective.data().has("timer")) enqueueTimer(queue, resource, objective.data().get("timer"));
             for (QuestV2Resource.Response response : stage.responses()) {
                 enqueueStage(queue, resource, response.transition());
             }
@@ -1060,6 +1086,13 @@ public final class QuestV2Parser {
                         "Link to it from an earlier transition or remove it.",
                         Set.of(stage.id()));
             }
+        }
+    }
+
+    private static void enqueueTimer(ArrayDeque<String> queue, QuestV2Resource resource, JsonElement raw) {
+        if (raw.isJsonObject() && raw.getAsJsonObject().has("timeout_stage")) {
+            var target = raw.getAsJsonObject().get("timeout_stage");
+            if (target.isJsonPrimitive() && resource.stagesById().containsKey(target.getAsString())) queue.add(target.getAsString());
         }
     }
 

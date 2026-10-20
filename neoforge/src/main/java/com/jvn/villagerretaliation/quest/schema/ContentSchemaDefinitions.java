@@ -319,6 +319,7 @@ public final class ContentSchemaDefinitions {
         properties.add("description_key", string());
         properties.add("objectives", arrayOf(ref("#/$defs/objective")));
         properties.add("followers", arrayOf(ref("#/$defs/follower")));
+        properties.add("timer", com.jvn.villagerretaliation.quest.QuestTimer.schema());
         properties.add("complete_when", oneOrArray(ref("#/$defs/predicate")));
         properties.add("completion", ref("#/$defs/completion"));
         properties.add("completion_mode", stringEnum(List.of("all", "any", "at_least")));
@@ -375,6 +376,7 @@ public final class ContentSchemaDefinitions {
         properties.add("id", idString());
         properties.add("type", stringEnum(objectiveTypes()));
         properties.add("optional", booleanSchema());
+        properties.add("timer", com.jvn.villagerretaliation.quest.QuestTimer.schema());
         properties.add("count", positiveInteger());
         properties.add("consume", booleanSchema());
         properties.add("tracker", ref("#/$defs/tracker"));

@@ -19,12 +19,23 @@ public record QuestProgressSnapshot(QuestState state, UUID questRunId, UUID star
         long startedGameTime, long completedGameTime, int completionCount, String consumedReason,
         String currentStage, boolean visitedTarget, ResourceKey<Level> targetDimension, BlockPos targetPos,
         String targetObjectiveId, String issuerName, String issuerProfession, ResourceKey<Level> issuerDimension,
+        BlockPos issuerPos, Map<String, ResourceLocation> resolvedObjectiveItems, Set<String> completedObjectives,
+        Map<String, Long> timerRemaining) {
+    public QuestProgressSnapshot(QuestState state, UUID questRunId, UUID startedVillagerId,
+        long startedGameTime, long completedGameTime, int completionCount, String consumedReason,
+        String currentStage, boolean visitedTarget, ResourceKey<Level> targetDimension, BlockPos targetPos,
+        String targetObjectiveId, String issuerName, String issuerProfession, ResourceKey<Level> issuerDimension,
         BlockPos issuerPos, Map<String, ResourceLocation> resolvedObjectiveItems, Set<String> completedObjectives) {
+        this(state, questRunId, startedVillagerId, startedGameTime, completedGameTime, completionCount,
+                consumedReason, currentStage, visitedTarget, targetDimension, targetPos, targetObjectiveId,
+                issuerName, issuerProfession, issuerDimension, issuerPos, resolvedObjectiveItems, completedObjectives, Map.of());
+    }
     public QuestProgressSnapshot {
         targetPos = targetPos == null ? null : targetPos.immutable();
         issuerPos = issuerPos == null ? null : issuerPos.immutable();
         resolvedObjectiveItems = Map.copyOf(resolvedObjectiveItems);
         completedObjectives = Set.copyOf(completedObjectives);
+        timerRemaining = Map.copyOf(timerRemaining);
     }
 
     public static QuestProgressSnapshot capture(QuestProgressState progress) {
@@ -43,7 +54,7 @@ public record QuestProgressSnapshot(QuestState state, UUID questRunId, UUID star
         return new QuestProgressSnapshot(progress.state(), progress.questRunId(), progress.startedVillagerId(),
                 progress.startedGameTime(), progress.completedGameTime(), progress.completionCount(), progress.consumedReason(),
                 progress.currentStage(), progress.visitedTarget(), progress.targetDimension(), progress.targetPos(), progress.targetObjectiveId(),
-                progress.issuerName(), progress.issuerProfession(), progress.issuerDimension(), progress.issuerPos(), items, completed);
+                progress.issuerName(), progress.issuerProfession(), progress.issuerDimension(), progress.issuerPos(), items, completed, definition == null ? Map.of() : progress.remainingTimers(definition));
     }
 
     public boolean objectiveComplete(String id) { return id != null && completedObjectives.contains(id); }

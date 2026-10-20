@@ -158,7 +158,8 @@ public final class QuestV2Compiler {
                 : DatapackJsonReader.readInt(stage.data(), "completion_count", 1);
         return new QuestDefinition.Stage(stage.id(), List.copyOf(objectiveIds.values()), predicates,
                 QuestDefinition.CompletionMode.bySerializedName(mode), count, stage.next().stage(), entry, exit, List.of(), bonuses,
-                VillagerQuestResources.readStringMap(DatapackJsonReader.readObject(stage.data(), "metadata")));
+                VillagerQuestResources.readStringMap(DatapackJsonReader.readObject(stage.data(), "metadata")),
+                QuestTimer.read(stage.data().get("timer")));
     }
 
     private static List<QuestDefinition.StagePredicate> qualifyPredicates(

@@ -680,7 +680,8 @@ public final class VillagerQuestResources {
                 itemSelection.entries(),
                 itemSelection.mode(),
                 entry.string("campaign_location"),
-                com.jvn.villagerretaliation.campaign.CampaignStoryObjective.read(type, schemaInput));
+                com.jvn.villagerretaliation.campaign.CampaignStoryObjective.read(type, schemaInput),
+                QuestTimer.read(entry.get("timer")));
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
         if (registryValidation.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());

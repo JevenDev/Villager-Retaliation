@@ -184,6 +184,11 @@ public final class QuestPresentationService {
         values.put("quest_id", definition.id().toString());
         values.put("target", targetName(definition));
         values.put("proof_item", questItemName(definition, progress));
+        String timerKey = objective == null ? com.jvn.villagerretaliation.quest.runtime.QuestTimers.stageKey(progress == null ? "" : progress.currentStage())
+                : com.jvn.villagerretaliation.quest.runtime.QuestTimers.objectiveKey(objective.id());
+        long remaining = progress == null ? -1 : progress.timerRemaining().getOrDefault(timerKey, -1L);
+        values.put("timer_remaining_ticks", Long.toString(remaining));
+        values.put("timer_remaining_seconds", remaining < 0 ? "" : Long.toString((remaining + 19) / 20));
         values.put("quest_stage", progress == null ? "" : progress.currentStage());
         values.put("current_stage", progress == null ? "" : progress.currentStage());
         values.put("visited_target", progress != null && progress.visitedTarget() ? "yes" : "no");

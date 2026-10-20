@@ -850,6 +850,43 @@
             "$ref": "#/$defs/follower"
           }
         },
+        "timer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration_ticks"
+          ],
+          "properties": {
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "warning_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483646
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "duration",
+                "deadline"
+              ]
+            },
+            "pause_when_inactive": {
+              "type": "boolean"
+            },
+            "pause_when_offline": {
+              "type": "boolean"
+            },
+            "timeout_stage": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z0-9_./-]+$"
+            }
+          }
+        },
         "complete_when": {
           "oneOf": [
             {
@@ -2469,6 +2506,43 @@
         },
         "optional": {
           "type": "boolean"
+        },
+        "timer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration_ticks"
+          ],
+          "properties": {
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "warning_ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483646
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "duration",
+                "deadline"
+              ]
+            },
+            "pause_when_inactive": {
+              "type": "boolean"
+            },
+            "pause_when_offline": {
+              "type": "boolean"
+            },
+            "timeout_stage": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-z0-9_./-]+$"
+            }
+          }
         },
         "count": {
           "type": "integer",

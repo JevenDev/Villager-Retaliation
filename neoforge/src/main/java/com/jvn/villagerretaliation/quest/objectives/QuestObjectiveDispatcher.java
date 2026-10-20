@@ -53,7 +53,8 @@ public final class QuestObjectiveDispatcher {
             if (QuestObjectiveRegistry.requirements(objective).contains(QuestObjectiveRequirement.COUNTER)) {
                 int count = progress.addObjectiveCounter(objective.id(), 1);
                 changed = true;
-                if (count >= objective.count() && progress.markObjectiveComplete(objective.id())) completed.accept(objective);
+                if (count >= objective.count() && (objective.timer() == null || complete.test(objective))
+                        && progress.markObjectiveComplete(objective.id())) completed.accept(objective);
             } else if (complete.test(objective) && progress.markObjectiveComplete(objective.id())) {
                 changed = true;
                 completed.accept(objective);

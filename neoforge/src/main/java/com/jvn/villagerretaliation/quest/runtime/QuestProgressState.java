@@ -57,6 +57,14 @@ public class QuestProgressState {
     protected BlockPos targetPos;
     protected String targetObjectiveId = "";
     protected String currentStage = "";
+    protected final Map<String, QuestTimerState> timers = new LinkedHashMap<>();
+
+    public QuestTimerState timer(String key) { return timers.get(key); }
+    public Map<String, Long> remainingTimers(QuestDefinition definition) {
+        Map<String, Long> values = new LinkedHashMap<>();
+        QuestTimers.active(definition, this).forEach(timer -> values.put(timer.key(), timer.state().remaining(timer.definition())));
+        return Map.copyOf(values);
+    }
     protected final Map<String, QuestActionCheckpoint> stageActions = new LinkedHashMap<>();
     protected String pendingStageTransition = "";
     protected String pendingStageEntry = "";
@@ -374,6 +382,7 @@ public class QuestProgressState {
         this.partyQuestInstanceId = null;
         this.questRunId = null;
         this.consumedReason = "";
+        this.timers.clear();
         this.currentStage = "started";
         this.campaignEntryStage = "";
         this.campaignWaitingQuest = "";
@@ -782,6 +791,7 @@ public class QuestProgressState {
     }
 
     public void restartForDefinitionRevision(String entryStage) {
+        this.timers.clear();
         this.currentStage = entryStage == null ? "" : entryStage.trim();
         clearStageActions();
         this.completedObjectives.clear();

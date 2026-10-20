@@ -245,6 +245,9 @@ public final class QuestObjectiveRegistry {
     public static Optional<QuestObjectiveResult> evaluate(
             QuestObjectiveEvaluationContext context,
             QuestDefinition.Objective objective) {
+        if (objective != null && objective.timer() != null && (context == null || context.progress() == null
+                || !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.progress(), context.level().getGameTime())))
+            return Optional.of(QuestObjectiveResult.incomplete(0.0F, "Objective timer is not ready."));
         return implementation(objective).map(type -> type.evaluate(context, objective));
     }
 
@@ -292,7 +295,9 @@ public final class QuestObjectiveRegistry {
             QuestObjectiveEvaluationContext context,
             QuestDefinition.Objective objective,
             QuestObjectiveEvent event) {
-        if (event == null || !eventKinds(objective).contains(event.kind())) {
+        if (event == null || !eventKinds(objective).contains(event.kind())
+                || objective.timer() != null && objective.timer().mode() == com.jvn.villagerretaliation.quest.QuestTimer.Mode.DEADLINE
+                && !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.progress(), context.level().getGameTime())) {
             return false;
         }
         return implementation(objective)
@@ -837,8 +842,9 @@ public final class QuestObjectiveRegistry {
     private static final class ConditionObjectiveType extends LogicalObjectiveType {
         @Override
         public Optional<String> validationError(QuestDefinition.Objective objective) {
-            return objective.conditions().isEmpty()
-                    ? Optional.of("condition objective must define conditions.")
+            return objective.conditions().isEmpty() && (objective.timer() == null
+                    || objective.timer().mode() != com.jvn.villagerretaliation.quest.QuestTimer.Mode.DURATION)
+                    ? Optional.of("condition objective must define conditions or a duration timer.")
                     : Optional.empty();
         }
 

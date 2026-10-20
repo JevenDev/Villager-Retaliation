@@ -159,6 +159,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             com.jvn.villagerretaliation.duel.DuelService.recoverPendingPlayer(player);
+            com.jvn.villagerretaliation.quest.runtime.QuestTimers.connection(player, true);
             SceneLifecycleIntegration.onPlayerConnection(player);
             VillagerQuestService.clearRuntimeState(player);
             ClipboardWorkforceService.clearRuntimeState(player);
@@ -176,6 +177,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
         if (event.getEntity() instanceof ServerPlayer player) {
             com.jvn.villagerretaliation.duel.DuelService.onPlayerLogout(player);
+            com.jvn.villagerretaliation.quest.runtime.QuestTimers.connection(player, false);
             com.jvn.villagerretaliation.party.CompanionLifecycleService.onLogout(player);
             PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
                     .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(

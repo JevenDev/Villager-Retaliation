@@ -51,6 +51,7 @@ public final class QuestDefinitionMigration {
                 } else {
                     progress.resetObjectiveProgress(Set.copyOf(stage.objectives()));
                     progress.resetBonusesForStage(stage.id());
+                    com.jvn.villagerretaliation.quest.runtime.QuestTimers.enter(definition, progress, stage.id(), gameTime);
                 }
             }
             case RESTART -> progress.restartForDefinitionRevision(QuestLifecycleService.initialStage(definition));

@@ -1,4 +1,5 @@
 {
+  "villagerretaliation.gui.quest_timer.warning": "%s: %s seconds remaining",
   "screen.villagerretaliation.addons.existing_allowed": "Existing worlds allowed",
   "screen.villagerretaliation.addons.new_world_only": "New worlds only",
   "screen.villagerretaliation.addons.button": "Addons (%s)",
