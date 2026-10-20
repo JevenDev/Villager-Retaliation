@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 
 public record DialogueChoice(boolean showUnavailable, String unavailableText, String unavailableKey) {
     public static final DialogueChoice HIDDEN = new DialogueChoice(false, "", "");
@@ -34,13 +33,17 @@ public record DialogueChoice(boolean showUnavailable, String unavailableText, St
     }
 
     public String reason(DialogueContext context) {
+        return reason((DialogueRuntimeContext) context);
+    }
+
+    public String reason(DialogueRuntimeContext context) {
         String fallback = unavailableText.isBlank()
-                ? VillagerDialogueResources.message(context, "dialogue.choice.unavailable")
+                ? context.message("dialogue.choice.unavailable")
                         .orElse("This response's requirements are not currently met.")
                 : unavailableText;
         String text = unavailableKey.isBlank() ? fallback
-                : VillagerDialogueResources.message(context, unavailableKey).orElse(fallback);
-        return VillagerDialogueResources.resolveTemplate(text,
+                : context.message(unavailableKey).orElse(fallback);
+        return DialogueTemplates.resolveTemplate(text,
                 com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context));
     }
 

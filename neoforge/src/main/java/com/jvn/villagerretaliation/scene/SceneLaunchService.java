@@ -14,6 +14,10 @@ public final class SceneLaunchService {
     }
 
     public static LaunchResult launch(DialogueContext context, VillagerActionDefinition action) {
+        return launch((com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext) context, action);
+    }
+
+    public static LaunchResult launch(com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context, VillagerActionDefinition action) {
         if (context == null || action == null || action.kind() != VillagerActionDefinition.Kind.START_SCENE
                 || action.sceneId() == null || action.sceneOperationId().isBlank()) {
             return LaunchResult.rejected("start_scene requires live context, scene_id, and stable operation_id");

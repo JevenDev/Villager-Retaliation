@@ -27,6 +27,10 @@ public interface DialogueRuntimeContext {
         return com.jvn.villagerretaliation.action.NarrativeActions.common();
     }
 
+    default DialogueRuntimeAdapter runtime() {
+        return com.jvn.villagerretaliation.dialogue.normal.EntityDialogueRuntime.INSTANCE;
+    }
+
     default RandomSource random() {
         return speaker() == null ? player().getRandom() : speaker().getRandom();
     }

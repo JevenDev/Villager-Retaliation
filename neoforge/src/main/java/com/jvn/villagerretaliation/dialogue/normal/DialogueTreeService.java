@@ -1,18 +1,14 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.scene.SceneContinuationService;
 import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
-import com.jvn.villagerretaliation.interaction.VillagerConversationService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionScreenOpener;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
-import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,6 +22,58 @@ public final class DialogueTreeService {
     private static final String ENTRY_OPTION_PREFIX = "dt:";
     private static final String RESPONSE_OPTION_PREFIX = "dr:";
     public static final String LEAVE_OPTION_ID = "dt:leave";
+
+    public static List<String> explainChoices(DialogueContext context) {
+        return explainChoices((DialogueRuntimeContext) context);
+    }
+
+    public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
+        return activeOptions((DialogueRuntimeContext) context);
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(DialogueContext context,
+            DialogueOptionDefinition option) {
+        return handleDialogueOption((DialogueRuntimeContext) context, option);
+    }
+
+    public static SelectionPreview previewSelection(DialogueContext context, DialogueOptionDefinition option) {
+        return previewSelection((DialogueRuntimeContext) context, option);
+    }
+
+    public static boolean leaveActiveSession(DialogueContext context) {
+        return leaveActiveSession((DialogueRuntimeContext) context);
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> startEntry(DialogueContext context,
+            ResourceLocation treeId,
+            String entryId) {
+        return startEntry((DialogueRuntimeContext) context, treeId, entryId);
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> startEntry(DialogueContext context,
+            ResourceLocation treeId,
+            String entryId,
+            Map<String, String> inheritedReplacements) {
+        return startEntry((DialogueRuntimeContext) context, treeId, entryId, inheritedReplacements);
+    }
+
+    public static EntryResult startEntryResult(DialogueContext context, ResourceLocation treeId, String entryId,
+            Map<String, String> inheritedReplacements, boolean forced) {
+        return startEntryResult((DialogueRuntimeContext) context, treeId, entryId, inheritedReplacements, forced);
+    }
+
+    public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
+            Map<String, String> replacements) {
+        resumeAfterActions((DialogueRuntimeContext) context, resume, replacements);
+    }
+
+    public static long responseRemainingTicks(DialogueContext context) {
+        return responseRemainingTicks((DialogueRuntimeContext) context);
+    }
+
+    public static void tick(DialogueContext context) {
+        tick((DialogueRuntimeContext) context);
+    }
 
     private DialogueTreeService() {
     }
@@ -42,7 +90,7 @@ public final class DialogueTreeService {
         return RESPONSE_OPTION_PREFIX + treeId + ":" + responseId;
     }
 
-    public static List<String> explainChoices(DialogueContext context) {
+    public static List<String> explainChoices(DialogueRuntimeContext context) {
         var session = sessions(context).get(key(context));
         if (session == null) return List.of();
         var tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), session.treeId()).orElse(null);
@@ -57,8 +105,8 @@ public final class DialogueTreeService {
         }).toList();
     }
 
-    public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueContext context) {
-        if (!sessions(context).diagnostic(key(context)).isBlank() || SceneContinuationService.hasPendingDialogue(context)) return Optional.of(List.of());
+    public static Optional<List<DialogueOptionDefinition>> activeOptions(DialogueRuntimeContext context) {
+        if (!sessions(context).diagnostic(key(context)).isBlank() || context.runtime().pending(context)) return Optional.of(List.of());
         SessionKey key = key(context);
         Session session = sessions(context).get(key);
         if (session == null) {
@@ -85,12 +133,12 @@ public final class DialogueTreeService {
                         .thenComparing(DialogueTreeDefinition.Response::id))
                 .map(response -> response.toOption(context, tree.id(), tree.metadata()))
                 .toList();
-        return options.isEmpty() || VillagerConversationService.isForced(context.player(), context.villager())
+        return options.isEmpty() || context.runtime().forced(context)
                 && options.stream().noneMatch(DialogueOptionDefinition::available) ? Optional.empty() : Optional.of(options);
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> handleDialogueOption(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             DialogueOptionDefinition option) {
         DialogueTreeReference reference = option.treeReference();
         if (reference.isEmpty()) {
@@ -106,7 +154,7 @@ public final class DialogueTreeService {
         return Optional.empty();
     }
 
-    public static SelectionPreview previewSelection(DialogueContext context, DialogueOptionDefinition option) {
+    public static SelectionPreview previewSelection(DialogueRuntimeContext context, DialogueOptionDefinition option) {
         DialogueTreeReference reference = option.treeReference();
         if (reference.isEmpty()) return new SelectionPreview(null, List.of());
         var tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), reference.treeId()).orElse(null);
@@ -114,7 +162,7 @@ public final class DialogueTreeService {
         if (reference.isEntry()) {
             var entry = tree.entry(reference.entryId()).orElse(null);
             var node = entry == null ? null : tree.node(entry.start()).orElse(null);
-            return entry != null && entry.matches(context, VillagerDialogueService.moodFor(context)) && node != null && node.matches(context)
+            return entry != null && entry.matches(context, context.runtime().disposition(context)) && node != null && node.matches(context)
                     ? new SelectionPreview(null, node.actions()) : new SelectionPreview(null, List.of());
         }
         Session session = sessions(context).get(key(context));
@@ -138,54 +186,54 @@ public final class DialogueTreeService {
         }
     }
 
-    public static boolean leaveActiveSession(DialogueContext context) {
+    public static boolean leaveActiveSession(DialogueRuntimeContext context) {
         return sessions(context).remove(key(context)) != null;
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> startEntry(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             ResourceLocation treeId,
             String entryId) {
         return startEntry(context, treeId, entryId, Map.of());
     }
 
     public static Optional<VillagerDialogueService.DialogueResult> startEntry(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             ResourceLocation treeId,
             String entryId,
             Map<String, String> inheritedReplacements) {
         return startEntryResult(context, treeId, entryId, inheritedReplacements, false).dialogue();
     }
 
-    public static EntryResult startEntryResult(DialogueContext context, ResourceLocation treeId, String entryId,
+    public static EntryResult startEntryResult(DialogueRuntimeContext context, ResourceLocation treeId, String entryId,
             Map<String, String> inheritedReplacements, boolean forced) {
         if (!sessions(context).diagnostic(key(context)).isBlank()) return unavailableEntry(sessions(context).diagnostic(key(context)));
-        if (SceneContinuationService.hasPendingDialogue(context)) return unavailableEntry("dialogue actions are still pending");
+        if (context.runtime().pending(context)) return unavailableEntry("dialogue actions are still pending");
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) return unavailableEntry("dialogue tree unavailable");
         DialogueTreeDefinition.Entry entry = tree.entry(entryId).orElse(null);
-        if (entry == null || !entry.matches(context, VillagerDialogueService.moodFor(context))) {
+        if (entry == null || !entry.matches(context, context.runtime().disposition(context))) {
             return unavailableEntry("dialogue entry unavailable");
         }
         return enterNodeResult(context, tree, entry.start(), "", inheritedReplacements, forced);
     }
 
     private static Optional<VillagerDialogueService.DialogueResult> selectResponse(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             ResourceLocation treeId,
             String responseId) {
         return selectResponse(context, treeId, responseId, false);
     }
 
     private static Optional<VillagerDialogueService.DialogueResult> selectResponse(
-            DialogueContext context, ResourceLocation treeId, String responseId, boolean timeout) {
+            DialogueRuntimeContext context, ResourceLocation treeId, String responseId, boolean timeout) {
         SessionKey key = key(context);
         Session session = sessions(context).get(key);
         if (session == null || !treeId.equals(session.treeId())) {
             return Optional.empty();
         }
 
-        if (SceneContinuationService.hasPendingDialogue(context)) return Optional.empty();
+        if (context.runtime().pending(context)) return Optional.empty();
         if (!timeout && session.responseDeadline() >= 0 && context.level().getGameTime() >= session.responseDeadline()) return expire(context);
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
@@ -215,7 +263,7 @@ public final class DialogueTreeService {
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements(),
                 tree.id() + "/" + node.id() + "/response/" + response.id(),
                 new SceneContinuation.DialogueResume(tree.id(), response.end() ? "" : response.next(),
-                        true, responseTemplate, VillagerConversationService.isForced(context.player(), context.villager()), responseExchanges));
+                        true, responseTemplate, context.runtime().forced(context), responseExchanges));
         String responseLine = resolve(responseTemplate, context, responseActionText.replacements());
         String leadingText = firstNonBlank(responseLine, responseActionText.text());
         if (!responseActionText.outcome().success()) {
@@ -225,7 +273,7 @@ public final class DialogueTreeService {
         }
         if (!response.end() && !response.next().isBlank()) {
             return enterNodeResult(context, tree, response.next(), leadingText, responseActionText.replacements(),
-                    VillagerConversationService.isForced(context.player(), context.villager()), responseExchanges).dialogue();
+                    context.runtime().forced(context), responseExchanges).dialogue();
         }
 
         sessions(context).remove(key);
@@ -233,12 +281,12 @@ public final class DialogueTreeService {
                 com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(responseExchanges, context, responseActionText.replacements())));
     }
 
-    private static EntryResult enterNodeResult(DialogueContext context, DialogueTreeDefinition tree, String nodeId,
+    private static EntryResult enterNodeResult(DialogueRuntimeContext context, DialogueTreeDefinition tree, String nodeId,
             String leadingText, Map<String, String> inheritedReplacements, boolean forced) {
         return enterNodeResult(context, tree, nodeId, leadingText, inheritedReplacements, forced, List.of());
     }
 
-    private static EntryResult enterNodeResult(DialogueContext context, DialogueTreeDefinition tree, String nodeId,
+    private static EntryResult enterNodeResult(DialogueRuntimeContext context, DialogueTreeDefinition tree, String nodeId,
             String leadingText, Map<String, String> inheritedReplacements, boolean forced,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> leadingExchanges) {
         DialogueTreeDefinition.Node node = tree.node(nodeId).orElse(null);
@@ -260,7 +308,7 @@ public final class DialogueTreeService {
                 actionText.replacements(), actionText.lineId(), leadingExchanges)), actionText.outcome());
     }
 
-    private static VillagerDialogueService.DialogueResult presentNode(DialogueContext context,
+    private static VillagerDialogueService.DialogueResult presentNode(DialogueRuntimeContext context,
             DialogueTreeDefinition tree, DialogueTreeDefinition.Node node, String leadingText,
             Map<String, String> replacements, String actionLineId,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> leadingExchanges) {
@@ -280,12 +328,11 @@ public final class DialogueTreeService {
             if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
             exchanges.addAll(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(node.exchanges(), context, replacements));
         } else if ((!exchanges.isEmpty() || selected.camera() != null) && !nodeLine.isBlank())
-            exchanges.add(com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
-                    DialogueTextSegment.parse(nodeLine, DialogueTextEffects.NONE), selected.camera()));
+            exchanges.add(npcSpeech(context, nodeLine, selected.camera()));
         return withExchanges(result(resultLineId, text), exchanges);
     }
 
-    public static void resumeAfterActions(DialogueContext context, SceneContinuation.DialogueResume resume,
+    public static void resumeAfterActions(DialogueRuntimeContext context, SceneContinuation.DialogueResume resume,
             Map<String, String> replacements) {
         if (!sessions(context).diagnostic(key(context)).isBlank()) return;
         DialogueTreeDefinition tree = DialogueTreeResources.tree(
@@ -293,10 +340,7 @@ public final class DialogueTreeService {
         if (tree == null || !tree.matches(context)) return;
         if (resume.nodeId().isBlank()) {
             var exchanges = com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(resume.exchanges(), context, replacements);
-            if (!exchanges.isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), exchanges);
-            else if (!resume.leadingText().isBlank()) VillagerInteractionService.sendPersonalVillagerChat(
-                    context.player(), context.villager(), resolve(resume.leadingText(), context, replacements));
-            if (resume.forced()) VillagerConversationService.endForPlayer(context.player(), true, !exchanges.isEmpty());
+            context.runtime().finish(context, exchanges, resolve(resume.leadingText(), context, replacements), resume.forced());
             return;
         }
         DialogueTreeDefinition.Node node = tree.node(resume.nodeId()).orElse(null);
@@ -310,33 +354,15 @@ public final class DialogueTreeService {
         } else {
             result = presentNode(context, tree, node, leading, replacements, "", resume.exchanges());
         }
-        if (resume.forced()) {
-            List<DialogueOptionDefinition> options = activeOptions(context).orElse(List.of());
-            if (options.stream().noneMatch(DialogueOptionDefinition::available)) options = List.of();
-            if (options.isEmpty()) {
-                if (result.exchanges().isEmpty() && !result.text().isBlank())
-                    VillagerInteractionService.sendVillagerNotice(context.player(), context.villager(), result.text());
-            } else if (!VillagerInteractionService.openForcedDialogue(context.player(), context.villager(), result.text(),
-                    options, options.stream().anyMatch(DialogueOptionDefinition::forceCameraTowardsVillager))) {
-                leaveActiveSession(context);
-            }
-            if (!result.exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), result.exchanges());
-            if (options.isEmpty()) VillagerConversationService.endForPlayer(context.player(), true, !result.exchanges().isEmpty());
-        } else if (VillagerConversationService.validate(context.player(), context.villager())
-                && !VillagerConversationService.isForced(context.player(), context.villager())) {
-            VillagerInteractionScreenOpener.refreshNormal(context.player(), context.villager());
-            if (!result.exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(context.player(), context.villager(), result.exchanges());
-            else VillagerInteractionService.sendPersonalVillagerChat(context.player(), context.villager(), result.text(), result.textSegments());
-        }
+        context.runtime().present(context, result, resume.forced());
     }
 
-    private static ActionText executeActions(DialogueContext context, List<VillagerActionDefinition> actions,
+    private static ActionText executeActions(DialogueRuntimeContext context, List<VillagerActionDefinition> actions,
             Map<String, String> inheritedReplacements, String sourcePointer,
             SceneContinuation.DialogueResume resume) {
         Map<String, String> replacements = new LinkedHashMap<>(DialoguePlaceholders.base(context));
         if (inheritedReplacements != null) replacements.putAll(inheritedReplacements);
-        SceneContinuationService.RunResult execution = SceneContinuationService.run(context, actions, replacements,
-                () -> VillagerQuestService.flashTracker(context.player(), true), sourcePointer, resume);
+        SceneContinuationService.RunResult execution = context.runtime().actions(context, actions, replacements, sourcePointer, resume);
         ActionResult outcome = execution.outcome();
         if (execution.suspended()) {
             outcome = new ActionResult(outcome.status(), outcome.message(), outcome.capabilities(), outcome.legacyResult(),
@@ -353,19 +379,26 @@ public final class DialogueTreeService {
     public record EntryResult(Optional<VillagerDialogueService.DialogueResult> dialogue, ActionResult outcome) {
     }
 
-    private static String resolve(String template, DialogueContext context, Map<String, String> replacements) {
+    private static String resolve(String template, DialogueRuntimeContext context, Map<String, String> replacements) {
         if (template == null || template.isBlank()) {
             return "";
         }
-        return VillagerDialogueResources.resolveTemplate(
+        return com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(
                 template,
                 DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements)
         );
     }
 
-    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech npcSpeech(DialogueContext context, String text) {
-        return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(context.villager().getUUID(), context.villager().getId(),
-                com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(context.villager()).getString(), DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech npcSpeech(DialogueRuntimeContext context, String text) {
+        return npcSpeech(context, text, null);
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueSpeech npcSpeech(DialogueRuntimeContext context, String text,
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+        var speaker = context.speaker();
+        return new com.jvn.villagerretaliation.dialogue.DialogueSpeech(speaker == null ? null : speaker.getUUID(),
+                speaker == null ? -1 : speaker.getId(), speaker == null ? "" : context.displayName(speaker),
+                DialogueTextSegment.parse(text, DialogueTextEffects.NONE), camera);
     }
 
     private static VillagerDialogueService.DialogueResult withExchanges(VillagerDialogueService.DialogueResult result,
@@ -399,36 +432,21 @@ public final class DialogueTreeService {
         return builder.toString();
     }
 
-    public static long responseRemainingTicks(DialogueContext context) {
+    public static long responseRemainingTicks(DialogueRuntimeContext context) {
         var session = sessions(context).get(key(context));
         return session == null || session.responseDeadline() < 0 || session.timerResolved() ? -1
                 : Math.max(0, session.responseDeadline() - context.level().getGameTime());
     }
 
-    public static void tick(DialogueContext context) {
+    public static void tick(DialogueRuntimeContext context) {
         if (responseRemainingTicks(context) < 0) return;
-        var result = expire(context);
-        if (result.isEmpty()) {
-            VillagerInteractionService.sendForcedDialogueReputation(context.player(), context.villager(),
-                    activeOptions(context).orElse(List.of()));
-            return;
-        }
-        boolean forced = VillagerConversationService.isForced(context.player(), context.villager());
-        var options = activeOptions(context).orElse(List.of());
-        if (forced) VillagerInteractionService.sendForcedDialogueReputation(context.player(), context.villager(), options);
-        else VillagerInteractionScreenOpener.refreshNormal(context.player(), context.villager());
-        if (!result.get().exchanges().isEmpty()) VillagerInteractionService.sendDialogueExchanges(
-                context.player(), context.villager(), result.get().exchanges());
-        else if (!result.get().text().isBlank()) VillagerInteractionService.sendPersonalVillagerChat(
-                context.player(), context.villager(), result.get().text());
-        if (forced && options.stream().noneMatch(DialogueOptionDefinition::available))
-            VillagerConversationService.endForPlayer(context.player(), true, !result.get().exchanges().isEmpty());
+        context.runtime().tick(context, expire(context));
     }
 
-    private static Optional<VillagerDialogueService.DialogueResult> expire(DialogueContext context) {
+    private static Optional<VillagerDialogueService.DialogueResult> expire(DialogueRuntimeContext context) {
         var session = sessions(context).get(key(context));
         if (session == null || session.timerResolved() || session.responseDeadline() < 0
-                || context.level().getGameTime() < session.responseDeadline() || SceneContinuationService.hasPendingDialogue(context))
+                || context.level().getGameTime() < session.responseDeadline() || context.runtime().pending(context))
             return Optional.empty();
         var tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), session.treeId()).orElse(null);
         var node = tree == null ? null : tree.nodes().get(session.nodeId());
@@ -440,16 +458,16 @@ public final class DialogueTreeService {
                 session.lastTouchedGameTime(), session.replacements(), session.responseDeadline(), true));
         return timer.response().isBlank()
                 ? enterNodeResult(context, tree, timer.next(), "", session.replacements(),
-                        VillagerConversationService.isForced(context.player(), context.villager())).dialogue()
+                        context.runtime().forced(context)).dialogue()
                 : selectResponse(context, tree.id(), timer.response(), true);
     }
 
-    private static DialogueTreeSessionSavedData sessions(DialogueContext context) {
+    private static DialogueTreeSessionSavedData sessions(DialogueRuntimeContext context) {
         return DialogueTreeSessionSavedData.get(context.level());
     }
 
-    private static SessionKey key(DialogueContext context) {
-        return new SessionKey(context.player().getUUID(), context.villager().getUUID());
+    private static SessionKey key(DialogueRuntimeContext context) {
+        return new SessionKey(context.player().getUUID(), context.providerId() == null ? context.player().getUUID() : context.providerId());
     }
 
     record SessionKey(UUID playerId, UUID villagerId) {

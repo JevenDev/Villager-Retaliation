@@ -88,6 +88,15 @@ public record DialogueTreeDefinition(
                     conditions, forceCameraTowardsVillager, order, 0);
         }
 
+        public boolean matches(DialogueRuntimeContext context, DialogueDisposition disposition) {
+            if (context instanceof DialogueContext villagerContext) return matches(villagerContext, disposition);
+            boolean baby = context.speaker() != null && context.speaker().isBaby();
+            return (!this.label.isBlank() || !this.labelKey.isBlank())
+                    && (baby ? this.showForBabies : this.showForAdults)
+                    && this.professions.isEmpty() && DialogueCondition.matchesAll(context, this.conditions)
+                    && (this.dispositions.isEmpty() || this.dispositions.contains(disposition));
+        }
+
         public boolean matches(DialogueContext context, DialogueDisposition disposition) {
             if (this.label.isBlank() && this.labelKey.isBlank()) {
                 return false;
@@ -116,8 +125,13 @@ public record DialogueTreeDefinition(
             return toOption(null, treeId, inheritedMetadata);
         }
 
+        public DialogueOptionDefinition toOption(DialogueContext context, ResourceLocation treeId,
+                DialogueEntryMetadata inheritedMetadata) {
+            return toOption((DialogueRuntimeContext) context, treeId, inheritedMetadata);
+        }
+
         public DialogueOptionDefinition toOption(
-                DialogueContext context,
+                DialogueRuntimeContext context,
                 ResourceLocation treeId,
                 DialogueEntryMetadata inheritedMetadata) {
             return option(
@@ -292,8 +306,13 @@ public record DialogueTreeDefinition(
             return toOption(null, treeId, inheritedMetadata);
         }
 
+        public DialogueOptionDefinition toOption(DialogueContext context, ResourceLocation treeId,
+                DialogueEntryMetadata inheritedMetadata) {
+            return toOption((DialogueRuntimeContext) context, treeId, inheritedMetadata);
+        }
+
         public DialogueOptionDefinition toOption(
-                DialogueContext context,
+                DialogueRuntimeContext context,
                 ResourceLocation treeId,
                 DialogueEntryMetadata inheritedMetadata) {
             return option(
@@ -333,12 +352,12 @@ public record DialogueTreeDefinition(
                 .orElse(new DialogueLine.SelectedText("", "", "", camera));
     }
 
-    private static String resolveLabel(DialogueContext context, String fallback, String key) {
+    private static String resolveLabel(DialogueRuntimeContext context, String fallback, String key) {
         if (context == null || key == null || key.isBlank()) {
             return fallback == null ? "" : fallback;
         }
         return DialogueOptionDefinition.networkSafeLabel(
-                VillagerDialogueResources.message(context, key).orElse(fallback == null ? "" : fallback));
+                context.message(key).orElse(fallback == null ? "" : fallback));
     }
 
     private static DialogueOptionDefinition option(

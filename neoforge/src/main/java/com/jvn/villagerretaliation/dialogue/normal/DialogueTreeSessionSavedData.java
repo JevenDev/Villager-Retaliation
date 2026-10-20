@@ -15,6 +15,8 @@ import net.minecraft.world.level.storage.LevelResource;
 public final class DialogueTreeSessionSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_dialogue_trees";
     private final Map<DialogueTreeService.SessionKey, DialogueTreeService.Session> sessions = new LinkedHashMap<>();
+    java.util.List<DialogueTreeService.SessionKey> keys() { return java.util.List.copyOf(this.sessions.keySet()); }
+
     private final ListTag quarantined = new ListTag();
     private final Map<DialogueTreeService.SessionKey, String> issues = new LinkedHashMap<>();
     private CompoundTag preserved;

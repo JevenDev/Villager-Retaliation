@@ -81,6 +81,10 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     }
 
     static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+        return trace((DialogueRuntimeContext) context, condition);
+    }
+
+    static ConditionEvaluationTrace trace(DialogueRuntimeContext context, DialogueCondition condition) {
         return ConditionRegistry.trace(context, condition);
     }
 
@@ -1427,7 +1431,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                     == ConditionOutcome.MATCHED;
         }
 
-        static ConditionEvaluationTrace trace(DialogueContext context, DialogueCondition condition) {
+        static ConditionEvaluationTrace trace(DialogueRuntimeContext context, DialogueCondition condition) {
             return ConditionEvaluator.trace(context == null ? null : context.conditions(), null, condition);
         }
 

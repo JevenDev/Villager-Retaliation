@@ -81,6 +81,7 @@ public class VillagerRetaliation {
                 .listener(SellBoxCapabilities::register)
                 .listener(VillagerReputationNetworking::registerPayloads);
         ToucanEventBuses.game()
+                .listener(com.jvn.villagerretaliation.dialogue.normal.EntityDialogueRuntime::onServerTickPost)
                 .listener(com.jvn.villagerretaliation.dialogue.conversation.ConversationService::onServerTickPost)
                 .listener(com.jvn.villagerretaliation.dialogue.conversation.ConversationService::onLogout)
                 .listener(com.jvn.villagerretaliation.dialogue.conversation.ConversationPresentationService::onServerTickPost)

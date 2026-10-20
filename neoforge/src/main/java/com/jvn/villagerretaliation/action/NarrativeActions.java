@@ -133,6 +133,12 @@ public final class NarrativeActions {
             context.player().sendSystemMessage(Component.literal(DialogueTemplates.resolveTemplate(action.text(), replacements)));
             return success(VillagerActionResult.success());
         });
+        actions = actions.with(VillagerActionDefinition.Kind.START_SCENE, (context, action, replacements) -> {
+            var launch = com.jvn.villagerretaliation.scene.SceneLaunchService.launch(context, action);
+            if (!launch.accepted()) return unavailable(launch.diagnostic());
+            return action.waitForScene() ? ActionResult.suspended(launch.instanceId(), Set.of())
+                    : success(VillagerActionResult.success());
+        });
         return actions.with(VillagerActionDefinition.Kind.LOOT, (context, action, replacements) -> {
             var result = grantLoot(context, action.lootTable(), received -> { });
             return result.resolved() ? success(VillagerActionResult.success()) : unavailable(result.diagnostic());

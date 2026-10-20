@@ -107,6 +107,9 @@ public record DialogueContext(
     public com.jvn.villagerretaliation.action.NarrativeActions actions() { return ACTIONS; }
 
     @Override
+    public DialogueRuntimeAdapter runtime() { return com.jvn.villagerretaliation.dialogue.normal.VrDialogueRuntime.INSTANCE; }
+
+    @Override
     public Villager speaker() {
         return this.villager;
     }

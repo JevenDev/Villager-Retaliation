@@ -24,6 +24,7 @@ public final class SceneContinuation {
     private UUID dependencyContinuationId;
     private boolean retrySuspendedAction;
     private boolean campaignRecovery;
+    private boolean entityRuntime;
     private String recoveryFingerprint = "";
     private UUID rewardOperation;
     private UUID outcomeOperation;
@@ -97,6 +98,9 @@ public final class SceneContinuation {
     public void prepareRecoveryAction(int index) { preparedRecoveryAction = index; }
     public void clearPreparedRecoveryAction() { preparedRecoveryAction = -1; }
     public void bindQuestRun(UUID run) { if (questRunId == null) questRunId = run; }
+
+    public boolean entityRuntime() { return this.entityRuntime; }
+    public void entityRuntime(boolean value) { this.entityRuntime = value; }
 
     public String recoveryFingerprint() { return recoveryFingerprint; }
     public void bindRecoveryFingerprint(String fingerprint) { if (recoveryFingerprint.isBlank()) recoveryFingerprint = fingerprint; }
@@ -187,6 +191,10 @@ public final class SceneContinuation {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", id);
+        if (this.entityRuntime) {
+            tag.putBoolean("EntityRuntime", true);
+            tag.putInt("EntityPreparedAction", this.preparedRecoveryAction);
+        }
         if (sceneInstanceId != null) tag.putUUID("Scene", sceneInstanceId);
         if (campaignRecovery) {
             var recovery = new CompoundTag();
@@ -305,6 +313,16 @@ public final class SceneContinuation {
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
         value.unreadableCampaignActions.putAll(unreadable);
+        value.entityRuntime = tag.getBoolean("EntityRuntime");
+        if (value.entityRuntime && tag.contains("CampaignRecovery")) {
+            throw new IllegalArgumentException("Entity continuations cannot claim campaign recovery authority");
+        }
+        if (value.entityRuntime) {
+            if (!tag.contains("EntityPreparedAction", Tag.TAG_INT)) throw new IllegalArgumentException("Entity action cursor is missing");
+            int prepared = tag.getInt("EntityPreparedAction");
+            if (prepared < -1 || prepared >= actions.size()) throw new IllegalArgumentException("Entity action cursor is invalid");
+            value.preparedRecoveryAction = prepared;
+        }
         value.campaignRecovery = tag.contains("CampaignRecovery");
         if (value.campaignRecovery) {
             var recovery = tag.getCompound("CampaignRecovery");

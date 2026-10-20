@@ -40,6 +40,148 @@ public final class SceneContinuationService {
     private SceneContinuationService() {
     }
 
+    public static RunResult run(com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context,
+            List<VillagerActionDefinition> actions, Map<String, String> replacements, Runnable flash,
+            String source, SceneContinuation.DialogueResume resume) {
+        if (context instanceof DialogueContext legacy) return run(legacy, actions, replacements, flash, source, resume);
+        var data = SceneSavedData.get(context.level());
+        if (context.providerId() == null && actions != null && actions.stream().anyMatch(VillagerActionDefinition::waitForScene)) {
+            return RunResult.of(ActionResult.unavailable("Scene recovery requires a persistent entity provider.", Set.of(), VillagerActionResult.EMPTY), null);
+        }
+        if (data.futureVersion()) return RunResult.of(ActionResult.unavailable("Scene storage is not compatible.", Set.of(), VillagerActionResult.EMPTY), null);
+        String base = Objects.requireNonNullElse(source, "actions") + "/entity/" + context.providerId();
+        for (var continuation : data.continuations()) {
+            if (!continuation.entityRuntime() || !Objects.equals(context.providerId(), continuation.providerId())
+                    || !context.player().getUUID().equals(continuation.playerId())
+                    || !continuation.sourcePointer().startsWith(base + "/")) continue;
+            if (continuation.completionReceipt()) continue;
+            if (!continuation.actions().equals(actions)) return RunResult.of(ActionResult.unavailable(
+                    "Suspended entity action definition changed.", Set.of(), VillagerActionResult.EMPTY), continuation.id());
+            return RunResult.of(ActionResult.suspendedContinuation(continuation.id(), continuation.actionDiagnostic(),
+                    Set.of(), new VillagerActionResult(false, "", "", continuation.replacements(), false)), continuation.id());
+        }
+        var sequence = ActionSequenceRunner.run(context, actions, 0, replacements, flash, null, null);
+        var result = sequence.outcome();
+        if (!result.suspended()) return RunResult.of(result, null);
+        var target = waitTarget(data, result);
+        if (target == null || target.scene() == null || target.rewardOperation() != null || target.outcomeOperation() != null) {
+            return RunResult.of(ActionResult.unavailable("Entity actions require a readable scene suspension target.",
+                    result.capabilities(), result.legacyResult()), null);
+        }
+        int suspendedIndex = sequence.nextActionIndex() - (result.retryOnResume() ? 0 : 1);
+        var action = actions.get(suspendedIndex);
+        var progress = action.questId() == null ? null : VillagerQuestSavedData.get(context.level())
+                .get(context.player().getUUID(), action.questId());
+        var continuation = data.suspendContinuation(target.scene(), context.player().getUUID(), context.providerId(),
+                pointer(base, action, suspendedIndex), actions, sequence.nextActionIndex(), result.legacyResult().replacements(),
+                action.questId(), progress == null ? null : progress.questRunId());
+        continuation.entityRuntime(true);
+        continuation.dialogueResume(resume);
+        if (cyclicDependency(data, continuation.id(), target.dependencyId())) {
+            result = ActionResult.failed("cyclic entity action dependency", result.capabilities());
+            continuation.finish(result);
+        } else applyWait(context.level().getServer(), data, continuation, target, result);
+        data.changed();
+        persistEntity(context.level().getServer(), data, continuation);
+        return RunResult.of(continuation.completionReceipt() ? result : ActionResult.suspendedContinuation(continuation.id(),
+                continuation.actionDiagnostic(), result.capabilities(), result.legacyResult()), continuation.id());
+    }
+
+    public static boolean hasPendingDialogue(com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context) {
+        if (context instanceof DialogueContext legacy) return hasPendingDialogue(legacy);
+        return SceneSavedData.get(context.level()).continuations().stream().anyMatch(continuation ->
+                !continuation.completionReceipt() && continuation.dialogueResume() != null
+                        && context.player().getUUID().equals(continuation.playerId())
+                        && Objects.equals(context.providerId(), continuation.providerId()));
+    }
+
+    private static boolean persistEntity(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
+        continuation.recoveryPersistenceIssue("Entity actions are waiting for recovery storage.");
+        try {
+            data.persistCampaignHandoff(server.overworld());
+            continuation.recoveryPersistenceIssue("");
+            return true;
+        } catch (java.io.IOException exception) {
+            continuation.recoveryPersistenceIssue("Entity action recovery is waiting for world storage: " + exception.getMessage());
+            data.changed();
+            return false;
+        }
+    }
+
+    private static void maintainEntity(MinecraftServer server, SceneSavedData data, SceneContinuation continuation) {
+        if (continuation.recoveryPersistencePending() && !persistEntity(server, data, continuation)) return;
+        if (continuation.completionReceipt()) return;
+        if (continuation.hasUnreadableActions() || continuation.preparedRecoveryAction() >= 0) {
+            if (continuation.pauseForConsent("A saved entity action has no completion receipt. Inspect its effects before repairing it.")) data.changed();
+            return;
+        }
+        if (continuation.dependencyContinuationId() != null) {
+            var dependency = data.continuation(continuation.dependencyContinuationId()).orElse(null);
+            if (dependency == null || !dependency.completionReceipt()) return;
+            if (dependency.actionStatus() != ActionStatus.SUCCESS && dependency.actionStatus() != ActionStatus.ALREADY_SATISFIED) {
+                continuation.finish(ActionResult.failed(dependency.actionDiagnostic(), Set.of()));
+                data.changed();
+                persistEntity(server, data, continuation);
+                return;
+            }
+        } else {
+            var scene = data.get(continuation.sceneInstanceId()).orElse(null);
+            if (scene == null || !scene.state().terminal()) return;
+            if (scene.completionResult() != SceneInstance.CompletionResult.SUCCESS) {
+                continuation.finish(ActionResult.failed("The entity scene did not complete successfully.", Set.of()));
+                data.changed();
+                persistEntity(server, data, continuation);
+                return;
+            }
+        }
+        var player = server.getPlayerList().getPlayer(continuation.playerId());
+        if (player == null) return;
+        if (continuation.providerId() == null) return;
+        var provider = player.serverLevel().getEntity(continuation.providerId());
+        if (!(provider instanceof net.minecraft.world.entity.LivingEntity living) || !living.isAlive()) return;
+        var resolved = com.jvn.villagerretaliation.dialogue.NarrativeActors.context(player.serverLevel(), player, living);
+        if (resolved.isEmpty()) return;
+        var context = resolved.orElseThrow();
+        if (continuation.questId() != null && continuation.questRunId() != null) {
+            var progress = VillagerQuestSavedData.get(context.level()).get(continuation.playerId(), continuation.questId());
+            if (progress == null || !continuation.questRunId().equals(progress.questRunId())) {
+                continuation.finish(ActionResult.unavailable("quest run changed", Set.of(), VillagerActionResult.EMPTY));
+                data.changed();
+                persistEntity(server, data, continuation);
+                return;
+            }
+        }
+        continuation.resuming(SceneInstance.CompletionResult.SUCCESS);
+        var sequence = ActionSequenceRunner.run(context, continuation.actions(), continuation.nextActionIndex(),
+                continuation.replacements(), () -> context.runtime().flashTracker(context), (next, outcome) -> {
+                    continuation.nextActionIndex(next);
+                    continuation.replacements().putAll(outcome.legacyResult().replacements());
+                    continuation.clearPreparedRecoveryAction();
+                    data.changed();
+                    if (!outcome.suspended() && (outcome.success() || !continuation.actions().get(next - 1).required())
+                            && !persistEntity(server, data, continuation)) throw pauseForSave(continuation);
+                }, index -> {
+                    continuation.prepareRecoveryAction(index);
+                    data.changed();
+                    if (!persistEntity(server, data, continuation)) throw pauseForSave(continuation);
+                });
+        var result = sequence.outcome();
+        if (result.suspended() && continuation.id().equals(result.suspensionId())) return;
+        if (result.suspended()) {
+            var target = waitTarget(data, result);
+            if (target == null || target.scene() == null || cyclicDependency(data, continuation.id(), target.dependencyId())) {
+                result = ActionResult.failed("Entity action suspension target is unavailable or cyclic.", Set.of());
+                continuation.finish(result);
+            } else applyWait(server, data, continuation, target, result);
+        } else continuation.finish(result);
+        data.changed();
+        if (!persistEntity(server, data, continuation)) return;
+        QuestStageActionService.settleContinuation(context.level(), continuation);
+        if (result.success() && continuation.dialogueResume() != null) {
+            DialogueTreeService.resumeAfterActions(context, continuation.dialogueResume(), continuation.replacements());
+        }
+    }
+
     public static RunResult run(DialogueContext context, List<VillagerActionDefinition> actions,
             Map<String, String> baseReplacements, Runnable trackerFlashHandler, String sourcePointer) {
         return run(context, actions, baseReplacements, trackerFlashHandler, sourcePointer, null);
@@ -275,6 +417,13 @@ public final class SceneContinuationService {
             int index = Math.floorMod(cursor + inspected, continuations.size());
             SceneContinuation continuation = continuations.get(index);
             MAINTENANCE_CURSORS.put(data, (index + 1) % continuations.size());
+            if (continuation.entityRuntime()) {
+                if (!continuation.completionReceipt() || continuation.recoveryPersistencePending()) {
+                    work++;
+                    maintainEntity(server, data, continuation);
+                }
+                continue;
+            }
             boolean retriedSave = continuation.recoveryPersistencePending();
             if (retriedSave) {
                 if (server.overworld().getGameTime() % 100L != 0L) continue;
