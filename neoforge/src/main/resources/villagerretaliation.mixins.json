@@ -131,6 +131,7 @@
     "client.MerchantContainerMixin",
     "client.MerchantResultSlotMixin",
     "client.ModelPartAccessor",
+    "client.DialogueSpeakerPoseMixin",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

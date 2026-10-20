@@ -1,0 +1,89 @@
+package com.jvn.villagerretaliation.dialogue;
+
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder("dialogue_cues")
+@PrefixGameTestTemplate(false)
+public final class DialoguePlaybackGameTests {
+    private DialoguePlaybackGameTests() { }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void pausesStopRevealAndSpeechIncludingAtLineBoundaries(GameTestHelper helper) {
+        var clock = clock("<pause=500>A<pause=200>B<pause=300>", 50);
+        helper.assertValueEqual(clock.visibleCharacters(499), 0, "leading pause precedes first character");
+        helper.assertTrue(clock.paused(499), "leading pause is active");
+        helper.assertFalse(clock.talking(499), "mouth is closed during pause");
+        helper.assertValueEqual(clock.visibleCharacters(500), 1, "first character appears after pause");
+        helper.assertTrue(clock.talking(500), "speech resumes between pauses");
+        helper.assertValueEqual(clock.visibleCharacters(749), 1, "middle pause holds the next character");
+        helper.assertValueEqual(clock.visibleCharacters(750), 2, "second character follows the middle pause");
+        helper.assertFalse(clock.complete(1099), "trailing pause holds completion after all text is visible");
+        helper.assertTrue(clock.complete(1100), "trailing pause eventually completes");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void speedChangesApplyAtTheirOwnTextPositions(GameTestHelper helper) {
+        var clock = clock("A<speed=0.5>BC<speed=2>D", 100);
+        helper.assertValueEqual(clock.visibleCharacters(99), 1, "initial speed");
+        helper.assertValueEqual(clock.visibleCharacters(100), 2, "speed changes do not shift already revealed text");
+        helper.assertValueEqual(clock.visibleCharacters(299), 2, "half speed doubles the interval");
+        helper.assertValueEqual(clock.visibleCharacters(300), 3, "slower character appears at the expected time");
+        helper.assertValueEqual(clock.visibleCharacters(500), 4, "later speed change begins at its own position");
+        helper.assertTrue(clock.complete(500), "no additional delay after the last character");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void gesturesFollowUnicodePositionsAndDoNotRestartOnSampling(GameTestHelper helper) {
+        var clock = clock("A😀<agree>B", 100);
+        helper.assertValueEqual(clock.visibleCharacters(100), 2, "Unicode characters count once");
+        helper.assertTrue(Math.abs(clock.pose(300, 0, 0, 0, 0).pitch()) > 1, "nod begins at the Unicode text position");
+        helper.assertValueEqual(clock.pose(300, 0, 0, 0, 0), clock.pose(300, 0, 0, 0, 0),
+                "repeated frames cannot retrigger gestures");
+        helper.assertFalse(clock.complete(849), "completion waits for the gesture");
+        helper.assertTrue(clock.complete(850), "gesture finishes automatically");
+        helper.assertValueEqual(clock.pose(900, 0, 0, 0, 0), new DialoguePlayback.Pose(0, 0), "nod returns to neutral");
+        var disagreement = clock("<disagree>AB", 100);
+        helper.assertTrue(Math.abs(disagreement.pose(100, 0, 0, 0, 0).yaw()) > 1, "disagreement moves horizontally");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void gazeHoldsBlendsAndResetsToNormalTracking(GameTestHelper helper) {
+        var clock = clock("<look=left>AB<look=player>C<reset>D", 500);
+        helper.assertValueEqual(clock.pose(180, 7, 2, -20, -5), new DialoguePlayback.Pose(35, 0), "left gaze settles");
+        helper.assertValueEqual(clock.pose(1180, 7, 2, -20, -5), new DialoguePlayback.Pose(-20, -5), "gaze can target the player");
+        helper.assertValueEqual(clock.pose(1680, 7, 2, -20, -5), new DialoguePlayback.Pose(7, 2), "reset restores normal tracking");
+        helper.assertTrue(clock("<agree><reset>A", 100).complete(0), "reset cancels the remaining gesture delay");
+        var copy = clock.copy();
+        helper.assertValueEqual(copy.pose(1200, 0, 0, 15, 4), clock.pose(1200, 0, 0, 15, 4),
+                "screen replacement preserves the performance timeline");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void skipAndInstantTextHandleQueuedCuesWithoutWaiting(GameTestHelper helper) {
+        var clock = clock("<look=left>A<pause=5000><disagree>B<look=right>", 100);
+        clock.skip();
+        helper.assertTrue(clock.complete(0), "skip bypasses pauses");
+        helper.assertValueEqual(clock.visibleCharacters(0), 2, "skip reveals all text");
+        helper.assertValueEqual(clock.pose(0, 0, 0, 0, 0), new DialoguePlayback.Pose(-35, 0),
+                "skip settles on final gaze without queued head shakes");
+        var instant = clock("<pause=60000><agree>AB", 0);
+        helper.assertTrue(instant.complete(0), "instant text never waits for authored pauses");
+        helper.assertValueEqual(instant.visibleCharacters(0), 2, "instant preference reveals all text");
+        helper.assertTrue(Math.abs(instant.pose(100, 0, 0, 0, 0).pitch()) > 1,
+                "instant text still permits gesture animation");
+        helper.succeed();
+    }
+
+    private static DialoguePlayback clock(String text, long millisPerCharacter) {
+        return new DialoguePlayback(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 0, millisPerCharacter);
+    }
+}

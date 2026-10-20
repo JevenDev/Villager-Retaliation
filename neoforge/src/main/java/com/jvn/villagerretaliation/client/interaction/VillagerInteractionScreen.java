@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialoguePlayback;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
@@ -449,6 +450,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
     private int dialogueLineScroll;
     private long dialogueTextAnimationStartMillis;
+    private long dialoguePlaybackMillisPerCharacter;
+    private DialoguePlayback dialoguePlayback = new DialoguePlayback(List.of(), 0, 0);
+    private String campaignPlaybackKey = "";
     private boolean dialogueTextAnimationSkipped;
     private boolean awaitingExchangeCompletion;
     private long optionLayoutVersion;
@@ -810,6 +814,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments) {
+        this.campaignPlaybackKey = "";
         boolean restoreOptions = this.automaticDialogue.active() || this.awaitingExchangeCompletion;
         cancelAutomaticDialogue();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
@@ -913,35 +918,37 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.closeAfterDialogueExchanges = false;
         this.villagerDialogueText = "";
         this.villagerDialogueTextSegments = List.of();
+        this.dialoguePlayback = new DialoguePlayback(List.of(), 0, 0);
+        VillagerDialoguePerformance.clear();
         this.tutorialRawSegments=List.of();
     }
 
     private List<DialogueTextSegment> tutorialRawSegments=List.of();
     private void refreshTutorialControlHints(){
         if(tutorialRawSegments.isEmpty())return;
-        var resolved=tutorialRawSegments.stream().map(segment->new DialogueTextSegment(com.jvn.villagerretaliation.client.quest.TutorialControlHints.resolve(segment.text()),segment.effects())).toList();
+        var resolved=tutorialRawSegments.stream().map(segment->segment.mapText(com.jvn.villagerretaliation.client.quest.TutorialControlHints::resolve)).toList();
         if(!resolved.equals(this.villagerDialogueTextSegments)){
             this.villagerDialogueTextSegments=resolved;
             this.villagerDialogueText=DialogueTextSegment.plainText(resolved);
+            this.dialoguePlayback = new DialoguePlayback(resolved, this.dialogueTextAnimationStartMillis, dialogueTextSpeed().millisPerCharacter());
         }
     }
 
     private void setDialogueText(String text, List<DialogueTextSegment> textSegments) {
-        if (text == null || text.isBlank()) {
+        if ((text == null || text.isBlank()) && (textSegments == null || textSegments.stream().allMatch(segment -> segment.cues().isEmpty()))) {
             return;
         }
-        var normalized=normalizeDialogueSegments(text,textSegments);
+        var normalized=normalizeDialogueSegments(text == null ? "" : text,textSegments);
         this.tutorialRawSegments=normalized.stream().anyMatch(segment->segment.text().contains("{"))?normalized:List.of();
         this.villagerDialogueTextSegments = normalized.stream()
-                .map(segment -> new DialogueTextSegment(
-                        com.jvn.villagerretaliation.client.quest.TutorialControlHints.resolve(segment.text()), segment.effects()))
+                .map(segment -> segment.mapText(com.jvn.villagerretaliation.client.quest.TutorialControlHints::resolve))
                 .toList();
         this.villagerDialogueText = DialogueTextSegment.plainText(this.villagerDialogueTextSegments);
-        if (this.villagerDialogueText.isBlank()) {
-            return;
-        }
         this.dialogueLineScroll = 0;
         this.dialogueTextAnimationStartMillis = Util.getMillis();
+        this.dialoguePlaybackMillisPerCharacter = dialogueTextSpeed().millisPerCharacter();
+        this.dialoguePlayback = new DialoguePlayback(this.villagerDialogueTextSegments,
+                this.dialogueTextAnimationStartMillis, this.dialoguePlaybackMillisPerCharacter);
         this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
         this.lastDialogueBlipVisibleCharacters = 0;
         this.nextDialogueBlipVisibleCharacter = this.dialogueTextAnimationSkipped
@@ -954,11 +961,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     public void copyCurrentDialogueTo(VillagerInteractionScreen target) {
         boolean automatic = this.automaticDialogue.active() || this.greetingRequest.pending();
         if (target == null || this.villagerDialogueText.isBlank() && !automatic
+                && this.villagerDialogueTextSegments.stream().allMatch(segment -> segment.cues().isEmpty())
                 || automatic && target.villagerEntityId != this.villagerEntityId) {
             return;
         }
         target.acceptVillagerDialogue(this.tutorialRawSegments.isEmpty()?this.villagerDialogueText:DialogueTextSegment.plainText(this.tutorialRawSegments),
                 this.tutorialRawSegments.isEmpty()?this.villagerDialogueTextSegments:this.tutorialRawSegments);
+        target.dialoguePlayback = this.dialoguePlayback.copy();
+        target.dialoguePlaybackMillisPerCharacter = this.dialoguePlaybackMillisPerCharacter;
+        target.dialogueTextAnimationStartMillis = this.dialogueTextAnimationStartMillis;
+        target.dialogueTextAnimationSkipped = this.dialogueTextAnimationSkipped;
+        target.campaignPlaybackKey = this.campaignPlaybackKey;
         target.dialogueSpeech = this.dialogueSpeech;
         target.awaitingExchangeCompletion = this.awaitingExchangeCompletion;
         target.dialogueCameraRevision = this.dialogueCameraRevision;
@@ -970,8 +983,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             target.automaticDialogue.copyFrom(this.automaticDialogue);
             target.greetingRequest.copyFrom(this.greetingRequest);
             target.page = this.page;
-            target.dialogueTextAnimationStartMillis = this.dialogueTextAnimationStartMillis;
-            target.dialogueTextAnimationSkipped = this.dialogueTextAnimationSkipped;
         }
         if (target.awaitingExchangeCompletion || !target.dialogueExchanges.isEmpty() || target.closeAfterDialogueExchanges || target.automaticDialogue.active()
                 || target.greetingRequest.pending()) target.rebuildOptionsKeepingListPosition();
@@ -4551,7 +4562,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             sourceSegments = DialogueTextSegment.parse(text.strip(), DialogueTextEffects.NONE);
         } else {
             sourceSegments = textSegments.stream()
-                    .filter(segment -> segment != null && !segment.text().isEmpty())
+                    .filter(segment -> segment != null && (!segment.text().isEmpty() || !segment.cues().isEmpty()))
                     .toList();
         }
         if (sourceSegments.isEmpty()) {
@@ -4561,6 +4572,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private static List<DialogueTextSegment> stripDialogueSegments(List<DialogueTextSegment> segments) {
+        if (segments.stream().anyMatch(segment -> !segment.cues().isEmpty())) return segments;
         String plainText = DialogueTextSegment.plainText(segments);
         int start = 0;
         while (start < plainText.length()) {
@@ -4648,15 +4660,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         boolean talking = isDialogueMouthAnimationActive();
         var speaker = dialogueSpeakerEntity();
         if (speaker instanceof Villager) VillagerDialogueMouthAnimation.update(speaker.getId(), talking);
+        VillagerDialoguePerformance.update(shouldRenderInteractionContainer() && !this.closingWithAnimation ? speaker : null,
+                dialoguePlaybackState());
     }
 
     private boolean isDialogueMouthAnimationActive() {
-        return shouldRenderInteractionContainer()
-                && !this.villagerDialogueText.isBlank()
-                && !isDialogueTextAnimationComplete();
+        return shouldRenderInteractionContainer() && !this.closingWithAnimation
+                && dialoguePlaybackState().talking(Util.getMillis());
     }
 
     private void clearDialogueMouthAnimation() {
+        VillagerDialoguePerformance.clear();
         VillagerDialogueMouthAnimation.clear(this.villagerEntityId);
         var speaker = dialogueSpeakerEntity();
         if (speaker != null) VillagerDialogueMouthAnimation.clear(speaker.getId());
@@ -4695,26 +4709,27 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && mouseY < top + INTERACTION_DIALOGUE_SCROLL_BOTTOM;
     }
 
-    private boolean isDialogueTextAnimationComplete() {
-        if (this.villagerDialogueText.isBlank() || this.dialogueTextAnimationSkipped) {
-            return true;
+    private DialoguePlayback dialoguePlaybackState() {
+        long interval = dialogueTextSpeed().millisPerCharacter();
+        if (interval != this.dialoguePlaybackMillisPerCharacter) {
+            this.dialoguePlaybackMillisPerCharacter = interval;
+            this.dialoguePlayback = new DialoguePlayback(this.villagerDialogueTextSegments, this.dialogueTextAnimationStartMillis, interval);
         }
-        DialogueTextSpeed speed = dialogueTextSpeed();
-        return speed.instant()
-                || visibleDialogueTextCharacters() >= this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
+        if (this.dialogueTextAnimationSkipped && !dialogueTextSpeed().instant()) this.dialoguePlayback.skip();
+        return this.dialoguePlayback;
+    }
+
+    private boolean isDialogueTextAnimationComplete() {
+        return dialoguePlaybackState().complete(Util.getMillis());
     }
 
     private int visibleDialogueTextCharacters() {
-        DialogueTextSpeed speed = dialogueTextSpeed();
-        if (speed.instant()) {
-            return this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length());
-        }
-        long elapsedMillis = Math.max(0L, Util.getMillis() - this.dialogueTextAnimationStartMillis);
-        return Math.max(1, (int) (elapsedMillis / speed.millisPerCharacter()) + 1);
+        return dialoguePlaybackState().visibleCharacters(Util.getMillis());
     }
 
     private void maybePlayDialogueBlip() {
-        if (this.dialogueTextAnimationSkipped || this.villagerDialogueText.isBlank() || this.campaignMedia.voicedLine()
+        if (this.dialogueTextAnimationSkipped || dialoguePlaybackState().paused(Util.getMillis())
+                || this.villagerDialogueText.isBlank() || this.campaignMedia.voicedLine()
                 || !VillagerRetaliationConfig.ENABLE_DIALOGUE_BLIP_AUDIO.get()) {
             return;
         }
@@ -6321,7 +6336,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (session && page != DialoguePage.CAMPAIGN_CONVERSATION && page != DialoguePage.CAMPAIGN_CONFIRMATION) openPage(DialoguePage.CAMPAIGN_CONVERSATION);
             else if (page == DialoguePage.CAMPAIGN_CONVERSATION || page == DialoguePage.TALK) rebuildOptionsKeepingListPosition();
             if (text != null) {
-                acceptVillagerDialogue(text, List.of());
+                var line = campaignConversation.presentationLine();
+                String key = line == null ? "" : campaignConversation.session().id() + "/" + line.key() + "/" + line.text();
+                boolean preserve = !key.isEmpty() && key.equals(campaignPlaybackKey);
+                var previousPlayback = dialoguePlayback.copy();
+                long previousStart = dialogueTextAnimationStartMillis;
+                boolean previousSkipped = dialogueTextAnimationSkipped;
+                var segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
+                if (line == null) segments = segments.stream()
+                        .map(segment -> new DialogueTextSegment(segment.text(), segment.effects())).toList();
+                acceptVillagerDialogue(text, segments);
+                campaignPlaybackKey = key;
+                if (preserve) {
+                    dialoguePlayback = previousPlayback;
+                    dialogueTextAnimationStartMillis = previousStart;
+                    dialogueTextAnimationSkipped = previousSkipped;
+                }
                 if (campaignConversation.session() != null && (campaignConversation.session().check() != null || campaignConversation.session().confirmation() != null)) {
                     dialogueTextAnimationSkipped = true;
                     nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
