@@ -69,12 +69,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
 
     int specificityScore();
 
-    static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+    static boolean matchesAll(DialogueRuntimeContext context, List<DialogueCondition> conditions) {
         return ConditionRegistry.matchesAll(context, conditions);
     }
 
     static boolean matchesAll(
-            DialogueContext context,
+            DialogueRuntimeContext context,
             QuestTriggerContext triggerContext,
             List<DialogueCondition> conditions) {
         return ConditionRegistry.matchesAll(context, triggerContext, conditions);
@@ -1411,11 +1411,11 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             return registration.reader().read(location, context, condition, defaultQuestId);
         }
 
-        static boolean matchesAll(DialogueContext context, List<DialogueCondition> conditions) {
+        static boolean matchesAll(DialogueRuntimeContext context, List<DialogueCondition> conditions) {
             return matchesAll(context, null, conditions);
         }
 
-        static boolean matchesAll(DialogueContext context, QuestTriggerContext triggerContext,
+        static boolean matchesAll(DialogueRuntimeContext context, QuestTriggerContext triggerContext,
                 List<DialogueCondition> conditions) {
             if (conditions == null || conditions.isEmpty()) return true;
             return ConditionEvaluator.all(context == null ? null : context.conditions(), triggerContext, conditions)

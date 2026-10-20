@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -159,13 +160,13 @@ public record DialogueLine(
         return new SelectedText(variantId(selectedIndex), this.lines.get(selectedIndex), "");
     }
 
-    public SelectedText selectText(DialogueContext context, List<String> recentDialogueIds) {
+    public SelectedText selectText(DialogueRuntimeContext context, List<String> recentDialogueIds) {
         return DialogueTextVariant.selectAndRecord(this.textVariants, context, recentDialogueIds)
                 .map(variant -> new SelectedText(variant.id(), variant.text(), variant.textKey(), variant.camera()))
                 .orElseGet(() -> new SelectedText(this.id, "", ""));
     }
 
-    public boolean hasEligibleTextVariant(DialogueContext context) {
+    public boolean hasEligibleTextVariant(DialogueRuntimeContext context) {
         return this.textVariants.stream().anyMatch(variant -> variant.matches(context)
                 && variant.weight() > 0 && variant.chance() > 0.0D
                 && DialogueUsageService.available(context, variant.id(), variant.usage()));
@@ -186,7 +187,7 @@ public record DialogueLine(
         return false;
     }
 
-    public boolean hasFreshVariant(DialogueContext context, List<String> recentDialogueIds) {
+    public boolean hasFreshVariant(DialogueRuntimeContext context, List<String> recentDialogueIds) {
         return DialogueTextVariant.hasFresh(this.textVariants, context, recentDialogueIds);
     }
 

@@ -1,14 +1,13 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 
 /** Applies one usage policy consistently regardless of the dialogue surface. */
 public final class DialogueUsageService {
     private DialogueUsageService() {
     }
 
-    public static boolean available(DialogueContext context, String dialogueId, DialogueUsagePolicy policy) {
+    public static boolean available(DialogueRuntimeContext context, String dialogueId, DialogueUsagePolicy policy) {
         if (context == null || dialogueId == null || dialogueId.isBlank()) {
             return true;
         }
@@ -25,27 +24,25 @@ public final class DialogueUsageService {
                 || context.level().getGameTime() >= usage.lastUsedGameTime() + effective.cooldownTicks();
     }
 
-    public static DialogueUsageSavedData.Usage usage(DialogueContext context, String dialogueId, DialogueUsagePolicy policy) {
+    public static DialogueUsageSavedData.Usage usage(DialogueRuntimeContext context, String dialogueId, DialogueUsagePolicy policy) {
         if (context == null || dialogueId == null || dialogueId.isBlank()) return DialogueUsageSavedData.Usage.EMPTY;
         DialogueUsagePolicy effective = policy == null ? DialogueUsagePolicy.DEFAULT : policy;
         DialogueUsageSavedData.Usage usage = DialogueUsageSavedData.get(context.level())
                 .usage(scopeKey(context, effective.scope()), dialogueId);
         if (usage.count() == 0 && effective.scope() == DialogueUsagePolicy.Scope.PLAYER_VILLAGER) {
-            VillagerInteractionTracker.DialogueUsage legacy = VillagerInteractionTracker.dialogueUsage(
-                    context.level(), context.villager(), context.player(), dialogueId);
-            usage = new DialogueUsageSavedData.Usage(legacy.count(), legacy.lastUsedGameTime());
+            usage = context.legacyUsage(dialogueId);
         }
         return usage;
     }
 
     public static java.util.Optional<String> lastUsedAmong(
-            DialogueContext context, java.util.Set<String> dialogueIds, DialogueUsagePolicy policy) {
+            DialogueRuntimeContext context, java.util.Set<String> dialogueIds, DialogueUsagePolicy policy) {
         if (context == null || dialogueIds == null || dialogueIds.isEmpty()) return java.util.Optional.empty();
         DialogueUsagePolicy effective = policy == null ? DialogueUsagePolicy.DEFAULT : policy;
         return DialogueUsageSavedData.get(context.level()).lastUsedAmong(scopeKey(context, effective.scope()), dialogueIds);
     }
 
-    public static void record(DialogueContext context, String dialogueId, DialogueUsagePolicy policy) {
+    public static void record(DialogueRuntimeContext context, String dialogueId, DialogueUsagePolicy policy) {
         if (context == null || dialogueId == null || dialogueId.isBlank()) {
             return;
         }
@@ -54,14 +51,17 @@ public final class DialogueUsageService {
                 scopeKey(context, effective.scope()), dialogueId, context.level().getGameTime());
     }
 
-    private static String scopeKey(DialogueContext context, DialogueUsagePolicy.Scope scope) {
+    private static String scopeKey(DialogueRuntimeContext context, DialogueUsagePolicy.Scope scope) {
         return switch (scope) {
-            case PLAYER_VILLAGER -> "player_villager:" + context.player().getUUID() + ":" + context.villager().getUUID();
+            // keep persisted scope prefixes compatible with existing worlds
+            case PLAYER_VILLAGER -> context.providerId() == null ? "player:" + context.player().getUUID()
+                    : "player_villager:" + context.player().getUUID() + ":" + context.providerId();
             case PLAYER -> "player:" + context.player().getUUID();
-            case VILLAGER -> "villager:" + context.villager().getUUID();
-            case VILLAGE -> "village:" + (context.villageKey() == null || context.villageKey().isBlank()
-                    ? context.level().dimension().location() + ":" + context.villager().blockPosition().asLong()
-                    : context.villageKey());
+            case VILLAGER -> context.providerId() == null ? "player:" + context.player().getUUID()
+                    : "villager:" + context.providerId();
+            case VILLAGE -> "village:" + (context.groupKey() == null || context.groupKey().isBlank()
+                    ? context.level().dimension().location() + ":" + context.origin().asLong()
+                    : context.groupKey());
             case DIMENSION -> "dimension:" + context.level().dimension().location();
             case WORLD -> "world";
         };

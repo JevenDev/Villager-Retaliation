@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.dialogue.CandidateArbitrator;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,11 +45,11 @@ public record DialogueTextVariant(
                 : new DialogueTextVariant(id, text, textKey, priority, weight, chance, conditions, metadata, usage, fallback);
     }
 
-    public boolean matches(DialogueContext context) {
+    public boolean matches(DialogueRuntimeContext context) {
         return this.conditions.isEmpty() || DialogueCondition.matchesAll(context, this.conditions);
     }
 
-    public static boolean hasFresh(List<DialogueTextVariant> variants, DialogueContext context, List<String> recentIds) {
+    public static boolean hasFresh(List<DialogueTextVariant> variants, DialogueRuntimeContext context, List<String> recentIds) {
         return variants.stream().anyMatch(variant -> variant.weight() > 0 && variant.chance() > 0.0D
                 && variant.matches(context) && DialogueUsageService.available(context, variant.id(), variant.usage())
                 && (!variant.usage().antiRepeat() || !recentIds.contains(variant.id())));
@@ -126,7 +126,7 @@ public record DialogueTextVariant(
 
     public static java.util.Optional<DialogueTextVariant> select(
             List<DialogueTextVariant> variants,
-            DialogueContext context,
+            DialogueRuntimeContext context,
             List<String> recentIds) {
         List<String> recent = recentIds == null ? List.of() : recentIds;
         List<DialogueTextVariant> matched = variants == null ? List.of() : variants.stream()
@@ -150,7 +150,7 @@ public record DialogueTextVariant(
 
     public static java.util.Optional<DialogueTextVariant> selectAndRecord(
             List<DialogueTextVariant> variants,
-            DialogueContext context,
+            DialogueRuntimeContext context,
             List<String> recentIds) {
         java.util.Optional<DialogueTextVariant> selected = select(variants, context, recentIds);
         selected.ifPresent(variant -> DialogueUsageService.record(context, variant.id(), variant.usage()));

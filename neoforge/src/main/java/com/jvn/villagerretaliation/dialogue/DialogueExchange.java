@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
-import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,16 +49,16 @@ public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, Strin
         return List.copyOf(result);
     }
 
-    public DialogueSpeech resolve(DialogueContext context, Map<String, String> replacements) {
+    public DialogueSpeech resolve(DialogueRuntimeContext context, Map<String, String> replacements) {
         var entity = speaker == ConversationDefinition.SpeakerKind.PLAYER ? context.player()
-                : speaker == ConversationDefinition.SpeakerKind.ROLE ? context.villager() : null;
-        String line = textKey.isBlank() ? text : VillagerDialogueResources.message(context, textKey).orElse(text);
-        line = VillagerDialogueResources.resolveTemplate(line, DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements));
+                : speaker == ConversationDefinition.SpeakerKind.ROLE ? context.speaker() : null;
+        String line = textKey.isBlank() ? text : context.message(textKey).orElse(text);
+        line = DialogueTemplates.resolveTemplate(line, DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements));
         return new DialogueSpeech(entity == null ? null : entity.getUUID(), entity == null ? -1 : entity.getId(),
-                entity == null ? "" : com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry.resolveDisplayName(entity).getString(), DialogueTextSegment.parse(line, DialogueTextEffects.NONE), camera);
+                entity == null ? "" : context.displayName(entity), DialogueTextSegment.parse(line, DialogueTextEffects.NONE), camera);
     }
 
-    public static List<DialogueSpeech> resolve(List<DialogueExchange> exchanges, DialogueContext context, Map<String, String> replacements) {
+    public static List<DialogueSpeech> resolve(List<DialogueExchange> exchanges, DialogueRuntimeContext context, Map<String, String> replacements) {
         return exchanges.stream().map(exchange -> exchange.resolve(context, replacements)).filter(line -> !line.text().isBlank()).toList();
     }
 }

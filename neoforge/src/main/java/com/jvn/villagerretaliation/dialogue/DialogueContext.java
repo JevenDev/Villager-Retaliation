@@ -1,5 +1,11 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.dialogue.conditions.ConditionContext;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueUsageSavedData;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.progress.PlayerHistoryService;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -15,8 +21,10 @@ import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -24,6 +32,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -68,7 +77,7 @@ public record DialogueContext(
         RandomSource random,
         String locale,
         String villageKey
-) {
+) implements DialogueRuntimeContext {
     public static DialogueContext forPlayer(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
         long day = Math.floorMod(level.getDayTime(), 24000L);
@@ -84,15 +93,64 @@ public record DialogueContext(
                 com.jvn.villagerretaliation.util.VillagerLocale.locale(player), "");
     }
 
-    public com.jvn.villagerretaliation.dialogue.conditions.ConditionContext conditions() {
+    @Override
+    public ConditionContext conditions() {
         return com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forDialogue(this,
                 com.jvn.villagerretaliation.quest.VillagerQuestService.conditionQueries(this));
     }
 
+    @Override
+    public Villager speaker() {
+        return this.villager;
+    }
+
+    @Override
+    public String groupKey() {
+        return this.villageKey;
+    }
+
+    @Override
+    public Optional<String> message(String key) {
+        return VillagerDialogueResources.message(this, key);
+    }
+
+    @Override
+    public String displayName(Entity entity) {
+        return VillagerPresetNameRegistry.resolveDisplayName(entity).getString();
+    }
+
+    @Override
+    public DialogueUsageSavedData.Usage legacyUsage(String dialogueId) {
+        if (this.villager == null) return DialogueUsageSavedData.Usage.EMPTY;
+        var usage = VillagerInteractionTracker.dialogueUsage(this.level, this.villager, this.player, dialogueId);
+        return new DialogueUsageSavedData.Usage(usage.count(), usage.lastUsedGameTime());
+    }
+
+    @Override
+    public Map<String, String> replacements() {
+        var values = new LinkedHashMap<String, String>();
+        values.putAll(PlayerHistoryService.replacements(this.player));
+        if (this.villager == null) {
+            values.put("villager", "");
+            return Map.copyOf(values);
+        }
+        String name = this.villager.getName().getString();
+        values.put("villager", name);
+        values.put("villager_name", name);
+        values.put("villager_possessive", name.isBlank() ? "someone here's"
+                : name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s");
+        values.put("profession", VillagerInteractionTextUtil.professionName(this.profession, "villager"));
+        values.put("reputation", Integer.toString(this.reputation));
+        values.put("reputation_level", this.reputationLevel.name().toLowerCase(java.util.Locale.ROOT));
+        return Map.copyOf(values);
+    }
+
+    @Override
     public UUID providerId() {
         return villager == null ? null : villager.getUUID();
     }
 
+    @Override
     public net.minecraft.core.BlockPos origin() {
         return villager == null ? player.blockPosition() : villager.blockPosition();
     }

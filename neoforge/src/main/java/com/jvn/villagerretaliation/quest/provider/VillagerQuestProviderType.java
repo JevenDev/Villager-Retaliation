@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.provider;
 
+import com.jvn.villagerretaliation.dialogue.conditions.ConditionContext;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
@@ -69,6 +70,18 @@ public final class VillagerQuestProviderType implements QuestProviderType {
                                 || definition.rules().crossVillagerCompatible()
                                         && matchesProviderRequirements(binding, definition.offer()))
                         .orElse(false);
+    }
+
+    @Override
+    public ConditionContext conditions(
+            QuestExecutionContext context, VillagerQuestSavedData.QuestProgress progress) {
+        return context.legacyDialogueContext() != null && context.liveProvider() != null
+                ? com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forDialogue(
+                        context.legacyDialogueContext(), context.quest(), progress,
+                        com.jvn.villagerretaliation.quest.VillagerQuestService.conditionQueries(context.legacyDialogueContext()))
+                : com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forSaved(
+                        context.level(), context.player(), context.quest(), progress,
+                        com.jvn.villagerretaliation.quest.VillagerQuestService.conditionQueries(context.player()));
     }
 
     public QuestProviderBinding bindingFromDialogueContext(DialogueContext context) {

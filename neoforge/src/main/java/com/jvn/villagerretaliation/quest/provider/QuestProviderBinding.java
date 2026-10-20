@@ -31,6 +31,19 @@ public record QuestProviderBinding(
         skills = freezeSkills(skills);
     }
 
+    public QuestProviderBinding(ResourceLocation providerType, UUID providerId, String displayName,
+            ResourceKey<Level> dimension, BlockPos pos, String groupKey, boolean live) {
+        this(providerType, providerId, displayName, null, 0, dimension, pos, groupKey, Map.of(), live);
+    }
+
+    public static QuestProviderBinding fromEntity(ResourceLocation providerType,
+            net.minecraft.world.entity.Entity entity, String groupKey) {
+        java.util.Objects.requireNonNull(providerType, "quest provider type");
+        java.util.Objects.requireNonNull(entity, "quest provider entity");
+        return new QuestProviderBinding(providerType, entity.getUUID(), entity.getName().getString(),
+                entity.level().dimension(), entity.blockPosition(), groupKey, true);
+    }
+
     public boolean matchesProviderId(UUID id) {
         return id != null && id.equals(this.providerId);
     }

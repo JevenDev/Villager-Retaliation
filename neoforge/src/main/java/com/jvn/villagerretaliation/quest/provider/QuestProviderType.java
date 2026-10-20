@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.quest.provider;
 
+import com.jvn.villagerretaliation.dialogue.conditions.ConditionContext;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
@@ -16,6 +17,11 @@ public interface QuestProviderType {
             QuestExecutionContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress);
+
+    default ConditionContext conditions(
+            QuestExecutionContext context, VillagerQuestSavedData.QuestProgress progress) {
+        return com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(context, progress);
+    }
 
     default Optional<DialogueContext> legacyDialogueContext(QuestExecutionContext context) {
         return context == null ? Optional.empty() : context.dialogueContext();

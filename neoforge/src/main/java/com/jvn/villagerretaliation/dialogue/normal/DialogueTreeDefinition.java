@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
@@ -32,7 +33,7 @@ public record DialogueTreeDefinition(
         nodes = nodes == null ? Map.of() : Map.copyOf(nodes);
     }
 
-    public boolean matches(DialogueContext context) {
+    public boolean matches(DialogueRuntimeContext context) {
         return DialogueCondition.matchesAll(context, this.conditions);
     }
 
@@ -180,7 +181,7 @@ public record DialogueTreeDefinition(
             this(id, lines, List.of(), actions, conditions, responses, end);
         }
 
-        public boolean matches(DialogueContext context) {
+        public boolean matches(DialogueRuntimeContext context) {
             return DialogueCondition.matchesAll(context, this.conditions);
         }
 
@@ -191,9 +192,9 @@ public record DialogueTreeDefinition(
             return this.lines.get(random.nextInt(this.lines.size()));
         }
 
-        public String selectLine(DialogueContext context) { return selectText(context).text(); }
+        public String selectLine(DialogueRuntimeContext context) { return selectText(context).text(); }
 
-        public DialogueLine.SelectedText selectText(DialogueContext context) {
+        public DialogueLine.SelectedText selectText(DialogueRuntimeContext context) {
             return selectedText(this.textVariants, context, this.camera);
         }
     }
@@ -278,7 +279,7 @@ public record DialogueTreeDefinition(
             this(id, label, "", metadata, next, requestType, lines, List.of(), actions, conditions, end, order, priority);
         }
 
-        public boolean matches(DialogueContext context) {
+        public boolean matches(DialogueRuntimeContext context) {
             return (!this.label.isBlank() || !this.labelKey.isBlank())
                     && DialogueCondition.matchesAll(context, this.conditions);
         }
@@ -316,18 +317,18 @@ public record DialogueTreeDefinition(
             return this.lines.get(random.nextInt(this.lines.size()));
         }
 
-        public String selectLine(DialogueContext context) { return selectText(context).text(); }
+        public String selectLine(DialogueRuntimeContext context) { return selectText(context).text(); }
 
-        public DialogueLine.SelectedText selectText(DialogueContext context) {
+        public DialogueLine.SelectedText selectText(DialogueRuntimeContext context) {
             return selectedText(this.textVariants, context, this.camera);
         }
     }
 
-    private static DialogueLine.SelectedText selectedText(List<DialogueTextVariant> variants, DialogueContext context,
+    private static DialogueLine.SelectedText selectedText(List<DialogueTextVariant> variants, DialogueRuntimeContext context,
             com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
         return DialogueTextVariant.selectAndRecord(variants, context, List.of())
                 .map(variant -> new DialogueLine.SelectedText(variant.id(), variant.textKey().isBlank() ? variant.text()
-                        : VillagerDialogueResources.message(context, variant.textKey()).orElse(variant.text()), variant.textKey(),
+                        : context.message(variant.textKey()).orElse(variant.text()), variant.textKey(),
                         variant.camera() == null ? camera : variant.camera()))
                 .orElse(new DialogueLine.SelectedText("", "", "", camera));
     }

@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -9,25 +8,20 @@ public final class DialoguePlaceholders {
     private DialoguePlaceholders() {
     }
 
-    public static Map<String, String> base(DialogueContext context) {
+    public static Map<String, String> base(DialogueRuntimeContext context) {
         Map<String, String> values = new LinkedHashMap<>();
         if (context.level() != null) values.putAll(time(context.level().getDayTime()));
         values.put("player", context.player().getName().getString());
-        values.putAll(com.jvn.villagerretaliation.progress.PlayerHistoryService.replacements(context.player()));
-        if (context.villager() == null) {
-            values.put("villager", "");
-            return Map.copyOf(values);
+        String speaker = context.speaker() == null ? "" : context.displayName(context.speaker());
+        values.put("speaker", speaker);
+        values.put("speaker_name", speaker);
+        values.put("speaker_possessive", toPossessive(speaker));
+        if (context.speaker() != null) {
+            values.put("x", Integer.toString(context.origin().getX()));
+            values.put("y", Integer.toString(context.origin().getY()));
+            values.put("z", Integer.toString(context.origin().getZ()));
         }
-        String villagerName = context.villager().getName().getString();
-        values.put("villager", villagerName);
-        values.put("villager_name", villagerName);
-        values.put("villager_possessive", toPossessive(villagerName));
-        values.put("profession", VillagerInteractionTextUtil.professionName(context.profession(), "villager"));
-        values.put("reputation", Integer.toString(context.reputation()));
-        values.put("reputation_level", context.reputationLevel().name().toLowerCase(java.util.Locale.ROOT));
-        values.put("x", Integer.toString(context.villager().blockPosition().getX()));
-        values.put("y", Integer.toString(context.villager().blockPosition().getY()));
-        values.put("z", Integer.toString(context.villager().blockPosition().getZ()));
+        values.putAll(context.replacements());
         return Map.copyOf(values);
     }
 

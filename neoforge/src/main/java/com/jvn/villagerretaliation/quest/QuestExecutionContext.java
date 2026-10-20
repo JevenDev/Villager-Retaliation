@@ -59,6 +59,26 @@ public record QuestExecutionContext(
                 context);
     }
 
+    public static QuestExecutionContext fromLiveProvider(
+            ServerLevel level,
+            ServerPlayer player,
+            QuestDefinition quest,
+            String event,
+            QuestProviderType providerType,
+            QuestProviderBinding binding,
+            Entity liveProvider) {
+        if (providerType == null || binding == null || liveProvider == null
+                || !providerType.id().equals(binding.providerType())
+                || !binding.live() || !binding.matchesProviderId(liveProvider.getUUID())
+                || liveProvider.isRemoved() || liveProvider.level() != level
+                || !level.dimension().equals(binding.dimension())
+                || player != null && player.serverLevel() != level) {
+            throw new IllegalArgumentException("live quest provider must match its type, binding and level");
+        }
+        return new QuestExecutionContext(level, player, quest, event, providerType, binding, liveProvider,
+                binding.villageKey(), Set.of(LIVE_PROVIDER), null);
+    }
+
     public static QuestExecutionContext fromSavedProvider(
             ServerLevel level,
             ServerPlayer player,
@@ -81,11 +101,9 @@ public record QuestExecutionContext(
 
     public com.jvn.villagerretaliation.dialogue.conditions.ConditionContext conditions(
             VillagerQuestSavedData.QuestProgress progress) {
-        return this.legacyDialogueContext != null && this.liveProvider != null
-                ? com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forDialogue(
-                        this.legacyDialogueContext, this.quest, progress, VillagerQuestService.conditionQueries(this.legacyDialogueContext))
-                : com.jvn.villagerretaliation.quest.conditions.VillagerConditionAccess.forSaved(
-                        this.level, this.player, this.quest, progress, VillagerQuestService.conditionQueries(this.player));
+        return this.providerType == null
+                ? com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(this, progress)
+                : this.providerType.conditions(this, progress);
     }
 
     public Optional<QuestProviderBinding> providerBinding() {
