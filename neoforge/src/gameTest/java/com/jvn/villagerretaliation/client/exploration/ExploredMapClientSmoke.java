@@ -140,7 +140,7 @@ public final class ExploredMapClientSmoke {
             require((land & 0xffffff) == (net.minecraft.world.level.material.MapColor.GRASS.calculateRGBColor(
                     net.minecraft.world.level.material.MapColor.Brightness.NORMAL) & 0xffffff), "grass pixels match Minecraft's map palette");
             require((unknown & 255) == (unknown >> 8 & 255) && (unknown >> 8 & 255) == (unknown >> 16 & 255), "unknown terrain contains only neutral white cloud layers");
-            int white = 0, layered = 0;
+            int white = 0, front = 0, middle = 0, back = 0;
             for (int y = 90; y < image.getHeight() - 100; y += 3) for (int x = 20; x < image.getWidth() - 20; x += 3) {
                 boolean markerOverlay = Math.abs(x - image.getWidth() / 2) < 120 && Math.abs(y - image.getHeight() / 2) < 100;
                 if (markerOverlay) continue;
@@ -149,11 +149,13 @@ public final class ExploredMapClientSmoke {
                 if (!(wx > 140 || wz > 140 || wx > 55 && wz > 55)) continue;
                 int rgb = image.getPixelRGBA(x, y), red = rgb & 255, green = rgb >> 8 & 255, blue = rgb >> 16 & 255;
                 require(red == green && green == blue, "unexplored terrain never leaks map colors through cloud gaps at " + wx + ", " + wz);
-                require(red >= 230, "undiscovered terrain stays white beneath the cloud layers");
+                require(red >= 203, "undiscovered terrain stays light beneath the cloud layers");
                 if (red == 255) white++;
-                else if (red < 250) layered++;
+                else if (red >= 243 && red <= 246) front++;
+                else if (red >= 223 && red <= 226) middle++;
+                else if (red >= 203 && red <= 206) back++;
             }
-            require(white > 10 && layered > 10, "unexplored areas blend a white background with subtle cloud silhouettes");
+            require(white > 10 && front > 10 && middle > 10 && back > 10, "unexplored areas show three distinct cloud layers over a white background");
         }
     }
     private static int pixel(NativeImage image, MapView view, double x, double z) {

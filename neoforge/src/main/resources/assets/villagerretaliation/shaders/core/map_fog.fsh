@@ -94,7 +94,7 @@ void main() {
     float remaining = 1.0;
     for (int layer = 0; layer < 3; layer++) {
         float opacity = cloudAt(plane, layer);
-        float shade = 0.98 - float(layer) * 0.035;
+        float shade = 0.96 - float(layer) * 0.08;
         color += vec3(shade) * Lighting * opacity * remaining;
         remaining *= 1.0 - opacity;
         if (remaining <= 0.0) { fragColor = vec4(color, 1.0); return; }
