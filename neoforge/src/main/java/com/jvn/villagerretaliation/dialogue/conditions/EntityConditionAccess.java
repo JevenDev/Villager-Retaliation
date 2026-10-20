@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionCapability;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome;
 import com.jvn.villagerretaliation.dialogue.DialogueContextConditions;
+import com.jvn.villagerretaliation.dialogue.DialogueContext.TimeOfDay;
+import com.jvn.villagerretaliation.dialogue.DialogueContext.WeatherState;
 import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestTriggerContext;
@@ -77,6 +79,44 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
         }
         if (condition instanceof DialogueCondition.Dimension dimension) {
             return level == null ? ConditionOutcome.UNKNOWN : result(dimension.dimensions().contains(level.dimension().location()));
+        }
+        if (condition instanceof DialogueCondition.PlayerItem item) {
+            return player == null ? ConditionOutcome.UNKNOWN : result(item.condition().matches(player));
+        }
+        if (condition instanceof DialogueCondition.Biome biome) {
+            Entity origin = provider == null ? player : provider;
+            return level == null || origin == null ? ConditionOutcome.UNKNOWN : result(biome.matches(level, origin.blockPosition()));
+        }
+        if (condition instanceof DialogueCondition.Advancement advancement) {
+            return level == null || player == null ? ConditionOutcome.UNKNOWN : result(advancement.matches(level, player));
+        }
+        if (condition instanceof DialogueCondition.Scoreboard scoreboard) {
+            return level == null || player == null ? ConditionOutcome.UNKNOWN : result(scoreboard.matches(level, player));
+        }
+        if (condition instanceof DialogueCondition.NearbyEntity nearby) {
+            Entity origin = nearby.aroundPlayer() ? player : provider;
+            return level == null || origin == null ? ConditionOutcome.UNKNOWN : result(nearby.matches(level, origin));
+        }
+        if (condition instanceof DialogueCondition.VillagerAge age) {
+            var living = subject("speaker");
+            return living == null ? ConditionOutcome.UNKNOWN : result((age.baby() == null || age.baby() == living.isBaby())
+                    && (age.adult() == null || age.adult() != living.isBaby()));
+        }
+        if (condition instanceof DialogueCondition.Weather weather) {
+            if (level == null) return ConditionOutcome.UNKNOWN;
+            var state = level.isThundering() ? WeatherState.THUNDER
+                    : level.isRaining() ? WeatherState.RAIN
+                    : WeatherState.CLEAR;
+            return result(weather.states().contains(state));
+        }
+        if (condition instanceof DialogueCondition.Time time) {
+            if (level == null) return ConditionOutcome.UNKNOWN;
+            long day = Math.floorMod(level.getDayTime(), 24000L);
+            var state = day < 6000 ? TimeOfDay.MORNING
+                    : day < 12000 ? TimeOfDay.AFTERNOON
+                    : day < 14000 ? TimeOfDay.EVENING
+                    : TimeOfDay.NIGHT;
+            return result(time.times().contains(state));
         }
         if (condition instanceof DialogueCondition.TriggerPayload payload) {
             return trigger == null ? ConditionOutcome.UNKNOWN : result(payload.matches(null, trigger));

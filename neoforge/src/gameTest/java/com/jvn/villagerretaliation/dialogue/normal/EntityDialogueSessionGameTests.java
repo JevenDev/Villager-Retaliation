@@ -106,6 +106,15 @@ public final class EntityDialogueSessionGameTests {
         uncertain.prepareRecoveryAction(0);
         var restored = SceneContinuation.load(uncertain.save());
         helper.assertValueEqual(restored.preparedRecoveryAction(), 0, "uncertain action marker survives reload");
+        for (boolean missing : List.of(false, true)) {
+            var invalid = uncertain.save();
+            if (missing) invalid.remove("EntityRuntime");
+            else invalid.putString("EntityRuntime", "true");
+            boolean rejected = false;
+            try { SceneContinuation.load(invalid); }
+            catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected, "a malformed entity marker cannot downgrade recovery to the legacy executor");
+        }
         helper.succeed();
     }
 

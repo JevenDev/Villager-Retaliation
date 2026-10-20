@@ -313,7 +313,13 @@ public final class SceneContinuation {
         try { value.sceneResult = SceneInstance.CompletionResult.valueOf(tag.getString("SceneResult")); }
         catch (IllegalArgumentException ignored) { }
         value.unreadableCampaignActions.putAll(unreadable);
+        if (tag.contains("EntityRuntime") && (!tag.contains("EntityRuntime", Tag.TAG_BYTE) || !tag.getBoolean("EntityRuntime"))) {
+            throw new IllegalArgumentException("Entity runtime marker is invalid");
+        }
         value.entityRuntime = tag.getBoolean("EntityRuntime");
+        if (tag.contains("EntityPreparedAction") && !value.entityRuntime) {
+            throw new IllegalArgumentException("Entity action cursor has no runtime marker");
+        }
         if (value.entityRuntime && tag.contains("CampaignRecovery")) {
             throw new IllegalArgumentException("Entity continuations cannot claim campaign recovery authority");
         }
