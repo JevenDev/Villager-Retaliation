@@ -13,6 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixture = path.join(root, "tools/test-fixtures/story-fragments");
 const runtimeFixture = path.join(root, "neoforge/src/gameTest/resources/campaign_fixture");
 const { readZip } = createRequire(import.meta.url)("./zip-utils.js");
+const { V2, V3, runtime } = createRequire(import.meta.url)("./quest-v3-format.js");
 const readJson = async file => JSON.parse(await readFile(file, "utf8"));
 const quest = "data/campaign_fixture/quests/campaign_fixture/characters/quest.json";
 const conversation = "data/campaign_fixture/quests/campaign_fixture/characters/conversations/mentor.json";
@@ -111,6 +112,7 @@ assert.equal(validateContentSchema({ any: 1 }, { propertyNames: false }).length,
 
 const project = await loadStoryProject(path.join(fixture, "story.json"));
 const compiled = compileStory(project.manifestFile, project.sources);
+assert.equal(compiled.outputs.get(quest).schema, V3);
 for (const [file, value] of compiled.outputs) assert.deepEqual(value, await readJson(path.join(runtimeFixture, file)), file);
 const welcome = authoredLocation(compiled, conversation, "/nodes/0/exchanges/0/text/key");
 assert.deepEqual({ file: welcome.file, pointer: welcome.pointer },
@@ -144,6 +146,18 @@ const checkDiagnostics = async (sources, check) => {
   check(result.errors);
 };
 try {
+  assert.deepEqual((await validateStory(compiled)).errors, []);
+  const v2Outputs = new Map(compiled.outputs);
+  v2Outputs.set(quest, { ...runtime(compiled.outputs.get(quest)), schema: V2 });
+  assert.deepEqual((await validateStory({ ...compiled, outputs: v2Outputs })).errors, []);
+  const legacyMetadata = structuredClone(project.sources);
+  legacyMetadata.get("content/quest.json").metadata.title = { key: "#title" };
+  await checkDiagnostics(legacyMetadata, issues => assert(issues.some(issue =>
+    issue.file === "content/quest.json" && issue.pointer === "/metadata/title" && issue.generated.file === quest)));
+  const invalidDisplay = structuredClone(project.sources);
+  invalidDisplay.get("content/quest.json").display = 42;
+  await checkDiagnostics(invalidDisplay, issues => assert(issues.some(issue =>
+    issue.file === "content/quest.json" && issue.pointer === "/display" && issue.generated.file === quest)));
   const sources = structuredClone(project.sources);
   sources.get("fragments/common.json").fragments["campaign_fixture:resident"].value.source = "unsupported";
   await checkDiagnostics(sources, issues => assert(issues.some(issue =>

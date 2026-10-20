@@ -1,22 +1,9 @@
 {
-  "schema": "villagerretaliation:quest/v2",
+  "schema": "villagerretaliation:quest/v3",
   "id": "campaign_fixture:characters",
   "localization_prefix": "campaign_fixture.quest.characters",
   "metadata": {
-    "title": {
-      "$use": "campaign_fixture:text",
-      "args": {
-        "key": "#title"
-      }
-    },
-    "description": {
-      "$use": "campaign_fixture:text",
-      "args": {
-        "key": "#description"
-      }
-    },
-    "questline": "campaign_fixture",
-    "campaign": "campaign_fixture:characters"
+    "questline": "campaign_fixture"
   },
   "provider": {
     "type": "villagerretaliation:villager",
@@ -54,9 +41,6 @@
           }
         }
       ],
-      "next": {
-        "stage": "report"
-      },
       "dialogue": {
         "offer": {
           "request": "question",
@@ -90,6 +74,9 @@
             "key": "#reminder.lines"
           }
         }
+      },
+      "transition": {
+        "stage": "report"
       }
     },
     {
@@ -121,5 +108,20 @@
         }
       }
     }
-  ]
+  ],
+  "story_arc": "campaign_fixture:characters",
+  "display": {
+    "title": {
+      "$use": "campaign_fixture:text",
+      "args": {
+        "key": "#title"
+      }
+    },
+    "description": {
+      "$use": "campaign_fixture:text",
+      "args": {
+        "key": "#description"
+      }
+    }
+  }
 }

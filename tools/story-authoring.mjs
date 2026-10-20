@@ -10,7 +10,7 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { createZip } = createRequire(import.meta.url)("./zip-utils.js");
 const schemas = new Map(await Promise.all(Object.entries({
-  quest: "quest-v2", campaign: "campaign-v1", conversation: "conversation-v1", scenario: "campaign-scenario-v1", scene: "scene-v1",
+  quest: "quest-v3", quest_v2: "quest-v2", campaign: "campaign-v1", conversation: "conversation-v1", scenario: "campaign-scenario-v1", scene: "scene-v1",
   encounter: "encounter-v1", reward: "quest-reward-v1", pool: "quest-pool-v1", locale: "quest-locale-v1", social_progression: "social-progression-v1"
 }).map(async ([kind, name]) => [kind, JSON.parse(await readFile(path.join(root, "tools/schemas", name + ".schema.json"), "utf8"))])));
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -76,6 +76,9 @@ function schemaIssues(kind, value) {
     return validateContentSchema(value, {
       type: "object", propertyNames: { minLength: 1 }, additionalProperties: { not: { type: "null" } }
     });
+  }
+  if (kind === "quest" && value?.schema === "villagerretaliation:quest/v2") {
+    return validateContentSchema(value, schemas.get("quest_v2"));
   }
   return validateContentSchema(value, schemas.get(kind));
 }
