@@ -84,6 +84,11 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
+    public void updateResponseTimer(long remainingTicks) {
+        this.interactionScreen.updateResponseTimer(remainingTicks);
+    }
+
+    @Override
     public void acceptCampaignConversation(com.jvn.villagerretaliation.network.CampaignConversationViewPayload payload) {
         this.interactionScreen.acceptCampaignConversation(payload);
     }

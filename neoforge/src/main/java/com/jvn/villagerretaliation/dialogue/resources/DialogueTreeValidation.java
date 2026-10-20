@@ -30,6 +30,14 @@ public final class DialogueTreeValidation {
             }
         }
         for (var node : tree.nodes().values()) {
+            var timer = node.responseTimer();
+            if (timer != null && (node.end() || node.responses().isEmpty()
+                    || !timer.next().isBlank() && !tree.nodes().containsKey(timer.next())
+                    || !timer.response().isBlank() && node.responses().stream().noneMatch(response -> response.id().equals(timer.response())))) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree node " + node.id(),
+                        "response timer requires choices and an existing response or silence node");
+                return null;
+            }
             var responseIds = new java.util.HashSet<String>();
             for (var response : node.responses()) {
                 if (!responseIds.add(response.id()) || (!response.next().isBlank() && !tree.nodes().containsKey(response.next()))) {
@@ -78,7 +86,7 @@ public final class DialogueTreeValidation {
                     networkSafeOption(location, "dialogue tree node \"" + node.id() + "\" response \"" + response.id() + "\"",
                             DialogueTreeService.responseOptionId(tree.id(), response.id()), response.label())).toList();
             nodes.put(node.id(), new DialogueTreeDefinition.Node(node.id(), node.lines(), node.textVariants(),
-                    node.actions(), node.conditions(), responses, node.end(), node.exchanges(), node.camera()));
+                    node.actions(), node.conditions(), responses, node.end(), node.exchanges(), node.camera(), node.responseTimer()));
         }
         return new DialogueTreeDefinition(tree.id(), tree.title(), tree.description(), tree.metadata(),
                 tree.conditions(), entries, nodes);

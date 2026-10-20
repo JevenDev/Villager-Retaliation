@@ -54,7 +54,9 @@ public final class DialogueTreeSessionSavedData extends SavedData {
                     if (key == null || !value.hasUUID("Id")
                             || ResourceLocation.tryParse(value.getString("Tree")) == null || value.getString("Node").isBlank()
                             || !value.contains("Touched", Tag.TAG_LONG) || value.getLong("Touched") < 0
-                            || !value.contains("Replacements", Tag.TAG_COMPOUND))
+                            || !value.contains("Replacements", Tag.TAG_COMPOUND)
+                            || value.contains("ResponseDeadline") && (!value.contains("ResponseDeadline", Tag.TAG_LONG) || value.getLong("ResponseDeadline") < -1)
+                            || value.contains("TimerResolved") && !value.contains("TimerResolved", Tag.TAG_BYTE))
                         throw new IllegalArgumentException("Invalid saved dialogue tree session");
                     var replacements = new LinkedHashMap<String, String>();
                     var saved = value.getCompound("Replacements");
@@ -63,7 +65,9 @@ public final class DialogueTreeSessionSavedData extends SavedData {
                         replacements.put(name, saved.getString(name));
                     }
                     data.sessions.put(key, new DialogueTreeService.Session(value.getUUID("Id"), ResourceLocation.parse(value.getString("Tree")),
-                            value.getString("Node"), value.getLong("Touched"), replacements));
+                            value.getString("Node"), value.getLong("Touched"), replacements,
+                            value.contains("ResponseDeadline", Tag.TAG_LONG) ? value.getLong("ResponseDeadline") : -1,
+                            value.getBoolean("TimerResolved")));
                     originals.put(key, value);
                 } catch (IllegalArgumentException exception) {
                     data.quarantined.add(value.copy());
@@ -113,6 +117,8 @@ public final class DialogueTreeSessionSavedData extends SavedData {
             value.putString("Tree", session.treeId().toString());
             value.putString("Node", session.nodeId());
             value.putLong("Touched", session.lastTouchedGameTime());
+            value.putLong("ResponseDeadline", session.responseDeadline());
+            value.putBoolean("TimerResolved", session.timerResolved());
             var replacements = new CompoundTag();
             session.replacements().forEach(replacements::putString);
             value.put("Replacements", replacements);

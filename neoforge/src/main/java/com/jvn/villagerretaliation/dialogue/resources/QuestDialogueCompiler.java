@@ -232,7 +232,8 @@ public final class QuestDialogueCompiler {
                     textVariants(treeId + "/node/" + nodeId, lines, "", DialogueEntryMetadata.EMPTY),
                     List.of(), List.of(), compileResponses(resource, stage.id(), stage.responses(), stage,
                             responsesSource, stageResponsesEntryId(stage.id())), false,
-                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(stage.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(stage.data())));
+                    com.jvn.villagerretaliation.dialogue.DialogueExchange.read(stage.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(stage.data()),
+                    responseTimer(stage.data(), stage.id())));
             addEntry(resource, stage.id(), entryId, titleCase(stage.id()), nodeId, responsesSource, null, entries);
             putBinding(
                     bindings,
@@ -265,7 +266,15 @@ public final class QuestDialogueCompiler {
                 compileResponses(resource, stageId, scene.responses(), stage, sceneSource.child("responses"),
                         stageSceneEntryId(stageId, scene.id())),
                 DatapackJsonReader.readBoolean(scene.data(), "end", false),
-                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(scene.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(scene.data())));
+                com.jvn.villagerretaliation.dialogue.DialogueExchange.read(scene.data()), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(scene.data()),
+                responseTimer(scene.data(), stageId)));
+    }
+
+    private static com.jvn.villagerretaliation.dialogue.DialogueResponseTimer responseTimer(JsonObject data, String stage) {
+        var timer = com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.read(data.get("response_timer"));
+        if (timer == null || timer.next().isBlank()) return timer;
+        return new com.jvn.villagerretaliation.dialogue.DialogueResponseTimer(timer.durationTicks(), "",
+                stage.isBlank() ? lifecycleNodeId(timer.next()) : stageSceneNodeId(stage, timer.next()));
     }
 
     private static List<DialogueTreeDefinition.Response> compileResponses(

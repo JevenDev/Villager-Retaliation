@@ -50,6 +50,8 @@ final class ConversationSessionCodec {
         tag.putInt("Exchange", session.exchange);
         tag.putInt("Effect", session.effect);
         tag.putString("Response", session.response);
+        tag.putLong("ResponseDeadline", session.responseDeadline);
+        tag.putBoolean("ResponseTimerResolved", session.responseTimerResolved);
         tag.putString("Check", session.check);
         tag.putString("Outcome", session.outcome);
         tag.putString("Diagnostic", session.diagnostic);
@@ -173,6 +175,11 @@ final class ConversationSessionCodec {
         session.exchange = integer(tag, "Exchange");
         session.effect = integer(tag, "Effect");
         session.response = string(tag, "Response");
+        require(!tag.contains("ResponseDeadline") || tag.contains("ResponseDeadline", Tag.TAG_LONG), "invalid saved response deadline type");
+        require(!tag.contains("ResponseTimerResolved") || tag.contains("ResponseTimerResolved", Tag.TAG_BYTE), "invalid saved response timer receipt");
+        session.responseDeadline = tag.contains("ResponseDeadline", Tag.TAG_LONG) ? tag.getLong("ResponseDeadline") : -1;
+        session.responseTimerResolved = tag.getBoolean("ResponseTimerResolved");
+        require(session.responseDeadline >= -1, "invalid saved response deadline");
         session.check = string(tag, "Check");
         session.outcome = string(tag, "Outcome");
         session.diagnostic = string(tag, "Diagnostic");

@@ -142,8 +142,16 @@ public record DialogueTreeDefinition(
             List<Response> responses,
             boolean end,
             List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
-            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera
+            com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera,
+            com.jvn.villagerretaliation.dialogue.DialogueResponseTimer responseTimer
     ) {
+        public Node(String id, List<String> lines, List<DialogueTextVariant> textVariants,
+                List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, List<Response> responses,
+                boolean end, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges,
+                com.jvn.villagerretaliation.dialogue.conversation.ConversationLinePresentation.Camera camera) {
+            this(id, lines, textVariants, actions, conditions, responses, end, exchanges, camera, null);
+        }
+
         public Node(String id, List<String> lines, List<DialogueTextVariant> textVariants,
                 List<VillagerActionDefinition> actions, List<DialogueCondition> conditions, List<Response> responses,
                 boolean end, List<com.jvn.villagerretaliation.dialogue.DialogueExchange> exchanges) {

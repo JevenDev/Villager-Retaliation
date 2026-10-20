@@ -50,6 +50,20 @@ for (const entry of cases) {
   if (entry.valid) assert.deepEqual(issues, [], entry.name);
   else assert(issues.some(issue => issue.pointer === entry.pointer), `${entry.name}: ${JSON.stringify(issues)}`);
 }
+for (const [timer, valid] of [
+  [{ duration_ticks: 40, response: "leave" }, true],
+  [{ duration_ticks: 40, next: "declined" }, true],
+  [{ duration_ticks: 0, response: "leave" }, false],
+  [{ duration_ticks: 40, response: "missing" }, false],
+  [{ duration_ticks: 40, next: "missing" }, false],
+  [{ duration_ticks: 40, response: "leave", next: "declined" }, false],
+  [{ duration_ticks: 40 }, false]
+]) {
+  const timed = structuredClone(conversation);
+  timed.nodes[0].response_timer = timer;
+  const issues = validateConversation(timed, schema, context);
+  assert.equal(issues.length === 0, valid, JSON.stringify({ timer, issues }));
+}
 for (const name of ["condition", "action", "localized_reference"]) assert.deepEqual(schema.$defs[name], questSchema.$defs[name], name);
 assert.throws(() => validateConversationSchema({}, { properties: { unused: { unsupportedKeyword: true } } }), /Unsupported schema keyword/);
 assert.throws(() => validateConversationSchema({}, { $ref: "#/$defs/missing" }), /Unresolved schema reference/);

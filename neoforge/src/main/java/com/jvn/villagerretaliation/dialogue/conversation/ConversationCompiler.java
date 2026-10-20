@@ -117,7 +117,8 @@ public final class ConversationCompiler {
                                 com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED).showUnavailable()), location);
             }
             put(nodes, key, new ConversationDefinition.Node(key, new ArrayList<>(exchanges.values()), effects(resolved, pointer),
-                    responses, string(value, "next"), string(value, "outcome"), pointer), pointer);
+                    responses, string(value, "next"), string(value, "outcome"), pointer,
+                    com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.read(value.get("response_timer"))), pointer);
         }
         Map<String, ConversationDefinition.Cast> characters = new LinkedHashMap<>();
         if (root.has("characters")) for (var entry : root.getAsJsonObject("characters").entrySet()) {
@@ -274,6 +275,15 @@ public final class ConversationCompiler {
         });
         for (var node : definition.nodes().values()) {
             Set<String> next = new LinkedHashSet<>();
+            var timer = node.responseTimer();
+            if (timer != null) {
+                if (node.responses().isEmpty()) error(node.pointer() + "/response_timer", "response timers require response choices");
+                if (!timer.response().isBlank()) require(node.responses(), timer.response(), node.pointer() + "/response_timer/response", "response");
+                else {
+                    require(definition.nodes(), timer.next(), node.pointer() + "/response_timer/next", "node");
+                    next.add(timer.next());
+                }
+            }
             if (!node.next().isBlank()) {
                 require(definition.nodes(), node.next(), node.pointer() + "/next", "node");
                 next.add(node.next());

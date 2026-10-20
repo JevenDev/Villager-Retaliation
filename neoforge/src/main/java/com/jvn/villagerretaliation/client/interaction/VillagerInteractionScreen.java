@@ -474,6 +474,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final EnumMap<SkillsProfileCycleButton, Float> skillsProfileCycleButtonScales =
             new EnumMap<>(SkillsProfileCycleButton.class);
     private long lastSkillsProfileCycleButtonAnimationMillis = -1L;
+    private long responseTimerTicks = -1;
+    private long responseTimerReceivedAt;
     private float interactionPortraitYaw;
     private float interactionPortraitPitch;
     private long lastInteractionPortraitAnimationMillis = -1L;
@@ -4363,7 +4365,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && this.page != DialoguePage.SKILLS;
     }
 
+    @Override
+    public void updateResponseTimer(long remainingTicks) {
+        this.responseTimerTicks = remainingTicks;
+        this.responseTimerReceivedAt = net.minecraft.Util.getMillis();
+    }
+
     private void renderInteractionDialogue(GuiGraphics graphics, int left, int top) {
+        if (this.responseTimerTicks >= 0 && this.campaignConversation.session() == null) {
+            long remaining = Math.max(0, this.responseTimerTicks - (net.minecraft.Util.getMillis() - this.responseTimerReceivedAt) / 50);
+            graphics.drawString(this.font, Component.translatable("villagerretaliation.gui.conversation.response_timer", (remaining + 19) / 20),
+                    left + INTERACTION_DIALOGUE_LEFT, top + INTERACTION_DIALOGUE_BOTTOM + 2, INTERACTION_DIALOGUE_COLOR, false);
+        }
         if (this.villagerDialogueText.isBlank()) {
             return;
         }

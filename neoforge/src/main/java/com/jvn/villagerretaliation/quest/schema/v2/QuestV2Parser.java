@@ -824,15 +824,20 @@ public final class QuestV2Parser {
         }
         validateParallel(validator, resource);
         for (var stage : resource.stages()) {
-            List<JsonElement> timers = new ArrayList<>();
-            if (stage.data().has("timer")) timers.add(stage.data().get("timer"));
-            stage.objectives().forEach(objective -> { if (objective.data().has("timer")) timers.add(objective.data().get("timer")); });
-            for (var raw : timers) {
+            Map<String, JsonElement> timers = new LinkedHashMap<>();
+            String stagePath = stagePointer(resource, stage.id());
+            if (stage.data().has("timer")) timers.put(stagePath + "/timer", stage.data().get("timer"));
+            for (int index = 0; index < stage.objectives().size(); index++) {
+                var objective = stage.objectives().get(index);
+                if (objective.data().has("timer")) timers.put(stagePath + "/objectives/" + index + "/timer", objective.data().get("timer"));
+            }
+            for (var entry : timers.entrySet()) {
+                var raw = entry.getValue();
                 if (raw.isJsonObject() && raw.getAsJsonObject().has("timeout_stage")
                         && raw.getAsJsonObject().get("timeout_stage").isJsonPrimitive()) {
                     String target = raw.getAsJsonObject().get("timeout_stage").getAsString();
-                    if (!resource.stagesById().containsKey(target))
-                        validator.error("/stages/" + stage.id() + "/timer/timeout_stage", "Timer references a missing timeout stage.",
+                    if (!resource.stagesById().containsKey(target) || stage.id().equals(target))
+                        validator.error(entry.getKey() + "/timeout_stage", "Timer must reference a different existing timeout stage.",
                                 "Declare the timeout stage.", Set.of(target));
                 }
             }
@@ -893,6 +898,7 @@ public final class QuestV2Parser {
             QuestV2Resource resource,
             QuestV2Resource.Stage stage,
             String stagePointer) {
+        validateResponseTimer(validator, stage.data(), stage.responses(), stage.scenes().keySet(), stagePointer);
         for (QuestV2Resource.DialogueSlot slot : stage.dialogueSlots().values()) {
             String slotPointer = stagePointer + "/dialogue/" + escapePointer(slot.slot());
             if (!slot.scene().isBlank() && !stage.scenes().containsKey(slot.scene())) {
@@ -904,6 +910,7 @@ public final class QuestV2Parser {
             }
             QuestV2Resource.Scene inlineScene = slot.inlineScene();
             if (inlineScene != null) {
+                validateResponseTimer(validator, inlineScene.data(), inlineScene.responses(), stage.scenes().keySet(), slotPointer);
                 for (QuestV2Resource.Response response : inlineScene.responses()) {
                     validateTransitionReferences(
                             validator,
@@ -915,6 +922,7 @@ public final class QuestV2Parser {
             }
         }
         for (QuestV2Resource.Scene scene : stage.scenes().values()) {
+            validateResponseTimer(validator, scene.data(), scene.responses(), stage.scenes().keySet(), stagePointer + "/scenes/" + scene.id());
             for (QuestV2Resource.Response response : scene.responses()) {
                 validateTransitionReferences(
                         validator,
@@ -923,6 +931,21 @@ public final class QuestV2Parser {
                         stagePointer + "/scenes/" + scene.id() + "/responses/" + response.id(),
                         stage.id());
             }
+        }
+    }
+
+    private static void validateResponseTimer(Validator validator, JsonObject owner,
+            List<QuestV2Resource.Response> responses, Set<String> scenes, String pointer) {
+        if (!owner.has("response_timer")) return;
+        try {
+            var timer = com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.read(owner.get("response_timer"));
+            if (timer == null || responses.isEmpty() || readBoolean(owner, "end")
+                    || !timer.next().isBlank() && !scenes.contains(timer.next())
+                    || !timer.response().isBlank() && responses.stream().noneMatch(response -> response.id().equals(timer.response())))
+                validator.error(pointer + "/response_timer", "Response timer requires choices and an existing response or silence scene.",
+                        "Reference a response in this scene or a scene in this stage.", Set.of());
+        } catch (IllegalArgumentException exception) {
+            validator.error(pointer + "/response_timer", exception.getMessage(), "Declare duration_ticks and one response or next.", Set.of());
         }
     }
 

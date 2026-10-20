@@ -203,6 +203,7 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
         if (screen != null) {
+            screen.updateResponseTimer(payload.responseRemainingTicks());
             screen.updateReputation(
                 payload.reputation(),
                 payload.reputationLevel(),

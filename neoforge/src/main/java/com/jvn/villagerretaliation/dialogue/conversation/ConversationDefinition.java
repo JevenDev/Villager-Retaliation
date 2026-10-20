@@ -49,7 +49,12 @@ public record ConversationDefinition(ResourceLocation id, int revision, String f
     }
 
     public record Node(String id, List<Exchange> exchanges, List<Effect> effects,
-            Map<String, Response> responses, String next, String outcome, String pointer) {
+            Map<String, Response> responses, String next, String outcome, String pointer,
+            com.jvn.villagerretaliation.dialogue.DialogueResponseTimer responseTimer) {
+        public Node(String id, List<Exchange> exchanges, List<Effect> effects,
+                Map<String, Response> responses, String next, String outcome, String pointer) {
+            this(id, exchanges, effects, responses, next, outcome, pointer, null);
+        }
         public Node {
             exchanges = List.copyOf(exchanges);
             effects = List.copyOf(effects);

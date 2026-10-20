@@ -114,6 +114,16 @@ export function validateConversation(root, schema, context) {
   }
   for (const node of nodes.values()) {
     const next = new Set();
+    if (node.response_timer) {
+      if (!Array.isArray(node.responses) || !node.responses.length) issue(`${node.pointer}/response_timer`, "response timers require response choices");
+      if (node.response_timer.response) {
+        if (!(node.responses ?? []).some(response => response.id === node.response_timer.response))
+          issue(`${node.pointer}/response_timer/response`, "unknown default response");
+      } else {
+        require(nodes, node.response_timer.next, `${node.pointer}/response_timer/next`, "node");
+        next.add(node.response_timer.next);
+      }
+    }
     index(node.exchanges ?? [], `${node.pointer}/exchanges`);
     index(node.effects ?? [], `${node.pointer}/effects`);
     for (const [position, exchange] of (node.exchanges ?? []).entries()) {

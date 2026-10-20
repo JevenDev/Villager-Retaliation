@@ -140,7 +140,14 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
     public record Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
             boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
             List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions,
-            boolean canCancel, boolean canMigrate, History history) {
+            boolean canCancel, boolean canMigrate, History history, long responseRemainingTicks) {
+        public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
+                boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
+                List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions,
+                boolean canCancel, boolean canMigrate, History history) {
+            this(id, revision, title, phase, line, canControl, canTakeControl, controller, handover, responses, check,
+                    outcome, confirmation, transactions, canCancel, canMigrate, history, -1);
+        }
         public Session(UUID id, long revision, String title, ConversationSession.Phase phase, Line line,
                 boolean canControl, boolean canTakeControl, String controller, List<Member> handover,
                 List<Response> responses, Check check, String outcome, UUID confirmation, List<Transaction> transactions) {
@@ -148,6 +155,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
                     confirmation, transactions, false, false, null);
         }
         public Session {
+            if (responseRemainingTicks < -1 || responseRemainingTicks > 72000) throw new IllegalArgumentException("Invalid response timer presentation");
             handover = List.copyOf(handover);
             responses = List.copyOf(responses);
             transactions = List.copyOf(transactions);
@@ -255,6 +263,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             buffer.writeVarInt(transaction.basePrice()); buffer.writeVarInt(transaction.bargainPrice()); buffer.writeVarInt(transaction.price());
             buffer.writeEnum(transaction.state()); buffer.writeBoolean(transaction.possible()); buffer.writeUtf(transaction.diagnostic(), MAX_LABEL_LENGTH);
         }
+        buffer.writeLong(value.responseRemainingTicks());
     }
 
     private static Session readSession(RegistryFriendlyByteBuf buffer) {
@@ -287,7 +296,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
                 buffer.readUUID(), buffer.readUtf(MAX_LABEL_LENGTH), buffer.readUtf(256), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readEnum(TransactionState.class), buffer.readBoolean(), buffer.readUtf(MAX_LABEL_LENGTH)));
         return new Session(id, revision, title, phase, line, control, take, controller, members, responses, check, outcome, confirmation, transactions,
-                canCancel, canMigrate, history);
+                canCancel, canMigrate, history, buffer.readLong());
     }
 
     private static Line readLine(RegistryFriendlyByteBuf buffer) {

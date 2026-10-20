@@ -551,7 +551,7 @@ const dialogueTreeEntryKeys = new Set([
   "force_camera_towards_villager",
   "order"
 ]);
-const dialogueTreeNodeKeys = new Set(["text_key", "variants", "usage", "id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
+const dialogueTreeNodeKeys = new Set(["response_timer", "text_key", "variants", "usage", "id", "lines", "text", "exchanges", "camera", "metadata", "actions", "conditions", "responses", "end"]);
 const dialogueTreeResponseKeys = new Set(["unavailable_behavior", "unavailable", "label_key", "text_key", "variants", "usage", "priority", "id", "label", "metadata", "next", "request", "lines", "text", "exchanges", "camera", "actions", "conditions", "end", "order"]);
 const dialogueRequestTypes = new Set([
   "greeting",
@@ -2992,6 +2992,8 @@ function checkQuestTimer(file, timer, pointer, location, model, stageId) {
     questV2Error(file, pointer, location, "timer warning_ticks must be smaller than duration_ticks.", "Use a nonnegative warning interval.");
   if (timer.mode === "duration" && timer.timeout_stage !== undefined)
     questV2Error(file, pointer, location, "duration timers cannot have timeout_stage.", "Use a deadline timer for timeouts.");
+  if (timer.timeout_stage === stageId)
+    questV2Error(file, pointer, location, "timer timeout_stage must leave its current stage.", "Use a different stage or omit timeout_stage to fail the quest.");
   if (typeof timer.timeout_stage === "string")
     model.transitions.push({ pointer: `${pointer}/timeout_stage`, location: `${location}.timeout_stage`, stageId,
       transition: { stage: timer.timeout_stage } });
@@ -3042,8 +3044,30 @@ function validateQuestParallel(file, model) {
   }
 }
 
+function checkResponseTimer(file, owner, destinations, pointer, location) {
+  const timer = owner?.response_timer;
+  if (timer === undefined) return;
+  const issues = validateConversationSchema(timer, conversationSchema.$defs.node.properties.response_timer);
+  for (const issue of issues) questV2Error(file, `${pointer}/response_timer${issue.pointer}`, location, issue.message, "Declare duration_ticks and one response or next.");
+  if (issues.length) return;
+  if (!Array.isArray(owner.responses) || !owner.responses.length || owner.end === true)
+    questV2Error(file, `${pointer}/response_timer`, location, "response timers require nonterminal response choices.", "Declare response choices.");
+  if (timer.response && !(owner.responses ?? []).some(response => response.id === timer.response))
+    questV2Error(file, `${pointer}/response_timer/response`, location, "unknown default response.", "Reference a response in this node.");
+  if (timer.next && !destinations.has(timer.next))
+    questV2Error(file, `${pointer}/response_timer/next`, location, "unknown silence destination.", "Reference an existing scene or node.");
+}
+
 function validateQuestV2Graph(file, data, model) {
   validateQuestParallel(file, model);
+  for (const stage of model.stages) {
+    const scenes = model.sceneIdsByStage.get(stage.id) ?? new Set();
+    checkResponseTimer(file, stage.raw, scenes, stage.pointer, stage.location);
+    for (const [index, scene] of (stage.raw.scenes ?? []).entries())
+      checkResponseTimer(file, scene, scenes, `${stage.pointer}/scenes/${index}`, stage.location);
+    for (const [slot, value] of Object.entries(stage.raw.dialogue ?? {}))
+      checkResponseTimer(file, value, scenes, `${stage.pointer}/dialogue/${slot}`, stage.location);
+  }
   const entryStage = stringValue(data.entry_stage);
   if (!entryStage) {
     questV2Error(file, "/entry_stage", "entry_stage", "entry_stage is required.", "Set entry_stage to the first stage id.");
@@ -3120,7 +3144,8 @@ function warnQuestV2UnreachableScenes(file, model) {
         queue.push(scene);
       }
     };
-    const enqueueResponseScenes = (responses) => {
+    const enqueueResponseScenes = (responses, timer) => {
+      enqueueScene(timer?.next);
       if (!Array.isArray(responses)) {
         return;
       }
@@ -3135,7 +3160,7 @@ function warnQuestV2UnreachableScenes(file, model) {
     for (const slot of Object.values(dialogue)) {
       const scene = firstString(slot?.scene, slot?.scene_ref);
       enqueueScene(scene);
-      enqueueResponseScenes(slot?.responses);
+      enqueueResponseScenes(slot?.responses, slot?.response_timer);
     }
     for (const entry of model.transitions) {
       if (entry.stageId === stage.id && entry.transition.scene && scenes.has(entry.transition.scene)) {
@@ -3144,7 +3169,7 @@ function warnQuestV2UnreachableScenes(file, model) {
     }
     while (queue.length > 0) {
       const sceneId = queue.shift();
-      enqueueResponseScenes(rawScenes.get(sceneId)?.responses);
+      enqueueResponseScenes(rawScenes.get(sceneId)?.responses, rawScenes.get(sceneId)?.response_timer);
     }
     for (const scene of scenes) {
       if (!reachable.has(scene)) {
@@ -3616,6 +3641,7 @@ function checkDialogueTree(file, data) {
     const nodeQuestId = stringValue(metadataObject(rawNode).quest) || defaultQuestId;
     checkUnknownObjectKeys(file, rawNode, location, dialogueTreeNodeKeys);
     checkDialogueTreeNodeFields(file, rawNode, location);
+    checkResponseTimer(file, rawNode, nodeIds, `/nodes/${node.id}`, location);
     warnTerminalDialogueTreeNode(file, rawNode, location);
     checkDialogueMetadata(file, rawNode, location);
     checkConditions(file, rawNode, location, nodeQuestId);
@@ -3783,6 +3809,8 @@ function checkUnreachableDialogueTreeNodes(file, nodes, entries, nodeIds) {
     if (!rawNode || !dialogueTreeNodeCanOfferResponses(rawNode)) {
       continue;
     }
+    const silence = stringValue(rawNode.response_timer?.next);
+    if (silence && nodeIds.has(silence) && !reachable.has(silence)) pending.push(silence);
     for (const response of rawNode.responses) {
       if (!structurallySelectableDialogueTreeResponse(response)) {
         continue;

@@ -1751,6 +1751,44 @@
             "$ref": "#/$defs/response"
           }
         },
+        "response_timer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 72000
+            },
+            "response": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            },
+            "next": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            }
+          },
+          "required": [
+            "duration_ticks"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "response"
+              ]
+            },
+            {
+              "required": [
+                "next"
+              ]
+            }
+          ]
+        },
         "events": {
           "type": "array",
           "items": {
@@ -3850,6 +3888,44 @@
             "$ref": "#/$defs/response"
           }
         },
+        "response_timer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 72000
+            },
+            "response": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            },
+            "next": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            }
+          },
+          "required": [
+            "duration_ticks"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "response"
+              ]
+            },
+            {
+              "required": [
+                "next"
+              ]
+            }
+          ]
+        },
         "conditions": {
           "type": "array",
           "items": {
@@ -4824,6 +4900,44 @@
           "items": {
             "$ref": "#/$defs/response"
           }
+        },
+        "response_timer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "duration_ticks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 72000
+            },
+            "response": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            },
+            "next": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9][a-z0-9_./-]*$"
+            }
+          },
+          "required": [
+            "duration_ticks"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "response"
+              ]
+            },
+            {
+              "required": [
+                "next"
+              ]
+            }
+          ]
         },
         "actions": {
           "type": "array",

@@ -19,6 +19,7 @@ public final class CampaignConversationScreenController {
     private boolean autoAdvance;
     private boolean confirmingCancellation;
     private long lineShownAt;
+    private long timerReceivedAt;
 
     public CampaignConversationScreenController(Host host) { this.host = host; }
 
@@ -47,11 +48,12 @@ public final class CampaignConversationScreenController {
             var prior = session();
             var unavailable = new CampaignConversationViewPayload.Session(prior.id(), prior.revision(), prior.title(), prior.phase(), prior.line(),
                     false, false, prior.controller(), java.util.List.of(), prior.responses(), prior.check(), prior.outcome(), prior.confirmation(), prior.transactions(),
-                    false, false, prior.history());
+                    false, false, prior.history(), prior.responseRemainingTicks());
             payload = new CampaignConversationViewPayload(payload.viewId(), payload.entityId(), payload.character(), state.page(), state.pageCount(),
                     java.util.List.of(), unavailable, payload.diagnostic());
         }
         state = payload;
+        timerReceivedAt = host.now();
         pending = false;
         pendingUntil = 0L;
         dieAnimation.accept(session(), host.now(), host.animateChecks());
@@ -238,6 +240,10 @@ public final class CampaignConversationScreenController {
             }
             for (var transaction : session.transactions()) append(text, transactionText(session, transaction));
             if (!session.outcome().isBlank()) append(text, session.outcome());
+            if (session.responseRemainingTicks() >= 0) {
+                long remaining = Math.max(0, session.responseRemainingTicks() - Math.max(0, host.now() - timerReceivedAt) / 50);
+                append(text, host.translate("conversation.response_timer", (remaining + 19) / 20));
+            }
         }
         if (!state.diagnostic().isBlank()) append(text, state.diagnostic());
         return text.toString();

@@ -128,18 +128,11 @@ public final class ConversationService {
                     case ADVANCE -> advance(player, session, definition);
                     case CHOOSE -> {
                         require(session.phase == ConversationSession.Phase.RESPONSES, "The conversation is not waiting for a response.");
-                        var response = definition.nodes().get(session.node).responses().get(argument);
-                        require(response != null && conditions(context, response.conditions()), "This response is no longer available.");
-                        for (var effect : response.effects()) if (effect.action().campaignPayment() != null) {
-                            String paymentIssue = ConversationBargaining.paymentIssue(context, session, effect.action().questId(), effect.action().campaignPayment().transaction());
-                            require(paymentIssue.isBlank(), paymentIssue);
+                        if (ConversationResponseTimers.expired(session, player.serverLevel().getGameTime())) {
+                            ConversationResponseTimers.expire(player, data, session);
+                            return view(player, sessionId);
                         }
-                        session.response = response.id();
-                        session.actingPlayer = player.getUUID();
-                        session.questRun = questRun(player, definition.quest());
-                        if (!ConversationConfirmations.prepare(player, session, response.effects(), requestId)) {
-                            selectResponse(player, session, requestId, response.id());
-                        }
+                        choose(player, session, definition, requestId, argument);
                     }
                     case CONFIRM -> {
                         String issue = ConversationConfirmations.confirm(player, session, definition, argument);
@@ -223,6 +216,21 @@ public final class ConversationService {
         return new Result(session.snapshot(), List.copyOf(responses), issue.isBlank() ? data.socialIssue(sessionId) : issue);
     }
 
+    static void choose(ServerPlayer player, ConversationSession session, ConversationDefinition definition, UUID request, String id) throws IOException {
+        var response = definition.nodes().get(session.node).responses().get(id);
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, character(player, session));
+        require(response != null && conditions(context, response.conditions()), "This response is no longer available.");
+        for (var effect : response.effects()) if (effect.action().campaignPayment() != null) {
+            String issue = ConversationBargaining.paymentIssue(context, session, effect.action().questId(), effect.action().campaignPayment().transaction());
+            require(issue.isBlank(), issue);
+        }
+        if (session.responseDeadline >= 0) session.responseTimerResolved = true;
+        session.response = response.id();
+        session.actingPlayer = player.getUUID();
+        session.questRun = questRun(player, definition.quest());
+        if (!ConversationConfirmations.prepare(player, session, response.effects(), request)) selectResponse(player, session, request, response.id());
+    }
+
     static void selectResponse(ServerPlayer player, ConversationSession session, UUID request, String response) {
         session.response = response;
         session.actingPlayer = player.getUUID();
@@ -262,6 +270,8 @@ public final class ConversationService {
 
     static void enter(ConversationSession session, String node) {
         session.node = node;
+        session.responseDeadline = -1;
+        session.responseTimerResolved = false;
         session.visit++;
         session.exchange = 0;
         session.effect = 0;
@@ -374,6 +384,8 @@ public final class ConversationService {
     }
 
     static void save(ServerPlayer player, ConversationSavedData data, ConversationSession session) throws IOException {
+        ConversationResources.conversation(player.server, session.identity.conversation()).ifPresent(
+                definition -> ConversationResponseTimers.arm(session, definition, player.serverLevel().getGameTime()));
         long expected = session.revision;
         session.revision++;
         data.write(player.serverLevel(), expected, session);
@@ -442,8 +454,11 @@ public final class ConversationService {
                 continue;
             }
             if (session.phase != ConversationSession.Phase.NODE_EFFECTS && session.phase != ConversationSession.Phase.RESPONSE_EFFECTS
-                    && session.nestedDecision == null) continue;
-            try { ConversationRuntime.drive(player, id, false); }
+                    && session.phase != ConversationSession.Phase.RESPONSES && session.nestedDecision == null) continue;
+            try {
+                if (session.phase == ConversationSession.Phase.RESPONSES) ConversationResponseTimers.expire(player, data, session);
+                else ConversationRuntime.drive(player, id, false);
+            }
             catch (Unavailable exception) {
                 session = data.session(id);
                 if (session.diagnostic.equals(exception.getMessage()) || !data.issue(id).isBlank()) continue;

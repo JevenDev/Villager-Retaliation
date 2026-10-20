@@ -364,7 +364,8 @@ public final class DialogueTreeResources {
                 DialogueCondition.readList(location, context, node, nodeQuestId),
                 readResponses(location, context, node, nodeQuestId, treeId),
                 DatapackJsonReader.readBoolean(node, "end", false),
-                DialogueExchange.read(node), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(node)
+                DialogueExchange.read(node), com.jvn.villagerretaliation.dialogue.DialogueCamera.read(node),
+                DialogueResponseTimer.read(node.get("response_timer"))
         );
     }
 

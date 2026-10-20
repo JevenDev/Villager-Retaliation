@@ -22,6 +22,8 @@ interface VillagerInteractionSessionScreen {
             List<DialogueOptionDefinition> dialogueOptions,
             List<GiftPreferenceView> giftPreferences);
 
+    void updateResponseTimer(long remainingTicks);
+
     void updateDuelStatus(OpenVillagerDuelPayload payload);
 
     void acceptRecruitmentResult(RecruitmentResultPayload payload);

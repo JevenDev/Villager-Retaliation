@@ -211,6 +211,18 @@ try {
     await writeJson(validQuest, invalid);
     run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
   }
+  const timed = structuredClone(conditionFixture);
+  timed.stages[0].responses = [{ id: "wait", label: "Wait", complete: true }];
+  timed.stages[0].response_timer = { duration_ticks: 40, response: "wait" };
+  await writeJson(validQuest, timed);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  timed.stages[0].scenes = [{ id: "silence", lines: ["No answer."], end: true }];
+  timed.stages[0].response_timer = { duration_ticks: 40, next: "silence" };
+  await writeJson(validQuest, timed);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  timed.stages[0].response_timer.next = "missing";
+  await writeJson(validQuest, timed);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
   const unreachable = structuredClone(conditionFixture);
   unreachable.stages.push({ id: "unreachable", objectives: [] });
   await writeJson(validQuest, unreachable);

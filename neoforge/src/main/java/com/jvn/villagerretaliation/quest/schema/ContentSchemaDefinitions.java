@@ -336,6 +336,7 @@ public final class ContentSchemaDefinitions {
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
         properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
+        properties.add("response_timer", com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.schema());
         properties.add("events", arrayOf(ref("#/$defs/event")));
         properties.add("on_enter", arrayOf(ref("#/$defs/action")));
         properties.add("on_exit", arrayOf(ref("#/$defs/action")));
@@ -471,6 +472,7 @@ public final class ContentSchemaDefinitions {
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
         properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
+        properties.add("response_timer", com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.schema());
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("end", booleanSchema());
@@ -496,6 +498,7 @@ public final class ContentSchemaDefinitions {
         properties.add("exchanges", com.jvn.villagerretaliation.dialogue.DialogueExchange.schema());
         properties.add("camera", com.jvn.villagerretaliation.dialogue.DialogueCamera.schema());
         properties.add("responses", arrayOf(ref("#/$defs/response")));
+        properties.add("response_timer", com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.schema());
         properties.add("actions", arrayOf(ref("#/$defs/action")));
         properties.add("conditions", arrayOf(ref("#/$defs/condition")));
         properties.add("end", booleanSchema());

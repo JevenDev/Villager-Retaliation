@@ -30,6 +30,15 @@ public final class ConversationTestStorage implements AutoCloseable {
         level.getServer().overworld().getDataStorage().set(ConversationSavedData.DATA_NAME, ConversationSavedData.load(saved, directory));
     }
 
+    public void setResponseDeadline(UUID id, long deadline) throws IOException {
+        var data = ConversationSavedData.get(level);
+        var session = data.session(id);
+        session.responseDeadline = deadline;
+        data.write(level, session.revision++, session);
+    }
+
+    public void maintain() { ConversationService.maintain(level.getServer()); }
+
     public void setLastText(UUID id, String text) throws IOException {
         var data = ConversationSavedData.get(level);
         var session = data.session(id);

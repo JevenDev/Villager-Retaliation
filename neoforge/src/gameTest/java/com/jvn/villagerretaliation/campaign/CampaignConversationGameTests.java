@@ -45,6 +45,59 @@ public final class CampaignConversationGameTests {
     private static final ResourceLocation ID = ResourceLocation.parse("campaign_fixture:mentor_conversation");
     private CampaignConversationGameTests() { }
 
+    @GameTest(template = "empty", batch = "conversation_runtime")
+    public static void lateChoicesResolveTheSavedDefaultResponseOnce(GameTestHelper helper) throws IOException {
+        try (var fixture = new Fixture(helper)) {
+            fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject().add("response_timer",
+                    JsonParser.parseString("{\"duration_ticks\":40,\"response\":\"leave\"}"));
+            fixture.install(fixture.graph);
+            var player = fixture.player();
+            var result = fixture.start(player);
+            UUID id = result.session().identity().id();
+            helper.assertValueEqual(result.session().responseDeadline(), -1L, "reading exchanges does not consume response time");
+            while (result.session().phase() == ConversationSession.Phase.EXCHANGES)
+                result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
+            long deadline = result.session().responseDeadline();
+            helper.assertTrue(deadline > player.serverLevel().getGameTime(), "choices arm the deadline");
+            fixture.storage.reload();
+            helper.assertValueEqual(ConversationService.view(player, id).session().responseDeadline(), deadline, "reload keeps the original deadline");
+            fixture.storage.setResponseDeadline(id, player.serverLevel().getGameTime());
+            result = ConversationService.view(player, id);
+            UUID late = UUID.randomUUID();
+            long revision = result.session().revision();
+            result = ConversationService.request(player, id, revision, late, ConversationSession.Intent.CHOOSE, "appeal");
+            helper.assertValueEqual(result.session().node(), "declined", "a late button cannot beat the default response");
+            helper.assertValueEqual(result.session().choices().getFirst().response(), "leave", "the default follows the normal choice path");
+            ConversationService.request(player, id, revision, late, ConversationSession.Intent.CHOOSE, "appeal");
+            helper.assertValueEqual(ConversationService.view(player, id).session().choices().size(), 1, "late retries cannot duplicate the choice");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_runtime")
+    public static void unansweredChoicesFollowTheirSilenceBranchOnMaintenance(GameTestHelper helper) throws IOException {
+        try (var fixture = new Fixture(helper)) {
+            fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject().add("response_timer",
+                    JsonParser.parseString("{\"duration_ticks\":40,\"next\":\"declined\"}"));
+            fixture.install(fixture.graph);
+            var player = fixture.player();
+            var result = fixture.start(player);
+            UUID id = result.session().identity().id();
+            while (result.session().phase() == ConversationSession.Phase.EXCHANGES)
+                result = fixture.intent(player, result, ConversationSession.Intent.ADVANCE, "");
+            fixture.storage.setResponseDeadline(id, player.serverLevel().getGameTime());
+            fixture.storage.reload();
+            fixture.storage.maintain();
+            result = ConversationService.view(player, id);
+            helper.assertValueEqual(result.session().node(), "declined", "server maintenance resolves silence without a client request");
+            helper.assertTrue(result.session().choices().isEmpty(), "silence does not invent a player response");
+            long visit = result.session().visit();
+            fixture.storage.maintain();
+            helper.assertValueEqual(ConversationService.view(player, id).session().visit(), visit, "the silence branch runs once");
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", batch = "conversation_runtime", timeoutTicks = 200)
     public static void exchangesChoicesAndRollsResumeWithoutReplay(GameTestHelper helper) throws IOException {
         try (var fixture = new Fixture(helper)) {

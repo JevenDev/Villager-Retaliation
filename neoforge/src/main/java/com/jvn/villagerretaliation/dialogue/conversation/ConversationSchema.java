@@ -52,6 +52,7 @@ public final class ConversationSchema {
         JsonObject node = object(List.of("id"), "id", id(), "exchanges", array(ref("exchange"), 0),
                 "camera", ConversationLinePresentation.cameraSchema(),
                 "effects", array(ref("effect"), 0), "responses", array(ref("response"), 1), "next", id(), "outcome", id());
+        node.getAsJsonObject("properties").add("response_timer", com.jvn.villagerretaliation.dialogue.DialogueResponseTimer.schema());
         node.add("oneOf", exclusive("responses", "next", "outcome"));
         definitions.add("node", node);
         definitions.add("topic", object(List.of("id", "label", "start"), "id", id(),

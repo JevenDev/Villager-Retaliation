@@ -178,6 +178,8 @@ public final class VillagerConversationService {
         }
 
         holdVillager(villager, player, session);
+        if (villager.tickCount % 20 == 0) com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.tick(
+                VillagerInteractionService.createDialogueContext(level, player, villager));
     }
 
     public static void holdSharedForcedParticipant(Villager villager, ServerPlayer player) {

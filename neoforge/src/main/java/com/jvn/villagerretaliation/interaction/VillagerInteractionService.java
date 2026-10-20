@@ -2768,7 +2768,8 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.preferences()
+                giftKnowledge.preferences(),
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.responseRemainingTicks(context)
         ));
     }
 
@@ -2806,7 +2807,8 @@ public final class VillagerInteractionService {
                 context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
-                giftKnowledge.preferences()
+                giftKnowledge.preferences(),
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.responseRemainingTicks(context)
         ));
     }
 
@@ -3489,7 +3491,7 @@ public final class VillagerInteractionService {
             var options = com.jvn.villagerretaliation.interaction.DialogueChoiceRequests.publish(
                     player, response.entityId(), response.dialogueOptions());
             payload = new VillagerDialogueResponsePayload(response.entityId(), response.reputation(), response.reputationLevel(),
-                    response.mood(), response.primaryMood(), response.forceCameraTowardsVillager(), options, response.giftPreferences());
+                    response.mood(), response.primaryMood(), response.forceCameraTowardsVillager(), options, response.giftPreferences(), response.responseRemainingTicks());
         }
         try {
             PacketDistributor.sendToPlayer(player, payload);

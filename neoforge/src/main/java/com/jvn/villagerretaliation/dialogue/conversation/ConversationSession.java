@@ -26,6 +26,8 @@ public final class ConversationSession {
     int exchange;
     int effect;
     String response = "";
+    long responseDeadline = -1;
+    boolean responseTimerResolved;
     String check = "";
     String outcome = "";
     String diagnostic = "";
@@ -79,6 +81,8 @@ public final class ConversationSession {
         exchange = source.exchange;
         effect = source.effect;
         response = source.response;
+        responseDeadline = source.responseDeadline;
+        responseTimerResolved = source.responseTimerResolved;
         check = source.check;
         outcome = source.outcome;
         diagnostic = source.diagnostic;
@@ -115,7 +119,7 @@ public final class ConversationSession {
     public Snapshot snapshot() {
         return new Snapshot(identity, revision, visit, node, phase, exchange, response, check, outcome,
                 controller, participants, speakers, transcript, choices, checks, receipts, socialAwards, diagnostic, confirmation != null ? confirmation
-                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null, transactionChecks);
+                        : nestedDecision != null && nestedDecision.state() == ConversationNestedDecision.State.PENDING ? nestedDecision.confirmation() : null, transactionChecks, responseDeadline, responseTimerResolved);
     }
 
     private static <K, V> Map<K, V> ordered(Map<K, V> values) {
@@ -212,7 +216,17 @@ public final class ConversationSession {
             int exchange, String response, String check, String outcome, UUID controller,
             Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
             List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
-            String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation, Map<String, UUID> transactionChecks) {
+            String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation, Map<String, UUID> transactionChecks,
+            long responseDeadline, boolean responseTimerResolved) {
+        public Snapshot(Identity identity, long revision, long visit, String node, Phase phase,
+                int exchange, String response, String check, String outcome, UUID controller,
+                Set<UUID> participants, Map<String, Speaker> speakers, List<Line> transcript,
+                List<Choice> choices, Map<String, Check> checks, Map<String, Receipt> receipts, Set<String> socialAwards,
+                String diagnostic, com.jvn.villagerretaliation.campaign.CampaignConfirmation confirmation, Map<String, UUID> transactionChecks) {
+            this(identity, revision, visit, node, phase, exchange, response, check, outcome, controller,
+                    participants, speakers, transcript, choices, checks, receipts, socialAwards, diagnostic, confirmation,
+                    transactionChecks, -1, false);
+        }
         public Snapshot {
             participants = Set.copyOf(participants);
             speakers = ordered(speakers);

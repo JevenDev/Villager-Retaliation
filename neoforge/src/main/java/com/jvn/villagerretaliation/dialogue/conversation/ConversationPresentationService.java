@@ -211,7 +211,8 @@ public final class ConversationPresentationService {
                         transaction.check(), label(transaction.title()), transaction.buyer(), label(transaction.buyerName()), transaction.item(),
                         transaction.basePrice(), transaction.bargainPrice(), transaction.price(), TransactionState.valueOf(transaction.state().name()),
                         transaction.possible(), label(transaction.diagnostic()))).toList(),
-                result.control().canCancel(), result.control().canMigrate(), history(player, snapshot));
+                result.control().canCancel(), result.control().canMigrate(), history(player, snapshot),
+                ConversationResponseTimers.remaining(player, id));
         return new CampaignConversationViewPayload(view, character.getId(), character.getUUID(), page, pages, List.of(), session,
                 text(issue.isBlank() ? result.diagnostic() : issue));
     }

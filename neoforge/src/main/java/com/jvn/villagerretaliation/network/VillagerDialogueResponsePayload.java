@@ -18,8 +18,19 @@ public record VillagerDialogueResponsePayload(
         VillagerMood primaryMood,
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
-        List<GiftPreferenceView> giftPreferences)
+        List<GiftPreferenceView> giftPreferences,
+        long responseRemainingTicks)
         implements CustomPacketPayload {
+    public VillagerDialogueResponsePayload(int entityId, int reputation, VillagerReputationLevel reputationLevel,
+            DialogueDisposition mood, VillagerMood primaryMood, boolean forceCameraTowardsVillager,
+            List<DialogueOptionDefinition> dialogueOptions, List<GiftPreferenceView> giftPreferences) {
+        this(entityId, reputation, reputationLevel, mood, primaryMood, forceCameraTowardsVillager, dialogueOptions, giftPreferences, -1);
+    }
+
+    public VillagerDialogueResponsePayload {
+        if (responseRemainingTicks < -1 || responseRemainingTicks > 72000) throw new IllegalArgumentException("Invalid dialogue response timer");
+    }
+
     public static final Type<VillagerDialogueResponsePayload> TYPE = VillagerPayloads.type("villager_dialogue_response");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerDialogueResponsePayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerDialogueResponsePayload::encode, VillagerDialogueResponsePayload::decode);
@@ -33,6 +44,7 @@ public record VillagerDialogueResponsePayload(
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeGiftPreferenceViews(buffer, payload.giftPreferences());
+        buffer.writeLong(payload.responseRemainingTicks());
     }
 
     private static VillagerDialogueResponsePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -44,7 +56,8 @@ public record VillagerDialogueResponsePayload(
                 buffer.readEnum(VillagerMood.class),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
-                DialogueOptionPayloadCodec.readGiftPreferenceViews(buffer)
+                DialogueOptionPayloadCodec.readGiftPreferenceViews(buffer),
+                buffer.readLong()
         );
     }
 
