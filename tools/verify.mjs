@@ -7,7 +7,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const failures = [];
 
 const syntaxFiles = [
-  "tools/quest-model.js",
+  "tools/quest-content.mjs",
   "tools/zip-utils.js",
   "wiki/shared/search.js",
   "wiki/player/app.js",
@@ -28,9 +28,7 @@ const validationScripts = [
   "tools/test-dialogue-contexts.mjs",
   "tools/test-dialogue-authoring.mjs",
   "tools/test-content-schemas.mjs",
-  "tools/test-quest-model.mjs",
   "tools/test-zip-utils.mjs",
-  "tools/test-quest-output.mjs",
   "tools/test-wiki-content.mjs"
 ];
 
@@ -46,7 +44,7 @@ const requiredFiles = [
   "tools/schemas/quest-reward-v1.schema.json",
   "tools/schemas/scene-v1.schema.json",
   "tools/schemas/encounter-v1.schema.json",
-  "tools/quest-model.js",
+  "tools/quest-content.mjs",
   "tools/zip-utils.js",
   "wiki/shared/search.js",
   "wiki/shared/villager_retaliation_logo.png",

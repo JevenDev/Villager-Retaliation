@@ -5,7 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /** Dependency-free policy checks; native world mutation/reload tests are separate. */
-public final class TutorialRunTest {
+public final class TutorialRunChecks {
+    private TutorialRunChecks() { }
     private static int checks;
     private static void check(boolean value, String message) {
         checks++; if (!value) throw new AssertionError(message);
@@ -21,7 +22,8 @@ public final class TutorialRunTest {
                 Map.of("harvest", 1, "deposit", 3), Map.of("harvest", 1, "deposit", 3), "chest")), "activate");
         return run;
     }
-    public static void main(String[] args) {
+    public static int run() {
+        checks = 0;
         var b = binding(); var run = trial(b);
         check(run.reserve(binding(), UUID.randomUUID(), "harvest", "crop", 1) == null, "foreign actor rejected");
         check(run.reserve(b, UUID.randomUUID(), "harvest", "wrong", 1) == null, "wrong target rejected");
@@ -118,5 +120,6 @@ public final class TutorialRunTest {
         check(specialist.reserve(specialist.binding(),UUID.randomUUID(),"report",n.worker().toString(),1)==null,"old Nitwit cannot issue replacement report");
         check(specialist.reserve(specialist.binding(),UUID.randomUUID(),"report",replacement.toString(),1)!=null,"replacement can issue the one remaining report");
         System.out.println("TutorialRun: " + checks + " policy checks passed");
+        return checks;
     }
 }

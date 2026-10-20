@@ -42,6 +42,7 @@ public final class AuthoringChecks {
         count += com.jvn.villagerretaliation.campaign.WorldCampaignChecks.run();
         count += com.jvn.villagerretaliation.client.interaction.CameraAuthoringChecks.run();
         count += com.jvn.villagerretaliation.authoring.client.EditorClientChecks.run();
+        count += com.jvn.villagerretaliation.quest.tutorial.TutorialRunChecks.run();
         count += com.jvn.villagerretaliation.quest.tutorial.TutorialPersistenceChecks.run();
         count += com.jvn.villagerretaliation.progress.PlayerHistoryChecks.run();
         count += com.jvn.villagerretaliation.progress.ProgressConditionChecks.run();

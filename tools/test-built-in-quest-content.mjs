@@ -1,9 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createRequire } from "node:module";
-
-const questModel = createRequire(import.meta.url)("./quest-model.js");
+import { editableQuest, materializeLocalizedDefinition } from "./quest-content.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
@@ -787,7 +785,7 @@ async function jsonFiles(directory) {
 
 async function readJson(file) {
   try {
-    return questModel.editableQuest(JSON.parse(await readFile(file, "utf8")));
+    return editableQuest(JSON.parse(await readFile(file, "utf8")));
   } catch (error) {
     errors.push(`${relative(file)}: invalid JSON (${error.message}).`);
     return null;
@@ -809,7 +807,7 @@ async function materialized(file, data) {
   const prefix = ownerQuest?.localization_prefix || "";
   const localeFile = path.join(ownerRoot, "locales", "en_us.json");
   const locale = await readJson(localeFile);
-  return questModel.materializeLocalizedDefinition(
+  return materializeLocalizedDefinition(
     data,
     prefix,
     locale?.messages || locale || {}

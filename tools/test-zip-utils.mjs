@@ -3,18 +3,18 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const zip = require("./zip-utils.js");
-const model = require("./quest-model.js");
 const decoder = new TextDecoder();
 
 async function testRoundTrip() {
-  const quest = model.createBranchingQuest("zip_test");
-  const bundle = model.questBundleFiles(quest);
-  const path = bundle.questPath;
+  const quest = { schema: "villagerretaliation:quest/v3", id: "zip_test:round_trip" };
+  const locale = { schema: "villagerretaliation:quest_locale/v1", messages: { "zip_test.title": "Round trip" } };
+  const path = "data/zip_test/quests/examples/round_trip/quest.json";
+  const localePath = "data/zip_test/quests/examples/round_trip/locales/en_us.json";
   const packMeta = JSON.stringify({ pack: { pack_format: 48, description: "Zip test" } });
   const bytes = zip.createZip({
     "pack.mcmeta": packMeta,
-    [path]: JSON.stringify(bundle.quest),
-    [bundle.localePath]: JSON.stringify(bundle.locale)
+    [path]: JSON.stringify(quest),
+    [localePath]: JSON.stringify(locale)
   }, { date: new Date("2025-01-01T00:00:00Z") });
   assert(bytes instanceof Uint8Array);
   assert.equal(new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(0, true), 0x04034b50);
@@ -25,14 +25,15 @@ async function testRoundTrip() {
   assert.equal(quests.length, 2);
   const questEntry = quests.find((entry) => entry.path === path);
   assert(questEntry);
-  assert(quests.some((entry) => entry.path === bundle.localePath));
-  assert.equal(questEntry.value.id, quest.id);
+  assert(quests.some((entry) => entry.path === localePath));
+  assert.deepEqual(questEntry.value, quest);
+  assert.deepEqual(quests.find((entry) => entry.path === localePath).value, locale);
 }
 
 async function testWrappedPackNormalization() {
   const bytes = zip.createZip({
     "wrapped/pack.mcmeta": "{}",
-    "wrapped/data/demo/quests/quests/a_helping_hand/quest.json": JSON.stringify(model.questBundleFiles(model.createLinearQuest("demo")).quest)
+    "wrapped/data/demo/quests/quests/a_helping_hand/quest.json": JSON.stringify({ id: "demo:a_helping_hand" })
   });
   const files = await zip.readZip(bytes);
   assert(Object.hasOwn(files, "pack.mcmeta"));
