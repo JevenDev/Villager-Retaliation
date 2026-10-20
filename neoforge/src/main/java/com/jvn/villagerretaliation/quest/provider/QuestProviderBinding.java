@@ -44,6 +44,17 @@ public record QuestProviderBinding(
                 entity.level().dimension(), entity.blockPosition(), groupKey, true);
     }
 
+    public static QuestProviderBinding fromSnapshot(QuestProviderSnapshot snapshot) {
+        java.util.Objects.requireNonNull(snapshot, "quest provider snapshot");
+        return new QuestProviderBinding(snapshot.type(), snapshot.id(), snapshot.name(), snapshot.dimension(),
+                snapshot.position(), snapshot.groupKey(), snapshot.live());
+    }
+
+    public QuestProviderSnapshot snapshot() {
+        return new QuestProviderSnapshot(this.providerType, this.providerId, this.displayName,
+                this.dimension, this.pos, this.villageKey, this.live);
+    }
+
     public boolean matchesProviderId(UUID id) {
         return id != null && id.equals(this.providerId);
     }

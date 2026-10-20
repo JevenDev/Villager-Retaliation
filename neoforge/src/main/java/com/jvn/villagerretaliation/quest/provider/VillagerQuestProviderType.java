@@ -115,7 +115,8 @@ public final class VillagerQuestProviderType implements QuestProviderType {
     public Optional<QuestProviderBinding> bindingFromProgress(
             ServerLevel level,
             VillagerQuestSavedData.QuestProgress progress) {
-        if (progress == null || progress.startedVillagerId() == null) {
+        if (progress == null || progress.startedVillagerId() == null
+                || !progress.issuerProviderType().isBlank() && !ID.toString().equals(progress.issuerProviderType())) {
             return Optional.empty();
         }
         return Optional.of(new QuestProviderBinding(

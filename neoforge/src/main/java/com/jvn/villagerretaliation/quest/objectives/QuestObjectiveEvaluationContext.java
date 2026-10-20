@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.quest.objectives;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
-import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -13,10 +13,10 @@ import net.minecraft.world.item.ItemStack;
 
 public record QuestObjectiveEvaluationContext(
         ServerPlayer player,
-        DialogueContext dialogueContext,
+        DialogueRuntimeContext runtimeContext,
         ServerLevel level,
         QuestDefinition definition,
-        VillagerQuestSavedData.QuestProgress progress,
+        com.jvn.villagerretaliation.quest.runtime.QuestProgressState state,
         ToIntFunction<QuestDefinition.Objective> itemCounter,
         BiPredicate<QuestDefinition.Objective, ItemStack> itemMatcher,
         ToIntFunction<QuestDefinition.Objective> reputationValue,
@@ -24,6 +24,25 @@ public record QuestObjectiveEvaluationContext(
         Predicate<QuestDefinition.Objective> conditionMatcher,
         Function<QuestDefinition.Objective, QuestObjectiveDebugState> debugState
 ) {
+    public com.jvn.villagerretaliation.dialogue.DialogueContext dialogueContext() {
+        return this.runtimeContext instanceof com.jvn.villagerretaliation.dialogue.DialogueContext context ? context : null;
+    }
+
+    public VillagerQuestSavedData.QuestProgress progress() {
+        return this.state instanceof VillagerQuestSavedData.QuestProgress progress ? progress : null;
+    }
+
+    public QuestObjectiveEvaluationContext(ServerPlayer player, com.jvn.villagerretaliation.dialogue.DialogueContext context,
+            ServerLevel level, QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress,
+            ToIntFunction<QuestDefinition.Objective> itemCounter, BiPredicate<QuestDefinition.Objective, ItemStack> itemMatcher,
+            ToIntFunction<QuestDefinition.Objective> reputationValue, Predicate<QuestDefinition.Objective> factMatcher,
+            Predicate<QuestDefinition.Objective> conditionMatcher,
+            Function<QuestDefinition.Objective, QuestObjectiveDebugState> debugState) {
+        this(player, (DialogueRuntimeContext) context, level, definition,
+                (com.jvn.villagerretaliation.quest.runtime.QuestProgressState) progress, itemCounter,
+                itemMatcher, reputationValue, factMatcher, conditionMatcher, debugState);
+    }
+
     public int itemCount(QuestDefinition.Objective objective) {
         return this.itemCounter == null || objective == null ? 0 : this.itemCounter.applyAsInt(objective);
     }

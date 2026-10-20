@@ -23,6 +23,24 @@ public interface QuestProviderType {
         return com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(context, progress);
     }
 
+    default ConditionContext conditions(QuestExecutionContext context,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        if (progress == null || progress instanceof VillagerQuestSavedData.QuestProgress) {
+            return conditions(context, (VillagerQuestSavedData.QuestProgress) progress);
+        }
+        return com.jvn.villagerretaliation.dialogue.conditions.EntityConditionAccess.forQuest(context, progress);
+    }
+
+    default boolean matchesProviderLock(QuestExecutionContext context, QuestDefinition definition,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
+        if (progress == null || progress instanceof VillagerQuestSavedData.QuestProgress) {
+            return matchesIssuerLock(context, definition, (VillagerQuestSavedData.QuestProgress) progress);
+        }
+        if (!definition.rules().lockedToVillager() || progress.startedVillagerId() == null) return true;
+        return context.providerBinding().map(binding -> binding.matchesProviderId(progress.startedVillagerId())
+                || definition.rules().crossVillagerCompatible() && matchesOffer(context, definition)).orElse(false);
+    }
+
     default Optional<DialogueContext> legacyDialogueContext(QuestExecutionContext context) {
         return context == null ? Optional.empty() : context.dialogueContext();
     }

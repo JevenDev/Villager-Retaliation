@@ -47,6 +47,7 @@ public class QuestProgressState {
     protected String rewardDeliveryIssue = "";
     protected UUID partyQuestInstanceId;
     protected UUID questRunId;
+    protected String issuerProviderType = "";
     protected String issuerName = "";
     protected String issuerProfession = "";
     protected int issuerLevel;
@@ -153,6 +154,21 @@ public class QuestProgressState {
                 Math.max(
                         Math.max(this.abandonedGameTime, this.expiredGameTime),
                         this.failedGameTime));
+    }
+
+    public UUID providerId() { return this.startedVillagerId; }
+
+    public String issuerProviderType() { return this.issuerProviderType; }
+
+    public void providerType(ResourceLocation type) {
+        this.issuerProviderType = type == null ? "" : type.toString();
+    }
+
+    public java.util.Optional<com.jvn.villagerretaliation.quest.provider.QuestProviderSnapshot> providerSnapshot(ResourceLocation fallbackType) {
+        ResourceLocation type = this.issuerProviderType.isBlank() ? fallbackType : ResourceLocation.tryParse(this.issuerProviderType);
+        return type == null ? java.util.Optional.empty() : java.util.Optional.of(
+                new com.jvn.villagerretaliation.quest.provider.QuestProviderSnapshot(type, this.startedVillagerId,
+                        this.issuerName, this.issuerDimension, this.issuerPos, this.issuerVillageKey, false));
     }
 
     public UUID startedVillagerId() {
@@ -426,6 +442,7 @@ public class QuestProgressState {
         this.campaignCatchUpOperations.clear();
         clearStageActions();
         this.issuerVillageKey = "";
+        this.issuerProviderType = "";
         this.triggerTimes.clear();
         this.completedObjectives.clear();
         this.objectiveCounters.clear();

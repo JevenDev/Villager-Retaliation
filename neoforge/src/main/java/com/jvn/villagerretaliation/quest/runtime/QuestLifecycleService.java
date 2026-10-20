@@ -55,30 +55,32 @@ public final class QuestLifecycleService {
             UUID playerId,
             UUID sharedRunId,
             boolean forceRestart) {
-        if (progress == null || providerBinding == null) {
+        if (providerBinding == null) return event(LifecycleEventType.NONE, questId, progress, gameTime, "missing_start_context");
+        var result = start(questId, progress, providerBinding.snapshot(), target == null ? null : target.snapshot(),
+                gameTime, playerId, sharedRunId, forceRestart);
+        if (result.type() == LifecycleEventType.STARTED) {
+            progress.setIssuer(providerBinding.providerId(), providerBinding.displayName(),
+                    providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
+                    providerBinding.level(), providerBinding.dimension(), providerBinding.pos(), providerBinding.villageKey());
+        }
+        return result;
+    }
+
+    public static LifecycleEvent start(ResourceLocation questId, QuestProgressState progress,
+            com.jvn.villagerretaliation.quest.provider.QuestProviderSnapshot provider, QuestTarget target,
+            long gameTime, UUID playerId, UUID sharedRunId, boolean forceRestart) {
+        if (progress == null || provider == null) {
             return event(LifecycleEventType.NONE, questId, progress, gameTime, "missing_start_context");
         }
-        QuestStateMachine.TransitionResult result = QuestStateMachine.start(
-                progress,
-                providerBinding.providerId(),
-                target == null ? providerBinding.dimension() : target.dimension(),
-                target == null ? null : target.pos(),
-                gameTime,
-                forceRestart);
-        if (!result.dirty()) {
-            return blockedEvent(questId, progress, gameTime, result);
-        }
+        var result = QuestStateMachine.start(progress, provider.id(),
+                target == null ? provider.dimension() : target.dimension(), target == null ? null : target.position(),
+                gameTime, forceRestart);
+        if (!result.dirty()) return blockedEvent(questId, progress, gameTime, result);
         progress.beginRun(playerId, questId, sharedRunId);
-        progress.setIssuer(
-                providerBinding.providerId(),
-                providerBinding.displayName(),
-                providerBinding.professionId() == null ? "" : providerBinding.professionId().toString(),
-                providerBinding.level(),
-                providerBinding.dimension(),
-                providerBinding.pos(),
-                providerBinding.villageKey());
-        if (target != null && !target.objectiveId().isBlank()) {
-            progress.setTarget(providerBinding.providerId(), target.dimension(), target.pos(), target.objectiveId());
+        progress.providerType(provider.type());
+        progress.setIssuer(provider.id(), provider.name(), "", 0, provider.dimension(), provider.position(), provider.groupKey());
+        if (target != null && !target.objective().isBlank()) {
+            progress.setTarget(provider.id(), target.dimension(), target.position(), target.objective());
         }
         return event(LifecycleEventType.STARTED, questId, progress, gameTime, "");
     }

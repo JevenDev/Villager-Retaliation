@@ -245,8 +245,8 @@ public final class QuestObjectiveRegistry {
     public static Optional<QuestObjectiveResult> evaluate(
             QuestObjectiveEvaluationContext context,
             QuestDefinition.Objective objective) {
-        if (objective != null && objective.timer() != null && (context == null || context.progress() == null
-                || !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.progress(), context.level().getGameTime())))
+        if (objective != null && objective.timer() != null && (context == null || context.state() == null
+                || !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.state(), context.level().getGameTime())))
             return Optional.of(QuestObjectiveResult.incomplete(0.0F, "Objective timer is not ready."));
         return implementation(objective).map(type -> type.evaluate(context, objective));
     }
@@ -297,7 +297,7 @@ public final class QuestObjectiveRegistry {
             QuestObjectiveEvent event) {
         if (event == null || !eventKinds(objective).contains(event.kind())
                 || objective.timer() != null && objective.timer().mode() == com.jvn.villagerretaliation.quest.QuestTimer.Mode.DEADLINE
-                && !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.progress(), context.level().getGameTime())) {
+                && !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.state(), context.level().getGameTime())) {
             return false;
         }
         return implementation(objective)
@@ -392,9 +392,9 @@ public final class QuestObjectiveRegistry {
         public QuestObjectiveResult evaluate(
                 QuestObjectiveEvaluationContext context,
                 QuestDefinition.Objective objective) {
-            int count = context == null || context.progress() == null
+            int count = context == null || context.state() == null
                     ? 0
-                    : context.progress().objectiveCounter(objective.id());
+                    : context.state().objectiveCounter(objective.id());
             float progress = Mth.clamp((float) count / (float) objective.count(), 0.0F, 1.0F);
             return count >= objective.count()
                     ? QuestObjectiveResult.complete("event objective complete")
@@ -669,9 +669,9 @@ public final class QuestObjectiveRegistry {
             return true;
         }
         return villager != null
-                && context.progress() != null
-                && (context.progress().startedVillagerId() == null
-                        || villager.getUUID().equals(context.progress().startedVillagerId()));
+                && context.state() != null
+                && (context.state().startedVillagerId() == null
+                        || villager.getUUID().equals(context.state().startedVillagerId()));
     }
 
     private static final class ReputationObjectiveType implements QuestObjectiveType<Void> {
@@ -712,9 +712,9 @@ public final class QuestObjectiveRegistry {
                 QuestObjectiveEvent event) {
             if (event.villager() != null) {
                 if (context == null
-                        || context.progress() == null
-                        || context.progress().startedVillagerId() == null
-                        || !event.villager().getUUID().equals(context.progress().startedVillagerId())) {
+                        || context.state() == null
+                        || context.state().startedVillagerId() == null
+                        || !event.villager().getUUID().equals(context.state().startedVillagerId())) {
                     return false;
                 }
             }
@@ -891,17 +891,17 @@ public final class QuestObjectiveRegistry {
                     context.level(),
                     context.player().blockPosition(),
                     objective,
-                    context.progress());
+                    context.state());
             if (!complete
                     && context.definition() != null
                     && context.definition().target().hasStructureTarget()
                     && context.definition().target().structure().equals(objective.structure())) {
-                complete = context.progress() != null && context.progress().visitedTarget()
+                complete = context.state() != null && context.state().visitedTarget()
                         || VillagerQuestTargets.isAtQuestTarget(
                                 context.level(),
                                 context.player().blockPosition(),
                                 context.definition(),
-                                context.progress());
+                                context.state());
             }
             return complete
                     ? QuestObjectiveResult.complete("structure target reached")

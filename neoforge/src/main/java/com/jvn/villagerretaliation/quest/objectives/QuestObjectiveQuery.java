@@ -15,7 +15,7 @@ public final class QuestObjectiveQuery {
 
     public static ResourceLocation resolvedItem(
             QuestDefinition.Objective objective,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         if (objective == null) {
             return null;
         }
@@ -35,7 +35,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> activeObjectives(
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         if (definition == null || definition.objectives().isEmpty()) {
             return List.of();
         }
@@ -75,7 +75,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> requiredObjectives(
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         return activeObjectives(definition, progress).stream()
                 .filter(objective -> !objective.optional())
                 .toList();
@@ -89,7 +89,7 @@ public final class QuestObjectiveQuery {
 
     public static List<QuestDefinition.Objective> requiredItemHandIns(
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         return requiredObjectives(definition, progress).stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
                 .toList();
@@ -108,7 +108,7 @@ public final class QuestObjectiveQuery {
 
     public static Optional<QuestDefinition.Objective> firstIncompleteRequired(
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress,
             Predicate<QuestDefinition.Objective> complete) {
         if (complete == null) {
             return Optional.empty();

@@ -57,6 +57,19 @@ public final class QuestAvailabilityService {
                 () -> scopedCompletionCounter.countScopedCompletions(context, definition));
     }
 
+    public static boolean canStart(QuestExecutionContext context,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress, boolean bypassOfferRequirements,
+            java.util.function.Predicate<net.minecraft.resources.ResourceLocation> prerequisiteCompleted,
+            java.util.function.IntSupplier scopedCompletions) {
+        if (context == null || context.quest() == null || context.player() == null || context.level() == null
+                || context.providerType() == null || context.binding() == null) return false;
+        var definition = context.quest();
+        if (!bypassOfferRequirements && !context.providerType().matchesOffer(context, definition)) return false;
+        if (!definition.prerequisites().stream().allMatch(prerequisiteCompleted)) return false;
+        return QuestStartRules.canStart(definition, progress, context.binding().providerId(),
+                context.level().getGameTime(), scopedCompletions);
+    }
+
     public static boolean withinStartLimit(
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {

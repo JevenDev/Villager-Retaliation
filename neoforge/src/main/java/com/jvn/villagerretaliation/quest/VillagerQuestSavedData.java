@@ -652,6 +652,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             if (tag.hasUUID(TAG_QUEST_RUN_ID)) {
                 progress.questRunId = tag.getUUID(TAG_QUEST_RUN_ID);
             }
+            progress.issuerProviderType = tag.getString("IssuerProviderType");
             progress.issuerName = tag.getString(TAG_ISSUER_NAME);
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
             progress.issuerLevel = tag.getInt(TAG_ISSUER_LEVEL);
@@ -775,6 +776,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
         private CompoundTag save() {
             CompoundTag tag = new CompoundTag();
             tag.putString(TAG_STATE, this.state.name());
+            if (!this.issuerProviderType.isBlank()) tag.putString("IssuerProviderType", this.issuerProviderType);
             if (this.startedVillagerId != null) {
                 tag.putUUID(TAG_STARTED_VILLAGER, this.startedVillagerId);
             }

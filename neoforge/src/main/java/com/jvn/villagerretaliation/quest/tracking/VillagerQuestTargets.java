@@ -119,7 +119,7 @@ public final class VillagerQuestTargets {
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         if (!definition.target().hasStructureTarget()) {
             return false;
         }
@@ -136,7 +136,7 @@ public final class VillagerQuestTargets {
             ServerLevel level,
             BlockPos playerPos,
             QuestDefinition.Objective objective,
-            VillagerQuestSavedData.QuestProgress progress) {
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         if (objective.structure() == null
                 || progress == null
                 || !objective.id().equals(progress.targetObjectiveId())) {
@@ -214,7 +214,7 @@ public final class VillagerQuestTargets {
     private static boolean isAtStructureTarget(
             ServerLevel level,
             BlockPos playerPos,
-            VillagerQuestSavedData.QuestProgress progress,
+            com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress,
             ResourceLocation structureId,
             int discoveryRadius,
             List<String> expectedPieces) {
@@ -269,5 +269,8 @@ public final class VillagerQuestTargets {
     }
 
     public record LocatedTarget(ResourceKey<Level> dimension, BlockPos pos, String objectiveId) {
+        public com.jvn.villagerretaliation.quest.runtime.QuestTarget snapshot() {
+            return new com.jvn.villagerretaliation.quest.runtime.QuestTarget(dimension, pos, objectiveId);
+        }
     }
 }

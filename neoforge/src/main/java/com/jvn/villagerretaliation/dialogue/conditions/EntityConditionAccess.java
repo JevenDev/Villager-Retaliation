@@ -7,7 +7,6 @@ import com.jvn.villagerretaliation.dialogue.DialogueContextConditions;
 import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
 import com.jvn.villagerretaliation.quest.QuestTriggerContext;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.EnumSet;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +20,7 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
                 context.groupKey(), null, null);
     }
 
-    public static ConditionContext forQuest(QuestExecutionContext context, VillagerQuestSavedData.QuestProgress progress) {
+    public static ConditionContext forQuest(QuestExecutionContext context, com.jvn.villagerretaliation.quest.runtime.QuestProgressState progress) {
         var binding = context.binding();
         var snapshot = binding == null ? null : new ConditionContext.ProviderSnapshot(
                 binding.level(), binding.dimension(), binding.pos(), binding.villageKey());
