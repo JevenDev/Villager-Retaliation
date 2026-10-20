@@ -204,27 +204,16 @@ public final class VillagerQuestTrackerOverlay {
     }
 
     public static List<QuestTrackerSyncPayload.Entry> trackedEntries() {
-        if (trackedQuestIds.isEmpty()) {
-            return List.of();
-        }
-        List<QuestTrackerSyncPayload.Entry> tracked = new ArrayList<>();
-        for (String questId : trackedQuestIds) {
-            for (QuestTrackerSyncPayload.Entry entry : entries) {
-                if (entry.trackable() && questId.equals(entry.questId())) {
-                    tracked.add(com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.entry(entry));
-                    break;
-                }
-            }
-        }
-        return List.copyOf(tracked);
+        return QuestTrackingSelection.entries(entries, trackedQuestIds).stream()
+                .map(com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation::entry).toList();
     }
 
     public static boolean isTracked(QuestTrackerSyncPayload.Entry entry) {
-        return entry != null && entry.trackable() && trackedQuestIds.contains(entry.questId());
+        return QuestTrackingSelection.index(entry, trackedQuestIds) >= 0;
     }
 
     public static int trackedIndex(QuestTrackerSyncPayload.Entry entry) {
-        return entry == null || !entry.trackable() ? -1 : trackedQuestIds.indexOf(entry.questId());
+        return QuestTrackingSelection.index(entry, trackedQuestIds);
     }
 
     public static void toggleTracking(QuestTrackerSyncPayload.Entry entry) {
