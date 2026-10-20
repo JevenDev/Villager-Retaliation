@@ -189,6 +189,28 @@ try {
     await writeJson(validQuest, candidate);
     run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure });
   }
+  const parallel = structuredClone(conditionFixture);
+  parallel.entry_stage = "fork";
+  parallel.stages = [
+    { id: "fork", objectives: [], parallel: ["left", "right"], next: "join" },
+    { id: "left", objectives: [{ id: "wait", type: "condition", timer: { mode: "duration", duration_ticks: 40 } }], next: "join" },
+    { id: "right", objectives: [], timer: { duration_ticks: 80, timeout_stage: "join", warning_ticks: 20 }, next: "join" },
+    { id: "join", objectives: [] }
+  ];
+  await writeJson(validQuest, parallel);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  for (const mutate of [
+    value => { value.stages[0].parallel = ["left", "left"]; },
+    value => { value.stages[0].parallel = ["left", "missing"]; },
+    value => { delete value.stages[1].next; },
+    value => { value.stages[2].timer.warning_ticks = 80; },
+    value => { value.stages[1].objectives[0].timer.timeout_stage = "join"; }
+  ]) {
+    const invalid = structuredClone(parallel);
+    mutate(invalid);
+    await writeJson(validQuest, invalid);
+    run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+  }
   const unreachable = structuredClone(conditionFixture);
   unreachable.stages.push({ id: "unreachable", objectives: [] });
   await writeJson(validQuest, unreachable);

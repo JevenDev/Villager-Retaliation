@@ -58,6 +58,39 @@ public class QuestProgressState {
     protected String targetObjectiveId = "";
     protected String currentStage = "";
     protected final Map<String, QuestTimerState> timers = new LinkedHashMap<>();
+    protected final Map<String, QuestParallelPath> parallelPaths = new LinkedHashMap<>();
+
+    public Map<String, QuestParallelPath> parallelPaths() { return Map.copyOf(parallelPaths); }
+
+    public boolean aliasCurrentStage(String stage) {
+        if (stage == null || stage.isBlank() || stage.equals(currentStage)) return false;
+        currentStage = stage;
+        return true;
+    }
+
+    public Set<String> activeStages() {
+        var stages = new LinkedHashSet<String>();
+        stages.add(currentStage());
+        parallelPaths.values().stream().filter(path -> path.phase() != QuestParallelPath.Phase.ARRIVED)
+                .forEach(path -> stages.add(path.stage()));
+        return java.util.Collections.unmodifiableSet(stages);
+    }
+
+    public boolean stageActive(String id) { return activeStages().contains(id); }
+
+    public void remapParallelStages(Map<String, String> aliases) {
+        Map<String, QuestParallelPath> remapped = new LinkedHashMap<>();
+        parallelPaths.forEach((branch, path) -> remapped.put(aliases.getOrDefault(branch, branch),
+                new QuestParallelPath(aliases.getOrDefault(path.stage(), path.stage()),
+                        aliases.getOrDefault(path.target(), path.target()), path.phase())));
+        parallelPaths.clear();
+        parallelPaths.putAll(remapped);
+        Map<String, QuestTimerState> renamedTimers = new LinkedHashMap<>();
+        timers.forEach((key, timer) -> renamedTimers.put(key.startsWith("stage/")
+                ? QuestTimers.stageKey(aliases.getOrDefault(key.substring("stage/".length()), key.substring("stage/".length()))) : key, timer));
+        timers.clear();
+        timers.putAll(renamedTimers);
+    }
 
     public QuestTimerState timer(String key) { return timers.get(key); }
     public Map<String, Long> remainingTimers(QuestDefinition definition) {
@@ -383,6 +416,7 @@ public class QuestProgressState {
         this.questRunId = null;
         this.consumedReason = "";
         this.timers.clear();
+        this.parallelPaths.clear();
         this.currentStage = "started";
         this.campaignEntryStage = "";
         this.campaignWaitingQuest = "";
@@ -611,6 +645,7 @@ public class QuestProgressState {
                 unfinished.put(key.startsWith("stage/") ? key : "stage/" + this.currentStage + "/" + key, checkpoint);
             }
         });
+        this.parallelPaths.clear();
         this.currentStage = normalized;
         if (!this.campaignId.isBlank()) this.campaignStageRevision++;
         clearStageActions();
@@ -751,6 +786,8 @@ public class QuestProgressState {
         if (counter != null) {
             this.objectiveCounters.merge(nextId, counter, Math::max);
         }
+        var timer = this.timers.remove(QuestTimers.objectiveKey(previousId));
+        if (timer != null) this.timers.putIfAbsent(QuestTimers.objectiveKey(nextId), timer);
         ResourceLocation resolvedItem = this.resolvedObjectiveItems.remove(previousId);
         if (resolvedItem != null) {
             this.resolvedObjectiveItems.putIfAbsent(nextId, resolvedItem);
@@ -791,6 +828,7 @@ public class QuestProgressState {
     }
 
     public void restartForDefinitionRevision(String entryStage) {
+        this.parallelPaths.clear();
         this.timers.clear();
         this.currentStage = entryStage == null ? "" : entryStage.trim();
         clearStageActions();

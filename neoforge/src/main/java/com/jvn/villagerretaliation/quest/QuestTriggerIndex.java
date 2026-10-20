@@ -40,6 +40,11 @@ public record QuestTriggerIndex(
         return this.triggersByEvent.keySet();
     }
 
+    public List<CompiledQuestTrigger> candidates(QuestDefinition.TriggerEvent event, Set<String> stages) {
+        return stages.stream().flatMap(stage -> candidates(event, stage).stream()).distinct()
+                .sorted(Comparator.comparingInt(CompiledQuestTrigger::index)).toList();
+    }
+
     public List<CompiledQuestTrigger> candidates(QuestDefinition.TriggerEvent event, String currentStage) {
         if (event == null) {
             return List.of();

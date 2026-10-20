@@ -203,7 +203,10 @@ public final class QuestLifecycleService {
         if (!result.dirty() && !allowUnchanged) {
             return StageTransition.unchanged(progress.currentStage());
         }
-        if (result.dirty()) QuestTimers.enter(definition, progress, nextStage, gameTime);
+        if (result.dirty() || allowUnchanged && progress.timers.isEmpty() && progress.parallelPaths.isEmpty()) {
+            QuestTimers.enter(definition, progress, nextStage, gameTime);
+            QuestParallelService.enter(definition, progress, nextStage, gameTime);
+        }
         return new StageTransition(
                 !previousStage.equals(progress.currentStage()),
                 previousStage,

@@ -542,7 +542,7 @@ public final class VillagerQuestService {
         return definition != null
                 && progress != null
                 && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
-                && binding.stageId().equals(progress.currentStage());
+                && progress.stageActive(binding.stageId());
     }
 
     private static boolean isInitialEmbeddedDialogueStage(
@@ -948,7 +948,7 @@ public final class VillagerQuestService {
                     false);
         }
         if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
-                || !progress.currentStage().equals(transition.stageId())) {
+                || !progress.stageActive(transition.stageId())) {
             return transitionActionResult(
                     "stale",
                     "That choice is no longer available.",
@@ -960,12 +960,14 @@ public final class VillagerQuestService {
                     false);
         }
 
-        String priorStage = progress.currentStage();
+        String priorStage = transition.stageId();
         String selectedNextStage = transition.target() == CompiledQuestTransition.Target.STAGE
                 ? transition.targetStage()
                 : transition.target().name().toLowerCase(Locale.ROOT);
         boolean changed = switch (transition.target()) {
-            case STAGE -> changeQuestStage(context, definition, progress, transition.targetStage(), true, true);
+            case STAGE -> progress.currentStage().equals(transition.stageId())
+                    ? changeQuestStage(context, definition, progress, transition.targetStage(), true, true)
+                    : STAGES.changeParallelStage(context, definition, progress, transition.stageId(), transition.targetStage());
             case COMPLETE -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.TURN_IN);
             case ABANDON -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.ABANDON);
             case FAIL -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.FAIL);
@@ -1164,7 +1166,7 @@ public final class VillagerQuestService {
                 continue;
             }
             boolean questProgressChanged = false;
-            for (var objective : QuestObjectiveQuery.stageObjectives(definition, progress.currentStage())) {
+            for (var objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
                 if (objective.type() != QuestDefinition.ObjectiveType.FOLLOWER_ARRIVAL) continue;
                 var target = com.jvn.villagerretaliation.quest.follower.QuestFollowerArrivalObjective.destination(level, objective).orElse(null);
                 if (target != null && (!target.position().equals(progress.targetPos())
@@ -1627,7 +1629,7 @@ public final class VillagerQuestService {
         var context = contextForStartedVillager(player.serverLevel(), player, progress).orElse(null);
         var evaluation = objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress);
         var rows = new java.util.ArrayList<com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective>();
-        for (var objective : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.stageObjectives(definition, progress.currentStage())) {
+        for (var objective : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.activeObjectives(definition, progress)) {
             var result = QuestObjectiveRegistry.evaluate(evaluation, objective).orElse(com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult.incomplete(0, "No evaluator"));
             boolean complete = objectiveComplete(player, context, player.serverLevel(), definition, progress, objective);
             rows.add(new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective(objective.id(),
@@ -1750,7 +1752,7 @@ public final class VillagerQuestService {
                 || definition.target().hasStructureTarget() && !progress.campaignAlternateEntry()) {
             return;
         }
-        QuestDefinition.Objective targetObjective = QuestObjectiveQuery.stageObjectives(definition, progress.currentStage()).stream()
+        QuestDefinition.Objective targetObjective = QuestObjectiveQuery.activeObjectives(definition, progress).stream()
                 .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
                 .orElse(null);
@@ -2856,11 +2858,18 @@ public final class VillagerQuestService {
                     || !timer.state().elapsed(timer.definition())) continue;
             if (!timer.definition().timeoutStage().isBlank()) {
                 if (context == null) {
-                    progress.requestStageTransition(timer.definition().timeoutStage());
+                    if (timer.key().equals(com.jvn.villagerretaliation.quest.runtime.QuestTimers.stageKey(progress.currentStage())))
+                        progress.requestStageTransition(timer.definition().timeoutStage());
                     changed = true;
                     continue;
                 }
-                if (!STAGES.changeQuestStage(context, definition, progress, timer.definition().timeoutStage(), true, true)) continue;
+                String source = timer.key().startsWith("stage/") ? timer.key().substring("stage/".length())
+                        : progress.activeStages().stream().filter(id -> definition.stages().get(id).objectives().contains(
+                                timer.key().substring("objective/".length()))).findFirst().orElse(progress.currentStage());
+                boolean transitioned = source.equals(progress.currentStage())
+                        ? STAGES.changeQuestStage(context, definition, progress, timer.definition().timeoutStage(), true, true)
+                        : STAGES.changeParallelStage(context, definition, progress, source, timer.definition().timeoutStage());
+                if (!transitioned) continue;
                 timer.state().handle();
                 return true;
             }
@@ -3126,6 +3135,9 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         if (progress != null && progress.completionPending()) return true;
+        if (progress != null && definition.stages().containsKey(progress.currentStage())
+                && !com.jvn.villagerretaliation.quest.runtime.QuestParallelService.complete(
+                        definition.stages().get(progress.currentStage()), progress)) return false;
         return progress != null
                 && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && activeConditionsMet(context, definition)
@@ -3337,6 +3349,9 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (definition.stages().containsKey(progress.currentStage())
+                && !com.jvn.villagerretaliation.quest.runtime.QuestParallelService.complete(
+                        definition.stages().get(progress.currentStage()), progress)) return false;
         List<QuestDefinition.Objective> objectives = requiredObjectivesForReadiness(definition, progress);
         List<QuestDefinition.Objective> requiredItemHandIns = objectives.stream()
                 .filter(QuestObjectiveRegistry::requiresItemHandIn)
@@ -4822,7 +4837,7 @@ public final class VillagerQuestService {
         }
         long gameTime = context.level().getGameTime();
         for (QuestDefinition.TriggerEvent event : compiled.triggerIndex().events()) {
-            for (CompiledQuestTrigger compiledTrigger : compiled.triggerIndex().candidates(event, progress.currentStage())) {
+            for (CompiledQuestTrigger compiledTrigger : compiled.triggerIndex().candidates(event, progress.activeStages())) {
                 QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.TRIGGER, definition.id(),
                         debugTriggerFilterLine(context, gameTime, progress, compiledTrigger.definition(), event));
             }
@@ -4999,6 +5014,13 @@ public final class VillagerQuestService {
             return List.of();
         }
         List<QuestTrackerSyncPayload.ObjectiveStep> steps = new ArrayList<>();
+        if (!progress.parallelPaths().isEmpty()) {
+            long finished = progress.parallelPaths().values().stream().filter(path ->
+                    path.phase() == com.jvn.villagerretaliation.quest.runtime.QuestParallelPath.Phase.ARRIVED).count();
+            steps.add(new QuestTrackerSyncPayload.ObjectiveStep(
+                    QuestPresentationService.resolveGlobalText(player, "quest.tracker.parallel", "Parallel paths: {finished}/{total}",
+                            Map.of("finished", Long.toString(finished), "total", Integer.toString(progress.parallelPaths().size()))), false));
+        }
         Map<String, String> baseReplacements = trackerReplacements(player, context, definition, progress, presentationProgress, null, true);
         QuestPresentationService.addActiveTrackerStep(
                 steps,

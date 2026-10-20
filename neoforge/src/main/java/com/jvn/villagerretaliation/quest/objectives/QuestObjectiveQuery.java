@@ -42,7 +42,7 @@ public final class QuestObjectiveQuery {
         if (progress == null || definition.stages().isEmpty()) {
             return definition.objectives();
         }
-        return stageObjectives(definition, progress.currentStage());
+        return progress.activeStages().stream().flatMap(stage -> stageObjectives(definition, stage).stream()).distinct().toList();
     }
 
     public static List<QuestDefinition.Objective> stageObjectives(

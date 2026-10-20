@@ -319,6 +319,11 @@ public final class ContentSchemaDefinitions {
         properties.add("description_key", string());
         properties.add("objectives", arrayOf(ref("#/$defs/objective")));
         properties.add("followers", arrayOf(ref("#/$defs/follower")));
+        var parallel = arrayOf(idString());
+        parallel.addProperty("minItems", 2);
+        parallel.addProperty("maxItems", 16);
+        parallel.addProperty("uniqueItems", true);
+        properties.add("parallel", parallel);
         properties.add("timer", com.jvn.villagerretaliation.quest.QuestTimer.schema());
         properties.add("complete_when", oneOrArray(ref("#/$defs/predicate")));
         properties.add("completion", ref("#/$defs/completion"));

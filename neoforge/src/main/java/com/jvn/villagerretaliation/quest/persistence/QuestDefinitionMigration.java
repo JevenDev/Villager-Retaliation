@@ -31,9 +31,10 @@ public final class QuestDefinitionMigration {
         for (Map.Entry<String, String> alias : definition.revision().objectiveAliases().entrySet()) {
             progress.remapObjective(alias.getKey(), alias.getValue());
         }
+        progress.remapParallelStages(definition.revision().stageAliases());
         String aliasedStage = definition.revision().stageAliases().get(progress.currentStage());
         if (aliasedStage != null && definition.stages().containsKey(aliasedStage)) {
-            progress.setCurrentStage(aliasedStage);
+            progress.aliasCurrentStage(aliasedStage);
         }
 
         QuestDefinition.RevisionPolicy policy = definition.revision().activePolicy();
@@ -52,6 +53,7 @@ public final class QuestDefinitionMigration {
                     progress.resetObjectiveProgress(Set.copyOf(stage.objectives()));
                     progress.resetBonusesForStage(stage.id());
                     com.jvn.villagerretaliation.quest.runtime.QuestTimers.enter(definition, progress, stage.id(), gameTime);
+                    com.jvn.villagerretaliation.quest.runtime.QuestParallelService.enter(definition, progress, stage.id(), gameTime);
                 }
             }
             case RESTART -> progress.restartForDefinitionRevision(QuestLifecycleService.initialStage(definition));

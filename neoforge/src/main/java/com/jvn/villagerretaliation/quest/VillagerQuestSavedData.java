@@ -662,6 +662,9 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
             progress.targetObjectiveId = tag.getString(TAG_TARGET_OBJECTIVE);
             progress.currentStage = tag.getString(TAG_CURRENT_STAGE);
+            var paths = tag.getCompound("ParallelPaths");
+            for (String key : paths.getAllKeys())
+                progress.parallelPaths.put(key, com.jvn.villagerretaliation.quest.runtime.QuestParallelPath.load(paths.getCompound(key)));
             var timers = tag.getCompound("Timers");
             for (String key : timers.getAllKeys())
                 progress.timers.put(key, com.jvn.villagerretaliation.quest.runtime.QuestTimerState.load(timers.getCompound(key)));
@@ -821,6 +824,11 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             }
             if (!this.currentStage.isBlank()) {
                 tag.putString(TAG_CURRENT_STAGE, this.currentStage);
+            if (!this.parallelPaths.isEmpty()) {
+                var paths = new CompoundTag();
+                this.parallelPaths.forEach((key, value) -> paths.put(key, value.save()));
+                tag.put("ParallelPaths", paths);
+            }
             if (!this.timers.isEmpty()) {
                 var timers = new CompoundTag();
                 this.timers.forEach((key, value) -> timers.put(key, value.save()));

@@ -988,8 +988,17 @@ public record QuestDefinition(
             List<StageBranch> branches,
             List<BonusOutcome> bonuses,
             Map<String, String> metadata,
-            QuestTimer timer
+            QuestTimer timer,
+            List<String> parallel
     ) {
+        public Stage(String id, List<String> objectives, List<StagePredicate> completeWhen,
+                CompletionMode completionMode, int completionCount, String next,
+                List<VillagerActionDefinition> entryActions, List<VillagerActionDefinition> exitActions,
+                List<StageBranch> branches, List<BonusOutcome> bonuses, Map<String, String> metadata, QuestTimer timer) {
+            this(id, objectives, completeWhen, completionMode, completionCount, next, entryActions, exitActions,
+                    branches, bonuses, metadata, timer, List.of());
+        }
+
         public Stage(String id, List<String> objectives, List<StagePredicate> completeWhen,
                 CompletionMode completionMode, int completionCount, String next,
                 List<VillagerActionDefinition> entryActions, List<VillagerActionDefinition> exitActions,
@@ -998,6 +1007,7 @@ public record QuestDefinition(
         }
 
         public Stage {
+            parallel = parallel == null ? List.of() : List.copyOf(parallel);
             id = id == null ? "" : id.trim();
             objectives = objectives == null ? List.of() : List.copyOf(objectives);
             completeWhen = completeWhen == null ? List.of() : List.copyOf(completeWhen);

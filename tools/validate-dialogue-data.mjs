@@ -2315,6 +2315,9 @@ function checkQuestV2Stages(file, stages, pointer, location, questId) {
     }
     checkQuestV2Composition(file, stage, stagePointer, stageLocation);
     checkQuestV2Bonuses(file, stage.bonuses, `${stagePointer}/bonuses`, `${stageLocation}.bonuses`, questId, objectiveIds);
+    checkQuestTimer(file, stage.timer, `${stagePointer}/timer`, `${stageLocation}.timer`, model, stageId);
+    for (const [index, objective] of (Array.isArray(stage.objectives) ? stage.objectives : []).entries())
+      checkQuestTimer(file, objective?.timer, `${stagePointer}/objectives/${index}/timer`, `${stageLocation}.objectives[${index}].timer`, model, stageId);
     const next = readQuestV2Transition(file, stage.next, `${stagePointer}/next`, `${stageLocation}.next`);
     if (!next.empty) {
       model.transitions.push({ pointer: `${stagePointer}/next`, location: `${stageLocation}.next`, transition: next, stageId });
@@ -2977,7 +2980,70 @@ function checkQuestV2Actions(file, actions, pointer, location, questId, options 
   }
 }
 
+function checkQuestTimer(file, timer, pointer, location, model, stageId) {
+  if (timer === undefined) return;
+  if (!timer || typeof timer !== "object" || Array.isArray(timer)) {
+    questV2Error(file, pointer, location, "timer must be an object.", "Declare duration_ticks and optional timer settings.");
+    return;
+  }
+  if (!Number.isInteger(timer.duration_ticks) || timer.duration_ticks < 1 || timer.duration_ticks > 2147483647)
+    questV2Error(file, pointer, location, "timer duration_ticks must be a positive bounded integer.", "Use 1 to 2147483647 ticks.");
+  if (timer.warning_ticks !== undefined && (!Number.isInteger(timer.warning_ticks) || timer.warning_ticks < 0 || timer.warning_ticks >= timer.duration_ticks))
+    questV2Error(file, pointer, location, "timer warning_ticks must be smaller than duration_ticks.", "Use a nonnegative warning interval.");
+  if (timer.mode === "duration" && timer.timeout_stage !== undefined)
+    questV2Error(file, pointer, location, "duration timers cannot have timeout_stage.", "Use a deadline timer for timeouts.");
+  if (typeof timer.timeout_stage === "string")
+    model.transitions.push({ pointer: `${pointer}/timeout_stage`, location: `${location}.timeout_stage`, stageId,
+      transition: { stage: timer.timeout_stage } });
+}
+
+function validateQuestParallel(file, model) {
+  const ownership = new Map();
+  for (const parent of model.stages) {
+    const branches = parent.raw.parallel;
+    if (branches === undefined) continue;
+    const pointer = `${parent.pointer}/parallel`;
+    if (!Array.isArray(branches) || branches.length < 2 || branches.length > 16 || new Set(branches).size !== branches.length) {
+      questV2Error(file, pointer, parent.location, "parallel requires 2 to 16 unique branch entries.", "Declare distinct stage ids.");
+      continue;
+    }
+    const join = typeof parent.raw.next === "string" ? parent.raw.next : parent.raw.next?.stage;
+    if (!model.stageIds.has(join)) {
+      questV2Error(file, pointer, parent.location, "parallel requires a named next stage as its join.", "Declare the join stage.");
+      continue;
+    }
+    for (const branch of branches) {
+      if (!model.stageIds.has(branch) || branch === parent.id || branch === join) {
+        questV2Error(file, pointer, parent.location, "parallel branch entry must be a stage separate from its parent and join.", "Declare a valid branch entry.");
+        continue;
+      }
+      model.transitions.push({ pointer, location: parent.location, stageId: parent.id, transition: { stage: branch } });
+      const pending = [branch], visited = new Set();
+      let joined = false;
+      while (pending.length) {
+        const id = pending.pop();
+        if (id === join) { joined = true; continue; }
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const stage = model.stages.find(candidate => candidate.id === id);
+        if (!stage) continue;
+        const owner = `${parent.id}/${branch}`;
+        if (id === parent.id || ownership.has(id) && ownership.get(id) !== owner || stage.raw.parallel !== undefined) {
+          questV2Error(file, pointer, parent.location, "parallel paths cannot overlap, reenter their parent, or contain nested forks.", "Keep paths separate until the join.");
+          break;
+        }
+        ownership.set(id, owner);
+        const targets = model.transitions.filter(edge => edge.stageId === id && edge.transition.stage).map(edge => edge.transition.stage);
+        if (!targets.length) questV2Error(file, pointer, parent.location, "parallel path has no transition to its join.", "Connect every path stage to its next stage.");
+        pending.push(...targets);
+      }
+      if (!joined) questV2Error(file, pointer, parent.location, "parallel path cannot reach its join.", "Connect the path to its join stage.");
+    }
+  }
+}
+
 function validateQuestV2Graph(file, data, model) {
+  validateQuestParallel(file, model);
   const entryStage = stringValue(data.entry_stage);
   if (!entryStage) {
     questV2Error(file, "/entry_stage", "entry_stage", "entry_stage is required.", "Set entry_stage to the first stage id.");

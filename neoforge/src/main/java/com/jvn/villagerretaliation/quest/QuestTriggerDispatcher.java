@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class QuestTriggerDispatcher {
     private QuestTriggerDispatcher() {
@@ -93,7 +94,8 @@ public final class QuestTriggerDispatcher {
         String dispatchStage = triggerContext.stage().isBlank()
                 ? progress.currentStage()
                 : triggerContext.stage();
-        List<CompiledQuestTrigger> candidates = index.candidates(event, dispatchStage).stream()
+        Set<String> dispatchStages = dispatchStage.equals(progress.currentStage()) ? progress.activeStages() : Set.of(dispatchStage);
+        List<CompiledQuestTrigger> candidates = index.candidates(event, dispatchStages).stream()
                 .sorted(Comparator.comparingInt((CompiledQuestTrigger candidate) -> candidate.definition().priority())
                         .reversed().thenComparingInt(CompiledQuestTrigger::index))
                 .toList();
@@ -178,7 +180,8 @@ public final class QuestTriggerDispatcher {
                 return false;
             }
         }
-        if (!trigger.stages().isEmpty() && !trigger.stages().contains(dispatchStage)) {
+        if (!trigger.stages().isEmpty() && !trigger.stages().contains(dispatchStage)
+                && !(dispatchStage.equals(progress.currentStage()) && trigger.stages().stream().anyMatch(progress::stageActive))) {
             return false;
         }
         long lastTriggered = progress.lastTriggerGameTime(trigger.id());

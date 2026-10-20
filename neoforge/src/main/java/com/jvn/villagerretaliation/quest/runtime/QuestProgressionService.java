@@ -41,11 +41,13 @@ public final class QuestProgressionService {
                 || progress.hasPendingLifecycleEvents() || progress.hasPendingTriggerEvents()
                 || progress.stageActions().values().stream().anyMatch(checkpoint -> !checkpoint.outcome().success())
                 || definition.triggers().stream().anyMatch(trigger -> trigger.event() == QuestDefinition.TriggerEvent.STAGE_CHANGED)) return false;
+        boolean parallelChanged = QuestParallelService.advance(definition, progress, gameTime, objectiveComplete, conditionsMet,
+                (key, actions) -> actions.isEmpty());
         var stage = definition.stages().get(progress.currentStage());
         if (stage == null || !stage.exitActions().isEmpty()
-                || stage.bonuses().stream().anyMatch(bonus -> !progress.bonusClaimed(stage.id(), bonus.id()))) return false;
+                || stage.bonuses().stream().anyMatch(bonus -> !progress.bonusClaimed(stage.id(), bonus.id()))) return parallelChanged;
         var readiness = QuestStageReadiness.forCurrentStage(definition, progress, objectiveComplete, conditionsMet);
-        if (!readiness.ready()) return false;
+        if (!readiness.ready()) return parallelChanged;
         for (var predicate : stage.completeWhen()) {
             definition.objectives().stream().filter(objective -> objective.id().equals(predicate.objective()) && objectiveComplete.test(objective))
                     .forEach(objective -> progress.markObjectiveComplete(objective.id()));

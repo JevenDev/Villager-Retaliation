@@ -25,10 +25,11 @@ public final class QuestTimers {
 
     public static List<Entry> active(QuestDefinition definition, QuestProgressState progress) {
         var result = new ArrayList<Entry>();
-        var stage = definition.stages().get(progress.currentStage());
-        if (stage == null) return List.of();
-        if (stage.timer() != null) add(result, progress, stageKey(stage.id()), stage.timer());
-        for (var objective : QuestObjectiveQuery.stageObjectives(definition, stage.id()))
+        for (String id : progress.activeStages()) {
+            var stage = definition.stages().get(id);
+            if (stage != null && stage.timer() != null) add(result, progress, stageKey(stage.id()), stage.timer());
+        }
+        for (var objective : progress.activeStages().stream().flatMap(stage -> QuestObjectiveQuery.stageObjectives(definition, stage).stream()).toList())
             if (objective.timer() != null && !progress.objectiveComplete(objective.id()))
                 add(result, progress, objectiveKey(objective.id()), objective.timer());
         return List.copyOf(result);
@@ -41,13 +42,14 @@ public final class QuestTimers {
 
     public static boolean update(QuestDefinition definition, QuestProgressState progress, long time, boolean active) {
         boolean changed = false;
-        var stage = definition.stages().get(progress.currentStage());
-        if (stage == null) return false;
-        if (stage.timer() != null && !progress.timers.containsKey(stageKey(stage.id()))) {
-            progress.timers.put(stageKey(stage.id()), new QuestTimerState(time));
-            changed = true;
+        for (String id : progress.activeStages()) {
+            var stage = definition.stages().get(id);
+            if (stage != null && stage.timer() != null && !progress.timers.containsKey(stageKey(stage.id()))) {
+                progress.timers.put(stageKey(stage.id()), new QuestTimerState(time));
+                changed = true;
+            }
         }
-        for (var objective : QuestObjectiveQuery.stageObjectives(definition, stage.id()))
+        for (var objective : progress.activeStages().stream().flatMap(stage -> QuestObjectiveQuery.stageObjectives(definition, stage).stream()).toList())
             if (objective.timer() != null && !progress.objectiveComplete(objective.id())
                     && !progress.timers.containsKey(objectiveKey(objective.id()))) {
                 progress.timers.put(objectiveKey(objective.id()), new QuestTimerState(time));

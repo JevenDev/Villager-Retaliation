@@ -822,6 +822,7 @@ public final class QuestV2Parser {
             validator.error("/stages", "at least one stage is required.", "Add an ordered stages array with an entry stage.", Set.of(resource.id().toString()));
             return;
         }
+        validateParallel(validator, resource);
         for (var stage : resource.stages()) {
             List<JsonElement> timers = new ArrayList<>();
             if (stage.data().has("timer")) timers.add(stage.data().get("timer"));
@@ -1054,6 +1055,9 @@ public final class QuestV2Parser {
                 continue;
             }
             enqueueStage(queue, resource, stage.next());
+            if (stage.data().has("parallel") && stage.data().get("parallel").isJsonArray())
+                for (var branch : stage.data().getAsJsonArray("parallel"))
+                    if (branch.isJsonPrimitive() && resource.stagesById().containsKey(branch.getAsString())) queue.add(branch.getAsString());
             if (stage.data().has("timer")) enqueueTimer(queue, resource, stage.data().get("timer"));
             for (var objective : stage.objectives())
                 if (objective.data().has("timer")) enqueueTimer(queue, resource, objective.data().get("timer"));
@@ -1087,6 +1091,77 @@ public final class QuestV2Parser {
                         Set.of(stage.id()));
             }
         }
+    }
+
+    private static void validateParallel(Validator validator, QuestV2Resource resource) {
+        Map<String, String> ownership = new LinkedHashMap<>();
+        for (var parent : resource.stages()) {
+            if (!parent.data().has("parallel")) continue;
+            var parallel = parent.data().get("parallel");
+            String pointer = stagePointer(resource, parent.id()) + "/parallel";
+            if (!parallel.isJsonArray() || parallel.getAsJsonArray().size() < 2 || parallel.getAsJsonArray().size() > 16) {
+                validator.error(pointer, "Parallel stages require 2 to 16 unique branch entries.", "Declare branch stage ids.", Set.of(parent.id()));
+                continue;
+            }
+            if (parent.next().stage().isBlank() || !resource.stagesById().containsKey(parent.next().stage())) {
+                validator.error(pointer, "Parallel stages require a named next stage as their join.", "Declare the join stage.", Set.of(parent.id()));
+                continue;
+            }
+            Set<String> roots = new LinkedHashSet<>();
+            for (var raw : parallel.getAsJsonArray()) {
+                if (!raw.isJsonPrimitive() || !raw.getAsJsonPrimitive().isString()
+                        || !roots.add(raw.getAsString()) || !resource.stagesById().containsKey(raw.getAsString())
+                        || raw.getAsString().equals(parent.id()) || raw.getAsString().equals(parent.next().stage())) {
+                    validator.error(pointer, "Parallel branch entries must be unique existing stages separate from their parent and join.",
+                            "Use distinct branch stage ids.", Set.of(parent.id()));
+                    continue;
+                }
+                String branch = raw.getAsString();
+                ArrayDeque<String> pending = new ArrayDeque<>();
+                Set<String> visited = new LinkedHashSet<>();
+                pending.add(branch);
+                boolean joined = false;
+                while (!pending.isEmpty()) {
+                    String id = pending.removeFirst();
+                    if (id.equals(parent.next().stage())) { joined = true; continue; }
+                    if (!visited.add(id)) continue;
+                    var stage = resource.stagesById().get(id);
+                    if (stage == null) continue;
+                    String owner = parent.id() + "/" + branch;
+                    String previous = ownership.putIfAbsent(id, owner);
+                    if (id.equals(parent.id()) || previous != null && !previous.equals(owner) || stage.data().has("parallel")) {
+                        validator.error(pointer, "Parallel paths cannot overlap, reenter their parent, or contain nested forks.",
+                                "Keep paths separate until the join stage.", Set.of(id));
+                        break;
+                    }
+                    var targets = parallelTargets(stage);
+                    if (targets.isEmpty()) validator.error(pointer, "Parallel path has no transition to its join.",
+                            "Give each branch stage a next or response transition.", Set.of(id));
+                    pending.addAll(targets);
+                }
+                if (!joined) validator.error(pointer, "Parallel path cannot reach its join.",
+                        "Connect the path to " + parent.next().stage() + ".", Set.of(branch));
+            }
+        }
+    }
+
+    private static Set<String> parallelTargets(QuestV2Resource.Stage stage) {
+        Set<String> result = new LinkedHashSet<>();
+        if (!stage.next().stage().isBlank()) result.add(stage.next().stage());
+        stage.responses().forEach(response -> { if (!response.transition().stage().isBlank()) result.add(response.transition().stage()); });
+        stage.events().forEach(event -> { if (!event.transition().stage().isBlank()) result.add(event.transition().stage()); });
+        for (var slot : stage.dialogueSlots().values()) if (slot.inlineScene() != null)
+            slot.inlineScene().responses().forEach(response -> { if (!response.transition().stage().isBlank()) result.add(response.transition().stage()); });
+        for (var scene : stage.scenes().values())
+            scene.responses().forEach(response -> { if (!response.transition().stage().isBlank()) result.add(response.transition().stage()); });
+        List<JsonElement> timers = new ArrayList<>();
+        if (stage.data().has("timer")) timers.add(stage.data().get("timer"));
+        stage.objectives().forEach(objective -> { if (objective.data().has("timer")) timers.add(objective.data().get("timer")); });
+        for (var raw : timers) {
+            if (raw.isJsonObject() && raw.getAsJsonObject().has("timeout_stage")
+                    && raw.getAsJsonObject().get("timeout_stage").isJsonPrimitive()) result.add(raw.getAsJsonObject().get("timeout_stage").getAsString());
+        }
+        return result;
     }
 
     private static void enqueueTimer(ArrayDeque<String> queue, QuestV2Resource resource, JsonElement raw) {

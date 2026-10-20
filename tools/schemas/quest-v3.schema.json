@@ -779,6 +779,17 @@
             "$ref": "#/$defs/follower"
           }
         },
+        "parallel": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          },
+          "minItems": 2,
+          "maxItems": 16,
+          "uniqueItems": true
+        },
         "timer": {
           "type": "object",
           "additionalProperties": false,

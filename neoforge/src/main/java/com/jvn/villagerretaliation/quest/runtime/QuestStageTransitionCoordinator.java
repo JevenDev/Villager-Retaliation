@@ -51,6 +51,34 @@ public final class QuestStageTransitionCoordinator {
         advanceStageIfComplete(context, definition, progress);
     }
 
+    public boolean changeParallelStage(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress, String from, String target) {
+        if (!CampaignQuestAccess.executionIssue(context, definition).isBlank()
+                || !QuestStageActionService.ready(context, progress)
+                || !QuestParallelService.request(definition, progress, from, target)) return false;
+        VillagerQuestSavedData.get(context.level()).setDirty();
+        advanceParallel(context, definition, progress);
+        access.ensureStageTarget(context, definition, progress);
+        access.sendTrackerSync(context.player(), true);
+        return true;
+    }
+
+    private boolean advanceParallel(DialogueContext context, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        boolean changed = QuestParallelService.advance(definition, progress, context.level().getGameTime(),
+                objective -> access.objectiveComplete(context.player(), context, context.level(), definition, progress, objective),
+                conditions -> DialogueCondition.matchesAll(context, conditions),
+                (key, actions) -> {
+                    VillagerQuestSavedData.get(context.level()).setDirty();
+                    return access.runStageActions(context, definition, progress, key, actions).success();
+                });
+        if (changed) {
+            VillagerQuestSavedData.get(context.level()).setDirty();
+            access.ensureStageTarget(context, definition, progress);
+        }
+        return changed;
+    }
+
     public boolean changeQuestStage(
             DialogueContext context,
             QuestDefinition definition,
@@ -76,6 +104,7 @@ public final class QuestStageTransitionCoordinator {
         }
         if (!campaignEntry.available() || campaignEntry.catchUp() || !CampaignQuestAccess.executionIssue(context, definition).isBlank()) return false;
         QuestDefinition.Stage previous = definition.stages().get(progress.currentStage());
+        if (previous != null && previous.next().equals(stage.trim()) && !QuestParallelService.complete(previous, progress)) return false;
         if (runExitActions && previous != null) {
             progress.requestStageTransition(stage);
             VillagerQuestSavedData.get(context.level()).setDirty();
@@ -149,6 +178,9 @@ public final class QuestStageTransitionCoordinator {
                 changed = true;
                 continue;
             }
+            changed |= advanceParallel(context, definition, progress);
+            if (!definition.stages().containsKey(progress.currentStage())
+                    || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) break;
             changed |= runEligibleStageBonuses(context, definition, progress);
             if (!QuestStageActionService.ready(context, progress)) break;
             QuestStageReadiness readiness = QuestStageReadiness.forCurrentStage(
