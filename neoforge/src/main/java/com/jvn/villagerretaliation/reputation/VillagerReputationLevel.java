@@ -52,32 +52,19 @@ public enum VillagerReputationLevel {
         this.worseningMessage = worseningMessage;
     }
 
+    public static final com.jvn.villagerretaliation.reputation.runtime.ReputationProfile<VillagerReputationLevel> PROFILE =
+            new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile<>(NEUTRAL, java.util.List.of(
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(ROYALTY, () -> VillagerRetaliationConfig.ROYALTY_THRESHOLD.get(), true),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(REVERED, () -> VillagerRetaliationConfig.REVERED_THRESHOLD.get(), true),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(RESPECTED, () -> VillagerRetaliationConfig.RESPECTED_THRESHOLD.get(), true),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(TRUSTED, () -> VillagerRetaliationConfig.TRUSTED_THRESHOLD.get(), true),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(FEARED, () -> VillagerRetaliationConfig.FEARED_THRESHOLD.get(), false),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(DESPISED, () -> VillagerRetaliationConfig.DESPISED_THRESHOLD.get(), false),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(HOSTILE, () -> VillagerRetaliationConfig.HOSTILE_THRESHOLD.get(), false),
+                    new com.jvn.villagerretaliation.reputation.runtime.ReputationProfile.Tier<>(SUSPICIOUS, () -> VillagerRetaliationConfig.SUSPICIOUS_THRESHOLD.get(), false)));
+
     public static VillagerReputationLevel fromReputation(int reputation) {
-        if (reputation >= VillagerRetaliationConfig.ROYALTY_THRESHOLD.get()) {
-            return ROYALTY;
-        }
-        if (reputation >= VillagerRetaliationConfig.REVERED_THRESHOLD.get()) {
-            return REVERED;
-        }
-        if (reputation >= VillagerRetaliationConfig.RESPECTED_THRESHOLD.get()) {
-            return RESPECTED;
-        }
-        if (reputation >= VillagerRetaliationConfig.TRUSTED_THRESHOLD.get()) {
-            return TRUSTED;
-        }
-        if (reputation <= VillagerRetaliationConfig.FEARED_THRESHOLD.get()) {
-            return FEARED;
-        }
-        if (reputation <= VillagerRetaliationConfig.DESPISED_THRESHOLD.get()) {
-            return DESPISED;
-        }
-        if (reputation <= VillagerRetaliationConfig.HOSTILE_THRESHOLD.get()) {
-            return HOSTILE;
-        }
-        if (reputation <= VillagerRetaliationConfig.SUSPICIOUS_THRESHOLD.get()) {
-            return SUSPICIOUS;
-        }
-        return NEUTRAL;
+        return PROFILE.tier(reputation);
     }
 
     public boolean isMoreTrustedThan(VillagerReputationLevel other) {

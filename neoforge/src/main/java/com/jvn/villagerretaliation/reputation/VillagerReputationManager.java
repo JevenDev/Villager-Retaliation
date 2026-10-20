@@ -33,6 +33,11 @@ public final class VillagerReputationManager {
     private static final Map<SyncKey, SyncedReputation> LAST_SYNCED_REPUTATION = new LinkedHashMap<>();
     private static long nextSyncCachePruneGameTime;
 
+    private static com.jvn.villagerretaliation.reputation.runtime.ReputationService<VillagerReputationLevel> reputationService(
+            VillagerReputationSavedData data) {
+        return new com.jvn.villagerretaliation.reputation.runtime.ReputationService<>(data, VillagerReputationLevel.PROFILE);
+    }
+
     private VillagerReputationManager() {
     }
 
@@ -73,13 +78,11 @@ public final class VillagerReputationManager {
         if (entry.tradesToday() >= VillagerRetaliationConfig.MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY.get()) {
             return;
         }
-        VillagerReputationLevel previousLevel = VillagerReputationLevel.fromReputation(entry.reputation());
         entry.incrementTradesToday();
-        entry.addReputation(VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get());
-        VillagerReputationLevel newLevel = VillagerReputationLevel.fromReputation(entry.reputation());
-        entry.setLastInteractionGameTime(level.getGameTime());
-        entry.setLastKnownVillagerPosition(villager.blockPosition());
-        data.setDirty();
+        var change = reputationService(data).add(villager.getUUID(), player.getUUID(),
+                VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get(), level.getGameTime(), villager.blockPosition());
+        VillagerReputationLevel previousLevel = change.previousTier();
+        VillagerReputationLevel newLevel = change.tier();
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, player);
         addVanillaGossip(villager, player.getUUID(), GossipType.TRADING, VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get());
         handleTierChange(level, villager, player, previousLevel, newLevel);
@@ -179,12 +182,10 @@ public final class VillagerReputationManager {
             return false;
         }
 
-        VillagerReputationLevel previousLevel = VillagerReputationLevel.fromReputation(previousReputation);
-        entry.setReputation(reputation);
-        VillagerReputationLevel newLevel = VillagerReputationLevel.fromReputation(reputation);
-        entry.setLastInteractionGameTime(level.getGameTime());
-        entry.setLastKnownVillagerPosition(villager.blockPosition());
-        data.setDirty();
+        var change = reputationService(data).set(villager.getUUID(), playerId, reputation,
+                level.getGameTime(), villager.blockPosition());
+        VillagerReputationLevel previousLevel = change.previousTier();
+        VillagerReputationLevel newLevel = change.tier();
         Player player = level.getPlayerByUUID(playerId);
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, player);
         if (player != null) {
@@ -199,16 +200,8 @@ public final class VillagerReputationManager {
     /** Updates an offline or unloaded villager identity without requiring an entity instance. */
     public static boolean setReputation(
             ServerLevel level, UUID villagerId, UUID playerId, int reputation, BlockPos lastKnownPosition) {
-        VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
-        VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villagerId, playerId);
-        if (entry.reputation() == reputation) {
-            return false;
-        }
-        entry.setReputation(reputation);
-        entry.setLastInteractionGameTime(level.getGameTime());
-        entry.setLastKnownVillagerPosition(lastKnownPosition);
-        data.setDirty();
-        return true;
+        return reputationService(VillagerReputationSavedData.get(level))
+                .set(villagerId, playerId, reputation, level.getGameTime(), lastKnownPosition).changed();
     }
 
     public static int getReputation(ServerLevel level, UUID villagerId, UUID playerId) {
@@ -262,11 +255,10 @@ public final class VillagerReputationManager {
 
         VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
         VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), playerId);
-        VillagerReputationLevel previousLevel = VillagerReputationLevel.fromReputation(entry.reputation());
-        entry.addReputation(amount);
-        VillagerReputationLevel newLevel = VillagerReputationLevel.fromReputation(entry.reputation());
-        entry.setLastInteractionGameTime(level.getGameTime());
-        entry.setLastKnownVillagerPosition(villager.blockPosition());
+        var change = reputationService(data).add(villager.getUUID(), playerId, amount,
+                level.getGameTime(), villager.blockPosition());
+        VillagerReputationLevel previousLevel = change.previousTier();
+        VillagerReputationLevel newLevel = change.tier();
         if (eventType == ReputationEventType.DIRECT_HIT) {
             entry.incrementDirectHits();
             addVanillaGossip(villager, playerId, GossipType.MINOR_NEGATIVE, Math.max(1, Math.abs(amount) / 5));

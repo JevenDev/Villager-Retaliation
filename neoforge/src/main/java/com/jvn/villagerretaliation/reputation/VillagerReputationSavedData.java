@@ -16,7 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
-public class VillagerReputationSavedData extends SavedData {
+public class VillagerReputationSavedData extends SavedData implements com.jvn.villagerretaliation.reputation.runtime.ReputationStore<VillagerReputationSavedData.ReputationEntry> {
     private static final String DATA_NAME = "villagerretaliation_reputations";
     private static final String TAG_ENTRIES = "Entries";
     private static final String TAG_VILLAGER = "Villager";
@@ -52,14 +52,14 @@ public class VillagerReputationSavedData extends SavedData {
             UUID villagerId = entryTag.getUUID(TAG_VILLAGER);
             UUID playerId = entryTag.getUUID(TAG_PLAYER);
             ReputationEntry entry = new ReputationEntry();
-            entry.reputation = entryTag.getInt(TAG_REPUTATION);
-            entry.lastInteractionGameTime = entryTag.getLong(TAG_LAST_INTERACTION);
+            entry.setReputation(entryTag.getInt(TAG_REPUTATION));
+            entry.setLastInteractionGameTime(entryTag.getLong(TAG_LAST_INTERACTION));
             entry.directHits = entryTag.getInt(TAG_DIRECT_HITS);
             entry.witnessedCrimes = entryTag.getInt(TAG_WITNESSED_CRIMES);
             entry.lastTradeDay = entryTag.getLong(TAG_LAST_TRADE_DAY);
             entry.tradesToday = entryTag.getInt(TAG_TRADES_TODAY);
             entry.lastGiftDay = entryTag.getLong(TAG_LAST_GIFT_DAY);
-            entry.lastKnownVillagerPosition = NbtDataUtil.readBlockPos(entryTag, TAG_LAST_POS).orElse(null);
+            entry.setPosition(NbtDataUtil.readBlockPos(entryTag, TAG_LAST_POS).orElse(null));
             data.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>()).put(playerId, entry);
         }
         return data;
@@ -75,19 +75,24 @@ public class VillagerReputationSavedData extends SavedData {
                 CompoundTag entryTag = new CompoundTag();
                 entryTag.putUUID(TAG_VILLAGER, villagerId);
                 entryTag.putUUID(TAG_PLAYER, playerEntry.getKey());
-                entryTag.putInt(TAG_REPUTATION, entry.reputation);
-                entryTag.putLong(TAG_LAST_INTERACTION, entry.lastInteractionGameTime);
+                entryTag.putInt(TAG_REPUTATION, entry.reputation());
+                entryTag.putLong(TAG_LAST_INTERACTION, entry.lastInteractionGameTime());
                 entryTag.putInt(TAG_DIRECT_HITS, entry.directHits);
                 entryTag.putInt(TAG_WITNESSED_CRIMES, entry.witnessedCrimes);
                 entryTag.putLong(TAG_LAST_TRADE_DAY, entry.lastTradeDay);
                 entryTag.putInt(TAG_TRADES_TODAY, entry.tradesToday);
                 entryTag.putLong(TAG_LAST_GIFT_DAY, entry.lastGiftDay);
-                NbtDataUtil.putBlockPos(entryTag, TAG_LAST_POS, entry.lastKnownVillagerPosition);
+                NbtDataUtil.putBlockPos(entryTag, TAG_LAST_POS, entry.position());
                 entriesTag.add(entryTag);
             }
         }
         tag.put(TAG_ENTRIES, entriesTag);
         return tag;
+    }
+
+    @Override
+    public void changed() {
+        setDirty();
     }
 
     public ReputationEntry getOrCreate(UUID villagerId, UUID playerId) {
@@ -180,7 +185,7 @@ public class VillagerReputationSavedData extends SavedData {
             Iterator<Map.Entry<UUID, ReputationEntry>> playerIterator = playerEntries.entrySet().iterator();
             while (playerIterator.hasNext()) {
                 ReputationEntry entry = playerIterator.next().getValue();
-                if (entry.reputation == 0 && entry.lastInteractionGameTime < olderThanGameTime) {
+                if (entry.reputation() == 0 && entry.lastInteractionGameTime() < olderThanGameTime) {
                     playerIterator.remove();
                     changed = true;
                 }
@@ -195,7 +200,7 @@ public class VillagerReputationSavedData extends SavedData {
     }
 
     private static ReputationEntry preferMostRecentEntry(ReputationEntry existing, ReputationEntry incoming) {
-        return incoming.lastInteractionGameTime >= existing.lastInteractionGameTime ? incoming : existing;
+        return incoming.lastInteractionGameTime() >= existing.lastInteractionGameTime() ? incoming : existing;
     }
 
     private static int inheritedParentReputation(int parentA, boolean hasParentA, int parentB, boolean hasParentB) {
@@ -214,31 +219,12 @@ public class VillagerReputationSavedData extends SavedData {
         return Math.round(base * 0.75F);
     }
 
-    public static class ReputationEntry {
-        private int reputation;
-        private long lastInteractionGameTime;
+    public static class ReputationEntry extends com.jvn.villagerretaliation.reputation.runtime.ReputationState {
         private int directHits;
         private int witnessedCrimes;
         private long lastTradeDay = Long.MIN_VALUE;
         private int tradesToday;
         private long lastGiftDay = Long.MIN_VALUE;
-        private BlockPos lastKnownVillagerPosition;
-
-        public int reputation() {
-            return this.reputation;
-        }
-
-        void setReputation(int reputation) {
-            this.reputation = reputation;
-        }
-
-        void addReputation(int amount) {
-            this.reputation += amount;
-        }
-
-        void setLastInteractionGameTime(long lastInteractionGameTime) {
-            this.lastInteractionGameTime = lastInteractionGameTime;
-        }
 
         void incrementDirectHits() {
             this.directHits++;
@@ -274,7 +260,7 @@ public class VillagerReputationSavedData extends SavedData {
         }
 
         void setLastKnownVillagerPosition(BlockPos lastKnownVillagerPosition) {
-            this.lastKnownVillagerPosition = lastKnownVillagerPosition;
+            setPosition(lastKnownVillagerPosition);
         }
     }
 }
