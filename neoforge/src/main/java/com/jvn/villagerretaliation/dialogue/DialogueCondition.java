@@ -283,8 +283,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
     private static MemorySource readMemorySource(JsonObject condition) {
         String source = readString(condition, "source").toLowerCase(Locale.ROOT);
         return switch (source) {
-            case "self", "this_villager", "villager" -> MemorySource.THIS_VILLAGER;
-            case "other", "other_villager", "another_villager" -> MemorySource.OTHER_VILLAGER;
+            case "self", "this_entity", "entity", "this_villager", "villager" -> MemorySource.THIS_VILLAGER;
+            case "other", "other_entity", "another_entity", "other_villager", "another_villager" -> MemorySource.OTHER_VILLAGER;
             default -> MemorySource.ANY;
         };
     }
@@ -1697,34 +1697,8 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         }
 
         private boolean matchesEventTag(DialogueContext context) {
-            UUID playerId = context.player().getUUID();
-            UUID villagerId = context.villager().getUUID();
-            return switch (this.source) {
-                case THIS_VILLAGER -> matchesEventList(context.personalEvents(), playerId, villagerId, false);
-                case OTHER_VILLAGER -> matchesEventList(context.villageEvents(), playerId, villagerId, true);
-                case ANY -> matchesEventList(context.personalEvents(), playerId, villagerId, false)
-                        || matchesEventList(context.villageEvents(), playerId, villagerId, false);
-            };
-        }
-
-        private boolean matchesEventList(
-                List<VillageEventMemory.MemoryEvent> events,
-                UUID playerId,
-                UUID villagerId,
-                boolean excludeSpeaker) {
-            for (VillageEventMemory.MemoryEvent event : events) {
-                if (!this.tags.contains(event.tagId())) {
-                    continue;
-                }
-                if (this.currentPlayerOnly && !playerId.equals(event.playerId())) {
-                    continue;
-                }
-                if (excludeSpeaker && villagerId.equals(event.sourceId())) {
-                    continue;
-                }
-                return true;
-            }
-            return false;
+            return com.jvn.villagerretaliation.dialogue.conditions.MemoryConditions.matches(this,
+                    context.player().getUUID(), context.villager().getUUID(), context.personalEvents(), context.villageEvents());
         }
 
         @Override

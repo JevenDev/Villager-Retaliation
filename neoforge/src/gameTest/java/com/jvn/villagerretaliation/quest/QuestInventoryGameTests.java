@@ -121,6 +121,30 @@ public final class QuestInventoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "quest_inventory_boundaries")
+    public static void itemHandInsUseEntityIndependentReceivers(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var definition = definition("""
+                {"objectives":[{"id":"delivery","type":"item_check","item":"minecraft:bone","count":3,"consume":true}]}
+                """);
+        player.getInventory().setItem(0, new ItemStack(Items.BONE, 4));
+        var received = new java.util.ArrayList<ItemStack>();
+        boolean[] room = { false };
+        var receiver = new com.jvn.villagerretaliation.quest.inventory.QuestItemReceiver() {
+            @Override public boolean canReceive(List<ItemStack> stacks) { return room[0]; }
+            @Override public ItemStack receive(ItemStack stack) { received.add(stack.copy()); return ItemStack.EMPTY; }
+        };
+        helper.assertValueEqual(QuestInventoryService.handInToReceiver(player, receiver, definition.objectives(),
+                QuestDefinition.Objective::item, null), QuestInventoryService.ItemHandInResult.NO_ROOM, "generic receiver capacity is checked first");
+        helper.assertValueEqual(player.getInventory().getItem(0).getCount(), 4, "failed preflight keeps every item");
+        room[0] = true;
+        helper.assertValueEqual(QuestInventoryService.handInToReceiver(player, receiver, definition.objectives(),
+                QuestDefinition.Objective::item, null), QuestInventoryService.ItemHandInResult.SUCCESS, "generic receiver accepts the delivery");
+        helper.assertValueEqual(received.getFirst().getCount(), 3, "generic receiver receives the requested count");
+        helper.assertValueEqual(player.getInventory().getItem(0).getCount(), 1, "unsubmitted items stay with the player");
+        helper.succeed();
+    }
+
     private static QuestDefinition definition(String raw) {
         var id = VillagerRetaliation.id("quest_inventory_boundary");
         return QuestDefinitionFixtures.read(id, JsonParser.parseString(raw).getAsJsonObject(), id);

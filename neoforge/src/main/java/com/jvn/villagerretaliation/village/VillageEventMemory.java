@@ -40,6 +40,8 @@ public final class VillageEventMemory {
     private static final long NOISY_EVENT_DEDUPE_TICKS = 40L;
     private static final long RECENT_QUERY_CACHE_TICKS = 20L;
     static final int MAX_EVENTS_PER_BUCKET = 80;
+    static final com.jvn.villagerretaliation.memory.EventMemoryPolicy<MemoryEvent> MEMORY_POLICY =
+            new com.jvn.villagerretaliation.memory.EventMemoryPolicy<>(MAX_EVENTS_PER_BUCKET, EVENT_TTL_TICKS, MemoryEvent::gameTime);
     private static final int MAX_RECENT_QUERY_CACHE_ENTRIES = 512;
     private static final double DEDUPE_RADIUS_SQR = 48.0D * 48.0D;
     private static final Map<ServerLevel, Long> NEXT_PRUNE_TICKS = new java.util.WeakHashMap<>();
@@ -430,12 +432,8 @@ public final class VillageEventMemory {
         if (mergeMatchingGift(events, event)) {
             return AppendResult.MERGED;
         }
-        if (isDuplicateEvent(events, event)) {
-            return AppendResult.UNCHANGED;
-        }
-        events.addLast(event);
-        trimToMaxEvents(events);
-        return AppendResult.ADDED;
+        return MEMORY_POLICY.append(events, event, VillageEventMemory::isDuplicateEvent)
+                ? AppendResult.ADDED : AppendResult.UNCHANGED;
     }
 
     private static boolean mergeMatchingGift(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
@@ -519,19 +517,7 @@ public final class VillageEventMemory {
     }
 
     private static boolean pruneNow(ArrayDeque<MemoryEvent> events, long gameTime) {
-        long oldestAllowed = gameTime - EVENT_TTL_TICKS;
-        boolean removed = events.removeIf(event -> event.gameTime() < oldestAllowed);
-        while (events.size() > MAX_EVENTS_PER_BUCKET) {
-            events.removeFirst();
-            removed = true;
-        }
-        return removed;
-    }
-
-    private static void trimToMaxEvents(ArrayDeque<MemoryEvent> events) {
-        while (events.size() > MAX_EVENTS_PER_BUCKET) {
-            events.removeFirst();
-        }
+        return MEMORY_POLICY.prune(events, gameTime);
     }
 
     private static void invalidateRecentCache() {
@@ -857,7 +843,7 @@ public final class VillageEventMemory {
             ContainerTheftMemory containerTheft,
             RetaliationMemory retaliation,
             CuredVillagerMemory curedVillager,
-            KilledVillagerMemory killedVillager) {
+            KilledVillagerMemory killedVillager) implements com.jvn.villagerretaliation.memory.EventMemory {
         public MemoryEvent(
                 EventTag tag,
                 long gameTime,

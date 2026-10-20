@@ -95,9 +95,7 @@ public class VillageEventMemorySavedData extends SavedData {
     }
 
     private static void normalize(ArrayDeque<VillageEventMemory.MemoryEvent> events) {
-        var ordered = events.stream().sorted(java.util.Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime)).toList();
-        events.clear();
-        ordered.stream().skip(Math.max(0, ordered.size() - VillageEventMemory.MAX_EVENTS_PER_BUCKET)).forEach(events::addLast);
+        VillageEventMemory.MEMORY_POLICY.normalize(events);
     }
 
     private static void readVillageEntries(ListTag entries, VillageEventMemorySavedData data) {

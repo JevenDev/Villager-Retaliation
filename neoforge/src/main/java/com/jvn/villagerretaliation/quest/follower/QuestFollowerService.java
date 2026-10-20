@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest.follower;
 
 import com.jvn.villagerretaliation.action.*;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext;
 import com.jvn.villagerretaliation.quest.*;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
@@ -22,6 +23,17 @@ public final class QuestFollowerService {
     private QuestFollowerService() { }
 
     public static ActionResult execute(DialogueContext context, VillagerActionDefinition action) {
+        return execute(context, action, (actor, player) -> {
+            if (actor instanceof net.minecraft.world.entity.npc.Villager villager) {
+                var owner = com.jvn.villagerretaliation.interaction.VillagerAssignmentStore.commandOwner(villager).orElse(null);
+                if (owner != null && !owner.equals(player.getUUID())) return "This villager is assigned to another player.";
+            }
+            return "";
+        });
+    }
+
+    public static ActionResult execute(DialogueRuntimeContext context, VillagerActionDefinition action, QuestFollowerPolicy policy) {
+        Objects.requireNonNull(policy);
         if (context == null || action.follower() == null || action.questId() == null) return blocked("Follower action requires an active quest.");
         var data = QuestFollowerSavedData.get(context.level());
         var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), action.questId());
@@ -49,10 +61,8 @@ public final class QuestFollowerService {
                 .equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString()))
             return blocked("Follower actor does not match its entity type filter.");
         if (!mayControlPet(mob, context.player())) return blocked("This pet belongs to another player.");
-        if (mob instanceof net.minecraft.world.entity.npc.Villager villager) {
-            var owner = com.jvn.villagerretaliation.interaction.VillagerAssignmentStore.commandOwner(villager).orElse(null);
-            if (owner != null && !owner.equals(context.player().getUUID())) return blocked("This villager is assigned to another player.");
-        }
+        String policyIssue = policy.issue(mob, context.player());
+        if (policyIssue != null && !policyIssue.isBlank()) return blocked(policyIssue);
         var existing = data.entries.get(mob.getUUID());
         if (existing != null && (!existing.quest.equals(action.questId()) || !existing.run.equals(progress.questRunId())))
             return blocked("Follower actor is controlled by another quest.");
@@ -71,11 +81,11 @@ public final class QuestFollowerService {
         return ActionResult.unavailable(message, Set.of(), VillagerActionResult.EMPTY);
     }
 
-    private static Entity resolve(DialogueContext context, ResourceLocation quest, VillagerQuestSavedData.QuestProgress progress,
+    private static Entity resolve(DialogueRuntimeContext context, ResourceLocation quest, VillagerQuestSavedData.QuestProgress progress,
             SceneActorDeclaration actor) {
         var server = context.level().getServer();
         return switch (actor.bindingSource()) {
-            case QUEST_PROVIDER -> context.villager();
+            case QUEST_PROVIDER -> context.speaker();
             case UUID -> find(server, UUID.fromString(actor.bindingReference()));
             case CAMPAIGN_ROLE -> {
                 var definition = VillagerQuestResources.quest(server, quest).orElse(null);

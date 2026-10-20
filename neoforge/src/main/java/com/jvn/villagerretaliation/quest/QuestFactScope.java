@@ -17,8 +17,8 @@ public enum QuestFactScope {
             case "player", "player_world", "per_player" -> PLAYER;
             case "world", "global", "server" -> WORLD;
             case "quest", "quest_progress", "player_quest" -> QUEST;
-            case "villager", "issuer", "quest_giver" -> VILLAGER;
-            case "village", "settlement" -> VILLAGE;
+            case "entity", "actor", "villager", "issuer", "quest_giver" -> VILLAGER;
+            case "group", "village", "settlement" -> VILLAGE;
             default -> fallback == null ? PLAYER : fallback;
         };
     }

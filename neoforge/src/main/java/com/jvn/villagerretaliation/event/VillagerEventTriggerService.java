@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,7 +31,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class VillagerEventTriggerService {
-    private static final Set<String> IN_FLIGHT_KEYS = ConcurrentHashMap.newKeySet();
+    private static final NarrativeTriggerRuntime TRIGGERS = new NarrativeTriggerRuntime();
 
     private VillagerEventTriggerService() {
     }
@@ -46,7 +45,7 @@ public final class VillagerEventTriggerService {
     }
 
     public static void clearRuntimeState() {
-        IN_FLIGHT_KEYS.clear();
+        TRIGGERS.clear();
     }
 
     public static void onMemoryWritten(ServerLevel level, VillageEventMemory.MemoryEvent event) {
@@ -81,32 +80,11 @@ public final class VillagerEventTriggerService {
 
         String key = cooldownKey(level, definition, event, villager, player).serialized();
         VillagerEventTriggerSavedData data = VillagerEventTriggerSavedData.get(level);
-        long lastRunTime = data.lastRunGameTime(key);
-        long gameTime = level.getGameTime();
-        if (!definition.repeatable() && lastRunTime > 0L) {
-            return;
-        }
-        if (definition.cooldownTicks() > 0L && lastRunTime > 0L && gameTime - lastRunTime < definition.cooldownTicks()) {
-            return;
-        }
-
-        if (!IN_FLIGHT_KEYS.add(key)) {
-            return;
-        }
-        try {
+        TRIGGERS.run(key, definition.repeatable(), definition.cooldownTicks(), level.getGameTime(), data, () -> {
             Map<String, String> replacements = eventReplacements(context, level, event, villager, player);
-            boolean ran;
-            if (context != null) {
-                ran = runContextActions(context, definition, replacements);
-            } else {
-                ran = runFallbackActions(level, event, definition, villager, player, replacements);
-            }
-            if (ran) {
-                data.markRun(key, gameTime);
-            }
-        } finally {
-            IN_FLIGHT_KEYS.remove(key);
-        }
+            return context != null ? runContextActions(context, definition, replacements)
+                    : runFallbackActions(level, event, definition, villager, player, replacements);
+        });
     }
 
     private static Map<String, String> eventReplacements(

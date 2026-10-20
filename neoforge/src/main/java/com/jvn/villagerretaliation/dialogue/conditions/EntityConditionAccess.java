@@ -31,6 +31,13 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
                         return facts.isEmpty() ? ConditionOutcome.UNKNOWN
                                 : result(FactConditions.matches(fact, facts.orElseThrow(), fact.scope().scopeKey(context, fact.questId())));
                     }
+                    if (condition instanceof DialogueCondition.Memory memory) {
+                        var access = context.actions().memories();
+                        if (access.isEmpty() || memory.kind() != DialogueCondition.MemoryKind.EVENT_TAG) return ConditionOutcome.UNKNOWN;
+                        var store = access.orElseThrow();
+                        return result(MemoryConditions.matches(memory, context.player().getUUID(), context.providerId(),
+                                store.personal(context.providerId()), store.group(context.groupKey())));
+                    }
                     return common.queries().evaluate(condition, trigger);
                 });
     }

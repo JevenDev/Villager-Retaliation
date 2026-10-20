@@ -146,6 +146,28 @@ public final class QuestDiscoveryGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "quest_discovery")
+    public static void genericFollowerContextsApplyTheirOwnOwnershipPolicy(GameTestHelper helper) {
+        try (var fixture = new Fixture(helper, "book_opened", "automatic")) {
+            QuestDiscoveryService.bookOpened(fixture.player, book());
+            var wolf = helper.spawn(net.minecraft.world.entity.EntityType.WOLF, 1, 1, 2);
+            var entityContext = new com.jvn.villagerretaliation.dialogue.EntityDialogueContext(helper.getLevel(),
+                    fixture.player, wolf, "en_us", "");
+            var action = follower(wolf, "follow", false);
+            var denied = com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(entityContext, action,
+                    (actor, player) -> "Actor is reserved.");
+            helper.assertFalse(denied.success(), "consumer ownership policy can block a follower");
+            helper.assertFalse(com.jvn.villagerretaliation.quest.follower.QuestFollowerService.retained(wolf), "blocked follower has no saved directive");
+            var allowed = com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(entityContext, action,
+                    (actor, player) -> "");
+            helper.assertTrue(allowed.success(), "a non-villager context can start its follower");
+            helper.assertTrue(com.jvn.villagerretaliation.quest.follower.QuestFollowerService.controls(wolf), "shared follower navigation controls the mob");
+            com.jvn.villagerretaliation.quest.follower.QuestFollowerService.release(helper.getLevel(), wolf.getUUID());
+            wolf.discard();
+        }
+        helper.succeed();
+    }
+
     private static com.jvn.villagerretaliation.action.VillagerActionDefinition follower(net.minecraft.world.entity.Entity actor, String command, boolean protect) {
         var raw = JsonParser.parseString("{\"type\":\"follower\",\"command\":\"" + command + "\",\"protected\":" + protect
                 + ",\"actor\":{\"alias\":\"companion\",\"type\":\"villagerretaliation:living_entity\",\"binding_source\":\"uuid\",\"binding\":\"" + actor.getUUID() + "\"}}").getAsJsonObject();

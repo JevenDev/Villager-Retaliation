@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
-public class VillagerEventTriggerSavedData extends SavedData {
+public class VillagerEventTriggerSavedData extends SavedData implements TriggerHistory {
     private static final String DATA_NAME = "villagerretaliation_event_triggers";
     private static final String TAG_ENTRIES = "Entries";
     private static final String TAG_KEY = "Key";

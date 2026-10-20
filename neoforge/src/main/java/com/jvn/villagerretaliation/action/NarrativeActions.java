@@ -24,27 +24,30 @@ public final class NarrativeActions {
     private final Map<VillagerActionDefinition.Kind, Handler> handlers;
     private final Handler fallback;
     private final QuestFactStore facts;
+    private final com.jvn.villagerretaliation.memory.EventMemoryAccess memories;
     private final ToIntFunction<DialogueRuntimeContext> reputation;
 
     private NarrativeActions(Map<VillagerActionDefinition.Kind, Handler> handlers, Handler fallback,
-            QuestFactStore facts, ToIntFunction<DialogueRuntimeContext> reputation) {
+            QuestFactStore facts, ToIntFunction<DialogueRuntimeContext> reputation,
+            com.jvn.villagerretaliation.memory.EventMemoryAccess memories) {
         this.handlers = Map.copyOf(handlers);
         this.fallback = Objects.requireNonNull(fallback);
         this.facts = facts;
+        this.memories = memories;
         this.reputation = reputation;
     }
 
     public static NarrativeActions common() { return COMMON; }
 
     public static NarrativeActions adapt(Handler handler) {
-        return new NarrativeActions(Map.of(), handler, null, null);
+        return new NarrativeActions(Map.of(), handler, null, null, null);
     }
 
     public NarrativeActions with(VillagerActionDefinition.Kind kind, Handler handler) {
         var updated = new EnumMap<VillagerActionDefinition.Kind, Handler>(VillagerActionDefinition.Kind.class);
         updated.putAll(this.handlers);
         updated.put(Objects.requireNonNull(kind), Objects.requireNonNull(handler));
-        return new NarrativeActions(updated, this.fallback, this.facts, this.reputation);
+        return new NarrativeActions(updated, this.fallback, this.facts, this.reputation, this.memories);
     }
 
     public NarrativeActions withReputation(ReputationService<?> service) {
@@ -57,7 +60,7 @@ public final class NarrativeActions {
                     : ActionResult.alreadySatisfied("reputation unchanged", Set.of(), VillagerActionResult.EMPTY);
         });
         return new NarrativeActions(updated.handlers, updated.fallback, updated.facts,
-                context -> service.score(context.providerId(), context.player().getUUID()));
+                context -> service.score(context.providerId(), context.player().getUUID()), updated.memories);
     }
 
     public NarrativeActions withFacts(QuestFactStore store, FactActions.StageSetter stages) {
@@ -84,8 +87,27 @@ public final class NarrativeActions {
                         : unavailable("The fact action is unavailable.");
             });
         }
-        return new NarrativeActions(updated.handlers, updated.fallback, store, updated.reputation);
+        return new NarrativeActions(updated.handlers, updated.fallback, store, updated.reputation, updated.memories);
     }
+
+    public NarrativeActions withFollowers(com.jvn.villagerretaliation.quest.follower.QuestFollowerPolicy policy) {
+        Objects.requireNonNull(policy);
+        return with(VillagerActionDefinition.Kind.FOLLOWER, (context, action, replacements) ->
+                com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action, policy));
+    }
+
+    public NarrativeActions withMemory(com.jvn.villagerretaliation.memory.EventMemoryAccess memory) {
+        Objects.requireNonNull(memory);
+        var updated = with(VillagerActionDefinition.Kind.MEMORY, (context, action, replacements) -> {
+            if (action.memoryTag() == null) return unavailable("An event memory requires a tag.");
+            boolean changed = memory.remember(context, action.memoryTag(), action.memoryScope().includesVillager(),
+                    action.memoryScope().includesVillage());
+            return changed ? success(VillagerActionResult.success()) : ActionResult.skipped("memory unchanged", Set.of());
+        });
+        return new NarrativeActions(updated.handlers, updated.fallback, updated.facts, updated.reputation, memory);
+    }
+
+    public Optional<com.jvn.villagerretaliation.memory.EventMemoryAccess> memories() { return Optional.ofNullable(this.memories); }
 
     public Optional<QuestFactStore> facts() { return Optional.ofNullable(this.facts); }
 

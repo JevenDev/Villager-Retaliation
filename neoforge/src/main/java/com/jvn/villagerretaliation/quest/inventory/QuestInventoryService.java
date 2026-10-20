@@ -175,6 +175,16 @@ public final class QuestInventoryService {
             List<QuestDefinition.Objective> requiredItemHandIns,
             Function<QuestDefinition.Objective, ResourceLocation> resolvedItem,
             PartySharedQuestRecord shared) {
+        QuestItemReceiver receiver = issuer == null ? null : new QuestItemReceiver() {
+            @Override public boolean canReceive(List<ItemStack> stacks) { return VillagerInventoryAccess.canAddItems(issuer, stacks); }
+            @Override public ItemStack receive(ItemStack stack) { return VillagerInventoryAccess.addItem(issuer, stack); }
+        };
+        return handInToReceiver(player, receiver, requiredItemHandIns, resolvedItem, shared);
+    }
+
+    public static ItemHandInResult handInToReceiver(ServerPlayer player, QuestItemReceiver receiver,
+            List<QuestDefinition.Objective> requiredItemHandIns,
+            Function<QuestDefinition.Objective, ResourceLocation> resolvedItem, PartySharedQuestRecord shared) {
         if (requiredItemHandIns.isEmpty()) {
             return ItemHandInResult.SUCCESS;
         }
@@ -188,15 +198,15 @@ public final class QuestInventoryService {
                 return ItemHandInResult.MISSING_ITEMS;
             }
             PartyQuestService.SubmissionPlan plan = planned.get();
-            if (issuer != null && !VillagerInventoryAccess.canAddItems(issuer, plan.submittedStacks())) {
+            if (receiver != null && !receiver.canReceive(plan.submittedStacks())) {
                 return ItemHandInResult.NO_ROOM;
             }
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Quest contribution: " + String.join(", ", plan.preview())));
             if (!plan.remove()) {
                 return ItemHandInResult.MISSING_ITEMS;
             }
-            for (ItemStack stack : issuer == null ? List.<ItemStack>of() : plan.submittedStacks()) {
-                ItemStack remainder = VillagerInventoryAccess.addItem(issuer, stack.copy());
+            for (ItemStack stack : receiver == null ? List.<ItemStack>of() : plan.submittedStacks()) {
+                ItemStack remainder = receiver.receive(stack.copy());
                 if (!remainder.isEmpty()) {
                     player.addItem(remainder);
                 }
@@ -208,14 +218,14 @@ public final class QuestInventoryService {
         if (handInStacks == null) {
             return ItemHandInResult.MISSING_ITEMS;
         }
-        if (issuer != null && !VillagerInventoryAccess.canAddItems(issuer, handInStacks)) {
+        if (receiver != null && !receiver.canReceive(handInStacks)) {
             return ItemHandInResult.NO_ROOM;
         }
         if (!removeSpecificPlayerStacks(player, handInStacks)) {
             return ItemHandInResult.MISSING_ITEMS;
         }
-        for (ItemStack stack : issuer == null ? List.<ItemStack>of() : handInStacks) {
-            ItemStack remainder = VillagerInventoryAccess.addItem(issuer, stack.copy());
+        for (ItemStack stack : receiver == null ? List.<ItemStack>of() : handInStacks) {
+            ItemStack remainder = receiver.receive(stack.copy());
             if (!remainder.isEmpty()) {
                 player.addItem(remainder);
             }
