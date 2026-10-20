@@ -1,25 +1,67 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
+import com.jvn.villagerretaliation.dialogue.DialogueCue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public record DialogueTextSegment(String text, DialogueTextEffects effects) {
+public record DialogueTextSegment(String text, DialogueTextEffects effects, List<DialogueCue.At> cues) {
     private static final int MAX_SEGMENTS = 64;
     private static final int MAX_NETWORK_TEXT_LENGTH = 512;
 
     public DialogueTextSegment {
         text = text == null ? "" : text;
         effects = effects == null ? DialogueTextEffects.NONE : effects;
+        cues = cues == null ? List.of() : List.copyOf(cues);
+        int previous = -1;
+        for (var cue : cues) {
+            if (cue.offset() < previous || cue.offset() > text.length()
+                    || cue.offset() > 0 && cue.offset() < text.length()
+                    && Character.isHighSurrogate(text.charAt(cue.offset() - 1))
+                    && Character.isLowSurrogate(text.charAt(cue.offset())))
+                throw new IllegalArgumentException("Invalid dialogue cue offset");
+            previous = cue.offset();
+        }
+        if (cues.size() > DialogueCue.MAX_CUES) throw new IllegalArgumentException("Too many dialogue cues");
+    }
+
+    public DialogueTextSegment(String text, DialogueTextEffects effects) {
+        this(text, effects, List.of());
+    }
+
+    public DialogueTextSegment mapText(java.util.function.UnaryOperator<String> transform) {
+        var mapped = new StringBuilder();
+        var mappedCues = new ArrayList<DialogueCue.At>();
+        int cursor = 0;
+        for (var cue : cues) {
+            mapped.append(transform.apply(text.substring(cursor, cue.offset())));
+            mappedCues.add(new DialogueCue.At(mapped.length(), cue.cue()));
+            cursor = cue.offset();
+        }
+        mapped.append(transform.apply(text.substring(cursor)));
+        return new DialogueTextSegment(mapped.toString(), effects, mappedCues);
+    }
+
+    private DialogueTextSegment append(DialogueTextSegment next) {
+        var combined = new ArrayList<>(cues);
+        for (var cue : next.cues()) combined.add(new DialogueCue.At(text.length() + cue.offset(), cue.cue()));
+        return new DialogueTextSegment(text + next.text(), effects, combined);
     }
 
     public static List<String> markupWarnings(String text) {
         var warnings = new ArrayList<String>();
         var stack = new ArrayList<String>();
+        int cueCount = 0;
         var matcher = java.util.regex.Pattern.compile("<(/?)([a-zA-Z_][^<>]*)>").matcher(text);
         while (matcher.find()) {
             String raw = matcher.group(2).trim();
+            if (DialogueCue.isTag(raw)) {
+                if (!matcher.group(1).isEmpty() || DialogueCue.parse(raw) == null)
+                    warnings.add("invalid dialogue cue: " + matcher.group());
+                else if (++cueCount > DialogueCue.MAX_CUES) warnings.add("too many dialogue cues");
+                continue;
+            }
             String tag = normalizeTag(tagName(raw));
             if (!isKnownClosingTag(tag)) {
                 warnings.add("unknown text tag: " + matcher.group());
@@ -75,6 +117,8 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         List<DialogueTextEffects> stack = new ArrayList<>();
         stack.add(safeBase);
         StringBuilder current = new StringBuilder();
+        var currentCues = new ArrayList<DialogueCue.At>();
+        int cueCount = 0;
 
         int index = 0;
         while (index < text.length()) {
@@ -92,6 +136,13 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
             current.append(text, index, open);
             String rawTag = text.substring(open + 1, close).trim();
             boolean closing = rawTag.startsWith("/");
+            DialogueCue cue = closing ? null : DialogueCue.parse(rawTag);
+            if (cue != null && cueCount < DialogueCue.MAX_CUES) {
+                currentCues.add(new DialogueCue.At(current.length(), cue));
+                cueCount++;
+                index = close + 1;
+                continue;
+            }
             String tag = normalizeTag(closing ? rawTag.substring(1) : tagName(rawTag));
             String effectTag = normalizeTag(closing ? rawTag.substring(1) : rawTag);
             DialogueTextEffects tagEffects = closing ? null : effectsForTag(effectTag);
@@ -106,7 +157,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
                 continue;
             }
 
-            flush(segments, current, currentEffects(stack));
+            flush(segments, current, currentCues, currentEffects(stack));
             if (closing) {
                 popTag(stack);
             } else {
@@ -115,7 +166,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
             index = close + 1;
         }
 
-        flush(segments, current, currentEffects(stack));
+        flush(segments, current, currentCues, currentEffects(stack));
         return segments.isEmpty() ? plain(stripTagsFallback(text), safeBase) : List.copyOf(segments);
     }
 
@@ -133,28 +184,25 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
     }
 
     public static List<DialogueTextSegment> slice(List<DialogueTextSegment> segments, int start, int end) {
-        if (segments == null || segments.isEmpty() || end <= start) {
-            return List.of();
-        }
-
+        if (segments == null || segments.isEmpty() || end < start) return List.of();
         int safeStart = Math.max(0, start);
-        int safeEnd = Math.max(safeStart, end);
+        int totalLength = plainText(segments).length();
+        int safeEnd = Math.min(Math.max(safeStart, end), totalLength);
         int cursor = 0;
-        List<DialogueTextSegment> sliced = new ArrayList<>();
-        for (DialogueTextSegment segment : segments) {
-            String segmentText = segment.text();
+        var sliced = new ArrayList<DialogueTextSegment>();
+        for (var segment : segments) {
             int segmentStart = cursor;
-            int segmentEnd = segmentStart + segmentText.length();
-            cursor = segmentEnd;
-            if (segmentEnd <= safeStart || segmentStart >= safeEnd) {
-                continue;
+            cursor += segment.text().length();
+            int localStart = Math.min(segment.text().length(), Math.max(0, safeStart - segmentStart));
+            int localEnd = Math.max(localStart, Math.min(segment.text().length(), safeEnd - segmentStart));
+            var cues = new ArrayList<DialogueCue.At>();
+            for (var cue : segment.cues()) {
+                int absolute = segmentStart + cue.offset();
+                if (absolute >= safeStart && (absolute < safeEnd || absolute == safeEnd && safeEnd == totalLength))
+                    cues.add(new DialogueCue.At(cue.offset() - localStart, cue.cue()));
             }
-
-            int localStart = Math.max(0, safeStart - segmentStart);
-            int localEnd = Math.min(segmentText.length(), safeEnd - segmentStart);
-            if (localStart < localEnd) {
-                sliced.add(new DialogueTextSegment(segmentText.substring(localStart, localEnd), segment.effects()));
-            }
+            if (localEnd > localStart || !cues.isEmpty())
+                sliced.add(new DialogueTextSegment(segment.text().substring(localStart, localEnd), segment.effects(), cues));
         }
         return List.copyOf(sliced);
     }
@@ -165,6 +213,12 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         for (DialogueTextSegment segment : safeSegments) {
             buffer.writeUtf(segment.text(), MAX_NETWORK_TEXT_LENGTH);
             DialogueTextEffects.write(buffer, segment.effects());
+            buffer.writeVarInt(segment.cues().size());
+            for (var cue : segment.cues()) {
+                buffer.writeVarInt(cue.offset());
+                buffer.writeEnum(cue.cue().kind());
+                buffer.writeDouble(cue.cue().value());
+            }
         }
     }
 
@@ -175,10 +229,18 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
                     "dialogue text segment count " + size + " is outside 0.." + MAX_SEGMENTS);
         }
         List<DialogueTextSegment> segments = new ArrayList<>(size);
+        int cueCount = 0;
         for (int index = 0; index < size; index++) {
-            segments.add(new DialogueTextSegment(
-                    buffer.readUtf(MAX_NETWORK_TEXT_LENGTH),
-                    DialogueTextEffects.read(buffer)));
+            String text = buffer.readUtf(MAX_NETWORK_TEXT_LENGTH);
+            DialogueTextEffects effects = DialogueTextEffects.read(buffer);
+            int count = buffer.readVarInt();
+            if (count < 0 || count > DialogueCue.MAX_CUES - cueCount)
+                throw new IllegalArgumentException("Too many dialogue cues");
+            cueCount += count;
+            var cues = new ArrayList<DialogueCue.At>();
+            for (int cue = 0; cue < count; cue++) cues.add(new DialogueCue.At(buffer.readVarInt(),
+                    new DialogueCue(buffer.readEnum(DialogueCue.Kind.class), buffer.readDouble())));
+            segments.add(new DialogueTextSegment(text, effects, cues));
         }
         return List.copyOf(segments);
     }
@@ -195,26 +257,22 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
 
         List<DialogueTextSegment> bounded = new ArrayList<>();
         int remainingCharacters = MAX_NETWORK_TEXT_LENGTH;
+        int remainingCues = DialogueCue.MAX_CUES;
         for (DialogueTextSegment segment : segments) {
-            if (segment == null || segment.text().isEmpty() || remainingCharacters <= 0) {
-                continue;
-            }
+            if (segment == null) continue;
             String text = truncate(segment.text(), remainingCharacters);
+            var cues = segment.cues().stream().filter(cue -> cue.offset() <= text.length())
+                    .limit(remainingCues).toList();
             remainingCharacters -= text.length();
-            if (text.isEmpty()) {
-                continue;
+            remainingCues -= cues.size();
+            if (!text.isEmpty() || !cues.isEmpty()) {
+                var next = new DialogueTextSegment(text, segment.effects(), cues);
+                if (!bounded.isEmpty() && (bounded.getLast().effects().equals(next.effects()) || bounded.size() == MAX_SEGMENTS)) {
+                    var previous = bounded.removeLast();
+                    bounded.add(previous.append(next));
+                } else bounded.add(next);
             }
-
-            DialogueTextEffects effects = segment.effects();
-            if (!bounded.isEmpty() && bounded.getLast().effects().equals(effects)) {
-                DialogueTextSegment previous = bounded.removeLast();
-                bounded.add(new DialogueTextSegment(previous.text() + text, effects));
-            } else if (bounded.size() < MAX_SEGMENTS) {
-                bounded.add(new DialogueTextSegment(text, effects));
-            } else {
-                DialogueTextSegment previous = bounded.removeLast();
-                bounded.add(new DialogueTextSegment(previous.text() + text, previous.effects()));
-            }
+            if (text.length() < segment.text().length()) break;
         }
         return List.copyOf(bounded);
     }
@@ -262,15 +320,17 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         return value.substring(0, end);
     }
 
-    private static void flush(List<DialogueTextSegment> segments, StringBuilder current, DialogueTextEffects effects) {
-        if (current.isEmpty()) {
+    private static void flush(List<DialogueTextSegment> segments, StringBuilder current,
+            List<DialogueCue.At> cues, DialogueTextEffects effects) {
+        if (current.isEmpty() && cues.isEmpty()) {
             return;
         }
-        DialogueTextSegment next = new DialogueTextSegment(current.toString(), effects);
+        DialogueTextSegment next = new DialogueTextSegment(current.toString(), effects, cues);
         current.setLength(0);
+        cues.clear();
         if (!segments.isEmpty() && segments.getLast().effects().equals(next.effects())) {
             DialogueTextSegment previous = segments.removeLast();
-            segments.add(new DialogueTextSegment(previous.text() + next.text(), next.effects()));
+            segments.add(previous.append(next));
         } else {
             segments.add(next);
         }

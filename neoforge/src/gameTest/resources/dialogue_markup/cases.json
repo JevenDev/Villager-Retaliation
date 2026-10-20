@@ -1,4 +1,15 @@
 [
+  {"text":"<look=left><agree><pause=500><b>Hello</b><speed=0.5> there.<reset>","warning":false},
+  {"text":"<look:player><disagree><look=right><look=up><look=down><pause=0><speed=10>Fine.","warning":false},
+  {"text":"<pause=60001>Wait","warning":true},
+  {"text":"<pause=-1>Wait","warning":true},
+  {"text":"<pause=0.5>Wait","warning":true},
+  {"text":"<speed=0>Wait","warning":true},
+  {"text":"<speed=NaN>Wait","warning":true},
+  {"text":"<speed=10.1>Wait","warning":true},
+  {"text":"<look=behind>Wait","warning":true},
+  {"text":"<agree=1>Wait","warning":true},
+  {"text":"</reset>Wait","warning":true},
   {
     "text": "Plain text and 2 < 5.",
     "warning": false

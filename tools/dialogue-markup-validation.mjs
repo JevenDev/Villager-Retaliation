@@ -8,11 +8,33 @@ const groups = [
 ];
 const tags = new Map(groups.flatMap(group => group.map(tag => [tag, group[0]])));
 
+const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset"]);
+
+function validCue(raw) {
+  const parts = raw.trim().toLowerCase().split(/[=:]/).map(part => part.trim());
+  const [name, argument] = parts;
+  if (["agree", "disagree", "reset"].includes(name)) return parts.length === 1;
+  if (parts.length !== 2) return false;
+  if (name === "look") return ["left", "right", "up", "down", "player"].includes(argument);
+  if (!/^[0-9]+(?:\.[0-9]+)?$/.test(argument)) return false;
+  const value = Number(argument);
+  return Number.isFinite(value) && (name === "pause"
+    ? Number.isInteger(value) && value >= 0 && value <= 60000 : value >= 0.1 && value <= 10);
+}
+
 export function markupWarnings(text) {
   const warnings = [];
   const stack = [];
+  let cueCount = 0;
   for (const match of text.matchAll(/<(\/?)([a-zA-Z_][^<>]*)>/g)) {
-    const tag = match[2].trim().split(":")[0].toLowerCase();
+    const raw = match[2].trim();
+    const cueName = raw.toLowerCase().split(/[=:]/)[0].trim();
+    if (cueTags.has(cueName)) {
+      if (match[1] || !validCue(raw)) warnings.push("invalid dialogue cue: " + match[0]);
+      else if (++cueCount > 64) warnings.push("too many dialogue cues");
+      continue;
+    }
+    const tag = raw.split(":")[0].toLowerCase();
     const canonical = tags.get(tag);
     if (!canonical) {
       warnings.push("unknown text tag: " + match[0]);

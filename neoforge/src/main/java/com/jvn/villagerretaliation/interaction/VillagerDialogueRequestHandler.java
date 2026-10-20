@@ -454,9 +454,7 @@ public final class VillagerDialogueRequestHandler {
             return segments == null ? List.of() : segments;
         }
         return segments.stream()
-                .map(segment -> new DialogueTextSegment(
-                        VillagerDialogueResources.resolveTemplate(segment.text(), replacements),
-                        segment.effects()))
+                .map(segment -> segment.mapText(text -> VillagerDialogueResources.resolveTemplate(text, replacements)))
                 .toList();
     }
 
