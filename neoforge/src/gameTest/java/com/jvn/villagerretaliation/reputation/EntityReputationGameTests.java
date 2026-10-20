@@ -57,6 +57,44 @@ public final class EntityReputationGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void customTierConditionsUseStableIdsAndPreserveUnknownSemantics(GameTestHelper helper) {
+        var cow = helper.spawn(EntityType.COW, 1, 1, 1);
+        var player = helper.makeMockServerPlayerInLevel();
+        var data = new EntityReputationSavedData();
+        var profile = new ReputationProfile<>("stranger", List.of(new ReputationProfile.Tier<>("ally", 10, true)));
+        var service = new ReputationService<>(data, profile);
+        var actions = com.jvn.villagerretaliation.action.NarrativeActions.common().withReputation(service,
+                tier -> net.minecraft.resources.ResourceLocation.parse("fixture:" + tier));
+        var context = new com.jvn.villagerretaliation.dialogue.EntityDialogueContext(helper.getLevel(), player, cow, "en_us", "", actions);
+        var json = com.google.gson.JsonParser.parseString("""
+                {"conditions":[{"type":"reputation_tier","tiers":["fixture:ally"]}]}
+                """).getAsJsonObject();
+        var conditions = com.jvn.villagerretaliation.dialogue.DialogueCondition.readList(
+                net.minecraft.resources.ResourceLocation.parse("fixture:tiers"), "conditions", json);
+        helper.assertValueEqual(conditions.size(), 1, "namespaced tier conditions parse");
+        var condition = conditions.getFirst();
+        helper.assertTrue(condition instanceof com.jvn.villagerretaliation.dialogue.DialogueCondition.ReputationTier,
+                "the parser retains the requested tier ids");
+        helper.assertFalse(condition.matches(context), "the initial tier does not match");
+        service.add(cow.getUUID(), player.getUUID(), 12, 1, null);
+        helper.assertTrue(condition.matches(context), "the consumer's tier profile controls the condition");
+        var loaded = EntityReputationSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+        var restored = new com.jvn.villagerretaliation.dialogue.EntityDialogueContext(helper.getLevel(), player, cow, "en_us", "",
+                com.jvn.villagerretaliation.action.NarrativeActions.common().withReputation(new ReputationService<>(loaded, profile),
+                        tier -> net.minecraft.resources.ResourceLocation.parse("fixture:" + tier)));
+        helper.assertTrue(condition.matches(restored), "tier conditions keep their meaning after save and reload");
+        var unavailable = new com.jvn.villagerretaliation.dialogue.EntityDialogueContext(helper.getLevel(), player, cow, "en_us", "");
+        var negated = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Not(condition);
+        helper.assertFalse(negated.matches(unavailable), "missing reputation access remains unknown under negation");
+        helper.assertTrue(!condition.unavailableReason(unavailable).isBlank(), "missing tier access reports its unavailable requirement");
+        json.getAsJsonArray("conditions").get(0).getAsJsonObject().add("tiers", com.google.gson.JsonParser.parseString("[]"));
+        var invalid = com.jvn.villagerretaliation.dialogue.DialogueCondition.readList(
+                net.minecraft.resources.ResourceLocation.parse("fixture:tiers"), "conditions", json);
+        helper.assertTrue(!com.jvn.villagerretaliation.dialogue.DialogueCondition.matchesAll(context, invalid), "empty tier lists cannot become an unconditional match");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void villagerSaveFormatRetainsAllExistingMetadata(GameTestHelper helper) {
         var entry = new CompoundTag();
         var entity = UUID.randomUUID();

@@ -31,7 +31,7 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public sealed interface DialogueCondition permits DialogueCondition.Invalid, DialogueCondition.AllOf, DialogueCondition.AnyOf,
-        DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
+        DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.ReputationTier, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
         DialogueCondition.VillagerLevel, DialogueCondition.Quest, DialogueCondition.QuestFact, DialogueCondition.CampaignFact, DialogueCondition.CampaignStanding, DialogueCondition.CampaignTransaction, DialogueCondition.CampaignEvidence,
@@ -230,6 +230,28 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
             max = readNullableInt(condition, "max_reputation");
         }
         return new Reputation(Set.copyOf(levels), min, max);
+    }
+
+    private static Optional<DialogueCondition> readReputationTier(ResourceLocation location, String context, JsonObject condition) {
+        var issues = com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(condition, reputationTierSchema());
+        if (!issues.isEmpty()) {
+            warnInvalid(location, context, issues.toString());
+            return Optional.empty();
+        }
+        var tiers = new java.util.LinkedHashSet<ResourceLocation>();
+        for (String key : List.of("tier", "tiers")) for (String value : readStringList(condition, key)) tiers.add(ResourceLocation.parse(value));
+        return Optional.of(new ReputationTier(tiers));
+    }
+
+    private static JsonObject reputationTierSchema() {
+        return com.google.gson.JsonParser.parseString("""
+                {"type":"object","additionalProperties":false,"required":["type"],
+                 "properties":{"type":{"const":"reputation_tier"},
+                   "tier":{"type":"string","pattern":"^[a-z0-9_.-]+:[a-z0-9/._-]+$"},
+                   "tiers":{"type":"array","minItems":1,"uniqueItems":true,
+                     "items":{"type":"string","pattern":"^[a-z0-9_.-]+:[a-z0-9/._-]+$"}}},
+                 "anyOf":[{"required":["tier"]},{"required":["tiers"]}]}
+                """).getAsJsonObject();
     }
 
     private static Optional<DialogueCondition> readMemory(ResourceLocation location, String context, JsonObject condition) {
@@ -1150,6 +1172,12 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                         capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
                         (location, context, condition, defaultQuestId) -> Optional.of(readReputation(condition))),
                 register(
+                        "reputation_tier",
+                        ReputationTier.class,
+                        Set.of(),
+                        capabilities(ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, defaultQuestId) -> readReputationTier(location, context, condition), reputationTierSchema()),
+                register(
                         "memory",
                         Memory.class,
                         Set.of(),
@@ -1688,6 +1716,20 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         public int specificityScore() {
             return 3;
         }
+    }
+
+    record ReputationTier(Set<ResourceLocation> tiers) implements DialogueCondition {
+        public ReputationTier {
+            tiers = Set.copyOf(tiers);
+            if (tiers.isEmpty()) throw new IllegalArgumentException("Reputation tier conditions require at least one tier.");
+        }
+
+        @Override public boolean matches(DialogueContext context) {
+            return context != null && context.villager() != null && tiers.contains(
+                    com.jvn.villagerretaliation.VillagerRetaliation.id(context.reputationLevel().name().toLowerCase(Locale.ROOT)));
+        }
+
+        @Override public int specificityScore() { return 3; }
     }
 
     record Memory(Set<ResourceLocation> tags, MemorySource source, boolean currentPlayerOnly, MemoryKind kind)

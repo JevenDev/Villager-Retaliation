@@ -22,6 +22,10 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
                 context.groupKey(), null, null);
         return new ConditionContext(common.playerId(), common.providerId(), common.savedProvider(), common.liveProvider(),
                 common.questRun(), common.capabilities(), (condition, trigger) -> {
+                    if (condition instanceof DialogueCondition.ReputationTier reputation) {
+                        var tier = context.actions().reputationTier(context);
+                        return tier.isEmpty() ? ConditionOutcome.UNKNOWN : result(reputation.tiers().contains(tier.orElseThrow()));
+                    }
                     if (condition instanceof DialogueCondition.Reputation reputation) {
                         var score = context.actions().reputation(context);
                         if (score.isEmpty() || !reputation.levels().isEmpty()) return ConditionOutcome.UNKNOWN;

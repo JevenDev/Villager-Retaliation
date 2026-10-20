@@ -1348,6 +1348,53 @@
         "implementation": "Reputation"
       },
       {
+        "id": "reputation_tier",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot"
+        ],
+        "implementation": "ReputationTier",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "reputation_tier"
+            },
+            "tier": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$"
+            },
+            "tiers": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$"
+              }
+            }
+          },
+          "anyOf": [
+            {
+              "required": [
+                "tier"
+              ]
+            },
+            {
+              "required": [
+                "tiers"
+              ]
+            }
+          ]
+        }
+      },
+      {
         "id": "memory",
         "aliases": [],
         "capabilities": [
@@ -7265,6 +7312,60 @@
         }
       },
       {
+        "id": "villagerretaliation:reputation_tier",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Reputation tier",
+        "description": "Built-in Reputation tier type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "tier"
+              ]
+            },
+            {
+              "required": [
+                "tiers"
+              ]
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "reputation_tier"
+            },
+            "tier": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$"
+            },
+            "tiers": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$"
+              }
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:scoreboard",
         "aliases": [
           "villagerretaliation:score"
@@ -8285,6 +8386,7 @@
         "recruitment_memory",
         "relationship",
         "reputation",
+        "reputation_tier",
         "response_selected",
         "score",
         "scoreboard",

@@ -26,28 +26,31 @@ public final class NarrativeActions {
     private final QuestFactStore facts;
     private final com.jvn.villagerretaliation.memory.EventMemoryAccess memories;
     private final ToIntFunction<DialogueRuntimeContext> reputation;
+    private final java.util.function.Function<DialogueRuntimeContext, ResourceLocation> reputationTier;
 
     private NarrativeActions(Map<VillagerActionDefinition.Kind, Handler> handlers, Handler fallback,
             QuestFactStore facts, ToIntFunction<DialogueRuntimeContext> reputation,
-            com.jvn.villagerretaliation.memory.EventMemoryAccess memories) {
+            com.jvn.villagerretaliation.memory.EventMemoryAccess memories,
+            java.util.function.Function<DialogueRuntimeContext, ResourceLocation> reputationTier) {
         this.handlers = Map.copyOf(handlers);
         this.fallback = Objects.requireNonNull(fallback);
         this.facts = facts;
         this.memories = memories;
         this.reputation = reputation;
+        this.reputationTier = reputationTier;
     }
 
     public static NarrativeActions common() { return COMMON; }
 
     public static NarrativeActions adapt(Handler handler) {
-        return new NarrativeActions(Map.of(), handler, null, null, null);
+        return new NarrativeActions(Map.of(), handler, null, null, null, null);
     }
 
     public NarrativeActions with(VillagerActionDefinition.Kind kind, Handler handler) {
         var updated = new EnumMap<VillagerActionDefinition.Kind, Handler>(VillagerActionDefinition.Kind.class);
         updated.putAll(this.handlers);
         updated.put(Objects.requireNonNull(kind), Objects.requireNonNull(handler));
-        return new NarrativeActions(updated, this.fallback, this.facts, this.reputation, this.memories);
+        return new NarrativeActions(updated, this.fallback, this.facts, this.reputation, this.memories, this.reputationTier);
     }
 
     public NarrativeActions withReputation(ReputationService<?> service) {
@@ -60,7 +63,20 @@ public final class NarrativeActions {
                     : ActionResult.alreadySatisfied("reputation unchanged", Set.of(), VillagerActionResult.EMPTY);
         });
         return new NarrativeActions(updated.handlers, updated.fallback, updated.facts,
-                context -> service.score(context.providerId(), context.player().getUUID()), updated.memories);
+                context -> service.score(context.providerId(), context.player().getUUID()), updated.memories, null);
+    }
+
+    public <T> NarrativeActions withReputation(ReputationService<T> service,
+            java.util.function.Function<? super T, ResourceLocation> tierIds) {
+        Objects.requireNonNull(tierIds);
+        var updated = withReputation(service);
+        return new NarrativeActions(updated.handlers, updated.fallback, updated.facts, updated.reputation, updated.memories,
+                context -> Objects.requireNonNull(tierIds.apply(service.tier(context.providerId(), context.player().getUUID())), "reputation tier id"));
+    }
+
+    public Optional<ResourceLocation> reputationTier(DialogueRuntimeContext context) {
+        return this.reputationTier == null || context.providerId() == null ? Optional.empty()
+                : Optional.of(this.reputationTier.apply(context));
     }
 
     public NarrativeActions withFacts(QuestFactStore store, FactActions.StageSetter stages) {
@@ -87,7 +103,7 @@ public final class NarrativeActions {
                         : unavailable("The fact action is unavailable.");
             });
         }
-        return new NarrativeActions(updated.handlers, updated.fallback, store, updated.reputation, updated.memories);
+        return new NarrativeActions(updated.handlers, updated.fallback, store, updated.reputation, updated.memories, updated.reputationTier);
     }
 
     public NarrativeActions withFollowers(com.jvn.villagerretaliation.quest.follower.QuestFollowerPolicy policy) {
@@ -104,7 +120,7 @@ public final class NarrativeActions {
                     action.memoryScope().includesVillage());
             return changed ? success(VillagerActionResult.success()) : ActionResult.skipped("memory unchanged", Set.of());
         });
-        return new NarrativeActions(updated.handlers, updated.fallback, updated.facts, updated.reputation, memory);
+        return new NarrativeActions(updated.handlers, updated.fallback, updated.facts, updated.reputation, memory, updated.reputationTier);
     }
 
     public Optional<com.jvn.villagerretaliation.memory.EventMemoryAccess> memories() { return Optional.ofNullable(this.memories); }

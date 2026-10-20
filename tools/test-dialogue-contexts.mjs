@@ -21,5 +21,13 @@ for (const condition of [
   { type: "physical_state", subject: "player", state: "invented" },
   { type: "companion_state", state: "invented" }
 ]) assert(validateContextDocuments([[source("bad"), { id: "test:bad", conditions: [condition] }]], schema).length);
+const tierRule = condition => [[source("tiers"), { id: "test:tiers", conditions: [condition] }]];
+assert.deepEqual(validateContextDocuments(tierRule({ type: "reputation_tier", tiers: ["test:ally"] }), schema), []);
+for (const condition of [
+  { type: "reputation_tier", tiers: [] },
+  { type: "reputation_tier", tier: "unqualified" },
+  { type: "reputation_tier", tiers: ["test:Invalid Tier"] },
+  { type: "reputation_tier" }
+]) assert(validateContextDocuments(tierRule(condition), schema).length);
 assert.deepEqual(await validateContextDirectory(), []);
 console.log("Dialogue context checks passed: composition, references, cycles, bounds, state schemas, and built-in content.");
