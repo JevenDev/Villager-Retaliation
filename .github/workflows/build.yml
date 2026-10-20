@@ -3,10 +3,32 @@ name: Build
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  verify:
+    name: Validate data and tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: verify-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/verify.mjs
+
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: build-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
 
     steps:
       - uses: actions/checkout@v4
@@ -14,10 +36,46 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Validate data and tools
-        run: node tools/verify.mjs
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew build
+      - run: ./gradlew build --no-daemon
+
+  deploy:
+    name: Deploy Wiki Sites
+    if: github.ref == 'refs/heads/1.21.1' && github.event_name != 'pull_request'
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Build combined Pages artifact
+        run: |
+          mkdir -p _site/datapack-builder
+          mkdir -p _site/quest-builder
+          mkdir -p _site/developer-wiki
+          mkdir -p _site/shared
+          cp -R wiki/player/. _site/
+          cp -R tools/datapack-builder/. _site/datapack-builder/
+          cp -R tools/quest-builder/. _site/quest-builder/
+          cp -R wiki/dev/. _site/developer-wiki/
+          cp -R wiki/shared/. _site/shared/
+          touch _site/.nojekyll
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
