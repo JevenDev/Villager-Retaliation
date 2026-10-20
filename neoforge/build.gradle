@@ -44,6 +44,7 @@ def animationClientSmokeDirectory = layout.buildDirectory.dir("animation-client-
 def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
 def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
+def dialogueCueClientSmokeDirectory = layout.buildDirectory.dir("dialogue-cue-client-smoke/${System.currentTimeMillis()}")
 
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
 
@@ -93,6 +94,14 @@ neoForge {
             systemProperty 'villagerretaliation.authoringEditorClientSmoke', authoringEditorClientSmokeDirectory.get().asFile.absolutePath
             systemProperty 'villagerretaliation.authoringEditorWorkflowSmokeOnly', providers.gradleProperty('authoringEditorWorkflowSmokeOnly').orElse('false').get()
             programArguments.addAll '--quickPlaySingleplayer', 'AuthoringEditorSmoke', '--width', '1920', '--height', '1080'
+        }
+
+        dialogueCueClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(dialogueCueClientSmokeDirectory)
+            systemProperty 'villagerretaliation.dialogueCueClientSmoke', dialogueCueClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'DialogueCueSmoke', '--width', '1280', '--height', '720'
         }
 
         dialogueCameraClientSmoke {
@@ -852,6 +861,20 @@ def configureIsolatedClientSmoke = { String taskName, runDirectory, String world
 
 def isolatedClientSmokeOptions =
         'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:3\n'
+
+tasks.named('runDialogueCueClientSmoke') {
+    doFirst {
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Dialogue cue client checks require the declared ImGuiMC dependency.')
+        copy {
+            from imgui
+            into new File(dialogueCueClientSmokeDirectory.get().asFile, 'mods')
+        }
+    }
+}
+
+configureIsolatedClientSmoke('runDialogueCueClientSmoke', dialogueCueClientSmokeDirectory, 'DialogueCueSmoke',
+        isolatedClientSmokeOptions + 'guiScale:2\n', 'Dialogue cue client smoke passed', 'Dialogue cue playback checks did not finish.')
 
 configureIsolatedClientSmoke('runPairedGreetClientSmoke', pairedGreetClientSmokeDirectory, 'PairedGreetSmoke',
         isolatedClientSmokeOptions, 'Paired Greet client smoke passed', 'Paired dialogue native checks did not finish.')
