@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.quest.tracking.QuestJournalData;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,12 +18,12 @@ final class QuestlineGraphLayout {
     private QuestlineGraphLayout() {
     }
 
-    static Layout arrange(List<QuestTrackerSyncPayload.QuestlineNode> source) {
+    static Layout arrange(List<QuestJournalData.QuestlineNode> source) {
         if (source == null || source.isEmpty()) {
             return Layout.EMPTY;
         }
-        Map<String, QuestTrackerSyncPayload.QuestlineNode> nodes = new LinkedHashMap<>();
-        for (QuestTrackerSyncPayload.QuestlineNode node : source) {
+        Map<String, QuestJournalData.QuestlineNode> nodes = new LinkedHashMap<>();
+        for (QuestJournalData.QuestlineNode node : source) {
             if (node != null && !node.questId().isBlank()) {
                 nodes.putIfAbsent(node.questId(), node);
             }
@@ -34,7 +34,7 @@ final class QuestlineGraphLayout {
 
         Map<String, List<String>> parents = new LinkedHashMap<>();
         Map<String, List<String>> primaryChildren = new LinkedHashMap<>();
-        for (QuestTrackerSyncPayload.QuestlineNode node : nodes.values()) {
+        for (QuestJournalData.QuestlineNode node : nodes.values()) {
             List<String> knownParents = node.parentQuestIds().stream().filter(nodes::containsKey).distinct().toList();
             parents.put(node.questId(), knownParents);
             if (!knownParents.isEmpty()) {
@@ -72,7 +72,7 @@ final class QuestlineGraphLayout {
         int minY = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
         int maxY = Integer.MIN_VALUE;
-        for (QuestTrackerSyncPayload.QuestlineNode node : nodes.values()) {
+        for (QuestJournalData.QuestlineNode node : nodes.values()) {
             int x = depths.getOrDefault(node.questId(), 0) * COLUMN_GAP;
             int y = rows.getOrDefault(node.questId(), 0);
             positioned.put(node.questId(), new PositionedNode(node, x, y));
@@ -146,7 +146,7 @@ final class QuestlineGraphLayout {
         return row;
     }
 
-    record PositionedNode(QuestTrackerSyncPayload.QuestlineNode node, int x, int y) {
+    record PositionedNode(QuestJournalData.QuestlineNode node, int x, int y) {
     }
 
     record Edge(String parentQuestId, String childQuestId) {

@@ -27,6 +27,37 @@ public final class VrQuestJournalSource implements QuestJournalSource {
     @Override public void confirmAbandonment(boolean confirm) { VillagerRetaliationClientPreferences.confirmQuestAbandonment(confirm); }
     @Override public Screen campaignScreen(Screen parent) { return new CampaignJournalScreen(parent); }
 
+    @Override public QuestJournalDataSource dataSource() {
+        return new QuestJournalDataSource() {
+            @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry> entries() {
+                return VillagerQuestTrackerOverlay.journalEntries();
+            }
+            @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.QuestlineNode> questlineNodes() {
+                return VillagerQuestTrackerOverlay.journalQuestlineNodes();
+            }
+            @Override public int trackedIndex(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                return VrQuestJournalSource.this.trackedIndex(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void toggleTracking(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                VrQuestJournalSource.this.toggleTracking(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void acknowledgeQuestUpdate(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                VrQuestJournalSource.this.acknowledgeQuestUpdate(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void request(String questId, QuestJournalDataSource.Request request) {
+                VrQuestJournalSource.this.request(questId, QuestJournalSource.Request.valueOf(request.name()));
+            }
+            @Override public void dismissFlash() { VrQuestJournalSource.this.dismissFlash(); }
+            @Override public boolean isJournalKey(int keyCode, int scanCode) { return VrQuestJournalSource.this.isJournalKey(keyCode, scanCode); }
+            @Override public void ignorePendingToggle() { VrQuestJournalSource.this.ignorePendingToggle(); }
+            @Override public boolean showTags() { return VrQuestJournalSource.this.showTags(); }
+            @Override public boolean cinematicBars() { return VrQuestJournalSource.this.cinematicBars(); }
+            @Override public boolean confirmAbandonment() { return VrQuestJournalSource.this.confirmAbandonment(); }
+            @Override public void confirmAbandonment(boolean confirm) { VrQuestJournalSource.this.confirmAbandonment(confirm); }
+            @Override public Screen campaignScreen(Screen parent) { return VrQuestJournalSource.this.campaignScreen(parent); }
+        };
+    }
+
     @Override public void request(String questId, Request request) {
         PacketDistributor.sendToServer(new QuestTrackerRequestPayload(questId, switch (request) {
             case ACCEPT -> QuestTrackerRequestPayload.Action.ACCEPT;

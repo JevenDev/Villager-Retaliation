@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.quest.tracking.QuestJournalData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -113,7 +114,7 @@ public final class VillagerQuestTrackerOverlay {
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        Optional<QuestTrackerSyncPayload.Entry> trackedEntry = trackedEntry();
+        Optional<QuestJournalData.Entry> trackedEntry = hudEntries().stream().findFirst();
         if (notificationAlpha > 0.01F && trackedEntry.isPresent()) {
             renderNotification(graphics, font, trackedEntry.get(), screenWidth, screenHeight);
         }
@@ -140,6 +141,18 @@ public final class VillagerQuestTrackerOverlay {
         trackerVisible = false;
         ignoredJournalToggleTicks = 0;
         pendingJournalOpenTicks = 0;
+    }
+
+    public static List<QuestJournalData.Entry> journalEntries() {
+        if (!com.jvn.villagerretaliation.authoring.client.EditorPlaytestViewport.active()) return MODEL.shared().entries();
+        return entries().stream().map(VrQuestJournalData::shared).toList();
+    }
+
+    public static List<QuestJournalData.QuestlineNode> journalQuestlineNodes() { return MODEL.shared().questlineNodes(); }
+
+    private static List<QuestJournalData.Entry> hudEntries() {
+        if (!com.jvn.villagerretaliation.authoring.client.EditorPlaytestViewport.active()) return MODEL.shared().trackedEntries();
+        return trackedEntries().stream().map(VrQuestJournalData::shared).toList();
     }
 
     public static List<QuestTrackerSyncPayload.Entry> entries() {
@@ -210,23 +223,23 @@ public final class VillagerQuestTrackerOverlay {
         if (MODEL.entries().isEmpty() || alpha <= 0.01F) {
             return;
         }
-        List<QuestTrackerSyncPayload.Entry> trackerEntries = trackerEntries(showRecentQuests);
+        List<QuestJournalData.Entry> trackerEntries = trackerEntries(showRecentQuests);
         if (trackerEntries.isEmpty()) {
             return;
         }
-        int width = QuestHudRenderer.trackerWidth(screenWidth);
-        int count = QuestHudRenderer.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
-        int totalHeight = QuestHudRenderer.trackerHeight(font, trackerEntries, count, width);
+        int width = QuestHud.trackerWidth(screenWidth);
+        int count = QuestHud.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
+        int totalHeight = QuestHud.trackerHeight(font, trackerEntries, count, width);
         int x = hudMargin();
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), (screenHeight - totalHeight) / 2);
         for (int index = 0; index < count; index++) {
-            QuestTrackerSyncPayload.Entry entry = trackerEntries.get(index);
+            QuestJournalData.Entry entry = trackerEntries.get(index);
             boolean primary = index == 0;
-            int height = primary ? QuestHudRenderer.primaryHeight() : QuestHudRenderer.secondaryHeight(font, entry, width);
+            int height = primary ? QuestHud.primaryHeight() : QuestHud.secondaryHeight(font, entry, width);
             float entryAlpha = alpha * (primary ? 1.0F : 0.76F);
-            int slide = Math.round((1.0F - entryAlpha) * QuestHudRenderer.slideDistance());
-            QuestHudRenderer.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
-            y += height + QuestHudRenderer.panelGap();
+            int slide = Math.round((1.0F - entryAlpha) * QuestHud.slideDistance());
+            QuestHud.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
+            y += height + QuestHud.panelGap();
         }
     }
 
@@ -262,8 +275,8 @@ public final class VillagerQuestTrackerOverlay {
         PacketDistributor.sendToServer(new QuestTrackerRequestPayload("", QuestTrackerRequestPayload.Action.REFRESH));
     }
 
-    private static List<QuestTrackerSyncPayload.Entry> trackerEntries(boolean showRecentQuests) {
-        List<QuestTrackerSyncPayload.Entry> tracked = trackedEntries();
+    private static List<QuestJournalData.Entry> trackerEntries(boolean showRecentQuests) {
+        List<QuestJournalData.Entry> tracked = hudEntries();
         if (tracked.isEmpty()) {
             return List.of();
         }
@@ -281,18 +294,18 @@ public final class VillagerQuestTrackerOverlay {
     private static void renderNotification(
             GuiGraphics graphics,
             Font font,
-            QuestTrackerSyncPayload.Entry entry,
+            QuestJournalData.Entry entry,
             int screenWidth,
             int screenHeight) {
-        int width = QuestHudRenderer.notificationWidth(font, entry, screenWidth);
-        int height = QuestHudRenderer.notificationHeight(font, entry, width, screenHeight);
+        int width = QuestHud.notificationWidth(font, entry, screenWidth);
+        int height = QuestHud.notificationHeight(font, entry, width, screenHeight);
         int margin = hudMargin();
-        int x = margin - Math.round((1.0F - notificationAlpha) * QuestHudRenderer.slideDistance());
+        int x = margin - Math.round((1.0F - notificationAlpha) * QuestHud.slideDistance());
         x = Math.min(x, screenWidth - width - margin);
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - height / 2);
         float alpha = notificationAlpha;
 
-        QuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
+        QuestHud.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
     }
 
     private static int hudMargin() {

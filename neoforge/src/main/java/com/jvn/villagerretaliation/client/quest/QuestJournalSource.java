@@ -24,5 +24,37 @@ public interface QuestJournalSource {
         return trackedIndex(entry) >= 0;
     }
 
+    default QuestJournalDataSource dataSource() {
+        QuestJournalSource legacy = this;
+        return new QuestJournalDataSource() {
+            @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry> entries() {
+                return legacy.entries().stream().map(VrQuestJournalData::shared).toList();
+            }
+            @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.QuestlineNode> questlineNodes() {
+                return legacy.questlineNodes().stream().map(VrQuestJournalData::shared).toList();
+            }
+            @Override public int trackedIndex(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                return legacy.trackedIndex(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void toggleTracking(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                legacy.toggleTracking(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void acknowledgeQuestUpdate(com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry entry) {
+                legacy.acknowledgeQuestUpdate(VrQuestJournalData.legacy(entry));
+            }
+            @Override public void request(String questId, QuestJournalDataSource.Request request) {
+                legacy.request(questId, QuestJournalSource.Request.valueOf(request.name()));
+            }
+            @Override public void dismissFlash() { legacy.dismissFlash(); }
+            @Override public boolean isJournalKey(int keyCode, int scanCode) { return legacy.isJournalKey(keyCode, scanCode); }
+            @Override public void ignorePendingToggle() { legacy.ignorePendingToggle(); }
+            @Override public boolean showTags() { return legacy.showTags(); }
+            @Override public boolean cinematicBars() { return legacy.cinematicBars(); }
+            @Override public boolean confirmAbandonment() { return legacy.confirmAbandonment(); }
+            @Override public void confirmAbandonment(boolean confirm) { legacy.confirmAbandonment(confirm); }
+            @Override public Screen campaignScreen(Screen parent) { return legacy.campaignScreen(parent); }
+        };
+    }
+
     enum Request { ACCEPT, ABANDON }
 }

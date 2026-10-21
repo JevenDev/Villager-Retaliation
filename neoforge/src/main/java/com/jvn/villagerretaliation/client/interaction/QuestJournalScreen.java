@@ -4,8 +4,9 @@ import com.jvn.toucanlib.client.ToucanHudText;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.quest.QuestJournalSource;
+import com.jvn.villagerretaliation.client.quest.QuestJournalDataSource;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
-import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.quest.tracking.QuestJournalData;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -178,19 +179,23 @@ public class QuestJournalScreen extends Screen {
     private boolean openedSoundPlayed;
     private long animationStartMillis = -1L;
     private final float cinematicBarSlant = VillagerDialogueCinematicBars.sampleSlant();
-    private List<QuestTrackerSyncPayload.Entry> cachedVisibleSourceEntries;
+    private List<QuestJournalData.Entry> cachedVisibleSourceEntries;
     private QuestJournalTab cachedVisibleTab;
     private String cachedVisibleQuery = "";
-    private List<QuestTrackerSyncPayload.Entry> cachedVisibleEntries = List.of();
-    private List<QuestTrackerSyncPayload.Entry> cachedOptionLayoutEntries;
+    private List<QuestJournalData.Entry> cachedVisibleEntries = List.of();
+    private List<QuestJournalData.Entry> cachedOptionLayoutEntries;
     private List<List<FormattedCharSequence>> cachedOptionTitleLines = List.of();
     private int[] cachedOptionHeights = new int[0];
     private float[] cachedOptionOffsets = new float[0];
     private float cachedOptionContentHeight;
 
-    private final QuestJournalSource source;
+    private final QuestJournalDataSource source;
 
     public QuestJournalScreen(QuestJournalSource source) {
+        this(source.dataSource());
+    }
+
+    public QuestJournalScreen(QuestJournalDataSource source) {
         super(Component.translatable(GUI_KEY_PREFIX + "title"));
         this.source = java.util.Objects.requireNonNull(source);
     }
@@ -346,7 +351,7 @@ public class QuestJournalScreen extends Screen {
                 playBookSound(1.08F);
                 return true;
             }
-            QuestTrackerSyncPayload.QuestlineNode node = questlineGraphNodeAt(mouseX, journalMouseY);
+            QuestJournalData.QuestlineNode node = questlineGraphNodeAt(mouseX, journalMouseY);
             if (node != null) {
                 if (openQuestPage(node.questId())) {
                     closeQuestlineMap();
@@ -371,7 +376,7 @@ public class QuestJournalScreen extends Screen {
             }
         }
 
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (abandonActionAt(mouseX, journalMouseY, selected)) {
             requestQuestAbandon(selected);
             return true;
@@ -611,7 +616,7 @@ public class QuestJournalScreen extends Screen {
         int accepted = 0;
         int nearby = 0;
         int completed = 0;
-        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+        for (QuestJournalData.Entry entry : entries()) {
             QuestJournalEntryState state = QuestJournalEntryState.from(entry);
             if (entry.questAvailable()) {
                 nearby++;
@@ -671,7 +676,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void renderQuestOptions(GuiGraphics graphics, int mouseX, int journalMouseY, int slideOffset) {
-        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        List<QuestJournalData.Entry> visibleEntries = visibleEntries();
         int left = optionsLeft();
         int top = optionsTop();
         int viewportBottom = top + optionViewportHeight();
@@ -838,7 +843,7 @@ public class QuestJournalScreen extends Screen {
                 height + QUEST_OPTION_SELECTED_OVERHANG_Y * 2);
     }
 
-    private void renderQuestOptionIcon(GuiGraphics graphics, QuestTrackerSyncPayload.Entry entry, boolean selected, int left, int top) {
+    private void renderQuestOptionIcon(GuiGraphics graphics, QuestJournalData.Entry entry, boolean selected, int left, int top) {
         QuestJournalEntryState state = QuestJournalEntryState.iconFor(entry, source.isTracked(entry));
         int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
         int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
@@ -887,7 +892,7 @@ public class QuestJournalScreen extends Screen {
 
     private void renderQuestOptionTitle(GuiGraphics graphics, int index, int hovered, int left, int top) {
         boolean selected = index == this.state.selectedOption();
-        QuestTrackerSyncPayload.Entry entry = visibleEntries().get(index);
+        QuestJournalData.Entry entry = visibleEntries().get(index);
         int authoredColor = journalColor(entry, TEXT_COLOR);
         int textColor = selected ? SELECTED_TEXT_COLOR : index == hovered ? HOVERED_TEXT_COLOR : authoredColor;
         int textLeft = left + QUEST_OPTION_TEXT_LEFT_PADDING;
@@ -904,7 +909,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void renderQuestDetails(GuiGraphics graphics, int slideOffset, int mouseX, int journalMouseY) {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (selected == null) {
             return;
         }
@@ -1047,7 +1052,7 @@ public class QuestJournalScreen extends Screen {
         graphics.drawString(this.font, line.text(), textLeft, top, line.color(), false);
     }
 
-    private List<QuestDetailLine> buildQuestDetailLines(QuestTrackerSyncPayload.Entry selected, int wrapWidth, int lineStep) {
+    private List<QuestDetailLine> buildQuestDetailLines(QuestJournalData.Entry selected, int wrapWidth, int lineStep) {
         List<QuestDetailLine> lines = new ArrayList<>();
         int y = 1;
         y = addTitleLines(
@@ -1060,7 +1065,7 @@ public class QuestJournalScreen extends Screen {
                 lineStep,
                 QuestJournalEntryState.from(selected).texture());
         y = addDividerLine(lines, y + 3, 3);
-        QuestTrackerSyncPayload.Journal journal = selected.journal();
+        QuestJournalData.Journal journal = selected.journal();
         int statusGapAfter = journal.blocker().isBlank() ? DETAILS_SECTION_GAP : 2;
         y = addWrappedDetailLines(lines, statusLine(selected), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, statusGapAfter);
         if (!journal.blocker().isBlank()) {
@@ -1109,8 +1114,8 @@ public class QuestJournalScreen extends Screen {
                     : "section.previous_steps";
             y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + sectionKey), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
-            for (QuestTrackerSyncPayload.Prerequisite prerequisite : selected.prerequisites()) {
-                QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(prerequisite.questId());
+            for (QuestJournalData.Prerequisite prerequisite : selected.prerequisites()) {
+                QuestJournalData.Entry target = journalEntryForQuestId(prerequisite.questId());
                 if (target == null) {
                     y = addQuestStepLines(lines, prerequisiteLine(prerequisite), prerequisite.met(), y, lineStep, 2);
                 } else {
@@ -1130,13 +1135,13 @@ public class QuestJournalScreen extends Screen {
         y = addDividerLine(lines, y + 3, 3);
         boolean completed = selected.progress() >= 1.0F || QuestJournalEntryState.from(selected) == QuestJournalEntryState.COMPLETED;
         if (!selected.objectiveSteps().isEmpty()) {
-            for (QuestTrackerSyncPayload.ObjectiveStep objectiveStep : selected.objectiveSteps()) {
+            for (QuestJournalData.ObjectiveStep objectiveStep : selected.objectiveSteps()) {
                 y = addQuestStepLines(lines, objectiveStep.label(), objectiveStep.completed(), true, y, lineStep, 2);
             }
         } else if (selected.questItems().isEmpty()) {
             y = addQuestStepLines(lines, selected.objective(), completed, y, lineStep, 2);
         } else {
-            for (QuestTrackerSyncPayload.QuestItem item : selected.questItems()) {
+            for (QuestJournalData.QuestItem item : selected.questItems()) {
                 y = addQuestStepLines(lines, questItemLine(item), questItemComplete(item), y, lineStep, 2);
             }
         }
@@ -1144,7 +1149,7 @@ public class QuestJournalScreen extends Screen {
             y = addDividerLine(lines, y + 3, 3);
             y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
-            for (QuestTrackerSyncPayload.RewardPreview reward : selected.rewardPreviews()) {
+            for (QuestJournalData.RewardPreview reward : selected.rewardPreviews()) {
                 if (rewardItemStack(reward.itemId()).isEmpty()) {
                     y = addQuestStepLines(lines, rewardPreviewLine(reward), completed, y, lineStep, 2);
                 } else {
@@ -1376,7 +1381,7 @@ public class QuestJournalScreen extends Screen {
 
     private int addQuestlineLinkLines(
             List<QuestDetailLine> lines,
-            QuestTrackerSyncPayload.Journal journal,
+            QuestJournalData.Journal journal,
             int wrapWidth,
             int top,
             int lineStep,
@@ -1444,7 +1449,7 @@ public class QuestJournalScreen extends Screen {
 
     private int addItemRewardLines(
             List<QuestDetailLine> lines,
-            QuestTrackerSyncPayload.RewardPreview reward,
+            QuestJournalData.RewardPreview reward,
             int top,
             int lineStep,
             int gapAfter) {
@@ -1485,7 +1490,7 @@ public class QuestJournalScreen extends Screen {
         return lastLine.top() + lastLine.height();
     }
 
-    private Component statusLine(QuestTrackerSyncPayload.Entry entry) {
+    private Component statusLine(QuestJournalData.Entry entry) {
         if (entry.status().isBlank()) {
             String key = entry.trackable() && source.isTracked(entry) ? "tracked" : "not_tracked";
             return Component.translatable(GUI_KEY_PREFIX + "status." + key);
@@ -1498,20 +1503,20 @@ public class QuestJournalScreen extends Screen {
                 : Component.translatable(GUI_KEY_PREFIX + "status.value_not_tracked", entry.status());
     }
 
-    private static String descriptionLine(QuestTrackerSyncPayload.Entry entry) {
+    private static String descriptionLine(QuestJournalData.Entry entry) {
         return entry.description().isBlank() ? entry.objective() : entry.description();
     }
 
-    private static String questItemLine(QuestTrackerSyncPayload.QuestItem item) {
+    private static String questItemLine(QuestJournalData.QuestItem item) {
         int current = Math.max(0, Math.min(item.count(), item.currentCount()));
         return item.label() + " " + current + "/" + item.count();
     }
 
-    private static boolean questItemComplete(QuestTrackerSyncPayload.QuestItem item) {
+    private static boolean questItemComplete(QuestJournalData.QuestItem item) {
         return item.count() <= 0 || item.currentCount() >= item.count();
     }
 
-    private static String rewardPreviewLine(QuestTrackerSyncPayload.RewardPreview reward) {
+    private static String rewardPreviewLine(QuestJournalData.RewardPreview reward) {
         return reward.label();
     }
 
@@ -1522,7 +1527,7 @@ public class QuestJournalScreen extends Screen {
                 : BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
     }
 
-    private static String prerequisiteLine(QuestTrackerSyncPayload.Prerequisite prerequisite) {
+    private static String prerequisiteLine(QuestJournalData.Prerequisite prerequisite) {
         return prerequisite.label();
     }
 
@@ -1604,7 +1609,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void restoreSelectedTabPosition() {
-        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        List<QuestJournalData.Entry> visibleEntries = visibleEntries();
         VillagerInteractionScreenState.OptionListPosition position = this.tabPositions.get(this.selectedTab);
         if (position == null) {
             this.state.resetOptions(!visibleEntries.isEmpty());
@@ -1713,7 +1718,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void clampSelectedOption() {
-        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        List<QuestJournalData.Entry> visibleEntries = visibleEntries();
         if (visibleEntries.isEmpty()) {
             this.state.resetOptions(false);
             this.selectedQuestId = "";
@@ -1769,7 +1774,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void acknowledgeSelectedQuestUpdate() {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (selected != null) {
             source.acknowledgeQuestUpdate(selected);
         }
@@ -1785,8 +1790,8 @@ public class QuestJournalScreen extends Screen {
         this.detailsPage = 0;
     }
 
-    private QuestTrackerSyncPayload.Entry selectedEntry() {
-        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+    private QuestJournalData.Entry selectedEntry() {
+        List<QuestJournalData.Entry> visibleEntries = visibleEntries();
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= visibleEntries.size()) {
             return null;
         }
@@ -1794,12 +1799,12 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void rememberSelectedQuestId() {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         this.selectedQuestId = selected == null ? "" : selected.questId();
     }
 
     private boolean turnDetailsPage(int direction) {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (selected == null || direction == 0) {
             return false;
         }
@@ -1816,14 +1821,14 @@ public class QuestJournalScreen extends Screen {
         return true;
     }
 
-    private int detailsPageCount(QuestTrackerSyncPayload.Entry selected) {
+    private int detailsPageCount(QuestJournalData.Entry selected) {
         return detailPageStarts(
                         buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP),
                         detailsPageViewportHeight(selected))
                 .size();
     }
 
-    private static int detailsPageViewportHeight(QuestTrackerSyncPayload.Entry selected) {
+    private static int detailsPageViewportHeight(QuestJournalData.Entry selected) {
         return Math.max(
                 1,
                 DETAILS_HEIGHT - (canManageQuest(selected)
@@ -1831,14 +1836,14 @@ public class QuestJournalScreen extends Screen {
                         : 0));
     }
 
-    private static boolean canManageQuest(QuestTrackerSyncPayload.Entry entry) {
+    private static boolean canManageQuest(QuestJournalData.Entry entry) {
         return entry != null && ("active".equalsIgnoreCase(entry.state()) || "discovered".equals(entry.state()));
     }
 
     private boolean abandonActionAt(
             double mouseX,
             double journalMouseY,
-            QuestTrackerSyncPayload.Entry selected) {
+            QuestJournalData.Entry selected) {
         return !this.questlineMapOpen
                 && canManageQuest(selected)
                 && isPointInside(
@@ -1850,13 +1855,13 @@ public class QuestJournalScreen extends Screen {
                         detailsTop() + DETAILS_HEIGHT);
     }
 
-    private void requestQuestAbandon(QuestTrackerSyncPayload.Entry selected) {
+    private void requestQuestAbandon(QuestJournalData.Entry selected) {
         if (selected == null) {
             return;
         }
         String questId = selected.questId();
         if ("discovered".equals(selected.state())) {
-            source.request(questId, QuestJournalSource.Request.ACCEPT);
+            source.request(questId, QuestJournalDataSource.Request.ACCEPT);
             return;
         }
         if (!source.confirmAbandonment()) {
@@ -1873,11 +1878,11 @@ public class QuestJournalScreen extends Screen {
         if (questId == null || questId.isBlank()) {
             return;
         }
-        source.request(questId, QuestJournalSource.Request.ABANDON);
+        source.request(questId, QuestJournalDataSource.Request.ABANDON);
         playBookSound(0.78F);
     }
 
-    private static int indexOfQuestId(List<QuestTrackerSyncPayload.Entry> visibleEntries, String questId) {
+    private static int indexOfQuestId(List<QuestJournalData.Entry> visibleEntries, String questId) {
         if (questId == null || questId.isBlank()) {
             return -1;
         }
@@ -1893,7 +1898,7 @@ public class QuestJournalScreen extends Screen {
         if (questline == null || questline.isBlank()) {
             return;
         }
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         this.questlineMapOpen = true;
         this.questlineMapId = questline;
         this.questlineMapReturnQuestId = selected == null ? "" : baseQuestId(selected.questId());
@@ -1943,7 +1948,7 @@ public class QuestJournalScreen extends Screen {
         return GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
     }
 
-    private List<QuestTrackerSyncPayload.QuestlineNode> currentQuestlineNodes() {
+    private List<QuestJournalData.QuestlineNode> currentQuestlineNodes() {
         if (this.questlineMapId.isBlank()) {
             return List.of();
         }
@@ -2044,7 +2049,7 @@ public class QuestJournalScreen extends Screen {
                 detailsTop() + this.font.lineHeight);
     }
 
-    private QuestTrackerSyncPayload.QuestlineNode questlineGraphNodeAt(double mouseX, double journalMouseY) {
+    private QuestJournalData.QuestlineNode questlineGraphNodeAt(double mouseX, double journalMouseY) {
         if (!isPointInsideQuestlineGraph(mouseX, journalMouseY)) {
             return null;
         }
@@ -2066,7 +2071,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void renderAbandonTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (!abandonActionAt(mouseX, mouseY - slideOffset, selected)) {
             return;
         }
@@ -2083,7 +2088,7 @@ public class QuestJournalScreen extends Screen {
             int mouseX,
             int mouseY,
             int slideOffset) {
-        QuestTrackerSyncPayload.QuestlineNode node = questlineGraphNodeAt(mouseX, mouseY - slideOffset);
+        QuestJournalData.QuestlineNode node = questlineGraphNodeAt(mouseX, mouseY - slideOffset);
         if (node == null) {
             return;
         }
@@ -2128,7 +2133,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void renderQuestlineTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
-        QuestTrackerSyncPayload.Entry entry = questEntryAt(mouseX, mouseY - slideOffset);
+        QuestJournalData.Entry entry = questEntryAt(mouseX, mouseY - slideOffset);
         if (entry == null || entry.journal().questline().isBlank()) {
             return;
         }
@@ -2139,7 +2144,7 @@ public class QuestJournalScreen extends Screen {
                 mouseY);
     }
 
-    private static List<Component> questlineTooltipLines(QuestTrackerSyncPayload.Journal journal) {
+    private static List<Component> questlineTooltipLines(QuestJournalData.Journal journal) {
         return List.of(
                 Component.translatable(GUI_KEY_PREFIX + "questline_label")
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_LABEL_COLOR)),
@@ -2152,7 +2157,7 @@ public class QuestJournalScreen extends Screen {
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_PROGRESS_COLOR)));
     }
 
-    private QuestTrackerSyncPayload.Entry questEntryAt(double mouseX, double journalMouseY) {
+    private QuestJournalData.Entry questEntryAt(double mouseX, double journalMouseY) {
         int index = questOptionAt(mouseX, journalMouseY);
         return index < 0 ? null : visibleEntries().get(index);
     }
@@ -2164,7 +2169,7 @@ public class QuestJournalScreen extends Screen {
         }
         List<Component> tooltip;
         if (link.questlineLink()) {
-            QuestTrackerSyncPayload.Entry selected = selectedEntry();
+            QuestJournalData.Entry selected = selectedEntry();
             tooltip = selected == null
                     ? List.of()
                     : questlineTooltipLines(selected.journal());
@@ -2177,7 +2182,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private QuestDetailLine detailLinkAt(double mouseX, double journalMouseY) {
-        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        QuestJournalData.Entry selected = selectedEntry();
         if (this.questlineMapOpen || selected == null || !isPointInsideDetailsScrollArea(mouseX, journalMouseY)) {
             return null;
         }
@@ -2201,7 +2206,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private boolean openQuestPage(String targetQuestId) {
-        QuestTrackerSyncPayload.Entry target = journalEntryForQuestId(targetQuestId);
+        QuestJournalData.Entry target = journalEntryForQuestId(targetQuestId);
         if (target == null) {
             return false;
         }
@@ -2223,16 +2228,16 @@ public class QuestJournalScreen extends Screen {
         return true;
     }
 
-    private QuestTrackerSyncPayload.Entry journalEntryForQuestId(String questId) {
+    private QuestJournalData.Entry journalEntryForQuestId(String questId) {
         if (questId == null || questId.isBlank()) {
             return null;
         }
-        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+        for (QuestJournalData.Entry entry : entries()) {
             if (!entry.journal().hidden() && questId.equals(entry.questId())) {
                 return entry;
             }
         }
-        for (QuestTrackerSyncPayload.Entry entry : entries()) {
+        for (QuestJournalData.Entry entry : entries()) {
             if (!entry.journal().hidden() && questId.equals(baseQuestId(entry.questId()))) {
                 return entry;
             }
@@ -2313,7 +2318,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private void ensureOptionLayout() {
-        List<QuestTrackerSyncPayload.Entry> visibleEntries = visibleEntries();
+        List<QuestJournalData.Entry> visibleEntries = visibleEntries();
         if (this.cachedOptionLayoutEntries == visibleEntries) {
             return;
         }
@@ -2411,12 +2416,12 @@ public class QuestJournalScreen extends Screen {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, pitch));
     }
 
-    private List<QuestTrackerSyncPayload.Entry> entries() {
+    private List<QuestJournalData.Entry> entries() {
         return source.entries();
     }
 
-    private List<QuestTrackerSyncPayload.Entry> visibleEntries() {
-        List<QuestTrackerSyncPayload.Entry> sourceEntries = entries();
+    private List<QuestJournalData.Entry> visibleEntries() {
+        List<QuestJournalData.Entry> sourceEntries = entries();
         String query = normalized(this.searchQuery);
         if (this.cachedVisibleSourceEntries == sourceEntries
                 && this.cachedVisibleTab == this.selectedTab
@@ -2431,7 +2436,7 @@ public class QuestJournalScreen extends Screen {
                 .filter(entry -> this.selectedTab.includes(QuestJournalEntryState.from(entry)))
                 .filter(entry -> query.isBlank() || journalSearchText(entry).contains(query))
                 .sorted(Comparator.comparingInt(this::activeTrackedSortKey)
-                        .thenComparing(Comparator.comparingInt((QuestTrackerSyncPayload.Entry entry) -> entry.journal().priority()).reversed())
+                        .thenComparing(Comparator.comparingInt((QuestJournalData.Entry entry) -> entry.journal().priority()).reversed())
                         .thenComparing(entry -> normalized(entry.journal().questline()))
                         .thenComparing(entry -> normalized(entry.title())))
                 .toList();
@@ -2447,17 +2452,17 @@ public class QuestJournalScreen extends Screen {
         this.detailsPage = 0;
     }
 
-    private static String journalSearchText(QuestTrackerSyncPayload.Entry entry) {
+    private static String journalSearchText(QuestJournalData.Entry entry) {
         return normalized(String.join(" ",
                 entry.title(), entry.description(), entry.objective(), entry.status(), entry.journal().questline(),
                 String.join(" ", entry.journal().tags())));
     }
 
-    private static int journalColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
+    private static int journalColor(QuestJournalData.Entry entry, int fallback) {
         return readableJournalTextColor(parseJournalColor(entry == null ? "" : entry.journal().color(), fallback));
     }
 
-    private static int journalOutlineColor(QuestTrackerSyncPayload.Entry entry, int fallback) {
+    private static int journalOutlineColor(QuestJournalData.Entry entry, int fallback) {
         return parseJournalColor(entry == null ? "" : entry.journal().outlineColor(), fallback);
     }
 
@@ -2532,7 +2537,7 @@ public class QuestJournalScreen extends Screen {
         return text.toString();
     }
 
-    private static Component journalTimingLine(QuestTrackerSyncPayload.Entry entry) {
+    private static Component journalTimingLine(QuestJournalData.Entry entry) {
         long now = currentGameTime();
         if (entry.journal().expiresAtGameTime() > 0L && "active".equals(normalized(entry.state()))) {
             long remaining = Math.max(0L, entry.journal().expiresAtGameTime() - now);
@@ -2544,8 +2549,8 @@ public class QuestJournalScreen extends Screen {
         return null;
     }
 
-    private static Component journalWaypointLine(QuestTrackerSyncPayload.Entry entry) {
-        QuestTrackerSyncPayload.Waypoint waypoint = entry.journal().waypoint();
+    private static Component journalWaypointLine(QuestJournalData.Entry entry) {
+        QuestJournalData.Waypoint waypoint = entry.journal().waypoint();
         if (!waypoint.present()) {
             return null;
         }
@@ -2576,7 +2581,7 @@ public class QuestJournalScreen extends Screen {
         return remainder + "s";
     }
 
-    private int activeTrackedSortKey(QuestTrackerSyncPayload.Entry entry) {
+    private int activeTrackedSortKey(QuestJournalData.Entry entry) {
         if (QuestJournalEntryState.from(entry) != QuestJournalEntryState.ACTIVE) {
             return Integer.MAX_VALUE;
         }
@@ -2584,7 +2589,7 @@ public class QuestJournalScreen extends Screen {
         return trackedIndex < 0 ? Integer.MAX_VALUE : trackedIndex;
     }
 
-    private static boolean hasQuestUpdate(QuestTrackerSyncPayload.Entry entry) {
+    private static boolean hasQuestUpdate(QuestJournalData.Entry entry) {
         return entry.questUpdate() && !entry.questAvailable();
     }
 
@@ -2699,7 +2704,7 @@ public class QuestJournalScreen extends Screen {
             this.texture = texture;
         }
 
-        static QuestJournalEntryState from(QuestTrackerSyncPayload.Entry entry) {
+        static QuestJournalEntryState from(QuestJournalData.Entry entry) {
             if (entry.questAvailable()) {
                 return AVAILABLE;
             }
@@ -2712,7 +2717,7 @@ public class QuestJournalScreen extends Screen {
             };
         }
 
-        static QuestJournalEntryState iconFor(QuestTrackerSyncPayload.Entry entry, boolean tracked) {
+        static QuestJournalEntryState iconFor(QuestJournalData.Entry entry, boolean tracked) {
             QuestJournalEntryState state = from(entry);
             if (state == ACTIVE && !tracked) {
                 return INACTIVE;
@@ -2945,7 +2950,7 @@ public class QuestJournalScreen extends Screen {
 
     private void renderQuestlineGraph(
             GuiGraphics graphics,
-            QuestTrackerSyncPayload.Entry selected,
+            QuestJournalData.Entry selected,
             int slideOffset,
             int mouseX,
             int journalMouseY) {
@@ -3037,7 +3042,7 @@ public class QuestJournalScreen extends Screen {
             boolean branch) {
         int left = questlineGraphNodeLeft(positioned);
         int top = questlineGraphNodeTop(positioned);
-        QuestTrackerSyncPayload.QuestlineNode node = positioned.node();
+        QuestJournalData.QuestlineNode node = positioned.node();
         boolean obtained = "completed".equalsIgnoreCase(node.state())
                 || "active".equalsIgnoreCase(node.state());
         AdvancementWidgetType widgetType = obtained
@@ -3077,7 +3082,7 @@ public class QuestJournalScreen extends Screen {
     }
 
     private static AdvancementType questlineNodeAdvancementType(
-            QuestTrackerSyncPayload.QuestlineNode node,
+            QuestJournalData.QuestlineNode node,
             boolean branch) {
         if ("active".equalsIgnoreCase(node.state())) {
             return AdvancementType.GOAL;
@@ -3094,7 +3099,7 @@ public class QuestJournalScreen extends Screen {
         };
     }
 
-    private static ItemStack questlineNodeItem(QuestTrackerSyncPayload.QuestlineNode node) {
+    private static ItemStack questlineNodeItem(QuestJournalData.QuestlineNode node) {
         ResourceLocation id = node == null ? null : ResourceLocation.tryParse(node.icon());
         return id == null
                 ? ItemStack.EMPTY
