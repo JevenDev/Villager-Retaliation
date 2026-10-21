@@ -2,7 +2,8 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.toucanlib.client.ToucanHudText;
 import com.jvn.toucanlib.client.ToucanScrollState;
-import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.quest.QuestPresentation;
+import com.jvn.villagerretaliation.client.quest.QuestPresentation.Texture;
 import com.jvn.villagerretaliation.client.quest.QuestJournalSource;
 import com.jvn.villagerretaliation.client.quest.QuestJournalDataSource;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
@@ -104,51 +105,43 @@ public class QuestJournalScreen extends Screen {
     private static final int QUESTLINE_GRAPH_PAN_MARGIN = 8;
     private static final String QUESTLINE_LINK_PREFIX = "#questline/";
 
-    private static final int TEXT_COLOR = 0xFF000000;
-    private static final int TITLE_COLOR = 0xFF000000;
-    private static final int QUEST_TITLE_TEXT_COLOR = 0xFF000000;
-    private static final int NO_QUEST_TITLE_OUTLINE = 0x00000000;
-    private static final int MUTED_TEXT_COLOR = 0xFF000000;
-    private static final int SELECTED_TEXT_COLOR = 0xFFFFFFFF;
-    private static final int HOVERED_TEXT_COLOR = 0xFF000000;
-    private static final int LINK_TEXT_COLOR = 0xFF315B8A;
-    private static final int QUESTLINE_LABEL_COLOR = 0xFF4A3828;
-    private static final int QUESTLINE_PROGRESS_COLOR = 0xFF4F6F36;
-    private static final int QUESTLINE_TOOLTIP_LABEL_COLOR = 0xFFF9CB5F;
-    private static final int QUESTLINE_TOOLTIP_NAME_COLOR = 0xFF5C96EF;
-    private static final int QUESTLINE_TOOLTIP_PROGRESS_COLOR = 0xFFB5F45B;
-    private static final int QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR = 0xFFA0A0A0;
-    private static final int QUESTLINE_NODE_TOOLTIP_ACTION_COLOR = 0xFF5C96EF;
-    private static final int QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR = 0xFFF9CB5F;
-    private static final int QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR = 0xFFB5F45B;
-    private static final int QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR = 0xFFF06A6A;
-    private static final int QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR = 0xFFA0A0A0;
-    private static final int QUEST_COUNT_TEXT_COLOR = 0xFFFFFFFF;
-    private static final int PAGE_TEXT_COLOR = 0xFFE1DAC7;
-    private static final Style QUEST_COUNT_ACTIVE_STYLE = Style.EMPTY.withColor(0xF9CB5F);
-    private static final Style QUEST_COUNT_ACCEPTED_STYLE = Style.EMPTY.withColor(0xE1DAC7);
-    private static final Style QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(0xB5F45B);
-    private static final Style QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(0x5C96EF);
-    private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.quest_journal.";
-    private static final int LIGHTEST_JOURNAL_ENTRY_COLOR = 0xFFF6F0DF;
+    private final int TEXT_COLOR;
+    private final int TITLE_COLOR;
+    private final int QUEST_TITLE_TEXT_COLOR;
+    private final int NO_QUEST_TITLE_OUTLINE;
+    private final int MUTED_TEXT_COLOR;
+    private final int SELECTED_TEXT_COLOR;
+    private final int HOVERED_TEXT_COLOR;
+    private final int LINK_TEXT_COLOR;
+    private final int QUESTLINE_LABEL_COLOR;
+    private final int QUESTLINE_PROGRESS_COLOR;
+    private final int QUESTLINE_TOOLTIP_LABEL_COLOR;
+    private final int QUESTLINE_TOOLTIP_NAME_COLOR;
+    private final int QUESTLINE_TOOLTIP_PROGRESS_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_ACTION_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR;
+    private final int QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR;
+    private final int QUEST_COUNT_TEXT_COLOR;
+    private final int PAGE_TEXT_COLOR;
+    private final Style QUEST_COUNT_ACTIVE_STYLE;
+    private final Style QUEST_COUNT_ACCEPTED_STYLE;
+    private final Style QUEST_COUNT_COMPLETED_STYLE;
+    private final Style QUEST_COUNT_NEARBY_STYLE;
+    private static final String GUI_KEY_PREFIX = "quest_journal.";
+    private final int LIGHTEST_JOURNAL_ENTRY_COLOR;
     private static final double MIN_JOURNAL_TEXT_CONTRAST = 4.5D;
 
-    private static final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLBAR_TEXTURE, 4, 6, 1, 1, 2, 2);
-    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_TEXTURE, 4, 6, 1, 1, 2, 2);
-    private static final JournalNineSlice QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SCROLLER_HIGHLIGHT_TEXTURE, 4, 6, 1, 1, 2, 2);
-    private static final JournalNineSlice QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_QUEST_NUMBER_TEXTURE, 11, 11, 3, 3, 3, 3);
-    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_1_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_1_TEXTURE, 3, 3, 1, 1, 1, 1);
-    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_2_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_2_TEXTURE, 3, 3, 1, 1, 1, 1);
-    private static final JournalNineSlice QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_ENTRY_HIGHLIGHT_TEXTURE, 3, 3, 1, 1, 1, 1);
-    private static final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE =
-            new JournalNineSlice(VillagerRetaliationClientAssets.QUEST_JOURNAL_SELECTED_QUEST_TEXTURE, 134, 23, 3, 3, 11, 11);
+    private final JournalNineSlice QUEST_JOURNAL_SCROLLBAR_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_SCROLLER_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_ENTRY_1_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_ENTRY_2_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE;
+    private final JournalNineSlice QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE;
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final EnumMap<QuestJournalTab, VillagerInteractionScreenState.OptionListPosition> tabPositions =
@@ -190,14 +183,50 @@ public class QuestJournalScreen extends Screen {
     private float cachedOptionContentHeight;
 
     private final QuestJournalDataSource source;
+    private final QuestPresentation presentation;
 
     public QuestJournalScreen(QuestJournalSource source) {
         this(source.dataSource());
     }
 
     public QuestJournalScreen(QuestJournalDataSource source) {
-        super(Component.translatable(GUI_KEY_PREFIX + "title"));
+        super(source.presentation().text(GUI_KEY_PREFIX + "title"));
         this.source = java.util.Objects.requireNonNull(source);
+        this.presentation = java.util.Objects.requireNonNull(source.presentation());
+        this.TEXT_COLOR = this.presentation.color(QuestPresentation.Color.TEXT_COLOR);
+        this.TITLE_COLOR = this.presentation.color(QuestPresentation.Color.TITLE_COLOR);
+        this.QUEST_TITLE_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.QUEST_TITLE_TEXT_COLOR);
+        this.NO_QUEST_TITLE_OUTLINE = this.presentation.color(QuestPresentation.Color.NO_QUEST_TITLE_OUTLINE);
+        this.MUTED_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.MUTED_TEXT_COLOR);
+        this.SELECTED_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.SELECTED_TEXT_COLOR);
+        this.HOVERED_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.HOVERED_TEXT_COLOR);
+        this.LINK_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.LINK_TEXT_COLOR);
+        this.QUESTLINE_LABEL_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_LABEL_COLOR);
+        this.QUESTLINE_PROGRESS_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_PROGRESS_COLOR);
+        this.QUESTLINE_TOOLTIP_LABEL_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_TOOLTIP_LABEL_COLOR);
+        this.QUESTLINE_TOOLTIP_NAME_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_TOOLTIP_NAME_COLOR);
+        this.QUESTLINE_TOOLTIP_PROGRESS_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_TOOLTIP_PROGRESS_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_ACTION_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_ACTION_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR);
+        this.QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR = this.presentation.color(QuestPresentation.Color.QUESTLINE_NODE_TOOLTIP_LOCKED_COLOR);
+        this.QUEST_COUNT_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.QUEST_COUNT_TEXT_COLOR);
+        this.PAGE_TEXT_COLOR = this.presentation.color(QuestPresentation.Color.PAGE_TEXT_COLOR);
+        this.LIGHTEST_JOURNAL_ENTRY_COLOR = this.presentation.color(QuestPresentation.Color.LIGHTEST_JOURNAL_ENTRY_COLOR);
+        this.QUEST_COUNT_ACTIVE_STYLE = Style.EMPTY.withColor(this.presentation.color(QuestPresentation.Color.QUEST_COUNT_ACTIVE));
+        this.QUEST_COUNT_ACCEPTED_STYLE = Style.EMPTY.withColor(this.presentation.color(QuestPresentation.Color.QUEST_COUNT_ACCEPTED));
+        this.QUEST_COUNT_COMPLETED_STYLE = Style.EMPTY.withColor(this.presentation.color(QuestPresentation.Color.QUEST_COUNT_COMPLETED));
+        this.QUEST_COUNT_NEARBY_STYLE = Style.EMPTY.withColor(this.presentation.color(QuestPresentation.Color.QUEST_COUNT_NEARBY));
+        this.QUEST_JOURNAL_SCROLLBAR_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.SCROLLBAR), 4, 6, 1, 1, 2, 2);
+        this.QUEST_JOURNAL_SCROLLER_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.SCROLLER), 4, 6, 1, 1, 2, 2);
+        this.QUEST_JOURNAL_SCROLLER_HIGHLIGHT_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.SCROLLER_HIGHLIGHT), 4, 6, 1, 1, 2, 2);
+        this.QUEST_JOURNAL_QUEST_NUMBER_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.QUEST_NUMBER), 11, 11, 3, 3, 3, 3);
+        this.QUEST_JOURNAL_ENTRY_1_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.ENTRY_1), 3, 3, 1, 1, 1, 1);
+        this.QUEST_JOURNAL_ENTRY_2_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.ENTRY_2), 3, 3, 1, 1, 1, 1);
+        this.QUEST_JOURNAL_ENTRY_HIGHLIGHT_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.ENTRY_HIGHLIGHT), 3, 3, 1, 1, 1, 1);
+        this.QUEST_JOURNAL_SELECTED_QUEST_NINE_SLICE = new JournalNineSlice(this.presentation.texture(Texture.SELECTED_QUEST), 134, 23, 3, 3, 11, 11);
     }
 
     @Override
@@ -471,7 +500,7 @@ public class QuestJournalScreen extends Screen {
         int left = journalLeft();
         int top = journalTop();
         graphics.blit(
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_TEXTURE,
+                this.presentation.texture(Texture.CONTAINER),
                 left,
                 top,
                 0,
@@ -482,7 +511,7 @@ public class QuestJournalScreen extends Screen {
                 JOURNAL_HEIGHT);
         renderBookmarks(graphics, left, top);
         graphics.blit(
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_CONTAINER_OVERLAY_TEXTURE,
+                this.presentation.texture(Texture.CONTAINER_OVERLAY),
                 left,
                 top,
                 0,
@@ -495,8 +524,8 @@ public class QuestJournalScreen extends Screen {
 
     private void renderTabTitle(GuiGraphics graphics) {
         Component title = this.searchActive || !this.searchQuery.isBlank()
-                ? Component.translatable(GUI_KEY_PREFIX + "search", this.searchQuery.isBlank() ? "_" : this.searchQuery)
-                : this.selectedTab.title();
+                ? this.presentation.text(GUI_KEY_PREFIX + "search", this.searchQuery.isBlank() ? "_" : this.searchQuery)
+                : this.selectedTab.title(this.presentation);
         graphics.drawString(
                 this.font,
                 title,
@@ -557,19 +586,19 @@ public class QuestJournalScreen extends Screen {
     private List<Component> questCountTooltip() {
         QuestCountSummary summary = questCountSummary();
         return switch (this.selectedTab) {
-            case CAMPAIGN -> List.of(Component.translatable("villagerretaliation.gui.campaign_journal.tooltip"));
+            case CAMPAIGN -> List.of(this.presentation.text("campaign_journal.tooltip"));
             case AVAILABLE -> List.of(
-                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
-                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
-                    Component.translatable(GUI_KEY_PREFIX + "count.nearby", summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
+                    this.presentation.text(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.nearby", summary.nearby()).withStyle(QUEST_COUNT_NEARBY_STYLE));
             case ACTIVE -> List.of(
-                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.translatable(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
-                    Component.translatable(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
+                    this.presentation.text(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.active", summary.active()).withStyle(QUEST_COUNT_ACTIVE_STYLE),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.accepted", summary.accepted()).withStyle(QUEST_COUNT_ACCEPTED_STYLE));
             case COMPLETED -> List.of(
-                    Component.translatable(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
-                    Component.translatable(GUI_KEY_PREFIX + "count.completed", summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
+                    this.presentation.text(GUI_KEY_PREFIX + "count.title").withStyle(Style.EMPTY.withColor(0xA0A0A0)),
+                    this.presentation.text(GUI_KEY_PREFIX + "count.completed", summary.completed()).withStyle(QUEST_COUNT_COMPLETED_STYLE));
         };
     }
 
@@ -578,7 +607,7 @@ public class QuestJournalScreen extends Screen {
         if (hoveredTab == null) {
             return;
         }
-        graphics.renderComponentTooltip(this.font, List.of(hoveredTab.tooltip()), mouseX, mouseY);
+        graphics.renderComponentTooltip(this.font, List.of(hoveredTab.tooltip(this.presentation)), mouseX, mouseY);
     }
 
     private void renderQuestStateTooltip(GuiGraphics graphics, int mouseX, int mouseY, int slideOffset) {
@@ -606,9 +635,9 @@ public class QuestJournalScreen extends Screen {
             return null;
         }
         if (index == this.state.selectedOption()) {
-            return Component.translatable(GUI_KEY_PREFIX + "state.selected").withStyle(QUEST_COUNT_ACTIVE_STYLE);
+            return this.presentation.text(GUI_KEY_PREFIX + "state.selected").withStyle(QUEST_COUNT_ACTIVE_STYLE);
         }
-        return QuestJournalEntryState.iconFor(visibleEntries().get(index), source.isTracked(visibleEntries().get(index))).tooltip();
+        return QuestJournalEntryState.iconFor(visibleEntries().get(index), source.isTracked(visibleEntries().get(index))).tooltip(this.presentation);
     }
 
     private QuestCountSummary questCountSummary() {
@@ -636,8 +665,8 @@ public class QuestJournalScreen extends Screen {
         for (QuestJournalTab tab : QuestJournalTab.values()) {
             int bookmarkLeft = bookmarkLeft(left, tab);
             int bookmarkTop = bookmarkTop(journalTop, tab);
-            renderBookmark(graphics, tab.texture(), bookmarkLeft, bookmarkTop);
-            renderBookmarkIcon(graphics, tab.iconTexture(), bookmarkLeft, bookmarkTop, tab == this.selectedTab);
+            renderBookmark(graphics, tab.texture(this.presentation), bookmarkLeft, bookmarkTop);
+            renderBookmarkIcon(graphics, tab.iconTexture(this.presentation), bookmarkLeft, bookmarkTop, tab == this.selectedTab);
         }
     }
 
@@ -684,7 +713,7 @@ public class QuestJournalScreen extends Screen {
         if (visibleEntries.isEmpty()) {
             graphics.drawString(
                     this.font,
-                    this.selectedTab.emptyMessage(),
+                    this.selectedTab.emptyMessage(this.presentation),
                     left,
                     top + QUEST_OPTION_EMPTY_TEXT_TOP_PADDING,
                     TEXT_COLOR,
@@ -847,16 +876,16 @@ public class QuestJournalScreen extends Screen {
         QuestJournalEntryState state = QuestJournalEntryState.iconFor(entry, source.isTracked(entry));
         int iconLeft = left + QUEST_OPTION_STATE_ICON_LEFT_PADDING;
         int iconTop = top + QUEST_OPTION_STATE_ICON_TOP_PADDING;
-        renderQuestOptionIcon(graphics, state.texture(), iconLeft, iconTop);
+        renderQuestOptionIcon(graphics, state.texture(this.presentation), iconLeft, iconTop);
         if (selected) {
-            renderQuestOptionIcon(graphics, state.selectedTexture(), iconLeft, iconTop);
+            renderQuestOptionIcon(graphics, state.selectedTexture(this.presentation), iconLeft, iconTop);
         }
         if (hasQuestUpdate(entry)) {
             int updateIconLeft = left + QUEST_OPTION_WIDTH - QUEST_OPTION_UPDATE_ICON_RIGHT_PADDING - QUEST_OPTION_UPDATE_ICON_WIDTH;
             int updateIconTop = top + QUEST_OPTION_UPDATE_ICON_TOP_PADDING;
             renderQuestOptionIcon(
                     graphics,
-                    VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_TEXTURE,
+                    this.presentation.texture(Texture.ICON_UPDATE),
                     updateIconLeft,
                     updateIconTop,
                     QUEST_OPTION_UPDATE_ICON_WIDTH,
@@ -864,7 +893,7 @@ public class QuestJournalScreen extends Screen {
             if (selected) {
                 renderQuestOptionIcon(
                         graphics,
-                        VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_UPDATE_SELECTED_QUEST_TEXTURE,
+                        this.presentation.texture(Texture.ICON_UPDATE_SELECTED_QUEST),
                         updateIconLeft,
                         updateIconTop,
                         QUEST_OPTION_UPDATE_ICON_WIDTH,
@@ -949,7 +978,7 @@ public class QuestJournalScreen extends Screen {
             renderDetailsPageLabel(graphics, left, maskBottom + DETAILS_PAGE_LABEL_GAP, this.detailsPage + 1, pageCount);
         }
         if (canManageQuest(selected)) {
-            Component label = Component.translatable(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept" : "abandon"));
+            Component label = this.presentation.text(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept" : "abandon"));
             int actionTop = top + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT + 2;
             graphics.drawString(
                     this.font,
@@ -996,7 +1025,7 @@ public class QuestJournalScreen extends Screen {
         if (line.divider()) {
             int dividerLeft = left + Math.max(0, (DETAILS_WIDTH - DETAILS_DIVIDER_WIDTH) / 2);
             graphics.blit(
-                    VillagerRetaliationClientAssets.QUEST_JOURNAL_DIVIDER_TEXTURE,
+                    this.presentation.texture(Texture.DIVIDER),
                     dividerLeft,
                     top,
                     0,
@@ -1063,7 +1092,7 @@ public class QuestJournalScreen extends Screen {
                 journalOutlineColor(selected, NO_QUEST_TITLE_OUTLINE),
                 y,
                 lineStep,
-                QuestJournalEntryState.from(selected).texture());
+                QuestJournalEntryState.from(selected).texture(this.presentation));
         y = addDividerLine(lines, y + 3, 3);
         QuestJournalData.Journal journal = selected.journal();
         int statusGapAfter = journal.blocker().isBlank() ? DETAILS_SECTION_GAP : 2;
@@ -1071,7 +1100,7 @@ public class QuestJournalScreen extends Screen {
         if (!journal.blocker().isBlank()) {
             y = addWrappedDetailLines(
                     lines,
-                    Component.translatable(GUI_KEY_PREFIX + "waiting_for", journal.blocker()),
+                    this.presentation.text(GUI_KEY_PREFIX + "waiting_for", journal.blocker()),
                     wrapWidth,
                     TEXT_COLOR,
                     y,
@@ -1082,7 +1111,7 @@ public class QuestJournalScreen extends Screen {
             y = addQuestlineLinkLines(lines, journal, wrapWidth, y, lineStep, DETAILS_SECTION_GAP);
         }
         if (source.showTags() && !journal.tags().isEmpty()) {
-            y = addWrappedDetailLines(lines, Component.translatable(GUI_KEY_PREFIX + "tags", String.join(", ", journal.tags())), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
+            y = addWrappedDetailLines(lines, this.presentation.text(GUI_KEY_PREFIX + "tags", String.join(", ", journal.tags())), wrapWidth, MUTED_TEXT_COLOR, y, lineStep, 1);
         }
         Component timing = journalTimingLine(selected);
         if (timing != null) {
@@ -1095,7 +1124,7 @@ public class QuestJournalScreen extends Screen {
         if (!selected.issuer().isBlank()) {
             y = addWrappedDetailLines(
                     lines,
-                    Component.translatable(GUI_KEY_PREFIX + "issuer", selected.issuer()),
+                    this.presentation.text(GUI_KEY_PREFIX + "issuer", selected.issuer()),
                     wrapWidth,
                     MUTED_TEXT_COLOR,
                     y,
@@ -1112,7 +1141,7 @@ public class QuestJournalScreen extends Screen {
             String sectionKey = selected.prerequisites().size() == 1
                     ? "section.previous_step"
                     : "section.previous_steps";
-            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + sectionKey), TITLE_COLOR, y, lineStep, 0);
+            y = addCenteredDetailLine(lines, this.presentation.text(GUI_KEY_PREFIX + sectionKey), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestJournalData.Prerequisite prerequisite : selected.prerequisites()) {
                 QuestJournalData.Entry target = journalEntryForQuestId(prerequisite.questId());
@@ -1131,7 +1160,7 @@ public class QuestJournalScreen extends Screen {
             }
         }
         y = addDividerLine(lines, y + 3, 3);
-        y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.objectives"), TITLE_COLOR, y, lineStep, 0);
+        y = addCenteredDetailLine(lines, this.presentation.text(GUI_KEY_PREFIX + "section.objectives"), TITLE_COLOR, y, lineStep, 0);
         y = addDividerLine(lines, y + 3, 3);
         boolean completed = selected.progress() >= 1.0F || QuestJournalEntryState.from(selected) == QuestJournalEntryState.COMPLETED;
         if (!selected.objectiveSteps().isEmpty()) {
@@ -1147,7 +1176,7 @@ public class QuestJournalScreen extends Screen {
         }
         if (!selected.rewardPreviews().isEmpty()) {
             y = addDividerLine(lines, y + 3, 3);
-            y = addCenteredDetailLine(lines, Component.translatable(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
+            y = addCenteredDetailLine(lines, this.presentation.text(GUI_KEY_PREFIX + "section.rewards"), TITLE_COLOR, y, lineStep, 0);
             y = addDividerLine(lines, y + 3, 3);
             for (QuestJournalData.RewardPreview reward : selected.rewardPreviews()) {
                 if (rewardItemStack(reward.itemId()).isEmpty()) {
@@ -1330,8 +1359,8 @@ public class QuestJournalScreen extends Screen {
             int lineStep,
             int gapAfter) {
         ResourceLocation icon = completed
-                ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
-                : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
+                ? this.presentation.texture(Texture.ICON_QUEST_STEP_COMPLETED)
+                : this.presentation.texture(Texture.ICON_QUEST_STEP);
         return addWrappedDetailLines(
                 lines,
                 text,
@@ -1357,8 +1386,8 @@ public class QuestJournalScreen extends Screen {
             return top;
         }
         ResourceLocation icon = completed
-                ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_COMPLETED_TEXTURE
-                : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_QUEST_STEP_TEXTURE;
+                ? this.presentation.texture(Texture.ICON_QUEST_STEP_COMPLETED)
+                : this.presentation.texture(Texture.ICON_QUEST_STEP);
         Component component = Component.literal(text).withStyle(Style.EMPTY.withUnderlined(true));
         int y = top;
         boolean first = true;
@@ -1393,7 +1422,7 @@ public class QuestJournalScreen extends Screen {
         int y = top;
         y = addQuestlineLinkText(
                 lines,
-                Component.translatable(GUI_KEY_PREFIX + "questline_label"),
+                this.presentation.text(GUI_KEY_PREFIX + "questline_label"),
                 wrapWidth,
                 QUESTLINE_LABEL_COLOR,
                 y,
@@ -1410,8 +1439,7 @@ public class QuestJournalScreen extends Screen {
                 targetQuestline);
         y = addQuestlineLinkText(
                 lines,
-                Component.translatable(
-                        GUI_KEY_PREFIX + "questline_completion",
+                this.presentation.text(GUI_KEY_PREFIX + "questline_completion",
                         journal.questlineCompleted(),
                         journal.questlineTotal()),
                 wrapWidth,
@@ -1493,14 +1521,14 @@ public class QuestJournalScreen extends Screen {
     private Component statusLine(QuestJournalData.Entry entry) {
         if (entry.status().isBlank()) {
             String key = entry.trackable() && source.isTracked(entry) ? "tracked" : "not_tracked";
-            return Component.translatable(GUI_KEY_PREFIX + "status." + key);
+            return this.presentation.text(GUI_KEY_PREFIX + "status." + key);
         }
         if (!entry.trackable()) {
-            return Component.translatable(GUI_KEY_PREFIX + "status.value", entry.status());
+            return this.presentation.text(GUI_KEY_PREFIX + "status.value", entry.status());
         }
         return source.isTracked(entry)
-                ? Component.translatable(GUI_KEY_PREFIX + "status.value_tracked", entry.status())
-                : Component.translatable(GUI_KEY_PREFIX + "status.value_not_tracked", entry.status());
+                ? this.presentation.text(GUI_KEY_PREFIX + "status.value_tracked", entry.status())
+                : this.presentation.text(GUI_KEY_PREFIX + "status.value_not_tracked", entry.status());
     }
 
     private static String descriptionLine(QuestJournalData.Entry entry) {
@@ -2039,7 +2067,7 @@ public class QuestJournalScreen extends Screen {
         if (!this.questlineMapOpen) {
             return false;
         }
-        Component back = Component.translatable(GUI_KEY_PREFIX + "questline_back");
+        Component back = this.presentation.text(GUI_KEY_PREFIX + "questline_back");
         return isPointInside(
                 mouseX,
                 journalMouseY,
@@ -2077,7 +2105,7 @@ public class QuestJournalScreen extends Screen {
         }
         graphics.renderComponentTooltip(
                 this.font,
-                List.of(Component.translatable(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept.tooltip" : "abandon.tooltip"))
+                List.of(this.presentation.text(GUI_KEY_PREFIX + ("discovered".equals(selected.state()) ? "accept.tooltip" : "abandon.tooltip"))
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR))),
                 mouseX,
                 mouseY);
@@ -2097,7 +2125,7 @@ public class QuestJournalScreen extends Screen {
         lines.add(Component.literal(node.title())
                 .withStyle(Style.EMPTY.withColor(titleColor).withBold(true)));
         String stateKey = questlineNodeStateKey(node.state());
-        lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.state." + stateKey)
+        lines.add(this.presentation.text(GUI_KEY_PREFIX + "questline_node.state." + stateKey)
                 .withStyle(Style.EMPTY.withColor(questlineNodeStateColor(node.state()))));
         if (!"locked".equals(stateKey)) {
             if (!node.description().isBlank()) {
@@ -2105,7 +2133,7 @@ public class QuestJournalScreen extends Screen {
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_DESCRIPTION_COLOR)));
             }
             if (journalEntryForQuestId(node.questId()) != null) {
-                lines.add(Component.translatable(GUI_KEY_PREFIX + "questline_node.open")
+                lines.add(this.presentation.text(GUI_KEY_PREFIX + "questline_node.open")
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_ACTION_COLOR)));
             }
         }
@@ -2122,7 +2150,7 @@ public class QuestJournalScreen extends Screen {
         };
     }
 
-    private static int questlineNodeStateColor(String state) {
+    private int questlineNodeStateColor(String state) {
         return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
             case "completed" -> QUESTLINE_NODE_TOOLTIP_COMPLETED_COLOR;
             case "active" -> QUESTLINE_NODE_TOOLTIP_ACTIVE_COLOR;
@@ -2144,14 +2172,13 @@ public class QuestJournalScreen extends Screen {
                 mouseY);
     }
 
-    private static List<Component> questlineTooltipLines(QuestJournalData.Journal journal) {
+    private List<Component> questlineTooltipLines(QuestJournalData.Journal journal) {
         return List.of(
-                Component.translatable(GUI_KEY_PREFIX + "questline_label")
+                this.presentation.text(GUI_KEY_PREFIX + "questline_label")
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_LABEL_COLOR)),
                 Component.literal(questlineDisplayName(journal.questline()))
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_NAME_COLOR).withBold(true)),
-                Component.translatable(
-                                GUI_KEY_PREFIX + "questline_completion",
+                this.presentation.text(GUI_KEY_PREFIX + "questline_completion",
                                 journal.questlineCompleted(),
                                 journal.questlineTotal())
                         .withStyle(Style.EMPTY.withColor(QUESTLINE_TOOLTIP_PROGRESS_COLOR)));
@@ -2174,7 +2201,7 @@ public class QuestJournalScreen extends Screen {
                     ? List.of()
                     : questlineTooltipLines(selected.journal());
         } else {
-            tooltip = List.of(Component.translatable(GUI_KEY_PREFIX + "view_previous_step"));
+            tooltip = List.of(this.presentation.text(GUI_KEY_PREFIX + "view_previous_step"));
         }
         if (!tooltip.isEmpty()) {
             graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
@@ -2458,7 +2485,7 @@ public class QuestJournalScreen extends Screen {
                 String.join(" ", entry.journal().tags())));
     }
 
-    private static int journalColor(QuestJournalData.Entry entry, int fallback) {
+    private int journalColor(QuestJournalData.Entry entry, int fallback) {
         return readableJournalTextColor(parseJournalColor(entry == null ? "" : entry.journal().color(), fallback));
     }
 
@@ -2466,7 +2493,7 @@ public class QuestJournalScreen extends Screen {
         return parseJournalColor(entry == null ? "" : entry.journal().outlineColor(), fallback);
     }
 
-    private static int readableJournalTextColor(int color) {
+    private int readableJournalTextColor(int color) {
         double backgroundLuminance = relativeLuminance(LIGHTEST_JOURNAL_ENTRY_COLOR);
         if (contrastRatio(relativeLuminance(color), backgroundLuminance) >= MIN_JOURNAL_TEXT_CONTRAST) {
             return color;
@@ -2537,19 +2564,19 @@ public class QuestJournalScreen extends Screen {
         return text.toString();
     }
 
-    private static Component journalTimingLine(QuestJournalData.Entry entry) {
+    private Component journalTimingLine(QuestJournalData.Entry entry) {
         long now = currentGameTime();
         if (entry.journal().expiresAtGameTime() > 0L && "active".equals(normalized(entry.state()))) {
             long remaining = Math.max(0L, entry.journal().expiresAtGameTime() - now);
-            return Component.translatable(GUI_KEY_PREFIX + "expires", formatDuration(remaining));
+            return this.presentation.text(GUI_KEY_PREFIX + "expires", formatDuration(remaining));
         }
         if (entry.journal().completedGameTime() >= 0L) {
-            return Component.translatable(GUI_KEY_PREFIX + "completed_ago", formatDuration(Math.max(0L, now - entry.journal().completedGameTime())));
+            return this.presentation.text(GUI_KEY_PREFIX + "completed_ago", formatDuration(Math.max(0L, now - entry.journal().completedGameTime())));
         }
         return null;
     }
 
-    private static Component journalWaypointLine(QuestJournalData.Entry entry) {
+    private Component journalWaypointLine(QuestJournalData.Entry entry) {
         QuestJournalData.Waypoint waypoint = entry.journal().waypoint();
         if (!waypoint.present()) {
             return null;
@@ -2562,7 +2589,7 @@ public class QuestJournalScreen extends Screen {
             int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
             distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
         }
-        return Component.translatable(GUI_KEY_PREFIX + "waypoint", waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance);
+        return this.presentation.text(GUI_KEY_PREFIX + "waypoint", waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance);
     }
 
     private static long currentGameTime() {
@@ -2603,44 +2630,44 @@ public class QuestJournalScreen extends Screen {
                 GUI_KEY_PREFIX + "tab.available",
                 GUI_KEY_PREFIX + "tab.available.tooltip",
                 GUI_KEY_PREFIX + "empty.available",
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE),
+                Texture.BOOKMARK_RED,
+                Texture.BOOKMARK_ICON_AVAILABLE),
         ACTIVE(
                 1,
                 GUI_KEY_PREFIX + "tab.active",
                 GUI_KEY_PREFIX + "tab.active.tooltip",
                 GUI_KEY_PREFIX + "empty.active",
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_PURPLE_TEXTURE,
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_ACTIVE_TEXTURE),
+                Texture.BOOKMARK_PURPLE,
+                Texture.BOOKMARK_ICON_ACTIVE),
         COMPLETED(
                 2,
                 GUI_KEY_PREFIX + "tab.completed",
                 GUI_KEY_PREFIX + "tab.completed.tooltip",
                 GUI_KEY_PREFIX + "empty.completed",
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_TEAL_TEXTURE,
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_COMPLETED_TEXTURE),
+                Texture.BOOKMARK_TEAL,
+                Texture.BOOKMARK_ICON_COMPLETED),
         CAMPAIGN(
                 3,
-                "villagerretaliation.gui.campaign_journal.title",
-                "villagerretaliation.gui.campaign_journal.tooltip",
-                "villagerretaliation.gui.campaign_journal.empty",
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_RED_TEXTURE,
-                VillagerRetaliationClientAssets.QUEST_JOURNAL_BOOKMARK_ICON_AVAILABLE_TEXTURE);
+                "campaign_journal.title",
+                "campaign_journal.tooltip",
+                "campaign_journal.empty",
+                Texture.BOOKMARK_RED,
+                Texture.BOOKMARK_ICON_AVAILABLE);
 
         private final int index;
         private final String titleKey;
         private final String tooltipKey;
         private final String emptyMessageKey;
-        private final ResourceLocation texture;
-        private final ResourceLocation iconTexture;
+        private final Texture texture;
+        private final Texture iconTexture;
 
         QuestJournalTab(
                 int index,
                 String titleKey,
                 String tooltipKey,
                 String emptyMessageKey,
-                ResourceLocation texture,
-                ResourceLocation iconTexture) {
+                Texture texture,
+                Texture iconTexture) {
             this.index = index;
             this.titleKey = titleKey;
             this.tooltipKey = tooltipKey;
@@ -2653,33 +2680,33 @@ public class QuestJournalScreen extends Screen {
             return this.index;
         }
 
-        Component title() {
-            return Component.translatable(this.titleKey);
+        Component title(QuestPresentation presentation) {
+            return presentation.text(this.titleKey);
         }
 
-        Component tooltip() {
-            return Component.translatable(this.tooltipKey).withStyle(this.tooltipStyle());
+        Component tooltip(QuestPresentation presentation) {
+            return presentation.text(this.tooltipKey).withStyle(this.tooltipStyle(presentation));
         }
 
-        private Style tooltipStyle() {
+        private Style tooltipStyle(QuestPresentation presentation) {
             return switch (this) {
-                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
-                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
-                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
-                case CAMPAIGN -> QUEST_COUNT_ACTIVE_STYLE;
+                case AVAILABLE -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_NEARBY));
+                case ACTIVE -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_ACTIVE));
+                case COMPLETED -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_COMPLETED));
+                case CAMPAIGN -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_ACTIVE));
             };
         }
 
-        Component emptyMessage() {
-            return Component.translatable(this.emptyMessageKey);
+        Component emptyMessage(QuestPresentation presentation) {
+            return presentation.text(this.emptyMessageKey);
         }
 
-        ResourceLocation texture() {
-            return this.texture;
+        ResourceLocation texture(QuestPresentation presentation) {
+            return presentation.texture(this.texture);
         }
 
-        ResourceLocation iconTexture() {
-            return this.iconTexture;
+        ResourceLocation iconTexture(QuestPresentation presentation) {
+            return presentation.texture(this.iconTexture);
         }
 
         boolean includes(QuestJournalEntryState state) {
@@ -2693,14 +2720,14 @@ public class QuestJournalScreen extends Screen {
     }
 
     private enum QuestJournalEntryState {
-        AVAILABLE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_AVAILABLE_TEXTURE),
-        ACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_ACTIVE_TEXTURE),
-        INACTIVE(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_INACTIVE_TEXTURE),
-        COMPLETED(VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_COMPLETED_TEXTURE);
+        AVAILABLE(Texture.ICON_AVAILABLE),
+        ACTIVE(Texture.ICON_ACTIVE),
+        INACTIVE(Texture.ICON_INACTIVE),
+        COMPLETED(Texture.ICON_COMPLETED);
 
-        private final ResourceLocation texture;
+        private final Texture texture;
 
-        QuestJournalEntryState(ResourceLocation texture) {
+        QuestJournalEntryState(Texture texture) {
             this.texture = texture;
         }
 
@@ -2725,17 +2752,17 @@ public class QuestJournalScreen extends Screen {
             return state;
         }
 
-        ResourceLocation texture() {
-            return this.texture;
+        ResourceLocation texture(QuestPresentation presentation) {
+            return presentation.texture(this.texture);
         }
 
-        ResourceLocation selectedTexture() {
+        ResourceLocation selectedTexture(QuestPresentation presentation) {
             return this == COMPLETED
-                    ? VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_COMPLETED_TEXTURE
-                    : VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_SELECTED_QUEST_TEXTURE;
+                    ? presentation.texture(Texture.ICON_SELECTED_QUEST_COMPLETED)
+                    : presentation.texture(Texture.ICON_SELECTED_QUEST);
         }
 
-        Component tooltip() {
+        Component tooltip(QuestPresentation presentation) {
             String key = switch (this) {
                 case AVAILABLE -> "available";
                 case ACTIVE -> "active";
@@ -2743,12 +2770,12 @@ public class QuestJournalScreen extends Screen {
                 case COMPLETED -> "completed";
             };
             Style style = switch (this) {
-                case AVAILABLE -> QUEST_COUNT_NEARBY_STYLE;
-                case ACTIVE -> QUEST_COUNT_ACTIVE_STYLE;
-                case INACTIVE -> QUEST_COUNT_ACCEPTED_STYLE;
-                case COMPLETED -> QUEST_COUNT_COMPLETED_STYLE;
+                case AVAILABLE -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_NEARBY));
+                case ACTIVE -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_ACTIVE));
+                case INACTIVE -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_ACCEPTED));
+                case COMPLETED -> Style.EMPTY.withColor(presentation.color(QuestPresentation.Color.QUEST_COUNT_COMPLETED));
             };
-            return Component.translatable(GUI_KEY_PREFIX + "state." + key).withStyle(style);
+            return presentation.text(GUI_KEY_PREFIX + "state." + key).withStyle(style);
         }
     }
 
@@ -2857,11 +2884,11 @@ public class QuestJournalScreen extends Screen {
             super(
                     ignored -> {
                     },
-                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.title"),
-                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.message", questTitle),
-                    Component.translatable(GUI_KEY_PREFIX + "abandon")
-                            .withStyle(Style.EMPTY.withColor(QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR)),
-                    Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.cancel"));
+                    parent.presentation.text(GUI_KEY_PREFIX + "abandon.confirm.title"),
+                    parent.presentation.text(GUI_KEY_PREFIX + "abandon.confirm.message", questTitle),
+                    parent.presentation.text(GUI_KEY_PREFIX + "abandon")
+                            .withStyle(Style.EMPTY.withColor(parent.QUESTLINE_NODE_TOOLTIP_CLOSED_COLOR)),
+                    parent.presentation.text(GUI_KEY_PREFIX + "abandon.confirm.cancel"));
             this.parent = parent;
             this.onConfirm = onConfirm;
             this.abandonUnlockAt = Util.getMillis() + ABANDON_DELAY_MILLIS;
@@ -2871,7 +2898,7 @@ public class QuestJournalScreen extends Screen {
         protected void addButtons(int y) {
             int checkboxWidth = Math.max(1, Math.min(260, this.width - 40));
             this.dontShowAgain = Checkbox.builder(
-                            Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.dont_show_again"),
+                            this.parent.presentation.text(GUI_KEY_PREFIX + "abandon.confirm.dont_show_again"),
                             this.font)
                     .maxWidth(checkboxWidth)
                     .pos(0, y - 28)
@@ -2901,7 +2928,7 @@ public class QuestJournalScreen extends Screen {
                 return;
             }
             String remaining = String.format(Locale.ROOT, "%.1fs", remainingSeconds(Util.getMillis()));
-            Component timerText = Component.translatable(GUI_KEY_PREFIX + "abandon.confirm.timer", remaining);
+            Component timerText = this.parent.presentation.text(GUI_KEY_PREFIX + "abandon.confirm.timer", remaining);
             int x = this.abandonButton.getX() + (this.abandonButton.getWidth() - this.font.width(timerText)) / 2;
             int timerY = this.abandonButton.getY()
                     + (this.abandonButton.getHeight() - this.font.lineHeight) / 2;
@@ -2956,7 +2983,7 @@ public class QuestJournalScreen extends Screen {
             int journalMouseY) {
         int left = detailsLeft();
         int top = detailsTop();
-        Component back = Component.translatable(GUI_KEY_PREFIX + "questline_back")
+        Component back = presentation.text(GUI_KEY_PREFIX + "questline_back")
                 .withStyle(Style.EMPTY.withUnderlined(true));
         graphics.drawString(this.font, back, left, top, LINK_TEXT_COLOR, false);
         if (selected.journal().questlineTotal() > 0) {
@@ -2974,7 +3001,7 @@ public class QuestJournalScreen extends Screen {
 
         QuestlineGraphLayout.Layout layout = currentQuestlineGraphLayout();
         if (layout.nodes().isEmpty()) {
-            Component unavailable = Component.translatable(GUI_KEY_PREFIX + "questline_empty");
+            Component unavailable = presentation.text(GUI_KEY_PREFIX + "questline_empty");
             graphics.drawString(
                     this.font,
                     unavailable,
@@ -3090,12 +3117,12 @@ public class QuestJournalScreen extends Screen {
         return branch ? AdvancementType.CHALLENGE : AdvancementType.TASK;
     }
 
-    private static ResourceLocation questlineNodeTexture(String state) {
+    private ResourceLocation questlineNodeTexture(String state) {
         return switch (state == null ? "" : state.toLowerCase(Locale.ROOT)) {
-            case "completed" -> QuestJournalEntryState.COMPLETED.texture();
-            case "active" -> QuestJournalEntryState.ACTIVE.texture();
-            case "available", "discovered" -> QuestJournalEntryState.AVAILABLE.texture();
-            default -> QuestJournalEntryState.INACTIVE.texture();
+            case "completed" -> QuestJournalEntryState.COMPLETED.texture(this.presentation);
+            case "active" -> QuestJournalEntryState.ACTIVE.texture(this.presentation);
+            case "available", "discovered" -> QuestJournalEntryState.AVAILABLE.texture(this.presentation);
+            default -> QuestJournalEntryState.INACTIVE.texture(this.presentation);
         };
     }
 

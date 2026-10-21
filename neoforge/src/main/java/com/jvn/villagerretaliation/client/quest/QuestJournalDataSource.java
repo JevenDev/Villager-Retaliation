@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.client.gui.screens.Screen;
 
 public interface QuestJournalDataSource {
+    QuestPresentation presentation();
     List<QuestJournalData.Entry> entries();
     List<QuestJournalData.QuestlineNode> questlineNodes();
     int trackedIndex(QuestJournalData.Entry entry);

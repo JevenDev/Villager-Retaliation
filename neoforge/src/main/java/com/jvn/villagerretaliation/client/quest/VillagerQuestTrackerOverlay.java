@@ -227,19 +227,19 @@ public final class VillagerQuestTrackerOverlay {
         if (trackerEntries.isEmpty()) {
             return;
         }
-        int width = QuestHud.trackerWidth(screenWidth);
-        int count = QuestHud.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
-        int totalHeight = QuestHud.trackerHeight(font, trackerEntries, count, width);
+        int width = VrQuestPresentation.HUD.trackerWidth(screenWidth);
+        int count = VrQuestPresentation.HUD.visibleTrackerEntryCount(showRecentQuests, trackerEntries.size());
+        int totalHeight = VrQuestPresentation.HUD.trackerHeight(font, trackerEntries, count, width);
         int x = hudMargin();
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), (screenHeight - totalHeight) / 2);
         for (int index = 0; index < count; index++) {
             QuestJournalData.Entry entry = trackerEntries.get(index);
             boolean primary = index == 0;
-            int height = primary ? QuestHud.primaryHeight() : QuestHud.secondaryHeight(font, entry, width);
+            int height = primary ? VrQuestPresentation.HUD.primaryHeight() : VrQuestPresentation.HUD.secondaryHeight(font, entry, width);
             float entryAlpha = alpha * (primary ? 1.0F : 0.76F);
-            int slide = Math.round((1.0F - entryAlpha) * QuestHud.slideDistance());
-            QuestHud.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
-            y += height + QuestHud.panelGap();
+            int slide = Math.round((1.0F - entryAlpha) * VrQuestPresentation.HUD.slideDistance());
+            VrQuestPresentation.HUD.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
+            y += height + VrQuestPresentation.HUD.panelGap();
         }
     }
 
@@ -297,15 +297,15 @@ public final class VillagerQuestTrackerOverlay {
             QuestJournalData.Entry entry,
             int screenWidth,
             int screenHeight) {
-        int width = QuestHud.notificationWidth(font, entry, screenWidth);
-        int height = QuestHud.notificationHeight(font, entry, width, screenHeight);
+        int width = VrQuestPresentation.HUD.notificationWidth(font, entry, screenWidth);
+        int height = VrQuestPresentation.HUD.notificationHeight(font, entry, width, screenHeight);
         int margin = hudMargin();
-        int x = margin - Math.round((1.0F - notificationAlpha) * QuestHud.slideDistance());
+        int x = margin - Math.round((1.0F - notificationAlpha) * VrQuestPresentation.HUD.slideDistance());
         x = Math.min(x, screenWidth - width - margin);
         int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - height / 2);
         float alpha = notificationAlpha;
 
-        QuestHud.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
+        VrQuestPresentation.HUD.renderNotification(graphics, font, entry, x, y, width, height, alpha, notificationAge);
     }
 
     private static int hudMargin() {

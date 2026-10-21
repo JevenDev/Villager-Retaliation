@@ -29,6 +29,7 @@ public final class VrQuestJournalSource implements QuestJournalSource {
 
     @Override public QuestJournalDataSource dataSource() {
         return new QuestJournalDataSource() {
+            @Override public QuestPresentation presentation() { return VrQuestJournalSource.this.presentation(); }
             @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry> entries() {
                 return VillagerQuestTrackerOverlay.journalEntries();
             }

@@ -107,6 +107,28 @@ public final class EntityJournalGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void presentationUsesConsumerResourcesAndImmutableSettings(GameTestHelper helper) {
+        var texture = net.minecraft.resources.ResourceLocation.parse("other_mod:textures/gui/journal.png");
+        var textures = new java.util.EnumMap<com.jvn.villagerretaliation.client.quest.QuestPresentation.Texture, net.minecraft.resources.ResourceLocation>(
+                com.jvn.villagerretaliation.client.quest.QuestPresentation.Texture.class);
+        textures.put(com.jvn.villagerretaliation.client.quest.QuestPresentation.Texture.CONTAINER, texture);
+        var colors = new java.util.EnumMap<com.jvn.villagerretaliation.client.quest.QuestPresentation.Color, Integer>(
+                com.jvn.villagerretaliation.client.quest.QuestPresentation.Color.class);
+        colors.put(com.jvn.villagerretaliation.client.quest.QuestPresentation.Color.TEXT_COLOR, 0xFF123456);
+        var presentation = new com.jvn.villagerretaliation.client.quest.QuestPresentation(textures, colors, "other_mod.gui.", 2);
+        textures.clear();
+        colors.clear();
+        helper.assertValueEqual(presentation.texture(com.jvn.villagerretaliation.client.quest.QuestPresentation.Texture.CONTAINER), texture,
+                "the consumer supplies its own journal texture without VR resources");
+        helper.assertValueEqual(presentation.color(com.jvn.villagerretaliation.client.quest.QuestPresentation.Color.TEXT_COLOR), 0xFF123456,
+                "presentation snapshots the consumer's palette");
+        helper.assertValueEqual(presentation.key("quest_journal.title"), "other_mod.gui.quest_journal.title",
+                "the consumer owns its localization namespace");
+        helper.assertValueEqual(presentation.maxHudEntries(), 2, "HUD presentation settings belong to the consumer");
+        helper.succeed();
+    }
+
     private static QuestTrackerSyncPayload.Entry entry(String id, String issuer, String state) {
         return new QuestTrackerSyncPayload.Entry(id, "A task from " + issuer, "Find the trail", "", 0.0F, false,
                 state, "", issuer, "Overworld", List.of());

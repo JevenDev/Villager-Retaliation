@@ -269,6 +269,13 @@ public final class AuthoringEditorClientSmoke {
         });
         STEPS.add(() -> capture("08b-playtest-resized"));
         STEPS.add(() -> {
+            var presentation = com.jvn.villagerretaliation.client.quest.VrQuestPresentation.DEFAULT;
+            var custom = new com.jvn.villagerretaliation.client.quest.QuestPresentation(
+                    presentation.textures(), presentation.colors(), presentation.translationPrefix(), 2);
+            require(new com.jvn.villagerretaliation.client.quest.QuestHud(custom).visibleTrackerEntryCount(true, 3) == 2,
+                    "Reusable quest HUD uses the consumer's presentation settings.");
+            require(com.jvn.villagerretaliation.client.quest.VrQuestPresentation.HUD.visibleTrackerEntryCount(true, 4) == 3,
+                    "VR retains its existing three-entry quest HUD.");
             Minecraft.getInstance().setScreen(new com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen());
         });
         STEPS.add(() -> {

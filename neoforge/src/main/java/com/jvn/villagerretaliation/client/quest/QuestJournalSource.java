@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.client.gui.screens.Screen;
 
 public interface QuestJournalSource {
+    default QuestPresentation presentation() { return VrQuestPresentation.DEFAULT; }
     List<QuestTrackerSyncPayload.Entry> entries();
     List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes();
     int trackedIndex(QuestTrackerSyncPayload.Entry entry);
@@ -27,6 +28,7 @@ public interface QuestJournalSource {
     default QuestJournalDataSource dataSource() {
         QuestJournalSource legacy = this;
         return new QuestJournalDataSource() {
+            @Override public QuestPresentation presentation() { return legacy.presentation(); }
             @Override public List<com.jvn.villagerretaliation.quest.tracking.QuestJournalData.Entry> entries() {
                 return legacy.entries().stream().map(VrQuestJournalData::shared).toList();
             }

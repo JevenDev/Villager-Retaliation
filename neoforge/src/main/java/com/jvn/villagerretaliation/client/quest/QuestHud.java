@@ -1,11 +1,9 @@
 package com.jvn.villagerretaliation.client.quest;
 
-import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.quest.tracking.QuestJournalData;
-import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,20 +27,23 @@ public final class QuestHud {
     private static final int PADDING_Y = 8;
     private static final int LINE_STEP = 10;
     private static final int TEXT_Z = 210;
-    private static final VillagerNineSlice OPTIONS_LIST_BACKGROUND_NINE_SLICE =
+    private final QuestPresentation presentation;
+    private final VillagerNineSlice OPTIONS_LIST_BACKGROUND_NINE_SLICE;
+
+    public QuestHud(QuestPresentation presentation) {
+        this.presentation = java.util.Objects.requireNonNull(presentation);
+        this.OPTIONS_LIST_BACKGROUND_NINE_SLICE =
             new VillagerNineSlice(
-                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_TEXTURE,
+                    this.presentation.texture(QuestPresentation.Texture.HUD_PANEL),
                     49,
                     23,
                     8,
                     8,
                     8,
                     8);
-
-    private QuestHud() {
     }
 
-    public static int trackerWidth(int screenWidth) {
+    public int trackerWidth(int screenWidth) {
         return Math.max(
                 VillagerAdaptiveGuiScale.unit(176),
                 Math.min(
@@ -50,11 +51,11 @@ public final class QuestHud {
                         screenWidth - VillagerAdaptiveGuiScale.unit(24)));
     }
 
-    public static int visibleTrackerEntryCount(boolean showRecentQuests, int entryCount) {
-        return showRecentQuests ? Math.min(QuestTrackerLimits.MAX_TRACKED_QUESTS, entryCount) : 1;
+    public int visibleTrackerEntryCount(boolean showRecentQuests, int entryCount) {
+        return showRecentQuests ? Math.min(this.presentation.maxHudEntries(), entryCount) : 1;
     }
 
-    public static int trackerHeight(Font font, List<QuestJournalData.Entry> entries, int entryCount, int width) {
+    public int trackerHeight(Font font, List<QuestJournalData.Entry> entries, int entryCount, int width) {
         int height = primaryHeight();
         for (int index = 1; index < entryCount; index++) {
             height += secondaryHeight(font, entries.get(index), width) + panelGap();
@@ -62,23 +63,23 @@ public final class QuestHud {
         return height;
     }
 
-    public static int notificationWidth(Font font, QuestJournalData.Entry entry, int screenWidth) {
+    public int notificationWidth(Font font, QuestJournalData.Entry entry, int screenWidth) {
         return trackerWidth(screenWidth);
     }
 
-    public static int panelGap() {
+    public int panelGap() {
         return VillagerAdaptiveGuiScale.unitAtLeast(PANEL_GAP, 1);
     }
 
-    public static int notificationHeight(Font font, QuestJournalData.Entry entry, int width, int screenHeight) {
+    public int notificationHeight(Font font, QuestJournalData.Entry entry, int width, int screenHeight) {
         return Math.min(primaryHeight(), Math.max(VillagerAdaptiveGuiScale.unit(NOTIFICATION_MIN_HEIGHT), screenHeight - VillagerAdaptiveGuiScale.unit(20)));
     }
 
-    public static int primaryHeight() {
+    public int primaryHeight() {
         return VillagerAdaptiveGuiScale.unit(PRIMARY_HEIGHT);
     }
 
-    public static int secondaryHeight(Font font, QuestJournalData.Entry entry, int width) {
+    public int secondaryHeight(Font font, QuestJournalData.Entry entry, int width) {
         int height = VillagerAdaptiveGuiScale.unit(SECONDARY_HEIGHT);
         if (!entry.showProgress() || entry.objective().isBlank()) {
             return height;
@@ -91,11 +92,11 @@ public final class QuestHud {
         return height + Math.max(0, objectiveLines - 1) * lineStep(font);
     }
 
-    public static int slideDistance() {
+    public int slideDistance() {
         return VillagerAdaptiveGuiScale.unit(SLIDE_DISTANCE);
     }
 
-    public static void renderNotification(
+    public void renderNotification(
             GuiGraphics graphics,
             Font font,
             QuestJournalData.Entry entry,
@@ -108,7 +109,7 @@ public final class QuestHud {
         renderEntry(graphics, font, entry, x, y, width, height, alpha, true, age);
     }
 
-    private static int addNotificationLines(
+    private int addNotificationLines(
             List<NotificationLine> lines,
             Font font,
             String text,
@@ -129,7 +130,7 @@ public final class QuestHud {
         return y + gapAfter;
     }
 
-    private static int notificationContentHeight(List<NotificationLine> lines, int lineStep) {
+    private int notificationContentHeight(List<NotificationLine> lines, int lineStep) {
         if (lines.isEmpty()) {
             return 0;
         }
@@ -137,7 +138,7 @@ public final class QuestHud {
         return lastLine.top() + lineStep;
     }
 
-    private static int trackerScroll(int age, int overflow) {
+    private int trackerScroll(int age, int overflow) {
         if (overflow <= 0) {
             return 0;
         }
@@ -158,25 +159,25 @@ public final class QuestHud {
         return Math.round(overflow * (1.0F - smoothProgress(phase / (float) TRACKER_SCROLL_TICKS)));
     }
 
-    private static float smoothProgress(float progress) {
+    private float smoothProgress(float progress) {
         float clamped = Mth.clamp(progress, 0.0F, 1.0F);
         return clamped * clamped * (3.0F - 2.0F * clamped);
     }
 
-    private static String questItemsLine(QuestJournalData.Entry entry) {
+    private String questItemsLine(QuestJournalData.Entry entry) {
         List<String> names = new ArrayList<>();
         for (QuestJournalData.QuestItem item : entry.questItems()) {
             names.add(questItemProgressLine(item));
         }
-        return Component.translatable("villagerretaliation.gui.quest_item_marker", String.join(", ", names)).getString();
+        return this.presentation.text("quest_item_marker", String.join(", ", names)).getString();
     }
 
-    private static String questItemProgressLine(QuestJournalData.QuestItem item) {
+    private String questItemProgressLine(QuestJournalData.QuestItem item) {
         int current = Math.max(0, Math.min(item.count(), item.currentCount()));
         return item.label() + " " + current + "/" + item.count();
     }
 
-    public static void renderEntry(
+    public void renderEntry(
             GuiGraphics graphics,
             Font font,
             QuestJournalData.Entry entry,
@@ -187,8 +188,8 @@ public final class QuestHud {
             float alpha,
             boolean primary,
             int age) {
-        int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TITLE_COLOR : VillagerQuestUi.TEXT_COLOR, alpha);
-        int textColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TEXT_COLOR : VillagerQuestUi.MUTED_TEXT_COLOR, alpha);
+        int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? this.presentation.color(QuestPresentation.Color.HUD_TITLE_COLOR) : this.presentation.color(QuestPresentation.Color.HUD_TEXT_COLOR), alpha);
+        int textColor = VillagerClientUiUtil.withAlphaRound(primary ? this.presentation.color(QuestPresentation.Color.HUD_TEXT_COLOR) : this.presentation.color(QuestPresentation.Color.HUD_MUTED_TEXT_COLOR), alpha);
         renderPanelBackground(graphics, x, y, width, height, alpha * (primary ? 1.0F : 0.72F));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -207,11 +208,11 @@ public final class QuestHud {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, true);
+            renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
-    private static void renderPrimaryEntryContent(
+    private void renderPrimaryEntryContent(
             GuiGraphics graphics,
             Font font,
             QuestJournalData.Entry entry,
@@ -228,7 +229,7 @@ public final class QuestHud {
                 ? progressBarTop(y, height)
                 : y + height - paddingY();
         int titleTop = y + paddingY();
-        int titleColor = VillagerClientUiUtil.withAlphaRound(VillagerQuestUi.TITLE_COLOR, alpha);
+        int titleColor = VillagerClientUiUtil.withAlphaRound(this.presentation.color(QuestPresentation.Color.HUD_TITLE_COLOR), alpha);
         renderSingleLine(graphics, font, entry.title(), contentLeft, titleTop, contentWidth, titleColor, true);
 
         int wrapWidth = VillagerClientUiUtil.scaledWrapWidth(contentWidth, textScale());
@@ -261,47 +262,47 @@ public final class QuestHud {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, true);
+            renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
-    private static List<NotificationLine> buildTrackerBodyLines(
+    private List<NotificationLine> buildTrackerBodyLines(
             Font font,
             QuestJournalData.Entry entry,
             int wrapWidth,
             int lineStep) {
         List<NotificationLine> lines = new ArrayList<>();
-        int y = addNotificationLines(lines, font, entry.objective(), wrapWidth, VillagerQuestUi.TEXT_COLOR, false, 0, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(5, 3));
+        int y = addNotificationLines(lines, font, entry.objective(), wrapWidth, this.presentation.color(QuestPresentation.Color.HUD_TEXT_COLOR), false, 0, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(5, 3));
         if (!entry.metadata().isBlank()) {
             for (String part : visibleMetadataParts(entry)) {
-                y = addNotificationLines(lines, font, part, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+                y = addNotificationLines(lines, font, part, wrapWidth, this.presentation.color(QuestPresentation.Color.HUD_MUTED_TEXT_COLOR), false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
             }
         }
         String runtime = runtimeJournalLine(entry);
         if (!runtime.isBlank()) {
-            y = addNotificationLines(lines, font, runtime, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+            y = addNotificationLines(lines, font, runtime, wrapWidth, this.presentation.color(QuestPresentation.Color.HUD_MUTED_TEXT_COLOR), false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
         }
         String waypoint = waypointLine(entry);
         if (!waypoint.isBlank()) {
-            y = addNotificationLines(lines, font, waypoint, wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
+            y = addNotificationLines(lines, font, waypoint, wrapWidth, this.presentation.color(QuestPresentation.Color.HUD_MUTED_TEXT_COLOR), false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
         }
         if (!entry.questItems().isEmpty()) {
-            addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, 0);
+            addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, this.presentation.color(QuestPresentation.Color.HUD_MUTED_TEXT_COLOR), false, y, lineStep, 0);
         }
         return lines;
     }
 
-    private static String runtimeJournalLine(QuestJournalData.Entry entry) {
+    private String runtimeJournalLine(QuestJournalData.Entry entry) {
         Minecraft minecraft = Minecraft.getInstance();
         long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
         long expiresAt = entry.journal().expiresAtGameTime();
         if (expiresAt <= 0L || !"active".equalsIgnoreCase(entry.state())) {
             return "";
         }
-        return Component.translatable("villagerretaliation.gui.quest_journal.expires", formatDuration(Math.max(0L, expiresAt - now))).getString();
+        return this.presentation.text("quest_journal.expires", formatDuration(Math.max(0L, expiresAt - now))).getString();
     }
 
-    private static String waypointLine(QuestJournalData.Entry entry) {
+    private String waypointLine(QuestJournalData.Entry entry) {
         QuestJournalData.Waypoint waypoint = entry.journal().waypoint();
         if (!waypoint.present()) {
             return "";
@@ -314,11 +315,11 @@ public final class QuestHud {
             int dz = waypoint.z() - minecraft.player.blockPosition().getZ();
             distance = " • " + Math.round(Math.sqrt((double) dx * dx + (double) dz * dz)) + " blocks";
         }
-        return Component.translatable("villagerretaliation.gui.quest_journal.waypoint",
+        return this.presentation.text("quest_journal.waypoint",
                 waypoint.x(), waypoint.y(), waypoint.z(), waypoint.dimension(), distance).getString();
     }
 
-    private static String formatDuration(long ticks) {
+    private String formatDuration(long ticks) {
         long seconds = Math.max(0L, ticks / 20L);
         long hours = seconds / 3600L;
         long minutes = (seconds % 3600L) / 60L;
@@ -328,7 +329,7 @@ public final class QuestHud {
         return remainder + "s";
     }
 
-    private static List<String> visibleMetadataParts(QuestJournalData.Entry entry) {
+    private List<String> visibleMetadataParts(QuestJournalData.Entry entry) {
         if (entry.metadata().isBlank()) {
             return List.of();
         }
@@ -337,7 +338,7 @@ public final class QuestHud {
                 .toList();
     }
 
-    private static void renderPanelBackground(
+    private void renderPanelBackground(
             GuiGraphics graphics,
             int x,
             int y,
@@ -347,7 +348,7 @@ public final class QuestHud {
         OPTIONS_LIST_BACKGROUND_NINE_SLICE.render(graphics, x, y, width, height, alpha);
     }
 
-    private static void renderWrappedText(
+    private void renderWrappedText(
             GuiGraphics graphics,
             Font font,
             String text,
@@ -359,7 +360,7 @@ public final class QuestHud {
         VillagerClientUiUtil.drawWrappedScaledLinesAtZ(graphics, font, text, x, y, width, maxLines, lineStep(font), color, false, textScale(), TEXT_Z);
     }
 
-    private static void renderSingleLine(
+    private void renderSingleLine(
             GuiGraphics graphics,
             Font font,
             String text,
@@ -371,30 +372,54 @@ public final class QuestHud {
         VillagerClientUiUtil.drawClippedScaledStringAtZ(graphics, font, text, x, y, width, lineStep(font), color, shadow, textScale(), TEXT_Z);
     }
 
-    private static int paddingX() {
+    private int paddingX() {
         return VillagerAdaptiveGuiScale.unit(PADDING_X);
     }
 
-    private static int paddingY() {
+    private int paddingY() {
         return VillagerAdaptiveGuiScale.unit(PADDING_Y);
     }
 
-    private static int progressBarTop(int y, int height) {
+    private int progressBarTop(int y, int height) {
         return y + height - paddingY() - progressBarHeight();
     }
 
-    private static int progressBarHeight() {
+    private int progressBarHeight() {
         return VillagerAdaptiveGuiScale.unitAtLeast(2, 1);
     }
 
-    private static int lineStep(Font font) {
+    private int lineStep(Font font) {
         return Math.max(VillagerAdaptiveGuiScale.unitAtLeast(LINE_STEP, 1), VillagerClientUiUtil.scaledLineStep(font, textScale()));
     }
 
-    private static float textScale() {
+    private float textScale() {
         return VillagerAdaptiveGuiScale.scaleFactor();
     }
 
     private record NotificationLine(FormattedCharSequence text, int baseColor, boolean shadow, int top) {
+    }
+    private void renderProgressBar(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int height,
+            float progress,
+            float alpha,
+            boolean highlight) {
+        if (right <= left || height <= 0) {
+            return;
+        }
+
+        int bottom = top + height;
+        graphics.fill(left, top, right, bottom, VillagerClientUiUtil.withAlphaRound(this.presentation.color(QuestPresentation.Color.HUD_BAR_BACKGROUND_COLOR), alpha));
+        int fillRight = left + Math.round((right - left) * Mth.clamp(progress, 0.0F, 1.0F));
+        if (fillRight > left) {
+            graphics.fill(left, top, fillRight, bottom, VillagerClientUiUtil.withAlphaRound(this.presentation.color(QuestPresentation.Color.HUD_ACCENT_COLOR), alpha));
+        }
+        if (highlight) {
+            int highlightHeight = VillagerAdaptiveGuiScale.unitAtLeast(1, 1);
+            graphics.fill(left, top - highlightHeight, right, top, VillagerClientUiUtil.withAlphaRound(this.presentation.color(QuestPresentation.Color.HUD_EDGE_HIGHLIGHT_COLOR), alpha * 0.35F));
+        }
     }
 }
