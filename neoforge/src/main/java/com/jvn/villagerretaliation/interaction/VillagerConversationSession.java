@@ -1,72 +1,16 @@
 package com.jvn.villagerretaliation.interaction;
 
 import java.util.UUID;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
-public final class VillagerConversationSession {
-    private final UUID id = UUID.randomUUID();
-    private final UUID playerId;
-    private final UUID villagerId;
-    private final int villagerEntityId;
-    private final ResourceKey<Level> dimension;
-    private final BlockPos startPosition;
-    private final boolean forced;
-    private long lastInteractionGameTime;
-    private boolean active = true;
-
+public final class VillagerConversationSession extends InteractionSession {
     public VillagerConversationSession(UUID playerId, UUID villagerId, int villagerEntityId, ResourceKey<Level> dimension,
             BlockPos startPosition, long gameTime, boolean forced) {
-        this.playerId = playerId;
-        this.villagerId = villagerId;
-        this.villagerEntityId = villagerEntityId;
-        this.dimension = dimension;
-        this.startPosition = startPosition;
-        this.forced = forced;
-        this.lastInteractionGameTime = gameTime;
+        super(playerId, villagerId, villagerEntityId, dimension, startPosition, gameTime, forced);
     }
 
-    public UUID id() { return this.id; }
-
-    public UUID playerId() {
-        return this.playerId;
-    }
-
-    public UUID villagerId() {
-        return this.villagerId;
-    }
-
-    public int villagerEntityId() {
-        return this.villagerEntityId;
-    }
-
-    public ResourceKey<Level> dimension() {
-        return this.dimension;
-    }
-
-    public BlockPos startPosition() {
-        return this.startPosition;
-    }
-
-    public boolean forced() {
-        return this.forced;
-    }
-
-    public long lastInteractionGameTime() {
-        return this.lastInteractionGameTime;
-    }
-
-    public boolean active() {
-        return this.active;
-    }
-
-    public void touch(long gameTime) {
-        this.lastInteractionGameTime = gameTime;
-    }
-
-    public void deactivate() {
-        this.active = false;
-    }
+    public UUID villagerId() { return actorId(); }
+    public int villagerEntityId() { return entityId(); }
 }
