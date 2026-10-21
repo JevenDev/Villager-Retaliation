@@ -1728,6 +1728,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     @Override
+    public void mouseMoved(double x, double y) {
+        if (this.popup != null) this.popup.hover(x, y);
+        super.mouseMoved(x, y);
+    }
+
+    @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (this.routeDraft != null && this.routeDraft.dragging()) return true;
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;

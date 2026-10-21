@@ -2985,6 +2985,7 @@
   "villagerretaliation.gui.settlement_view.overview": "Overview",
   "villagerretaliation.gui.settlement_view.residents": "Residents",
   "villagerretaliation.gui.settlement_view.areas": "Areas",
+  "villagerretaliation.gui.settlement_view.action_hint": "Scroll to select. Click or Enter to confirm.",
   "villagerretaliation.gui.settlement_view.manage_selection": "Manage selection",
   "villagerretaliation.gui.settlement_view.draw_area": "Draw area",
   "villagerretaliation.gui.settlement_view.cancel_area": "Cancel draft",

@@ -1028,7 +1028,6 @@ public final class SettlementViewClientSmoke {
             if (!suppliesChecked) {
                 button(screen, "Food supply").onPress();
                 screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
-                screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
                 screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
                 ticks = 0;
                 phase = 170;
@@ -1100,7 +1099,6 @@ public final class SettlementViewClientSmoke {
             phase = 175;
         } else if (phase == 175 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
             button(screen, "Settlement menu").onPress();
-            screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
             screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
             ticks = 0;
             phase = 176;

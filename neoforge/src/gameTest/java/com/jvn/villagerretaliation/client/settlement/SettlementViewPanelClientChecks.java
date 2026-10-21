@@ -9,6 +9,7 @@ final class SettlementViewPanelClientChecks {
     private SettlementViewPanelClientChecks() { }
 
     static void verify(SettlementViewScreen view) {
+        verifyPopup();
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.getCameraEntity();
         double x = view.focusX(), z = view.focusZ();
@@ -17,6 +18,10 @@ final class SettlementViewPanelClientChecks {
         button(view, "villagerretaliation.gui.settlement_view.overview").onPress();
         require(minecraft.screen == view && view.contextPopup().target().kind() == SettlementViewPopup.Kind.OVERVIEW,
                 "overview opens over the world without switching screens");
+        var action = view.contextPopup().buttons().getFirst();
+        view.mouseScrolled(action.getX() + 2, action.getY() + 2, 0, -1);
+        require(view.contextPopup().buttons().get(1).isFocused() && view.viewHeight() == height,
+                "tooltip scrolling selects an action without zooming the world");
         view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
         button(view, "Treasury").onPress();
         require(view.contextPopup().target().kind() == SettlementViewPopup.Kind.TREASURY, "treasury opens a status popover");
@@ -50,6 +55,63 @@ final class SettlementViewPanelClientChecks {
         view.contextPopup().buttons().getFirst().onPress();
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "filter selection preserves the world camera");
+    }
+
+    private static void verifyPopup() {
+        var font = Minecraft.getInstance().font;
+        var popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.ACTIONS, null), 630, 350);
+        int[] selected = {-1};
+        var details = java.util.List.<net.minecraft.network.chat.Component>of(net.minecraft.network.chat.Component.literal("Resident"),
+                net.minecraft.network.chat.Component.literal("Health 20 | Food 10"));
+        var actions = new java.util.ArrayList<SettlementViewPopup.Action>();
+        for (int index = 0; index < 20; index++) {
+            int action = index;
+            actions.add(new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal("Action " + index),
+                    index != 1, () -> selected[0] = action));
+        }
+        popup.update(font, 640, 360, details, actions.subList(0, 3));
+        var first = popup.buttons().getFirst();
+        double x = first.getX() + 4, y = first.getY() + 2;
+        require(first.getHeight() == font.lineHeight + 1, "tooltip actions use compact text rows");
+        require(first.isFocused(), "the first enabled tooltip action is selected");
+        require(!popup.scroll(-1, -1, -1), "scrolling outside the tooltip is left to the view");
+        popup.scroll(x, y, 0);
+        require(popup.buttons().getFirst().isFocused(), "horizontal scrolling preserves the selected action");
+        popup.scroll(x, y, -1);
+        require(popup.buttons().get(2).isFocused() && selected[0] == -1,
+                "the wheel selects the next enabled action without running it");
+        popup.update(font, 640, 360, details, actions.subList(0, 3));
+        require(popup.buttons().get(2).isFocused(), "live tooltip refresh preserves wheel selection");
+        popup.click(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(selected[0] == 2, "click confirms the wheel selection even over a different row");
+        selected[0] = -1;
+        var disabled = popup.buttons().get(1);
+        popup.hover(disabled.getX() + 4, disabled.getY() + 2);
+        popup.click(disabled.getX() + 4, disabled.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(selected[0] == -1, "clicking a disabled row cannot run another action");
+        popup.hover(x, y);
+        require(popup.buttons().getFirst().isFocused(), "moving the pointer selects the hovered action");
+        popup.key(GLFW.GLFW_KEY_UP);
+        popup.key(GLFW.GLFW_KEY_ENTER);
+        require(selected[0] == 2, "keyboard navigation wraps past disabled actions and confirms");
+        popup.update(font, 200, 120, details, actions);
+        for (int index = 0; index < 30; index++) popup.key(GLFW.GLFW_KEY_DOWN);
+        var focused = popup.buttons().stream().filter(Button::isFocused).findFirst().orElseThrow();
+        require(focused.getY() >= 4 && focused.getBottom() <= 116,
+                "overflow navigation keeps the selected row inside the viewport");
+        require(popup.contains(focused.getX() + 2, focused.getY() + 2), "overflow selection remains clickable");
+        popup.update(font, 200, 120, details, java.util.List.of(new SettlementViewPopup.Action(
+                net.minecraft.network.chat.Component.literal("Unavailable"), false, () -> selected[0] = 99)));
+        selected[0] = -1;
+        popup.scroll(popup.buttons().getFirst().getX() + 2, popup.buttons().getFirst().getY() + 2, -1);
+        popup.key(GLFW.GLFW_KEY_ENTER);
+        require(selected[0] == -1 && popup.buttons().stream().noneMatch(Button::isFocused),
+                "a tooltip with no enabled actions cannot activate an entry");
+        popup.update(font, 200, 120, details, java.util.List.of(new SettlementViewPopup.Action(
+                net.minecraft.network.chat.Component.literal("A workplace name that is too long to fit on one tooltip row"), true, () -> {})));
+        require(popup.buttons().getFirst().getHeight() > font.lineHeight + 1, "long action names wrap without truncation");
+        popup.update(font, 200, 120, details, java.util.List.of());
+        require(popup.buttons().isEmpty() && popup.key(GLFW.GLFW_KEY_DOWN), "informational tooltips support empty action lists");
     }
 
     static void verifyWindow(com.jvn.villagerretaliation.client.ui.VillagerWindowScreen screen) {
