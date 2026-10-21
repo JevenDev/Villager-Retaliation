@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.client.settlement;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
+import com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence;
+import com.jvn.villagerretaliation.settlement.SettlementViewAction;
 import java.util.function.BooleanSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -59,6 +61,24 @@ final class SettlementViewUi {
                 ? "villagerretaliation.gui.clipboard_workforce.status." + resident.status().substring("workforce.".length())
                 : "villagerretaliation.gui.settlement.work." + resident.status();
         return Component.translatableWithFallback(key, SettlementManagementScreen.text("work.idle").getString()).getString();
+    }
+
+    static boolean actionEligible(SettlementViewAction action, SettlementManagementPayload.Resident resident,
+                                  SettlementManagementPayload.Area workplace) {
+        if (!action.eligible(resident, workplace) || resident.status().equals("personal_commitment")) return false;
+        boolean enabled = resident.settings() != null ? resident.settings().enabled() : !resident.status().equals("paused");
+        return switch (action) {
+            case ENABLE -> !enabled;
+            case PAUSE -> enabled;
+            case RETURN -> !resident.temporary().isBlank();
+            case TEMPORARY_TASK -> resident.presence() != Presence.UNLOADED;
+            case CANCEL_TASKS -> resident.presence() != Presence.UNLOADED && !resident.temporary().isBlank();
+            default -> true;
+        };
+    }
+
+    static Component actionLabel(String label, long eligible, int selected) {
+        return Component.literal(selected > 1 ? label + " (" + eligible + "/" + selected + ")" : label);
     }
 
     static String readable(String value) {

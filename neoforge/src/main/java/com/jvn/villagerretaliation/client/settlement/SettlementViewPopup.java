@@ -61,7 +61,18 @@ final class SettlementViewPopup {
     }
 
     void update(Font font, int viewportWidth, int viewportHeight, List<Component> details, List<Action> actions) {
+        Object focused = this.focus >= 0 && this.focus < this.actions.size() ? this.actions.get(this.focus).key() : null;
         this.actions = List.copyOf(actions);
+        if (focused != null) {
+            this.focus = -1;
+            for (int index = 0; index < this.actions.size(); index++) {
+                if (focused.equals(this.actions.get(index).key())) {
+                    this.focus = index;
+                    break;
+                }
+            }
+            if (this.focus < 0) this.navigationSelection = false;
+        }
         Component hint = Component.translatable("villagerretaliation.gui.settlement_view.action_hint").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC);
         int textWidth = details.stream().mapToInt(font::width).max().orElse(0);
         for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> "));
@@ -264,6 +275,9 @@ final class SettlementViewPopup {
         }
     }
 
-    record Action(Component label, boolean enabled, Runnable run) {
+    record Action(Component label, boolean enabled, Runnable run, Object key) {
+        Action(Component label, boolean enabled, Runnable run) {
+            this(label, enabled, run, null);
+        }
     }
 }

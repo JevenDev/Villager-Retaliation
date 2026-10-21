@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.settlement.SettlementViewAction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -111,6 +112,20 @@ final class SettlementViewPanelClientChecks {
         popup.update(font, 200, 120, details, java.util.List.of(new SettlementViewPopup.Action(
                 net.minecraft.network.chat.Component.literal("A workplace name that is too long to fit on one tooltip row"), true, () -> {})));
         require(popup.buttons().getFirst().getHeight() > font.lineHeight + 1, "long action names wrap without truncation");
+        var changing = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.ACTIONS, null), 4, 4);
+        var enable = new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal("Enable work (1/2)"), true,
+                () -> {}, SettlementViewAction.ENABLE);
+        var pause = new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal("Pause work (1/2)"), true,
+                () -> {}, SettlementViewAction.PAUSE);
+        var assign = new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal("Assign to area"), true,
+                () -> {}, SettlementViewAction.ASSIGN);
+        changing.update(font, 640, 360, details, java.util.List.of(enable, pause, assign));
+        var start = changing.buttons().getFirst();
+        changing.scroll(start.getX() + 2, start.getY() + 2, -1);
+        require(changing.buttons().get(1).isFocused(), "the work command can be selected before a live refresh");
+        changing.update(font, 640, 360, details, java.util.List.of(new SettlementViewPopup.Action(
+                net.minecraft.network.chat.Component.literal("Pause work (2/2)"), true, () -> {}, SettlementViewAction.PAUSE), assign));
+        require(changing.buttons().getFirst().isFocused(), "filtering and count updates preserve the selected command by identity");
         popup.update(font, 200, 120, details, java.util.List.of());
         require(popup.buttons().isEmpty() && popup.key(GLFW.GLFW_KEY_DOWN), "informational tooltips support empty action lists");
     }

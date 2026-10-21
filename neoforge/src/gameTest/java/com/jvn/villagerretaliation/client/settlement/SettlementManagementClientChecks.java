@@ -1,13 +1,19 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
 import com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence;
+import com.jvn.villagerretaliation.settlement.SettlementAreaType;
+import com.jvn.villagerretaliation.settlement.SettlementViewAction;
+import com.jvn.villagerretaliation.settlement.SettlementWorkerSetting;
+import com.jvn.villagerretaliation.settlement.SettlementWorkerSettings;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
 final class SettlementManagementClientChecks {
@@ -59,8 +65,74 @@ final class SettlementManagementClientChecks {
                 null, area, unknownSupply.storageName(), unknownSupply.item(), 5L, 2L, 3L, 12, "available");
         require(SettlementSupplyView.detail(observedSupply).getString().equals("Stored 5 | Reserved 2 | Incoming 3 | Target 12 | Short 4"),
                 "updated supply observations display stored and incoming amounts separately");
+        verifySelectionActions();
         verifyProductionTracking();
         verifyTransferTracking();
+    }
+
+    private static void verifySelectionActions() {
+        var depot = new SettlementManagementPayload.Area(UUID.randomUUID(), "Depot", SettlementAreaType.DEPOT,
+                BlockPos.ZERO, BlockPos.ZERO.above(), 5, true, 0, 0, 1);
+        var active = selectionResident(depot, "idle", null, "");
+        var paused = selectionResident(depot, "paused", null, "");
+        require(SettlementViewUi.actionEligible(SettlementViewAction.PAUSE, active, depot)
+                && !SettlementViewUi.actionEligible(SettlementViewAction.ENABLE, active, depot),
+                "enabled workers only offer Pause work");
+        require(SettlementViewUi.actionEligible(SettlementViewAction.ENABLE, paused, depot)
+                && !SettlementViewUi.actionEligible(SettlementViewAction.PAUSE, paused, depot),
+                "paused workers only offer Enable work");
+        require(!SettlementViewUi.actionEligible(SettlementViewAction.MOVE, active, depot)
+                && !SettlementViewUi.actionEligible(SettlementViewAction.TEMPORARY_TASK, active, depot),
+                "couriers do not offer guard orders or incompatible temporary tasks");
+        var areaPaused = selectionResident(depot, "area_paused", null, "");
+        require(SettlementViewUi.actionEligible(SettlementViewAction.PAUSE, areaPaused, depot),
+                "a paused workplace does not imply that its worker is individually paused");
+        var state = new CompoundTag();
+        state.putBoolean("Enabled", true);
+        var settings = SettlementWorkerSettings.capture(HiredVillagerRole.COURIER, state).with(SettlementWorkerSetting.ENABLED, 0);
+        require(SettlementViewUi.actionEligible(SettlementViewAction.ENABLE,
+                selectionResident(depot, "awaiting_arrival", settings, ""), depot),
+                "detailed worker settings take precedence over the work status summary");
+        require(!SettlementViewUi.actionEligible(SettlementViewAction.ASSIGN,
+                selectionResident(depot, "personal_commitment", null, ""), depot),
+                "personally employed residents do not offer settlement work commands");
+        var forestry = new SettlementManagementPayload.Area(UUID.randomUUID(), "Forestry", SettlementAreaType.FORESTRY,
+                BlockPos.ZERO, BlockPos.ZERO.above(), 5, true, 0, 0, 1);
+        require(!SettlementViewUi.actionEligible(SettlementViewAction.CANCEL_TASKS,
+                selectionResident(forestry, "idle", null, ""), forestry)
+                && SettlementViewUi.actionEligible(SettlementViewAction.CANCEL_TASKS,
+                selectionResident(forestry, "idle", null, "Tree | 1 queued"), forestry),
+                "temporary task cancellation is shown only when there is a queue to cancel");
+        var unloaded = new SettlementManagementPayload.Resident(UUID.randomUUID(), "Worker", ResourceLocation.withDefaultNamespace("none"),
+                false, Presence.UNLOADED, BlockPos.ZERO, forestry.id(), 20, 20, "idle", List.of(HiredVillagerRole.LOGGING),
+                null, null, null, "", false, false, 0, "Tree | 1 queued");
+        require(!SettlementViewUi.actionEligible(SettlementViewAction.TEMPORARY_TASK, unloaded, forestry)
+                && !SettlementViewUi.actionEligible(SettlementViewAction.CANCEL_TASKS, unloaded, forestry)
+                && SettlementViewUi.actionEligible(SettlementViewAction.PAUSE, unloaded, forestry),
+                "unloaded workers keep saved-state work controls but cannot accept live temporary-task commands");
+        var guardPost = new SettlementManagementPayload.Area(UUID.randomUUID(), "Guard post", SettlementAreaType.GUARD_POST,
+                BlockPos.ZERO, BlockPos.ZERO.above(), 5, true, 0, 0, 1);
+        require(!SettlementViewUi.actionEligible(SettlementViewAction.RETURN,
+                selectionResident(guardPost, "idle", null, ""), guardPost)
+                && SettlementViewUi.actionEligible(SettlementViewAction.RETURN,
+                selectionResident(guardPost, "idle", null, "Temporary move"), guardPost),
+                "returning to assignment is shown only for a temporary guard command");
+        var group = List.of(active, paused);
+        for (var action : List.of(SettlementViewAction.ENABLE, SettlementViewAction.PAUSE)) {
+            long eligible = group.stream().filter(row -> SettlementViewUi.actionEligible(action, row, depot)).count();
+            require(eligible == 1 && SettlementViewUi.actionLabel(action.label(), eligible, group.size()).getString()
+                    .equals(action.label() + " (1/2)"), "mixed selections keep accurate work toggle counts");
+        }
+        require(SettlementViewUi.actionLabel("Assign to area", 1, 1).getString().equals("Assign to area")
+                && SettlementViewUi.actionLabel("Depot", 1, 1).getString().equals("Depot"),
+                "single selections omit counts in the action menu and workplace picker");
+    }
+
+    private static SettlementManagementPayload.Resident selectionResident(SettlementManagementPayload.Area area, String status,
+                                                                          SettlementWorkerSettings settings, String temporary) {
+        return new SettlementManagementPayload.Resident(UUID.randomUUID(), "Worker", ResourceLocation.withDefaultNamespace("none"),
+                false, Presence.HERE, BlockPos.ZERO, area.id(), 20, 20, status, List.of(area.kind().role()),
+                null, settings, null, "", false, false, 0, temporary);
     }
 
     private static void verifyProductionTracking() {

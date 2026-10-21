@@ -1131,16 +1131,25 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return eligibleCount(SettlementViewAction.MOVE, null) > 0;
     }
 
+    private SettlementManagementPayload.Resident residentSnapshot(UUID id) {
+        var overview = this.roster.get(id);
+        return overview != null && this.resident != null && id.equals(this.resident.id())
+                && java.util.Objects.equals(overview.area(), this.resident.area()) ? this.resident : overview;
+    }
+
     private long eligibleCount(SettlementViewAction action, UUID destination) {
         if (!permits(action.permission())) return 0;
-        return this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull)
-                .filter(r -> action.eligible(r, this.areas.get(action == SettlementViewAction.ASSIGN ? destination : r.area()))).count();
+        return this.selection.residents().stream().map(this::residentSnapshot).filter(java.util.Objects::nonNull)
+                .filter(r -> SettlementViewUi.actionEligible(action, r, this.areas.get(action == SettlementViewAction.ASSIGN ? destination : r.area()))).count();
     }
 
     private void submitBatch(SettlementViewAction action, UUID area, SettlementGuardOrder order) {
-        if (this.commands.busy() || this.selection.size() == 0) return;
-        var targets = this.selection.residents().stream().map(id -> new SettlementViewBatchPayload.Target(id,
-                this.roster.containsKey(id) ? this.roster.get(id).area() : null)).toList();
+        if (this.commands.busy() || this.selection.size() == 0 || !permits(action.permission())) return;
+        var targets = this.selection.residents().stream().map(this::residentSnapshot).filter(java.util.Objects::nonNull)
+                .filter(resident -> SettlementViewUi.actionEligible(action, resident,
+                        this.areas.get(action == SettlementViewAction.ASSIGN ? area : resident.area())))
+                .map(resident -> new SettlementViewBatchPayload.Target(resident.id(), resident.area())).toList();
+        if (targets.isEmpty()) return;
         var request = new SettlementViewBatchPayload(this.session, UUID.randomUUID(), action, targets, area, order);
         if (action == SettlementViewAction.ASSIGN && targets.stream().anyMatch(target ->
                 target.expectedArea() != null && !target.expectedArea().equals(area)
@@ -1278,9 +1287,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             long eligible = action == SettlementViewAction.ASSIGN
                     ? this.areas.keySet().stream().mapToLong(id -> eligibleCount(action, id)).max().orElse(0)
                     : eligibleCount(action, null);
-            actions.add(new SettlementViewPopup.Action(Component.literal(action.label() + " (" + eligible + "/"
-                    + this.selection.size() + ")"), !this.commands.busy() && eligible > 0,
-                    () -> executeAction(action)));
+            if (eligible == 0) continue;
+            actions.add(new SettlementViewPopup.Action(SettlementViewUi.actionLabel(action.label(), eligible, this.selection.size()),
+                    !this.commands.busy(), () -> executeAction(action), action));
         }
         return actions;
     }
@@ -2576,9 +2585,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 for (var area : this.areas.values()) {
                     long eligible = eligibleCount(SettlementViewAction.ASSIGN, area.id());
                     if (eligible == 0) continue;
-                    actions.add(new SettlementViewPopup.Action(Component.literal(area.name() + " (" + eligible + "/"
-                            + this.selection.size() + ")"), !this.commands.busy(),
-                            () -> submitBatch(SettlementViewAction.ASSIGN, area.id(), null)));
+                    actions.add(new SettlementViewPopup.Action(SettlementViewUi.actionLabel(area.name(), eligible, this.selection.size()), !this.commands.busy(),
+                            () -> submitBatch(SettlementViewAction.ASSIGN, area.id(), null), area.id()));
                 }
                 if (actions.isEmpty()) details.add(Component.literal("No compatible workplaces"));
             }
@@ -2703,6 +2711,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }
                 if (actions.isEmpty()) details.add(text("details_unavailable"));
             }
+        }
+        if (this.commands.busy() && (target.kind() == SettlementViewPopup.Kind.RESIDENT
+                || target.kind() == SettlementViewPopup.Kind.ACTIONS || target.kind() == SettlementViewPopup.Kind.ASSIGN)) {
+            details.add(Component.literal(this.commands.summary()));
         }
         this.popup.update(this.font, this.width, this.height, details, actions);
     }
