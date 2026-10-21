@@ -129,7 +129,34 @@ public final class EntityInteractionGameTests {
         helper.succeed();
     }
 
-    private static final class Policy implements InteractionSessionPolicy {
+    @GameTest(template = "empty", batch = "interaction_lifecycle")
+    public static void lifecycleCallbacksCannotOverwriteAReentrantSession(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var cow = helper.spawn(EntityType.COW, 1, 1, 1);
+        var wolf = helper.spawn(EntityType.WOLF, 2, 1, 1);
+        var replacementPolicy = new Policy();
+        var policy = new Policy() {
+            @Override public void ended(ServerPlayer owner, InteractionSession session, boolean notifyClient, boolean finishExchanges) {
+                super.ended(owner, session, notifyClient, finishExchanges);
+                InteractionSessions.start(owner, wolf, replacementPolicy, InteractionSessions.StartMode.NORMAL).orElseThrow();
+            }
+        };
+        try {
+            InteractionSessions.start(player, cow, policy, InteractionSessions.StartMode.NORMAL).orElseThrow();
+            helper.assertTrue(InteractionSessions.start(player, cow, replacementPolicy, InteractionSessions.StartMode.NORMAL).isEmpty(),
+                    "a replacement that loses ownership during a lifecycle callback cannot overwrite the callback's session");
+            helper.assertValueEqual(InteractionSessions.current(player).orElseThrow().actorId(), wolf.getUUID(),
+                    "the callback's session retains the player");
+            helper.assertFalse(InteractionSessions.isConversing(cow), "the interrupted replacement leaves no stale actor reservation");
+        } finally {
+            InteractionSessions.endForPlayer(player, false, false);
+            cow.discard();
+            wolf.discard();
+        }
+        helper.succeed();
+    }
+
+    private static class Policy implements InteractionSessionPolicy {
         private boolean allowed = true;
         private long timeout = 2400;
         private final List<UUID> closed = new ArrayList<>();

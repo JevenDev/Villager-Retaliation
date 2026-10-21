@@ -28,12 +28,21 @@ public final class InteractionSessions {
         UUID owner = state.playersByActor.get(actor.getUUID());
         if (owner != null && !owner.equals(player.getUUID())) return Optional.empty();
         endForPlayer(player, false, false);
+        if (state.byPlayer.containsKey(player.getUUID()) || state.playersByActor.containsKey(actor.getUUID())
+                || !participantsAvailable(player, actor)) return Optional.empty();
         var session = new InteractionSession(player.getUUID(), actor.getUUID(), actor.getId(),
                 player.level().dimension(), actor.blockPosition(), player.serverLevel().getGameTime(), mode != StartMode.NORMAL);
-        state.byPlayer.put(player.getUUID(), new Entry(session, policy));
+        var entry = new Entry(session, policy);
+        state.byPlayer.put(player.getUUID(), entry);
         state.playersByActor.put(actor.getUUID(), player.getUUID());
-        policy.hold(player, actor, session);
-        return Optional.of(session);
+        boolean held = false;
+        try {
+            policy.hold(player, actor, session);
+            held = true;
+            return state.byPlayer.get(player.getUUID()) == entry && session.active() ? Optional.of(session) : Optional.empty();
+        } finally {
+            if (!held && state.byPlayer.get(player.getUUID()) == entry) end(player, entry, true, false);
+        }
     }
 
     public static Optional<InteractionSession> current(ServerPlayer player) {
@@ -55,11 +64,20 @@ public final class InteractionSessions {
         }
         entry.session.touch(player.serverLevel().getGameTime());
         entry.policy.hold(player, actor, entry.session);
-        return true;
+        return state(player.server).byPlayer.get(player.getUUID()) == entry && entry.session.active();
     }
 
     public static boolean validate(ServerPlayer player, LivingEntity actor, UUID sessionId) {
         return sessionId != null && sessionId.equals(sessionId(player, actor)) && validate(player, actor);
+    }
+
+    public static boolean check(ServerPlayer player, LivingEntity actor, UUID sessionId) {
+        var entry = state(player.server).byPlayer.get(player.getUUID());
+        if (entry == null || sessionId == null || !sessionId.equals(entry.session.id())
+                || !entry.session.actorId().equals(actor.getUUID())) return false;
+        if (valid(player, actor, entry)) return true;
+        end(player, entry, true, false);
+        return false;
     }
 
     public static void recordActivity(ServerPlayer player, int entityId) {
@@ -72,6 +90,19 @@ public final class InteractionSessions {
     public static boolean isForced(ServerPlayer player, LivingEntity actor) {
         var session = current(player).orElse(null);
         return session != null && session.forced() && session.actorId().equals(actor.getUUID());
+    }
+
+    public static boolean ownedBy(ServerPlayer player, InteractionSessionPolicy policy) {
+        var entry = state(player.server).byPlayer.get(player.getUUID());
+        return entry != null && entry.session.active() && entry.policy == policy;
+    }
+
+    public static boolean ownedBy(LivingEntity actor, InteractionSessionPolicy policy) {
+        if (!(actor.level() instanceof ServerLevel level)) return false;
+        var state = state(level.getServer());
+        var player = state.playersByActor.get(actor.getUUID());
+        var entry = player == null ? null : state.byPlayer.get(player);
+        return entry != null && entry.session.active() && entry.policy == policy;
     }
 
     public static boolean isConversing(LivingEntity actor) {
@@ -116,6 +147,9 @@ public final class InteractionSessions {
             end(player, entry, true, false);
             return;
         }
+        long now = level.getGameTime();
+        if (entry.lastTick == now) return;
+        entry.lastTick = now;
         entry.policy.hold(player, actor, entry.session);
         entry.policy.tick(player, actor, entry.session);
     }
@@ -123,6 +157,14 @@ public final class InteractionSessions {
     public static void clear(MinecraftServer server) {
         var state = SERVERS.remove(server);
         if (state != null) state.byPlayer.values().forEach(entry -> entry.session.deactivate());
+    }
+
+    public static void clear(InteractionSessionPolicy policy) {
+        for (var state : SERVERS.values()) {
+            for (var entry : new java.util.ArrayList<>(state.byPlayer.values())) {
+                if (entry.policy == policy) retire(state, entry.session.playerId(), entry.session.actorId(), entry);
+            }
+        }
     }
 
     public static void clear() {
@@ -162,7 +204,16 @@ public final class InteractionSessions {
 
     public enum StartMode { NORMAL, FORCED, AUTHORIZED_FORCED }
 
-    private record Entry(InteractionSession session, InteractionSessionPolicy policy) { }
+    private static final class Entry {
+        private final InteractionSession session;
+        private final InteractionSessionPolicy policy;
+        private long lastTick = Long.MIN_VALUE;
+
+        private Entry(InteractionSession session, InteractionSessionPolicy policy) {
+            this.session = session;
+            this.policy = policy;
+        }
+    }
 
     private static final class State {
         private final Map<UUID, Entry> byPlayer = new HashMap<>();

@@ -744,6 +744,8 @@ public final class VillagerRetaliationEvents {
                     event.getTarget() instanceof LivingEntity living ? living : null);
         }
 
+        if (com.jvn.villagerretaliation.interaction.InteractionService.handleRightClick(event)) return;
+
         if (event.getTarget() instanceof Villager villager
                 && VillagerBehaviorSuppressionPolicy.suppresses(
                         villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {

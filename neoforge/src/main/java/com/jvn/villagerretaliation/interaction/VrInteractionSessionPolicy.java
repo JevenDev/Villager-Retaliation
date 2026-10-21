@@ -113,4 +113,5 @@ final class VrInteractionSessionPolicy implements InteractionSessionPolicy {
         }
         VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         return villager.getNavigation().moveTo(player, FORCED_DIALOGUE_APPROACH_SPEED);
-    }}
+    }
+}

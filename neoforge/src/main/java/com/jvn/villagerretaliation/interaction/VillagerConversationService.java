@@ -10,7 +10,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class VillagerConversationService {
     private VillagerConversationService() { }
 
-    public static void clearRuntimeState() { InteractionSessions.clear(); }
+    public static void clearRuntimeState() { InteractionSessions.clear(VrInteractionSessionPolicy.INSTANCE); }
 
     public static boolean start(ServerPlayer player, Villager villager) {
         return start(player, villager, InteractionSessions.StartMode.NORMAL);
@@ -29,27 +29,33 @@ public final class VillagerConversationService {
         return InteractionSessions.start(player, villager, VrInteractionSessionPolicy.INSTANCE, mode).isPresent();
     }
 
-    public static UUID sessionId(ServerPlayer player, Villager villager) { return InteractionSessions.sessionId(player, villager); }
-    public static boolean validate(ServerPlayer player, Villager villager) { return InteractionSessions.validate(player, villager); }
+    public static UUID sessionId(ServerPlayer player, Villager villager) { return owns(player) ? InteractionSessions.sessionId(player, villager) : null; }
+    public static boolean validate(ServerPlayer player, Villager villager) { return owns(player) && InteractionSessions.validate(player, villager); }
 
     /** Records client activity for the session identified by the supplied villager entity id. */
-    public static void recordActivity(ServerPlayer player, int villagerEntityId) { InteractionSessions.recordActivity(player, villagerEntityId); }
+    public static void recordActivity(ServerPlayer player, int villagerEntityId) { if (owns(player)) InteractionSessions.recordActivity(player, villagerEntityId); }
 
-    public static boolean isForced(ServerPlayer player, Villager villager) { return InteractionSessions.isForced(player, villager); }
+    public static boolean isForced(ServerPlayer player, Villager villager) { return owns(player) && InteractionSessions.isForced(player, villager); }
     public static void endForPlayer(ServerPlayer player, boolean notifyClient) { endForPlayer(player, notifyClient, false); }
     public static void endForPlayer(ServerPlayer player, boolean notifyClient, boolean finishExchanges) {
-        InteractionSessions.endForPlayer(player, notifyClient, finishExchanges);
+        if (owns(player)) InteractionSessions.endForPlayer(player, notifyClient, finishExchanges);
     }
-    public static void endForVillager(Villager villager, boolean notifyClient) { InteractionSessions.endForActor(villager, notifyClient); }
-    public static boolean isConversing(Villager villager) { return InteractionSessions.isConversing(villager); }
-    public static boolean isConversing(ServerPlayer player) { return InteractionSessions.isConversing(player); }
-    public static void tickVillager(Villager villager) { InteractionSessions.tick(villager); }
+    public static void endForVillager(Villager villager, boolean notifyClient) {
+        if (InteractionSessions.ownedBy(villager, VrInteractionSessionPolicy.INSTANCE)) InteractionSessions.endForActor(villager, notifyClient);
+    }
+    public static boolean isConversing(Villager villager) { return InteractionSessions.ownedBy(villager, VrInteractionSessionPolicy.INSTANCE); }
+    public static boolean isConversing(ServerPlayer player) { return owns(player); }
+    public static void tickVillager(Villager villager) {
+        if (InteractionSessions.ownedBy(villager, VrInteractionSessionPolicy.INSTANCE)) InteractionSessions.tick(villager);
+    }
 
     public static void holdSharedForcedParticipant(Villager villager, ServerPlayer player) {
         VrInteractionSessionPolicy.holdSharedForcedParticipant(villager, player);
     }
 
     public static void endForEntityLeaving(Entity entity, boolean notifyClient) { InteractionSessions.endForEntityLeaving(entity, notifyClient); }
+
+    private static boolean owns(ServerPlayer player) { return InteractionSessions.ownedBy(player, VrInteractionSessionPolicy.INSTANCE); }
 
     static void notifyEnded(ServerPlayer player, InteractionSession session, boolean finishExchanges) {
         try {

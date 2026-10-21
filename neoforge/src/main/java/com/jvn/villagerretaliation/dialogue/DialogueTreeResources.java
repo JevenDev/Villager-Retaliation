@@ -66,6 +66,17 @@ public final class DialogueTreeResources {
                 .toList();
     }
 
+    public static List<DialogueOptionDefinition> entryOptions(DialogueRuntimeContext context, DialogueDisposition disposition,
+            java.util.Set<ResourceLocation> treeIds) {
+        return treeIds.stream().map(id -> tree(context.level().getServer(), context.locale(), id)).flatMap(Optional::stream)
+                .filter(tree -> tree.matches(context))
+                .flatMap(tree -> tree.entries().stream().filter(entry -> entry.matches(context, disposition))
+                        .map(entry -> new RankedOption(entry.toOption(context, tree.id(), tree.metadata()), entry.priority())))
+                .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
+                        .thenComparingInt(value -> value.option().order()).thenComparing(value -> value.option().id()))
+                .map(RankedOption::option).toList();
+    }
+
     public static Optional<DialogueTreeDefinition> tree(MinecraftServer server, String locale, ResourceLocation id) {
         if (id == null) {
             return Optional.empty();
