@@ -252,6 +252,23 @@ public final class VillagerRetaliationClientAssets {
     public static final ResourceLocation QUEST_JOURNAL_SELECTED_QUEST_TEXTURE =
             texture("gui/quest_journal/quest_journal_selected_quest");
 
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_BG_LEFT_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_bg_left");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_BG_RIGHT_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_bg_right");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_CONTAINER_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_container");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_DIVIDER_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_divider");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_RESIDENTS_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_residents");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_HOUSING_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_housing");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_FOOD_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_food");
+    public static final ResourceLocation SETTLEMENT_STATUS_BAR_FUNDS_TEXTURE =
+            texture("gui/settlement/settlement_status_bar_funds");
+
     public static final ResourceLocation COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/combat_villager.json");
     public static final ResourceLocation HUMANOID_VILLAGER_MODEL =

@@ -72,9 +72,7 @@ final class SettlementViewUi {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            if (isHoveredOrFocused()) graphics.renderOutline(getX(), getY(), getWidth(), getHeight(), 0xFF81B6FF);
-        }
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
     }
 
     static final class IconButton extends Button {

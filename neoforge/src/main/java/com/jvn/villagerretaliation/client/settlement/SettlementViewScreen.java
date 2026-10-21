@@ -82,6 +82,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementViewPopup popup;
     private boolean panning;
     private SettlementManagementPayload.Header header;
+    private final SettlementViewUi.HeaderButton[] statusButtons = new SettlementViewUi.HeaderButton[5];
     private SettlementViewWindow window;
     private double focusX;
     private double focusZ;
@@ -383,33 +384,22 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 widget.visible = this.preferences.sidebar;
             }
         }
-        int nameWidth = Math.clamp(this.width / 5, 82, 144);
-        addRenderableWidget(new SettlementViewUi.HeaderButton(text("overview"), 2, nameWidth - 4,
+        this.statusButtons[0] = addRenderableWidget(new SettlementViewUi.HeaderButton(text("overview"), 0, 1,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.OVERVIEW, 4)));
-        var metrics = List.of("Treasury", "Residents", "Beds", "Food supply", "Issues");
-        int available = this.width - nameWidth - 96;
+        var metrics = List.of("Residents", "Beds", "Food supply", "Treasury");
         for (int index = 0; index < metrics.size(); index++) {
             int metric = index;
-            int left = nameWidth + available * index / metrics.size();
-            int width = available * (index + 1) / metrics.size() - (left - nameWidth);
-            addRenderableWidget(new SettlementViewUi.HeaderButton(Component.literal(metrics.get(index)), left, width, () -> {
+            this.statusButtons[index + 1] = addRenderableWidget(new SettlementViewUi.HeaderButton(Component.literal(metrics.get(index)), 0, 1, () -> {
+                int left = this.statusButtons[metric + 1].getX();
                 switch (metric) {
-                    case 0 -> openHeaderPopup(SettlementViewPopup.Kind.TREASURY, left);
-                    case 1 -> browse(Page.RESIDENTS, "All");
-                    case 2 -> browse(Page.AREAS, SettlementViewBrowser.kindFilter(SettlementAreaType.HOME));
-                    case 3 -> openHeaderPopup(SettlementViewPopup.Kind.FOOD, left);
-                    case 4 -> browse(Page.ISSUES, "All");
+                    case 0 -> browse(Page.RESIDENTS, "All");
+                    case 1 -> browse(Page.AREAS, SettlementViewBrowser.kindFilter(SettlementAreaType.HOME));
+                    case 2 -> openHeaderPopup(SettlementViewPopup.Kind.FOOD, left);
+                    case 3 -> openHeaderPopup(SettlementViewPopup.Kind.TREASURY, left);
                 }
             }));
         }
-        addRenderableWidget(Button.builder(Component.literal(this.preferences.sidebar ? ">" : "<"), ignored -> {
-            this.preferences.sidebar = !this.preferences.sidebar;
-            savePreferences();
-            rebuildWidgets();
-        }).bounds(this.width - 50, 7, 20, 20)
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Toggle settlement browser"))).build());
-        addRenderableWidget(new SettlementViewUi.IconButton(Component.translatable("gui.done"), this.width - 26, 7, 22, 20,
-                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BARRIER), false, false, () -> false, this::onClose));
+        updateStatusButtons(statusLayout(this.width));
         int toolTop = SettlementViewLayout.HEADER_HEIGHT + 6;
         addRenderableWidget(tool(Component.literal("Select"), toolTop, net.minecraft.world.item.Items.ARROW, false,
                 () -> this.interaction.is(Mode.SELECT) && this.gizmo == null && this.guardMode == null,
@@ -480,11 +470,20 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         int mapButtonY = this.preferences.sidebar && this.layout.dockedMap && this.preferences.map
                 ? this.overviewMap.top - 20 : this.height - 24;
         int mapButtonWidth = this.preferences.sidebar ? this.panelWidth - 12 : this.overviewMap.width;
+        mapButtonWidth = Math.min(mapButtonWidth, this.width - 54 - mapButtonX);
         addRenderableWidget(Button.builder(Component.literal(this.preferences.map ? "Hide map" : "Map"), ignored -> {
             this.preferences.map = !this.preferences.map;
             savePreferences();
             rebuildWidgets();
         }).bounds(mapButtonX, mapButtonY, mapButtonWidth, 18).build());
+        addRenderableWidget(Button.builder(Component.literal(this.preferences.sidebar ? ">" : "<"), ignored -> {
+            this.preferences.sidebar = !this.preferences.sidebar;
+            savePreferences();
+            rebuildWidgets();
+        }).bounds(this.width - 50, mapButtonY, 20, 18)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Toggle settlement browser"))).build());
+        addRenderableWidget(new SettlementViewUi.IconButton(Component.translatable("gui.done"), this.width - 26, mapButtonY, 22, 18,
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BARRIER), false, false, () -> false, this::onClose));
         if (this.preferences.map) {
             int left = this.layout.dockedMap ? this.panelLeft + 6 : this.overviewMap.left - 24;
             addRenderableWidget(new SettlementViewUi.IconButton(text("center"), left, this.overviewMap.top, 20, 18,
@@ -866,38 +865,37 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void renderHeader(GuiGraphics graphics, int mouseX, int mouseY, int screenWidth) {
-        SettlementViewUi.frame(graphics, 0, 0, screenWidth, SettlementViewLayout.HEADER_HEIGHT);
-        int nameWidth = Math.clamp(screenWidth / 5, 82, 144);
-        SettlementViewUi.item(graphics, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RED_BANNER), 7, 7, 18);
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(this.header.name(), nameWidth - 34), 29, 7, 0xFFFFFF);
-        graphics.drawString(this.font, this.font.plainSubstrByWidth(SettlementManagementScreen.enumText("stage", this.header.stage()).getString(),
-                nameWidth - 34), 29, 20, 0xB9C1CB);
-        var icons = List.of(net.minecraft.world.item.Items.EMERALD, net.minecraft.world.item.Items.VILLAGER_SPAWN_EGG,
-                net.minecraft.world.item.Items.RED_BED, net.minecraft.world.item.Items.WHEAT, net.minecraft.world.item.Items.REDSTONE_TORCH);
-        var values = List.of(this.header.balance().decimal(2), Integer.toString(this.header.population()), Integer.toString(this.header.housing()),
-                String.format(java.util.Locale.ROOT, "%.1f", this.header.foodDays()), Integer.toString(this.header.issues()));
-        var labels = List.of("Treasury", "Residents", "Beds", "Food days", "Issues");
-        int available = screenWidth - nameWidth - 96;
-        for (int index = 0; index < icons.size(); index++) {
-            int left = nameWidth + available * index / icons.size();
-            int width = available * (index + 1) / icons.size() - (left - nameWidth);
-            graphics.fill(left, 4, left + 1, 30, 0xFF666C73);
-            boolean detailed = width >= 58;
-            int iconSize = width >= 40 ? 16 : 10;
-            if (index == 1) SettlementViewUi.portrait(graphics, left + 5, detailed ? 9 : 5, iconSize);
-            else SettlementViewUi.item(graphics, new net.minecraft.world.item.ItemStack(icons.get(index)), left + 5, detailed ? 9 : 5, iconSize);
-            int valueLeft = detailed ? left + 25 : left + 5;
-            graphics.drawString(this.font, this.font.plainSubstrByWidth(values.get(index), width - (valueLeft - left) - 3),
-                    valueLeft, detailed ? 7 : 20, index == 4 && this.header.issues() > 0 ? 0xFF9C83 : 0xFFFFFF);
-            if (detailed) graphics.drawString(this.font, labels.get(index), valueLeft, 20, 0xB9C1CB);
-            if (mouseX >= left && mouseX < left + width && mouseY < SettlementViewLayout.HEADER_HEIGHT)
-                graphics.renderTooltip(this.font, Component.literal(labels.get(index) + ": " + values.get(index)), mouseX, mouseY);
+        var layout = statusLayout(screenWidth);
+        if (screenWidth == this.width) updateStatusButtons(layout);
+        int highlightedEntry = -1;
+        if (mouseX >= 0 && mouseY >= 0) {
+            for (int index = 0; index < this.statusButtons.length; index++) {
+                var button = this.statusButtons[index];
+                if (button != null && button.isMouseOver(mouseX, mouseY)) highlightedEntry = index;
+            }
+            if (highlightedEntry < 0) {
+                for (int index = 0; index < this.statusButtons.length; index++) {
+                    var button = this.statusButtons[index];
+                    if (button != null && button.isFocused()) highlightedEntry = index;
+                }
+            }
         }
-        long time = this.minecraft.level.getDayTime();
-        long clock = Math.floorMod(time + 6_000L, 24_000L);
-        graphics.drawString(this.font, "Day " + (Math.floorDiv(time, 24_000L) + 1), screenWidth - 90, 7, 0xFFFFFF);
-        graphics.drawString(this.font, String.format(java.util.Locale.ROOT, "%02d:%02d", clock / 1_000L, clock % 1_000L * 60L / 1_000L),
-                screenWidth - 90, 20, 0xB9C1CB);
+        SettlementStatusBar.render(graphics, this.font, layout, mouseX, mouseY, highlightedEntry);
+    }
+
+    private SettlementStatusBar.Layout statusLayout(int screenWidth) {
+        return SettlementStatusBar.layout(this.font, this.header, this.minecraft.level.getDayTime(), screenWidth);
+    }
+
+    private void updateStatusButtons(SettlementStatusBar.Layout layout) {
+        if (this.statusButtons[0] == null) return;
+        this.statusButtons[0].setX(layout.left());
+        this.statusButtons[0].setWidth(layout.divider());
+        for (int index = 0; index < 4; index++) {
+            int left = layout.boundary(layout.metricLeft(index));
+            this.statusButtons[index + 1].setX(left);
+            this.statusButtons[index + 1].setWidth(layout.boundary(layout.metricLeft(index + 1)) - left);
+        }
     }
 
     private void renderChrome(GuiGraphics graphics, int mouseX, int mouseY) {

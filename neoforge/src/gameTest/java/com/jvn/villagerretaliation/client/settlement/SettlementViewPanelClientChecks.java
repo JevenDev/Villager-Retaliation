@@ -10,6 +10,7 @@ final class SettlementViewPanelClientChecks {
 
     static void verify(SettlementViewScreen view) {
         verifyPopup();
+        SettlementStatusBarClientChecks.verify(view.parent().snapshot().header());
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.getCameraEntity();
         double x = view.focusX(), z = view.focusZ();
