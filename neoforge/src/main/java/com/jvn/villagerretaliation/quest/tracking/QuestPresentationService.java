@@ -2,18 +2,23 @@ package com.jvn.villagerretaliation.quest.tracking;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.query.QuestProgressSnapshot;
 import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
@@ -27,8 +32,43 @@ import net.minecraft.world.level.Level;
 
 public final class QuestPresentationService {
     private static final int APPROXIMATE_COORDINATE_STEP = 50;
+    private static final Map<UUID, CompletionCache> COMPLETION_CACHES = new HashMap<>();
 
     private QuestPresentationService() {
+    }
+
+    public static void clearRuntimeState() {
+        COMPLETION_CACHES.clear();
+    }
+
+    public static void clearRuntimeState(ServerPlayer player) {
+        if (player != null) COMPLETION_CACHES.remove(player.getUUID());
+    }
+
+    private record CompletionKey(QuestDefinition definition, VillagerQuestSavedData.CompletionHistoryEntry history,
+            Map<String, String> replacements, List<QuestTrackerSyncPayload.Prerequisite> prerequisites) { }
+
+    private static final class CompletionCache {
+        private final QuestContentCatalog catalog;
+        private final String locale;
+        private final Map<CompletionKey, QuestTrackerSyncPayload.Entry> entries = new LinkedHashMap<>(16, 0.75F, true);
+
+        private CompletionCache(QuestContentCatalog catalog, String locale) {
+            this.catalog = catalog;
+            this.locale = locale;
+        }
+    }
+
+    private static CompletionCache completionCache(ServerPlayer player) {
+        if (player == null || player.getServer() == null) return null;
+        var catalog = QuestContentCatalogs.current(player.getServer());
+        String locale = VillagerLocale.locale(player);
+        var cache = COMPLETION_CACHES.get(player.getUUID());
+        if (cache == null || cache.catalog != catalog || !cache.locale.equals(locale)) {
+            cache = new CompletionCache(catalog, locale);
+            COMPLETION_CACHES.put(player.getUUID(), cache);
+        }
+        return cache;
     }
 
     public static QuestTrackerSyncPayload.Entry withRuntimeJournal(QuestTrackerSyncPayload.Entry entry,
@@ -120,13 +160,19 @@ public final class QuestPresentationService {
         String issuer = completionIssuerSummary(history);
         String issuerLocation = completionIssuerLocationSummary(history);
         Map<String, String> replacements = completionHistoryReplacements(player, definition, history, issuer, issuerLocation);
+        var cache = completionCache(player);
+        var key = new CompletionKey(definition, history, replacements, prerequisites == null ? List.of() : List.copyOf(prerequisites));
+        if (cache != null) {
+            var cached = cache.entries.get(key);
+            if (cached != null) return cached;
+        }
         QuestDefinition.Step fallback = QuestTrackerPresenter.fallbackStep("completed", VillagerQuestSavedData.QuestState.COMPLETED);
         QuestDefinition.Step step = definition.tracker().step("completed", fallback);
         QuestDefinition.SelectedText title = definition.tracker().title().isBlank() && definition.tracker().titleKey().isBlank()
                 ? new QuestDefinition.SelectedText(definition.title(), definition.titleKey())
                 : new QuestDefinition.SelectedText(definition.tracker().title(), definition.tracker().titleKey());
         String status = resolveGlobalText(player, "quest.tracker.status.completed", "Completed", replacements);
-        return withRuntimeJournalView(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
+        var entry = withRuntimeJournalView(QuestTrackerPresenter.entry(new QuestTrackerPresenter.EntryInput(
                 player,
                 definition,
                 title,
@@ -146,6 +192,13 @@ public final class QuestPresentationService {
                 definition,
                 null,
                 history.completedGameTime());
+        if (cache != null) {
+            if (cache.entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
+                cache.entries.remove(cache.entries.keySet().iterator().next());
+            }
+            cache.entries.put(key, entry);
+        }
+        return entry;
     }
 
     public static QuestTrackerSyncPayload.Entry withRuntimeJournalView(

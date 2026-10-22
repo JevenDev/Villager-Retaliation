@@ -232,6 +232,7 @@ public final class HiredVillagerWorkService {
             Villager villager,
             HiredWorkSession session) {
         if (session.role() == HiredVillagerRole.COURIER
+                || !session.context().autoDepositOutputs()
                 || !session.inventory().hasOutputItems()) {
             return false;
         }

@@ -165,6 +165,15 @@ public final class PartyGameTests {
                 0,
                 "valid"));
 
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.REGROUP, -1, null));
+        PartyVillagerRecord record = sourceParty.villager(villager.getUUID());
+        record.setCommanderEquipmentAccess(true);
+        record.setStaying(level.dimension().location(), villager.blockPosition());
+        record.setMoveToReturnCommander(leader.getUUID());
+        helper.assertTrue(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "the previous commander has an active order before transfer");
         VillagerOwnershipTransferService.TransferResult result =
                 VillagerOwnershipTransferService.transfer(level, villager, newOwner.getUUID());
         helper.assertTrue(result.success(), "party villager ownership transfer should succeed");
@@ -177,6 +186,18 @@ public final class PartyGameTests {
                 "the villager should move into the target player's party");
         helper.assertValueEqual(targetParty.villager(villager.getUUID()).recruiterId(), newOwner.getUUID(),
                 "party recruiter ownership should transfer");
+        helper.assertValueEqual(targetParty.villager(villager.getUUID()).commanderId(), newOwner.getUUID(),
+                "the new owner must replace the previous commander");
+        helper.assertTrue(VillagerRecruitmentService.isFollowing(villager, newOwner),
+                "the transferred companion must follow the new owner");
+        helper.assertFalse(VillagerRecruitmentService.isFollowing(villager, leader),
+                "the transferred companion must stop following the previous owner");
+        helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "ownership transfer must cancel the previous commander's runtime order");
+        helper.assertTrue(record.moveToReturnCommanderId() == null && !record.regrouping(),
+                "ownership transfer must cancel persisted return and regroup orders");
+        helper.assertFalse(record.commanderEquipmentAccess(),
+                "ownership transfer must revoke delegated equipment access");
         helper.assertValueEqual(AssignedStorageSavedData.get(level).assignedTo(villager.getUUID())
                         .getFirst().hirerId(),
                 newOwner.getUUID(),
@@ -2128,6 +2149,15 @@ public final class PartyGameTests {
         helper.assertTrue(record.moveToHolding()
                         && PartyQuickCommandService.hasActiveMoveToOrder(villager),
                 "The held destination must remain monitored for the commander's return");
+
+        leader.moveTo(target.getX() + 0.5D, target.getY() + 20.0D, target.getZ() + 0.5D, 0.0F, 0.0F);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertValueEqual(record.commandMode(), PartyCommandMode.STAY,
+                "passing far above the destination must not cancel the hold order");
+        leader.moveTo(target.getX() + 0.5D, target.getY() - 20.0D, target.getZ() + 0.5D, 0.0F, 0.0F);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertValueEqual(record.commandMode(), PartyCommandMode.STAY,
+                "passing far below the destination must not cancel the hold order");
 
         villager.moveTo(target.getX() - 6.5D, target.getY(), target.getZ() + 0.5D, 0.0F, 0.0F);
         leader.moveTo(target.getX() + 3.5D, target.getY(), target.getZ() + 0.5D, 0.0F, 0.0F);

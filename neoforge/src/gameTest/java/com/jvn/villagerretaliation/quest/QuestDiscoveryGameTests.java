@@ -372,6 +372,40 @@ public final class QuestDiscoveryGameTests {
         }
     }
 
+    @GameTest(template = "empty", batch = "quest_discovery")
+    public static void completionHistoryDoesNotHideDiscoveryOffers(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "item_acquired", "offer")) {
+            var player = fixture.player;
+            QuestDiscoverySavedData.get(helper.getLevel()).offer(player.getUUID(), ID,
+                    new QuestDiscoverySavedData.Offer("letter", null, Map.of()));
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            VillagerQuestService.refreshTracker(player);
+            helper.assertTrue(trackerSignature(player).contains("test:discovery|"), "offer appears before completion history fills the packet");
+            var data = VillagerQuestSavedData.get(helper.getLevel());
+            var definitions = VillagerQuestResources.quests(helper.getLevel().getServer()).stream()
+                    .filter(definition -> !definition.id().equals(ID) && !definition.tracker().hidden()).limit(32).toList();
+            helper.assertValueEqual(definitions.size(), 32, "fixture has enough visible quests");
+            for (var definition : definitions) {
+                var progress = data.getOrCreate(player.getUUID(), definition.id());
+                progress.start(null, helper.getLevel().dimension(), player.blockPosition(), 0);
+                progress.complete(1, false);
+            }
+            VillagerQuestService.refreshTracker(player);
+            helper.assertTrue(trackerSignature(player).contains("test:discovery|"), "completed history must leave discovered offers accessible");
+            helper.assertTrue(trackerSignature(player).contains("#completed/"), "remaining capacity retains completed history");
+        }
+        helper.succeed();
+    }
+
+    private static String trackerSignature(ServerPlayer player) throws Exception {
+        var field = VillagerQuestService.class.getDeclaredField("LAST_TRACKER_SYNCS");
+        field.setAccessible(true);
+        var state = ((Map<?, ?>) field.get(null)).get(player.getUUID());
+        var accessor = state.getClass().getDeclaredMethod("signature");
+        accessor.setAccessible(true);
+        return (String) accessor.invoke(state);
+    }
+
     private static ItemStack book() {
         var stack = new ItemStack(Items.WRITTEN_BOOK);
         var tag = new CompoundTag();

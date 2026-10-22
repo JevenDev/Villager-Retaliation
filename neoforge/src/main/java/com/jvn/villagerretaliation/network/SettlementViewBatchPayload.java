@@ -55,6 +55,17 @@ public record SettlementViewBatchPayload(UUID session, UUID operation, Settlemen
                 || append && task == null) throw new IllegalArgumentException("Invalid view command");
     }
 
+    // operation IDs carry a session prefix and increasing sequence so evicted results cannot be replayed
+    public static UUID operation(UUID session, long sequence) {
+        if (sequence <= 0) throw new IllegalArgumentException("Invalid operation sequence");
+        return new UUID(session.getMostSignificantBits(), sequence);
+    }
+
+    public long sequence() {
+        return operation.getMostSignificantBits() == session.getMostSignificantBits()
+                ? Math.max(0L, operation.getLeastSignificantBits()) : 0L;
+    }
+
     public record Target(UUID resident, UUID expectedArea) {
         public Target { java.util.Objects.requireNonNull(resident); }
     }
