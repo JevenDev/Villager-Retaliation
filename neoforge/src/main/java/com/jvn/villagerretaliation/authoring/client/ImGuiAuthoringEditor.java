@@ -88,6 +88,7 @@ final class ImGuiAuthoringEditor {
     private boolean requestQuickOpen;
     private final ImString quickQuery = new ImString(256);
     private int quickIndex;
+    private List<EditorCommands.Command> frameCommands;
     private String searchQuery = "", searchLocale = "";
     private boolean searchWording;
     private List<EditorSearch.Hit> searchHits = List.of();
@@ -295,6 +296,7 @@ final class ImGuiAuthoringEditor {
         }
         if (worldContent == null) recordLocation();
         rendering = true;
+        frameCommands = null;
         float fontScale = ImGui.getStyle().getFontScaleMain();
         ImGui.getStyle().setFontScaleMain(fontScale * preferences.textScale());
         pushEditorStyle();
@@ -321,7 +323,7 @@ final class ImGuiAuthoringEditor {
             if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
             referencePopup();
             nodeDeletePopup();
-            shortcuts.popup(commands(), library, this::operation, preferences.textScale());
+            shortcuts.popup(this::commands, library, this::operation, preferences.textScale());
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
@@ -1111,6 +1113,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private List<EditorCommands.Command> commands() {
+        if (rendering && frameCommands != null) return frameCommands;
         boolean graph = graphDocument() && view != 3, selected = graph && !selectedNode.isEmpty();
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         var result = new java.util.ArrayList<EditorCommands.Command>();
@@ -1150,6 +1153,7 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Preview content", "", graph, () -> { view = 1; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Playtest content", "", graph, this::enterPlaytest));
         result.add(new EditorCommands.Command("Reset editor layout", "", true, () -> resetLayout = true));
+        if (rendering) frameCommands = result;
         return result;
     }
 
@@ -2402,7 +2406,7 @@ final class ImGuiAuthoringEditor {
 
     private void schemaObjectTools(JsonObject value, String path) {
         if (propertySchema == null) return;
-        JsonObject rule = propertySchema.at(documentCache.json(document), path);
+        JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
         JsonObject properties = EditorSchema.object(rule.get("properties"));
         var required = propertySchema.required(rule);
         ImGui.textUnformatted("Add property");
@@ -2611,7 +2615,7 @@ final class ImGuiAuthoringEditor {
             if (depth == 0 ? EditorWidgets.treeSection(title) : ImGui.treeNode(title)) {
                 if (ImGui.smallButton("Focus list")) operation(() -> setPointer(path));
                 var array = value.getAsJsonArray();
-                JsonObject rule = propertySchema.at(documentCache.json(document), path);
+                JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
                 if (ImGui.beginCombo(EditorWidgets.field("Add entry"), "Choose an entry type...")) {
                     for (var choice : propertySchema.options(EditorSchema.object(rule.get("items"))).entrySet())
                         if (ImGui.selectable(choice.getKey())) editArray(path, values -> values.add(choice.getValue().get()));
@@ -2707,7 +2711,7 @@ final class ImGuiAuthoringEditor {
                     && diagnostic.severity() == AuthoringDiagnostic.Severity.ERROR) return diagnostic.message();
         if (pendingFields.contains(path)) value = pendingFields.candidate(document, path);
         if (!value.isJsonPrimitive() && !value.isJsonNull()) return "";
-        var messages = propertySchema.scalarIssues(documentCache.json(document), path, value);
+        var messages = propertySchema.scalarIssues(document, documentCache.json(document), path, value);
         return messages.isEmpty() ? "" : messages.getFirst();
     }
 
@@ -2758,7 +2762,7 @@ final class ImGuiAuthoringEditor {
                 else if (type.getAsString().equals("event_history")) choices = EditorProgressConditions.historyTargets(parent.getAsJsonObject());
             }
         }
-        JsonObject rule = propertySchema.at(documentCache.json(document), path);
+        JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);

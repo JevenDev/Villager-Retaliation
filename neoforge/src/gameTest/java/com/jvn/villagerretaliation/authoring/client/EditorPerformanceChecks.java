@@ -25,7 +25,9 @@ final class EditorPerformanceChecks {
         schemaMenusPreserveDefaultsAndIsolation();
         benchmarkSchemaMenus();
         benchmarkGraphPreparation();
-        return 7;
+        schemaCachesTrackRevisionsAndPendingValues();
+        fileIndexesTrackEveryMembershipChange();
+        return 9;
     }
 
     private static AuthoringWorkspace workspace() throws IOException {
@@ -214,6 +216,59 @@ final class EditorPerformanceChecks {
         double cached = (System.nanoTime() - start) / 300_000_000.0;
         check(blocks == 99_000, "benchmark consumes the complete graph");
         System.out.printf(java.util.Locale.ROOT, "Editor graph preparation (300 nodes): uncached %.3f ms, cached %.6f ms per read%n", uncached, cached);
+    }
+
+    private static void schemaCachesTrackRevisionsAndPendingValues() {
+        var rule = JsonParser.parseString("""
+                {"$defs":{},"type":"object","properties":{"value":{"anyOf":[{"type":"integer","minimum":1},{"type":"string","minLength":3}]}}}
+                """).getAsJsonObject();
+        var schema = new EditorSchema(rule);
+        var document = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/cache.json", JsonParser.parseString("{\"value\":2}").getAsJsonObject());
+        var cache = new EditorDocumentCache();
+        var first = schema.at(document, cache.json(document), "/value");
+        check(first == schema.at(document, cache.json(document), "/value"), "idle property frames reuse resolved schema rules");
+        var valid = schema.scalarIssues(document, cache.json(document), "/value", new com.google.gson.JsonPrimitive(2));
+        check(valid.isEmpty() && valid == schema.scalarIssues(document, cache.json(document), "/value", new com.google.gson.JsonPrimitive(2)), "unchanged scalar checks reuse their result");
+        check(!schema.scalarIssues(document, cache.json(document), "/value", new com.google.gson.JsonPrimitive(0)).isEmpty(), "pending edits retain minimum validation");
+        check(schema.scalarIssues(document, cache.json(document), "/value", new com.google.gson.JsonPrimitive(3)).isEmpty(), "correcting a pending value clears its cached error");
+        document.edit("Change property type", root -> root.addProperty("value", "words"));
+        check(schema.at(document, cache.json(document), "/value").get("type").getAsString().equals("string"), "content edits refresh value-dependent schema branches");
+        check(!schema.scalarIssues(document, cache.json(document), "/value", new com.google.gson.JsonPrimitive("a")).isEmpty(), "changed branches retain their string validation");
+        document.undo();
+        check(schema.at(document, cache.json(document), "/value").equals(first), "undo restores the previous effective rule");
+        document.redo();
+        check(schema.at(document, cache.json(document), "/value").equals(schema.at(document.json(), "/value")), "redo matches uncached schema resolution");
+        var other = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/other.json", JsonParser.parseString("{\"value\":5}").getAsJsonObject());
+        check(schema.at(other, cache.json(other), "/value").equals(first), "another document cannot inherit a cached branch");
+    }
+
+    private static void fileIndexesTrackEveryMembershipChange() throws IOException {
+        var workspace = workspace();
+        var document = workspace.createDocument(DefinitionKind.TREE, "test:file_index");
+        var initial = workspace.filePaths();
+        check(initial == workspace.filePaths() && initial.equals(initial.stream().sorted().toList()), "idle reads reuse the sorted file index");
+        document.edit("Change wording", root -> root.addProperty("title", "Updated"));
+        check(initial == workspace.filePaths(), "content changes preserve an unchanged path index");
+        String original = document.resourcePath();
+        workspace.rename(document, "test:renamed_index");
+        check(!workspace.filePaths().contains(original) && initial.contains(original), "rename refreshes paths without changing earlier snapshots");
+        document.undo();
+        check(workspace.filePaths().contains(original), "undo rename refreshes the index");
+        var added = workspace.createDocument(DefinitionKind.TREE, "test:extra_index");
+        check(workspace.filePaths().size() == initial.size() + 1, "new documents enter the index");
+        workspace.remove(added);
+        check(!workspace.filePaths().contains(added.resourcePath()), "deleted documents leave the index");
+        workspace.restoreDeleted(0);
+        check(workspace.filePaths().contains(added.resourcePath()), "restored documents return to the index");
+        workspace.importResources(java.util.Map.of("data/test/descriptions/note.md", "Note".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        var attached = workspace.filePaths();
+        check(attached.contains("data/test/descriptions/note.md"), "new supporting files enter the index");
+        workspace.writeTextFile("data/test/descriptions/note.md", "Changed note");
+        check(attached == workspace.filePaths(), "supporting content edits preserve their path index");
+        workspace.applyFileMove(workspace.previewFileMove("data/test/descriptions/note.md", "data/test/descriptions/moved.md"));
+        check(!workspace.filePaths().contains("data/test/descriptions/note.md") && workspace.filePaths().contains("data/test/descriptions/moved.md"), "moving attachments refreshes the index");
+        workspace.undoFileMove();
+        check(workspace.filePaths().equals(attached), "undoing attachment moves restores the paths");
     }
 
     private static void check(boolean passed, String message) { if (!passed) throw new AssertionError(message); }

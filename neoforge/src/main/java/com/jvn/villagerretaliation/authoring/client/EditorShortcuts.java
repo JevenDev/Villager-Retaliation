@@ -16,10 +16,10 @@ final class EditorShortcuts {
 
     void open() { requested = true; }
 
-    void popup(List<EditorCommands.Command> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run, float textScale) {
+    void popup(java.util.function.Supplier<List<EditorCommands.Command>> commands, EditorLibrary library, Consumer<ImGuiAuthoringEditor.EditorOperation> run, float textScale) {
         if (requested) { requested = false; ImGui.openPopup("Customize shortcuts"); }
         if (!EditorWidgets.beginPopup("Customize shortcuts", 620, 620, textScale)) return;
-        ImGui.setNextItemOpen(true); render(commands, library, run);
+        ImGui.setNextItemOpen(true); render(commands.get(), library, run);
         ImGui.endPopup();
     }
 

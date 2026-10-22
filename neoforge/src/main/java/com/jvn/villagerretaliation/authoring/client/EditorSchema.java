@@ -17,6 +17,11 @@ import java.util.function.Supplier;
 
 final class EditorSchema {
     private final JsonObject root;
+    private AuthoringDocument cachedDocument;
+    private long cachedRevision;
+    private final Map<String, JsonObject> resolvedPaths = new LinkedHashMap<>();
+    private final Map<String, ScalarCheck> scalarChecks = new LinkedHashMap<>();
+    private record ScalarCheck(JsonElement value, List<String> issues) { }
 
     EditorSchema(JsonObject root) {
         this.root = root;
@@ -55,8 +60,32 @@ final class EditorSchema {
         return effective(rule, value);
     }
 
+    JsonObject at(AuthoringDocument document, JsonObject snapshot, String pointer) {
+        bind(document);
+        return resolvedPaths.computeIfAbsent(pointer, ignored -> at(snapshot, pointer));
+    }
+
+    private void bind(AuthoringDocument document) {
+        if (cachedDocument == document && cachedRevision == document.revision()) return;
+        cachedDocument = document; cachedRevision = document.revision();
+        resolvedPaths.clear(); scalarChecks.clear();
+    }
+
+    List<String> scalarIssues(AuthoringDocument document, JsonObject snapshot, String pointer, JsonElement value) {
+        bind(document);
+        var prior = scalarChecks.get(pointer);
+        if (prior != null && prior.value().equals(value)) return prior.issues();
+        var issues = scalarIssues(at(document, snapshot, pointer), value);
+        scalarChecks.put(pointer, new ScalarCheck(value.deepCopy(), issues));
+        return issues;
+    }
+
     List<String> scalarIssues(JsonObject document, String pointer, JsonElement value) {
-        JsonObject rule = at(document, pointer), scalar = new JsonObject();
+        return scalarIssues(at(document, pointer), value);
+    }
+
+    private List<String> scalarIssues(JsonObject rule, JsonElement value) {
+        JsonObject scalar = new JsonObject();
         for (String field : List.of("type", "enum", "const", "minimum", "maximum", "minLength", "maxLength", "pattern"))
             if (rule.has(field)) scalar.add(field, rule.get(field));
         return QuestJsonSchema.validate(value, scalar).stream().map(QuestJsonSchema.Issue::message).toList();

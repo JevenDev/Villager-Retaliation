@@ -41,6 +41,10 @@ public final class AuthoringWorkspace {
     private static final long MAX_PACK_BYTES = 256L * 1024 * 1024;
     private final Path directory;
     private final List<AuthoringDocument> documents = new ArrayList<>();
+    private List<AuthoringDocument> indexedDocuments = List.of();
+    private List<String> indexedDocumentPaths = List.of();
+    private java.util.Set<String> indexedAttachments = java.util.Set.of();
+    private List<String> indexedFiles;
     private final Map<String, byte[]> attachments = new LinkedHashMap<>();
     private final java.util.Set<String> folders = new java.util.TreeSet<>();
     private JsonObject packMetadata = JsonParser.parseString("""
@@ -146,10 +150,18 @@ public final class AuthoringWorkspace {
     public List<AuthoringDocument> documents() { return List.copyOf(documents); }
 
     public List<String> filePaths() {
+        boolean current = indexedFiles != null && documents.equals(indexedDocuments) && attachments.keySet().equals(indexedAttachments);
+        for (int i = 0; current && i < documents.size(); i++)
+            current = documents.get(i).resourcePath().equals(indexedDocumentPaths.get(i));
+        if (current) return indexedFiles;
         var paths = new java.util.TreeSet<String>(attachments.keySet());
         documents.forEach(document -> paths.add(document.resourcePath()));
         paths.add("pack.mcmeta");
-        return List.copyOf(paths);
+        indexedDocuments = List.copyOf(documents);
+        indexedDocumentPaths = documents.stream().map(AuthoringDocument::resourcePath).toList();
+        indexedAttachments = java.util.Set.copyOf(attachments.keySet());
+        indexedFiles = List.copyOf(paths);
+        return indexedFiles;
     }
 
     private AuthoringWorkspace savedBaseline() throws IOException {
@@ -1223,11 +1235,12 @@ public final class AuthoringWorkspace {
         }
         String namespace = owner.resourcePath().split("/", 3)[1];
         String resolvedKey = key;
+        String shared = DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/";
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {
             var candidates = documents.stream().filter(candidate -> candidate.resourcePath().endsWith("/locales/" + language + ".json")
                     || candidate.resourcePath().contains("/dialogue/" + language + "/"))
                     .sorted(Comparator.comparingInt((AuthoringDocument candidate) -> candidate.resourcePath().startsWith(bundle) && !bundle.isEmpty() ? 0
-                            : candidate.resourcePath().startsWith(DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/") ? 1
+                            : candidate.resourcePath().startsWith(shared) ? 1
                             : candidate.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
                             .thenComparing(AuthoringDocument::resourcePath)).toList();
             for (var candidate : candidates) {
@@ -1362,9 +1375,10 @@ public final class AuthoringWorkspace {
         if (key.isBlank()) return value.toString();
         if (!visited.add(key)) return key;
         String namespace = owner.resourcePath().startsWith("data/") ? owner.resourcePath().split("/", 3)[1] : "";
+        String shared = DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/";
         List<AuthoringDocument> candidates = documents.stream().sorted(Comparator
                 .comparingInt((AuthoringDocument document) -> !bundle.isEmpty() && document.resourcePath().startsWith(bundle) ? 0
-                        : document.resourcePath().startsWith(DefinitionKind.contentRoot(owner.resourcePath()) + "quests/_shared/") ? 1
+                        : document.resourcePath().startsWith(shared) ? 1
                         : document.resourcePath().startsWith("data/" + namespace + "/") ? 2 : 3)
                 .thenComparing(AuthoringDocument::resourcePath)).toList();
         for (String language : List.of(locale == null ? "en_us" : locale, "en_us")) {

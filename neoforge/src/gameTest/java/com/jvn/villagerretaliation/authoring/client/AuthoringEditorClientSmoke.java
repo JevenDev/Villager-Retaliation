@@ -220,6 +220,26 @@ public final class AuthoringEditorClientSmoke {
         pause(250);
         STEPS.add(() -> {
             capture("00-readable-library");
+            EditorCampaignProfile.start("default-campaign");
+        });
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
+                    "The complete bundled campaign editor stays responsive without repeated schema work: " + profile);
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var largest = imported.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST)
+                    .max(java.util.Comparator.comparingInt(value -> value.value("/stages").getAsJsonArray().size())).orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, largest);
+        });
+        pause(500);
+        STEPS.add(() -> EditorCampaignProfile.start("largest-quest"));
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 8,
+                    "The largest bundled quest stays responsive with the full campaign loaded: " + profile);
+            capture("00-largest-campaign-quest");
             ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
             invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
             workspace = (AuthoringWorkspace) field(editor, "workspace");
@@ -2542,6 +2562,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void renderContentBrowserBenchmark() {
+        EditorCampaignProfile.endUI();
         if (!measureContentBrowser) return;
         ImGui.setNextWindowPos(ImGui.getMainViewport().getWorkPosX() + 450, ImGui.getMainViewport().getWorkPosY() + 220);
         ImGui.setNextWindowSize(440, 440);
@@ -2553,6 +2574,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void frame() {
+        EditorCampaignProfile.beginFrame();
         if (finished || stepping) return;
         if (measureWorldLoading) {
             long now = System.nanoTime();
