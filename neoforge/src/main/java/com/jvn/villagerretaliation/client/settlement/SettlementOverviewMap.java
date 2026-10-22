@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.exploration.ExploredMapRenderer;
+import com.jvn.villagerretaliation.exploration.MapLighting;
+import com.jvn.villagerretaliation.exploration.MapView;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.SettlementPlotSnapshot;
 import java.util.List;
@@ -22,7 +25,7 @@ final class SettlementOverviewMap implements AutoCloseable {
     int top;
     int width;
     int height;
-    private final SettlementMapTerrain terrain = new SettlementMapTerrain();
+    private final ExploredMapRenderer terrain = new ExploredMapRenderer();
     private BlockPos center = BlockPos.ZERO;
     private int boundaryRadius = 1;
     private double radius = 1;
@@ -70,14 +73,19 @@ final class SettlementOverviewMap implements AutoCloseable {
     }
 
     boolean coversChrome(double x, double y) {
-        return x >= this.left - 27 && x < this.left + this.width + 3 && y >= this.top - 3 && y < this.top + this.height + 19;
+        return x >= this.left - 2 && x < this.left + this.width + 2
+                && y >= this.top - SettlementUiWindow.TITLE_HEIGHT - 2 && y < this.top + this.height + 2;
     }
 
-    private double blocksPerPixel() { return this.radius * 2.0D / Math.min(this.width, this.height); }
-    double worldX(double x) { return this.centerX + (x - this.left - this.width / 2.0D) * blocksPerPixel(); }
-    double worldZ(double y) { return this.centerZ + (y - this.top - this.height / 2.0D) * blocksPerPixel(); }
-    int x(double value) { return this.left + (int) Math.round(this.width / 2.0D + (value - this.centerX) / blocksPerPixel()); }
-    int y(double value) { return this.top + (int) Math.round(this.height / 2.0D + (value - this.centerZ) / blocksPerPixel()); }
+    MapView view() {
+        return new MapView(this.width, this.height, this.centerX, this.centerZ,
+                Math.min(this.width, this.height) / (this.radius * 2.0D));
+    }
+
+    double worldX(double x) { return view().worldX(x - this.left); }
+    double worldZ(double y) { return view().worldZ(y - this.top); }
+    int x(double value) { return this.left + (int) Math.round(view().screenX(value)); }
+    int y(double value) { return this.top + (int) Math.round(view().screenY(value)); }
 
     Marker marker(double x, double y) {
         if (!contains(x, y)) return null;
@@ -93,26 +101,20 @@ final class SettlementOverviewMap implements AutoCloseable {
         return closest;
     }
 
-    void render(GuiGraphics g, Font font, List<ChunkPos> chunks, List<SettlementPlotSnapshot.Plot> plots,
+    void render(GuiGraphics g, Font font, List<SettlementPlotSnapshot.Plot> plots,
                 List<SettlementManagementPayload.Area> areas, List<SettlementManagementPayload.Project> projects,
                 List<Marker> markers, UUID selectedArea, List<Vec3> footprint,
                 double focusX, double focusZ, double cameraX, double cameraZ, float yaw, int mouseX, int mouseY) {
         this.markers = List.copyOf(markers);
-        SettlementViewUi.frame(g, this.left - 27, this.top - 3, this.width + 30, this.height + 22);
-        g.fill(this.left - 1, this.top - 1, this.left + this.width + 1, this.top + this.height + 1, 0xFF080C10);
-        g.fill(this.left, this.top, this.left + this.width, this.top + this.height, 0xFF1B2025);
         g.enableScissor(this.left, this.top, this.left + this.width, this.top + this.height);
-        this.terrain.update(chunks, worldX(this.left), worldZ(this.top), worldX(this.left + this.width), worldZ(this.top + this.height));
-        for (var chunk : chunks) {
-            var tile = this.terrain.tile(chunk);
-            if (tile == null) continue;
-            int x = x(chunk.getMinBlockX());
-            int z = y(chunk.getMinBlockZ());
-            int sizeX = x(chunk.getMaxBlockX() + 1) - x;
-            int sizeZ = y(chunk.getMaxBlockZ() + 1) - z;
-            if (sizeX > 0 && sizeZ > 0) g.blit(tile.location, x, z, sizeX, sizeZ, 0, 0,
-                    SettlementMapTerrain.TILE_SIZE, SettlementMapTerrain.TILE_SIZE, SettlementMapTerrain.TILE_SIZE, SettlementMapTerrain.TILE_SIZE);
-        }
+        var level = Minecraft.getInstance().level;
+        var lighting = level == null ? MapLighting.DAY
+                : MapLighting.at(level.getTimeOfDay(1.0F), level.dimensionType().hasSkyLight());
+        var view = view();
+        g.pose().pushPose();
+        g.pose().translate(this.left, this.top, 0);
+        this.terrain.render(g, view, lighting);
+        g.pose().popPose();
         territory(g, plots);
         for (var area : areas) footprint(g, area.min(), area.max(), area.id().equals(selectedArea) ? 0xFF70CBFF : 0x707CA5BD);
         for (var project : projects) footprint(g, project.min(), project.max(), project.id().equals(selectedArea) ? 0xFF70CBFF : 0xB0E7B64E);
@@ -139,39 +141,11 @@ final class SettlementOverviewMap implements AutoCloseable {
         line(g, cx + dx, cz + dz, cx - dz / 2, cz + dx / 2, 0xFFFFFFFF);
         line(g, cx + dx, cz + dz, cx + dz / 2, cz - dx / 2, 0xFFFFFFFF);
         g.disableScissor();
-        compass(g, font, "N", this.left + this.width / 2, this.top + 2);
-        compass(g, font, "S", this.left + this.width / 2, this.top + this.height - 10);
-        compass(g, font, "W", this.left + 6, this.top + this.height / 2 - 4);
-        compass(g, font, "E", this.left + this.width - 6, this.top + this.height / 2 - 4);
-        int worldX = (int) Math.floor(contains(mouseX, mouseY) ? worldX(mouseX) : focusX);
-        int worldZ = (int) Math.floor(contains(mouseX, mouseY) ? worldZ(mouseY) : focusZ);
-        var biome = biome(chunks, worldX, worldZ);
-        String coordinates = "x: " + worldX + "  z: " + worldZ;
-        String status = coordinates + "  |  " + biome.getString();
-        g.pose().pushPose();
-        g.pose().translate(this.left - 23, this.top + this.height + 5, 0);
-        g.pose().scale(0.75F, 0.75F, 1);
-        g.drawString(font, font.plainSubstrByWidth(status, (int) ((this.width + 22) / 0.75F)), 0, 0, 0xDFE5EC);
-        g.pose().popPose();
         if (contains(mouseX, mouseY)) {
             var marker = marker(mouseX, mouseY);
-            var tooltip = marker == null ? Component.literal(coordinates).append(" | ").append(biome)
-                    : SettlementManagementScreen.name(marker.entry()).copy().append(marker.lastKnown()
-                            ? Component.translatable("villagerretaliation.gui.settlement_view.map_last_known") : Component.empty());
-            g.renderTooltip(font, tooltip, mouseX, mouseY);
+            if (marker != null) g.renderTooltip(font, SettlementManagementScreen.name(marker.entry()).copy().append(marker.lastKnown()
+                    ? Component.translatable("villagerretaliation.gui.settlement_view.map_last_known") : Component.empty()), mouseX, mouseY);
         }
-    }
-
-    private static Component biome(List<ChunkPos> chunks, int x, int z) {
-        var level = Minecraft.getInstance().level;
-        var position = new ChunkPos(Math.floorDiv(x, 16), Math.floorDiv(z, 16));
-        var chunk = level == null || !chunks.contains(position) ? null : level.getChunkSource().getChunk(position.x, position.z, false);
-        if (chunk == null) return Component.translatable("villagerretaliation.gui.settlement_view.map_unavailable");
-        int height = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
-        return chunk.getNoiseBiome(Math.floorDiv(x, 4), Math.floorDiv(height, 4), Math.floorDiv(z, 4)).unwrapKey()
-                .map(key -> Component.translatableWithFallback("biome." + key.location().getNamespace() + "."
-                        + key.location().getPath().replace('/', '.'), SettlementViewUi.readable(key.location().getPath())))
-                .orElseGet(() -> Component.translatable("villagerretaliation.gui.settlement_view.map_unavailable"));
     }
 
     private void territory(GuiGraphics g, List<SettlementPlotSnapshot.Plot> plots) {
@@ -234,12 +208,6 @@ final class SettlementOverviewMap implements AutoCloseable {
             case GUARD_POST -> Items.SHIELD;
             case CONSTRUCTION -> Items.BRICKS;
         });
-    }
-
-    private static void compass(GuiGraphics g, Font font, String label, int x, int z) {
-        int left = x - font.width(label) / 2;
-        g.fill(left - 1, z - 1, left + font.width(label) + 1, z + 9, 0x8010151B);
-        g.drawString(font, label, left, z, 0xFFFFFF);
     }
 
     private void footprint(GuiGraphics g, BlockPos min, BlockPos max, int color) {

@@ -24,11 +24,11 @@ final class SettlementViewLayout {
         this.mapWidth = this.dockedMap ? Math.min(this.panelWidth - 38, height / 3) : Math.clamp(this.panelLeft / 3, 64, 112);
         this.mapHeight = this.mapWidth;
         this.mapLeft = this.dockedMap ? this.panelLeft + 30 : this.panelLeft - this.mapWidth - 6;
-        this.mapTop = this.dockedMap ? height - this.mapHeight - 22 : HEADER_HEIGHT + 6;
+        this.mapTop = this.dockedMap ? height - this.mapHeight - 30 : HEADER_HEIGHT + 6;
         this.contentBottom = this.dockedMap && map ? this.mapTop - 24 : height - 28;
         this.commandBottom = height - 32;
         this.commandTop = this.commandBottom - 46;
     }
 
-    int browserRows() { return Math.max(0, (this.contentBottom - 124) / 28); }
+    int browserRows() { return Math.max(0, (this.contentBottom - 138) / 28); }
 }

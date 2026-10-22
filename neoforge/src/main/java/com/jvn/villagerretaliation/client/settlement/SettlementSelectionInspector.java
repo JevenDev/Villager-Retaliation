@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.client.inventory.ProductionClientState;
 import com.jvn.villagerretaliation.interaction.work.production.HiredProductionOrder;
 import com.jvn.villagerretaliation.interaction.work.production.ProductionManagementService;
@@ -98,17 +99,24 @@ final class SettlementSelectionInspector {
             this.tabs.add(button);
             add.accept(button);
         }
-        this.primary = Button.builder(Component.empty(), ignored -> this.action.accept(this.section))
+        this.primary = VillagerUi.buttonBuilder(Component.empty(), ignored -> this.action.accept(this.section))
                 .bounds(this.left, bottom - 66, this.width, 18).build();
-        this.routeEditor = Button.builder(Component.literal("Edit persistent route"), ignored -> this.editRoute.run())
+        this.routeEditor = VillagerUi.buttonBuilder(Component.literal("Edit persistent route"), ignored -> this.editRoute.run())
                 .bounds(this.left, bottom - 66, this.width, 18).build();
         add.accept(this.routeEditor);
         add.accept(this.primary);
-        this.back = Button.builder(Component.literal("Browse settlement"), ignored -> {
+        this.back = VillagerUi.buttonBuilder(Component.literal("Browse settlement"), ignored -> {
             this.suppressed = true;
             this.browse.run();
         }).bounds(this.left, bottom - 44, this.width, 18).build();
         add.accept(this.back);
+    }
+
+    void move(int dx, int dy) {
+        this.left += dx;
+        this.top += dy;
+        this.contentTop += dy;
+        this.hits.clear();
     }
 
     boolean visible() { return this.visible; }
@@ -444,7 +452,7 @@ final class SettlementSelectionInspector {
                     this.width - 36), textLeft, titleTop + 13, 0xB9C1CB);
             graphics.fill(textLeft, titleTop + 25, this.left + this.width, titleTop + 28, 0xFF10151A);
             graphics.fill(textLeft, titleTop + 25, textLeft + Math.clamp(Math.round(SettlementViewUi.healthFraction(resident) * (this.width - 36)), 0, this.width - 36),
-                    titleTop + 28, 0xFF67CF75);
+                    titleTop + 28, 0xFFCCCCCC);
         }
         graphics.drawString(font, font.plainSubstrByWidth(name, this.left + this.width - textLeft), textLeft, titleTop + 2, 0xFFFFFF);
         var wrapped = new ArrayList<Wrapped>();
@@ -456,7 +464,7 @@ final class SettlementSelectionInspector {
         for (int row = 0; row < this.visibleLines && this.scroll + row < wrapped.size(); row++) {
             int y = this.contentTop + row * (font.lineHeight + 2);
             var part = wrapped.get(this.scroll + row);
-            graphics.drawString(font, part.text(), this.left, y, part.line().resident() == null ? 0xCCCCCC : 0x99DDEE);
+            graphics.drawString(font, part.text(), this.left, y, part.line().resident() == null ? 0xCCCCCC : 0xFFFFFF);
             this.hits.add(new Hit(y, part.line()));
         }
         if (this.totalLines > this.visibleLines) {

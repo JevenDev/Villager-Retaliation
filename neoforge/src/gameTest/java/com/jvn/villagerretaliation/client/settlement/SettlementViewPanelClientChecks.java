@@ -45,8 +45,9 @@ final class SettlementViewPanelClientChecks {
         button(view, "Residents").onPress();
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "status navigation preserves the world camera position and zoom");
+        verifyFloatingWindows(view);
         var filters = view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                .filter(button -> button.getY() == 80).findFirst().orElseThrow();
+                .filter(button -> button.getMessage().getString().startsWith("All (")).findFirst().orElseThrow();
         filters.onPress();
         require(view.contextPopup().target().kind() == SettlementViewPopup.Kind.FILTERS, "browser filters open a direct-choice popover");
         view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals("Needs attention"))
@@ -57,6 +58,39 @@ final class SettlementViewPanelClientChecks {
         view.contextPopup().buttons().getFirst().onPress();
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "filter selection preserves the world camera");
+    }
+
+    private static void verifyFloatingWindows(SettlementViewScreen view) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.getCameraEntity();
+        double focusX = view.focusX(), focusZ = view.focusZ();
+        for (var window : view.uiWindows()) {
+            int left = window.left(), top = window.top();
+            var positions = window.widgets().stream().map(widget -> new int[]{widget.getX(), widget.getY()}).toList();
+            require(view.mouseClicked(left + 4, top + 4, 0), "a floating window title captures the pointer");
+            require(view.mouseDragged(-1000, -1000, 0, -1000, -1000), "floating windows can be dragged across the view");
+            view.mouseReleased(-1000, -1000, 0);
+            int dx = window.left() - left, dy = window.top() - top;
+            require(window.left() >= 0 && window.top() >= SettlementViewLayout.HEADER_HEIGHT,
+                    "window dragging keeps titles below the status bar");
+            for (int index = 0; index < window.widgets().size(); index++) {
+                var widget = window.widgets().get(index);
+                require(widget.getX() == positions.get(index)[0] + dx && widget.getY() == positions.get(index)[1] + dy,
+                        "floating controls move with their window hit targets");
+            }
+            int movedLeft = window.left(), movedTop = window.top();
+            view.resize(minecraft, view.width, view.height);
+            require(window.left() == movedLeft && window.top() == movedTop,
+                    "rebuilding controls retains a dragged window position");
+            view.mouseClicked(window.left() + 4, window.top() + 4, 0);
+            view.mouseDragged(left + 4, top + 4, 0, left - window.left(), top - window.top());
+            view.mouseReleased(left + 4, top + 4, 0);
+            require(window.left() == left && window.top() == top, "floating windows can return to their original position");
+        }
+        require(view.focusX() == focusX && view.focusZ() == focusZ && minecraft.getCameraEntity() == camera,
+                "dragging and rebuilding windows leave the world camera unchanged");
+        var restored = SettlementViewPreferences.forSettlement(view.parent().snapshot().header().id());
+        require(restored.sidebarWindow != null && restored.mapWindow != null, "dragged window positions survive preference reload");
     }
 
     private static void verifyPopup() {

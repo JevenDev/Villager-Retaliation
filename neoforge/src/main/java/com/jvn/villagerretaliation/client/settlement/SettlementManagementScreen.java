@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
@@ -25,7 +27,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class SettlementManagementScreen extends Screen {
+public final class SettlementManagementScreen extends VillagerWindowScreen {
     private SettlementManagementPayload snapshot;
     private Page desiredPage;
     private int desiredIndex;
@@ -59,10 +61,6 @@ public final class SettlementManagementScreen extends Screen {
     private final SettlementManagementPayload.Resident assigning;
     private SettlementBuildingDraft buildingDraft;
     private final SettlementManagementPayload.Bed choosingBed;
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
     private int contentLeft;
     private int contentWidth;
 
@@ -221,15 +219,10 @@ public final class SettlementManagementScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(700, this.width - 24),
-                Math.min(420, this.height - 24), false);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
+        initWindow(700, 420, false);
         this.contentLeft = this.left + 102;
         this.contentWidth = this.panelWidth - 102;
-        this.worldView = addRenderableWidget(Button.builder(text("world_view"), ignored -> {
+        this.worldView = addRenderableWidget(VillagerUi.buttonBuilder(text("world_view"), ignored -> {
             this.pendingResident = null;
             if (!SettlementViewClient.resume(this)) {
                 this.viewRequested = true;
@@ -246,12 +239,12 @@ public final class SettlementManagementScreen extends Screen {
                     || this.choosingBed != null && page != Page.RESIDENTS) {
                 continue;
             }
-            Button button = addRenderableWidget(Button.builder(enumText("page", page), ignored -> navigate(page, 0, ""))
+            Button button = addRenderableWidget(VillagerUi.buttonBuilder(enumText("page", page), ignored -> navigate(page, 0, ""))
                     .bounds(this.left, y, 94, navigationHeight).build());
             button.active = page != this.desiredPage;
             y += navigationHeight + 2;
         }
-        addRenderableWidget(Button.builder(Component.translatable(this.parent == null ? "gui.done" : "gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable(this.parent == null ? "gui.done" : "gui.back"), ignored -> onClose())
                 .bounds(this.left, this.top + this.panelHeight - 20, 94, 20).build());
         this.search = new EditBox(this.font, this.contentLeft, this.top + 30, this.contentWidth, 20, text("search"));
         this.search.setMaxLength(64);
@@ -266,22 +259,27 @@ public final class SettlementManagementScreen extends Screen {
         this.rows = addRenderableWidget(new Rows(this.contentLeft, this.top + 56, this.contentWidth,
                 Math.max(36, this.panelHeight - 112 - extraActions)));
         int bottom = this.top + this.panelHeight;
-        this.previous = addRenderableWidget(Button.builder(Component.literal("<"), ignored -> navigate(this.desiredPage, this.desiredIndex - 1, this.query))
+        this.previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> navigate(this.desiredPage, this.desiredIndex - 1, this.query))
                 .bounds(this.contentLeft, bottom - 46 - extraActions, 24, 20).build());
-        this.next = addRenderableWidget(Button.builder(Component.literal(">"), ignored -> navigate(this.desiredPage, this.desiredIndex + 1, this.query))
+        this.next = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(">"), ignored -> navigate(this.desiredPage, this.desiredIndex + 1, this.query))
                 .bounds(this.contentLeft + 28, bottom - 46 - extraActions, 24, 20).build());
-        addRenderableWidget(Button.builder(text("refresh"), ignored -> {
+        addRenderableWidget(VillagerUi.buttonBuilder(text("refresh"), ignored -> {
             this.refreshAt = Util.getMillis();
         }).bounds(this.contentLeft + this.contentWidth - 64, bottom - 46 - extraActions, 64, 20).build());
         int actionWidth = (this.contentWidth - (actionCount - 1) * 4) / actionCount;
         for (int index = 0; index < this.actions.length; index++) {
             int action = index;
-            this.actions[index] = addRenderableWidget(Button.builder(Component.empty(), ignored -> perform(action))
+            this.actions[index] = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> perform(action))
                     .bounds(this.contentLeft + (actionWidth + 4) * (index % actionCount),
                             bottom - 20 - extraActions + (index / actionCount) * 24, actionWidth, 20).build());
         }
         populateRows();
         updateActions();
+    }
+
+    @Override
+    protected void windowMoved(int dx, int dy) {
+        this.contentLeft += dx;
     }
 
     private int actionColumns() {
@@ -811,14 +809,6 @@ public final class SettlementManagementScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 8, this.top - 8, this.left + this.panelWidth + 8, this.top + this.panelHeight + 8, 0xD0101010);
-        }
     }
 
     @Override

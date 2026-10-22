@@ -20,8 +20,12 @@ public abstract class VillagerWindowScreen extends Screen {
     protected VillagerWindowScreen(Component title) { super(title); }
 
     protected void initWindow(int preferredWidth, int preferredHeight) {
+        initWindow(preferredWidth, preferredHeight, true);
+    }
+
+    protected void initWindow(int preferredWidth, int preferredHeight, boolean compact) {
         var layout = SettlementViewClient.panelLayout(this.width, this.height,
-                Math.min(preferredWidth, this.width - 24), Math.min(preferredHeight, this.height - 24), true);
+                Math.min(preferredWidth, this.width - 24), Math.min(preferredHeight, this.height - 24), compact);
         this.panelWidth = layout.width();
         this.panelHeight = layout.height();
         this.left = Math.clamp(this.positioned ? this.left : layout.left(), 8, Math.max(8, this.width - this.panelWidth - 8));
@@ -89,7 +93,7 @@ public abstract class VillagerWindowScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
+            if (!SettlementViewClient.basicUi()) super.renderBackground(graphics, mouseX, mouseY, partialTick);
             VillagerUi.frame(graphics, this.left - 8, this.top - 8, this.panelWidth + 16, this.panelHeight + 16);
         }
     }

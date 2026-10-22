@@ -11,7 +11,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 @EventBusSubscriber(modid = "villagerretaliation", value = Dist.CLIENT)
 public final class ExploredMapMinimap {
-    private static final MapTileView TILES = new MapTileView();
+    private static final ExploredMapRenderer TILES = new ExploredMapRenderer();
     @SubscribeEvent public static void render(RenderGuiLayerEvent.Post event) {
         var mc = Minecraft.getInstance();
         if (!VanillaGuiLayers.SAVING_INDICATOR.equals(event.getName()) || !VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.get()
@@ -22,12 +22,11 @@ public final class ExploredMapMinimap {
         var graphics = event.getGuiGraphics();
         double zoom = Math.clamp(VillagerRetaliationConfig.EXPLORED_MAP_MINIMAP_ZOOM.get(), .75, 4);
         var view = new MapView(width, height, mc.player.getX(), mc.player.getZ(), zoom);
-        var cache = ExploredMapClient.tiles(); boolean ready = TILES.update(repository, cache, view);
         var lighting = MapLighting.at(mc.level.getTimeOfDay(event.getPartialTick().getGameTimeDeltaPartialTick(false)), mc.level.dimensionType().hasSkyLight());
         graphics.fill(left - 1, top - 1, left + width + 1, top + height + 1, 0xff85837e);
         graphics.enableScissor(left, top, left + width, top + height);
         graphics.pose().pushPose(); graphics.pose().translate(left, top, 0);
-        MapFogRenderer.render(graphics, view, ready ? TILES : null, cache, lighting);
+        TILES.render(graphics, view, lighting);
         for (var marker : TILES.markers()) MapVillageIcon.render(graphics, (int)view.screenX(marker.x()), (int)view.screenY(marker.z()));
         MapPlayerIcon.render(graphics, width / 2f, height / 2f, mc.player.getViewYRot(event.getPartialTick().getGameTimeDeltaPartialTick(false)));
         graphics.pose().popPose(); graphics.disableScissor();

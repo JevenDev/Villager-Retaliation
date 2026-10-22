@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
-import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
 import com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence;
 import com.jvn.villagerretaliation.settlement.SettlementViewAction;
@@ -16,11 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 final class SettlementViewUi {
-    private static final VillagerNineSlice FRAME = new VillagerNineSlice(
-            VillagerRetaliationClientAssets.ATTRIBUTE_FILTER_SCROLL_ROW_TEXTURE, 132, 24, 3, 3, 3, 3);
-    private static final VillagerNineSlice SELECTED = new VillagerNineSlice(
-            VillagerRetaliationClientAssets.ATTRIBUTE_FILTER_SELECTED_SCROLL_ROW_TEXTURE, 136, 28, 5, 5, 5, 5);
-
     private SettlementViewUi() { }
 
     static void frame(GuiGraphics graphics, int left, int top, int width, int height) {
@@ -120,10 +114,8 @@ final class SettlementViewUi {
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             boolean selected = this.selected.getAsBoolean();
-            (selected ? SELECTED : FRAME).renderAtTextureScale(graphics, getX(), getY(), getWidth(), getHeight());
-            int color = selected ? 0xB02B589D : isHoveredOrFocused() && this.active ? 0xC0404955 : 0xE0292F36;
-            graphics.fill(getX() + 3, getY() + 3, getRight() - 3, getBottom() - 3, color);
-            if (selected || isFocused()) graphics.renderOutline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, 0xFF81B6FF);
+            com.jvn.villagerretaliation.client.ui.VillagerUi.row(graphics, getX(), getY(), getWidth(), getHeight(),
+                    selected || isFocused(), isHoveredOrFocused() && this.active);
             int size = this.label && this.icon.isEmpty() && !this.portrait ? 0 : Math.min(16, getHeight() - 6);
             int left = this.label ? getX() + 5 : getX() + (getWidth() - size) / 2;
             int top = getY() + (getHeight() - size) / 2;
@@ -160,10 +152,8 @@ final class SettlementViewUi {
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             if (this.entry == null) return;
-            (this.selected ? SELECTED : FRAME).renderAtTextureScale(graphics, getX(), getY(), getWidth(), getHeight());
-            graphics.fill(getX() + 3, getY() + 3, getRight() - 3, getBottom() - 3,
-                    this.selected ? 0xE02D5284 : isHoveredOrFocused() ? 0xF03B444E : 0xF023282E);
-            if (this.selected || isFocused()) graphics.renderOutline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, 0xFF81B6FF);
+            com.jvn.villagerretaliation.client.ui.VillagerUi.row(graphics, getX(), getY(), getWidth(), getHeight(),
+                    this.selected || isFocused(), isHoveredOrFocused());
             Font font = Minecraft.getInstance().font;
             int iconSize = Math.min(20, getHeight() - 6);
             int textLeft = getX() + iconSize + 9;
@@ -174,13 +164,13 @@ final class SettlementViewUi {
                 portrait(graphics, getX() + 5, getY() + (getHeight() - iconSize) / 2, iconSize);
                 detail = profession(resident) + " / " + status(resident);
                 if (resident.presence() == com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.HERE
-                        && (resident.status().equals("working") || resident.status().equals("workforce.working"))) detailColor = 0x85DD88;
+                        && (resident.status().equals("working") || resident.status().equals("workforce.working"))) detailColor = 0xCCCCCC;
                 if (getWidth() >= 160) {
                     textWidth -= 28;
                     graphics.fill(getRight() - 31, getY() + 8, getRight() - 6, getY() + 13, 0xFF0C1117);
                     graphics.fill(getRight() - 30, getY() + 9,
                             getRight() - 30 + Math.clamp(Math.round(healthFraction(resident) * 23), 0, 23),
-                            getY() + 12, 0xFF67CF75);
+                            getY() + 12, 0xFFCCCCCC);
                 }
             } else {
                 ItemStack icon = new ItemStack(this.entry instanceof SettlementManagementPayload.Project ? Items.BRICKS
@@ -191,7 +181,7 @@ final class SettlementViewUi {
                 detail = readable(SettlementViewBrowser.kind(this.entry));
                 if (this.entry instanceof SettlementManagementPayload.Issue issue) {
                     detail = issue.detail();
-                    detailColor = issue.needsAttention() ? 0xFFB080 : 0xB9C1CB;
+                    detailColor = 0xCCCCCC;
                 }
             }
             graphics.drawString(font, font.plainSubstrByWidth(getMessage().getString(), textWidth), textLeft, getY() + 5, 0xFFFFFF);

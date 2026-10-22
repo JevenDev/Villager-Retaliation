@@ -1883,7 +1883,7 @@ public final class SettlementViewClientSmoke {
         search.setValue("");
         int expanded = screen.viewportWidth();
         literalButton(screen, ">").onPress();
-        require(screen.viewportWidth() > expanded, "collapsing the entire sidebar reclaims its viewport");
+        require(screen.viewportWidth() == expanded, "hiding a floating sidebar preserves the world viewport");
         capture("browser-collapsed");
         literalButton(screen, "Residents").onPress();
         require(screen.viewportWidth() == expanded && !screen.inspector().visible(), "the resident tool reopens the settlement browser");
@@ -1918,9 +1918,12 @@ public final class SettlementViewClientSmoke {
                         "visible view controls fit narrow layouts");
                 for (var other : controls) {
                     if (control == other) continue;
+                    var window = screen.uiWindows().stream().filter(value -> value.widgets().contains(control)).findFirst().orElse(null);
+                    var otherWindow = screen.uiWindows().stream().filter(value -> value.widgets().contains(other)).findFirst().orElse(null);
+                    if (window != otherWindow) continue;
                     require(control.getRight() <= other.getX() || other.getRight() <= control.getX()
                             || control.getBottom() <= other.getY() || other.getBottom() <= control.getY(),
-                            "worldview controls do not overlap");
+                            "controls within each window do not overlap");
                 }
             }
         }
@@ -1994,8 +1997,13 @@ public final class SettlementViewClientSmoke {
                         "management button label fits: " + button.getMessage().getString() + " in " + button.getWidth());
             for (var other : buttons) {
                 if (button == other) continue;
+                if (screen instanceof SettlementViewScreen view) {
+                    var window = view.uiWindows().stream().filter(value -> value.widgets().contains(button)).findFirst().orElse(null);
+                    var otherWindow = view.uiWindows().stream().filter(value -> value.widgets().contains(other)).findFirst().orElse(null);
+                    if (window != otherWindow) continue;
+                }
                 require(button.getRight() <= other.getX() || other.getRight() <= button.getX()
-                        || button.getBottom() <= other.getY() || other.getBottom() <= button.getY(), "management buttons do not overlap");
+                        || button.getBottom() <= other.getY() || other.getBottom() <= button.getY(), "management buttons do not overlap: " + button.getMessage().getString() + " / " + other.getMessage().getString());
             }
         }
     }

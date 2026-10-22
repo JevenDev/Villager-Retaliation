@@ -17,6 +17,10 @@ import net.neoforged.fml.loading.FMLPaths;
 public final class SettlementViewPreferences {
     private final Path path;
     private boolean readable = true;
+    public record WindowPosition(int left, int top) { }
+
+    public WindowPosition sidebarWindow;
+    public WindowPosition mapWindow;
     public boolean sidebar = true;
     public boolean map = true;
     public boolean workOverlay;
@@ -46,6 +50,8 @@ public final class SettlementViewPreferences {
                 if (ids.size() > SettlementViewSelection.LIMIT) throw new IllegalArgumentException("Oversized control group");
                 groups.add(ids);
             }
+            this.sidebarWindow = position(values, "window.sidebar");
+            this.mapWindow = position(values, "window.map");
             this.sidebar = sidebar;
             this.map = map;
             this.workOverlay = work;
@@ -70,6 +76,20 @@ public final class SettlementViewPreferences {
         return new SettlementViewPreferences(FMLPaths.CONFIGDIR.get().resolve("villagerretaliation-views").resolve(key + ".properties"));
     }
 
+    private static WindowPosition position(Properties values, String key) {
+        String left = values.getProperty(key + ".left");
+        String top = values.getProperty(key + ".top");
+        if (left == null && top == null) return null;
+        if (left == null || top == null) throw new IllegalArgumentException("Incomplete window position");
+        return new WindowPosition(Integer.parseInt(left), Integer.parseInt(top));
+    }
+
+    private static void position(Properties values, String key, WindowPosition position) {
+        if (position == null) return;
+        values.setProperty(key + ".left", Integer.toString(position.left()));
+        values.setProperty(key + ".top", Integer.toString(position.top()));
+    }
+
     private static boolean bool(Properties values, String key, boolean fallback) {
         String value = values.getProperty(key, Boolean.toString(fallback));
         if (!value.equals("true") && !value.equals("false")) throw new IllegalArgumentException("Invalid visibility preference");
@@ -80,6 +100,8 @@ public final class SettlementViewPreferences {
         if (!this.readable) return;
         var values = new Properties();
         values.setProperty("version", "1");
+        position(values, "window.sidebar", this.sidebarWindow);
+        position(values, "window.map", this.mapWindow);
         values.setProperty("sidebar", Boolean.toString(this.sidebar));
         values.setProperty("map", Boolean.toString(this.map));
         values.setProperty("work", Boolean.toString(this.workOverlay));

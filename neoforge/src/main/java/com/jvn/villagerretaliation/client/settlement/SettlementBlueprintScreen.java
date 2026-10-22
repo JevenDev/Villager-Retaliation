@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import java.util.List;
 import java.util.Locale;
@@ -7,10 +9,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public final class SettlementBlueprintScreen extends Screen {
+public final class SettlementBlueprintScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final List<BuilderStructureCatalog.Entry> entries = BuilderStructureCatalog.entries();
     private String query = "";
@@ -18,10 +19,6 @@ public final class SettlementBlueprintScreen extends Screen {
     private BuilderStructureCatalog.Entry selected;
     private Blueprints list;
     private Button draft;
-    private int left;
-    private int panelWidth;
-    private int top;
-    private int panelHeight;
     private final java.util.Map<net.minecraft.resources.ResourceLocation, java.util.List<ThumbnailPixel>> thumbnails = new java.util.LinkedHashMap<>();
     private final java.util.Set<net.minecraft.resources.ResourceLocation> visible = new java.util.LinkedHashSet<>();
     private net.minecraft.resources.ResourceLocation requested;
@@ -43,16 +40,12 @@ public final class SettlementBlueprintScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(500, this.width - 32), this.height - 24, true);
-        this.panelWidth = layout.width();
-        this.left = layout.left();
-        this.top = layout.top();
-        this.panelHeight = layout.height();
+        initWindow(500, this.height - 24);
         int fourth = (this.panelWidth - 12) / 4;
         String[] sizes = { "small", "medium", "large", "" };
         for (int index = 0; index < sizes.length; index++) {
             String size = sizes[index];
-            addRenderableWidget(Button.builder(Component.literal(size.isEmpty() ? "All buildings" : "House " + Character.toUpperCase(size.charAt(0)) + size.substring(1)), ignored -> {
+            addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(size.isEmpty() ? "All buildings" : "House " + Character.toUpperCase(size.charAt(0)) + size.substring(1)), ignored -> {
                 this.houseSize = size;
                 this.list.refresh();
             }).bounds(this.left + index * (fourth + 4), this.top + 24, fourth, 20).build());
@@ -69,12 +62,12 @@ public final class SettlementBlueprintScreen extends Screen {
         });
         this.list.refresh();
         int half = (this.panelWidth - 6) / 2;
-        this.draft = addRenderableWidget(Button.builder(SettlementManagementScreen.text("place_prefab"), ignored -> {
+        this.draft = addRenderableWidget(VillagerUi.buttonBuilder(SettlementManagementScreen.text("place_prefab"), ignored -> {
             if (this.selected != null) {
                 this.parent.placeBuilding(this.selected);
             }
         }).bounds(this.left, this.top + this.panelHeight - 16, half, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left + half + 6, this.top + this.panelHeight - 16, half, 20).build());
         updateButton();
         setInitialFocus(search);
@@ -172,13 +165,6 @@ public final class SettlementBlueprintScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        }
     }
 
     @Override

@@ -102,6 +102,10 @@ public final class SettlementViewClient {
         }
     }
 
+    public static boolean basicUi() {
+        return SettlementManagementClient.current() != null;
+    }
+
     public static boolean connectedPanel() {
         var management = SettlementManagementClient.current();
         return active != null && panels && management != null && management.root() == active.parent().root();

@@ -17,11 +17,21 @@ public final class VillagerUi {
     private VillagerUi() { }
 
     public static void frame(GuiGraphics graphics, int left, int top, int width, int height) {
+        if (com.jvn.villagerretaliation.client.settlement.SettlementViewClient.basicUi()) {
+            graphics.fill(left, top, left + width, top + height, 0xFF202020);
+            graphics.renderOutline(left, top, width, height, 0xFF808080);
+            return;
+        }
         FRAME.renderAtTextureScale(graphics, left, top, width, height);
         graphics.fill(left + 3, top + 3, left + width - 3, top + height - 3, 0xF023282E);
     }
 
     public static void row(GuiGraphics graphics, int left, int top, int width, int height, boolean selected, boolean hovered) {
+        if (com.jvn.villagerretaliation.client.settlement.SettlementViewClient.basicUi()) {
+            graphics.fill(left, top, left + width, top + height, selected ? 0xFF606060 : hovered ? 0xFF484848 : 0xFF303030);
+            graphics.renderOutline(left, top, width, height, selected ? 0xFFFFFFFF : 0xFF808080);
+            return;
+        }
         (selected ? SELECTED : FRAME).renderAtTextureScale(graphics, left, top, width, height);
         graphics.fill(left + 3, top + 3, left + width - 3, top + height - 3,
                 selected ? 0xE02D5284 : hovered ? 0xF03B444E : 0xF023282E);
@@ -79,7 +89,8 @@ public final class VillagerUi {
             String label = font.plainSubstrByWidth(getMessage().getString(), Math.max(0, getRight() - textLeft - 5));
             graphics.drawString(font, label, textLeft, getY() + (getHeight() - font.lineHeight) / 2,
                     this.active ? 0xFFFFFF : 0x999999, false);
-            if (isFocused()) graphics.renderOutline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, 0xFF81B6FF);
+            if (isFocused()) graphics.renderOutline(getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2,
+                    com.jvn.villagerretaliation.client.settlement.SettlementViewClient.basicUi() ? 0xFFFFFFFF : 0xFF81B6FF);
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.network.SettlementBuildingPreviewPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -7,10 +9,9 @@ import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public final class SettlementBuildingScreen extends Screen {
+public final class SettlementBuildingScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementBuildingDraft draft;
     private List<SettlementBuildingPreviewPayload.Builder> candidates = List.of();
@@ -18,11 +19,7 @@ public final class SettlementBuildingScreen extends Screen {
     private Builders builders;
     private Materials materials;
     private Button request;
-    private int left;
-    private int panelWidth;
     private int materialTop;
-    private int top;
-    private int panelHeight;
 
     SettlementBuildingScreen(SettlementManagementScreen parent) {
         super(SettlementManagementScreen.text("choose_building_builder"));
@@ -48,21 +45,17 @@ public final class SettlementBuildingScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(520, this.width - 24), this.height - 16, true);
-        this.panelWidth = layout.width();
-        this.left = layout.left();
-        this.top = layout.top();
-        this.panelHeight = layout.height();
+        initWindow(520, this.height - 16);
         int builderHeight = Math.clamp((this.panelHeight - 206) / 2, 26, 80);
         this.materialTop = this.top + 78 + builderHeight + 22;
         this.builders = addRenderableWidget(new Builders(builderHeight));
         this.materials = addRenderableWidget(new Materials());
         int third = (this.panelWidth - 12) / 3;
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, this.top + this.panelHeight - 20, third, 20).build());
-        addRenderableWidget(Button.builder(SettlementManagementScreen.text("change_prefab"), ignored -> this.parent.newBuilding())
+        addRenderableWidget(VillagerUi.buttonBuilder(SettlementManagementScreen.text("change_prefab"), ignored -> this.parent.newBuilding())
                 .bounds(this.left + third + 6, this.top + this.panelHeight - 20, third, 20).build());
-        this.request = addRenderableWidget(Button.builder(SettlementManagementScreen.text("request_build"), ignored -> {
+        this.request = addRenderableWidget(VillagerUi.buttonBuilder(SettlementManagementScreen.text("request_build"), ignored -> {
             if (!this.draft.ready() || this.parent.submitting()) return;
             this.draft.submitting();
             this.parent.submit(new SettlementManagementActionPayload.CommissionBuilding(this.draft.request, this.draft.structure,
@@ -108,13 +101,6 @@ public final class SettlementBuildingScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        }
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 2, 0xFFFFFF);
@@ -130,6 +116,11 @@ public final class SettlementBuildingScreen extends Screen {
                 ? SettlementManagementScreen.text("building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
                         SettlementManagementScreen.text("building_failure_" + failure).getString());
         graphics.drawWordWrap(this.font, hint, this.left, this.top + this.panelHeight - 55, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
+    }
+
+    @Override
+    protected void windowMoved(int dx, int dy) {
+        this.materialTop += dy;
     }
 
     private final class Builders extends ObjectSelectionList<BuilderRow> {

@@ -1,11 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
-import java.util.List;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 final class SettlementOverviewMapClientChecks {
     private SettlementOverviewMapClientChecks() { }
@@ -22,13 +17,14 @@ final class SettlementOverviewMapClientChecks {
         require(map.worldZ(80) - map.worldZ(20) == 32, "map zoom stops at sixteen blocks of radius");
         map.center();
         require(map.worldX(110) - map.worldX(10) == originalSpan, "centering restores the settlement overview");
-        require(!map.contains(110, 20) && map.coversChrome(5, 85), "map chrome has a separate hit region from terrain");
-        require(SettlementMapTerrain.tint(0xFF0000FF, 0xFF0000, 1) == 0xFF0000FF,
-                "native image red survives RGB biome tinting");
-        require(SettlementMapTerrain.tint(0xFFFF0000, 0x0000FF, 1) == 0xFFFF0000,
-                "native image blue survives RGB biome tinting");
-        verifyTerrain(center);
+        require(!map.contains(110, 20) && map.coversChrome(9, 19), "map chrome has a separate hit region from terrain");
+        require(map.worldX(35) == map.view().worldX(25) && map.worldZ(45) == map.view().worldZ(25),
+                "map input and recorded terrain use the same world projection");
+        require(map.x(-112) - map.left == Math.round(map.view().screenX(-112)),
+                "map overlays align with the shared world map renderer");
+        map.close();
         var overview = screen.overviewMap();
+        require(overview.width == overview.height, "the settlement minimap is square");
         double span = overview.worldX(overview.left + overview.width) - overview.worldX(overview.left);
         double focusX = screen.focusX(), focusZ = screen.focusZ();
         float height = screen.viewHeight();
@@ -38,56 +34,6 @@ final class SettlementOverviewMapClientChecks {
         require(screen.viewHeight() == height && screen.focusX() == focusX && screen.focusZ() == focusZ,
                 "map zoom preserves the world camera");
         overview.center();
-    }
-
-    private static void verifyTerrain(BlockPos center) {
-        var level = Minecraft.getInstance().level;
-        var roof = center.offset(-5, 4, 2);
-        var position = new ChunkPos(roof);
-        var chunk = level.getChunkSource().getChunk(position.x, position.z, false);
-        require(chunk != null, "the map checks use a loaded settlement chunk");
-        var original = chunk.getBlockState(roof);
-        try (var terrain = new SettlementMapTerrain()) {
-            terrain.update(List.of(position), position.getMinBlockX(), position.getMinBlockZ(),
-                    position.getMaxBlockX() + 1, position.getMaxBlockZ() + 1);
-            var tile = terrain.tile(position);
-            require(tile != null && terrain.size() == 1, "authorized loaded terrain creates a map tile");
-            int roofColor = pixel(tile, roof);
-            int groundColor = pixel(tile, center.offset(-1, -1, 8));
-            require((roofColor & 255) > (roofColor >> 16 & 255), "the map shows the wooden roof above the red bed");
-            require((groundColor >> 8 & 255) > (groundColor & 255), "grass receives its actual biome tint");
-            require(roofColor != groundColor, "buildings and terrain have distinct surface colors");
-            try {
-                chunk.setBlockState(roof, Blocks.RED_WOOL.defaultBlockState(), false);
-                tile.updated = 0;
-                terrain.update(List.of(position), position.getMinBlockX(), position.getMinBlockZ(),
-                        position.getMaxBlockX() + 1, position.getMaxBlockZ() + 1);
-                int changed = pixel(tile, roof);
-                require((changed & 255) > (changed >> 8 & 255) * 2 && (changed & 255) > (changed >> 16 & 255) * 2,
-                        "terrain refresh displays a changed surface block");
-                chunk.setBlockState(roof, Blocks.WATER.defaultBlockState(), false);
-                tile.updated = 0;
-                terrain.update(List.of(position), position.getMinBlockX(), position.getMinBlockZ(),
-                        position.getMaxBlockX() + 1, position.getMaxBlockZ() + 1);
-                int water = pixel(tile, roof);
-                require((water >> 16 & 255) > (water & 255), "water uses the biome-tinted liquid texture");
-                chunk.setBlockState(roof, original.setValue(BlockStateProperties.WATERLOGGED, true), false);
-                tile.updated = 0;
-                terrain.update(List.of(position), position.getMinBlockX(), position.getMinBlockZ(),
-                        position.getMaxBlockX() + 1, position.getMaxBlockZ() + 1);
-                int wetRoof = pixel(tile, roof);
-                require((wetRoof & 255) > (wetRoof >> 16 & 255), "waterlogged slabs retain their visible wooden roof");
-            } finally {
-                chunk.setBlockState(roof, original, false);
-            }
-            terrain.update(List.of(), 0, 0, 0, 0);
-            require(terrain.size() == 0 && tile.texture.getPixels() == null, "revoked map tiles release their image and GPU texture");
-        }
-    }
-
-    private static int pixel(SettlementMapTerrain.Tile tile, BlockPos position) {
-        return tile.texture.getPixels().getPixelRGBA((position.getX() & 15) * SettlementMapTerrain.PIXELS_PER_BLOCK + 1,
-                (position.getZ() & 15) * SettlementMapTerrain.PIXELS_PER_BLOCK + 1);
     }
 
     private static void require(boolean condition, String message) {

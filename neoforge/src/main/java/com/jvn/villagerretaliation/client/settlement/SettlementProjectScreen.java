@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerWindowScreen;
+import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
@@ -16,10 +18,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public final class SettlementProjectScreen extends Screen {
+public final class SettlementProjectScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload previousSnapshot;
     private final SettlementViewScreen view;
@@ -36,10 +37,6 @@ public final class SettlementProjectScreen extends Screen {
     private Button next;
     private Button save;
     private Component feedback = Component.empty();
-    private int left;
-    private int top;
-    private int panelWidth;
-    private int panelHeight;
 
     public SettlementProjectScreen(SettlementManagementScreen parent, SettlementManagementPayload.Project project, SettlementViewScreen view) {
         super(Component.literal("Construction crew"));
@@ -68,13 +65,8 @@ public final class SettlementProjectScreen extends Screen {
 
     @Override
     protected void init() {
-        var layout = SettlementViewClient.panelLayout(this.width, this.height, Math.min(480, this.width - 24),
-                Math.min(344, this.height - 16), true);
-        this.panelWidth = layout.width();
-        this.panelHeight = layout.height();
-        this.left = layout.left();
-        this.top = layout.top();
-        this.priorityButton = addRenderableWidget(Button.builder(Component.empty(), ignored -> {
+        initWindow(480, 344);
+        this.priorityButton = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
             this.priority = (this.priority + 1) % 10;
             updateRows();
         }).bounds(this.left, this.top + 20, 128, 20).build());
@@ -82,7 +74,7 @@ public final class SettlementProjectScreen extends Screen {
         int tabWidth = (this.panelWidth - 4) / 2;
         for (int index = 0; index < 2; index++) {
             boolean picking = index == 1;
-            addRenderableWidget(Button.builder(Component.literal(picking ? "Add builders" : "Current crew"), ignored -> {
+            addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(picking ? "Add builders" : "Current crew"), ignored -> {
                 this.choosing = picking;
                 this.offset = 0;
                 request();
@@ -105,17 +97,17 @@ public final class SettlementProjectScreen extends Screen {
         this.offset -= this.offset % count;
         for (int index = 0; index < count; index++) {
             int row = index;
-            this.rows.add(addRenderableWidget(Button.builder(Component.empty(), ignored -> toggle(row))
+            this.rows.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> toggle(row))
                     .bounds(this.left, this.top + 92 + index * 22, this.panelWidth, 20).build()));
         }
         int bottom = this.top + this.panelHeight;
-        this.previous = addRenderableWidget(Button.builder(Component.literal("<"), ignored -> move(-this.rows.size()))
+        this.previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> move(-this.rows.size()))
                 .bounds(this.left, bottom - 46, 24, 20).build());
-        this.next = addRenderableWidget(Button.builder(Component.literal(">"), ignored -> move(this.rows.size()))
+        this.next = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(">"), ignored -> move(this.rows.size()))
                 .bounds(this.left + 28, bottom - 46, 24, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), ignored -> onClose())
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(this.left, bottom - 20, 94, 20).build());
-        this.save = addRenderableWidget(Button.builder(Component.literal("Apply crew"), ignored -> this.parent.submit(
+        this.save = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Apply crew"), ignored -> this.parent.submit(
                 new SettlementManagementActionPayload.ConfigureProject(this.project.id(), this.project.crewRevision(), this.priority,
                         List.copyOf(this.assistants.keySet())))).bounds(this.left + this.panelWidth - 110, bottom - 20, 110, 20).build());
         updateRows();
@@ -235,14 +227,6 @@ public final class SettlementProjectScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() { return false; }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!SettlementViewClient.renderPanelBackground(graphics, this.left, this.top, this.panelWidth, this.panelHeight)) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTick);
-            graphics.fill(this.left - 6, this.top - 6, this.left + this.panelWidth + 6, this.top + this.panelHeight + 6, 0xD0101010);
-        }
-    }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

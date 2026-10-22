@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 public final class ExploredMapScreen extends Screen {
-    private static final MapTileView TILES = new MapTileView();
+    private static final ExploredMapRenderer TILES = new ExploredMapRenderer();
     private double centerX, centerZ, zoom = 2.5;
     private boolean centered, dragging;
     private int heldKeys;
@@ -31,8 +31,8 @@ public final class ExploredMapScreen extends Screen {
         var repository = ExploredMapClient.repository();
         var lighting = minecraft.level == null ? MapLighting.DAY : MapLighting.at(minecraft.level.getTimeOfDay(partial), minecraft.level.dimensionType().hasSkyLight());
         if (repository != null) {
-            var view = view(); var cache = ExploredMapClient.tiles();
-            boolean ready = TILES.update(repository, cache, view); MapFogRenderer.render(graphics, view, ready ? TILES : null, cache, lighting);
+            var view = view();
+            TILES.render(graphics, view, lighting);
             graphics.enableScissor(0, 0, width, height);
             for (var marker : TILES.markers()) {
                 int x = (int)view.screenX(marker.x()), y = (int)view.screenY(marker.z());
