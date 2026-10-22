@@ -212,6 +212,124 @@ public final class QuestSiteGameTests {
     }
 
     @GameTest(template = "empty", batch = "quest_sites")
+    public static void peacefulGuardRemovalAllowsRescueAfterDifficultyChanges(GameTestHelper helper) throws Exception {
+        var server = helper.getLevel().getServer();
+        var difficulty = server.getWorldData().getDifficulty();
+        try (var fixture = new Fixture(helper, "free_at_site")) {
+            var captive = fixture.captive();
+            var guard = fixture.guard();
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "living guards block release");
+            fixture.site.phase = Phase.READY;
+            fixture.data.setDirty(false);
+            server.setDifficulty(net.minecraft.world.Difficulty.PEACEFUL, true);
+            guard.checkDespawn();
+            helper.assertTrue(guard.isRemoved(), "persistent pillagers are discarded on Peaceful");
+            helper.assertTrue(fixture.site.defeated.contains(guard.getUUID()), "Peaceful removal clears prepared guards");
+            helper.assertTrue(fixture.data.isDirty(), "guard removal is persisted");
+            var reloaded = QuestSiteSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                    helper.getLevel().registryAccess());
+            helper.assertTrue(reloaded.sites.get(fixture.site.id).defeated.contains(guard.getUUID()), "cleared guards survive reload");
+            server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+            fixture.site.phase = Phase.ACTIVE;
+            fixture.interact(captive);
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.rescued, "removed guards no longer block rescue after leaving Peaceful");
+            helper.succeed();
+        } finally { server.setDifficulty(difficulty, true); }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void guardUnloadsAndNonPeacefulDiscardsDoNotCountAsDefeats(GameTestHelper helper) throws Exception {
+        var server = helper.getLevel().getServer();
+        var difficulty = server.getWorldData().getDifficulty();
+        try {
+            for (var reason : List.of(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK,
+                    net.minecraft.world.entity.Entity.RemovalReason.CHANGED_DIMENSION,
+                    net.minecraft.world.entity.Entity.RemovalReason.DISCARDED)) {
+                try (var fixture = new Fixture(helper, "free_at_site")) {
+                    var captive = fixture.captive();
+                    var guard = fixture.guard();
+                    server.setDifficulty(reason == net.minecraft.world.entity.Entity.RemovalReason.DISCARDED
+                            ? net.minecraft.world.Difficulty.NORMAL : net.minecraft.world.Difficulty.PEACEFUL, true);
+                    guard.remove(reason);
+                    helper.assertTrue(fixture.site.defeated.isEmpty(), "non-defeat removal keeps guards pending: " + reason);
+                    fixture.interact(captive);
+                    helper.assertFalse(fixture.site.released, "pending guards still block release: " + reason);
+                }
+            }
+            helper.succeed();
+        } finally { server.setDifficulty(difficulty, true); }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void rescuedVillagerLossPreservesTurnIn(GameTestHelper helper) throws Exception {
+        for (String rescue : List.of("free_at_site", "escort_home")) {
+            try (var fixture = new Fixture(helper, rescue)) {
+                var captive = fixture.captive();
+                fixture.interact(captive);
+                captive.moveTo(fixture.site.home.getCenter());
+                QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+                helper.assertTrue(fixture.site.rescued, "rescue is completed: " + rescue);
+                helper.assertValueEqual(fixture.progress.currentStage(), "return", "quest is ready to turn in");
+                QuestSiteService.died(captive);
+                captive.discard();
+                helper.assertFalse(fixture.site.dead, "rescued villager death does not fail the encounter");
+                helper.assertTrue(helper.getLevel().areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(fixture.site.actorPosition).toLong()),
+                        "last known actor chunk is loaded");
+                fixture.site.activatedAt = helper.getLevel().getGameTime() - 201;
+                QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+                helper.assertValueEqual(fixture.progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "completed rescue survives actor loss");
+                var result = VillagerQuestService.performAction(DialogueContext.forPlayer(fixture.player), QUEST,
+                        com.jvn.villagerretaliation.action.VillagerActionDefinition.QuestAction.TURN_IN).orElseThrow();
+                helper.assertValueEqual(result.status(), "completed", "rescued villager death does not prevent turn-in");
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void missingCaptiveStillFailsBeforeRescue(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            var captive = fixture.captive();
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            captive.discard();
+            helper.assertTrue(helper.getLevel().areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(fixture.site.actorPosition).toLong()),
+                    "last known actor chunk is loaded");
+            fixture.site.activatedAt = helper.getLevel().getGameTime() - 201;
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertValueEqual(fixture.progress.state(), VillagerQuestSavedData.QuestState.FAILED, "missing captive fails an unfinished rescue");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_site_queue", timeoutTicks = 100)
+    public static void readyOfflineSiteDoesNotStarveLaterRequests(GameTestHelper helper) {
+        var fixture = new Fixture(helper, "escort_home");
+        fixture.data.sites.clear();
+        var waiting = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, null,
+                fixture.site.dimension, fixture.site.home);
+        waiting.config = fixture.site.config;
+        waiting.phase = Phase.READY;
+        waiting.accepted = true;
+        waiting.position = fixture.site.position;
+        var later = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, null,
+                fixture.site.dimension, fixture.site.home.offset(5000, 0, 0));
+        later.config = fixture.site.config;
+        later.accepted = true;
+        fixture.data.sites.put(waiting.id, waiting);
+        fixture.data.sites.put(later.id, later);
+        helper.startSequence().thenIdle(20).thenExecute(() -> {
+            try {
+                helper.assertValueEqual(waiting.phase, Phase.READY, "offline site remains ready for its owner");
+                helper.assertTrue(later.attempt > 0, "later site receives search attempts while the ready site waits");
+            } finally {
+                try { fixture.close(); } catch (Exception exception) { throw new IllegalStateException(exception); }
+            }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
     public static void anotherPlayerCannotReleaseOrClaimTheCaptive(GameTestHelper helper) throws Exception {
         try (var fixture = new Fixture(helper, "escort_home")) {
             var captive = fixture.captive();
@@ -410,6 +528,7 @@ public final class QuestSiteGameTests {
         final QuestDefinition quest;
         final Site site;
         final VillagerQuestSavedData.QuestProgress progress;
+        final List<net.minecraft.world.entity.monster.Pillager> guards = new java.util.ArrayList<>();
         Villager captive;
 
         Fixture(GameTestHelper helper, String rescue) {
@@ -463,6 +582,16 @@ public final class QuestSiteGameTests {
             return captive;
         }
 
+        net.minecraft.world.entity.monster.Pillager guard() {
+            var guard = EntityType.PILLAGER.create(helper.getLevel());
+            guard.setPersistenceRequired();
+            guard.moveTo(site.position.offset(3, 0, 0).getCenter());
+            helper.getLevel().addFreshEntity(guard);
+            guards.add(guard);
+            site.guards.add(guard.getUUID());
+            return guard;
+        }
+
         void interact(Villager actor) {
             helper.assertValueEqual(QuestSiteSavedData.get(helper.getLevel()), data, "site storage is current");
             helper.assertValueEqual(progress.questRunId(), site.run, "owner run is unchanged");
@@ -476,6 +605,7 @@ public final class QuestSiteGameTests {
 
         @Override public void close() throws Exception {
             if (captive != null) captive.discard();
+            guards.forEach(net.minecraft.world.entity.Entity::discard);
             VillagerQuestService.clearRuntimeState(player);
             player.discard();
             var storage = helper.getLevel().getServer().overworld().getDataStorage();

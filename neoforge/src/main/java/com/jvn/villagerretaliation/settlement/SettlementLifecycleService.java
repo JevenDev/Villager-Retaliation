@@ -154,6 +154,8 @@ public final class SettlementLifecycleService {
         if (!town.economy().balance().equals(CurrencyAmount.ZERO)) blockers.add("Withdraw the treasury before dissolution.");
         if (town.depots().values().stream().anyMatch(depot -> !depot.isEmpty())) blockers.add("Empty every depot before dissolution. Its inventory belongs to the town.");
         if (town.projects().values().stream().anyMatch(SettlementProject::active)) blockers.add("Finish or cancel active construction in management first, then withdraw any refunded fees.");
+        if (town.projects().values().stream().anyMatch(SettlementConstructionMaterials::refundPending))
+            blockers.add("Return reserved construction materials to accessible storage and collect them before dissolution.");
         if (town.projects().values().stream().anyMatch(project -> project.site() != null && project.site().unsettled())
                 || town.fields().values().stream().anyMatch(SettlementFieldPlot::pending)
                 || town.furnaces().values().stream().anyMatch(SettlementFurnaceState::pending)
