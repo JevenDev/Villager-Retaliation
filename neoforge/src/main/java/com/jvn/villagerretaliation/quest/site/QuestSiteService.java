@@ -186,7 +186,7 @@ public final class QuestSiteService {
                 continue;
             }
             if (site.phase == Phase.PREPARING && !site.accepted) continue;
-            if (++preparing > 1) continue;
+            if (site.phase != Phase.READY && ++preparing > 1) continue;
             if (site.pending == null) site.pendingSince = 0;
             else if (site.pendingSince == 0) site.pendingSince = level.getGameTime();
             else if (level.getGameTime() - site.pendingSince > 1200) {
@@ -343,7 +343,7 @@ public final class QuestSiteService {
         var lastLevel = site.actorDimension == null ? level : level.getServer().getLevel(
                 net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, site.actorDimension));
         var lastPosition = site.actorPosition == null ? site.position : site.actorPosition;
-        if (site.captive != null && captive == null && lastLevel != null
+        if (!site.rescued && site.captive != null && captive == null && lastLevel != null
                 && lastLevel.areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(lastPosition).toLong())) {
             if (site.activatedAt == 0) site.activatedAt = level.getGameTime();
             if (level.getGameTime() - site.activatedAt > 200) {
@@ -480,6 +480,21 @@ public final class QuestSiteService {
         for (var site : QuestSiteSavedData.get(level).sites.values()) {
             if (mob.getUUID().equals(site.captive) && (site.released || site.phase == Phase.RETIRED || site.phase == Phase.UNAVAILABLE))
                 mob.setNoAi(false);
+        }
+    }
+
+    @SubscribeEvent
+    public static void left(net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level)
+                || !(event.getEntity() instanceof net.minecraft.world.entity.monster.Pillager guard)
+                || guard.getRemovalReason() != Entity.RemovalReason.DISCARDED
+                || level.getDifficulty() != net.minecraft.world.Difficulty.PEACEFUL) return;
+        var data = QuestSiteSavedData.get(level);
+        for (var site : data.sites.values()) {
+            if (site.phase == Phase.RETIRED || site.phase == Phase.UNAVAILABLE
+                    || !site.guards.contains(guard.getUUID()) || site.defeated.contains(guard.getUUID())) continue;
+            site.defeated.add(guard.getUUID());
+            data.setDirty();
         }
     }
 
