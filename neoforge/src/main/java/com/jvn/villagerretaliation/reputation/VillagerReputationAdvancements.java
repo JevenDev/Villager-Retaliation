@@ -104,6 +104,7 @@ public final class VillagerReputationAdvancements {
             VillagerProfession.TOOLSMITH,
             VillagerProfession.WEAPONSMITH);
 
+    private static final ResourceLocation KNOCK_KNOCK = advancementId("reputation/knock_knock");
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
     private static final ResourceLocation IM_SORRY = advancementId("reputation/im_sorry");
@@ -752,6 +753,10 @@ public final class VillagerReputationAdvancements {
             && HOSTILE_OR_WORSE_HISTORY.getOrDefault(player.getUUID(), Set.of()).contains(villager.getUUID())) {
             award(player, PEACE_OFFERING);
         }
+    }
+
+    public static void onVaultDoorHit(ServerPlayer player) {
+        award(player, KNOCK_KNOCK);
     }
 
     public static void onCuredKnownZombieVillager(ServerPlayer player) {

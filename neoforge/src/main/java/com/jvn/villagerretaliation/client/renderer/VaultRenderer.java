@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.renderer;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.storage.StorageBlock;
 import com.jvn.villagerretaliation.storage.StorageBlockEntity;
+import com.jvn.villagerretaliation.storage.VaultDoorImpact;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -36,9 +37,7 @@ public final class VaultRenderer {
         event.register(LOWER_HINGE); event.register(UPPER_HINGE); event.register(HINGE_MOUNTS);
     }
     public static float doorAngle(float openness,float breachProgress) {
-        float closed=1-Mth.clamp((openness-0.25F)/0.75F,0,1);
-        float intact=1-breachProgress;
-        return Mth.lerp(1-intact*intact*intact*intact,-100*(1-closed*closed*closed),-115);
+        return VaultDoorImpact.doorAngle(openness,breachProgress);
     }
     public static float cogAngle(float openness) {
         float turned=Mth.clamp(openness/0.25F,0,1);

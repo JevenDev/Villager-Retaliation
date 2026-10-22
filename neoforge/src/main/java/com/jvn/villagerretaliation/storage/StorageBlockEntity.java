@@ -40,6 +40,7 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     boolean creativeBreak;
     private float vaultOpenness, previousVaultOpenness;
     private boolean vaultDoorOpen;
+    private VaultDoorImpact doorImpact;
     private final ChestLidController doorController=new ChestLidController();
     private final ChestLidController breachController=new ChestLidController();
     private final ContainerOpenersCounter openersCounter=new ContainerOpenersCounter() {
@@ -237,10 +238,20 @@ public final class StorageBlockEntity extends BlockEntity implements MenuProvide
     }
     public static void tick(net.minecraft.world.level.Level level,BlockPos pos,BlockState state,StorageBlockEntity bank) {
         if(bank.fuse>0 && --bank.fuse==0) {
+            boolean wasBreached=bank.breached();
             bank.hit();
-            ((ServerLevel)level).sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,pos.getX()+.5,pos.getY()+.5,pos.getZ()+.5,1,0,0,0,0);
-            level.playSound(null,pos,net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.BLOCKS,1,1);
+            if(bank.controller() && !bank.safe()) {
+                var facing=state.getValue(StorageBlock.FACING);
+                var origin=pos.getCenter().relative(facing,0.8);
+                level.explode(null,origin.x,origin.y,origin.z,2F,Level.ExplosionInteraction.NONE);
+                if(!wasBreached && bank.breached() && bank.vaultFormed()) bank.doorImpact=new VaultDoorImpact();
+            } else {
+                ((ServerLevel)level).sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,pos.getX()+.5,pos.getY()+.5,pos.getZ()+.5,1,0,0,0,0);
+                level.playSound(null,pos,net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.BLOCKS,1,1);
+            }
         }
+        if(bank.controller()) doorAnimateTick(level,pos,bank.getBlockState(),bank);
+        if(bank.doorImpact!=null && (!bank.breached() || !bank.vaultFormed() || bank.doorImpact.tick(bank))) bank.doorImpact=null;
         if(bank.controller() && !bank.safe() && level.getGameTime()%5==0) bank.syncVaultDisplay();
         if(level.getGameTime()%20==0) {
             VaultConnections.repairMembership(bank);
