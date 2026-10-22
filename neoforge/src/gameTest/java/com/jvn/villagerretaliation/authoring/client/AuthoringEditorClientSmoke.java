@@ -199,8 +199,58 @@ public final class AuthoringEditorClientSmoke {
         });
     }
 
+    private static void buildResizeSteps() {
+        var previous = new AuthoringDocument[1];
+        var original = new EditorGraph.Card[1];
+        var history = new int[1];
+        var position = new float[2];
+        STEPS.add(() -> {
+            previous[0] = document;
+            document = workspace.createDocument(DefinitionKind.TREE, "test:resize_graph");
+            DialogueGraph.addNode(document, "finish");
+            workspace.addDialogueResponse(document, "start", "go", "Continue", "finish");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("focusMode", ""); set("showGraphTools", false); set("showMinimap", true);
+            set("zoom", .75f); set("fitGraph", false); set("panX", 25f); set("panY", 25f);
+            original[0] = EditorGraph.cards(workspace, document, "en_us").getFirst();
+            history[0] = document.undoLabels().size();
+        });
+        pause(250);
+        STEPS.add(() -> {
+            locateCanvas();
+            System.arraycopy(positions().get("start"), 0, position, 0, 2);
+        });
+        move(() -> point("start", original[0].width() - 4, original[0].height() - 4), false);
+        move(() -> point("start", original[0].width() - 4, original[0].height() - 4), true);
+        STEPS.add(() -> { mouseX += 120; mouseY += 90; });
+        STEPS.add(() -> mouseDown = false);
+        pause(200);
+        STEPS.add(() -> {
+            var card = EditorGraph.cards(workspace, document, "en_us").getFirst();
+            require(Math.abs(card.width() - original[0].width() - 160) < 1 && Math.abs(card.height() - original[0].height() - 120) < 1,
+                    "The corner grip resizes both axes at the current zoom: " + card.width() + " x " + card.height());
+            require(document.undoLabels().size() == history[0] + 1 && document.undoLabel().equals("Resize node"), "A complete drag creates one resize history entry.");
+            require(positions().get("start")[0] == position[0] && positions().get("start")[1] == position[1], "Resizing preserves node position.");
+            require(!(boolean) field(editor, "showBranch") && field(editor, "nodeResize") == null, "The grip avoids the footer action and finishes on release.");
+            capture("00-node-resized");
+        });
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(EditorGraph.cards(workspace, document, "en_us").getFirst().width() == original[0].width(), "Toolbar Undo restores node dimensions."));
+        click(() -> toolbar("Redo"));
+        STEPS.add(() -> require(EditorGraph.cards(workspace, document, "en_us").getFirst().width() > original[0].width(), "Toolbar Redo restores the resized node."));
+        click(() -> port("start"));
+        STEPS.add(() -> require(!field(editor, "selectedEdge").equals(""), "The output port follows the resized card."));
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> {
+            document = previous[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("showMinimap", false);
+        });
+    }
+
     private static void buildSteps() {
         buildWorldContentSteps();
+        buildResizeSteps();
         buildInlineSteps();
         buildLayoutSteps();
         buildVariableSteps();
@@ -2307,7 +2357,7 @@ public final class AuthoringEditorClientSmoke {
             float y = card.blockY(i) + 28;
             for (var field : card.blocks().get(i).fields()) {
                 if (field.pointer().equals(path)) return point(node, 90, y + 35);
-                y += field.height();
+                y += field.height() + (field.multiline() ? card.fieldGrowth() : 0);
             }
         }
         throw new AssertionError("Missing inline field: " + path);
@@ -2316,7 +2366,7 @@ public final class AuthoringEditorClientSmoke {
     private static float[] blockDetails(String node, String path) {
         var card = EditorGraph.cards(workspace, document, "en_us").stream().filter(value -> value.node().id().equals(node)).findFirst().orElseThrow();
         for (int i = 0; i < card.blocks().size(); i++) if (card.blocks().get(i).pointer().equals(path))
-            return point(node, EditorGraph.WIDTH - 28, card.blockY(i) + 12);
+            return point(node, card.width() - 28, card.blockY(i) + 12);
         throw new AssertionError("Missing graph block: " + path);
     }
 
@@ -2499,7 +2549,7 @@ public final class AuthoringEditorClientSmoke {
         var card = EditorGraph.cards(workspace, document, "en_us").stream()
                 .filter(candidate -> candidate.node().id().equals(node)).findFirst().orElseThrow();
         for (int i = 0; i < card.blocks().size(); i++)
-            if (card.blocks().get(i).output() != null) return point(node, EditorGraph.WIDTH, card.outputY(i));
+            if (card.blocks().get(i).output() != null) return point(node, card.width(), card.outputY(i));
         throw new IllegalStateException("No output on " + node);
     }
 

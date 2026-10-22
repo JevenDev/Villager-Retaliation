@@ -66,7 +66,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 52 + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run();
+        return 52 + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {

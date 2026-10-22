@@ -120,7 +120,7 @@ final class EditorGraphOrganization {
             for (var card : cards) if (ids.contains(card.node().id()) && positions.containsKey(card.node().id())) {
                 var point = positions.get(card.node().id());
                 left = Math.min(left, point[0]); top = Math.min(top, point[1]);
-                right = Math.max(right, point[0] + EditorGraph.WIDTH); bottom = Math.max(bottom, point[1] + card.height());
+                right = Math.max(right, point[0] + card.width()); bottom = Math.max(bottom, point[1] + card.height());
             }
             if (left == Float.MAX_VALUE) continue;
             float x = originX + (left - 16) * zoom, y = originY + (top - 46) * zoom;

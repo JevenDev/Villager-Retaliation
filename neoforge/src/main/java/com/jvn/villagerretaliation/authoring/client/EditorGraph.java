@@ -29,14 +29,32 @@ final class EditorGraph {
         }
         float height() { return fields.isEmpty() ? ROW : 28 + (float) fields.stream().mapToDouble(EditorGraphInline.Field::height).sum() + 6; }
     }
-    record Card(DialogueGraph.Node node, List<Block> blocks) {
-        float height() { return blockY(blocks.size()) + 34; }
+    record Card(DialogueGraph.Node node, List<Block> blocks, float width, float requestedHeight, float naturalHeight, long textFields) {
+        Card(DialogueGraph.Node node, List<Block> blocks) { this(node, blocks, WIDTH, 0); }
+        Card(DialogueGraph.Node node, List<Block> blocks, float width, float height) {
+            this(node, blocks, width, height, HEADER + (float) blocks.stream().mapToDouble(Block::height).sum() + 34,
+                    blocks.stream().flatMap(block -> block.fields().stream()).filter(EditorGraphInline.Field::multiline).count());
+        }
+        Card {
+            width = Float.isFinite(width) ? Math.clamp(width, 240, 2000) : WIDTH;
+            requestedHeight = Float.isFinite(requestedHeight) ? Math.clamp(requestedHeight, 0, 10000) : 0;
+        }
+        Card resized(float width, float height) { return new Card(node, blocks, width, height); }
+        float minimumHeight() { return naturalHeight() - textFields() * 40; }
+        float height() { return requestedHeight == 0 ? naturalHeight() : Math.max(minimumHeight(), requestedHeight); }
+        float fieldGrowth() { return requestedHeight == 0 || textFields() == 0 ? 0 : (height() - naturalHeight()) / textFields(); }
+        float blockHeight(int index) {
+            var block = blocks.get(index);
+            if (requestedHeight == 0) return block.height();
+            return block.height() + (textFields() == 0 ? (height() - naturalHeight()) / blocks.size()
+                    : block.fields().stream().filter(EditorGraphInline.Field::multiline).count() * fieldGrowth());
+        }
         float blockY(int index) {
             float y = HEADER;
-            for (int i = 0; i < index; i++) y += blocks.get(i).height();
+            for (int i = 0; i < index; i++) y += blockHeight(i);
             return y;
         }
-        float outputY(int index) { return blockY(index) + blocks.get(index).height() / 2; }
+        float outputY(int index) { return blockY(index) + blockHeight(index) / 2; }
     }
 
     static List<Card> cards(AuthoringDocument document, Function<JsonElement, String> wording) {
@@ -51,6 +69,7 @@ final class EditorGraph {
                                     Function<JsonElement, String> wording, String locale) {
         List<Card> cards = new ArrayList<>();
         JsonObject root = document.json();
+        JsonObject metadata = document.metadata();
         var schema = EditorSchema.forDocument(document);
         List<DialogueGraph.Edge> outputs = DialogueGraph.outputs(document).stream().distinct().toList();
         Map<String, List<DialogueGraph.Edge>> byNode = outputs.stream().collect(java.util.stream.Collectors.groupingBy(DialogueGraph.Edge::from));
@@ -146,8 +165,8 @@ final class EditorGraph {
             }
             if (blocks.stream().noneMatch(block -> block.output() != null))
                 blocks.add(new Block(node.pointer(), "End", terminalLabel(value), null));
-            cards.add(new Card(node, blocks.stream().map(block -> new Block(block.pointer(), block.title(), block.text(), block.output(),
-                    block.styledText(), EditorGraphInline.fields(workspace, document, root, block, locale, schema))).toList()));
+            cards.add(EditorGraphSizing.restore(new Card(node, blocks.stream().map(block -> new Block(block.pointer(), block.title(), block.text(), block.output(),
+                    block.styledText(), EditorGraphInline.fields(workspace, document, root, block, locale, schema))).toList()), metadata));
         }
         return List.copyOf(cards);
     }
@@ -197,13 +216,21 @@ final class EditorGraph {
                 queue.add(block.output().to());
             }
         }
+        Map<Integer, Float> widths = new java.util.TreeMap<>();
+        columns.forEach((id, column) -> widths.merge(column, byId.get(id).width(), Math::max));
+        Map<Integer, Float> offsets = new LinkedHashMap<>();
+        float offset = 0;
+        for (var column : widths.entrySet()) {
+            offsets.put(column.getKey(), offset);
+            offset += column.getValue() + 90;
+        }
         Map<String, float[]> result = new LinkedHashMap<>();
         Map<Integer, Float> heights = new LinkedHashMap<>();
         for (String id : columns.keySet()) {
             var card = byId.get(id);
             int column = columns.get(id);
             float y = heights.getOrDefault(column, 0f);
-            result.put(card.node().id(), new float[] {column * (WIDTH + 90), y});
+            result.put(card.node().id(), new float[] {offsets.get(column), y});
             heights.put(column, y + card.height() + 40);
         }
         return result;

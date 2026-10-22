@@ -14,7 +14,7 @@ final class EditorGraphSelection {
         var selected = new LinkedHashSet<String>();
         for (var card : cards) {
             float[] point = positions.get(card.node().id());
-            if (point != null && point[0] <= Math.max(x1, x2) && point[0] + EditorGraph.WIDTH >= Math.min(x1, x2)
+            if (point != null && point[0] <= Math.max(x1, x2) && point[0] + card.width() >= Math.min(x1, x2)
                     && point[1] <= Math.max(y1, y2) && point[1] + card.height() >= Math.min(y1, y2)) selected.add(card.node().id());
         }
         return selected;
@@ -58,5 +58,5 @@ final class EditorGraphSelection {
         }
     }
 
-    private static float extent(EditorGraph.Card card, boolean horizontal) { return horizontal ? EditorGraph.WIDTH : card.height(); }
+    private static float extent(EditorGraph.Card card, boolean horizontal) { return horizontal ? card.width() : card.height(); }
 }
