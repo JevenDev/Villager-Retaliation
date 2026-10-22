@@ -1204,6 +1204,96 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerRespectsDisabledBreedingFoodStorage(GameTestHelper helper) {
+        assertAnimalHandlerRespectsSupplyStorage(helper, true);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerRespectsDisabledBucketStorage(GameTestHelper helper) {
+        assertAnimalHandlerRespectsSupplyStorage(helper, false);
+        helper.succeed();
+    }
+
+    private static void assertAnimalHandlerRespectsSupplyStorage(GameTestHelper helper, boolean breeding) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, breeding ? "VrAnimalFoodPolicy" : "VrAnimalBucketPolicy");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Cow first = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        first.setNoAi(true);
+        Cow second = breeding ? spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 4)) : null;
+        if (second != null) second.setNoAi(true);
+        BlockPos chestRelative = new BlockPos(2, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRelative);
+        setBlock(helper, chestRelative, Blocks.CHEST.defaultBlockState());
+        ItemStack supply = breeding ? new ItemStack(Items.WHEAT, 2) : new ItemStack(Items.BUCKET);
+        container(level, chest).setItem(0, supply.copy());
+        AssignedStorageService.assign(hirer, villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.SUPPLY_PURPOSE);
+        HiredWorkContext base = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        base.state().putBoolean("UseAssignedStorageForSupplies", false);
+        HiredWorkContext context = new HiredWorkContext(
+                base.inventory(), base.state(), base.workCenter(), base.workMin(), base.workMax(),
+                base.radius(), base.verticalRadius(), true, 50, 100, 100, 100, true, false);
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+        for (int tick = 0; tick < 10; tick++) {
+            worker.tick(level, villager, hirer, context);
+        }
+        helper.assertValueEqual(countItem(container(level, chest), supply.getItem()), supply.getCount(),
+                "disabled supply storage must leave the stored supplies untouched");
+        helper.assertFalse(first.isInLove(), "disabled storage must not feed animals from stored supplies");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.MILK_BUCKET), 0,
+                "disabled storage must not supply milk buckets");
+
+        context.inventory().insertSupply(supply.copy());
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 20,
+                () -> breeding ? first.isInLove() && second.isInLove()
+                        : countInventoryItem(context.inventory(), Items.MILK_BUCKET) == 1);
+        helper.assertValueEqual(countItem(container(level, chest), supply.getItem()), supply.getCount(),
+                "carried supplies must work without withdrawing from disabled storage");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerWaitsForBothParentsBreedingCooldowns(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalBreedingCooldown");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Cow first = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        Cow second = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 4));
+        first.setNoAi(true);
+        second.setNoAi(true);
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        context.inventory().insertSupply(new ItemStack(Items.WHEAT, 2));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+        for (Cow parent : List.of(first, second)) {
+            first.setAge(0);
+            second.setAge(0);
+            parent.setAge(6000);
+            for (int tick = 0; tick < 10; tick++) {
+                worker.tick(level, villager, hirer, context);
+            }
+            helper.assertFalse(first.isInLove() || second.isInLove(), "both parents must finish their breeding cooldown");
+            helper.assertValueEqual(countInventoryItem(context.inventory(), Items.WHEAT), 2,
+                    "breeding cooldown must not consume food");
+        }
+        second.setAge(0);
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 20,
+                () -> first.isInLove() && second.isInLove());
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.WHEAT), 0,
+                "ready parents should consume breeding food");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void animalHandlerDepositsDueWoolWithoutReadySheep(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
         ServerLevel level = helper.getLevel();

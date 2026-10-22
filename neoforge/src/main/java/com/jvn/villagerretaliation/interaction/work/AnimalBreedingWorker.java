@@ -426,8 +426,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                         continue;
                     }
                     Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
-                    int carried = HiredSupplyCrafting.countCarried(context, food);
-                    if (carried < 2 && AssignedStorageService.countItems(villager, food) <= 0) {
+                    if (HiredSupplyCrafting.countAvailable(villager, context, food) < 2) {
                         hasPairWithoutFood = true;
                         continue;
                     }
@@ -455,7 +454,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.clearFailure(context);
             return null;
         }
-        if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
+        if (!context.useAssignedStorageForSupplies() || !AssignedStorageService.hasAssignedStorage(level, villager)) {
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");
@@ -690,7 +689,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             HiredWorkerBrain.clearFailure(context);
             return null;
         }
-        if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
+        if (!context.useAssignedStorageForSupplies() || !AssignedStorageService.hasAssignedStorage(level, villager)) {
             HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
             return WorkResult.idle(target.missingSupplyMessageKey());
@@ -1000,7 +999,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             Animal animal,
             Set<ResourceLocation> selectedTargets) {
         return animal.isAlive()
-                && !animal.isBaby()
+                && animal.getAge() == 0
                 && animal.canFallInLove()
                 && !isHandledAnimalOnCooldown(context.state(), animal, level.getGameTime())
                 && context.isInsideWorkArea(animal.blockPosition())
@@ -1020,8 +1019,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && first.getType() == second.getType()
                 && first.isAlive()
                 && second.isAlive()
-                && !first.isBaby()
-                && !second.isBaby()
+                && first.getAge() == 0
+                && second.getAge() == 0
                 && first.canFallInLove()
                 && second.canFallInLove()
                 && first.distanceToSqr(second) <= MAX_BREEDING_PAIR_DISTANCE_SQR;
