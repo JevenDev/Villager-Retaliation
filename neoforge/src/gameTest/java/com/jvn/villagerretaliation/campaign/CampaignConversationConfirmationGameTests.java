@@ -37,6 +37,41 @@ public final class CampaignConversationConfirmationGameTests {
     private CampaignConversationConfirmationGameTests() { }
 
     @GameTest(template = "empty", batch = "conversation_confirmations")
+    public static void declinedConfirmationRestoresItsOriginalResponseDeadline(GameTestHelper helper) throws IOException {
+        try (var fixture = fixture(helper, START, false)) {
+            var opening = fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject();
+            opening.add("response_timer", JsonParser.parseString("""
+                    {"duration_ticks":40,"next":"declined"}
+                    """));
+            fixture.install(fixture.graph);
+            var player = fixture.player();
+            var result = fixture.start(player);
+            long deadline = result.session().responseDeadline();
+            helper.assertTrue(deadline >= 0, "the response timer is armed");
+            result = fixture.intent(player, result, ConversationSession.Intent.CHOOSE, "appeal");
+            helper.assertTrue(result.session().confirmation() != null, "the chosen response needs confirmation");
+            helper.assertTrue(result.session().responseTimerResolved(), "confirmation suspends timeout resolution");
+            UUID id = result.session().identity().id();
+            fixture.storage.reload();
+            result = ConversationService.view(player, id);
+            result = fixture.intent(player, result, ConversationSession.Intent.DECLINE, result.session().confirmation().id().toString());
+            helper.assertValueEqual(result.session().phase(), ConversationSession.Phase.RESPONSES, "decline returns to the choices");
+            helper.assertFalse(result.session().responseTimerResolved(), "decline restores timeout resolution");
+            helper.assertValueEqual(result.session().responseDeadline(), deadline, "decline does not extend the deadline");
+            fixture.storage.reload();
+            result = ConversationService.view(player, id);
+            helper.assertFalse(result.session().responseTimerResolved(), "the restored timer survives a reload");
+            fixture.storage.setResponseDeadline(id, helper.getLevel().getGameTime());
+            fixture.storage.maintain();
+            result = ConversationService.view(player, id);
+            helper.assertValueEqual(result.session().node(), "declined", "the original silence destination still runs");
+            helper.assertValueEqual(player.totalExperience, 0, "declined response effects never run");
+            helper.assertTrue(progress(fixture, player) == null, "declining cannot accept the quest");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_confirmations")
     public static void acceptanceResumesAfterReloadAndDeclineAppliesNothing(GameTestHelper helper) throws IOException {
         try (var fixture = fixture(helper, START, false)) {
             var player = fixture.player();
