@@ -68,6 +68,13 @@ public final class PersonalWorkerDiagnostics {
             boolean materialStorageUnreachable,
             boolean materialInventoryFull,
             boolean buildSiteUnreachable) {
+        if (role == HiredVillagerRole.ANIMAL_HANDLING && missingMaterials) {
+            return switch (brain.failureReason()) {
+                case "missing_breeding_food" -> "Breeding needs two suitable food items. Add them to supply slots or enable assigned Supplies storage containing them.";
+                case "missing_bucket" -> "Milking needs an empty bucket. Add one to supply slots or enable assigned Supplies storage containing buckets.";
+                default -> "Animal handling is waiting for supplies. Check supply slots and assigned Supplies storage.";
+            };
+        }
         if (role == HiredVillagerRole.BREWING) {
             return brewingDiagnostic(
                     brain,

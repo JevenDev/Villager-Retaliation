@@ -20,12 +20,14 @@ public final class HiredAnimalBreedingTargets {
     public static final TagKey<EntityType<?>> HANDLING_TARGETS = TagKey.create(Registries.ENTITY_TYPE, VillagerRetaliation.id("animal_handling_targets"));
     private static final String TARGETS_TAG = "AnimalBreedingTargets";
     private static final String ALL_TARGETS = "all";
+    private static List<ResourceLocation> cachedOptions;
 
     private HiredAnimalBreedingTargets() {
     }
 
-    public static List<ResourceLocation> options() {
-        return BuiltInRegistries.ENTITY_TYPE.holders()
+    public static synchronized List<ResourceLocation> options() {
+        if (cachedOptions != null) return cachedOptions;
+        cachedOptions = BuiltInRegistries.ENTITY_TYPE.holders()
                 .map(holder -> holder.unwrapKey()
                         .map(key -> key.location())
                         .orElseGet(() -> BuiltInRegistries.ENTITY_TYPE.getKey(holder.value())))
@@ -40,15 +42,21 @@ public final class HiredAnimalBreedingTargets {
                         .comparing(ResourceLocation::getNamespace)
                         .thenComparing(ResourceLocation::getPath))
                 .toList();
+        return cachedOptions;
+    }
+
+    public static synchronized void onTagsUpdated(net.neoforged.neoforge.event.TagsUpdatedEvent event) {
+        if (event.shouldUpdateStaticData()) cachedOptions = null;
     }
 
     public static Set<ResourceLocation> selectedTargetIds(CompoundTag state) {
-        List<ResourceLocation> options = options();
         Set<ResourceLocation> selected = new LinkedHashSet<>();
         if (!state.contains(TARGETS_TAG, Tag.TAG_LIST)) {
             return selected;
         }
         ListTag list = state.getList(TARGETS_TAG, Tag.TAG_STRING);
+        if (list.isEmpty()) return selected;
+        List<ResourceLocation> options = options();
         for (Tag entry : list) {
             if (entry instanceof StringTag stringTag) {
                 ResourceLocation id = resolveTargetId(stringTag.getAsString(), options);

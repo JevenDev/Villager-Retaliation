@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.quest.tutorial.*;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService;
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind;
@@ -32,9 +33,14 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Mule;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.DyeColor;
@@ -176,7 +182,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             if (search.hasPairWithoutFood()) {
                 HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
                 HiredWorkerBrain.setLastTargetScanResult(context, "missing_breeding_food");
-                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+                setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS);
                 return WorkResult.idle("interaction.work.animal_breeding.missing_food");
             }
             if (HiredTemporaryEntities.current(context.state()) != null) {
@@ -240,7 +246,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (!context.inventory().consumeSupplyExactly(pair.foodPredicate(), 2)) {
             if(tutorialPermit!=null)TutorialWorkService.failed(villager,tutorialPermit);
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");
         }
 
@@ -294,7 +300,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (weaponResult.tool().isEmpty()) {
             HiredWorkerBrain.setFailure(context, "missing_cull_weapon", level.getGameTime() + 100L);
             HiredWorkerBrain.setLastTargetScanResult(context, "animal_cull_weapon_missing");
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, target.animal().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_cull_weapon");
         }
 
@@ -410,6 +416,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             animalsByType.computeIfAbsent(typeId(animal), ignored -> new ArrayList<>()).add(animal);
         }
 
+        List<ItemStack> supplies = null;
         boolean hasPairWithoutFood = false;
         BreedingPair best = null;
         double bestScore = Double.MAX_VALUE;
@@ -426,7 +433,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                         continue;
                     }
                     Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
-                    if (HiredSupplyCrafting.countAvailable(villager, context, food) < 2) {
+                    if (supplies == null) supplies = breedingSupplies(villager, context);
+                    int foodCount = 0;
+                    for (ItemStack stack : supplies) {
+                        if (food.test(stack)) foodCount += Math.min(2, stack.getCount());
+                        if (foodCount >= 2) break;
+                    }
+                    if (foodCount < 2) {
                         hasPairWithoutFood = true;
                         continue;
                     }
@@ -443,6 +456,20 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return new BreedingSearch(best, hasPairWithoutFood, !scan.refreshed());
     }
 
+    private static List<ItemStack> breedingSupplies(Villager villager, HiredWorkContext context) {
+        List<ItemStack> supplies = new ArrayList<>();
+        for (int slot : context.inventory().supplySlots()) {
+            ItemStack stack = context.inventory().getItem(slot);
+            if (!stack.isEmpty()) supplies.add(stack.copy());
+        }
+        if (context.useAssignedStorageForSupplies()) {
+            AssignedStorageService.productionSupplies(villager).stream()
+                    .filter(stack -> VillagerItemFilterService.mayWithdraw(villager, stack))
+                    .forEach(supplies::add);
+        }
+        return supplies;
+    }
+
     private WorkResult gatherBreedingFood(
             ServerLevel level,
             Villager villager,
@@ -456,13 +483,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
         if (!context.useAssignedStorageForSupplies() || !AssignedStorageService.hasAssignedStorage(level, villager)) {
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");
         }
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, pair.foodPredicate());
         if (storage == null) {
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");
         }
 
@@ -492,7 +519,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (moved <= 0) {
             if (context.inventory().hasSupplySpace()) {
                 HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
-                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, storage);
+                setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, storage);
                 return WorkResult.idle("interaction.work.animal_breeding.missing_food");
             }
             HiredWorkerBrain.setFailure(context, "animal_food_inventory_full", level.getGameTime() + 100L);
@@ -676,7 +703,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             }
             if (shearsResult.tool().isEmpty()) {
                 HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
-                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+                setTaskState(context, target.missingSupplyState(), target.animal().blockPosition());
                 return WorkResult.idle(target.missingSupplyMessageKey());
             }
             if (shearsResult.status() == ToolStorageStatus.COLLECTED) {
@@ -691,13 +718,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
         if (!context.useAssignedStorageForSupplies() || !AssignedStorageService.hasAssignedStorage(level, villager)) {
             HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            setTaskState(context, target.missingSupplyState(), target.animal().blockPosition());
             return WorkResult.idle(target.missingSupplyMessageKey());
         }
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, target.supplyPredicate());
         if (storage == null) {
             HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            setTaskState(context, target.missingSupplyState(), target.animal().blockPosition());
             return WorkResult.idle(target.missingSupplyMessageKey());
         }
 
@@ -727,7 +754,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         if (moved <= 0) {
             if (context.inventory().hasSupplySpace()) {
                 HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
-                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, storage);
+                setTaskState(context, target.missingSupplyState(), storage);
                 return WorkResult.idle(target.missingSupplyMessageKey());
             }
             HiredWorkerBrain.setFailure(context, "animal_product_supply_inventory_full", level.getGameTime() + 100L);
@@ -749,7 +776,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         ItemStack shears = context.inventory().findTool(stack -> stack.is(Items.SHEARS));
         if (shears.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "missing_shears", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, sheep.blockPosition());
+            setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, sheep.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_shears");
         }
 
@@ -799,7 +826,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
         if (context.inventory().findSupply(stack -> stack.is(Items.BUCKET)).isEmpty()) {
             HiredWorkerBrain.setFailure(context, "missing_bucket", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, animal.blockPosition());
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, animal.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_bucket");
         }
 
@@ -998,14 +1025,23 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             Villager villager,
             Animal animal,
             Set<ResourceLocation> selectedTargets) {
-        return animal.isAlive()
-                && animal.getAge() == 0
-                && animal.canFallInLove()
+        return readyForBreeding(animal)
                 && !isHandledAnimalOnCooldown(context.state(), animal, level.getGameTime())
                 && context.isInsideWorkArea(animal.blockPosition())
                 && context.isLoaded(level, animal.blockPosition())
                 && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
                 && HiredAnimalBreedingTargets.matches(animal, selectedTargets);
+    }
+
+    private static boolean readyForBreeding(Animal animal) {
+        if (!animal.isAlive() || animal.getAge() != 0 || !animal.canFallInLove()) return false;
+        if (animal instanceof Parrot || animal instanceof Mule
+                || animal instanceof SkeletonHorse || animal instanceof ZombieHorse) return false;
+        if (animal instanceof TamableAnimal tamable && !tamable.isTame()) return false;
+        if (animal instanceof Wolf wolf && (wolf.isInSittingPose() || wolf.isOrderedToSit())) return false;
+        if (animal instanceof AbstractHorse horse && (!horse.isTamed() || horse.isVehicle()
+                || horse.isPassenger() || horse.getHealth() < horse.getMaxHealth())) return false;
+        return true;
     }
 
     private static Animal breedingApproachTarget(Villager villager, BreedingPair pair) {
@@ -1017,12 +1053,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static boolean canAttemptPair(Animal first, Animal second) {
         return first != second
                 && first.getType() == second.getType()
-                && first.isAlive()
-                && second.isAlive()
-                && first.getAge() == 0
-                && second.getAge() == 0
-                && first.canFallInLove()
-                && second.canFallInLove()
+                && readyForBreeding(first)
+                && readyForBreeding(second)
                 && first.distanceToSqr(second) <= MAX_BREEDING_PAIR_DISTANCE_SQR;
     }
 
@@ -1394,6 +1426,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 case SHEAR -> "shearable_sheep_found";
                 case MILK -> "milkable_animal_found";
             };
+        }
+
+        HiredWorkerTaskState missingSupplyState() {
+            return kind == AnimalProductKind.SHEAR
+                    ? HiredWorkerTaskState.PAUSED_MISSING_TOOL : HiredWorkerTaskState.WAITING_FOR_MATERIALS;
         }
 
         String missingSupplyFailure() {
