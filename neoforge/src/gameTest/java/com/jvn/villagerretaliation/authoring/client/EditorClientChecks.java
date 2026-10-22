@@ -705,6 +705,28 @@ public final class EditorClientChecks {
         var variable = EditorTextEdit.insert(plain.text(), plain.start(), plain.end(), "{player}");
         check(variable.text().equals("Hello, {player}!"), "variable insertion replaces the selection");
         check(variable.start() == variable.end(), "inserted variables leave a collapsed cursor");
+        var commands = EditorTextStyles.shortcutCommands(java.util.List.of(new EditorCommands.Command("Save", "Ctrl+S", true, () -> { })));
+        EditorShortcuts.validate(commands, java.util.Map.of());
+        EditorShortcuts.validate(commands, java.util.Map.of("Text: Bold", "Ctrl+Shift+B"));
+        check(commands.stream().anyMatch(command -> command.id().equals("Text: Bold") && command.shortcut().equals("Ctrl+B")),
+                "formatting shortcuts appear in the existing shortcut settings");
+        for (var style : EditorTextStyles.STYLES) {
+            var styled = EditorTextEdit.format(text, from, to, style.tag());
+            check(com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.markupWarnings(styled.text()).isEmpty(),
+                    "each visible style uses supported runtime markup");
+            check(EditorTextEdit.format(styled.text(), styled.start(), styled.end(), style.tag()).text().equals(text),
+                    "each visible style toggles without losing Unicode wording");
+        }
+        check(EditorTextStyles.COLORS.size() == 16 && EditorTextStyles.COLORS.stream().distinct().count() == 16,
+                "the palette exposes all sixteen named colors");
+        for (String color : EditorTextStyles.COLORS)
+            check(com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.parseColor(color) != null, "palette colors resolve at runtime");
+        String gradient = "gradient:" + EditorTextStyles.hex(new float[] {1, .67f, 0}) + ":" + EditorTextStyles.hex(new float[] {1, .33f, .33f});
+        var fade = EditorTextEdit.format(text, from, to, gradient);
+        check(com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.fromTag(gradient).hasGradient()
+                && com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.markupWarnings(fade.text()).isEmpty(),
+                "visual gradient controls produce supported hex colors and a matching closing tag");
+        check(EditorTextEdit.format(fade.text(), fade.start(), fade.end(), gradient).text().equals(text), "gradients toggle without losing text");
         var empty = EditorTextEdit.format("", 0, 0, "color:gold");
         check(empty.text().equals("<color:gold>text</color>") && empty.end() - empty.start() == 4,
                 "formatting an empty field selects an editable text span");

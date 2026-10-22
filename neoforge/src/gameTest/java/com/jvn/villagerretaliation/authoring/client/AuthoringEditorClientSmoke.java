@@ -610,9 +610,9 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        buildInlineSteps();
         buildWorldContentSteps();
         buildResizeSteps();
-        buildInlineSteps();
         buildLayoutSteps();
         buildVariableSteps();
         buildPanelSteps();
@@ -2535,12 +2535,19 @@ public final class AuthoringEditorClientSmoke {
         click(() -> textTool("B"));
         click(() -> textTool("U"));
         click(() -> textTool("Style"));
-        click(() -> screenPoint(1800, 363));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
         click(() -> textTool("Style"));
-        move(() -> screenPoint(1800, 307), false);
+        key(ImGuiKey.Home);
+        key(ImGuiKey.RightArrow);
         pause(500);
         STEPS.add(() -> capture("10b-color-menu"));
-        click(() -> screenPoint(1600, 363));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
         STEPS.add(() -> {
             require(textEditing(), "Formatting keeps the source field active.");
             require(((imgui.type.ImString) field(greetingSelection(), "buffer")).get().equals(GREETING),
@@ -2687,9 +2694,71 @@ public final class AuthoringEditorClientSmoke {
         });
         click(() -> point("finish", 100, 18));
         STEPS.add(() -> require(document.value("/nodes/start/lines/0").getAsString().equals("Written inside the node.\nSecond line."), "Leaving an inline field applies its wording."));
+        click(() -> inlinePoint("start", "/nodes/start/lines/0"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("Hello, Zo\u00eb!");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.B);
+        STEPS.add(() -> require(inlineText().equals("<b>Hello, Zo\u00eb!</b>"), "Ctrl+B formats the active inline selection: " + inlineText()));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.B);
+        STEPS.add(() -> require(inlineText().equals("Hello, Zo\u00eb!"), "Ctrl+B toggles the selected style."));
+        click(() -> inlineTool("B"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.I);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.U);
+        STEPS.add(() -> {
+            require(inlineText().equals("<b><i><u>Hello, Zo\u00eb!</u></i></b>"), "Toolbar clicks preserve Unicode selection and keyboard focus.");
+            capture("02-inline-formatting-toolbar");
+            try { ((EditorLibrary) field(editor, "library")).shortcut("Text: Bold", "Ctrl+Shift+B"); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.B);
+        STEPS.add(() -> require(inlineText().equals("<b><i><u>Hello, Zo\u00eb!</u></i></b>"), "Rebinding disables the old formatting chord."));
+        STEPS.add(() -> { ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true); ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Shift, true); });
+        key(ImGuiKey.B);
+        STEPS.add(() -> { ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false); ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Shift, false); });
+        STEPS.add(() -> {
+            require(inlineText().equals("<b><i><u><b>Hello, Zo\u00eb!</b></u></i></b>"), "The rebound formatting chord applies to the active selection.");
+            try { ((EditorLibrary) field(editor, "library")).shortcut("Text: Bold", "Ctrl+B"); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        click(() -> inlineTool("Style"));
+        STEPS.add(() -> capture("02-inline-style-menu"));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(inlineText().contains("<wave>"), "The Style menu preserves the active selection."));
+        click(() -> inlineTool("Style"));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.RightArrow);
+        STEPS.add(() -> capture("02-inline-color-menu"));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.DownArrow);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(inlineText().contains("<color:gold>"), "The visual color palette applies a named color: " + inlineText()));
+        click(() -> inlineTool("Style"));
+        key(ImGuiKey.Home);
+        key(ImGuiKey.RightArrow);
+        key(ImGuiKey.End);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(inlineText().contains("<color:#"), "The custom color control applies a hex color: " + inlineText()));
+        click(() -> inlineTool("Style"));
+        key(ImGuiKey.End);
+        key(ImGuiKey.RightArrow);
+        STEPS.add(() -> capture("02-inline-gradient-menu"));
+        key(ImGuiKey.End);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(inlineText().contains("<gradient:#"), "The gradient controls apply both colors: " + inlineText()));
+        click(() -> point("finish", 100, 18));
+        STEPS.add(() -> {
+            require(document.value("/nodes/start/lines/0").getAsString().contains("<wave>"), "The Style menu applies an effect and commits when leaving the field: " + document.value("/nodes/start/lines/0").getAsString());
+            require(document.value("/nodes/start/lines/0").getAsString().contains("Zo\u00eb"), "Formatting preserves the original wording.");
+        });
         click(() -> inlinePoint("start", "/nodes/start/responses/0/label"));
         chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
         type("Ask about the village.");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.B);
         click(() -> point("finish", 100, 18));
         STEPS.add(() -> require(document.value("/nodes/start/responses/0/label").getAsString().equals("Ask about the village."), "Response wording edits inside the node."));
         click(() -> inlinePoint("start", "/nodes/start/conditions/0/min"));
@@ -2710,6 +2779,21 @@ public final class AuthoringEditorClientSmoke {
             set("workspace", workspace);
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
         });
+    }
+
+    private static String inlineText() {
+        return ((Map<String, imgui.type.ImString>) field(editor, "fields")).get("/nodes/start/lines/0").get();
+    }
+
+    private static float[] inlineTool(String target) {
+        float[] input = inlinePoint("start", "/nodes/start/lines/0");
+        float x = point("start", 12, 0)[0];
+        for (String label : new String[] {"B", "I", "U", "Style"}) {
+            float width = ImGui.calcTextSize(label).x + 8;
+            if (label.equals(target)) return new float[] {x + width / 2, input[1] - 15 + ImGui.getTextLineHeight() / 2};
+            x += width + ImGui.getStyle().getItemSpacingX();
+        }
+        throw new IllegalArgumentException(target);
     }
 
     private static float[] inlinePoint(String node, String path) {

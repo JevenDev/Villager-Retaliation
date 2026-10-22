@@ -1,22 +1,28 @@
 package com.jvn.villagerretaliation.authoring.client;
 
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import imgui.ImGui;
 import imgui.ImGuiInputTextCallbackData;
 import imgui.callback.ImGuiInputTextCallback;
 import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiColorEditFlags;
 import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiMouseCursor;
 import imgui.flag.ImGuiStyleVar;
 import imgui.type.ImString;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 final class EditorTextField {
     private final Map<String, Selection> selections = new HashMap<>();
     private final Map<String, Size> sizes = new HashMap<>();
     private final EditorVariablePicker variables = new EditorVariablePicker();
+    private Map<String, String> overrides = Map.of();
+    private final Map<String, EditorShortcuts.Binding> bindings = new HashMap<>();
+    private boolean bindingsReady;
     private String focus = "";
 
     void focus(String id) { focus = id; }
@@ -24,6 +30,19 @@ final class EditorTextField {
     void clear() {
         selections.values().forEach(selection -> selection.preview.retire());
         selections.clear();
+    }
+
+    void beginFrame(boolean visible, Map<String, String> shortcuts) {
+        if (!bindingsReady || !overrides.equals(shortcuts)) {
+            bindingsReady = true;
+            overrides = Map.copyOf(shortcuts);
+            bindings.clear();
+            for (var style : EditorTextStyles.STYLES) {
+                var binding = EditorShortcuts.parse(EditorShortcuts.binding(style.command(), overrides));
+                if (binding != null) bindings.put(style.tag(), binding);
+            }
+        }
+        beginFrame(visible);
     }
 
     void beginFrame(boolean visible) {
@@ -34,6 +53,10 @@ final class EditorTextField {
     record InlineEdit(boolean activated, boolean apply) { }
 
     InlineEdit inline(String id, ImString buffer, float width, float height) {
+        return inline(id, buffer, width, height, true);
+    }
+
+    InlineEdit inline(String id, ImString buffer, float width, float height, boolean formatting) {
         Selection selection = selections.compute(id, (key, prior) -> {
             if (prior != null && prior.buffer == buffer) return prior;
             if (prior != null) prior.preview.retire();
@@ -46,16 +69,26 @@ final class EditorTextField {
                 selection.sourceMode = true; selection.requestFocus = true; activated = true;
             }
         } else {
-            if (selection.requestFocus) {
-                ImGui.setKeyboardFocusHere(); selection.requestFocus = false;
-                selection.focusFrame = ImGui.getFrameCount();
+            selection.toolbarBusy = false;
+            float left = ImGui.getCursorScreenPosX(), top = ImGui.getCursorScreenPosY();
+            if (formatting) {
+                formatToolbar(selection);
+                ImGui.sameLine();
+                styleMenu(selection);
             }
-            ImGui.inputTextMultiline("##text", buffer, width, height,
-                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
+            float toolbarHeight = ImGui.getCursorScreenPosY() - top;
+            ImGui.setCursorScreenPos(left, top + toolbarHeight);
+            focusSource(selection);
+            if (ImGui.inputTextMultiline("##text", buffer, width, Math.max(1, height - toolbarHeight),
+                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection)) selection.dirty = true;
             activated = ImGui.isItemActivated();
-            apply = ImGui.isItemDeactivatedAfterEdit();
             selection.editing = ImGui.isItemActive();
-            if (!selection.editing && ImGui.getFrameCount() > selection.focusFrame + 1) selection.sourceMode = false;
+            if (formatting && selection.editing) formattingShortcut(selection);
+            if (leftSource(selection)) {
+                selection.sourceMode = false;
+                apply = selection.dirty;
+                selection.dirty = false;
+            }
         }
         ImGui.popID();
         return new InlineEdit(activated, apply);
@@ -70,32 +103,16 @@ final class EditorTextField {
         if (focus.equals(id)) { focus = ""; selection.sourceMode = true; selection.requestFocus = true; }
         ImGui.pushID(id);
         ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
+        selection.toolbarBusy = false;
         if (formatting) {
-            formatButton("B", "Bold", "b", selection);
-            EditorWidgets.sameLineFor("I");
-            formatButton("I", "Italic", "i", selection);
-            EditorWidgets.sameLineFor("U");
-            formatButton("U", "Underline", "u", selection);
+            formatToolbar(selection);
             EditorWidgets.sameLineFor("Insert variable");
         }
         String variable = variables.render(kind, textScale);
         if (variable != null) selection.command = new Command("{" + variable + "}", false);
         if (formatting) {
             EditorWidgets.sameLineFor("Style");
-            if (ImGui.smallButton("Style")) ImGui.openPopup("styles");
-            if (ImGui.beginPopup("styles")) {
-                if (ImGui.beginMenu("Color")) {
-                    for (String color : new String[] {"white", "gray", "gold", "yellow", "red", "green", "aqua", "blue", "light_purple"}) {
-                        if (ImGui.menuItem(color.replace('_', ' '))) selection.command = new Command("color:" + color, true);
-                    }
-                    ImGui.endMenu();
-                }
-                for (String[] style : new String[][] {{"Strikethrough", "s"}, {"Wave", "wave"}, {"Shake", "shake"},
-                        {"Pulse", "pulse"}, {"Jump", "jump"}, {"Rainbow", "rainbow"}, {"Obfuscated", "obfuscated"}}) {
-                    if (ImGui.menuItem(style[0])) selection.command = new Command(style[1], true);
-                }
-                ImGui.endPopup();
-            }
+            styleMenu(selection);
         }
         ImGui.popStyleVar();
         float defaultHeight = formatting ? 112 : 64;
@@ -111,19 +128,14 @@ final class EditorTextField {
                 selection.requestFocus = true;
             }
         } else {
-            if (selection.requestFocus || selection.command != null && selection.focusFrame < 0) {
-                ImGui.setKeyboardFocusHere();
-                selection.focusFrame = ImGui.getFrameCount();
-                selection.requestFocus = false;
-                selection.sourceMode = true;
-            }
+            focusSource(selection);
             ImGui.pushStyleColor(ImGuiCol.NavCursor, 0);
             ImGui.inputTextMultiline("##text", buffer, width, height - 12,
                     ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
             ImGui.popStyleColor();
             selection.editing = ImGui.isItemActive();
-            if (!selection.editing && selection.command == null && ImGui.getFrameCount() > selection.focusFrame + 1)
-                selection.sourceMode = false;
+            if (formatting && selection.editing) formattingShortcut(selection);
+            if (leftSource(selection)) selection.sourceMode = false;
         }
         resizeCorner(selection, size, origin.x, origin.y, width, height, available, defaultHeight, editingSource);
         if (formatting) {
@@ -192,9 +204,94 @@ final class EditorTextField {
         private Size(float height) { this.height = height; }
     }
 
-    private static void formatButton(String label, String name, String tag, Selection selection) {
-        if (ImGui.smallButton(label)) selection.command = new Command(tag, true);
-        if (ImGui.isItemHovered()) ImGui.setTooltip(name + ": apply to the selection, or insert a text span.");
+    private static void focusSource(Selection selection) {
+        if (selection.requestFocus || selection.command != null && selection.focusFrame < 0) {
+            ImGui.setKeyboardFocusHere();
+            selection.requestFocus = false;
+            selection.sourceMode = true;
+            selection.focusFrame = ImGui.getFrameCount();
+        }
+    }
+
+    private static boolean leftSource(Selection selection) {
+        return !selection.editing && !selection.toolbarBusy && selection.command == null
+                && ImGui.getFrameCount() > selection.focusFrame + 1;
+    }
+
+    private void formattingShortcut(Selection selection) {
+        if (selection.toolbarBusy || selection.command != null) return;
+        for (var style : EditorTextStyles.STYLES) {
+            var binding = bindings.get(style.tag());
+            if (binding != null && binding.pressed()) { selection.command = new Command(style.tag(), true); return; }
+        }
+    }
+
+    private void formatToolbar(Selection selection) {
+        for (int i = 0; i < 3; i++) {
+            if (i > 0) ImGui.sameLine();
+            var style = EditorTextStyles.STYLES.get(i);
+            if (ImGui.smallButton(style.tag().toUpperCase(Locale.ROOT))) selection.command = new Command(style.tag(), true);
+            toolbarItem(selection);
+            if (ImGui.isItemHovered()) {
+                String shortcut = EditorShortcuts.binding(style.command(), overrides);
+                ImGui.setTooltip(style.name() + (shortcut.isEmpty() ? "" : " (" + shortcut + ")")
+                        + ": apply to the selection, or insert a text span. Rebind in Keyboard shortcuts.");
+            }
+        }
+    }
+
+    private void styleMenu(Selection selection) {
+        if (ImGui.smallButton("Style")) ImGui.openPopup("styles");
+        toolbarItem(selection);
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Colors, gradients and text effects. Select text to apply or remove a style.");
+        if (!ImGui.beginPopup("styles")) return;
+        selection.toolbarBusy = true;
+        ImGui.setWindowFontScale(1);
+        if (ImGui.beginMenu("Color")) {
+            ImGui.setWindowFontScale(1);
+            for (String color : EditorTextStyles.COLORS) {
+                if (ImGui.menuItem(color.replace('_', ' ') + "    ")) selection.command = new Command("color:" + color, true);
+                int rgb = DialogueTextEffects.parseColor(color);
+                float right = ImGui.getItemRectMaxX() - 8, y = ImGui.getItemRectMinY() + 4;
+                ImGui.getWindowDrawList().addRectFilled(right - 10, y, right, y + 10,
+                        ImGui.getColorU32((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f, (rgb & 255) / 255f, 1));
+            }
+            ImGui.separator();
+            if (selection.color == null) selection.color = new float[] {1, .67f, 0};
+            ImGui.setNextItemWidth(220);
+            ImGui.colorEdit3("Custom", selection.color, ImGuiColorEditFlags.DisplayHex);
+            if (ImGui.button("Apply custom color")) {
+                selection.command = new Command("color:" + EditorTextStyles.hex(selection.color), true);
+                ImGui.closeCurrentPopup();
+            }
+            ImGui.endMenu();
+        }
+        for (var style : EditorTextStyles.STYLES.subList(3, EditorTextStyles.STYLES.size())) {
+            if (ImGui.menuItem(style.name(), EditorShortcuts.binding(style.command(), overrides)))
+                selection.command = new Command(style.tag(), true);
+        }
+        ImGui.separator();
+        if (ImGui.beginMenu("Gradient")) {
+            ImGui.setWindowFontScale(1);
+            if (selection.gradientStart == null) {
+                selection.gradientStart = new float[] {1, .67f, 0};
+                selection.gradientEnd = new float[] {1, .33f, .33f};
+            }
+            ImGui.setNextItemWidth(220);
+            ImGui.colorEdit3("Start", selection.gradientStart, ImGuiColorEditFlags.DisplayHex);
+            ImGui.setNextItemWidth(220);
+            ImGui.colorEdit3("End", selection.gradientEnd, ImGuiColorEditFlags.DisplayHex);
+            if (ImGui.button("Apply gradient")) {
+                selection.command = new Command("gradient:" + EditorTextStyles.hex(selection.gradientStart) + ":" + EditorTextStyles.hex(selection.gradientEnd), true);
+                ImGui.closeCurrentPopup();
+            }
+            ImGui.endMenu();
+        }
+        ImGui.endPopup();
+    }
+
+    private static void toolbarItem(Selection selection) {
+        selection.toolbarBusy |= ImGui.isItemActive() || ImGui.isItemHovered() && (ImGui.isMouseDown(0) || ImGui.isMouseReleased(0));
     }
 
     private record Command(String value, boolean format) { }
@@ -202,7 +299,8 @@ final class EditorTextField {
     private static final class Selection extends ImGuiInputTextCallback {
         private final ImString buffer;
         private final EditorTextPreview preview = new EditorTextPreview();
-        private boolean editing, sourceMode, requestFocus;
+        private boolean editing, sourceMode, requestFocus, toolbarBusy, dirty;
+        private float[] color, gradientStart, gradientEnd;
         private int start, end;
         private Command command;
         private int focusFrame = -1;

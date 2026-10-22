@@ -288,7 +288,7 @@ final class ImGuiAuthoringEditor {
 
     private void render() {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
-        textFields.beginFrame(MC.screen == screen || playtesting);
+        textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
@@ -330,7 +330,7 @@ final class ImGuiAuthoringEditor {
             if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
             referencePopup();
             nodeDeletePopup();
-            shortcuts.popup(this::commands, library, this::operation, preferences.textScale());
+            shortcuts.popup(() -> EditorTextStyles.shortcutCommands(commands()), library, this::operation, preferences.textScale());
             ImGui.endDisabled();
             popupWasOpen = ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopup);
         } finally {
@@ -967,7 +967,7 @@ final class ImGuiAuthoringEditor {
         float[] scale = {preferences.textScale()};
         if (ImGui.sliderFloat(EditorWidgets.field("Editor text size"), scale, .8f, 2)) operation(() -> { preferences = preferences.withScale(scale[0]); savePreferences(); });
         graphTools();
-        shortcuts.render(commands(), library, this::operation);
+        shortcuts.render(EditorTextStyles.shortcutCommands(commands()), library, this::operation);
         if (document != null) coverage.render(document, id -> operation(() -> {
             selectedNode = id; graphFocus = id; view = 0; nodeSelection.clear(); nodeSelection.add(id);
             setPointer(documentCache.nodes(document).stream().filter(node -> node.id().equals(id)).findFirst().orElseThrow().pointer());
@@ -1783,7 +1783,8 @@ final class ImGuiAuthoringEditor {
                     buffer.set(Boolean.toString(!Boolean.parseBoolean(buffer.get()))); changed = true;
                 }
             } else if (field.multiline()) {
-                var edit = textFields.inline("graph:" + node.id() + ":" + block.pointer() + ":" + field.pointer(), buffer, width, (76 + card.fieldGrowth()) * zoom);
+                var edit = textFields.inline("graph:" + node.id() + ":" + block.pointer() + ":" + field.pointer(), buffer, width, (76 + card.fieldGrowth()) * zoom,
+                        !List.of("Choice", "End choice").contains(block.title()));
                 activated = edit.activated(); apply = edit.apply();
             } else {
                 ImGui.setNextItemWidth(width);
@@ -1796,7 +1797,7 @@ final class ImGuiAuthoringEditor {
                     }
                 } else ImGui.inputText("##value", buffer);
             }
-            apply |= changed || ImGui.isItemDeactivatedAfterEdit();
+            apply |= changed || !field.multiline() && ImGui.isItemDeactivatedAfterEdit();
             if (activated || ImGui.isItemActivated()) {
                 selectedNode = node.id(); nodeSelection.clear(); nodeSelection.add(node.id());
                 setPointer(block.pointer()); selectedEdge = ""; showBranch = false;
