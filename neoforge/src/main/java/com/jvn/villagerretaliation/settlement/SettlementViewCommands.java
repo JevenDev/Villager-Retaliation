@@ -8,13 +8,13 @@ import com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Stat
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 final class SettlementViewCommands {
-    private final Map<UUID, SettlementViewBatchResultPayload> completed = new LinkedHashMap<>();
+    private final LinkedHashMap<UUID, SettlementViewBatchResultPayload> completed = new LinkedHashMap<>();
+    private long lastSequence;
     private SettlementViewBatchPayload pending;
     private final List<Outcome> outcomes = new ArrayList<>();
 
@@ -22,25 +22,41 @@ final class SettlementViewCommands {
         this.pending = null;
         this.outcomes.clear();
         this.completed.clear();
+        this.lastSequence = 0;
     }
 
     void submit(SettlementViewService.Session session, SettlementViewBatchPayload request) {
+        if (!session.id.equals(request.session())) return;
         var result = this.completed.get(request.operation());
         if (result != null) {
             PacketDistributor.sendToPlayer(session.player, result);
             return;
         }
         if (this.pending != null && this.pending.operation().equals(request.operation())) return;
-        if (this.pending != null || this.completed.size() >= 128) {
-            var denied = new SettlementViewBatchResultPayload(session.id, request.operation(),
-                    request.targets().stream().map(target -> new Outcome(target.resident(), Status.FAILED,
-                            this.pending != null ? "Another command is pending" : "Session command limit reached. Reopen the view")).toList());
-            if (this.completed.size() < 128) this.completed.put(request.operation(), denied);
-            PacketDistributor.sendToPlayer(session.player, denied);
+        long sequence = request.sequence();
+        if (sequence <= this.lastSequence) {
+            reject(session, request, "Command is no longer current. Review the selection and try again", false);
+            return;
+        }
+        this.lastSequence = sequence;
+        if (this.pending != null) {
+            reject(session, request, "Another command is pending", true);
             return;
         }
         this.pending = request;
         this.outcomes.clear();
+    }
+
+    private void reject(SettlementViewService.Session session, SettlementViewBatchPayload request, String reason, boolean remember) {
+        var result = new SettlementViewBatchResultPayload(session.id, request.operation(),
+                request.targets().stream().map(target -> new Outcome(target.resident(), Status.FAILED, reason)).toList());
+        if (remember) remember(result);
+        PacketDistributor.sendToPlayer(session.player, result);
+    }
+
+    private void remember(SettlementViewBatchResultPayload result) {
+        this.completed.put(result.operation(), result);
+        if (this.completed.size() > 128) this.completed.pollFirstEntry();
     }
 
     int tick(SettlementViewService.Session session, int budget) {
@@ -53,7 +69,7 @@ final class SettlementViewCommands {
         }
         if (this.outcomes.size() == this.pending.targets().size()) {
             var result = new SettlementViewBatchResultPayload(session.id, this.pending.operation(), this.outcomes);
-            this.completed.put(this.pending.operation(), result);
+            remember(result);
             this.pending = null;
             this.outcomes.clear();
             PacketDistributor.sendToPlayer(session.player, result);

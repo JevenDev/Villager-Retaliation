@@ -81,6 +81,113 @@ public final class SettlementFollowupGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void commandHistoryStaysBoundedWithoutReplayingEvictedOperations(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "CommandReviewer"));
+        var town = town(helper, helper.absolutePos(new BlockPos(1, 2, 1)), player.getUUID());
+        try {
+            helper.assertTrue(SettlementViewService.open(player, town.id()), "view opens");
+            var session = SettlementViewService.session(player.getUUID());
+            var targets = List.of(new SettlementViewBatchPayload.Target(UUID.randomUUID(), null));
+            var first = new SettlementViewBatchPayload(session.id, SettlementViewBatchPayload.operation(session.id, 1),
+                    SettlementViewAction.RETURN, targets, null, null);
+            for (int sequence = 1; sequence <= 300; sequence++) {
+                session.commands.submit(session, new SettlementViewBatchPayload(session.id,
+                        SettlementViewBatchPayload.operation(session.id, sequence), first.action(), targets, null, null));
+                helper.assertValueEqual(session.commands.tick(session, 16), 1, "commands continue after the history fills");
+            }
+            session.commands.submit(session, first);
+            helper.assertValueEqual(session.commands.tick(session, 16), 0, "evicted commands cannot execute again");
+            var pending = new SettlementViewBatchPayload(session.id, SettlementViewBatchPayload.operation(session.id, 301),
+                    first.action(), targets, null, null);
+            var denied = new SettlementViewBatchPayload(session.id, SettlementViewBatchPayload.operation(session.id, 302),
+                    first.action(), targets, null, null);
+            session.commands.submit(session, pending);
+            session.commands.submit(session, pending);
+            session.commands.submit(session, denied);
+            helper.assertValueEqual(session.commands.tick(session, 16), 1, "duplicate pending requests execute once");
+            session.commands.submit(session, denied);
+            helper.assertValueEqual(session.commands.tick(session, 16), 0, "a rejected operation cannot later execute");
+            session.commands.submit(session, new SettlementViewBatchPayload(session.id,
+                    SettlementViewBatchPayload.operation(session.id, 303), first.action(), targets, null, null));
+            helper.assertValueEqual(session.commands.tick(session, 16), 1, "new commands still work after rejection");
+        } finally {
+            player.setLastSectionPos(SectionPos.of(player));
+            SettlementViewService.close(player.getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void duplicateSurveyFactoriesAreNeverConstructed(GameTestHelper helper) {
+        var simulation = new SettlementSimulationService();
+        int[] built = {0};
+        int[] executed = {0};
+        java.util.function.Supplier<Runnable> factory = () -> {
+            built[0]++;
+            return () -> executed[0]++;
+        };
+        simulation.enqueueLazy("site", factory);
+        simulation.enqueueLazy("site", factory);
+        helper.assertValueEqual(built[0], 0, "queued surveys are constructed within the work budget");
+        drain(helper, simulation);
+        helper.assertValueEqual(built[0], 1, "only one duplicate survey is constructed");
+        helper.assertValueEqual(executed[0], 1, "the survey runs once");
+        simulation.enqueueLazy("site", factory);
+        drain(helper, simulation);
+        helper.assertValueEqual(executed[0], 2, "completed sites can be surveyed again");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void managementRequestsCoalesceAndRecheckPermissions(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var leader = UUID.randomUUID();
+        var player = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "PageReviewer"));
+        var town = town(helper, helper.absolutePos(new BlockPos(1, 2, 1)), leader);
+        town.setPermissions(leader, player.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        var simulation = new SettlementSimulationService();
+        var responses = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementManagementPayload>();
+        var summary = new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(town.id().value(),
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUMMARY, 0, "", 1, true);
+        var history = new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(town.id().value(),
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.HISTORY, 0, "", 2, false);
+        simulation.requests.submit(player, summary, responses::add);
+        simulation.runPending();
+        simulation.requests.submit(player, history, responses::add);
+        helper.assertTrue(responses.isEmpty(), "request handling does not drain planning synchronously");
+        drain(helper, simulation);
+        helper.assertValueEqual(responses.size(), 1, "page navigation shares the pending assessment");
+        helper.assertValueEqual(responses.getFirst(), SettlementManagementService.snapshot(player, history),
+                "the latest page matches a fresh synchronous assessment");
+        responses.clear();
+        simulation.requests.submit(player, summary, responses::add);
+        simulation.runPending();
+        town.setPermissions(leader, player.getUUID(), java.util.Set.of());
+        drain(helper, simulation);
+        helper.assertValueEqual(responses.size(), 1, "revocation returns the available town list");
+        helper.assertTrue(responses.getFirst().header() == null, "revoked access cannot expose an in-progress assessment");
+        town.setPermissions(leader, player.getUUID(), java.util.Set.of(SettlementPermission.VIEW));
+        responses.clear();
+        simulation.requests.submit(player, summary, responses::add);
+        var towns = new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(null,
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.TOWNS, 0, "Review", 3, false);
+        simulation.requests.submit(player, towns, responses::add);
+        drain(helper, simulation);
+        helper.assertValueEqual(responses.size(), 1, "leaving the town cancels its pending assessment");
+        helper.assertValueEqual(responses.getFirst(), SettlementManagementService.snapshot(player, towns),
+                "town list searches preserve the latest request");
+        helper.succeed();
+    }
+
+    private static void drain(GameTestHelper helper, SettlementSimulationService simulation) {
+        int steps = 0;
+        while (simulation.runPending()) {
+            helper.assertTrue(++steps < 10_000, "pending work completes");
+        }
+    }
+
     private static SettlementRecord town(GameTestHelper helper, BlockPos center, UUID leader) {
         var level = helper.getLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);

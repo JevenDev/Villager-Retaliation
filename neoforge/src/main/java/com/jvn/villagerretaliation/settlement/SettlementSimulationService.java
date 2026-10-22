@@ -16,6 +16,7 @@ public final class SettlementSimulationService {
     private static final int MIN_STEPS_PER_TICK = 64;
     static final int MAX_STEPS_PER_TICK = 256;
     private static final long BUDGET_NANOS = 3_000_000L;
+    final SettlementManagementRequests requests = new SettlementManagementRequests(this);
     private final Map<VillageAllegianceId, Entry> entries = new LinkedHashMap<>();
     private List<Entry> scheduled = List.of();
     private long refreshAt;
@@ -41,6 +42,7 @@ public final class SettlementSimulationService {
     void invalidate() {
         this.entries.clear();
         this.management.clear();
+        this.requests.clear();
         this.scheduled = List.of();
         this.selection = null;
         this.pending.clear();
@@ -106,6 +108,10 @@ public final class SettlementSimulationService {
 
     void enqueue(Object key, Runnable work) {
         if (this.queued.add(key)) this.pending.addLast(new Pending(key, work));
+    }
+
+    void enqueueLazy(Object key, java.util.function.Supplier<Runnable> work) {
+        enqueue(key, SettlementWork.lazy(work));
     }
 
     boolean runPending() {
