@@ -200,6 +200,7 @@
             "quest_choice_selected",
             "quest_counter",
             "quest_fact",
+            "quest_site",
             "quest_stage",
             "quest_stage_history",
             "quest_tag",
@@ -1510,6 +1511,110 @@
                         "farming_wheat"
                       ]
                     }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_site"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "quest",
+              "state"
+            ],
+            "properties": {
+              "type": {
+                "const": "quest_site"
+              },
+              "quest": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "state": {
+                "enum": [
+                  "discovered",
+                  "guards_defeated",
+                  "released",
+                  "rescued",
+                  "route_exists",
+                  "route_known",
+                  "route_reached",
+                  "approach_used"
+                ]
+              },
+              "route": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+$",
+                "maxLength": 64
+              },
+              "approach": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+$",
+                "maxLength": 64
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "route_exists",
+                        "route_known",
+                        "route_reached"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "route"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "route"
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "state": {
+                      "const": "approach_used"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "approach"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "approach"
+                    ]
                   }
                 }
               }

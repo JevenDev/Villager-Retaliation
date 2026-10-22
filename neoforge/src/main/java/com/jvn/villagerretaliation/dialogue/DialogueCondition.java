@@ -41,7 +41,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
         DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
-        DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState, SpeakingStyle.Condition, Knowledge.Condition, QuestAftermathCondition,
+        DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState, SpeakingStyle.Condition, Knowledge.Condition, QuestAftermathCondition, com.jvn.villagerretaliation.dialogue.QuestSiteCondition,
         com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check, ExplorationConditions.Check {
 
     boolean matches(DialogueContext context);
@@ -1132,6 +1132,10 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                             }
                             return Optional.of(new WorkState(value));
                         }, com.jvn.villagerretaliation.quest.tutorial.WorkStatePredicate.schema()),
+                register("quest_site", com.jvn.villagerretaliation.dialogue.QuestSiteCondition.class, Set.of(),
+                        capabilities(ConditionCapability.WORLD_KNOWN, ConditionCapability.PLAYER_LIVE),
+                        (location, context, condition, quest) -> com.jvn.villagerretaliation.dialogue.QuestSiteCondition.read(location, context, condition),
+                        com.jvn.villagerretaliation.dialogue.QuestSiteCondition.schema()),
                 register("quest_aftermath", QuestAftermathCondition.class, Set.of(), capabilities(ConditionCapability.WORLD_KNOWN,
                         ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
                         (location, context, condition, quest) -> QuestAftermathCondition.read(location, context, condition), QuestAftermathCondition.schema()),

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { validateQuestSiteAccess } from "./quest-site-validation.mjs";
 import { createRequire } from "node:module";
 import { readFile, readdir, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -18,12 +19,28 @@ for (const selection of ["existing_only", "prefer_existing", "new_site"]) {
   for (const terrain of ["new_terrain_only", "generated_wilderness"]) {
     const site = { selection, terrain, structures: ["minecraft:pillager_outpost"],
       templates: ["villagerretaliation:quest/holding_camp"], map_style: "search_circle", rescue: "escort_home" };
-    assert.deepEqual(validateContentSchema(site, schema.$defs.target.properties.site), []);
+    assert.deepEqual(validateContentSchema(site, { ...schema.$defs.target.properties.site, $defs: schema.$defs }), []);
     if (selection !== "existing_only") {
       delete site.templates;
-      assert(validateContentSchema(site, schema.$defs.target.properties.site).length > 0);
+      assert(validateContentSchema(site, { ...schema.$defs.target.properties.site, $defs: schema.$defs }).length > 0);
     }
   }
+}
+const routeQuest = { id: "test:route", target: { site: { selection: "new_site", templates: ["test:camp"], guards: 1,
+  access: { routes: [{ id: "rear", label: "Rear route", offset: { x: 0, y: 0, z: 6 },
+    reveal_when: [{ type: "knowledge", topic: "test:route", subject: "player" }] }],
+    approaches: [{ id: "direct", guards_defeated: true }, { id: "rear", route: "rear" }],
+    guard_positions: [{ x: 0, y: 0, z: -3 }] } } } };
+assert.deepEqual(validateQuestSiteAccess(routeQuest), []);
+assert.deepEqual(validateContentSchema(routeQuest.target.site, { ...schema.$defs.target.properties.site, $defs: schema.$defs }), []);
+for (const mutate of [q => q.target.site.access.routes.push(q.target.site.access.routes[0]),
+  q => q.target.site.access.approaches.push({ id: "direct" }),
+  q => q.target.site.access.approaches[1].route = "missing",
+  q => q.target.site.guards = 2,
+  q => q.conditions = [{ type: "quest_site", quest: q.id, state: "route_reached", route: "missing" }]]) {
+  const invalid = structuredClone(routeQuest);
+  mutate(invalid);
+  assert(validateQuestSiteAccess(invalid).length > 0);
 }
 for (const example of fingerprints.values) assert.equal(fingerprintJson(example.source), example.fingerprint, example.name);
 assert.throws(() => fingerprintJson('{"number":1.}'), SyntaxError);

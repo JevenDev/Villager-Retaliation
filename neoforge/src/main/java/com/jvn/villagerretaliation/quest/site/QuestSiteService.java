@@ -43,6 +43,29 @@ public final class QuestSiteService {
     private static final Gson GSON = new Gson();
     private QuestSiteService() { }
 
+    public static boolean matches(ServerLevel level, ServerPlayer player, com.jvn.villagerretaliation.dialogue.QuestSiteCondition condition) {
+        var site = QuestSiteService.find(level, player.getUUID(), condition.quest());
+        var progress = VillagerQuestSavedData.get(level).get(player.getUUID(), condition.quest());
+        if (site == null || site.run == null || progress == null || !site.run.equals(progress.questRunId())) return false;
+        boolean matches = switch (condition.state()) {
+            case "discovered" -> site.discovered;
+            case "released" -> site.released;
+            case "rescued" -> site.rescued;
+            case "guards_defeated" -> site.defeated.containsAll(site.guards);
+            case "route_exists" -> {
+                var definition = VillagerQuestResources.quest(player.server, condition.quest()).orElse(null);
+                var access = definition == null || definition.target().site() == null ? null : QuestSiteAccessService.access(site, definition);
+                yield access != null && QuestSiteAccessService.compatible(site, definition.target().site())
+                        && access.routes().stream().anyMatch(route -> route.id().equals(condition.route()));
+            }
+            case "route_known" -> site.knownRoutes.getOrDefault(player.getUUID(), java.util.Set.of()).contains(condition.route());
+            case "route_reached" -> site.reachedRoutes.getOrDefault(player.getUUID(), java.util.Set.of()).contains(condition.route());
+            case "approach_used" -> !site.approach.isBlank() && site.approach.equals(condition.approach());
+            default -> false;
+        };
+        return matches;
+    }
+
     static Site find(ServerLevel level, UUID player, ResourceLocation quest) {
         var progress = VillagerQuestSavedData.get(level).get(player, quest);
         var sites = QuestSiteSavedData.get(level).sites.values();
@@ -176,7 +199,7 @@ public final class QuestSiteService {
             var quest = VillagerQuestResources.quest(server, site.quest).orElse(null);
             if (level == null || quest == null || quest.target().site() == null) continue;
             var config = quest.target().site();
-            if (!site.config.equals(GSON.toJson(config))) {
+            if (!QuestSiteAccessService.compatible(site, config)) {
                 unavailable(data, site, "Quest site requirements changed. The existing site has been preserved.");
                 continue;
             }
@@ -273,6 +296,9 @@ public final class QuestSiteService {
                 double angle = i * Math.PI * 2 / Math.max(1, site.guards.size());
                 guard.moveTo(site.position.getX() + .5 + Math.cos(angle) * 3, site.position.getY(),
                         site.position.getZ() + .5 + Math.sin(angle) * 3, 0, 0);
+                var access = QuestSiteAccessService.access(site, config);
+                if (access != null && !access.guardPositions().isEmpty())
+                    guard.moveTo(site.position.offset(access.guardPositions().get(i)).getBottomCenter());
                 if (!level.noCollision(guard) || !level.addFreshEntity(guard)) {
                     unavailable(data, site, "A quest guard's position is obstructed.");
                     return;
@@ -365,6 +391,7 @@ public final class QuestSiteService {
             data.setDirty();
             for (var player : players) VillagerQuestService.refreshTracker(player);
         }
+        QuestSiteAccessService.observe(level, site, quest, players);
         if (site.released && !site.rescued && (quest.target().site().rescue() == QuestSiteDefinition.Rescue.FREE_AT_SITE
                 || captive != null && captive.level() == level && captive.blockPosition().distSqr(destination) <= 12 * 12)) {
             site.rescued = true;
@@ -420,15 +447,18 @@ public final class QuestSiteService {
             return;
         }
         if (site.released) return;
-        if (!site.defeated.containsAll(site.guards)) {
-            player.displayClientMessage(Component.translatable("quest.villagerretaliation.rescue.guards"), true);
+        var quest = VillagerQuestResources.quest(player.server, site.quest).orElse(null);
+        if (quest == null || quest.target().site() == null || !QuestSiteAccessService.compatible(site, quest.target().site())) return;
+        String approach = QuestSiteAccessService.approach(level, site, quest, player);
+        if (approach.isBlank()) {
+            player.displayClientMessage(Component.translatable(QuestSiteAccessService.access(site, quest) == null
+                    ? "quest.villagerretaliation.rescue.guards" : "quest.villagerretaliation.rescue.access"), true);
             return;
         }
-        var quest = VillagerQuestResources.quest(player.server, site.quest).orElse(null);
-        if (quest == null || quest.target().site() == null) return;
         if (quest.target().site().rescue() == QuestSiteDefinition.Rescue.ESCORT_HOME) {
             if (!startEscort(player, site)) return;
         }
+        site.approach = approach;
         site.released = true;
         if (event.getTarget() instanceof Mob mob) mob.setNoAi(false);
         data.setDirty();

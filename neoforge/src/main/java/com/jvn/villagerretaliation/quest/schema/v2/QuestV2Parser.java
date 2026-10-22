@@ -118,6 +118,8 @@ public final class QuestV2Parser {
                         rewards,
                         ui, readDiscovery(validator, root.get("discovery")));
         if (resource != null) {
+            for (String issue : com.jvn.villagerretaliation.quest.site.QuestSiteAccess.referenceErrors(root))
+                validator.error("/target/site/access", issue, "Reference routes and approaches declared by this quest site.", Set.of());
             validateGraph(validator, resource);
         }
         return validator.valid() && resource != null ? Optional.of(resource) : Optional.empty();

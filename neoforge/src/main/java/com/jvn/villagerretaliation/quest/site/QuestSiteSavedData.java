@@ -63,6 +63,9 @@ public final class QuestSiteSavedData extends SavedData {
                 site.template = ResourceLocation.tryParse(tag.getString("Template"));
                 site.run = tag.hasUUID("Run") ? tag.getUUID("Run") : null;
                 site.captive = tag.hasUUID("Captive") ? tag.getUUID("Captive") : null;
+                site.approach = tag.getString("Approach");
+                readRoutes(tag, "KnownRoutes", site.knownRoutes);
+                readRoutes(tag, "ReachedRoutes", site.reachedRoutes);
                 site.released = tag.getBoolean("Released");
                 site.discovered = tag.getBoolean("Discovered");
                 site.rescued = tag.getBoolean("Rescued");
@@ -112,6 +115,9 @@ public final class QuestSiteSavedData extends SavedData {
             if (site.template != null) tag.putString("Template", site.template.toString());
             if (site.run != null) tag.putUUID("Run", site.run);
             if (site.captive != null) tag.putUUID("Captive", site.captive);
+            if (!site.approach.isBlank()) tag.putString("Approach", site.approach);
+            writeRoutes(tag, "KnownRoutes", site.knownRoutes);
+            writeRoutes(tag, "ReachedRoutes", site.reachedRoutes);
             tag.putBoolean("Released", site.released);
             tag.putBoolean("Discovered", site.discovered);
             tag.putBoolean("Rescued", site.rescued);
@@ -139,12 +145,38 @@ public final class QuestSiteSavedData extends SavedData {
         return root;
     }
 
+    private static void readRoutes(CompoundTag tag, String key, Map<UUID, java.util.Set<String>> routes) {
+        var list = tag.getList(key, Tag.TAG_COMPOUND);
+        for (var raw : list) {
+            var entry = (CompoundTag) raw;
+            if (!entry.hasUUID("Player")) continue;
+            var names = new java.util.LinkedHashSet<String>();
+            for (var name : entry.getList("Routes", Tag.TAG_STRING)) names.add(name.getAsString());
+            routes.put(entry.getUUID("Player"), names);
+        }
+    }
+
+    private static void writeRoutes(CompoundTag tag, String key, Map<UUID, java.util.Set<String>> routes) {
+        if (routes.isEmpty()) return;
+        var list = new ListTag();
+        routes.forEach((player, names) -> {
+            var entry = new CompoundTag();
+            entry.putUUID("Player", player);
+            var values = new ListTag();
+            names.forEach(name -> values.add(net.minecraft.nbt.StringTag.valueOf(name)));
+            entry.put("Routes", values);
+            list.add(entry);
+        });
+        tag.put(key, list);
+    }
+
     static final class Site {
         final UUID id, player, provider;
         final ResourceLocation quest, dimension;
         final BlockPos home;
         Phase phase = Phase.SEARCHING;
-        String config = "", diagnostic = "";
+        String config = "", diagnostic = "", approach = "";
+        final Map<UUID, java.util.Set<String>> knownRoutes = new LinkedHashMap<>(), reachedRoutes = new LinkedHashMap<>();
         int attempt;
         BlockPos position, actorPosition;
         ResourceLocation template, actorDimension;

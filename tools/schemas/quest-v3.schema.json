@@ -838,6 +838,150 @@
                   "maximum": 29999000
                 }
               }
+            },
+            "access": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "approaches"
+              ],
+              "properties": {
+                "routes": {
+                  "type": "array",
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "label",
+                      "offset"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_.-]+$",
+                        "maxLength": 64
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "radius": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8
+                      },
+                      "reveal_when": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "$ref": "#/$defs/condition"
+                        }
+                      },
+                      "offset": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "x",
+                          "y",
+                          "z"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "integer",
+                            "minimum": -16,
+                            "maximum": 16
+                          },
+                          "y": {
+                            "type": "integer",
+                            "minimum": -8,
+                            "maximum": 8
+                          },
+                          "z": {
+                            "type": "integer",
+                            "minimum": -16,
+                            "maximum": 16
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "description": "Offsets are relative to the site center in world axes, with positive X east and positive Z south. Routes are always physically accessible. Reaching one records a visit for that player and run. reveal_when only reveals its location."
+                },
+                "approaches": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_.-]+$",
+                        "maxLength": 64
+                      },
+                      "route": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_.-]+$",
+                        "maxLength": 64
+                      },
+                      "guards_defeated": {
+                        "type": "boolean"
+                      },
+                      "conditions": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "$ref": "#/$defs/condition"
+                        }
+                      }
+                    }
+                  },
+                  "description": "Requirements within an approach are combined with AND. The first matching approach records its id at release. A route requirement means the player has visited that route. Omitted access preserves the default guard-defeat requirement."
+                },
+                "guard_positions": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "x",
+                      "y",
+                      "z"
+                    ],
+                    "properties": {
+                      "x": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      },
+                      "y": {
+                        "type": "integer",
+                        "minimum": -8,
+                        "maximum": 8
+                      },
+                      "z": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      }
+                    }
+                  },
+                  "description": "Optional spawn offsets from the site center. Supply exactly one position per guard. This does not change guard AI."
+                }
+              },
+              "description": "Named alternatives for freeing a captive. Any matching approach permits release. No approach is selected until release, and all share the same rescue progress."
             }
           },
           "allOf": [
@@ -6385,6 +6529,7 @@
             "quest_choice_selected",
             "quest_counter",
             "quest_fact",
+            "quest_site",
             "quest_stage",
             "quest_stage_history",
             "quest_tag",
@@ -7695,6 +7840,110 @@
                         "farming_wheat"
                       ]
                     }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_site"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "quest",
+              "state"
+            ],
+            "properties": {
+              "type": {
+                "const": "quest_site"
+              },
+              "quest": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "state": {
+                "enum": [
+                  "discovered",
+                  "guards_defeated",
+                  "released",
+                  "rescued",
+                  "route_exists",
+                  "route_known",
+                  "route_reached",
+                  "approach_used"
+                ]
+              },
+              "route": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+$",
+                "maxLength": 64
+              },
+              "approach": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+$",
+                "maxLength": 64
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "route_exists",
+                        "route_known",
+                        "route_reached"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "route"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "route"
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "state": {
+                      "const": "approach_used"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "approach"
+                  ]
+                },
+                "else": {
+                  "not": {
+                    "required": [
+                      "approach"
+                    ]
                   }
                 }
               }

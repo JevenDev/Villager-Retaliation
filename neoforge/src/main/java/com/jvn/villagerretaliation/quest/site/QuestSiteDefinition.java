@@ -8,15 +8,23 @@ import net.minecraft.resources.ResourceLocation;
 public record QuestSiteDefinition(Selection selection, Terrain terrain, List<ResourceLocation> structures,
         List<ResourceLocation> templates, int minDistance, int maxDistance, int attempts, int buffer,
         MapStyle mapStyle, int searchRadius, Rescue rescue, int guards, ResourceLocation supportTag, int minimumSupportBlocks,
-        net.minecraft.core.BlockPos escortDestination) {
+        net.minecraft.core.BlockPos escortDestination, QuestSiteAccess access) {
     public enum Selection { EXISTING_ONLY, PREFER_EXISTING, NEW_SITE }
     public enum Terrain { NEW_TERRAIN_ONLY, GENERATED_WILDERNESS }
     public enum MapStyle { EXACT, SEARCH_CIRCLE }
     public enum Rescue { NONE, FREE_AT_SITE, ESCORT_HOME }
 
+    public QuestSiteDefinition(Selection selection, Terrain terrain, List<ResourceLocation> structures,
+            List<ResourceLocation> templates, int minDistance, int maxDistance, int attempts, int buffer,
+            MapStyle mapStyle, int searchRadius, Rescue rescue, int guards, ResourceLocation supportTag,
+            int minimumSupportBlocks, net.minecraft.core.BlockPos escortDestination) {
+        this(selection, terrain, structures, templates, minDistance, maxDistance, attempts, buffer, mapStyle,
+                searchRadius, rescue, guards, supportTag, minimumSupportBlocks, escortDestination, null);
+    }
+
     public static QuestSiteDefinition read(JsonObject object) {
         if (object == null) return null;
-        var issues = com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(object, schema());
+        var issues = com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(object, ValidationSchema.VALUE);
         if (!issues.isEmpty()) throw new IllegalArgumentException("Invalid quest site: " + issues);
         var result = new QuestSiteDefinition(
                 Selection.valueOf(text(object, "selection", "existing_only").toUpperCase(java.util.Locale.ROOT)),
@@ -27,12 +35,15 @@ public record QuestSiteDefinition(Selection selection, Terrain terrain, List<Res
                 number(object, "search_radius", 96),
                 Rescue.valueOf(text(object, "rescue", "none").toUpperCase(java.util.Locale.ROOT)),
                 number(object, "guards", 2), ResourceLocation.parse(text(object, "support_tag", "minecraft:planks")),
-                number(object, "minimum_support_blocks", 32), destination(object));
+                number(object, "minimum_support_blocks", 32), destination(object),
+                object.has("access") ? new QuestSiteAccess(object.getAsJsonObject("access")) : null);
         if (result.minDistance > result.maxDistance) throw new IllegalArgumentException("Site minimum distance exceeds maximum distance.");
         if (result.selection != Selection.NEW_SITE && result.structures.isEmpty())
             throw new IllegalArgumentException("Existing quest sites require structures.");
         if (result.selection != Selection.EXISTING_ONLY && result.templates.isEmpty())
             throw new IllegalArgumentException("Quest site placement requires templates.");
+        if (result.access != null && !result.access.guardPositions().isEmpty() && result.access.guardPositions().size() != result.guards)
+            throw new IllegalArgumentException("Guard positions must match the number of guards.");
         return result;
     }
 
@@ -56,8 +67,17 @@ public record QuestSiteDefinition(Selection selection, Terrain terrain, List<Res
         return object.has(field) ? object.get(field).getAsInt() : fallback;
     }
 
+    private static final class ValidationSchema {
+        private static final JsonObject VALUE = create();
+        private static JsonObject create() {
+            var schema = schema();
+            schema.add("$defs", com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions());
+            return schema;
+        }
+    }
+
     public static JsonObject schema() {
-        return JsonParser.parseString("""
+        var schema = JsonParser.parseString("""
                 {"type":"object","additionalProperties":false,"properties":{
                   "selection":{"enum":["existing_only","prefer_existing","new_site"]},
                   "terrain":{"description":"Defaults to new terrain only. Generated wilderness uses conservative construction checks and cannot prove that land is untouched.","enum":["new_terrain_only","generated_wilderness"]},
@@ -85,5 +105,7 @@ public record QuestSiteDefinition(Selection selection, Terrain terrain, List<Res
                    "then":{"required":["structures"],"properties":{"structures":{"minItems":1}}}}
                 ]}
                 """).getAsJsonObject();
+        schema.getAsJsonObject("properties").add("access", QuestSiteAccess.schema());
+        return schema;
     }
 }

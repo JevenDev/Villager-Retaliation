@@ -531,6 +531,142 @@ public final class QuestSiteGameTests {
         com.jvn.villagerretaliation.quest.content.QuestRewardBundleGameTests.allMigratedGenericRewardsCompileAndResolveFromBundles(helper);
     }
 
+    private static JsonObject access() {
+        return JsonParser.parseString("""
+                {"routes":[{"id":"rear","label":"Rear entrance","offset":{"x":0,"y":0,"z":6},"radius":1,
+                  "reveal_when":[{"type":"knowledge","topic":"test:route","subject":"player","state":"complete"}]}],
+                 "approaches":[{"id":"direct","guards_defeated":true},{"id":"around","route":"rear"}]}
+                """).getAsJsonObject();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void authoredApproachesRejectAmbiguousOrInvalidDefinitions(GameTestHelper helper) {
+        var config = config("escort_home");
+        config.add("access", access());
+        helper.assertValueEqual(QuestSiteDefinition.read(config).access().approaches().size(), 2, "named alternatives compile");
+        for (String invalid : List.of(
+                "{\"approaches\":[{\"id\":\"empty\"}]}",
+                "{\"approaches\":[{\"id\":\"bad\",\"route\":\"missing\"}]}",
+                "{\"approaches\":[{\"id\":\"same\",\"guards_defeated\":true},{\"id\":\"same\",\"guards_defeated\":true}]}",
+                "{\"approaches\":[{\"id\":\"bad\",\"conditions\":[{\"type\":\"knowledge\"}]}]}",
+                "{\"approaches\":[{\"id\":\"direct\",\"guards_defeated\":true}],\"guard_positions\":[{\"x\":0,\"y\":0,\"z\":0}]}")) {
+            config.add("access", JsonParser.parseString(invalid));
+            expectInvalid(helper, config);
+        }
+        var duplicate = access();
+        duplicate.getAsJsonArray("routes").add(duplicate.getAsJsonArray("routes").get(0).deepCopy());
+        config.add("access", duplicate);
+        expectInvalid(helper, config);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void explorationCanFreeTheCaptiveWithGuardsAlive(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "free_at_site", access())) {
+            var captive = fixture.captive();
+            fixture.guard();
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "the main approach is guarded");
+            fixture.player.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            fixture.player.moveTo(fixture.site.position.getBottomCenter());
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "walking the alternative route permits release");
+            helper.assertValueEqual(fixture.site.approach, "around", "release records the actual approach");
+            helper.assertTrue(fixture.guards.getFirst().isAlive(), "bypassing guards does not kill or remove them");
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertValueEqual(fixture.progress.currentStage(), "return", "either approach reaches the shared objective");
+            var restored = QuestSiteSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess()).sites.get(fixture.site.id);
+            helper.assertValueEqual(restored.approach, "around", "chosen approach survives reload");
+            helper.assertTrue(restored.reachedRoutes.get(fixture.player.getUUID()).contains("rear"), "visited routes survive reload");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void informationRevealsButDoesNotTraverseARoute(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home", access())) {
+            var captive = fixture.captive();
+            fixture.guard();
+            var knowledge = com.jvn.villagerretaliation.dialogue.KnowledgeSavedData.get(helper.getLevel());
+            var topic = ResourceLocation.parse("test:route");
+            knowledge.witness(fixture.player.getUUID(), topic, helper.getLevel().getGameTime());
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.knownRoutes.get(fixture.player.getUUID()).contains("rear"), "information reveals the entrance");
+            helper.assertTrue(fixture.site.reachedRoutes.isEmpty(), "information alone does not bypass guards");
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "the route still needs to be reached");
+            var restored = QuestSiteSavedData.load(fixture.data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+            helper.getLevel().getServer().overworld().getDataStorage().set("villagerretaliation_quest_sites", restored);
+            helper.assertValueEqual(new com.jvn.villagerretaliation.dialogue.QuestSiteCondition(QUEST, "route_known", "rear", "")
+                    .evaluate(helper.getLevel(), fixture.player), com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED, "route knowledge is queryable after reload");
+            helper.getLevel().getServer().overworld().getDataStorage().set("villagerretaliation_quest_sites", fixture.data);
+            fixture.site.defeated.add(fixture.guards.getFirst().getUUID());
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "player may switch to combat after learning a route");
+            helper.assertValueEqual(fixture.site.approach, "direct", "combat is recorded without a route lock");
+            helper.assertTrue(QuestFollowerService.retained(captive), "both approaches start the same escort");
+            fixture.player.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            fixture.interact(captive);
+            helper.assertValueEqual(fixture.site.approach, "direct", "repeated interactions do not rewrite the outcome");
+            knowledge.forget(fixture.player.getUUID(), topic);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void routeVisitsAreBoundToEachPlayerAndQuestRun(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "free_at_site", access())) {
+            fixture.captive();
+            fixture.guard();
+            var other = helper.makeMockServerPlayerInLevel();
+            try {
+                other.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+                QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(other));
+                helper.assertFalse(fixture.site.reachedRoutes.containsKey(other.getUUID()), "unrelated players cannot acquire site progress");
+                fixture.player.moveTo(other.position());
+                QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+                var progress = VillagerQuestSavedData.get(helper.getLevel()).getOrCreate(other.getUUID(), QUEST);
+                progress.start(null, helper.getLevel().dimension(), fixture.site.position, 0);
+                progress.beginRun(other.getUUID(), QUEST, fixture.site.run);
+                progress.setCurrentStage("rescue");
+                other.moveTo(fixture.site.position.getBottomCenter());
+                helper.assertValueEqual(QuestSiteAccessService.approach(helper.getLevel(), fixture.site, fixture.quest, other), "", "party members cannot use another player's visited route remotely");
+                other.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+                helper.assertValueEqual(QuestSiteAccessService.approach(helper.getLevel(), fixture.site, fixture.quest, other), "around", "party member can use the same physical route");
+                progress.complete(1, true);
+                progress.start(null, helper.getLevel().dimension(), fixture.site.position, 2);
+                progress.beginRun(other.getUUID(), QUEST, UUID.randomUUID());
+                helper.assertValueEqual(new com.jvn.villagerretaliation.dialogue.QuestSiteCondition(QUEST, "route_reached", "rear", "")
+                        .evaluate(helper.getLevel(), other), com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.UNMET, "new runs do not inherit an earlier site visit");
+            } finally { other.discard(); }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void existingRescuesKeepTheirOriginalAccessRules(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "free_at_site", access())) {
+            var captive = fixture.captive();
+            fixture.guard();
+            var saved = JsonParser.parseString(fixture.site.config).getAsJsonObject();
+            saved.remove("access");
+            fixture.site.config = saved.toString();
+            helper.assertTrue(QuestSiteAccessService.compatible(fixture.site, fixture.quest.target().site()), "adding approaches preserves existing sites");
+            fixture.player.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.reachedRoutes.isEmpty(), "old sites retain their original geometry and rules");
+            fixture.player.moveTo(fixture.site.position.getBottomCenter());
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "legacy rescue still requires guards to be defeated");
+            fixture.site.defeated.add(fixture.guards.getFirst().getUUID());
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "existing saves remain completable");
+        }
+        helper.succeed();
+    }
+
     private static JsonObject config(String rescue) {
         var root = JsonParser.parseString("""
                 {"selection":"prefer_existing","structures":["minecraft:pillager_outpost"],
@@ -563,6 +699,10 @@ public final class QuestSiteGameTests {
         Villager captive;
 
         Fixture(GameTestHelper helper, String rescue) {
+            this(helper, rescue, null);
+        }
+
+        Fixture(GameTestHelper helper, String rescue, JsonObject access) {
             this.helper = helper;
             var level = helper.getLevel();
             var server = level.getServer();
@@ -581,7 +721,9 @@ public final class QuestSiteGameTests {
                        "next":{"stage":"return"}},{"id":"return","objectives":[]}]}
                     """).getAsJsonObject();
             var target = new JsonObject();
-            target.add("site", config(rescue));
+            var config = config(rescue);
+            if (access != null) config.add("access", access);
+            target.add("site", config);
             root.add("target", target);
             var envelope = QuestResourceEnvelope.read(ResourceLocation.parse("test:quests/rescues/rescue/quest.json"), root).orElseThrow();
             var compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope, level.registryAccess()).orElseThrow();

@@ -1143,6 +1143,104 @@
         }
       },
       {
+        "id": "quest_site",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ],
+        "implementation": "QuestSiteCondition",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "quest",
+            "state"
+          ],
+          "properties": {
+            "type": {
+              "const": "quest_site"
+            },
+            "quest": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "state": {
+              "enum": [
+                "discovered",
+                "guards_defeated",
+                "released",
+                "rescued",
+                "route_exists",
+                "route_known",
+                "route_reached",
+                "approach_used"
+              ]
+            },
+            "route": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+$",
+              "maxLength": 64
+            },
+            "approach": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+$",
+              "maxLength": 64
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "route_exists",
+                      "route_known",
+                      "route_reached"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "route"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "route"
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "approach_used"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "approach"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "approach"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
         "id": "quest_aftermath",
         "aliases": [],
         "capabilities": [
@@ -7576,6 +7674,110 @@
         }
       },
       {
+        "id": "villagerretaliation:quest_site",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Quest site",
+        "description": "Built-in Quest site type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "route_exists",
+                      "route_known",
+                      "route_reached"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "route"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "route"
+                  ]
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "approach_used"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "approach"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "approach"
+                  ]
+                }
+              }
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "quest_site"
+            },
+            "quest": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "state": {
+              "enum": [
+                "discovered",
+                "guards_defeated",
+                "released",
+                "rescued",
+                "route_exists",
+                "route_known",
+                "route_reached",
+                "approach_used"
+              ]
+            },
+            "route": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+$",
+              "maxLength": 64
+            },
+            "approach": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+$",
+              "maxLength": 64
+            }
+          },
+          "required": [
+            "type",
+            "quest",
+            "state"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:recruitment_memory",
         "aliases": [],
         "live_capabilities": [
@@ -8738,6 +8940,7 @@
         "quest_choice_selected",
         "quest_counter",
         "quest_fact",
+        "quest_site",
         "quest_stage",
         "quest_stage_history",
         "quest_tag",

@@ -73,6 +73,7 @@ public record EntityConditionAccess(ServerLevel level, ServerPlayer player, Enti
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.QuestSiteCondition site) return site.evaluate(level, player);
         if (condition instanceof com.jvn.villagerretaliation.dialogue.Knowledge.Condition knowledge)
             return knowledge.evaluate(level, player, provider == null ? null : provider.getUUID());
         if (condition instanceof com.jvn.villagerretaliation.dialogue.SpeakingStyle.Condition style)
