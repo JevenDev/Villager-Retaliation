@@ -678,11 +678,20 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        if (ImGui.button("New content", -1, 0)) operation(() -> {
+        float modeWidth = ImGui.calcTextSize("Pack files").x + ImGui.getFrameHeight() + 2 * ImGui.getStyle().getFramePaddingX();
+        float newWidth = Math.max(ImGui.calcTextSize("New content").x + 16, ImGui.getContentRegionAvailX() - modeWidth - 8);
+        if (ImGui.button("New content", newWidth, 0)) operation(() -> {
             showCreate = !showCreate;
             view = 0;
             chooseCreateScope();
         });
+        EditorWidgets.sameLineFor(modeWidth);
+        ImGui.setNextItemWidth(Math.min(modeWidth, ImGui.getContentRegionAvailX()));
+        if (ImGui.beginCombo("##explorer_view", filesMode ? "Pack files" : "Content")) {
+            if (ImGui.selectable("Content", !filesMode)) { filesMode = false; saveViewPreferences(); }
+            if (ImGui.selectable("Pack files", filesMode)) { filesMode = true; saveViewPreferences(); }
+            ImGui.endCombo();
+        }
         if (showCreate) {
             ImGui.textUnformatted("Format");
             ImGui.setNextItemWidth(-1);
@@ -770,10 +779,13 @@ final class ImGuiAuthoringEditor {
         }
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
+            ImGui.beginChild("##pack_explorer", 0, Math.max(180, ImGui.getContentRegionAvailY() - 150));
+            EditorExplorer.begin(false);
             packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
-            if (ImGui.smallButton("Use content list")) { filesMode = false; saveViewPreferences(); }
+            EditorExplorer.end();
+            ImGui.endChild();
         } else {
-            if (ImGui.checkbox("Supporting files", showResources)) { showResources = !showResources; saveViewPreferences(); }
+            if (workspace.documents().size() <= 30 && ImGui.checkbox("Supporting files", showResources)) { showResources = !showResources; saveViewPreferences(); }
             contentBrowser();
         }
         ImGui.separator();
@@ -870,19 +882,30 @@ final class ImGuiAuthoringEditor {
         var index = contentBrowser.get(workspace, locale.get());
         boolean library = index.entries().size() > 30;
         if (library) {
-            ImGui.textDisabled(index.quests() + " quests / " + index.dialogue() + " dialogue / " + index.entries().size() + " files");
-            if (ImGui.checkbox("Group content##library", groupContent)) { groupContent = !groupContent; saveViewPreferences(); }
-            if (ImGui.smallButton("Collapse all")) contentBrowser.collapse();
-            EditorWidgets.sameLineFor("Show selected");
+            float right = ImGui.getCursorPosX() + ImGui.getContentRegionAvailX();
+            ImGui.alignTextToFramePadding();
+            ImGui.textDisabled(index.entries().size() + " files");
+            ImGui.sameLine(Math.max(ImGui.getCursorPosX(), right - ImGui.getFrameHeight() * 3));
             ImGui.beginDisabled(document == null);
-            if (ImGui.smallButton("Show selected")) {
+            if (EditorExplorer.action("reveal", "Reveal selected file")) {
                 filter.set(""); contentKind = "All";
                 if (document.kind() == DefinitionKind.RESOURCE) showResources = true;
                 contentBrowser.reveal(document); revealBrowserSelection = true;
             }
             ImGui.endDisabled();
-            ImGui.beginChild("##content_library", 0, Math.max(180, ImGui.getContentRegionAvailY() - 150), true);
+            ImGui.sameLine(0, 0);
+            if (EditorExplorer.action("collapse", "Collapse all folders")) contentBrowser.collapse();
+            ImGui.sameLine(0, 0);
+            if (EditorExplorer.action("options", "Explorer options")) ImGui.openPopup("explorer_options");
+            if (ImGui.beginPopup("explorer_options")) {
+                if (ImGui.menuItem("Group by campaign and type", "", groupContent)) { groupContent = !groupContent; saveViewPreferences(); }
+                if (ImGui.menuItem("Show supporting files", "", showResources)) { showResources = !showResources; saveViewPreferences(); }
+                ImGui.endPopup();
+            }
+            ImGui.separator();
+            ImGui.beginChild("##content_library", 0, Math.max(180, ImGui.getContentRegionAvailY() - 150 - ImGui.getTextLineHeightWithSpacing()));
         }
+        EditorExplorer.begin(true);
         var listing = contentBrowser.rows(workspace, locale.get(), filter.get(), showResources, contentKind, groupContent, document);
         var rows = listing.rows();
         float height = ImGui.getTextLineHeightWithSpacing();
@@ -897,17 +920,18 @@ final class ImGuiAuthoringEditor {
             clipper.begin(rows.size(), height);
             while (clipper.step()) for (int i = clipper.getDisplayStart(); i < clipper.getDisplayEnd(); i++) {
                 var row = rows.get(i);
+                float screenLeft = ImGui.getCursorScreenPosX() - ImGui.getCursorPosX() + left;
+                EditorExplorer.guides(screenLeft, row.depth());
                 ImGui.setCursorPosX(left + row.depth() * ImGui.getFontSize() * .8f);
                 if (row.entry() == null) {
                     ImGui.setNextItemOpen(contentBrowser.expanded(row.key()), ImGuiCond.Always);
-                    boolean open = ImGui.treeNodeEx(row.key(), imgui.flag.ImGuiTreeNodeFlags.NoTreePushOnOpen | imgui.flag.ImGuiTreeNodeFlags.SpanAvailWidth,
-                            row.label() + " (" + row.count() + ")");
+                    boolean open = EditorExplorer.folder(row.key(), row.label(), Integer.toString(row.count()), imgui.flag.ImGuiTreeNodeFlags.NoTreePushOnOpen);
                     if (open != contentBrowser.expanded(row.key())) contentBrowser.toggle(row.key());
                     if (ImGui.isItemHovered()) ImGui.setTooltip(row.label() + " (" + row.count() + " files)");
                 } else {
                     var entry = row.entry();
                     var candidate = entry.document();
-                    if (ImGui.selectable((candidate.dirty() ? "* " : "") + entry.title() + "###content:" + entry.path(), document == candidate))
+                    if (EditorExplorer.file("content:" + entry.path(), entry.title(), document == candidate, candidate.dirty(), candidate.kind()))
                         operation(() -> { select(candidate); view = 0; });
                     if (ImGui.isItemHovered()) ImGui.setTooltip(entry.title() + "\n" + kindLabel(candidate.kind()) + "\n" + entry.id() + "\n" + entry.path());
                 }
@@ -918,9 +942,11 @@ final class ImGuiAuthoringEditor {
         if (library) ImGui.dummy(0, 0);
         if (rows.isEmpty() && !showCreate) ImGui.textWrapped(filter.get().isBlank()
                 ? "No content in this view. Choose New content or include supporting files." : "No matches. Try a title, resource ID or phrase.");
+        EditorExplorer.end();
         if (library) {
             ImGui.endChild();
             if (!filter.get().isBlank()) ImGui.textDisabled(listing.matches() + " matching files");
+            else ImGui.textDisabled(index.quests() + " quests / " + index.dialogue() + " dialogue");
         }
     }
 

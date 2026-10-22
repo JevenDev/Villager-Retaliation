@@ -143,7 +143,7 @@ final class EditorPackFiles implements AutoCloseable {
             cachedTree = tree(matching, folders.stream().filter(path -> path.toLowerCase(Locale.ROOT).contains(term)).toList(), "");
             cachedPaths = paths; cachedFolders = folders; cachedSearch = search;
         }
-        if (ImGui.selectable("Pack root##pack_root", selected.isEmpty())) schedule.accept(() -> manage.accept(""));
+        if (EditorExplorer.root("Pack root", selected.isEmpty())) schedule.accept(() -> manage.accept(""));
         contextMenu("", false, workspace, open, manage, schedule);
         ImGui.textDisabled("Drag to move.\nRight-click for actions.");
         if (cachedTree.children.isEmpty()) ImGui.textWrapped("No files match this search.");
@@ -157,7 +157,7 @@ final class EditorPackFiles implements AutoCloseable {
                             Consumer<String> open, Consumer<String> manage, Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
         if (node.file) {
             AuthoringDocument document = treeDocuments.get(node.path);
-            if (ImGui.selectable((document != null && document.dirty() ? "* " : "") + fileLabel(label) + "##file:" + node.path, node.path.equals(selected))) schedule.accept(() -> open.accept(node.path));
+            if (EditorExplorer.file("file:" + node.path, label, node.path.equals(selected), document != null && document.dirty(), document == null ? null : document.kind())) schedule.accept(() -> open.accept(node.path));
             if (ImGui.isItemHovered()) ImGui.setTooltip(node.path + (document == null ? "" : "\n" + document.id()));
             treeActions(node, workspace, open, manage, schedule);
             return;
@@ -166,7 +166,7 @@ final class EditorPackFiles implements AutoCloseable {
         if (node.path.equals(selected)) flags |= ImGuiTreeNodeFlags.Selected;
         if (searching || reveal && (selected.equals(node.path) || selected.startsWith(node.path + "/"))) ImGui.setNextItemOpen(true);
         else if (depth < 2) ImGui.setNextItemOpen(true, ImGuiCond.Once);
-        boolean expanded = ImGui.treeNodeEx(label + "##folder:" + node.path, flags);
+        boolean expanded = EditorExplorer.folder(label + "##folder:" + node.path, label, "", flags);
         if (ImGui.isItemClicked()) pressedFolder = ImGui.isItemToggledOpen() ? "" : node.path;
         if (node.path.equals(pressedFolder) && ImGui.isItemHovered() && ImGui.isMouseReleased(0)) {
             var delta = ImGui.getMouseDragDelta(0);
@@ -256,14 +256,6 @@ final class EditorPackFiles implements AutoCloseable {
         EditorWidgets.sameLineFor("Cancel");
         if (ImGui.button("Cancel") || ImGui.isKeyPressed(imgui.flag.ImGuiKey.Escape)) ImGui.closeCurrentPopup();
         ImGui.endPopup();
-    }
-
-    private static String fileLabel(String name) {
-        int limit = Math.max(12, (int) (ImGui.getContentRegionAvailX() / ImGui.calcTextSize("M").x) - 2);
-        if (name.length() <= limit) return name;
-        int dot = name.lastIndexOf('.');
-        String suffix = dot >= 0 && name.length() - dot <= 12 ? name.substring(dot) : "";
-        return name.substring(0, Math.max(3, limit - suffix.length() - 3)) + "..." + suffix;
     }
 
     private void load(AuthoringWorkspace workspace) throws IOException {
