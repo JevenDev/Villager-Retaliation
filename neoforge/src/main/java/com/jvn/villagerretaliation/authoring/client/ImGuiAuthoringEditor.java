@@ -203,6 +203,7 @@ final class ImGuiAuthoringEditor {
     }
 
     static void tick() {
+        EditorTestWorld.tick(INSTANCE.workspace);
         if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
             INSTANCE.attempt(INSTANCE::writeRecovery);
@@ -228,6 +229,7 @@ final class ImGuiAuthoringEditor {
         EditorLiveQuestTest.stop();
         EditorPlaytestPresentation.clear();
         INSTANCE.clearCampaignPreview();
+        EditorTestWorld.disconnect();
         INSTANCE.target = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
     }
@@ -2347,7 +2349,7 @@ final class ImGuiAuthoringEditor {
                 if (ImGui.smallButton("Remove line")) editArray(path, values -> values.remove(index));
                 ImGui.endDisabled();
                 sameLineFor("Duplicate line");
-                if (ImGui.smallButton("Duplicate line")) editArray(path, values -> values.add(values.get(index).deepCopy()));
+                if (ImGui.smallButton("Duplicate line")) editArray(path, values -> values.add(values.get(index)));
                 if (i > 0) {
                     sameLineFor("Move up");
                     if (ImGui.smallButton("Move up")) editArray(path, values -> {
@@ -2383,7 +2385,7 @@ final class ImGuiAuthoringEditor {
                     ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
                     if (ImGui.smallButton("Remove")) editArray(path, values -> values.remove(index));
                     EditorWidgets.sameLineFor("Duplicate");
-                    if (ImGui.smallButton("Duplicate")) editArray(path, values -> values.add(values.get(index).deepCopy()));
+                    if (ImGui.smallButton("Duplicate")) editArray(path, values -> values.add(values.get(index)));
                     if (i > 0) {
                         EditorWidgets.sameLineFor("Move up");
                         if (ImGui.smallButton("Move up")) editArray(path, values -> {
@@ -2728,6 +2730,8 @@ final class ImGuiAuthoringEditor {
 
     private void playtestQuest() {
         if (!EditorTestWorld.active(workspace)) {
+            String problem = EditorTestWorld.problem(workspace);
+            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
             ImGui.textWrapped("Create a separate test world for quest playtesting.");
             if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
             return;
@@ -2881,6 +2885,8 @@ final class ImGuiAuthoringEditor {
     private void liveQuestTest() {
         if (!EditorWidgets.section("Live quest test", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) return;
         if (!EditorTestWorld.active(workspace)) {
+            String problem = EditorTestWorld.problem(workspace);
+            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
             ImGui.textWrapped("Create a separate test world to execute real objectives, actions, and rewards.");
             if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
             return;
@@ -3233,7 +3239,7 @@ final class ImGuiAuthoringEditor {
 
     private void writeRecovery() throws IOException {
         saveSession();
-        if (workspace == null || showRecovery || !(workspace.dirty() || hasPendingFields() || rawModified)) return;
+        if (workspace == null || showRecovery) return;
         JsonObject buffers = new JsonObject();
         if (document != null) buffers.addProperty("document", document.resourcePath());
         buffers.addProperty("pointer", pointer.get());
@@ -3245,7 +3251,7 @@ final class ImGuiAuthoringEditor {
         translatedFields.forEach((owner, edits) -> translated.add(owner.resourcePath(), edits.snapshot()));
         buffers.add("translated", translated);
         if (rawModified) buffers.addProperty("raw", jsonText.get());
-        workspace.saveRecovery(buffers);
+        EditorRecovery.write(workspace, buffers, hasPendingFields() || rawModified);
     }
 
     private void recoveryControls() {
@@ -3300,7 +3306,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void closeEditor() {
-        attempt(this::saveSession);
+        attempt(this::writeRecovery);
         confirmClose = false;
         EditorPlaytestPresentation.clear();
         EditorLiveQuestTest.stop();
@@ -3473,7 +3479,7 @@ final class ImGuiAuthoringEditor {
 
     private void editArray(String path, java.util.function.Consumer<JsonArray> edit) {
         operation(() -> {
-            document.edit("Edit " + path, root -> edit.accept(JsonPointers.get(root, path).getAsJsonArray()));
+            EditorArrayOrder.edit(document, path, "Edit " + path, edit);
             refresh();
         });
     }

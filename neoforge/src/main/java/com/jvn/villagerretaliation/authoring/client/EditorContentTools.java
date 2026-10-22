@@ -97,6 +97,7 @@ final class EditorContentTools {
             else {
                 int separator = node.pointer().lastIndexOf('/');
                 JsonObject parent = JsonPointers.get(root, node.pointer().substring(0, separator)).getAsJsonObject();
+                if (parent.has(replacement)) throw new IllegalArgumentException("A node already uses the storage key " + replacement);
                 parent.add(replacement, owner.deepCopy());
                 JsonPointers.remove(root, node.pointer());
             }

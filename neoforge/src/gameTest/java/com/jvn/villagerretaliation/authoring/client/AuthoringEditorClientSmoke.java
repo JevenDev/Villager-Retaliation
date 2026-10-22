@@ -1673,6 +1673,8 @@ public final class AuthoringEditorClientSmoke {
                     "The original world remains available without the test pack.");
             require(minecraft.getSingleplayerServer().getPackRepository().getSelectedIds().contains("file/test_content"), "The created server loaded the test pack.");
             require(EditorTestWorld.currentSnapshot(workspace), "Live execution identifies the exported snapshot.");
+            EditorTestWorld.disconnect();
+            require(EditorTestWorld.active(workspace) && EditorTestWorld.currentSnapshot(workspace), "Live controls restore their workspace and snapshot after losing the in-memory session.");
             EditorLiveQuestTest.start(workspace, document);
         });
         waitUntil(() -> !EditorLiveQuestTest.view().busy());

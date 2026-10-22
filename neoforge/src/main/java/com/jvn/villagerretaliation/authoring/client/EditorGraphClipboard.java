@@ -121,6 +121,8 @@ final class EditorGraphClipboard {
         }
         Set<String> used = new HashSet<>();
         DialogueGraph.nodes(document).forEach(node -> used.add(node.id()));
+        JsonElement storedNodes = document.json().get(document.kind() == DefinitionKind.QUEST ? "stages" : "nodes");
+        if (storedNodes.isJsonObject()) used.addAll(storedNodes.getAsJsonObject().keySet());
         Map<String, String> names = new LinkedHashMap<>();
         selection.keySet().forEach(id -> names.put(id, unique(id, used)));
         Set<String> usedChecks = new HashSet<>();
@@ -133,7 +135,7 @@ final class EditorGraphClipboard {
             String id = DialogueGraph.string(check, "id");
             if (checkNames.containsKey(id)) {
                 check.addProperty("id", checkNames.get(id));
-                rewrite(check, names, checkNames);
+                rewrite(check, names, checkNames, document.id());
                 addedChecks.add(check);
             }
         }
@@ -141,7 +143,7 @@ final class EditorGraphClipboard {
         selection.forEach((id, value) -> {
             JsonObject node = value.deepCopy();
             if (node.has("id") || document.kind() != DefinitionKind.TREE) node.addProperty("id", names.get(id));
-            rewrite(node, names, checkNames);
+            rewrite(node, names, checkNames, document.id());
             nodes.add(node);
         });
         Set<String> effects = new HashSet<>();
@@ -273,8 +275,24 @@ final class EditorGraphClipboard {
         return bundle + "locales/" + language + ".json";
     }
 
-    private static void collectTargets(JsonElement value, Set<String> targets) {
-        for (String field : List.of("next", "stage", "success", "failure")) collectStrings(value, field, targets);
+    private boolean externalQuest(JsonObject value) {
+        String quest = DialogueGraph.string(value, "quest");
+        if (quest.isBlank()) quest = DialogueGraph.string(value, "quest_id");
+        return !quest.isBlank() && (snapshot.kind() != DefinitionKind.QUEST || !quest.equals(snapshot.id()));
+    }
+
+    private void collectTargets(JsonElement value, Set<String> targets) {
+        if (value.isJsonObject()) {
+            JsonObject object = value.getAsJsonObject();
+            if (externalQuest(object)) return;
+            for (var entry : object.entrySet()) {
+                if (Set.of("next", "stage", "success", "failure").contains(entry.getKey()) && entry.getValue().isJsonPrimitive())
+                    targets.add(entry.getValue().getAsString());
+                else if (entry.getKey().equals("stages") && entry.getValue().isJsonArray()) {
+                    for (var stage : entry.getValue().getAsJsonArray()) if (stage.isJsonPrimitive()) targets.add(stage.getAsString());
+                } else if (!Set.of("metadata", "text", "label", "lines", "variants").contains(entry.getKey())) collectTargets(entry.getValue(), targets);
+            }
+        } else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> collectTargets(child, targets));
     }
 
     private static void collectStrings(JsonElement value, String field, Set<String> values) {
@@ -315,14 +333,23 @@ final class EditorGraphClipboard {
         else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> collectChecks(child, names, used));
     }
 
-    private static void rewrite(JsonElement value, Map<String, String> names, Map<String, String> checks) {
-        if (value.isJsonObject()) for (var entry : value.getAsJsonObject().entrySet()) {
-            var mapping = entry.getKey().equals("check") ? checks : names;
-            if (Set.of("next", "stage", "success", "failure", "check").contains(entry.getKey()) && entry.getValue().isJsonPrimitive()
-                    && mapping.containsKey(entry.getValue().getAsString())) entry.setValue(new JsonPrimitive(mapping.get(entry.getValue().getAsString())));
-            else if (!Set.of("metadata", "text", "label", "lines", "variants").contains(entry.getKey())) rewrite(entry.getValue(), names, checks);
-        }
-        else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> rewrite(child, names, checks));
+    private void rewrite(JsonElement value, Map<String, String> names, Map<String, String> checks, String destination) {
+        if (value.isJsonObject()) {
+            JsonObject object = value.getAsJsonObject();
+            if (externalQuest(object)) return;
+            for (var entry : object.entrySet()) {
+                var mapping = entry.getKey().equals("check") ? checks : names;
+                if (Set.of("next", "stage", "success", "failure", "check").contains(entry.getKey()) && entry.getValue().isJsonPrimitive()
+                        && mapping.containsKey(entry.getValue().getAsString())) entry.setValue(new JsonPrimitive(mapping.get(entry.getValue().getAsString())));
+                else if (Set.of("quest", "quest_id").contains(entry.getKey()) && entry.getValue().isJsonPrimitive()
+                        && entry.getValue().getAsString().equals(snapshot.id())) entry.setValue(new JsonPrimitive(destination));
+                else if (entry.getKey().equals("stages") && entry.getValue().isJsonArray()) {
+                    var stages = entry.getValue().getAsJsonArray();
+                    for (int i = 0; i < stages.size(); i++) if (stages.get(i).isJsonPrimitive() && names.containsKey(stages.get(i).getAsString()))
+                        stages.set(i, new JsonPrimitive(names.get(stages.get(i).getAsString())));
+                } else if (!Set.of("metadata", "text", "label", "lines", "variants").contains(entry.getKey())) rewrite(entry.getValue(), names, checks, destination);
+            }
+        } else if (value.isJsonArray()) value.getAsJsonArray().forEach(child -> rewrite(child, names, checks, destination));
     }
 
     private static void collectEffects(JsonElement value, Set<String> used, boolean rename) {
