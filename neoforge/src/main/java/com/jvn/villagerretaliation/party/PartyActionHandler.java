@@ -274,7 +274,7 @@ public final class PartyActionHandler {
             PartyQuestService.detachPlayer(player.serverLevel(), party, player.getUUID());
             VillagerQuestService.refreshTracker(player);
             refreshPartyTrackers(player, party);
-            PartySyncService.clear(player.getServer(), player.getUUID());
+            PartySyncService.sendTo(player);
             PartySyncService.syncParty(player.getServer(), party.id());
         }
     }
@@ -288,10 +288,10 @@ public final class PartyActionHandler {
         }
         if (party != null) {
             PartyQuestService.detachPlayer(leader.serverLevel(), party, targetId);
-            PartySyncService.clear(leader.getServer(), targetId);
             ServerPlayer removed = leader.getServer().getPlayerList().getPlayer(targetId);
             String removedName = removed == null ? profileName(leader, targetId) : removed.getName().getString();
             if (removed != null) {
+                PartySyncService.sendTo(removed);
                 styledNotice(removed, "villagerretaliation.party.player_removed.self");
                 VillagerQuestService.refreshTracker(removed);
             }

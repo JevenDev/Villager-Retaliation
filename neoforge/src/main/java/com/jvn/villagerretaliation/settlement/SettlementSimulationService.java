@@ -16,6 +16,7 @@ public final class SettlementSimulationService {
     private static final int MIN_STEPS_PER_TICK = 64;
     static final int MAX_STEPS_PER_TICK = 256;
     private static final long BUDGET_NANOS = 3_000_000L;
+    final SettlementManagementRequests requests = new SettlementManagementRequests(this);
     private final Map<VillageAllegianceId, Entry> entries = new LinkedHashMap<>();
     private List<Entry> scheduled = List.of();
     private long refreshAt;
@@ -41,6 +42,7 @@ public final class SettlementSimulationService {
     void invalidate() {
         this.entries.clear();
         this.management.clear();
+        this.requests.clear();
         this.scheduled = List.of();
         this.selection = null;
         this.pending.clear();
@@ -60,13 +62,17 @@ public final class SettlementSimulationService {
         int cap = VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.get();
         if (foreground(level, town)) return backlog(level, town);
         if (cap <= 0) return "simulation_disabled";
-        var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active())
+        var towns = SettlementSavedData.get(level).settlements().stream().filter(SettlementSimulationService::eligible)
                 .filter(value -> {
                     var dimension = level.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, value.dimension()));
                     return dimension != null && !foreground(dimension, value);
                 }).toList();
         return select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), cap).stream().anyMatch(value -> value.id().equals(town.id()))
                 ? backlog(level, town) : "simulation_capped";
+    }
+
+    private static boolean eligible(SettlementRecord town) {
+        return town.territory().active() && town.autonomous() == null;
     }
 
     static List<SettlementRecord> select(List<SettlementRecord> towns, long day, int limit) {
@@ -102,6 +108,10 @@ public final class SettlementSimulationService {
 
     void enqueue(Object key, Runnable work) {
         if (this.queued.add(key)) this.pending.addLast(new Pending(key, work));
+    }
+
+    void enqueueLazy(Object key, java.util.function.Supplier<Runnable> work) {
+        enqueue(key, SettlementWork.lazy(work));
     }
 
     boolean runPending() {
@@ -160,7 +170,7 @@ public final class SettlementSimulationService {
         var background = new ArrayList<SettlementRecord>();
         var jobs = new ArrayList<Runnable>();
         jobs.add(SettlementWork.each(towns, town -> {
-            if (!town.territory().active() || town.autonomous()!=null) return;
+            if (!eligible(town)) return;
             var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
             if (level == null) return;
             (foreground(level, town) ? foreground : background).add(town);

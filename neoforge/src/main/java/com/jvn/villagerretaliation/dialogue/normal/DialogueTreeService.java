@@ -233,8 +233,12 @@ public final class DialogueTreeService {
             return Optional.empty();
         }
 
-        if (context.runtime().pending(context)) return Optional.empty();
-        if (!timeout && session.responseDeadline() >= 0 && context.level().getGameTime() >= session.responseDeadline()) return expire(context);
+        if (context.runtime().pending(context) || !timeout && session.timerResolved()) return Optional.empty();
+        if (!timeout && session.responseDeadline() >= 0 && context.level().getGameTime() >= session.responseDeadline()) {
+            var timeoutResult = expire(context);
+            // only accept a live choice if the timeout left this visit untouched
+            if (timeoutResult.isPresent() || sessions(context).get(key) != session) return timeoutResult;
+        }
         DialogueTreeDefinition tree = DialogueTreeResources.tree(context.level().getServer(), context.locale(), treeId).orElse(null);
         if (tree == null || !tree.matches(context)) {
             sessions(context).remove(key);
@@ -327,8 +331,10 @@ public final class DialogueTreeService {
         if (!node.exchanges().isEmpty()) {
             if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
             exchanges.addAll(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(node.exchanges(), context, replacements));
-        } else if ((!exchanges.isEmpty() || selected.camera() != null) && !nodeLine.isBlank())
+        } else if ((!exchanges.isEmpty() || selected.camera() != null) && !nodeLine.isBlank()) {
+            if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
             exchanges.add(npcSpeech(context, nodeLine, selected.camera()));
+        }
         return withExchanges(result(resultLineId, text), exchanges);
     }
 

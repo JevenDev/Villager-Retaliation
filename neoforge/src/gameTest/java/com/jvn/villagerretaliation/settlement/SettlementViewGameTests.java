@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_view")
 @PrefixGameTestTemplate(false)
 public final class SettlementViewGameTests {
     private SettlementViewGameTests() {
@@ -448,7 +448,8 @@ public final class SettlementViewGameTests {
             var order = new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE, List.of(town.center().east(4)));
             var targets = members.subList(0, 18).stream()
                     .map(id -> new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(id, town.duties().get(id))).toList();
-            var request = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
+            var request = new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id,
+                    com.jvn.villagerretaliation.network.SettlementViewBatchPayload.operation(session.id, 1),
                     SettlementViewAction.MOVE, targets, null, order);
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewBatchPayload.STREAM_CODEC, request);
             session.commands.submit(session, request);
@@ -484,7 +485,8 @@ public final class SettlementViewGameTests {
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.STREAM_CODEC,
                     new com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload(session.id, request.operation(), List.of(outcome)));
             session.commands.submit(session, new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id,
-                    UUID.randomUUID(), SettlementViewAction.RETURN, targets, null, null));
+                    com.jvn.villagerretaliation.network.SettlementViewBatchPayload.operation(session.id, 2),
+                    SettlementViewAction.RETURN, targets, null, null));
             SettlementViewService.close(fixture.player().getUUID(), false);
             helper.assertValueEqual(session.commands.tick(session, 16), 0, "session teardown discards pending commands");
             expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session.id, UUID.randomUUID(),
@@ -671,6 +673,7 @@ public final class SettlementViewGameTests {
     private static ServerPlayer player(GameTestHelper helper, String name) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
         player.setPos(helper.absolutePos(BlockPos.ZERO).getCenter());
+        player.setLastSectionPos(net.minecraft.core.SectionPos.of(player));
         return player;
     }
 

@@ -13,7 +13,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
@@ -223,7 +222,7 @@ public final class VillagerLadderTraversal {
         double targetX = dismount.getX() + 0.5D;
         double targetY = dismount.getY();
         double targetZ = dismount.getZ() + 0.5D;
-        if (!isWalkable(level, dismount)) {
+        if (!VillagerNavigationSafety.isSafeLadderPosition(level, dismount)) {
             return false;
         }
         rememberRecentLadderDismount(level, villager, ladder, dismount);
@@ -330,7 +329,7 @@ public final class VillagerLadderTraversal {
         }
         VillagerLadderRoutePlanner.Route route = nearestLadderRoute(level, villager, target);
         if (route == null) {
-            return false;
+            return VillagerLadderRoutePlanner.isSearching(villager);
         }
         BlockPos ladder = route.entryRung();
         BlockPos approach = route.approach();
@@ -499,7 +498,7 @@ public final class VillagerLadderTraversal {
                 || isStandingInLadder(level, villager.blockPosition())
                 || Math.abs(villager.getY() - ladder.getY()) > 2.0D
                 || horizontalDistanceToBlockCenterSqr(villager, ladder) > LADDER_ENTRY_DISTANCE_SQR
-                || !isWalkable(level, ladder)
+                || !VillagerNavigationSafety.isSafeLadderPosition(level, ladder)
                 || !isUsefulLadderRoute(level, villager, ladder, target)) {
             return false;
         }
@@ -656,6 +655,9 @@ public final class VillagerLadderTraversal {
                 target,
                 LADDER_ESCAPE_SEARCH_RADIUS,
                 LADDER_ESCAPE_VERTICAL_RADIUS);
+        if (best == null && VillagerLadderRoutePlanner.isSearching(villager)) {
+            return null;
+        }
         if (best != null
                 && stalledAttempts > 0
                 && horizontalDistanceSqr(best.approach(), origin) <= 16.0D
@@ -735,7 +737,7 @@ public final class VillagerLadderTraversal {
                     ? new BlockPos[] { side, side.above() }
                     : new BlockPos[] { side, side.below() };
             for (BlockPos candidate : candidates) {
-                if (!isWalkable(level, candidate)) {
+                if (!VillagerNavigationSafety.isSafeLadderPosition(level, candidate)) {
                     continue;
                 }
                 double score = candidate.distSqr(target)
@@ -767,17 +769,6 @@ public final class VillagerLadderTraversal {
         double dx = entity.getX() - (pos.getX() + 0.5D);
         double dz = entity.getZ() - (pos.getZ() + 0.5D);
         return dx * dx + dz * dz;
-    }
-    private static boolean isWalkable(ServerLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
-            return false;
-        }
-        BlockState feet = level.getBlockState(pos);
-        BlockState head = level.getBlockState(pos.above());
-        BlockState floor = level.getBlockState(pos.below());
-        return (feet.isAir() || feet.liquid() || feet.is(Blocks.LADDER))
-                && (head.isAir() || head.liquid() || head.is(Blocks.LADDER))
-                && (floor.isSolid() || feet.is(Blocks.LADDER));
     }
     private record ActiveLadderClimb(BlockPos bottom, BlockPos top, long targetPos, boolean climbingUp, long expiresGameTime) {
         private ActiveLadderClimb refreshed(long expiresGameTime) {
@@ -843,12 +834,14 @@ public final class VillagerLadderTraversal {
     }
 
     public static void clearRuntimeState() {
+        VillagerLadderRoutePlanner.clearRuntimeState();
         ACTIVE_LADDER_CLIMBS.clear();
         RECENT_LADDER_DISMOUNTS.clear();
         LADDER_SEARCHES.clear();
     }
 
     public static void clearRuntimeState(Villager villager) {
+        VillagerLadderRoutePlanner.clearRuntimeState(villager);
         clearActiveLadderClimb(villager);
         RECENT_LADDER_DISMOUNTS.remove(villager.getUUID());
         LADDER_SEARCHES.remove(villager.getUUID());

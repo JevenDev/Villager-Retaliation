@@ -490,9 +490,9 @@ public final class VillagerRetaliationRetaliationUtil {
         boolean targetMoved = targetChanged
                 || target.distanceToSqr(state.pathedTargetX(), state.pathedTargetY(), state.pathedTargetZ()) >= PATHED_TARGET_MOVED_DISTANCE_SQR;
         boolean navigationDone = villager.getNavigation().isDone();
-        boolean shouldRecalculatePath = navigationDone
+        boolean shouldRecalculatePath = targetChanged
                 || ticksUntilNextPathRecalculation <= 0
-                && (targetMoved || villager.getRandom().nextFloat() < 0.05F);
+                && (navigationDone || targetMoved || villager.getRandom().nextFloat() < 0.05F);
 
         if (!shouldRecalculatePath) {
             PATH_STATES.put(villagerId, state.withTicksUntilNextPathRecalculation(ticksUntilNextPathRecalculation));

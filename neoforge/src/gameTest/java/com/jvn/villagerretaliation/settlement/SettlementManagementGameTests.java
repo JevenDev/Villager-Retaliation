@@ -37,7 +37,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_management")
 @PrefixGameTestTemplate(false)
 public final class SettlementManagementGameTests {
     private SettlementManagementGameTests() {
@@ -861,6 +861,7 @@ public final class SettlementManagementGameTests {
                     && issue.cause().equals("simulation_disabled") && !issue.needsAttention()), "disabled simulation is informational");
             cap.set(1);
             var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active())
+                    .filter(value -> value.autonomous() == null)
                     .filter(value -> !SettlementSimulationService.foreground(level, value)).toList();
             var selected = SettlementSimulationService.select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), 1);
             for (var candidate : towns) {

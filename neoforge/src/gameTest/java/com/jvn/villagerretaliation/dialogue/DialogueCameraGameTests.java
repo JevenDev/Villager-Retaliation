@@ -33,6 +33,51 @@ public final class DialogueCameraGameTests {
     private DialogueCameraGameTests() { }
 
     @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void nodeCamerasKeepPrecedingResponseSpeechInOrder(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 1, 1, 1);
+        var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(
+                helper.getLevel(), player, villager);
+        var id = ResourceLocation.parse("fixture:camera_response");
+        try {
+            for (boolean explicitExchange : List.of(false, true)) {
+                var root = json("""
+                        {"id":"fixture:camera_response","entries":[{"id":"start","label":"Ask","start":"start"}],
+                         "nodes":{"start":{"lines":["Choose."],"responses":[
+                           {"id":"accept","label":"Accept","lines":["Your payment was accepted."],"next":"done"}]},
+                           "done":{"lines":["Goodbye."],"camera":{"preset":"behind"},"end":true}}}
+                        """);
+                if (explicitExchange) {
+                    var response = root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("responses").get(0).getAsJsonObject();
+                    response.remove("lines");
+                    response.add("exchanges", JsonParser.parseString("""
+                            [{"speaker":{"type":"player"},"text":"I accept."}]
+                            """));
+                }
+                var tree = DialogueTreeResources.readGeneratedTree(id, root, id);
+                helper.assertTrue(tree != null, "camera response content loads");
+                DialogueTreeResources.installTestTrees(player.server, context.locale(), List.of(tree), java.util.Set.of());
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(context, id, "start").orElseThrow();
+                var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(context).orElseThrow().getFirst();
+                var result = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.handleDialogueOption(context, option).orElseThrow();
+                helper.assertValueEqual(result.exchanges().stream().map(DialogueSpeech::text).toList(),
+                        List.of(explicitExchange ? "I accept." : "Your payment was accepted.", "Goodbye."),
+                        "response speech is retained once before the destination line");
+                helper.assertValueEqual(result.exchanges().getFirst().speaker(),
+                        explicitExchange ? player.getUUID() : villager.getUUID(), "response speaker is retained");
+                helper.assertTrue(result.exchanges().getFirst().camera() == null, "the destination camera does not leak onto the response");
+                helper.assertValueEqual(result.exchanges().getLast().camera(), DialogueCamera.read(root.getAsJsonObject("nodes").getAsJsonObject("done")),
+                        "the destination line retains its camera");
+            }
+        } finally {
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.leaveActiveSession(context);
+            DialogueTreeResources.clearCache();
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_camera")
     public static void sharedFixturesMatchTheParserAndSchema(GameTestHelper helper) {
         try (var stream = DialogueCameraGameTests.class.getResourceAsStream("/dialogue_camera/cases.json")) {
             if (stream == null) throw new IllegalStateException("Missing dialogue camera fixtures");

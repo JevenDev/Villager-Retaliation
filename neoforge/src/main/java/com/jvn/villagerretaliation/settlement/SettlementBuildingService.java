@@ -46,7 +46,7 @@ public final class SettlementBuildingService {
     }
 
     static void enqueue(ServerLevel level, SettlementRecord town, SettlementArea area) {
-        SettlementSavedData.get(level).simulation.enqueue(new Site(town, area), work(level, town, area));
+        SettlementSavedData.get(level).simulation.enqueueLazy(new Site(town, area), () -> work(level, town, area));
     }
 
     static Runnable work(ServerLevel level, SettlementRecord town, SettlementArea area) {

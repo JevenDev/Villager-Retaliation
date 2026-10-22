@@ -413,6 +413,18 @@ public final class PartyQuickCommandService {
         clearAllOrders(villager);
     }
 
+    static void resetForOwnershipTransfer(MinecraftServer server, PartyVillagerRecord record) {
+        record.setFollowing();
+        record.setCommanderEquipmentAccess(false);
+        Villager villager = VillagerEntityResolver.loaded(server, record.villagerId());
+        if (villager == null) {
+            clearAllOrders(record.villagerId());
+        } else {
+            clearAllOrders(villager);
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+        }
+    }
+
     public static void clearRuntimeState() {
         RUNTIME_ORDERS.clear();
         MANUAL_ATTACK_TARGETS.clear();
@@ -862,6 +874,7 @@ public final class PartyQuickCommandService {
         }
         BlockPos commanderPos = commander.blockPosition();
         return Math.abs(commanderPos.getX() - target.getX()) <= MOVE_TO_RETURN_RADIUS
+                && Math.abs(commanderPos.getY() - target.getY()) <= MOVE_TO_RETURN_RADIUS
                 && Math.abs(commanderPos.getZ() - target.getZ()) <= MOVE_TO_RETURN_RADIUS;
     }
 

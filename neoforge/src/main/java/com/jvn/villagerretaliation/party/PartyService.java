@@ -522,6 +522,10 @@ public final class PartyService {
         UUID targetPartyId = targetParty.id();
         if (sourcePartyId.equals(targetPartyId)) {
             record.transferRecruiter(targetPlayerId);
+            if (!currentOwnerId.equals(targetPlayerId)) {
+                record.assignCommander(targetPlayerId);
+                PartyQuickCommandService.resetForOwnershipTransfer(level.getServer(), record);
+            }
             data.changed();
             return OwnershipTransferResult.success(currentOwnerId, sourcePartyId, targetPartyId);
         }
@@ -537,6 +541,8 @@ public final class PartyService {
             if (createdTargetParty) data.removeParty(targetPartyId);
             return OwnershipTransferResult.failure("The villager's party record could not be transferred.");
         }
+        removed.assignCommander(targetPlayerId);
+        PartyQuickCommandService.resetForOwnershipTransfer(level.getServer(), removed);
         return OwnershipTransferResult.success(currentOwnerId, sourcePartyId, targetPartyId);
     }
 

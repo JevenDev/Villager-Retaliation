@@ -76,6 +76,7 @@ final class ConversationConfirmations {
 
     static void discard(ConversationSession session) {
         session.phase = session.pendingChoice == null ? ConversationSession.Phase.NODE_EFFECTS : ConversationSession.Phase.RESPONSES;
+        if (session.pendingChoice != null) session.responseTimerResolved = false;
         session.confirmation = null;
         session.pendingChoice = null;
         session.response = "";
