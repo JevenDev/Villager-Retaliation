@@ -3473,7 +3473,7 @@ final class ImGuiAuthoringEditor {
 
     private void editArray(String path, java.util.function.Consumer<JsonArray> edit) {
         operation(() -> {
-            document.edit("Edit " + path, root -> edit.accept(JsonPointers.get(root, path).getAsJsonArray()));
+            EditorArrayOrder.edit(document, path, "Edit " + path, edit);
             refresh();
         });
     }

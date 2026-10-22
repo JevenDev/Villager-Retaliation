@@ -9,6 +9,10 @@ import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
 public final class EditorClientChecks {
     private EditorClientChecks() { }
 
+    public static void main(String[] args) throws java.io.IOException {
+        System.out.println("Passed " + run() + " standalone editor checks.");
+    }
+
     public static int run() throws java.io.IOException {
         navigationKeepsContextBranchesAndWorkspaceBoundaries();
         packFileTreeKeepsAncestorFolders();
@@ -62,7 +66,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 52 + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run();
+        return 52 + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {
