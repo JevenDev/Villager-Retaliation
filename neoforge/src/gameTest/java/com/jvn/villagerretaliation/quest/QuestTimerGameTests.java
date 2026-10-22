@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressionService;
 import com.jvn.villagerretaliation.quest.runtime.QuestTimerState;
 import com.jvn.villagerretaliation.quest.runtime.QuestTimers;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
@@ -79,14 +81,82 @@ public final class QuestTimerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void stageDeadlinesRejectEventsAtAndAfterTheBoundary(GameTestHelper helper) {
+        var quest = fixture("deadline");
+        for (long time : new long[] {139, 140, 141}) {
+            var progress = new VillagerQuestSavedData.QuestProgress();
+            progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+            QuestLifecycleService.initializeStage(quest, progress, 100);
+            QuestTimers.update(quest, progress, 139, true);
+            boolean advanced = QuestProgressionService.advanceSaved(quest, progress, time, objective -> true, conditions -> true);
+            helper.assertValueEqual(advanced, time < 140, "event time determines stage readiness at " + time);
+            helper.assertValueEqual(progress.currentStage(), time < 140 ? "done" : "work", "expired stage cannot advance");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void liveStageReadinessUsesTheCurrentDeadline(GameTestHelper helper) {
+        var quest = fixture("deadline");
+        var player = helper.makeMockServerPlayerInLevel();
+        long now = player.serverLevel().getGameTime();
+        var progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, now - 40);
+        QuestLifecycleService.initializeStage(quest, progress, now - 40);
+        QuestTimers.update(quest, progress, now - 1, true);
+        helper.assertFalse(QuestStageReadiness.forCurrentStage(DialogueContext.forPlayer(player), quest, progress,
+                objective -> true).ready(), "live context rejects completion at the deadline before the next scan");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void disconnectPreservesOnlineTimeAndExcludesOfflineTime(GameTestHelper helper) {
+        var timer = new QuestTimerState(100);
+        timer.update(120, true);
+        timer.pause(139);
+        helper.assertValueEqual(timer.elapsed(), 39L, "logout includes online time since the last scan");
+        timer = QuestTimerState.load(timer.save());
+        timer.pause(500);
+        timer.resume(1000);
+        timer.update(1001, true);
+        helper.assertValueEqual(timer.elapsed(), 40L, "repeated pause and reload cannot count offline time");
+        timer.update(1002, false);
+        timer.pause(1100);
+        helper.assertValueEqual(timer.elapsed(), 40L, "logout cannot charge time already paused by inactive conditions");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void pausedStageDeadlineRemainsFrozenUntilResume(GameTestHelper helper) {
+        var quest = fixture("deadline");
+        var player = UUID.randomUUID();
+        var data = new VillagerQuestSavedData();
+        var progress = data.getOrCreate(player, quest.id());
+        progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+        QuestLifecycleService.initializeStage(quest, progress, 100);
+        progress.timer("stage/work").pause(139);
+        data = VillagerQuestSavedData.load(data.save(new CompoundTag(), null), null);
+        progress = data.get(player, quest.id());
+        helper.assertTrue(QuestTimers.allowsStage(quest.stages().get("work"), progress, 500), "paused saved deadline ignores wall time");
+        progress.timer("stage/work").resume(500);
+        helper.assertTrue(QuestTimers.allowsStage(quest.stages().get("work"), progress, 500), "resume retains the remaining tick");
+        helper.assertFalse(QuestTimers.allowsStage(quest.stages().get("work"), progress, 501), "resumed deadline expires at its boundary");
+        helper.succeed();
+    }
+
     private static QuestDefinition fixture() {
+        return fixture("duration");
+    }
+
+    private static QuestDefinition fixture(String mode) {
         var json = JsonParser.parseString("""
                 {"schema":"villagerretaliation:quest/v2","id":"test:timers",
                  "provider":{"type":"villagerretaliation:villager"},"entry_stage":"work","stages":[
-                 {"id":"work","timer":{"duration_ticks":40,"mode":"duration"},
+                 {"id":"work","timer":{"duration_ticks":40,"mode":"%s"},
                   "objectives":[{"id":"wait","type":"condition","timer":{"duration_ticks":20,"mode":"duration"}}],"next":"done"},
                  {"id":"done","objectives":[]}]}
-                """).getAsJsonObject();
+                """.formatted(mode)).getAsJsonObject();
         var envelope = QuestResourceEnvelope.read(ResourceLocation.parse("test:quests/timers.json"), json).orElseThrow();
         return QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow().asQuestDefinition();
     }

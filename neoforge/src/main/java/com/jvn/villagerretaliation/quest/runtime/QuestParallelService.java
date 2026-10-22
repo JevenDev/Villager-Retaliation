@@ -77,7 +77,7 @@ public final class QuestParallelService {
                     }
                     if (!progress.currentStage().equals(parent.id()) || progress.status() != QuestProgressTypes.QuestState.ACTIVE) return true;
                     if (progress.parallelPaths.get(branch).phase() != QuestParallelPath.Phase.ACTIVE) continue;
-                    if (blocked || stage.next().isBlank() || !ready(definition, progress, stage, objectiveComplete, conditionsMet)) break;
+                    if (blocked || stage.next().isBlank() || !ready(definition, progress, stage, time, objectiveComplete, conditionsMet)) break;
                     progress.parallelPaths.put(branch, new QuestParallelPath(stage.id(), stage.next(), QuestParallelPath.Phase.EXITING));
                     changed = true;
                     continue;
@@ -97,9 +97,9 @@ public final class QuestParallelService {
         return changed;
     }
 
-    private static boolean ready(QuestDefinition definition, QuestProgressModel progress, QuestDefinition.Stage stage,
+    private static boolean ready(QuestDefinition definition, QuestProgressModel progress, QuestDefinition.Stage stage, long time,
             Predicate<QuestDefinition.Objective> objectives, Predicate<List<DialogueCondition>> conditions) {
-        if (!QuestTimers.allowsStage(stage, progress)) return false;
+        if (!QuestTimers.allowsStage(stage, progress, time)) return false;
         return stage.completeWhen().isEmpty() ? stage.objectives().isEmpty()
                 || stage.timer() != null && stage.timer().mode() == com.jvn.villagerretaliation.quest.QuestTimer.Mode.DURATION
                 : QuestStageReadiness.compositionMet(definition, stage.completeWhen(), stage.completionMode(),

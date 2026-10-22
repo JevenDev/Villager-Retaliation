@@ -1639,7 +1639,7 @@ public final class VillagerQuestService {
                     QuestObjectiveRegistry.canonicalTypeId(objective), complete, complete ? 1 : result.progress(), result.message(),
                     com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.label(objective)));
         }
-        var readiness = com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness.forCurrentStage(definition, progress,
+        var readiness = com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness.forCurrentStage(definition, progress, player.serverLevel().getGameTime(),
                 objective -> objectiveComplete(player, context, player.serverLevel(), definition, progress, objective),
                 conditions -> context != null && (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(player, quest, progress.currentStage())
                         || com.jvn.villagerretaliation.dialogue.DialogueCondition.matchesAll(context, conditions)));

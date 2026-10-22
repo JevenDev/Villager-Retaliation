@@ -74,6 +74,39 @@ public final class QuestReliabilityGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void forcedRestartAtStartedStageCreatesANewRunAndRebindsProvider(GameTestHelper helper) {
+        var quest = detachedFixture("\"repeatable\":true");
+        var data = new VillagerQuestSavedData();
+        var progress = data.getOrCreate(PLAYER, quest.id());
+        start(quest, progress, ISSUER, 100);
+        var firstRun = progress.questRunId();
+        helper.assertValueEqual(progress.currentStage(), "started", "fixture retains the default stage");
+        helper.assertFalse(QuestStateMachine.start(progress, ISSUER, Level.OVERWORLD, null, 101).dirty(),
+                "ordinary duplicate start remains blocked");
+        helper.assertValueEqual(progress.questRunId(), firstRun, "blocked start preserves the run identity");
+        progress.markHasProof();
+        var replacement = new QuestProviderBinding(VillagerRetaliation.id("villager"), UUID.randomUUID(), "Replacement",
+                Level.NETHER, new BlockPos(3, 4, 5), "replacement_village", true);
+        var result = QuestLifecycleService.start(quest.id(), progress, replacement, null, 102, PLAYER, null, true);
+        helper.assertTrue(result.type() == QuestLifecycleService.LifecycleEventType.STARTED, "forced restart reports a new start");
+        helper.assertTrue(progress.questRunId() != null && !firstRun.equals(progress.questRunId()), "restart creates a fresh run identity");
+        helper.assertValueEqual(progress.startCount(), 2, "restart increments the start count exactly once");
+        helper.assertFalse(progress.hasProof(), "restart resets progress");
+        var newRun = progress.questRunId();
+        progress = roundTrip(data).get(PLAYER, quest.id());
+        helper.assertValueEqual(progress.questRunId(), newRun, "new run survives reload");
+        helper.assertValueEqual(progress.startedVillagerId(), replacement.providerId(), "replacement provider survives reload");
+        helper.assertValueEqual(progress.issuerName(), replacement.displayName(), "restart updates provider presentation");
+        helper.assertValueEqual(progress.issuerDimension(), Level.NETHER, "restart updates provider dimension");
+        helper.assertValueEqual(progress.issuerPos(), replacement.pos(), "restart updates provider position");
+        var sharedRun = UUID.randomUUID();
+        result = QuestLifecycleService.start(quest.id(), progress, replacement, null, 103, PLAYER, sharedRun, true);
+        helper.assertTrue(result.type() == QuestLifecycleService.LifecycleEventType.STARTED, "shared restart also reports a new start");
+        helper.assertValueEqual(progress.questRunId(), sharedRun, "shared restart adopts the definitive party run identity");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void pendingPartyRewardsBlockOffersUntilClaimedIncludingAfterReload(GameTestHelper helper) {
         var quest = detachedFixture("\"repeatable\":true");
         var data = new VillagerQuestSavedData();

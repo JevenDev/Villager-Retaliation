@@ -46,7 +46,7 @@ public final class QuestProgressionService {
         var stage = definition.stages().get(progress.currentStage());
         if (stage == null || !stage.exitActions().isEmpty()
                 || stage.bonuses().stream().anyMatch(bonus -> !progress.bonusClaimed(stage.id(), bonus.id()))) return parallelChanged;
-        var readiness = QuestStageReadiness.forCurrentStage(definition, progress, objectiveComplete, conditionsMet);
+        var readiness = QuestStageReadiness.forCurrentStage(definition, progress, gameTime, objectiveComplete, conditionsMet);
         if (!readiness.ready()) return parallelChanged;
         for (var predicate : stage.completeWhen()) {
             definition.objectives().stream().filter(objective -> objective.id().equals(predicate.objective()) && objectiveComplete.test(objective))

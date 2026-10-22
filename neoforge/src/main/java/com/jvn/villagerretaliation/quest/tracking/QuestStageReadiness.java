@@ -33,7 +33,7 @@ public record QuestStageReadiness(
             QuestDefinition definition,
             QuestProgressModel progress,
             Predicate<QuestDefinition.Objective> objectiveComplete) {
-        return forCurrentStage(definition, progress, objectiveComplete, conditions ->
+        return forCurrentStage(definition, progress, context == null ? Long.MIN_VALUE : context.level().getGameTime(), objectiveComplete, conditions ->
                 context != null && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.stageForced(context.player(), definition.id(), progress.currentStage())
                         || DialogueCondition.matchesAll(context, conditions));
     }
@@ -47,6 +47,12 @@ public record QuestStageReadiness(
     public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
             QuestProgressModel progress, Predicate<QuestDefinition.Objective> objectiveComplete,
             Predicate<java.util.List<DialogueCondition>> conditionsMet) {
+        return forCurrentStage(definition, progress, Long.MIN_VALUE, objectiveComplete, conditionsMet);
+    }
+
+    public static QuestStageReadiness forCurrentStage(QuestDefinition definition,
+            QuestProgressModel progress, long gameTime, Predicate<QuestDefinition.Objective> objectiveComplete,
+            Predicate<java.util.List<DialogueCondition>> conditionsMet) {
         if (definition == null || progress == null || definition.stages().isEmpty()) {
             return notReady("", "", "stage context unavailable");
         }
@@ -57,7 +63,7 @@ public record QuestStageReadiness(
         if (!com.jvn.villagerretaliation.quest.runtime.QuestParallelService.complete(stage, progress)) {
             return notReady(stage.id(), stage.next(), "parallel paths have not reached their join");
         }
-        if (!com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsStage(stage, progress)) {
+        if (!com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsStage(stage, progress, gameTime)) {
             return notReady(stage.id(), stage.next(), "stage timer is not ready");
         }
         if (stage.next().isBlank()) {

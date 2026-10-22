@@ -160,6 +160,26 @@ public final class QuestParallelGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void branchDeadlinesRejectLateEventsWithoutBlockingSiblings(GameTestHelper helper) {
+        var raw = raw();
+        raw.getAsJsonArray("stages").get(1).getAsJsonObject().add("timer",
+                JsonParser.parseString("{\"duration_ticks\":40}"));
+        var quest = definition(raw);
+        for (long time : new long[] {139, 140, 141}) {
+            var progress = new VillagerQuestSavedData.QuestProgress();
+            progress.start(UUID.randomUUID(), Level.OVERWORLD, null, 100);
+            QuestLifecycleService.initializeStage(quest, progress, 100);
+            QuestParallelService.advance(quest, progress, time, objective -> true, conditions -> true,
+                    (stage, key, actions) -> true, stage -> { });
+            helper.assertValueEqual(progress.parallelPaths().get("left").phase(), time < 140
+                    ? QuestParallelPath.Phase.ARRIVED : QuestParallelPath.Phase.ACTIVE, "branch deadline is inclusive");
+            helper.assertTrue(progress.parallelPaths().get("right").phase() == QuestParallelPath.Phase.ARRIVED,
+                    "untimed sibling can still reach its join");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void invalidParallelGraphsAreRejected(GameTestHelper helper) {
         for (String invalid : List.of(
                 "[\"left\",\"left\"]", "[\"left\",\"missing\"]", "[\"fork\",\"right\"]", "[\"left\",\"join\"]")) {

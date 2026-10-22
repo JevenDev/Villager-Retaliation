@@ -30,6 +30,11 @@ public final class QuestTimerState {
         return previous != elapsed;
     }
 
+    public void pause(long time) {
+        if (!paused) update(time, true);
+        paused = true;
+    }
+
     public void resume(long time) { updatedAt = time; paused = false; }
 
     public boolean warn(QuestTimer timer) {

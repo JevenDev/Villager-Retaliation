@@ -218,7 +218,8 @@ public final class QuestStateMachine {
         VillagerQuestSavedData.QuestState previousState = legacyState(progress);
         String previousStage = progress.currentStage();
         mutation.run();
-        boolean dirty = previousState != legacyState(progress) || !previousStage.equals(progress.currentStage());
+        boolean dirty = event == LifecycleEvent.STARTED
+                || previousState != legacyState(progress) || !previousStage.equals(progress.currentStage());
         return new TransitionResult(
                 previousState,
                 legacyState(progress),

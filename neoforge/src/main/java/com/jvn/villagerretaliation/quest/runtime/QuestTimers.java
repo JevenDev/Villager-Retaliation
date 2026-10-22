@@ -73,10 +73,14 @@ public final class QuestTimers {
     }
 
     public static boolean allowsStage(QuestDefinition.Stage stage, QuestProgressModel progress) {
+        return allowsStage(stage, progress, Long.MIN_VALUE);
+    }
+
+    public static boolean allowsStage(QuestDefinition.Stage stage, QuestProgressModel progress, long time) {
         if (stage.timer() == null) return true;
         var timer = progress.timer(stageKey(stage.id()));
         if (timer == null) return false;
-        return stage.timer().mode() == QuestTimer.Mode.DURATION ? timer.elapsed(stage.timer()) : !timer.elapsed(stage.timer());
+        return stage.timer().mode() == QuestTimer.Mode.DURATION ? timer.elapsed(stage.timer()) : !timer.elapsedAt(stage.timer(), time);
     }
 
     public static void connection(ServerPlayer player, boolean online) {
@@ -87,7 +91,7 @@ public final class QuestTimers {
             for (var timer : active(definition, entry.getValue())) {
                 if (!timer.definition().pauseWhenOffline()) continue;
                 if (online) timer.state().resume(player.serverLevel().getGameTime());
-                else timer.state().update(player.serverLevel().getGameTime(), false);
+                else timer.state().pause(player.serverLevel().getGameTime());
                 data.setDirty();
             }
         }
