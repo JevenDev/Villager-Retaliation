@@ -81,7 +81,7 @@ public final class QuestSiteService {
                     context.villager() == null ? null : context.villager().getUUID(), context.level().dimension().location(), context.origin());
             site.config = GSON.toJson(config);
             site.requestedAt = context.level().getGameTime();
-            data.sites.put(site.id, site);
+            data.add(site);
             data.setDirty();
         }
         return site;
@@ -153,14 +153,13 @@ public final class QuestSiteService {
         var data = QuestSiteSavedData.get(server.overworld());
         if (server.overworld().getGameTime() % 5 != 0) return;
         int preparing = 0;
-        for (var site : List.copyOf(data.sites.values())) {
+        for (var site : data.tickingSites()) {
             if (site.phase == Phase.RETIRED) continue;
             if (!site.accepted && site.run == null && site.captive == null
                     && server.overworld().getGameTime() - site.requestedAt > 6000) {
-                site.phase = Phase.RETIRED;
+                data.retire(site);
                 site.position = null;
                 site.pending = null;
-                data.setDirty();
                 continue;
             }
             if (site.phase == Phase.UNAVAILABLE) {
@@ -324,8 +323,7 @@ public final class QuestSiteService {
             if (VillagerQuestSavedData.get(level).hasActiveRun(site.quest, site.run)) return;
             var captive = level.getEntity(site.captive == null ? new UUID(0, 0) : site.captive);
             if (captive instanceof Mob mob) mob.setNoAi(false);
-            site.phase = Phase.RETIRED;
-            data.setDirty();
+            data.retire(site);
             return;
         }
         if (site.dead) {

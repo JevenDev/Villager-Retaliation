@@ -237,37 +237,12 @@ public final class QuestInventoryService {
             ServerPlayer player,
             List<QuestDefinition.Objective> requiredObjectives,
             Function<QuestDefinition.Objective, ResourceLocation> resolvedItem) {
-        List<ItemStack> handInStacks = new ArrayList<>();
-        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
-                .map(ItemStack::copy)
-                .toList();
-        for (QuestDefinition.Objective objective : requiredObjectives) {
-            ResourceLocation itemId = resolvedItem.apply(objective);
-            if (itemId == null) {
-                return Optional.empty();
-            }
-            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-            if (item.isEmpty()) {
-                return Optional.empty();
-            }
-            int remaining = objective.count();
-            for (ItemStack stack : availableStacks) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (!matchesItem(stack, objective.itemRequirements(), item.get())) {
-                    continue;
-                }
-                int removed = Math.min(remaining, stack.getCount());
-                handInStacks.add(stack.copyWithCount(removed));
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-            if (remaining > 0) {
-                return Optional.empty();
-            }
-        }
-        return Optional.of(List.copyOf(handInStacks));
+        List<ItemStack> stacks = removablePlayerStacks(player).stream().filter(stack -> !stack.isEmpty()).toList();
+        return QuestItemAllocation.plan(requiredObjectives,
+                stacks.stream().map(stack -> new QuestItemAllocation.Supply(stack, stack.getCount())).toList(),
+                (objective, stack) -> matchesObjectiveItemStack(objective, stack, resolvedItem.apply(objective)))
+                .map(allocations -> allocations.stream()
+                        .map(allocation -> stacks.get(allocation.source()).copyWithCount(allocation.count())).toList());
     }
 
     public static boolean matchesObjectiveItemStack(
