@@ -27,12 +27,13 @@ final class EditorContentBrowserChecks {
     static int run() throws IOException {
         readableTitlesUseScopedLocalesAndFallbacks();
         groupingAndSearchKeepEveryMatchAccessible();
+        playtestSearchFindsTitlesIdsAndAlternateSpellings();
         cachedRowsFollowEditsUndoAndMembershipChanges();
         validationCacheTracksDefinitionsAndSupportingFiles();
         asyncValidationUsesIsolatedSnapshotsAndRejectsStaleResults();
         worldPreparationOwnsResourcesAndSavesDraftsOffThread();
         benchmarkLargeLibrary();
-        return 7;
+        return 8;
     }
 
     private static AuthoringWorkspace workspace() throws IOException { return AuthoringWorkspace.create(Files.createTempDirectory("editor-content-browser")); }
@@ -77,6 +78,31 @@ final class EditorContentBrowserChecks {
         check(browser.rows(workspace, "en_us", "", false, "All", false, null).matches() == 2, "supporting files can be hidden without hiding campaign cards");
         var rows = browser.rows(workspace, "en_us", "", true, "All", false, null);
         check(rows.rows().size() == 3 && rows == browser.rows(workspace, "en_us", "", true, "All", false, null), "unchanged filters reuse the visible row list");
+    }
+
+    private static void playtestSearchFindsTitlesIdsAndAlternateSpellings() throws IOException {
+        var workspace = workspace(); var map = quest(workspace);
+        var missing = workspace.createDocument(DefinitionKind.QUEST, "test:missing_neighbor");
+        missing.edit("Quest title", root -> root.add("display", json("{\"title\":\"A Missing Neighbor\"}")));
+        var browser = new EditorContentBrowser();
+        var all = browser.playtestEntries(workspace, "en_us", "");
+        check(all.size() == 2 && all.getFirst().document() == missing, "playtest lists sorted readable titles and excludes manifests and supporting files");
+        check(all == browser.playtestEntries(workspace, "en_us", ""), "unchanged playtest filters reuse their results");
+        for (String query : List.of("missing neighbour", "MISSING NEIGHBOR", "test:missing_neighbor", "missing-neighbour", "roadside_rescues")) {
+            var matches = browser.playtestEntries(workspace, "en_us", query);
+            if (query.equals("roadside_rescues")) check(matches.isEmpty(), "unrelated queries return no playable content");
+            else check(matches.size() == 1 && matches.getFirst().document() == missing, "playtest search matches titles, IDs and both neighbor spellings: " + query);
+        }
+        check(browser.playtestEntries(workspace, "en_us", "Blank Map").getFirst().document() == map, "playtest search resolves localized quest titles");
+        check(browser.playtestEntries(workspace, "en_us", "maps/blank_map").getFirst().document() == map, "playtest search accepts bundle paths");
+        check(browser.playtestEntries(workspace, "en_us", "   ").size() == 2, "clearing the query restores every playable entry");
+        missing.edit("Rename title", root -> root.getAsJsonObject("display").addProperty("title", "Lost Villager"));
+        check(browser.playtestEntries(workspace, "en_us", "Lost Villager").size() == 1, "edited titles invalidate playtest results");
+        missing.undo();
+        check(browser.playtestEntries(workspace, "en_us", "Lost Villager").isEmpty(), "undo invalidates playtest results");
+        workspace.remove(missing);
+        check(browser.playtestEntries(workspace, "en_us", "neighbor").isEmpty(), "removed quests leave playtest results");
+        check(browser.playtestEntries(workspace(), "en_us", "").isEmpty(), "workspace switches discard playtest results");
     }
 
     private static void cachedRowsFollowEditsUndoAndMembershipChanges() throws IOException {

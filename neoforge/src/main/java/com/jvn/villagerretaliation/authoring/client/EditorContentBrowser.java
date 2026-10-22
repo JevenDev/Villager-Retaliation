@@ -28,6 +28,9 @@ final class EditorContentBrowser {
     private List<Source> sources = List.of();
     private String language = "";
     private Snapshot snapshot;
+    private Snapshot playtestSnapshot;
+    private String playtestQuery = "";
+    private List<Entry> playtestMatches = List.of();
     private View view;
     private String query = "", kind = "";
     private boolean supporting, grouped;
@@ -62,6 +65,26 @@ final class EditorContentBrowser {
                 (int) documents.stream().filter(document -> List.of(DefinitionKind.TREE, DefinitionKind.CONVERSATION, DefinitionKind.FORCED).contains(document.kind())).count());
         owner = workspace; language = locale; view = null;
         return snapshot;
+    }
+
+    List<Entry> playtestEntries(AuthoringWorkspace workspace, String locale, String search) {
+        var index = get(workspace, locale);
+        String query = playtestSearch(search).strip();
+        if (playtestSnapshot == index && playtestQuery.equals(query)) return playtestMatches;
+        String[] terms = query.split("\\s+");
+        playtestMatches = index.entries().stream()
+                .filter(entry -> entry.document().kind() != DefinitionKind.RESOURCE && !entry.document().kind().campaignManifest())
+                .filter(entry -> {
+                    String text = playtestSearch(entry.search());
+                    for (String term : terms) if (!text.contains(term)) return false;
+                    return true;
+                }).toList();
+        playtestSnapshot = index; playtestQuery = query;
+        return playtestMatches;
+    }
+
+    private static String playtestSearch(String value) {
+        return value.toLowerCase(Locale.ROOT).replace("neighbour", "neighbor").replace('_', ' ').replace('-', ' ');
     }
 
     View rows(AuthoringWorkspace workspace, String locale, String search, boolean showSupporting, String contentKind, boolean group, AuthoringDocument selected) {

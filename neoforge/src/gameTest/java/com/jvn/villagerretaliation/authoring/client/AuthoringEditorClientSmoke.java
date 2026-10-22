@@ -258,6 +258,25 @@ public final class AuthoringEditorClientSmoke {
             System.out.printf(java.util.Locale.ROOT, "Campaign Playtest with cold validation: longest frame gap %.3f ms%n", worldLoadingGap / 1e6);
             require(worldLoadingGap < 500_000_000, "Cold campaign validation keeps the game rendering in Playtest.");
             capture("00-campaign-playtest");
+        });
+        replaceText(() -> poolPoint(1450, 178), () -> "missing neighbour");
+        click(() -> poolPoint(1450, 218));
+        STEPS.add(() -> {
+            var query = ((imgui.type.ImString) field(editor, "playtestSearch")).get();
+            require(query.equals("missing neighbour"), "Playtest exposes an editable search field.");
+            var browser = (EditorContentBrowser) field(editor, "contentBrowser");
+            var matches = browser.playtestEntries((AuthoringWorkspace) field(editor, "workspace"), "en_us", query);
+            require(matches.size() == 1 && matches.getFirst().id().equals("villagerretaliation:missing_neighbor")
+                    && matches.getFirst().title().equals("A Missing Neighbor"), "The default campaign's Missing Neighbor quest is discoverable by either spelling.");
+            capture("00-campaign-playtest-search");
+        });
+        click(() -> poolPoint(1450, 250));
+        STEPS.add(() -> require(((AuthoringDocument) field(editor, "document")).id().equals("villagerretaliation:missing_neighbor")
+                && (int) field(editor, "view") == 3, "Selecting the search result opens Missing Neighbor inside Playtest."));
+        click(() -> poolPoint(1870, 178));
+        STEPS.add(() -> {
+            require(((imgui.type.ImString) field(editor, "playtestSearch")).get().isEmpty(), "Clear restores the full Playtest content list.");
+            capture("00-campaign-playtest-missing-neighbor");
             invoke("leavePlaytest", new Class<?>[] {int.class}, 0);
         });
         buildDialoguePoolSteps();

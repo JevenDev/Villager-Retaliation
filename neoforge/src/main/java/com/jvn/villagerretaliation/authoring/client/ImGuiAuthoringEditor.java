@@ -138,6 +138,7 @@ final class ImGuiAuthoringEditor {
     private boolean playtestHold = true;
     private long nextPlaytestRefresh;
     private final ImString playtestValue = new ImString(256);
+    private final ImString playtestSearch = new ImString(256);
     private Map<String, JsonObject> playtestVisuals = Map.of();
     private String playtestLocale = "";
     private Map<String, String> playtestReplacements = Map.of();
@@ -2926,12 +2927,26 @@ final class ImGuiAuthoringEditor {
         if (workspace == null) {
             ImGui.textWrapped("Open a workspace in Edit first.");
         } else {
+            ImGui.setNextItemWidth(EditorWidgets.inputWidth("Clear"));
+            ImGui.inputTextWithHint("##playtest_search", "Find quests or dialogue...", playtestSearch);
+            sameLineFor("Clear");
+            ImGui.beginDisabled(playtestSearch.get().isEmpty());
+            if (ImGui.button("Clear##playtest_search")) playtestSearch.set("");
+            ImGui.endDisabled();
+            var matches = contentBrowser.playtestEntries(workspace, locale.get(), playtestSearch.get());
+            String title = contentBrowser.get(workspace, locale.get()).entries().stream().filter(entry -> entry.document() == document)
+                    .map(EditorContentBrowser.Entry::title).findFirst().orElse("Choose content");
             ImGui.setNextItemWidth(-1);
-            if (ImGui.beginCombo("##playtest_content", document == null ? "Choose content" : document.id())) {
-                for (var candidate : workspace.documents()) if (candidate.kind() != DefinitionKind.RESOURCE
-                        && ImGui.selectable(candidate.id(), document == candidate)) operation(() -> select(candidate));
+            if (ImGui.beginCombo("##playtest_content", title, imgui.flag.ImGuiComboFlags.HeightLarge)) {
+                for (var entry : matches) {
+                    var candidate = entry.document();
+                    if (ImGui.selectable(entry.title() + "##" + entry.path(), document == candidate)) operation(() -> select(candidate));
+                    if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + entry.id() + "\n" + entry.path());
+                }
+                if (matches.isEmpty()) ImGui.textWrapped("No matching quests or dialogue.");
                 ImGui.endCombo();
             }
+            if (!playtestSearch.get().isBlank()) ImGui.textDisabled(matches.size() + " matching quests or dialogue");
             if (document != null) {
                 ImGui.separatorText("Steps");
                 for (var node : documentCache.nodes(document)) {
