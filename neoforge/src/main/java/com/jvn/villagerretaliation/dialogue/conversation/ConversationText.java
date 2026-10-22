@@ -13,6 +13,11 @@ public final class ConversationText {
 
     static java.util.Map<String, String> prepare(ServerPlayer viewer, ConversationSession session, String entry,
             String key, java.util.Map<String, String> values) {
+        return prepare(viewer, session, entry, key, values, null);
+    }
+
+    static java.util.Map<String, String> prepare(ServerPlayer viewer, ConversationSession session, String entry,
+            String key, java.util.Map<String, String> values, com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context) {
         var catalog = QuestContentCatalogs.current(viewer.server).localization();
         var locales = new java.util.LinkedHashSet<>(catalog.locales());
         locales.addAll(com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.locales(viewer.server));
@@ -20,11 +25,17 @@ public final class ConversationText {
         locales.add(com.jvn.villagerretaliation.util.VillagerLocale.normalize(viewer.clientInformation().language()));
         var templates = new java.util.LinkedHashMap<String, String>();
         for (String locale : locales) catalog.plainText(locale, key).ifPresent(text -> templates.put(locale, text));
-        return prepare(viewer.server, session, entry + "/" + key, templates, values);
+        return prepare(viewer.server, session, entry + "/" + key, templates, values, context);
     }
 
     static java.util.Map<String, String> prepare(net.minecraft.server.MinecraftServer server, ConversationSession session,
             String entry, java.util.Map<String, String> templates, java.util.Map<String, String> values) {
+        return prepare(server, session, entry, templates, values, null);
+    }
+
+    private static java.util.Map<String, String> prepare(net.minecraft.server.MinecraftServer server, ConversationSession session,
+            String entry, java.util.Map<String, String> templates, java.util.Map<String, String> values,
+            com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context) {
         var result = new java.util.LinkedHashMap<String, String>();
         values.forEach((key, value) -> { if (!key.startsWith("_vr_word_")) result.put(key, value); });
         String cachePrefix = "_vr_word_prepared/" + session.visit + "/" + entry + "/";
@@ -35,8 +46,9 @@ public final class ConversationText {
         for (var template : templates.entrySet()) {
             String cacheKey = cachePrefix + template.getKey();
             String prepared = session.replacements.computeIfAbsent(cacheKey, ignored ->
-                    VillagerDialogueResources.resolveTemplate(template.getValue(), result, server, template.getKey(),
-                            net.minecraft.util.RandomSource.create(seed)));
+                    com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.resolver(server, template.getKey(),
+                            net.minecraft.util.RandomSource.create(seed), context)
+                            .apply(VillagerDialogueResources.resolveTemplate(template.getValue(), result)));
             result.put("_vr_word_text/" + template.getKey(), prepared);
         }
         return java.util.Map.copyOf(result);

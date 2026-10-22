@@ -1,5 +1,9 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { readFileSync } from "node:fs";
+import { validateConversationSchema } from "./conversation-validation.mjs";
+
+const conditionSchema = JSON.parse(readFileSync(new URL("./schemas/quest-v2.schema.json", import.meta.url), "utf8"));
 import { fileURLToPath } from "node:url";
 
 const builtInData = fileURLToPath(new URL("../neoforge/src/main/resources/data", import.meta.url));
@@ -9,11 +13,31 @@ const poolPath = /(?:^|\/)data\/([^/]+)\/(?:(world_campaigns|campaign_addons)\/(
 const normalizeLocale = value => value.toLowerCase().replaceAll("-", "_");
 
 export function wordPoolIssues(value) {
-  if (!value || !Array.isArray(value.values) || value.values.length === 0)
-    return ["values must be a nonempty array of literal strings"];
-  return value.values.flatMap((text, index) => typeof text !== "string" || !text.trim() || text.length > 512
-    || /[{}<>\u00a7\u0000-\u001f\u007f-\u009f]/.test(text)
-    ? [`values/${index}: expected nonblank literal text without placeholders, markup, or control characters, at most 512 characters`] : []);
+  if (!value || Object.keys(value).some(key => key !== "values") || !Array.isArray(value.values)
+      || value.values.length === 0 || value.values.length > 256)
+    return ["word pools require 1 to 256 values and no unknown fields"];
+  const errors = [];
+  let fallback = false;
+  value.values.forEach((entry, index) => {
+    const object = entry && typeof entry === "object" && !Array.isArray(entry);
+    const text = object ? entry.text : entry;
+    if (typeof text !== "string" || !text.trim() || text.length > 512 || /[{}<>\u00a7\u0000-\u001f\u007f-\u009f]/.test(text))
+      errors.push(`values/${index}: expected nonblank literal text without placeholders, markup, or control characters, at most 512 characters`);
+    if (object && Object.keys(entry).some(key => !["text", "weight", "conditions"].includes(key)))
+      errors.push(`values/${index}: unknown word field`);
+    if (object && "weight" in entry && (!Number.isInteger(entry.weight) || entry.weight < 1 || entry.weight > 1000))
+      errors.push(`values/${index}: weight must be an integer from 1 to 1000`);
+    if (!object || !("conditions" in entry) || Array.isArray(entry.conditions) && !entry.conditions.length) fallback = true;
+    if (object && "conditions" in entry) {
+      if (!Array.isArray(entry.conditions)) errors.push(`values/${index}: conditions must be an array`);
+      else entry.conditions.forEach((condition, child) => {
+        for (const issue of validateConversationSchema(condition, { $defs: conditionSchema.$defs, $ref: "#/$defs/condition" }))
+          errors.push(`values/${index}/conditions/${child}${issue.pointer}: ${issue.message}`);
+      });
+    }
+  });
+  if (!fallback) errors.push("word pools require an unconditional fallback");
+  return errors;
 }
 
 export function wordReferences(text) {

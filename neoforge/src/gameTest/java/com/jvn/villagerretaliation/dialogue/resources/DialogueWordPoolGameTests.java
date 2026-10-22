@@ -34,7 +34,7 @@ import net.minecraft.world.entity.EntityType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("dialogue_words")
 @PrefixGameTestTemplate(false)
 public final class DialogueWordPoolGameTests {
     private static final String TOKEN = "{word:villagerretaliation:mood/content}";
@@ -112,7 +112,7 @@ public final class DialogueWordPoolGameTests {
             Files.createDirectories(translated.getParent());
             Files.writeString(translated, "{\"values\":[\"heureux\"]}");
             try (var manager = new MultiPackResourceManager(PackType.SERVER_DATA, List.of(pack("low", low), pack("high", high)))) {
-                ServerResourceCache<Map<String, Map<ResourceLocation, List<String>>>> cache = ServerResourceCache.create(Map::of,
+                ServerResourceCache<Map<String, Map<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool>>> cache = ServerResourceCache.create(Map::of,
                         server -> DialogueWordPoolResources.read(manager.listResources("dialogue_words", id -> id.getPath().endsWith(".json"))
                                 .entrySet().stream().map(entry -> new DatapackResourceLoader.JsonResource(entry.getKey(), entry.getValue())).toList()));
                 var server = helper.getLevel().getServer();
@@ -177,6 +177,31 @@ public final class DialogueWordPoolGameTests {
                 for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
             }
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_words")
+    public static void speakingStylesChooseWeightedPhrasesAndKeepFallbacks(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        var context = VillagerInteractionService.createDialogueContext(helper.getLevel(), player, villager);
+        String style = com.jvn.villagerretaliation.dialogue.SpeakingStyle.forSpeaker(villager.getUUID());
+        var pool = com.jvn.villagerretaliation.dialogue.DialogueWordPool.read(JsonParser.parseString(
+                "{\"values\":[\"fallback\",{\"text\":\"chosen\",\"weight\":3,\"conditions\":[{\"type\":\"speaking_style\",\"style\":\""
+                        + style + "\"}]}]}").getAsJsonObject());
+        helper.assertValueEqual(pool.select(context, RandomSource.create(1)), "chosen", "matching style replaces the fallback");
+        helper.assertValueEqual(pool.select(null, RandomSource.create(1)), "fallback", "missing context uses safe fallback");
+        var saved = villager.saveWithoutId(new net.minecraft.nbt.CompoundTag());
+        var restored = EntityType.VILLAGER.create(helper.getLevel());
+        restored.load(saved);
+        helper.assertValueEqual(com.jvn.villagerretaliation.dialogue.SpeakingStyle.forSpeaker(restored.getUUID()), style,
+                "save and reload preserve the voice");
+        var weighted = com.jvn.villagerretaliation.dialogue.DialogueWordPool.read(JsonParser.parseString(
+                "{\"values\":[{\"text\":\"rare\",\"weight\":1},{\"text\":\"common\",\"weight\":9}]}").getAsJsonObject());
+        int common = 0;
+        var random = RandomSource.create(12);
+        for (int i = 0; i < 1000; i++) if (weighted.select(null, random).equals("common")) common++;
+        helper.assertTrue(common > 850 && common < 950, "weights influence phrase frequency");
         helper.succeed();
     }
 

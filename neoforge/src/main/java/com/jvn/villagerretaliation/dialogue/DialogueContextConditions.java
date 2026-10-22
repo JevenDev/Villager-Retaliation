@@ -16,6 +16,9 @@ public final class DialogueContextConditions {
 
     public static JsonObject schema(String type) {
         String fields = switch (type) {
+            case "speaking_style" -> """
+                    {"style":{"enum":["blunt","cautious","cheerful","formal"]}}
+                    """;
             case "context" -> """
                     {"id":{"type":"string","pattern":"^[a-z0-9_.-]+:[a-z0-9_./-]+$","maxLength":256}}
                     """;
@@ -43,6 +46,7 @@ public final class DialogueContextConditions {
         var required = new com.google.gson.JsonArray();
         required.add("type");
         if (type.equals("context")) required.add("id");
+        if (type.equals("speaking_style")) required.add("style");
         if (type.equals("health") || type.equals("physical_state")) required.add("subject");
         if (type.equals("physical_state") || type.equals("companion_state")) required.add("state");
         schema.add("required", required);
@@ -56,6 +60,7 @@ public final class DialogueContextConditions {
             return Optional.empty();
         }
         return switch (type) {
+            case "speaking_style" -> Optional.of(new SpeakingStyle.Condition(value.get("style").getAsString()));
             case "context" -> Optional.of(new ContextRule(ResourceLocation.parse(value.get("id").getAsString())));
             case "health" -> {
                 double min = value.has("min") ? value.get("min").getAsDouble() : 0;

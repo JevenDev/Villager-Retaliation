@@ -1143,6 +1143,35 @@
         }
       },
       {
+        "id": "speaking_style",
+        "aliases": [],
+        "capabilities": [
+          "provider_live"
+        ],
+        "implementation": "Condition",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "style": {
+              "enum": [
+                "blunt",
+                "cautious",
+                "cheerful",
+                "formal"
+              ]
+            },
+            "type": {
+              "const": "speaking_style"
+            }
+          },
+          "required": [
+            "type",
+            "style"
+          ]
+        }
+      },
+      {
         "id": "context",
         "aliases": [],
         "capabilities": [],
@@ -7572,6 +7601,41 @@
         }
       },
       {
+        "id": "villagerretaliation:speaking_style",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/provider_live"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Speaking style",
+        "description": "Built-in Speaking style type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "style": {
+              "enum": [
+                "blunt",
+                "cautious",
+                "cheerful",
+                "formal"
+              ]
+            },
+            "type": {
+              "const": "speaking_style"
+            }
+          },
+          "required": [
+            "type",
+            "style"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:stage_history",
         "aliases": [
           "villagerretaliation:quest_stage_history",
@@ -8395,6 +8459,7 @@
         "settlement_need",
         "skill",
         "social_attribute",
+        "speaking_style",
         "stage",
         "stage_history",
         "stat",

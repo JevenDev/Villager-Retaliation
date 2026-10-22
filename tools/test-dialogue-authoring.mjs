@@ -20,6 +20,12 @@ const wordFile = "/pack/data/custom/dialogue_words/en_us/greetings/friendly.json
 const wordLine = "/pack/data/custom/dialogue/fr_fr/lines/greeting.json";
 const words = { values: ["happy", "in good spirits"] };
 assert.deepEqual(wordPoolIssues(words), []);
+assert.deepEqual(wordPoolIssues({ values: ["fine", { text: "splendid", weight: 3,
+  conditions: [{ type: "speaking_style", style: "formal" }] }] }), []);
+for (const entry of [{ text: "fine", weight: 0 }, { text: "fine", weight: 1.5 }, { text: "fine", extra: true },
+  { text: "fine", conditions: [{ type: "speaking_style", style: "unknown" }] }, { text: "fine", conditions: null }])
+  assert(wordPoolIssues({ values: ["fallback", entry] }).length);
+assert(wordPoolIssues({ values: [{ text: "secret", conditions: [{ type: "speaking_style", style: "formal" }] }] }).length);
 for (const invalid of [{}, { values: [] }, { values: [" "] }, { values: [1] }, { values: [null] },
   { values: ["{player}"] }, { values: ["<aqua>happy</aqua>"] }, { values: ["bad\nword"] }])
   assert(wordPoolIssues(invalid).length > 0, JSON.stringify(invalid));

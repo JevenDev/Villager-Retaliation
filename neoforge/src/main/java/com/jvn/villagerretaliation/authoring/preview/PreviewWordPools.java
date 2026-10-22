@@ -4,7 +4,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
 import com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace;
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
-import com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources;
+import com.jvn.villagerretaliation.dialogue.DialogueWordPool;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.io.IOException;
@@ -21,6 +21,13 @@ public final class PreviewWordPools {
 
     public static Function<ResourceLocation, List<String>> lookup(AuthoringWorkspace workspace, AuthoringDocument owner,
             String locale, java.util.function.BiFunction<ResourceLocation, String, List<String>> fallback) {
+        var definitions = lookupDefinitions(workspace, owner, locale, (id, language) -> new DialogueWordPool(
+                fallback.apply(id, language).stream().map(text -> new DialogueWordPool.Entry(text, 1, List.of())).toList()));
+        return id -> definitions.apply(id).values();
+    }
+
+    public static Function<ResourceLocation, DialogueWordPool> lookupDefinitions(AuthoringWorkspace workspace, AuthoringDocument owner,
+            String locale, java.util.function.BiFunction<ResourceLocation, String, DialogueWordPool> fallback) {
         Map<String, AuthoringDocument> documents = new LinkedHashMap<>();
         workspace.documents().forEach(document -> documents.put(document.resourcePath(), document));
         String scope = DefinitionKind.contentRoot(owner.resourcePath());
@@ -32,28 +39,28 @@ public final class PreviewWordPools {
                 var document = scoped == null ? documents.get(root + suffix) : scoped;
                 if (document != null) {
                     try {
-                        return DialogueWordPoolResources.readValues(document.json());
+                        return DialogueWordPool.read(document.json());
                     } catch (IllegalArgumentException exception) {
                         DatapackDiagnostics.warnSkippedEntry(id, "preview word pool", language, exception.getMessage());
                         continue;
                     }
                 }
                 var values = fallback.apply(id, language);
-                if (!values.isEmpty()) return values;
+                if (!values.entries().isEmpty()) return values;
             }
-            return List.of();
+            return DialogueWordPool.EMPTY;
         };
     }
 
-    public static List<String> bundled(ResourceLocation id, String locale) {
+    public static DialogueWordPool bundled(ResourceLocation id, String locale) {
         String path = "/data/" + id.getNamespace() + "/dialogue_words/" + VillagerLocale.normalize(locale) + "/" + id.getPath() + ".json";
         var stream = PreviewWordPools.class.getResourceAsStream(path);
-        if (stream == null) return List.of();
+        if (stream == null) return DialogueWordPool.EMPTY;
         try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-            return DialogueWordPoolResources.readValues(JsonParser.parseReader(reader).getAsJsonObject());
+            return DialogueWordPool.read(JsonParser.parseReader(reader).getAsJsonObject());
         } catch (IOException | com.google.gson.JsonParseException | IllegalStateException | IllegalArgumentException exception) {
             DatapackDiagnostics.warnSkippedEntry(id, "preview word pool", locale, exception.getMessage());
-            return List.of();
+            return DialogueWordPool.EMPTY;
         }
     }
 }

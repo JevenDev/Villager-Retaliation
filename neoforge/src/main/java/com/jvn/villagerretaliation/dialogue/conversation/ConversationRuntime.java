@@ -115,7 +115,9 @@ final class ConversationRuntime {
         var context = ConversationActors.context(player, ConversationService.character(player, session));
         var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
                 com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), session.replacements);
-        replacements = ConversationText.prepare(player, session, "line/" + exchange.id(), exchange.textKey(), replacements);
+        var wordContext = exchange.speaker().kind() == ConversationDefinition.SpeakerKind.ROLE
+                ? ConversationActors.context(player, ConversationBinding.speaker(player, session, role)) : null;
+        replacements = ConversationText.prepare(player, session, "line/" + exchange.id(), exchange.textKey(), replacements, wordContext);
         String text = ConversationText.render(player, ConversationService.text(player, exchange.textKey()), replacements);
         session.transcript.add(new ConversationSession.Line(session.node, session.visit, exchange.id(), exchange.speaker().kind(),
                 role, speaker, name, exchange.textKey(), text, replacements, true));

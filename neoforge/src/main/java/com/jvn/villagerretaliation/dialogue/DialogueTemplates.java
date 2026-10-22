@@ -26,7 +26,7 @@ public final class DialogueTemplates {
         String resolved = resolveTemplate(text, replacements);
         if (!resolved.contains("{word")) return resolved;
         return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
-                .resolver(context.level() == null ? null : context.level().getServer(), context.locale(), context.random()).apply(resolved);
+                .resolver(context.level() == null ? null : context.level().getServer(), context.locale(), context.random(), context).apply(resolved);
     }
 
     public static String resolveTemplate(String text, Map<String, String> replacements,

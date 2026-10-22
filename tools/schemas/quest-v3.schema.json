@@ -6400,6 +6400,7 @@
             "settlement_need",
             "skill",
             "social_attribute",
+            "speaking_style",
             "stage",
             "stage_history",
             "stat",
@@ -7695,6 +7696,42 @@
                   }
                 }
               }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "speaking_style"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "style": {
+                "enum": [
+                  "blunt",
+                  "cautious",
+                  "cheerful",
+                  "formal"
+                ]
+              },
+              "type": {
+                "const": "speaking_style"
+              }
+            },
+            "required": [
+              "type",
+              "style"
             ]
           }
         },

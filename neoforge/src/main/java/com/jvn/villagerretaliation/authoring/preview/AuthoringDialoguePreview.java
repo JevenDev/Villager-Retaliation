@@ -38,7 +38,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private SoundInstance voice;
     private int shownRevision = -1;
     private boolean disposed;
-    private Function<ResourceLocation, List<String>> wordPools;
+    private Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool> wordPools;
     private final java.util.Map<String, String> resolvedWords = new java.util.HashMap<>();
     private final RandomSource wordRandom = RandomSource.create();
 
@@ -78,7 +78,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
 
     public static void start(AuthoringDocument document, String nodeId, Entity target,
             PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport,
-            java.util.function.Consumer<PreviewCoverage> coverage, Function<ResourceLocation, List<String>> wordPools) {
+            java.util.function.Consumer<PreviewCoverage> coverage, Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool> wordPools) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null || target == null
                 || target.level() != minecraft.level || !target.isAlive() || target.isRemoved())
@@ -94,7 +94,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         var preview = new AuthoringDialoguePreview(session, target, nodeId, conditions, returnToEditor, coverage);
         preview.wordPools = wordPools == null ? idValue -> {
             var values = defaultWordPool(idValue, minecraft.options.languageCode);
-            return values.isEmpty() ? defaultWordPool(idValue, "en_us") : values;
+            return values.entries().isEmpty() ? defaultWordPool(idValue, "en_us") : values;
         } : wordPools;
         preview.showTransport = showTransport;
         active = preview;
@@ -190,14 +190,15 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
                 .forEach(replacements::putIfAbsent);
         String resolved = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(text, replacements);
         return resolvedWords.computeIfAbsent(resolved, value -> com.jvn.villagerretaliation.dialogue.DialogueWordPools
-                .resolver(wordPools, wordRandom, issue -> com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedEntry(
+                .selectingResolver(id -> wordPools.apply(id).selectMatching(rules -> conditions.evaluate(rules)
+                                == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED, wordRandom), issue -> com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedEntry(
                         ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview"), "dialogue words", "preview", issue))
                 .apply(value));
     }
 
-    public static List<String> defaultWordPool(ResourceLocation id, String locale) {
+    public static com.jvn.villagerretaliation.dialogue.DialogueWordPool defaultWordPool(ResourceLocation id, String locale) {
         var server = Minecraft.getInstance().getSingleplayerServer();
-        if (server != null) return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedValues(server, locale, id);
+        if (server != null) return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedPool(server, locale, id);
         return PreviewWordPools.bundled(id, locale);
     }
 

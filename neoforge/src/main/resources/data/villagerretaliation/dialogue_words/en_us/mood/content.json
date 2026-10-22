@@ -1,3 +1,48 @@
 {
-  "values": ["content", "happy", "glad", "in good spirits"]
+  "values": [
+    "content",
+    "happy",
+    "glad",
+    "in good spirits",
+    {
+      "text": "fine",
+      "weight": 2,
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "blunt"
+        }
+      ]
+    },
+    {
+      "text": "well enough",
+      "weight": 2,
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cautious"
+        }
+      ]
+    },
+    {
+      "text": "full of beans",
+      "weight": 2,
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cheerful"
+        }
+      ]
+    },
+    {
+      "text": "quite well",
+      "weight": 2,
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "formal"
+        }
+      ]
+    }
+  ]
 }

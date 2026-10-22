@@ -19,6 +19,13 @@ public final class DialogueWordPools {
 
     public static UnaryOperator<String> resolver(Function<ResourceLocation, List<String>> pools,
             RandomSource random, Consumer<String> diagnostic) {
+        return selectingResolver(id -> {
+            var values = pools.apply(id);
+            return values == null || values.isEmpty() ? null : values.get(random.nextInt(values.size()));
+        }, diagnostic);
+    }
+
+    public static UnaryOperator<String> selectingResolver(Function<ResourceLocation, String> select, Consumer<String> diagnostic) {
         Map<String, String> choices = new HashMap<>();
         return text -> {
             if (!text.contains("{word")) return text;
@@ -33,12 +40,12 @@ public final class DialogueWordPools {
                         return key;
                     }
                     var id = ResourceLocation.parse(reference.group(1));
-                    List<String> values = pools.apply(id);
-                    if (values == null || values.isEmpty()) {
+                    String selected = select.apply(id);
+                    if (selected == null) {
                         diagnostic.accept("Missing word pool: " + id);
                         return key;
                     }
-                    return values.get(random.nextInt(values.size()));
+                    return selected;
                 });
                 matcher.appendReplacement(result, Matcher.quoteReplacement(value));
             }
