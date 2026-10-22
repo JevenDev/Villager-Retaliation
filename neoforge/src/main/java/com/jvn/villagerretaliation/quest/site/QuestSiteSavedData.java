@@ -16,6 +16,24 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class QuestSiteSavedData extends SavedData {
     final Map<UUID, Site> sites = new LinkedHashMap<>();
+    private final Map<UUID, Site> tickingSites = new LinkedHashMap<>();
+
+    void add(Site site) {
+        sites.put(site.id, site);
+        if (site.phase != Phase.RETIRED) tickingSites.put(site.id, site);
+        else tickingSites.remove(site.id);
+    }
+
+    void retire(Site site) {
+        site.phase = Phase.RETIRED;
+        tickingSites.remove(site.id);
+        setDirty();
+    }
+
+    List<Site> tickingSites() {
+        return List.copyOf(tickingSites.values());
+    }
+
     enum Phase { SEARCHING, CANDIDATE, PREPARING, PLACING, SPAWNING, READY, ACTIVE, RETIRED, UNAVAILABLE }
     public static QuestSiteSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -63,7 +81,7 @@ public final class QuestSiteSavedData extends SavedData {
                     site.phase = Phase.UNAVAILABLE;
                     site.diagnostic = "Quest site preparation was interrupted. The site has been preserved for inspection.";
                 }
-                data.sites.put(site.id, site);
+                data.add(site);
             } catch (IllegalArgumentException exception) {
                 com.mojang.logging.LogUtils.getLogger().error("Could not load quest site {}", tag.getUUID("Id"), exception);
             }

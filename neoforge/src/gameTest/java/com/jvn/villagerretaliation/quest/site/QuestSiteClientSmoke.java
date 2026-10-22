@@ -130,7 +130,7 @@ public final class QuestSiteClientSmoke {
         var site = new QuestSiteSavedData.Site(UUID.randomUUID(), player.getUUID(), quest.id(), null,
                 player.level().dimension().location(), player.blockPosition());
         site.position = player.blockPosition().offset(300, 0, 0);
-        QuestSiteSavedData.get(player.serverLevel()).sites.put(site.id, site);
+        QuestSiteSavedData.get(player.serverLevel()).add(site);
         player.getInventory().clearContent();
         QuestSiteMaps.give(player, quest, site, true);
         var circle = preview(player);

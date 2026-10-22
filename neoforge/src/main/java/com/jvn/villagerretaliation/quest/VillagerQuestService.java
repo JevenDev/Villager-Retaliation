@@ -221,6 +221,7 @@ public final class VillagerQuestService {
         CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.clear();
         LAST_TRACKER_SYNCS.clear();
         NEARBY_AVAILABLE_QUEST_CACHES.clear();
+        QuestPresentationService.clearRuntimeState();
         QuestInventoryService.clearRuntimeState();
         QuestDebugTraceService.clearRuntimeState();
     }
@@ -231,6 +232,7 @@ public final class VillagerQuestService {
             CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.remove(playerId);
             LAST_TRACKER_SYNCS.remove(playerId);
             NEARBY_AVAILABLE_QUEST_CACHES.remove(playerId);
+            QuestPresentationService.clearRuntimeState(player);
             QuestInventoryService.clearRuntimeState(player);
             QuestDebugTraceService.clearRuntimeState(player);
         }
@@ -1160,9 +1162,10 @@ public final class VillagerQuestService {
                 changed = true;
                 progressNotice = true;
                 if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) continue;
+                active = !definition.rules().activeState().pauseProgressWhenUnmet()
+                        || activeConditionsState(questContext, player, level, definition, progress) == ConditionMatch.MET;
             }
-            if (definition.rules().activeState().pauseProgressWhenUnmet()
-                    && activeConditionsState(questContext, player, level, definition, progress) != ConditionMatch.MET) {
+            if (!active) {
                 continue;
             }
             boolean questProgressChanged = false;
@@ -4204,6 +4207,7 @@ public final class VillagerQuestService {
 
         List<QuestTrackerSyncPayload.Entry> entries = new ArrayList<>();
         List<QuestTrackerSyncPayload.Entry> completionEntries = new ArrayList<>();
+        List<Map.Entry<QuestDefinition, VillagerQuestSavedData.QuestProgress>> completionHistories = new ArrayList<>();
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : visible) {
             if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
                 break;
@@ -4211,8 +4215,8 @@ public final class VillagerQuestService {
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition != null) {
                 VillagerQuestSavedData.QuestProgress progress = entry.getValue();
-                if (!progress.completionHistory().isEmpty()) {
-                    appendArchivedCompletionEntries(player, definition, progress, completionEntries);
+                if (progress.hasCompletionHistory()) {
+                    completionHistories.add(Map.entry(definition, progress));
                     if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
                             || progress.state() == VillagerQuestSavedData.QuestState.CONSUMED) {
                         continue;
@@ -4237,7 +4241,6 @@ public final class VillagerQuestService {
                 }
             }
         }
-        appendEntries(entries, completionEntries);
         for (var offer : com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(level).offers(player.getUUID()).entrySet()) {
             var compiled = VillagerQuestResources.compiledQuest(level.getServer(), offer.getKey()).orElse(null);
             var progress = data.get(player.getUUID(), offer.getKey());
@@ -4248,6 +4251,11 @@ public final class VillagerQuestService {
             entries.add(availableTrackerEntry(player, DialogueContext.forPlayer(player), compiled.asQuestDefinition()).asDiscoveryOffer());
         }
         appendNearbyAvailableQuestEntries(level, player, data, entries);
+        appendEntries(entries, completionEntries);
+        for (var history : completionHistories) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) break;
+            appendArchivedCompletionEntries(player, history.getKey(), history.getValue(), entries);
+        }
         applyQuestlineProgress(level, player, data, entries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestIds);
         Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);

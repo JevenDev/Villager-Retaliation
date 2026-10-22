@@ -349,6 +349,10 @@ public class QuestProgressModel {
         return this.completionCount;
     }
 
+    public boolean hasCompletionHistory() {
+        return !this.completionHistory.isEmpty();
+    }
+
     public List<CompletionHistoryEntry> completionRecords() {
         return List.copyOf(this.completionHistory);
     }
