@@ -1434,7 +1434,8 @@ final class ImGuiAuthoringEditor {
         float canvasY = ImGui.getCursorScreenPosY();
         ImGui.setNextItemAllowOverlap();
         ImGui.invisibleButton("graph_canvas", canvasWidth, canvasHeight);
-        boolean hover = ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
+        boolean hover = ImGui.isWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem)
+                && ImGui.isMouseHoveringRect(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight);
         var canvasEnd = ImGui.getCursorScreenPos();
         boolean minimapHover = showMinimap && hover && ImGui.isMouseHoveringRect(canvasX + canvasWidth - 190, canvasY + canvasHeight - 130, canvasX + canvasWidth, canvasY + canvasHeight);
         if (minimapHover) hover = false;
@@ -1471,7 +1472,11 @@ final class ImGuiAuthoringEditor {
             panX += ImGui.getIO().getMouseDeltaX();
             panY += ImGui.getIO().getMouseDeltaY();
         }
-        boolean overField = cards.stream().anyMatch(card -> {
+        String foreground = nodeResize != null ? nodeResize.original().node().id() : draggingNode != null ? draggingNode : selectedNode;
+        var layeredCards = EditorGraphSelection.front(cards, foreground);
+        String hoveredNode = EditorGraphSelection.topmost(layeredCards, positions,
+                (ImGui.getMousePosX() - canvasX - panX) / zoom, (ImGui.getMousePosY() - canvasY - panY) / zoom, Math.max(12, 10 * zoom) / zoom);
+        boolean overField = layeredCards.stream().filter(card -> card.node().id().equals(hoveredNode)).anyMatch(card -> {
             float[] point = positions.get(card.node().id());
             float gx = (ImGui.getMousePosX() - canvasX - panX) / zoom - point[0];
             float gy = (ImGui.getMousePosY() - canvasY - panY) / zoom - point[1];
@@ -1519,8 +1524,9 @@ final class ImGuiAuthoringEditor {
                     wire(draw, x1, y1, ImGui.getIO().getMousePosX(), ImGui.getIO().getMousePosY(), 0xff81c9ed);
             }
         }
-        for (var card : cards) {
+        for (var card : layeredCards) {
             var node = card.node();
+            boolean nodeHover = hover && node.id().equals(hoveredNode);
             float[] position = positions.get(node.id());
             float x = canvasX + panX + position[0] * zoom;
             float y = canvasY + panY + position[1] * zoom;
@@ -1529,6 +1535,14 @@ final class ImGuiAuthoringEditor {
             float margin = Math.max(12, 10 * zoom);
             if (x + w + margin < canvasX || x - margin > canvasX + canvasWidth
                     || y + h + margin < canvasY || y - margin > canvasY + canvasHeight) continue;
+            ImGui.setCursorScreenPos(x - margin, y - margin);
+            ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
+            // keep each card and its child text fields together in the window draw order
+            boolean visible = ImGui.beginChild("graph_node:" + node.id(), w + margin * 2, h + margin * 2, false,
+                    ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoBackground);
+            ImGui.popStyleVar();
+            if (!visible) { ImGui.endChild(); continue; }
+            draw = ImGui.getWindowDrawList();
             draw.addRectFilled(x, y, x + w, y + h, 0xff39352f, 4);
             draw.addRectFilled(x, y, x + w, y + EditorGraph.HEADER * zoom,
                     selectedNode.equals(node.id()) || nodeSelection.contains(node.id()) ? 0xff65513d : 0xff494037, 4);
@@ -1541,7 +1555,7 @@ final class ImGuiAuthoringEditor {
                     && (issue.pointer().equals(node.pointer()) || issue.pointer().startsWith(node.pointer() + "/"))).count();
             if (issueCount > 0) draw.addText(x + w - 28, y + 10, 0xff82b9ef, "!" + issueCount);
             float inputY = y + EditorGraph.HEADER / 2 * zoom;
-            boolean inputHover = hover && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), x, inputY, EditorGraph.HEADER * zoom);
+            boolean inputHover = nodeHover && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), x, inputY, EditorGraph.HEADER * zoom);
             draw.addCircleFilled(x, inputY, 6 * zoom, inputHover ? 0xff81c9ed : 0xffc2bdb4);
             if (inputHover) {
                 ImGui.setTooltip(selectedEdge.isEmpty() ? "Input: connect a response here" : "Connect to " + node.id());
@@ -1554,7 +1568,7 @@ final class ImGuiAuthoringEditor {
                     });
                 }
             }
-            if (nodeResize == null && !inputHover && hover && ImGui.isMouseHoveringRect(x, y, x + w, y + EditorGraph.HEADER * zoom)
+            if (nodeResize == null && !inputHover && nodeHover && ImGui.isMouseHoveringRect(x, y, x + w, y + EditorGraph.HEADER * zoom)
                     && ImGui.isMouseClicked(0)) operation(() -> {
                 if (ImGui.getIO().getKeyCtrl()) {
                     if (nodeSelection.isEmpty() && !selectedNode.isEmpty()) nodeSelection.add(selectedNode);
@@ -1573,9 +1587,9 @@ final class ImGuiAuthoringEditor {
                 float rowHeight = card.blockHeight(i) * zoom;
                 float centerY = y + card.outputY(i) * zoom;
                 float outputX = x + w;
-                boolean outputHover = block.output() != null && hover
+                boolean outputHover = block.output() != null && nodeHover
                         && EditorGraphHit.port(ImGui.getMousePosX(), ImGui.getMousePosY(), outputX, centerY, EditorGraph.ROW * zoom);
-                boolean blockHover = !outputHover && hover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + rowHeight);
+                boolean blockHover = !outputHover && nodeHover && ImGui.isMouseHoveringRect(x + 6, rowY, x + w - 6, rowY + rowHeight);
                 boolean testedChoice = coverage.visible() && coverageSnapshot.chosen(block.pointer());
                 int background = blockHover ? 0xff514a40 : testedChoice ? 0xff3b5540 : block.output() != null ? 0xff403c32 : 0xff35322e;
                 draw.addRectFilled(x + 5 * zoom, rowY + 2 * zoom, x + w - 5 * zoom, rowY + rowHeight - 2 * zoom, background, 3);
@@ -1626,7 +1640,7 @@ final class ImGuiAuthoringEditor {
                 }
             }
             float grip = Math.max(12, 16 * zoom);
-            boolean resizeHover = hover && selectedEdge.isEmpty() && ImGui.isMouseHoveringRect(x + w - grip, y + h - grip, x + w, y + h);
+            boolean resizeHover = nodeHover && selectedEdge.isEmpty() && ImGui.isMouseHoveringRect(x + w - grip, y + h - grip, x + w, y + h);
             if (resizeHover || nodeResize != null && nodeResize.original().node().id().equals(node.id()))
                 ImGui.setMouseCursor(imgui.flag.ImGuiMouseCursor.ResizeNWSE);
             if (resizeHover && nodeResize == null && ImGui.isMouseClicked(0)) operation(() -> {
@@ -1637,7 +1651,7 @@ final class ImGuiAuthoringEditor {
             float footerY = y + h - 34 * zoom;
             String footer = document.kind() == DefinitionKind.QUEST ? "Edit stage" : "+ Add response";
             graphText(draw, x + 12 * zoom, footerY + 9 * zoom, 0xffbdcddd, footer, card.width() - 42);
-            if (nodeResize == null && !resizeHover && hover && ImGui.isMouseHoveringRect(x, footerY, x + w, y + h) && ImGui.isMouseClicked(0)) operation(() -> {
+            if (nodeResize == null && !resizeHover && nodeHover && ImGui.isMouseHoveringRect(x, footerY, x + w, y + h) && ImGui.isMouseClicked(0)) operation(() -> {
                 selectedNode = node.id();
                 setPointer(node.pointer());
                 selectedEdge = "";
@@ -1652,7 +1666,9 @@ final class ImGuiAuthoringEditor {
                         resizeHover ? 0xff81c9ed : 0xffaaa49a, Math.max(1, zoom));
             }
             if (resizeHover) ImGui.setTooltip("Drag to resize node. Right-click to reset its size.");
+            ImGui.endChild();
         }
+        draw = ImGui.getWindowDrawList();
         if (nodeResize != null && !ImGui.isMouseDown(0)) {
             var drag = nodeResize;
             nodeResize = null;
@@ -1672,6 +1688,13 @@ final class ImGuiAuthoringEditor {
                 point[1] += ImGui.getIO().getMouseDeltaY() / zoom;
             }
         }
+        boolean overlay = boxSelecting || showMinimap && !cards.isEmpty();
+        if (overlay) {
+            ImGui.setCursorScreenPos(canvasX, canvasY);
+            ImGui.beginChild("graph_overlay", canvasWidth, canvasHeight, false, ImGuiWindowFlags.NoInputs
+                    | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            draw = ImGui.getWindowDrawList();
+        }
         if (boxSelecting) {
             float mx = (ImGui.getMousePosX() - canvasX - panX) / zoom, my = (ImGui.getMousePosY() - canvasY - panY) / zoom;
             float left = canvasX + panX + Math.min(boxX, mx) * zoom, top = canvasY + panY + Math.min(boxY, my) * zoom;
@@ -1690,11 +1713,12 @@ final class ImGuiAuthoringEditor {
                 boxSelecting = false;
             }
         }
-        if (showMinimap && !cards.isEmpty()) minimap(draw, cards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
+        if (showMinimap && !cards.isEmpty()) minimap(draw, layeredCards, canvasX, canvasY, canvasWidth, canvasHeight, minimapHover);
+        if (overlay) ImGui.endChild();
         ImGui.popClipRect();
         ImGui.setCursorScreenPos(canvasEnd.x, canvasEnd.y);
         ImGui.dummy(0, 0);
-        graphContext(cards, canvasX, canvasY, hover);
+        graphContext(layeredCards, canvasX, canvasY, hover);
         if (ImGui.isMouseReleased(0)) {
             wireDragMoved = false;
             if (draggingNode != null) {
@@ -1774,17 +1798,15 @@ final class ImGuiAuthoringEditor {
         if (nodeResize != null) return;
         float mx = ImGui.getMousePosX(), my = ImGui.getMousePosY();
         float gx = (mx - canvasX - panX) / zoom, gy = (my - canvasY - panY) / zoom;
-        var underMouse = cards.stream().filter(card -> {
-            var point = positions.get(card.node().id());
-            return gx >= point[0] - 12 / zoom && gx <= point[0] + card.width() + 12 / zoom
-                    && gy >= point[1] - 12 / zoom && gy <= point[1] + card.height() + 12 / zoom;
-        }).findFirst();
+        String hoveredNode = EditorGraphSelection.topmost(cards, positions, gx, gy, Math.max(12, 10 * zoom) / zoom);
+        var underMouse = cards.stream().filter(card -> card.node().id().equals(hoveredNode)).findFirst();
         boolean dropped = hover && wireDragMoved && ImGui.isMouseReleased(0) && !selectedEdge.isEmpty() && underMouse.isEmpty();
         if (hover && ImGui.isMouseClicked(1) || dropped) {
             contextX = gx; contextY = gy;
             contextNode = underMouse.map(card -> card.node().id()).orElse("");
             contextOutput = dropped ? selectedEdge : "";
             if (!dropped) for (var card : cards) {
+                if (underMouse.isPresent() && !card.node().id().equals(hoveredNode)) continue;
                 var point = positions.get(card.node().id());
                 for (int i = 0; i < card.blocks().size(); i++) {
                     var edge = card.blocks().get(i).output();

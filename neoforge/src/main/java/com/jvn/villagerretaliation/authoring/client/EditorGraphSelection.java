@@ -10,6 +10,25 @@ import java.util.Set;
 final class EditorGraphSelection {
     private EditorGraphSelection() { }
 
+    static List<EditorGraph.Card> front(List<EditorGraph.Card> cards, String node) {
+        for (int i = 0; i < cards.size() - 1; i++) if (cards.get(i).node().id().equals(node)) {
+            var ordered = new ArrayList<>(cards);
+            ordered.add(ordered.remove(i));
+            return ordered;
+        }
+        return cards;
+    }
+
+    static String topmost(List<EditorGraph.Card> cards, Map<String, float[]> positions, float x, float y, float margin) {
+        for (int i = cards.size() - 1; i >= 0; i--) {
+            var card = cards.get(i);
+            var point = positions.get(card.node().id());
+            if (point != null && x >= point[0] - margin && x <= point[0] + card.width() + margin
+                    && y >= point[1] - margin && y <= point[1] + card.height() + margin) return card.node().id();
+        }
+        return "";
+    }
+
     static Set<String> box(List<EditorGraph.Card> cards, Map<String, float[]> positions, float x1, float y1, float x2, float y2) {
         var selected = new LinkedHashSet<String>();
         for (var card : cards) {

@@ -19,7 +19,8 @@ final class EditorGraphSizingChecks {
         resizedBoundsDriveSelectionAndArrangement();
         resizingClampsToUsableFiniteDimensions();
         sizesFollowRenamesCopiesAndDeletion();
-        return 5;
+        activeCardsAndHitTestsShareTheirOrder();
+        return 6;
     }
 
     private static AuthoringDocument document() {
@@ -119,6 +120,24 @@ final class EditorGraphSizingChecks {
         EditorGraphActions.delete(document, Set.of(copied), "greeting");
         check(!document.metadata().getAsJsonObject("node_positions").has(copied), "deletion removes the node's geometry");
         document.undo(); check(card(document, copied).width() == 620, "undo deletion restores its size");
+    }
+
+    private static void activeCardsAndHitTestsShareTheirOrder() {
+        var document = document();
+        var cards = EditorGraph.cards(document, value -> "");
+        var original = document.json();
+        var front = EditorGraphSelection.front(cards, "start");
+        check(front.getLast().node().id().equals("start") && cards.getFirst().node().id().equals("start"), "bringing a card forward preserves the original model order");
+        check(EditorGraphSelection.front(front, "start") == front && EditorGraphSelection.front(cards, "missing") == cards,
+                "unchanged stacking reuses the current card list");
+        var positions = Map.of("start", new float[] {0, 0}, "finish", new float[] {150, 0});
+        check(EditorGraphSelection.topmost(front, positions, 180, 30, 0).equals("start"), "the foreground card owns overlapping hits");
+        check(EditorGraphSelection.topmost(cards, positions, 180, 30, 0).equals("finish"), "hits follow the current stacking order");
+        check(EditorGraphSelection.topmost(front, positions, 490, 30, 4).equals("finish"), "visible parts of background cards remain accessible");
+        check(EditorGraphSelection.topmost(front, positions, -3, 20, 4).equals("start"), "ports retain their hit margin");
+        check(EditorGraphSelection.topmost(front, positions, -20, 20, 4).isEmpty()
+                && EditorGraphSelection.topmost(front, Map.of(), 0, 0, 4).isEmpty(), "empty canvas and missing positions have no target");
+        check(document.json().equals(original) && !document.metadata().has("node_positions"), "stacking does not change authored content or layout metadata");
     }
 
     private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

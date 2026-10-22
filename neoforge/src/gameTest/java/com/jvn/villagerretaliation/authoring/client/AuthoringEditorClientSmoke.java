@@ -272,10 +272,17 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             locateCanvas();
             System.arraycopy(positions().get("start"), 0, position, 0, 2);
+            positions().put("finish", new float[] {position[0] + original[0].width() + 20, position[1]});
         });
         move(() -> point("start", original[0].width() - 4, original[0].height() - 4), false);
         move(() -> point("start", original[0].width() - 4, original[0].height() - 4), true);
         STEPS.add(() -> { mouseX += 120; mouseY += 90; });
+        pause(200);
+        STEPS.add(() -> {
+            require(field(editor, "nodeResize") != null, "The overlapping node is still being resized.");
+            assertResizedNodeInFront();
+            capture("00-node-resizing-overlap");
+        });
         STEPS.add(() -> mouseDown = false);
         pause(200);
         STEPS.add(() -> {
@@ -285,12 +292,24 @@ public final class AuthoringEditorClientSmoke {
             require(document.undoLabels().size() == history[0] + 1 && document.undoLabel().equals("Resize node"), "A complete drag creates one resize history entry.");
             require(positions().get("start")[0] == position[0] && positions().get("start")[1] == position[1], "Resizing preserves node position.");
             require(!(boolean) field(editor, "showBranch") && field(editor, "nodeResize") == null, "The grip avoids the footer action and finishes on release.");
+            assertResizedNodeInFront();
             capture("00-node-resized");
         });
         click(() -> toolbar("Undo"));
         STEPS.add(() -> require(EditorGraph.cards(workspace, document, "en_us").getFirst().width() == original[0].width(), "Toolbar Undo restores node dimensions."));
         click(() -> toolbar("Redo"));
         STEPS.add(() -> require(EditorGraph.cards(workspace, document, "en_us").getFirst().width() > original[0].width(), "Toolbar Redo restores the resized node."));
+        click(() -> point("finish", 300, 16));
+        STEPS.add(() -> require(field(editor, "selectedNode").equals("finish"), "An exposed background header can be brought forward."));
+        click(() -> point("start", 400, 16));
+        STEPS.add(() -> require(field(editor, "selectedNode").equals("finish"), "Overlapping headers hit the foreground node."));
+        click(() -> point("start", 60, 16));
+        click(() -> point("start", 400, 100));
+        STEPS.add(() -> {
+            var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
+            require(field(editor, "selectedNode").equals("start") && (boolean) field(selections.get("graph:start:/nodes/start/lines:/nodes/start/lines/0"), "sourceMode"),
+                    "The foreground text field receives overlapping clicks instead of the covered field.");
+        });
         click(() -> port("start"));
         STEPS.add(() -> require(!field(editor, "selectedEdge").equals(""), "The output port follows the resized card."));
         key(ImGuiKey.Escape);
@@ -299,6 +318,22 @@ public final class AuthoringEditorClientSmoke {
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
             set("showMinimap", false);
         });
+    }
+
+    private static void assertResizedNodeInFront() {
+        try (NativeImage image = renderedImage()) {
+            float ox = ImGui.getMainViewport().getPosX(), oy = ImGui.getMainViewport().getPosY();
+            var header = point("finish", 30, 16);
+            require(image.getPixelRGBA((int) (header[0] - ox), (int) (header[1] - oy)) == 0xff65513d,
+                    "The resized header covers the overlapping background header.");
+            var reference = point("start", 300, 102);
+            int background = image.getPixelRGBA((int) (reference[0] - ox), (int) (reference[1] - oy));
+            var left = point("finish", 24, 98);
+            var right = point("finish", 65, 108);
+            for (int y = (int) (left[1] - oy); y < (int) (right[1] - oy); y++)
+                for (int x = (int) (left[0] - ox); x < (int) (right[0] - ox); x++)
+                    require(image.getPixelRGBA(x, y) == background, "The resized text field hides text from the covered node.");
+        }
     }
 
     private static void buildSteps() {
