@@ -240,6 +240,9 @@ public final class AuthoringEditorClientSmoke {
             require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 8,
                     "The largest bundled quest stays responsive with the full campaign loaded: " + profile);
             capture("00-largest-campaign-quest");
+        });
+        buildDialoguePoolSteps();
+        STEPS.add(() -> {
             ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
             invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
             workspace = (AuthoringWorkspace) field(editor, "workspace");
@@ -250,6 +253,94 @@ public final class AuthoringEditorClientSmoke {
             set("groupContent", false);
             set("showResources", false);
         });
+    }
+
+    private static void buildDialoguePoolSteps() {
+        var pool = new AuthoringDocument[1];
+        var preferences = new EditorPreferences[1];
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            pool[0] = imported.documents().stream().filter(value -> value.resourcePath().endsWith(
+                    "/professions/fisherman/share_stories/03_share_stories__biomes_hot_dry.json")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, pool[0]);
+            require(((EditorDialoguePool) field(editor, "dialoguePool")).supports(pool[0], pool[0].json()), "Bundled fisherman dialogue opens as pool cards.");
+        });
+        pause(500);
+        STEPS.add(() -> { capture("00-dialogue-pool-cards"); EditorCampaignProfile.start("dialogue-pool"); });
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
+                    "Dialogue pool cards stay responsive with the default campaign loaded: " + profile);
+        });
+        replaceText(() -> poolPoint(600, 675), () -> "<b>Edited on a pool card</b>, {player}.");
+        click(() -> poolPoint(530, 350));
+        STEPS.add(() -> {
+            require(pool[0].value("/lines/0/lines/0").getAsString().contains("Edited on a pool card"), "Card text edits apply through the normal draft buffers.");
+            require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/lines/0"), "Details selects the pool entry's conditions.");
+        });
+        replaceText(() -> poolPoint(600, 548), () -> "121");
+        click(() -> poolPoint(530, 350));
+        STEPS.add(() -> require(pool[0].value("/lines/0/weight").getAsInt() == 121, "Pool selection weights are editable on cards."));
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(pool[0].value("/lines/0/weight").getAsInt() == 120, "Card field edits support undo."));
+        click(() -> toolbar("Redo"));
+        STEPS.add(() -> { require(pool[0].value("/lines/0/weight").getAsInt() == 121, "Card field edits support redo."); capture("00-dialogue-pool-edited"); });
+        click(() -> poolPoint(462, 758));
+        STEPS.add(() -> {
+            require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 21, "Add line creates a new editable variation.");
+            require(pool[0].value("/lines/0/lines/20").getAsString().equals("New dialogue."), "Add line selects a fresh variation.");
+            capture("00-dialogue-pool-added-line");
+        });
+        click(() -> poolPoint(590, 758));
+        STEPS.add(() -> require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 22, "Duplicate line preserves the variation: " + pool[0].value("/lines/0/lines").getAsJsonArray().size()));
+        click(() -> poolPoint(725, 758));
+        STEPS.add(() -> require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 21, "Remove line deletes only the chosen variation."));
+        click(() -> poolPoint(498, 796));
+        STEPS.add(() -> {
+            require(pool[0].value("/lines").getAsJsonArray().size() == 8, "Duplicate entry copies the complete card.");
+            require(pool[0].value("/lines/7/story_biome").getAsString().equals("minecraft:badlands"), "Card duplication preserves selection rules.");
+        });
+        STEPS.add(() -> invoke("setPointer", new Class<?>[] {String.class}, "/lines/0"));
+        pause(250);
+        click(() -> poolPoint(650, 796));
+        STEPS.add(() -> require(pool[0].value("/lines").getAsJsonArray().size() == 7, "Remove entry deletes one card."));
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(pool[0].value("/lines/0/id").getAsString().equals("fisherman_share_story_badlands"), "Undo restores a deleted pool card."));
+        click(() -> poolPoint(460, 274));
+        STEPS.add(() -> require(pool[0].value("/lines").getAsJsonArray().size() == 9, "Add entry works in the pool toolbar."));
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> {
+            require(((imgui.type.ImString) field(editor, "pointer")).get().isEmpty(), "Undoing a new card clears its removed Details selection.");
+            invoke("setPointer", new Class<?>[] {String.class}, "/lines/0");
+            preferences[0] = (EditorPreferences) field(editor, "preferences");
+            set("preferences", preferences[0].withScale(1.5f));
+        });
+        pause(250);
+        STEPS.add(() -> { capture("00-dialogue-pool-large-text"); set("preferences", preferences[0]); });
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var root = new com.google.gson.JsonObject(); var lines = new com.google.gson.JsonArray();
+            for (int i = 0; i < 500; i++) {
+                var entry = pool[0].value("/lines/0").getAsJsonObject(); entry.addProperty("id", "stress_" + i); lines.add(entry);
+            }
+            root.add("lines", lines);
+            var stress = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue/en_us/stress.json", root);
+            imported.add(stress); invoke("select", new Class<?>[] {AuthoringDocument.class}, stress);
+        });
+        pause(500);
+        STEPS.add(() -> EditorCampaignProfile.start("dialogue-pool-500-entries"));
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
+                    "Large dialogue pools render only visible cards: " + profile);
+            capture("00-dialogue-pool-500-entries");
+        });
+    }
+
+    private static float[] poolPoint(float x, float y) {
+        return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
     }
 
     private static void buildResizeSteps() {

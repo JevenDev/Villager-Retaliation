@@ -119,6 +119,7 @@ final class ImGuiAuthoringEditor {
     private final ImString fieldValue = new ImString("{}", 8192);
     private final Map<String, ImString> fields = new HashMap<>();
     private final EditorTextField textFields = new EditorTextField();
+    private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
@@ -1305,7 +1306,12 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (document.kind() == DefinitionKind.RESOURCE) {
-            ImGui.textWrapped("Edit resource pools and localization in Properties. Select a dialogue-bearing object to preview it.");
+            if (dialoguePool.supports(document, documentCache.json(document))) {
+                ImGui.beginDisabled(rawModified);
+                dialoguePool.render(document, pointer.get(), preferences.textScale(), this::poolField,
+                        path -> { setPointer(path); focusPanel = DETAIL_PANEL; }, this::operation, this::refresh);
+                ImGui.endDisabled();
+            } else ImGui.textWrapped("Edit resource pools and localization in Properties. Select a dialogue-bearing object to preview it.");
             ImGui.end();
             return;
         }
@@ -2374,8 +2380,42 @@ final class ImGuiAuthoringEditor {
         });
     }
 
+    private void poolField(JsonElement value, String path, String label, boolean text) {
+        if (!value.isJsonPrimitive()) { inspectValue(value, path, label, 0); return; }
+        ImGui.pushID(path);
+        ImGui.textUnformatted(label);
+        ImString buffer = fields.computeIfAbsent(path, ignored -> new ImString(value.getAsString(), 65536));
+        ImGui.setNextItemWidth(-1);
+        boolean activated, apply;
+        if (text) {
+            var edit = textFields.inline("pool:" + path, buffer, Math.max(1, ImGui.getContentRegionAvailX()), 100 * preferences.textScale());
+            activated = edit.activated(); apply = edit.apply();
+        } else {
+            ImGui.inputText("##value", buffer);
+            activated = ImGui.isItemActivated(); apply = ImGui.isItemDeactivatedAfterEdit();
+        }
+        if (activated) setPointer("/lines/" + path.split("/")[2]);
+        pendingFields.update(path, value, buffer.get());
+        String error = fieldMessage(path, value);
+        if (!error.isEmpty()) ImGui.textWrapped(error);
+        if (apply) operation(() -> { });
+        ImGui.popID();
+    }
+
     private void selectedDetails() {
         JsonElement selected = JsonPointers.get(documentCache.json(document), pointer.get());
+        if (selected.isJsonObject() && document.kind() == DefinitionKind.RESOURCE
+                && dialoguePool.supports(document, documentCache.json(document))
+                && (pointer.get().isEmpty() || pointer.get().matches("/lines/[0-9]+"))) {
+            ImGui.textWrapped(pointer.get().isEmpty() ? "Select a pool card to edit its selection rules."
+                    : "Edit dialogue, ID, request and weight on the card. Additional selection rules are below.");
+            for (var entry : selected.getAsJsonObject().entrySet()) {
+                if (pointer.get().isEmpty() ? entry.getKey().equals("lines") : List.of("id", "request", "weight", "lines", "variants").contains(entry.getKey())) continue;
+                inspectValue(entry.getValue(), pointer.get() + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
+            }
+            schemaObjectTools(selected.getAsJsonObject(), pointer.get());
+            return;
+        }
         if (!selected.isJsonObject()) {
             inspectValue(selected, pointer.get(), "Value", 0);
             return;
@@ -2661,7 +2701,7 @@ final class ImGuiAuthoringEditor {
                 if (text) textFields.focus(path);
                 ImGui.setKeyboardFocusHere();
             }
-            if (text && (path.contains("/lines/") || path.contains("/variants/") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+            if (text && (path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false, preferences.textScale());
@@ -3684,6 +3724,10 @@ final class ImGuiAuthoringEditor {
         }
         if (document != null) {
             jsonText.set(JSON.toJson(documentCache.json(document)));
+            if (document.kind() == DefinitionKind.RESOURCE && dialoguePool.supports(document, documentCache.json(document))) {
+                try { JsonPointers.get(documentCache.json(document), pointer.get()); }
+                catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException exception) { pointer.set(""); }
+            }
             try {
                 var ids = documentCache.nodes(document).stream().map(DialogueGraph.Node::id).collect(java.util.stream.Collectors.toSet());
                 nodeSelection.retainAll(ids);
