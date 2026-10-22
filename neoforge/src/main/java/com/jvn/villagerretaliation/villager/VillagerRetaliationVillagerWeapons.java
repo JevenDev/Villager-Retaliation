@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -321,7 +322,8 @@ public final class VillagerRetaliationVillagerWeapons {
             ItemStack equippedWeapon,
             ItemStack groundWeapon
     ) {
-        return canBeWantedGroundWeapon(itemEntity)
+        return VillagerRetaliationRetaliationUtil.canRetryGroundItem(villager, itemEntity)
+                && canBeWantedGroundWeapon(itemEntity)
                 && villager.distanceToSqr(itemEntity) <= WEAPON_SEARCH_RADIUS_SQR
                 && villager.hasLineOfSight(itemEntity)
                 && villager.level().getWorldBorder().isWithinBounds(itemEntity.blockPosition())

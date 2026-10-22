@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import java.util.Optional;
@@ -106,6 +107,7 @@ public final class VillagerRetaliationVillagerArmor {
 
     private static boolean isEligibleVisibleUpgrade(AbstractVillager villager, ItemEntity itemEntity) {
         return itemEntity.isAlive()
+                && VillagerRetaliationRetaliationUtil.canRetryGroundItem(villager, itemEntity)
                 && !itemEntity.getItem().isEmpty()
                 && villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_SEARCH_RADIUS
                         * VillagerRetaliationVillagerWeapons.WEAPON_SEARCH_RADIUS

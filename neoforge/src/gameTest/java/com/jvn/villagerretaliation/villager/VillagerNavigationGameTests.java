@@ -16,6 +16,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -53,6 +60,78 @@ public final class VillagerNavigationGameTests {
     private static TestFunction scenario(String name, Consumer<GameTestHelper> test) {
         return new TestFunction("navigation_regressions", "villagernavigationgametests.regression_" + name,
                 "villagerretaliation_navigation:empty", 1400, 0L, true, test);
+    }
+
+    @GameTest(template = "empty")
+    public static void suppressedBrainStillExpiresMemoriesAndSensesHostiles(GameTestHelper helper) {
+        CountingVillager villager = new CountingVillager(helper.getLevel());
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        villager.setPos(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D);
+        Zombie hostile = new Zombie(EntityType.ZOMBIE, helper.getLevel());
+        hostile.setPos(villager.getX() + 2, villager.getY(), villager.getZ());
+        hostile.setNoAi(true);
+        helper.getLevel().addFreshEntity(hostile);
+        try {
+            villager.setTarget(hostile);
+            helper.assertTrue(VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager),
+                    "combat owns the fixture's behavior");
+            villager.getBrain().setMemoryWithExpiry(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(origin), 1);
+            WalkTarget movement = new WalkTarget(origin.east(5), 0.5F, 0);
+            villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, movement);
+            for (int tick = 0; tick < 60; tick++) {
+                villager.runBrainAiStep();
+            }
+            helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.LOOK_TARGET),
+                    "temporary memories expire while behavior is suppressed");
+            helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.NEAREST_HOSTILE).orElse(null) == hostile,
+                    "sensors discover a new hostile while behavior is suppressed");
+            helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET).orElse(null) == movement,
+                    "vanilla movement behaviors do not replace the controlled walk target");
+        } finally {
+            hostile.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 240)
+    public static void unreachableGearYieldsCombatAndDoesNotHideOtherItems(GameTestHelper helper) {
+        CountingVillager villager = new CountingVillager(helper.getLevel());
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        villager.setPos(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D);
+        ItemEntity weapon = new ItemEntity(helper.getLevel(), villager.getX() + 3, villager.getY(), villager.getZ(), new ItemStack(Items.IRON_SWORD));
+        ItemEntity armor = new ItemEntity(helper.getLevel(), villager.getX() + 4, villager.getY(), villager.getZ(), new ItemStack(Items.IRON_HELMET));
+        ItemEntity alternative = new ItemEntity(helper.getLevel(), villager.getX() + 5, villager.getY(), villager.getZ(), new ItemStack(Items.STONE_SWORD));
+        for (ItemEntity item : List.of(weapon, armor, alternative)) {
+            item.setNoGravity(true);
+            item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            item.setNeverPickUp();
+            helper.getLevel().addFreshEntity(item);
+        }
+        helper.assertFalse(VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, weapon, 0.5D, () -> {}),
+                "a failed weapon path immediately yields combat");
+        helper.assertFalse(VillagerRetaliationRetaliationUtil.tryAcquireGroundArmor(villager, armor, 0.5D),
+                "a failed armor path immediately yields combat");
+        for (int call = 0; call < 10; call++) {
+            VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, weapon, 0.5D, () -> {});
+            VillagerRetaliationRetaliationUtil.tryAcquireGroundArmor(villager, armor, 0.5D);
+        }
+        helper.assertValueEqual(villager.navigation().entitySearches, 2, "failed items are not repeatedly pathfound");
+        helper.assertTrue(VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).orElse(null) == alternative,
+                "another weapon remains eligible when the preferred weapon is inaccessible");
+        helper.assertTrue(VillagerRetaliationVillagerArmor.findNearestUpgrade(villager).isEmpty(),
+                "the inaccessible armor is excluded from selection");
+        helper.runAfterDelay(201, () -> {
+            try {
+                VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, weapon, 0.5D, () -> {});
+                helper.assertValueEqual(villager.navigation().entitySearches, 3, "failed items become retryable after the cooldown");
+                helper.succeed();
+            } finally {
+                weapon.discard();
+                armor.discard();
+                alternative.discard();
+                VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+            }
+        });
     }
 
     @GameTest(template = "empty")
@@ -243,6 +322,10 @@ public final class VillagerNavigationGameTests {
         @Override
         protected PathNavigation createNavigation(Level level) {
             return new CountingNavigation(this, level);
+        }
+
+        private void runBrainAiStep() {
+            super.customServerAiStep();
         }
 
         private CountingNavigation navigation() {

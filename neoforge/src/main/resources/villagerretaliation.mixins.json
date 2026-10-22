@@ -79,6 +79,7 @@
     "VillagerMakeLoveMixin",
     "VillagerFamilyAccessor",
     "VillagerBrainTickMixin",
+    "BrainVillagerBehaviorMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",
     "VillagerProfessionMixin",

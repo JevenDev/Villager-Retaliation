@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
@@ -55,6 +56,8 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 4;
     private static final int RANDOM_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 7;
     private static final double PURSUED_WEAPON_MOVED_DISTANCE_SQR = 0.25D;
+    private static final int FAILED_GROUND_ITEM_RETRY_TICKS = 200;
+    private static final Map<AbstractVillager, Map<UUID, Long>> FAILED_GROUND_ITEMS = new WeakHashMap<>();
     private static final Map<UUID, RetaliationPathState> PATH_STATES = new HashMap<>();
     private static final Map<UUID, GroundWeaponPursuitState> GROUND_WEAPON_PURSUIT_STATES = new HashMap<>();
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
@@ -126,10 +129,44 @@ public final class VillagerRetaliationRetaliationUtil {
             return false;
         }
 
+        return pursueGroundItem(villager, itemEntity, movementSpeed);
+    }
+
+    private static boolean pursueGroundItem(AbstractVillager villager, ItemEntity itemEntity, double movementSpeed) {
+        if (!canRetryGroundItem(villager, itemEntity)) {
+            return false;
+        }
         if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
+            var path = villager.getNavigation().createPath(itemEntity, 1);
+            if (path == null || !path.canReach() || !villager.getNavigation().moveTo(path, movementSpeed)) {
+                long now = villager.level().getGameTime();
+                Map<UUID, Long> failures = FAILED_GROUND_ITEMS.computeIfAbsent(villager, ignored -> new HashMap<>());
+                failures.values().removeIf(until -> until <= now);
+                failures.put(itemEntity.getUUID(), now + FAILED_GROUND_ITEM_RETRY_TICKS);
+                clearGroundWeaponPursuitState(villager);
+                return false;
+            }
             villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
             VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
-            villager.getNavigation().moveTo(itemEntity, movementSpeed);
+        }
+        return !villager.getNavigation().isDone();
+    }
+
+    public static boolean canRetryGroundItem(AbstractVillager villager, ItemEntity itemEntity) {
+        Map<UUID, Long> failures = FAILED_GROUND_ITEMS.get(villager);
+        if (failures == null) {
+            return true;
+        }
+        Long until = failures.get(itemEntity.getUUID());
+        if (until == null) {
+            return true;
+        }
+        if (until > villager.level().getGameTime()) {
+            return false;
+        }
+        failures.remove(itemEntity.getUUID());
+        if (failures.isEmpty()) {
+            FAILED_GROUND_ITEMS.remove(villager);
         }
         return true;
     }
@@ -465,12 +502,7 @@ public final class VillagerRetaliationRetaliationUtil {
             return false;
         }
 
-        if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
-            villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
-            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
-            villager.getNavigation().moveTo(itemEntity, movementSpeed);
-        }
-        return true;
+        return pursueGroundItem(villager, itemEntity, movementSpeed);
     }
 
     public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
@@ -534,6 +566,7 @@ public final class VillagerRetaliationRetaliationUtil {
 
     public static void clearRuntimeState() {
         PATH_STATES.clear();
+        FAILED_GROUND_ITEMS.clear();
         GROUND_WEAPON_PURSUIT_STATES.clear();
     }
 
