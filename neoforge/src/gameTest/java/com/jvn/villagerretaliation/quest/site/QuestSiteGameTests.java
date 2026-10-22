@@ -42,6 +42,31 @@ public final class QuestSiteGameTests {
     private QuestSiteGameTests() { }
 
     @GameTest(template = "empty", batch = "quest_sites")
+    public static void retiredSitesRemainSavedButLeaveTheTickQueue(GameTestHelper helper) {
+        var data = new QuestSiteSavedData();
+        var dimension = helper.getLevel().dimension().location();
+        for (int index = 0; index < 128; index++) {
+            var site = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, null, dimension, BlockPos.ZERO);
+            site.position = new BlockPos(index * 32, 64, 0);
+            data.add(site);
+            data.retire(site);
+        }
+        var active = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, null, dimension, BlockPos.ZERO);
+        active.phase = Phase.ACTIVE;
+        data.add(active);
+        helper.assertValueEqual(data.sites.size(), 129, "historical placement records remain available");
+        helper.assertValueEqual(data.tickingSites(), List.of(active), "only unfinished sites need regular ticks");
+        var restored = QuestSiteSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+        helper.assertValueEqual(restored.sites.size(), 129, "all historical sites survive reload");
+        helper.assertValueEqual(restored.tickingSites().size(), 1, "reload rebuilds only the live tick queue");
+        var restoredActive = restored.sites.get(active.id);
+        restored.retire(restoredActive);
+        helper.assertTrue(restored.tickingSites().isEmpty(), "retirement immediately removes the live site");
+        helper.assertTrue(restored.sites.containsKey(active.id), "retirement preserves placement history");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
     public static void allAuthoringPoliciesAndInvalidInputs(GameTestHelper helper) {
         for (String selection : List.of("existing_only", "prefer_existing", "new_site"))
             for (String terrain : List.of("new_terrain_only", "generated_wilderness"))
@@ -88,7 +113,7 @@ public final class QuestSiteGameTests {
         site.mapRecipients.add(site.player);
         site.phase = Phase.ACTIVE;
         site.released = true;
-        data.sites.put(site.id, site);
+        data.add(site);
         var reloaded = QuestSiteSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
         var copy = reloaded.sites.get(site.id);
         helper.assertValueEqual(copy.captive, site.captive, "captive UUID is stable");
@@ -306,7 +331,7 @@ public final class QuestSiteGameTests {
     @GameTest(template = "empty", batch = "quest_site_queue", timeoutTicks = 100)
     public static void readyOfflineSiteDoesNotStarveLaterRequests(GameTestHelper helper) {
         var fixture = new Fixture(helper, "escort_home");
-        fixture.data.sites.clear();
+        fixture.data.retire(fixture.site);
         var waiting = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, null,
                 fixture.site.dimension, fixture.site.home);
         waiting.config = fixture.site.config;
@@ -317,8 +342,8 @@ public final class QuestSiteGameTests {
                 fixture.site.dimension, fixture.site.home.offset(5000, 0, 0));
         later.config = fixture.site.config;
         later.accepted = true;
-        fixture.data.sites.put(waiting.id, waiting);
-        fixture.data.sites.put(later.id, later);
+        fixture.data.add(waiting);
+        fixture.data.add(later);
         helper.startSequence().thenIdle(20).thenExecute(() -> {
             try {
                 helper.assertValueEqual(waiting.phase, Phase.READY, "offline site remains ready for its owner");
@@ -565,7 +590,7 @@ public final class QuestSiteGameTests {
             site.phase = Phase.ACTIVE;
             site.discovered = true;
             site.config = new Gson().toJson(quest.target().site());
-            data.sites.put(site.id, site);
+            data.add(site);
             progress = VillagerQuestSavedData.get(level).getOrCreate(player.getUUID(), QUEST);
             progress.start(null, level.dimension(), position, 0);
             progress.beginRun(player.getUUID(), QUEST, site.run);

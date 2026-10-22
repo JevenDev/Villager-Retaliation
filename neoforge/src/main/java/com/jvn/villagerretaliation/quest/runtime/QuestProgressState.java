@@ -14,6 +14,8 @@ public class QuestProgressState extends QuestProgressModel {
     private static final String LEVEL = "villagerretaliation:level";
     protected String issuerProfession = "";
     protected int issuerLevel;
+    private List<QuestProgressTypes.CompletionHistoryEntry> cachedCompletionRecords = List.of();
+    private List<CompletionHistoryEntry> cachedCompletionHistory = List.of();
 
     public String issuerProfession() { return this.issuerProfession; }
     public int issuerLevel() { return this.issuerLevel; }
@@ -60,7 +62,11 @@ public class QuestProgressState extends QuestProgressModel {
     }
 
     public List<CompletionHistoryEntry> completionHistory() {
-        return completionRecords().stream().map(QuestProgressState::legacyCompletion).toList();
+        if (!this.completionHistory.equals(this.cachedCompletionRecords)) {
+            this.cachedCompletionRecords = completionRecords();
+            this.cachedCompletionHistory = this.cachedCompletionRecords.stream().map(QuestProgressState::legacyCompletion).toList();
+        }
+        return this.cachedCompletionHistory;
     }
 
     public List<ProviderRebindHistoryEntry> providerRebindHistory() {

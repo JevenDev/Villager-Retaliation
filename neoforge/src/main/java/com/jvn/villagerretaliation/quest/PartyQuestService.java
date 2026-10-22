@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartySharedQuestRecord;
+import com.jvn.villagerretaliation.quest.inventory.QuestItemAllocation;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -223,31 +224,15 @@ public final class PartyQuestService {
         }
 
         List<StackSource> sources = itemSources(submitter, party, shared);
-        IdentityHashMap<ItemStack, Integer> available = new IdentityHashMap<>();
-        for (StackSource source : sources) {
-            available.put(source.stack(), Math.min(source.stack().getCount(), source.permittedCount()));
-        }
+        var allocation = QuestItemAllocation.plan(objectives, sources.stream()
+                .map(source -> new QuestItemAllocation.Supply(source.stack(), source.permittedCount())).toList(), matcher);
+        if (allocation.isEmpty()) return Optional.empty();
         List<Removal> removals = new ArrayList<>();
         List<ItemStack> submitted = new ArrayList<>();
-        for (QuestDefinition.Objective objective : objectives) {
-            int remaining = objective.count();
-            for (StackSource source : sources) {
-                if (remaining <= 0) {
-                    break;
-                }
-                int sourceAvailable = available.getOrDefault(source.stack(), 0);
-                if (sourceAvailable <= 0 || !matcher.test(objective, source.stack())) {
-                    continue;
-                }
-                int removed = Math.min(remaining, sourceAvailable);
-                removals.add(new Removal(source, objective, removed));
-                submitted.add(source.stack().copyWithCount(removed));
-                available.put(source.stack(), sourceAvailable - removed);
-                remaining -= removed;
-            }
-            if (remaining > 0) {
-                return Optional.empty();
-            }
+        for (var assigned : allocation.get()) {
+            var source = sources.get(assigned.source());
+            removals.add(new Removal(source, assigned.objective(), assigned.count()));
+            submitted.add(source.stack().copyWithCount(assigned.count()));
         }
         return Optional.of(new SubmissionPlan(List.copyOf(removals), List.copyOf(submitted), matcher));
     }
@@ -255,7 +240,8 @@ public final class PartyQuestService {
     private static List<StackSource> itemSources(ServerPlayer submitter, PartyRecord party, PartySharedQuestRecord shared) {
         List<StackSource> sources = new ArrayList<>();
         var inventory = submitter.getInventory();
-        for (int slot = 0; slot < inventory.items.size(); slot++) {
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (slot >= inventory.items.size() && slot < inventory.items.size() + inventory.armor.size()) continue;
             ItemStack stack = inventory.getItem(slot);
             if (!stack.isEmpty()) sources.add(new StackSource(stack, inventory, slot, stack.copy(), stack.getCount(),
                     () -> submitter.isAlive() && shared.linked(submitter.getUUID())
