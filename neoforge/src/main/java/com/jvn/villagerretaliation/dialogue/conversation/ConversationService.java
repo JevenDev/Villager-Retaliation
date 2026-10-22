@@ -198,19 +198,24 @@ public final class ConversationService {
                 var controller = player.getUUID().equals(session.controller) ? player : session.controller == null ? null : player.server.getPlayerList().getPlayer(session.controller);
                 boolean authorized = controller != null && member(controller, session) && canControl(controller, session) && near(controller, character);
                 var context = authorized ? ConversationActors.context(controller, character) : null;
+                var textReplacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
+                        com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(ConversationActors.context(player, character)), session.replacements);
+                int priorReplacements = session.replacements.size();
                 for (var response : definition.nodes().get(session.node).responses().values()) {
                     boolean available = authorized && conditions(context, response.conditions());
                     if (authorized && !response.showUnavailable() && !available) continue;
                     responses.add(new Response(response.id(),
-                            com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
-                                    text(player, response.labelKey()), session.replacements),
+                            ConversationText.render(player, text(player, response.labelKey()),
+                                    ConversationText.prepare(player, session, "response/" + response.id(), response.labelKey(), textReplacements)),
                             available,
                             !authorized ? "An authorized controller must be present."
                                     : available ? ""
                                     : response.unavailableKey().isEmpty()
                                             ? com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED.reason(context)
-                                            : text(player, response.unavailableKey())));
+                                            : ConversationText.render(player, text(player, response.unavailableKey()),
+                                                    ConversationText.prepare(player, session, "unavailable/" + response.id(), response.unavailableKey(), textReplacements))));
                 }
+                if (session.replacements.size() != priorReplacements) save(player, data, session);
             }
             issue = session.controller == null ? "The conversation is paused until an authorized member takes control." : session.diagnostic;
             if (session.phase == ConversationSession.Phase.RESPONSES && responses.stream().noneMatch(Response::available))
@@ -243,8 +248,8 @@ public final class ConversationService {
         var context = ConversationActors.context(player, character(player, session));
         var replacements = com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.merge(
                 com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), session.replacements);
-        String label = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
-                text(player, authored.labelKey()), replacements);
+        replacements = ConversationText.prepare(player, session, "response/" + response, authored.labelKey(), replacements);
+        String label = ConversationText.render(player, text(player, authored.labelKey()), replacements);
         session.choices.add(new ConversationSession.Choice(request, session.node, session.visit, response, player.getUUID(),
                 presentParticipants(player, session), player.serverLevel().getGameTime(), authored.labelKey(), label, replacements));
         session.phase = ConversationSession.Phase.RESPONSE_EFFECTS;

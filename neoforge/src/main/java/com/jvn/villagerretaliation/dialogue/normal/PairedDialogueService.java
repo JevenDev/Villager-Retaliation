@@ -50,6 +50,14 @@ public final class PairedDialogueService {
             String familiarity, String branch, String player, String npc, List<String> owners, List<String> tokens, String group) { }
 
     public static Optional<String> render(String template, Map<String, String> values) {
+        return render(template, values, false);
+    }
+
+    public static Optional<String> renderTemplate(String template, Map<String, String> values) {
+        return render(template, values, true);
+    }
+
+    private static Optional<String> render(String template, Map<String, String> values, boolean words) {
         var matcher = TOKEN.matcher(template);
         var result = new StringBuilder();
         while (matcher.find()) {
@@ -58,7 +66,8 @@ public final class PairedDialogueService {
             matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(value));
         }
         matcher.appendTail(result);
-        return safe(result.toString()) ? Optional.of(result.toString()) : Optional.empty();
+        return safe(words ? com.jvn.villagerretaliation.dialogue.DialogueWordPools.templateLiterals(result.toString()) : result.toString())
+                ? Optional.of(result.toString()) : Optional.empty();
     }
 
     public static boolean safe(String value) {
@@ -85,8 +94,8 @@ public final class PairedDialogueService {
                         || !eligible(pair, context, result.lineId(), outcome)) continue;
                 var tokens = new HashMap<>(outcome.tokens());
                 if (!bind(pair, context, result.lineId(), tokens)) continue;
-                var player = render(pair.player(), tokens);
-                var npc = render(pair.npc(), tokens);
+                var player = renderTemplate(pair.player(), tokens);
+                var npc = renderTemplate(pair.npc(), tokens);
                 if (player.isPresent() && npc.isPresent()) candidates.add(new Rendered(pair, player.get(), npc.get()));
             }
             if (candidates.isEmpty()) return result;
@@ -94,11 +103,15 @@ public final class PairedDialogueService {
         }
         // Keep original prose reachable; never discard a real multi-result gift disclosure.
         if (!joke && !insult && context.random().nextInt(4) == 0) return result;
+        var usageIds = selected.stream().map(Rendered::usageId).toList();
+        selected.replaceAll(value -> new Rendered(value.pair(),
+                com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(value.player(), Map.of(), context),
+                com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(value.npc(), Map.of(), context)));
         String npc = selected.stream().map(Rendered::npc).collect(java.util.stream.Collectors.joining(" "));
-        if (!safe(npc)) return result;
+        if (!safe(com.jvn.villagerretaliation.dialogue.DialogueWordPools.templateLiterals(npc))) return result;
         var segments = DialogueTextSegment.plain(npc, DialogueTextEffects.NONE);
         var first = selected.getFirst();
-        selected.forEach(value -> DialogueUsageService.record(context, value.usageId(), USAGE));
+        usageIds.forEach(id -> DialogueUsageService.record(context, id, USAGE));
         var speech = new DialogueSpeech(context.player().getUUID(), context.player().getId(), context.player().getName().getString(),
                 DialogueTextSegment.plain(first.player(), DialogueTextEffects.NONE));
         return new VillagerDialogueService.DialogueResult(result.lineId(), npc, DialogueTextEffects.NONE, segments,

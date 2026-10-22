@@ -22,6 +22,19 @@ public final class DialogueTemplates {
         return resolved;
     }
 
+    public static String resolveTemplate(String text, Map<String, String> replacements, DialogueRuntimeContext context) {
+        String resolved = resolveTemplate(text, replacements);
+        if (!resolved.contains("{word")) return resolved;
+        return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
+                .resolver(context.level() == null ? null : context.level().getServer(), context.locale(), context.random()).apply(resolved);
+    }
+
+    public static String resolveTemplate(String text, Map<String, String> replacements,
+            net.minecraft.server.MinecraftServer server, String locale, net.minecraft.util.RandomSource random) {
+        return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.resolver(server, locale, random)
+                .apply(resolveTemplate(text, replacements));
+    }
+
     private static String replaceTemplateToken(String text, String token, String replacement, boolean capitalizeAtSentenceStart) {
         StringBuilder builder = new StringBuilder(text.length());
         int cursor = 0;

@@ -2974,7 +2974,8 @@ final class ImGuiAuthoringEditor {
                         conditions.variant(), candidate -> conditions.evaluate(evaluationId, candidate)
                                 == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED);
                 return resolved.equals(key) ? null : resolved;
-            }, view != 3, coverage.observe(document));
+            }, view != 3, coverage.observe(document), com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.lookup(
+                    workspace, document, locale.get(), AuthoringDialoguePreview::defaultWordPool));
         });
     }
 

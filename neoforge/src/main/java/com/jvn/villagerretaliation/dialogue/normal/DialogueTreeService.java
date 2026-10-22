@@ -392,7 +392,7 @@ public final class DialogueTreeService {
         }
         return com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(
                 template,
-                DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements)
+                DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements), context
         );
     }
 

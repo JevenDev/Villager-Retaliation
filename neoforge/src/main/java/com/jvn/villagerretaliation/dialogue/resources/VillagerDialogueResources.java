@@ -305,7 +305,7 @@ public final class VillagerDialogueResources {
                     .toList();
         }
         return selectMessage(candidates, context.random())
-                .map(line -> resolveTemplate(line.selectText(context, context.random()), replacements));
+                .map(line -> resolveTemplate(line.selectText(context, context.random()), replacements, context));
     }
 
     public static Optional<String> professionPriorityMessage(DialogueContext context, String key, Map<String, String> replacements) {
@@ -324,7 +324,7 @@ public final class VillagerDialogueResources {
                 .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
                 .toList();
         return selectMessage(candidates, context.random())
-                .map(line -> resolveTemplate(line.selectText(context, context.random()), replacements));
+                .map(line -> resolveTemplate(line.selectText(context, context.random()), replacements, context));
     }
 
     public static Optional<String> globalMessage(MinecraftServer server, net.minecraft.util.RandomSource random, String key) {
@@ -362,7 +362,7 @@ public final class VillagerDialogueResources {
                     .toList();
         }
         return selectMessage(candidates, random)
-                .map(line -> resolveTemplate(line.selectText(null, random), replacements));
+                .map(line -> resolveTemplate(line.selectText(null, random), replacements, server, locale, random));
     }
 
     private static List<KeyedMessageLine> bundleMessageLines(
@@ -492,7 +492,8 @@ public final class VillagerDialogueResources {
                         candidates.stream().map(candidate -> CandidateArbitrator.Candidate.eligible(
                                 candidate.id(), candidate, candidate.priority(), candidate.chance(), candidate.weight())).toList(),
                         context.random(), ignored -> true)
-                .map(candidate -> resolvePacifyText(candidate.selectText(context), payment));
+                .map(candidate -> resolveTemplate(resolvePacifyText(candidate.selectText(context), payment),
+                        com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), context));
     }
 
     public static Optional<String> giftAdviceLine(
@@ -514,8 +515,9 @@ public final class VillagerDialogueResources {
                                 candidate.id(), candidate, candidate.priority(), candidate.chance(),
                                 VillagerDialogueService.effectiveWeight(candidate))).toList(),
                         context.random(), ignored -> true)
-                .map(candidate -> resolveGiftAdviceText(
-                        candidate.selectText(context.random()), giftItemName, giftSubject));
+                .map(candidate -> resolveTemplate(resolveGiftAdviceText(
+                        candidate.selectText(context.random()), giftItemName, giftSubject),
+                        com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), context));
     }
 
     private static DialoguePool load(MinecraftServer server, String locale) {
@@ -1875,6 +1877,16 @@ public final class VillagerDialogueResources {
                 ignored -> true);
     }
 
+    public static String resolveTemplate(String text, Map<String, String> replacements,
+            com.jvn.villagerretaliation.dialogue.DialogueRuntimeContext context) {
+        return com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(text, replacements, context);
+    }
+
+    public static String resolveTemplate(String text, Map<String, String> replacements, MinecraftServer server,
+            String locale, net.minecraft.util.RandomSource random) {
+        return com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(text, replacements, server, locale, random);
+    }
+
     public static String resolveTemplate(String text, Map<String, String> replacements) {
         return com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(text, replacements);
     }
@@ -1938,7 +1950,7 @@ public final class VillagerDialogueResources {
                     : message(context, variant.textKey()).orElse(variant.text());
             return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
                     com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(
-                            resolveTemplate(text, this.playerItemCondition.replacements(context.player())), com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), variant.camera());
+                            resolveTemplate(text, this.playerItemCondition.replacements(context.player()), context), com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), variant.camera());
         }
 
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {

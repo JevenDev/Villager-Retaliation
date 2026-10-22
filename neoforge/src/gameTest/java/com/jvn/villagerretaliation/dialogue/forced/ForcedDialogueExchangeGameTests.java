@@ -32,6 +32,11 @@ public final class ForcedDialogueExchangeGameTests {
         var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 1, 1, 1);
         var context = new ForcedDialogueResources.ForcedDialogueContext("Guide", "", "", "", "", "", "", 0,
                 "", "", "", "", 0, 0, 0, 0, 0, helper.getLevel().getServer(), helper.getLevel().getRandom(), "en_us");
+        String wordLine = ForcedDialogueResources.resolveTemplate(
+                "I'm <aqua>{word:villagerretaliation:mood/content}</aqua> this {time_of_day}.", context);
+        helper.assertFalse(wordLine.contains("{word"), "forced dialogue expands pools");
+        helper.assertFalse(wordLine.contains("{time_of_day}"), "forced dialogue retains time placeholders");
+        helper.assertTrue(wordLine.contains("<aqua>"), "formatting remains for the final parser");
         var ambient = ForcedDialogueService.resolveForcedExchanges(null, villager, definition.output().exchanges(), context, java.util.Map.of());
         helper.assertTrue(ambient.getFirst().speaker() == null, "ambient narration needs no player identity");
         helper.assertValueEqual(ambient.getLast().speaker(), villager.getUUID(), "ambient NPC keeps its entity identity");

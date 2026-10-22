@@ -3,6 +3,7 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
+import { validateWordDirectory } from "./dialogue-word-validation.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
@@ -996,6 +997,8 @@ for (const file of [...cli.questFiles, ...cli.conversationFiles, ...cli.campaign
 }
 if (!contextRoots.size) errors.push(...await validateContextDirectory());
 else for (const [directory, files] of contextRoots) errors.push(...await validateContextDirectory(directory, files));
+if (!contextRoots.size) errors.push(...await validateWordDirectory());
+else for (const [directory, files] of contextRoots) errors.push(...await validateWordDirectory(directory, files));
 validateCrossReferences();
 
 if (errors.length > 0) process.exitCode = 1;

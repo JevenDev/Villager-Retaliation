@@ -50,6 +50,7 @@ public final class VillagerDataWarmup {
     public static void warm(MinecraftServer server) {
         VillagerDialogueResources.warm(server);
         DialogueTuningResources.warm(server);
+        com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.warm(server);
         DialogueTreeResources.warm(server);
         VillagerGiftResources.warm(server);
         ProfessionLootResources.warm(server);
@@ -97,6 +98,7 @@ public final class VillagerDataWarmup {
         DatapackDiagnostics.clear();
         VillagerDialogueResources.clearCache();
         DialogueTuningResources.clearCache();
+        com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.clearCache();
         DialogueTreeResources.clearCache();
         VillagerGiftResources.clearCache();
         ProfessionLootResources.clearCache();

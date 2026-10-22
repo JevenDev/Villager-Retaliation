@@ -53,7 +53,7 @@ public record DialogueExchange(ConversationDefinition.SpeakerKind speaker, Strin
         var entity = speaker == ConversationDefinition.SpeakerKind.PLAYER ? context.player()
                 : speaker == ConversationDefinition.SpeakerKind.ROLE ? context.speaker() : null;
         String line = textKey.isBlank() ? text : context.message(textKey).orElse(text);
-        line = DialogueTemplates.resolveTemplate(line, DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements));
+        line = DialogueTemplates.resolveTemplate(line, DialoguePlaceholders.merge(DialoguePlaceholders.base(context), replacements), context);
         return new DialogueSpeech(entity == null ? null : entity.getUUID(), entity == null ? -1 : entity.getId(),
                 entity == null ? "" : context.displayName(entity), DialogueTextSegment.parse(line, DialogueTextEffects.NONE), camera);
     }

@@ -882,7 +882,9 @@ public final class ForcedDialogueResources {
         if (text == null) {
             return "";
         }
-        return VillagerDialogueResources.resolveTemplate(text, templateReplacements(context, extraReplacements));
+        return context == null ? VillagerDialogueResources.resolveTemplate(text, templateReplacements(null, extraReplacements))
+                : VillagerDialogueResources.resolveTemplate(text, templateReplacements(context, extraReplacements),
+                        context.server(), context.locale(), context.random());
     }
 
     static String resolveTemplate(LocalizedText text, ForcedDialogueContext context) {
@@ -894,13 +896,12 @@ public final class ForcedDialogueResources {
             return "";
         }
         Map<String, String> replacements = templateReplacements(context, extraReplacements);
-        String fallback = VillagerDialogueResources.resolveTemplate(text.text(), replacements);
         if (!text.key().isBlank() && context != null && context.server() != null && context.random() != null) {
-            return VillagerDialogueResources
-                    .globalMessage(context.server(), context.random(), text.key(), context.locale(), replacements)
-                    .orElse(fallback);
+            var localized = VillagerDialogueResources
+                    .globalMessage(context.server(), context.random(), text.key(), context.locale(), replacements);
+            if (localized.isPresent()) return localized.get();
         }
-        return fallback;
+        return resolveTemplate(text.text(), context, extraReplacements);
     }
 
     private static Map<String, String> templateReplacements(ForcedDialogueContext context, Map<String, String> extraReplacements) {

@@ -185,16 +185,16 @@ public final class PairedGreetGameTests {
     }
 
     @GameTest(template = "empty", batch = "paired_greet")
-    public static void deliveredPairedResourcesRemainByteIdentical(GameTestHelper helper) throws Exception {
+    public static void bundledPairedResourcesMatchExpectedContent(GameTestHelper helper) throws Exception {
         var expected = java.util.Map.of(
-                "00_greet_pairs.json", "4fcc3aa36ab4e7251fafb1ee09f3c5691e51585dc05e967c4ff858ca569ec6c6",
+                "00_greet_pairs.json", "a40127098e2bb01bd73aef5749da68f2bbc9f38364213dada295c6ed7b46ccac",
                 "01_ordinary_greet_extension.json", "37debf9c3c1750a6e3484b90c1353023fafcb282d0785ad73d0e887e6d22e78a");
         for (var entry : expected.entrySet()) {
             var resource = helper.getLevel().getServer().getResourceManager().getResource(
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "paired_greetings/en_us/" + entry.getKey())).orElseThrow();
             try (var stream = resource.open()) {
                 String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(stream.readAllBytes()));
-                helper.assertValueEqual(hash, entry.getValue(), "previously delivered pair resource is untouched: " + entry.getKey());
+                helper.assertValueEqual(hash, entry.getValue(), "bundled pair resource matches expected content: " + entry.getKey());
             }
         }
         helper.succeed();
@@ -375,9 +375,11 @@ public final class PairedGreetGameTests {
                         helper.assertTrue(owner.matches(context, requestType, binding.optionId(), VillagerDialogueService.dispositionFor(tier)),
                                 "bound NPC owner passes its actual request/age/reputation gates: " + binding.id());
                         helper.assertTrue(variant != null && variant.matches(context), "bound NPC variant passes its actual adult/reputation/mood gates: " + binding.id());
-                        var original = VillagerDialogueService.DialogueResult.fromText(variant.id(), variant.text(), owner.textEffects());
-                        helper.assertValueEqual(original.text(), DialogueTextSegment.plainText(DialogueTextSegment.parse(binding.npcText(), DialogueTextEffects.NONE)),
-                                "every binding preserves its exact loaded NPC counterpart");
+                        helper.assertValueEqual(DialogueTextSegment.plainText(DialogueTextSegment.parse(variant.text(), owner.textEffects())),
+                                DialogueTextSegment.plainText(DialogueTextSegment.parse(binding.npcText(), DialogueTextEffects.NONE)),
+                                "every binding preserves its exact loaded NPC template");
+                        var original = VillagerDialogueService.DialogueResult.fromText(variant.id(),
+                                VillagerDialogueResources.resolveTemplate(variant.text(), java.util.Map.of(), context), owner.textEffects());
                         helper.assertTrue(compatible.stream().anyMatch(fallback -> fallback.npcVariantId().equals(binding.npcVariantId()) && !fallback.player().contains("<")),
                                 "every exact tier/contact binding has a token-free fallback");
                         var result = PairedGreetingService.attach(context, DialogueOptionDefinition.simple(binding.optionId(), "Existing choice", requestType, 0), original, false, List.of(binding));

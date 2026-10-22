@@ -590,6 +590,34 @@ public final class ConversationSessionGameTests {
     }
 
     @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void wordChoicesRemainStableAfterSessionReload(GameTestHelper helper) throws IOException {
+        try (var disk = new Disk()) {
+            var player = helper.makeMockServerPlayerInLevel();
+            var session = session(UUID.randomUUID());
+            String template = "Hello {player}, I'm {word:villagerretaliation:mood/content}.";
+            var replacements = ConversationText.prepare(player.server, session, "greet", Map.of("en_us", template), Map.of("player", "Alex"));
+            String prepared = ConversationText.render(player, template, replacements);
+            helper.assertFalse(prepared.contains("{word"), "conversation prepares a pool word");
+            session.transcript.add(new ConversationSession.Line("welcome", 1, "greet", ConversationDefinition.SpeakerKind.NARRATOR,
+                    "", null, "", "fixture.words", prepared, replacements, true));
+            disk.open().write(null, 0, session);
+            var restored = disk.reload().session(session.identity.id()).transcript.getFirst();
+            for (int index = 0; index < 20; index++) {
+                player.getRandom().nextLong();
+                helper.assertValueEqual(ConversationText.render(player, template, restored.replacements()), prepared,
+                        "localized redisplay uses the saved wording");
+            }
+            helper.assertValueEqual(restored.fallback(), prepared, "prepared fallback survives saving");
+            var resumed = disk.reload().session(session.identity.id());
+            var afterReload = ConversationText.prepare(player.server, resumed, "greet",
+                    Map.of("en_us", "Changed {word:missing:pool}"), Map.of("player", "Alex"));
+            helper.assertValueEqual(ConversationText.render(player, "Changed {word:missing:pool}", afterReload), prepared,
+                    "resumed text retains its prepared wording even when content changes");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
     public static void localizedLineSnapshotsAndRecoveryProofSurviveReload(GameTestHelper helper) throws IOException {
         try (var disk = new Disk()) {
             var data = disk.open();

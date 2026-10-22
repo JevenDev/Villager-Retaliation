@@ -54,7 +54,7 @@ public final class PairedDialogueResources {
             com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.valueOf(p.request().toUpperCase(Locale.ROOT));
             var values = new HashMap<String, String>();
             p.tokens().forEach(t -> values.put(t, "literal"));
-            if (PairedDialogueService.render(p.player(), values).isEmpty() || PairedDialogueService.render(p.npc(), values).isEmpty()) throw new IllegalArgumentException("Invalid pair template " + p.id());
+            if (PairedDialogueService.renderTemplate(p.player(), values).isEmpty() || PairedDialogueService.renderTemplate(p.npc(), values).isEmpty()) throw new IllegalArgumentException("Invalid pair template " + p.id());
             rows.add(p);
         }
         return List.copyOf(rows);

@@ -44,7 +44,7 @@ public record DialogueChoice(boolean showUnavailable, String unavailableText, St
         String text = unavailableKey.isBlank() ? fallback
                 : context.message(unavailableKey).orElse(fallback);
         return DialogueTemplates.resolveTemplate(text,
-                com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context));
+                com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.base(context), context);
     }
 
     public static JsonObject behaviorSchema() {

@@ -38,6 +38,9 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private SoundInstance voice;
     private int shownRevision = -1;
     private boolean disposed;
+    private Function<ResourceLocation, List<String>> wordPools;
+    private final java.util.Map<String, String> resolvedWords = new java.util.HashMap<>();
+    private final RandomSource wordRandom = RandomSource.create();
 
     private AuthoringDialoguePreview(DialoguePreviewSession session, Entity target, String start,
             PreviewConditions conditions, Runnable returnToEditor, java.util.function.Consumer<PreviewCoverage> coverage) {
@@ -70,6 +73,12 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     public static void start(AuthoringDocument document, String nodeId, Entity target,
             PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport,
             java.util.function.Consumer<PreviewCoverage> coverage) {
+        start(document, nodeId, target, conditions, returnToEditor, localization, showTransport, coverage, null);
+    }
+
+    public static void start(AuthoringDocument document, String nodeId, Entity target,
+            PreviewConditions conditions, Runnable returnToEditor, Function<String, String> localization, boolean showTransport,
+            java.util.function.Consumer<PreviewCoverage> coverage, Function<ResourceLocation, List<String>> wordPools) {
         var minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null || target == null
                 || target.level() != minecraft.level || !target.isAlive() || target.isRemoved())
@@ -83,6 +92,10 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         var session = new DialoguePreviewSession(json, id, conditions, localization);
         session.start(nodeId);
         var preview = new AuthoringDialoguePreview(session, target, nodeId, conditions, returnToEditor, coverage);
+        preview.wordPools = wordPools == null ? idValue -> {
+            var values = defaultWordPool(idValue, minecraft.options.languageCode);
+            return values.isEmpty() ? defaultWordPool(idValue, "en_us") : values;
+        } : wordPools;
         preview.showTransport = showTransport;
         active = preview;
         try {
@@ -175,7 +188,17 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         replacements.putIfAbsent("z", Integer.toString(target.blockPosition().getZ()));
         com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(conditions.resolveDayTime(minecraft.level.getDayTime()))
                 .forEach(replacements::putIfAbsent);
-        return com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(text, replacements);
+        String resolved = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(text, replacements);
+        return resolvedWords.computeIfAbsent(resolved, value -> com.jvn.villagerretaliation.dialogue.DialogueWordPools
+                .resolver(wordPools, wordRandom, issue -> com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedEntry(
+                        ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview"), "dialogue words", "preview", issue))
+                .apply(value));
+    }
+
+    public static List<String> defaultWordPool(ResourceLocation id, String locale) {
+        var server = Minecraft.getInstance().getSingleplayerServer();
+        if (server != null) return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedValues(server, locale, id);
+        return PreviewWordPools.bundled(id, locale);
     }
 
     @Override public List<Entity> cameraSubjects() {

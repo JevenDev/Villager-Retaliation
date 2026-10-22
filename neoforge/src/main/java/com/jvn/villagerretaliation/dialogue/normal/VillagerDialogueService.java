@@ -208,8 +208,10 @@ public final class VillagerDialogueService {
 
     private static com.jvn.villagerretaliation.dialogue.DialogueSpeech resolveSpeech(DialogueContext context,
             com.jvn.villagerretaliation.dialogue.DialogueSpeech speech) {
+        var words = com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
+                .resolver(context.level().getServer(), context.locale(), context.random());
         return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
-                DialogueTextSegment.parse(resolveText(speech.text(), context), DialogueTextEffects.NONE), speech.camera());
+                speech.segments().stream().map(segment -> segment.mapText(text -> resolveText(text, context, words))).toList(), speech.camera());
     }
 
     private static com.jvn.villagerretaliation.dialogue.DialogueSpeech plainSpeech(DialogueContext context, String text) {
@@ -907,6 +909,12 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(String text, DialogueContext context) {
+        return resolveText(text, context, com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
+                .resolver(context.level().getServer(), context.locale(), context.random()));
+    }
+
+    private static String resolveText(String text, DialogueContext context, java.util.function.UnaryOperator<String> words) {
+        text = words.apply(VillagerDialogueResources.resolveTemplate(text, DialoguePlaceholders.base(context)));
         String curedVillagerName = curedVillagerName(context);
         return resolveRetaliationText(resolveContainerTheftText(text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())

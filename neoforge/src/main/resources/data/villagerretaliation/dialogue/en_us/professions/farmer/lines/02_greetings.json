@@ -1347,7 +1347,7 @@
         },
         {
           "id": "paired_greet.wellbeing.royalty.content",
-          "text": "I'm feeling content. It's kind of you to ask.",
+          "text": "I'm feeling {word:villagerretaliation:mood/content}. It's kind of you to ask.",
           "conditions": [
             {
               "type": "reputation",
@@ -1365,7 +1365,7 @@
         },
         {
           "id": "paired_greet.wellbeing.revered.content",
-          "text": "I'm feeling content. Thank you for asking.",
+          "text": "I'm feeling {word:villagerretaliation:mood/content}. Thank you for asking.",
           "conditions": [
             {
               "type": "reputation",
@@ -1383,7 +1383,7 @@
         },
         {
           "id": "paired_greet.wellbeing.trusted.content",
-          "text": "I'm feeling <aqua>content</aqua>, thanks for asking.",
+          "text": "I'm feeling <aqua>{word:villagerretaliation:mood/content}</aqua>, thanks for asking.",
           "conditions": [
             {
               "type": "reputation",
@@ -1401,7 +1401,7 @@
         },
         {
           "id": "paired_greet.wellbeing.neutral.content",
-          "text": "I'm feeling content, thank you.",
+          "text": "I'm feeling {word:villagerretaliation:mood/content}, thank you.",
           "conditions": [
             {
               "type": "reputation",

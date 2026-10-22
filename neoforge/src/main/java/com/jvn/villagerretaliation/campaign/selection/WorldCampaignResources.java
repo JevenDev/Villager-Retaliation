@@ -19,7 +19,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
 
 public final class WorldCampaignResources {
-    private static final Set<String> ROOTS = Set.of("quests", "dialogue", "dialogue_trees", "forced_dialogue", "paired_greetings", "campaigns", "campaign_scenarios");
+    private static final Set<String> ROOTS = Set.of("quests", "dialogue_words", "dialogue", "dialogue_trees", "forced_dialogue", "paired_greetings", "campaigns", "campaign_scenarios");
 
     private WorldCampaignResources() { }
 

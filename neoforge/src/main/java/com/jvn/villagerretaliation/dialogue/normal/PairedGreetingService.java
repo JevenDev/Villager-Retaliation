@@ -45,8 +45,9 @@ public final class PairedGreetingService {
         List<RenderedPair> candidates = new ArrayList<>();
         for (Pair pair : pairs) {
             if (!pair.optionId().equals(option.id()) || !pair.npcVariantId().equals(result.lineId())
-                    || !DialogueTextSegment.plainText(DialogueTextSegment.parse(
-                            pair.npcText(), DialogueTextEffects.NONE)).equals(result.text())
+                    || !com.jvn.villagerretaliation.dialogue.DialogueWordPools.matches(
+                            DialogueTextSegment.plainText(DialogueTextSegment.parse(pair.npcText(), DialogueTextEffects.NONE)), result.text(),
+                            id -> com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.values(context.level().getServer(), context.locale(), id))
                     || pair.reputationLevel() != context.reputationLevel()
                     || pair.firstConversation() != context.firstConversation()
                     || pair.weight() <= 0) continue;
@@ -80,7 +81,8 @@ public final class PairedGreetingService {
         DialogueUsageService.record(context, selected.usageId(), USAGE);
         // Plain segments deliberately avoid interpreting names as text-effect markup.
         DialogueSpeech player = new DialogueSpeech(context.player().getUUID(), context.player().getId(),
-                context.player().getName().getString(), DialogueTextSegment.plain(selected.text(), DialogueTextEffects.NONE));
+                context.player().getName().getString(), DialogueTextSegment.plain(com.jvn.villagerretaliation.dialogue.DialogueTemplates.resolveTemplate(
+                        selected.text(), Map.of(), context), DialogueTextEffects.NONE));
         DialogueSpeech npc = DialogueSpeech.npc(context.villager(), result.textSegments(), null);
         return new VillagerDialogueService.DialogueResult(result.lineId(), result.text(), result.textEffects(),
                 result.textSegments(), List.of(player, npc));
@@ -100,7 +102,7 @@ public final class PairedGreetingService {
                 || template.codePoints().anyMatch(Character::isISOControl)) return false;
         Matcher matcher = TOKEN.matcher(template);
         while (matcher.find()) if (!TOKENS.contains(matcher.group(1))) return false;
-        String literal = matcher.replaceAll("");
+        String literal = com.jvn.villagerretaliation.dialogue.DialogueWordPools.templateLiterals(matcher.replaceAll(""));
         return literal.indexOf('<') < 0 && literal.indexOf('>') < 0
                 && literal.indexOf('{') < 0 && literal.indexOf('}') < 0;
     }
