@@ -1908,7 +1908,7 @@ public final class VillagerQuestService {
         VillagerQuestTargets.LocatedTarget target = (campaignEntry.alternateStage()
                 ? VillagerQuestTargets.locateStageTarget(context, definition, campaignEntry.stage())
                 : VillagerQuestTargets.locateInitialTarget(context, definition)).orElse(null);
-        if (target == null && (campaignEntry.alternateStage()
+        if (target == null && definition.target().site() == null && (campaignEntry.alternateStage()
                 ? QuestObjectiveQuery.stageObjectives(definition, campaignEntry.stage()).stream()
                         .anyMatch(objective -> !objective.optional() && QuestObjectiveRegistry.requiresLocatedTarget(objective))
                 : VillagerQuestTargets.requiresLocatedTarget(definition, campaignEntry.stage()))) {
@@ -1922,12 +1922,17 @@ public final class VillagerQuestService {
                     replacements(context, definition, progress));
         }
 
+        if (definition.target().site() != null && target == null) {
+            return result(com.jvn.villagerretaliation.quest.site.QuestSiteService.preparing(context, definition) ? "site_preparing" : "locate_failed",
+                    "", com.jvn.villagerretaliation.quest.site.QuestSiteService.issue(context, definition), Map.of());
+        }
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
         PartyQuestEnrollmentService.StartPlan partyStart = preparePartyStart(context, definition);
         UUID definitiveRunId = partyStart == null ? null : partyStart.shared().instanceId();
         QuestLifecycleService.start(definition.id(), started, providerBinding, target,
                 context.level().getGameTime(), context.player().getUUID(), definitiveRunId, forceRestart);
+        if (definition.target().site() != null) com.jvn.villagerretaliation.quest.site.QuestSiteService.bind(context, definition, started.questRunId());
         started.adoptDefinitionRevision(definition.revision().number());
         started.bindCampaign(definition.campaign());
         started.campaignAcceptance(acceptance);
@@ -1977,7 +1982,7 @@ public final class VillagerQuestService {
         if (!campaignEntry.alternateStage()) lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.STARTED);
         data.setDirty();
         if (target != null) {
-            rememberQuestStoryHint(context, definition, target);
+            if (definition.target().site() == null) rememberQuestStoryHint(context, definition, target);
             maybeGiveQuestTargetMap(context, definition, target);
         }
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
@@ -2040,7 +2045,7 @@ public final class VillagerQuestService {
         initializeQuestStage(memberContext, definition, linked);
         lockBranchQuests(memberContext, definition, QuestDefinition.BranchLockEvent.STARTED);
         if (target != null) {
-            rememberQuestStoryHint(memberContext, definition, target);
+            if (definition.target().site() == null) rememberQuestStoryHint(memberContext, definition, target);
             maybeGiveQuestTargetMap(memberContext, definition, target);
         }
         sendQuestNotification(memberContext, "quest.started", definition, linked, "Quest started: {quest}");
@@ -2075,6 +2080,7 @@ public final class VillagerQuestService {
                             replacements(context, definition, progress)),
                     replacements(context, definition, progress));
         }
+        if (definition.target().site() != null) com.jvn.villagerretaliation.quest.site.QuestSiteService.giveMap(context, definition, true);
         return result(
                 "reminder",
                 lineId(definition, "reminder"),
@@ -2430,7 +2436,8 @@ public final class VillagerQuestService {
                 true,
                 true,
                 VillagerQuestService::parentCompleted,
-                VillagerQuestService::scopedCompletionCount);
+                VillagerQuestService::scopedCompletionCount)
+                && com.jvn.villagerretaliation.quest.site.QuestSiteService.offerAvailable(context, definition);
     }
 
     private static boolean withinActiveCapacity(
@@ -3703,6 +3710,10 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestTargets.LocatedTarget target) {
+        if (definition.target().site() != null) {
+            com.jvn.villagerretaliation.quest.site.QuestSiteService.giveMap(context, definition, false);
+            return;
+        }
         ResourceLocation structure = VillagerQuestTargets.targetStructure(definition, target.objectiveId());
         if (structure == null) {
             return;
@@ -4992,7 +5003,8 @@ public final class VillagerQuestService {
                     presented.status(), presented.issuer(), presented.issuerLocation(), presented.questItems(), presented.rewardPreviews(),
                     presented.prerequisites(), steps, presented.questUpdate(), presented.questAvailable()).withJournal(presented.journal());
         }
-        return QuestPresentationService.withRuntimeJournalView(presented, definition, presentationProgress, presentationProgress.completedGameTime());
+        return com.jvn.villagerretaliation.quest.site.QuestSiteService.present(player, definition,
+                QuestPresentationService.withRuntimeJournalView(presented, definition, presentationProgress, presentationProgress.completedGameTime()));
     }
 
     private static List<QuestTrackerSyncPayload.Prerequisite> prerequisitePreviews(

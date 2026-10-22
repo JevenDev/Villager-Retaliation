@@ -299,6 +299,7 @@ public final class ContentSchemaDefinitions {
         properties.add("pieces", arrayOf(string()));
         properties.add("search_radius", integer());
         properties.add("discovery_radius", integer());
+        properties.add("site", com.jvn.villagerretaliation.quest.site.QuestSiteDefinition.schema());
         properties.add("proof_item", resourceLocation());
         properties.add("proof_item_components", itemComponents());
         properties.add("proof_item_durability", durability());

@@ -1,0 +1,276 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "villagerretaliation:missing_neighbor",
+  "localization_prefix": "villagerretaliation.quest.missing_neighbor",
+  "metadata": {
+    "questline": "roadside_rescues",
+    "tags": [
+      "group.roadside_rescues",
+      "role.story",
+      "activity.combat",
+      "activity.explore",
+      "destination.overworld",
+      "tier.mid",
+      "difficulty.normal",
+      "commitment.standard",
+      "theme.community"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:cleric"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_starts": 1,
+    "max_completions": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "abandonment": "remove_forever",
+    "consume_on_completion": true,
+    "consume_on_abandonment": true
+  },
+  "target": {
+    "dimension": "minecraft:overworld",
+    "site": {
+      "selection": "prefer_existing",
+      "terrain": "new_terrain_only",
+      "structures": [
+        "minecraft:pillager_outpost"
+      ],
+      "templates": [
+        "villagerretaliation:quest/holding_camp"
+      ],
+      "min_distance": 256,
+      "max_distance": 2048,
+      "attempts": 32,
+      "buffer": 16,
+      "map_style": "search_circle",
+      "search_radius": 96,
+      "rescue": "escort_home",
+      "guards": 2
+    }
+  },
+  "entry_stage": "rescue",
+  "stages": [
+    {
+      "id": "rescue",
+      "objectives": [
+        {
+          "id": "bring_neighbor_home",
+          "type": "criterion",
+          "criterion": "villagerretaliation:captive_rescued",
+          "match": {
+            "quest": "villagerretaliation:missing_neighbor"
+          },
+          "count": 1,
+          "tracker": {
+            "text": {
+              "key": "#rescue.tracker"
+            }
+          }
+        }
+      ],
+      "dialogue": {
+        "offer": {
+          "label": {
+            "key": "#offer.label"
+          },
+          "request": "question",
+          "lines": {
+            "key": "#offer.lines"
+          },
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#offer.accept"
+              },
+              "transition": {
+                "scene": "start_quest"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#offer.accept"
+                  }
+                }
+              ]
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#offer.lines"
+              }
+            }
+          ]
+        },
+        "reminder": {
+          "label": {
+            "key": "#reminder.label"
+          },
+          "request": "question",
+          "lines": {
+            "key": "#reminder.lines"
+          },
+          "responses": [
+            {
+              "id": "remind",
+              "label": {
+                "key": "#reminder.response"
+              },
+              "transition": {
+                "scene": "remind"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#reminder.response"
+                  }
+                }
+              ]
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#reminder.lines"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": {
+                  "key": "#start.started"
+                },
+                "locate_failed": {
+                  "key": "#start.failed"
+                },
+                "site_preparing": {
+                  "key": "#start.preparing"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "remind",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind"
+            }
+          ]
+        }
+      ],
+      "transition": {
+        "stage": "return"
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": {
+            "key": "#return.label"
+          },
+          "request": "question",
+          "lines": {
+            "key": "#return.lines"
+          },
+          "responses": [
+            {
+              "id": "complete",
+              "label": {
+                "key": "#return.response"
+              },
+              "transition": {
+                "scene": "finish"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#return.response"
+                  }
+                }
+              ]
+            }
+          ],
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#return.lines"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "finish",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#return.completed"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "experience": 150,
+    "reputation": 10,
+    "loot_table": "villagerretaliation:quest/missing_neighbor"
+  },
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
+    "icon": "minecraft:filled_map"
+  }
+}

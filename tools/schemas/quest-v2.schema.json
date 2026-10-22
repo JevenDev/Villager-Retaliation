@@ -768,6 +768,175 @@
         "discovery_radius": {
           "type": "integer"
         },
+        "site": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "selection": {
+              "enum": [
+                "existing_only",
+                "prefer_existing",
+                "new_site"
+              ]
+            },
+            "terrain": {
+              "description": "Defaults to new terrain only. Generated wilderness uses conservative construction checks and cannot prove that land is untouched.",
+              "enum": [
+                "new_terrain_only",
+                "generated_wilderness"
+              ]
+            },
+            "structures": {
+              "type": "array",
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              }
+            },
+            "templates": {
+              "type": "array",
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              }
+            },
+            "min_distance": {
+              "type": "integer",
+              "minimum": 128,
+              "maximum": 8192
+            },
+            "max_distance": {
+              "type": "integer",
+              "minimum": 128,
+              "maximum": 8192
+            },
+            "attempts": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "buffer": {
+              "type": "integer",
+              "minimum": 8,
+              "maximum": 32
+            },
+            "map_style": {
+              "enum": [
+                "exact",
+                "search_circle"
+              ]
+            },
+            "search_radius": {
+              "type": "integer",
+              "minimum": 32,
+              "maximum": 192
+            },
+            "rescue": {
+              "enum": [
+                "none",
+                "free_at_site",
+                "escort_home"
+              ]
+            },
+            "guards": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8
+            },
+            "support_tag": {
+              "description": "Block tag used to check whether an existing structure still supports this encounter. Defaults to minecraft:planks.",
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "minimum_support_blocks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 512
+            },
+            "escort_destination": {
+              "description": "Optional escort destination in the quest site dimension. Defaults to the quest giver position.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y",
+                "z"
+              ],
+              "properties": {
+                "x": {
+                  "type": "integer",
+                  "minimum": -29999000,
+                  "maximum": 29999000
+                },
+                "y": {
+                  "type": "integer",
+                  "minimum": -2048,
+                  "maximum": 2048
+                },
+                "z": {
+                  "type": "integer",
+                  "minimum": -29999000,
+                  "maximum": 29999000
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "required": [
+                  "selection"
+                ],
+                "properties": {
+                  "selection": {
+                    "enum": [
+                      "prefer_existing",
+                      "new_site"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "templates"
+                ],
+                "properties": {
+                  "templates": {
+                    "minItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "not": {
+                  "required": [
+                    "selection"
+                  ],
+                  "properties": {
+                    "selection": {
+                      "const": "new_site"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "structures"
+                ],
+                "properties": {
+                  "structures": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          ]
+        },
         "proof_item": {
           "type": "string",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"

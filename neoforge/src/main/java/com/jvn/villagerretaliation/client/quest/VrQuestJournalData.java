@@ -50,10 +50,7 @@ public final class VrQuestJournalData {
     public static QuestJournalData.Waypoint shared(QuestTrackerSyncPayload.Waypoint value) {
         if (value == null) return null;
         return new QuestJournalData.Waypoint(
-                value.dimension(),
-                value.x(),
-                value.y(),
-                value.z());
+                value.dimension(), value.x(), value.y(), value.z(), value.radius());
     }
 
     public static QuestJournalData.QuestlineNode shared(QuestTrackerSyncPayload.QuestlineNode value) {
@@ -158,10 +155,7 @@ public final class VrQuestJournalData {
     public static QuestTrackerSyncPayload.Waypoint legacy(QuestJournalData.Waypoint value) {
         if (value == null) return null;
         return new QuestTrackerSyncPayload.Waypoint(
-                value.dimension(),
-                value.x(),
-                value.y(),
-                value.z());
+                value.dimension(), value.x(), value.y(), value.z(), value.radius());
     }
 
     public static QuestTrackerSyncPayload.QuestlineNode legacy(QuestJournalData.QuestlineNode value) {

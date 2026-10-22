@@ -220,7 +220,8 @@ public record QuestDefinition(
             int searchRadius,
             int discoveryRadius,
             ResourceLocation proofItem,
-            ItemStackPredicate proofItemPredicate
+            ItemStackPredicate proofItemPredicate,
+            com.jvn.villagerretaliation.quest.site.QuestSiteDefinition site
     ) {
         public static final Target EMPTY =
                 new Target(null, null, List.of(), 128, 128, null, ItemStackPredicate.ANY);
@@ -233,6 +234,11 @@ public record QuestDefinition(
                 int discoveryRadius,
                 ResourceLocation proofItem) {
             this(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem, ItemStackPredicate.ANY);
+        }
+
+        public Target(ResourceLocation structure, ResourceKey<Level> dimension, List<String> pieces,
+                int searchRadius, int discoveryRadius, ResourceLocation proofItem, ItemStackPredicate predicate) {
+            this(structure, dimension, pieces, searchRadius, discoveryRadius, proofItem, predicate, null);
         }
 
         public Target {

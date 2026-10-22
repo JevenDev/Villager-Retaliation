@@ -75,6 +75,7 @@ public final class BuiltInQuestContentGameTests {
             questline("nether_routes", "bastion_line", "choose_a_road", "fortress_line", "through_fire"),
             questline("old_roads", "sunken_ledger", "the_broken_milestone"),
             questline("redstone_works", "power_the_gate", "quiet_trigger", "small_spark", "sun_switch"),
+            questline("roadside_rescues", "missing_neighbor"),
             questline("village_commissions",
                     "apiary_smoke", "beacon_polish", "bell_rope", "compost_turn", "copper_weather",
                     "dragon_sample", "echo_trade", "ender_freight", "market_day", "ocean_glass",

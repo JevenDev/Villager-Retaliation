@@ -296,6 +296,7 @@ public final class VillagerRetaliationEvents {
         PartyVillagerContractService.onServerTick(event.getServer());
         com.jvn.villagerretaliation.combat.downed.VillagerReviveService.tick(event.getServer());
         SceneRuntime.tick(event.getServer());
+        com.jvn.villagerretaliation.quest.site.QuestSiteService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementViewService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementBuildingService.tick(event.getServer());
         com.jvn.villagerretaliation.settlement.SettlementSimulationService.tick(event.getServer());
@@ -431,6 +432,7 @@ public final class VillagerRetaliationEvents {
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
         com.jvn.villagerretaliation.quest.follower.QuestFollowerService.died(event.getEntity());
+        com.jvn.villagerretaliation.quest.site.QuestSiteService.died(event.getEntity());
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                 .onEntityPermanentlyRemoved(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {

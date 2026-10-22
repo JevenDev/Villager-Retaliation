@@ -41,6 +41,7 @@ public final class ExploredMapScreen extends Screen {
                 graphics.drawCenteredString(font, marker.name().isBlank() ? Component.translatable("map.villagerretaliation.village")
                         : Component.literal(marker.name()), x, y + 10, 0xffe8c0);
             }
+            QuestMapOverlay.render(graphics, view, font);
             if (minecraft.player != null) MapPlayerIcon.render(graphics, (float)view.screenX(minecraft.player.getX()),
                     (float)view.screenY(minecraft.player.getZ()), minecraft.player.getViewYRot(partial));
             graphics.disableScissor(); renderedFrames++;

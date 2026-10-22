@@ -1,4 +1,9 @@
 {
+  "quest.villagerretaliation.site_map": "Quest Map",
+  "quest.villagerretaliation.search_area": "Search near %s, %s within %s blocks",
+  "quest.villagerretaliation.rescue.guards": "Defeat the guards before freeing the captive.",
+  "quest.villagerretaliation.rescue.freed": "The captive is free.",
+  "quest.villagerretaliation.rescue.reserved": "This rescue belongs to another adventuring group.",
   "villagerretaliation.gui.conversation.response_timer": "Respond within %s seconds",
   "villagerretaliation.gui.quest_timer.warning": "%s: %s seconds remaining",
   "screen.villagerretaliation.addons.existing_allowed": "Existing worlds allowed",

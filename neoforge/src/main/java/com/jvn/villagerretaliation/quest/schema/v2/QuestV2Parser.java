@@ -168,6 +168,13 @@ public final class QuestV2Parser {
             return new JsonObject();
         }
         validator.expectKeys(object, pointer, TARGET_KEYS);
+        if (object.has("site")) {
+            try {
+                com.jvn.villagerretaliation.quest.site.QuestSiteDefinition.read(object.getAsJsonObject("site"));
+            } catch (IllegalArgumentException | IllegalStateException exception) {
+                validator.error(pointer + "/site", exception.getMessage(), "Use a valid quest site definition.", Set.of());
+            }
+        }
         readResourceLocation(validator, object, pointer + "/structure", "structure");
         readResourceLocation(validator, object, pointer + "/dimension", "dimension");
         readResourceLocation(validator, object, pointer + "/proof_item", "proof_item");

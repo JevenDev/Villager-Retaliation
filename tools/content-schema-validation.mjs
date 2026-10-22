@@ -43,7 +43,7 @@ export function validateContentSchema(value, schema) {
     const issues = [];
     const issue = (message, at = pointer) => issues.push({ pointer: at, message });
     if (rule.$ref) issues.push(...validate(value, resolve(rule.$ref), pointer, depth + 1));
-    const matchesType = type => type === "object" ? object(value) : type === "array" ? Array.isArray(value)
+    const matchesType = type => Array.isArray(type) ? type.some(matchesType) : type === "object" ? object(value) : type === "array" ? Array.isArray(value)
       : type === "integer" ? Number.isInteger(value) : type === "null" ? value === null : typeof value === type;
     if (rule.type && !matchesType(rule.type)) return [...issues, { pointer, message: `expected ${rule.type}` }];
     if (Object.hasOwn(rule, "const") && !equal(rule.const, value)) issue("unsupported value");

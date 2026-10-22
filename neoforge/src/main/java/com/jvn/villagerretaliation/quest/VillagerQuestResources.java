@@ -592,7 +592,9 @@ public final class VillagerQuestResources {
                 searchRadius,
                 discoveryRadius,
                 proofItem,
-                proofItemPredicate);
+                proofItemPredicate,
+                com.jvn.villagerretaliation.quest.site.QuestSiteDefinition.read(
+                        target != null && target.has("site") ? target.getAsJsonObject("site") : null));
     }
 
     static Optional<QuestDefinition.Objective> readObjective(

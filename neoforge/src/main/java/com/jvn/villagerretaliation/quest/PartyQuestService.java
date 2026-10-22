@@ -28,6 +28,14 @@ public final class PartyQuestService {
             if (objective.optional()) {
                 continue;
             }
+            boolean siteCriterion = definition.target().site() != null
+                    && objective.type() == QuestDefinition.ObjectiveType.CRITERION && objective.criterion() != null
+                    && objective.criterion().getNamespace().equals("villagerretaliation")
+                    && java.util.Set.of("site_discovered", "captive_freed", "captive_rescued").contains(objective.criterion().getPath());
+            if (siteCriterion) {
+                supported = true;
+                continue;
+            }
             if (objective.type() != QuestDefinition.ObjectiveType.MOB_KILL
                     && objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK) {
                 return false;

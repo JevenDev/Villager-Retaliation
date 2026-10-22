@@ -1,0 +1,488 @@
+package com.jvn.villagerretaliation.quest.site;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.quest.*;
+import com.jvn.villagerretaliation.quest.follower.QuestFollowerSavedData;
+import com.jvn.villagerretaliation.quest.follower.QuestFollowerService;
+import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
+import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
+import com.jvn.villagerretaliation.quest.site.QuestSiteSavedData.Phase;
+import com.jvn.villagerretaliation.quest.site.QuestSiteSavedData.Site;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder("quest_sites")
+@PrefixGameTestTemplate(false)
+public final class QuestSiteGameTests {
+    private static final ResourceLocation QUEST = ResourceLocation.parse("test:rescue");
+    private static final ResourceLocation TEMPLATE = ResourceLocation.parse("villagerretaliation:quest/holding_camp");
+    private QuestSiteGameTests() { }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void allAuthoringPoliciesAndInvalidInputs(GameTestHelper helper) {
+        for (String selection : List.of("existing_only", "prefer_existing", "new_site"))
+            for (String terrain : List.of("new_terrain_only", "generated_wilderness"))
+                for (String style : List.of("exact", "search_circle"))
+                    for (String rescue : List.of("free_at_site", "escort_home")) {
+                        var root = config(rescue);
+                        root.addProperty("selection", selection);
+                        root.addProperty("terrain", terrain);
+                        root.addProperty("map_style", style);
+                        var parsed = QuestSiteDefinition.read(root);
+                        helper.assertValueEqual(parsed.rescue().name().toLowerCase(java.util.Locale.ROOT), rescue, "rescue policy survives parsing");
+                    }
+        for (String field : List.of("selection", "terrain", "map_style", "rescue")) {
+            var root = config("escort_home");
+            root.addProperty(field, "unknown");
+            expectInvalid(helper, root);
+        }
+        var missing = config("escort_home");
+        missing.remove("templates");
+        expectInvalid(helper, missing);
+        var reversed = config("escort_home");
+        reversed.addProperty("min_distance", 4096);
+        expectInvalid(helper, reversed);
+        var extra = config("escort_home");
+        extra.addProperty("overwrite_player_blocks", true);
+        expectInvalid(helper, extra);
+        var scalar = JsonParser.parseString("{\"type\":[\"string\",\"number\",\"boolean\"]}").getAsJsonObject();
+        helper.assertTrue(com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(
+                new com.google.gson.JsonPrimitive("test:rescue"), scalar).isEmpty(), "criterion scalar unions accept strings");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void persistenceRetainsOwnershipAndNeverReplaysInterruptedPlacement(GameTestHelper helper) {
+        var data = new QuestSiteSavedData();
+        var site = new Site(UUID.randomUUID(), UUID.randomUUID(), QUEST, UUID.randomUUID(),
+                helper.getLevel().dimension().location(), helper.absolutePos(new BlockPos(48, 3, 48)));
+        site.position = site.home.offset(256, 0, 0);
+        site.template = TEMPLATE;
+        site.captive = UUID.randomUUID();
+        site.run = UUID.randomUUID();
+        site.guards.add(UUID.randomUUID());
+        site.defeated.add(site.guards.getFirst());
+        site.mapRecipients.add(site.player);
+        site.phase = Phase.ACTIVE;
+        site.released = true;
+        data.sites.put(site.id, site);
+        var reloaded = QuestSiteSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
+        var copy = reloaded.sites.get(site.id);
+        helper.assertValueEqual(copy.captive, site.captive, "captive UUID is stable");
+        helper.assertValueEqual(copy.run, site.run, "shared run identity is stable");
+        helper.assertValueEqual(copy.defeated, site.defeated, "guard deaths survive reload");
+        helper.assertTrue(copy.released && copy.mapRecipients.contains(site.player), "release and map receipts survive reload");
+        for (var phase : List.of(Phase.PLACING, Phase.SPAWNING)) {
+            site.phase = phase;
+            copy = QuestSiteSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                    helper.getLevel().registryAccess()).sites.get(site.id);
+            helper.assertValueEqual(copy.phase, Phase.UNAVAILABLE, "interrupted world mutations are never replayed");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void searchCircleHidesExactCoordinatesAndRoundTripsPacket(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            fixture.site.discovered = false;
+            var values = new LinkedHashMap<String, String>();
+            values.put("target_x", Integer.toString(fixture.site.position.getX()));
+            values.put("objective_target_x", values.get("target_x"));
+            QuestSiteService.sanitize(values, fixture.player, fixture.quest);
+            helper.assertValueEqual(values.get("target_y"), "unknown", "height is hidden");
+            helper.assertValueEqual(values.get("distance"), "unknown", "exact target distance is hidden");
+            var center = QuestSiteService.displayPosition(helper.getLevel(), fixture.player.getUUID(), fixture.quest, fixture.site.position);
+            helper.assertTrue(center.distSqr(new BlockPos(fixture.site.position.getX(), 0, fixture.site.position.getZ())) < 96 * 96,
+                    "search circle contains the encounter");
+            var waypoint = new QuestTrackerSyncPayload.Waypoint(helper.getLevel().dimension().location().toString(),
+                    center.getX(), 0, center.getZ(), 96);
+            var journal = QuestTrackerSyncPayload.Journal.EMPTY.withRuntime(-1, -1, waypoint);
+            var entry = new QuestTrackerSyncPayload.Entry(QUEST.toString(), "Rescue", "Search", "", "", 0, false, "active",
+                    "", "", "", List.of(), List.of(), List.of(), List.of(), false, false, journal);
+            var payload = new QuestTrackerSyncPayload(List.of(entry), QUEST.toString(), false);
+            var buffer = new RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                QuestTrackerSyncPayload.STREAM_CODEC.encode(buffer, payload);
+                var decoded = QuestTrackerSyncPayload.STREAM_CODEC.decode(buffer);
+                helper.assertValueEqual(decoded.entries().getFirst().journal().waypoint(), waypoint, "map style survives the wire format");
+            } finally { buffer.release(); }
+            fixture.site.discovered = true;
+            helper.assertValueEqual(QuestSiteService.displayRadius(helper.getLevel(), fixture.player.getUUID(), fixture.quest), 0,
+                    "discovery reveals an exact destination");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void mapsAreBoundReplaceableAndNotDuplicated(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            fixture.site.discovered = false;
+            var otherDimension = new Site(UUID.randomUUID(), fixture.player.getUUID(), QUEST, null,
+                    net.minecraft.world.level.Level.NETHER.location(), fixture.site.home);
+            otherDimension.position = fixture.site.position;
+            QuestSiteMaps.give(fixture.player, fixture.quest, otherDimension, false);
+            helper.assertTrue(fixture.player.getInventory().isEmpty(), "map delivery waits for the destination dimension");
+            QuestSiteMaps.give(fixture.player, fixture.quest, fixture.site, false);
+            QuestSiteMaps.give(fixture.player, fixture.quest, fixture.site, false);
+            var maps = fixture.player.getInventory().items.stream().filter(stack -> stack.is(Items.FILLED_MAP)).toList();
+            helper.assertValueEqual(maps.size(), 1, "initial delivery has one map");
+            var map = maps.getFirst();
+            var data = MapItem.getSavedData(map, helper.getLevel());
+            helper.assertTrue(data != null && data.locked, "search circle survives vanilla map terrain updates");
+            helper.assertTrue(map.get(DataComponents.CUSTOM_DATA).copyTag().getUUID("QuestSite").equals(fixture.site.id),
+                    "physical map is bound to its saved site");
+            int red = Byte.toUnsignedInt(net.minecraft.world.level.material.MapColor.COLOR_RED.getPackedId(
+                    net.minecraft.world.level.material.MapColor.Brightness.NORMAL));
+            int pixels = 0;
+            for (byte color : data.colors) if (Byte.toUnsignedInt(color) == red) pixels++;
+            helper.assertTrue(pixels > 100 && pixels < 400, "physical map contains a bounded search ring");
+            fixture.player.getInventory().clearContent();
+            QuestSiteMaps.give(fixture.player, fixture.quest, fixture.site, false);
+            helper.assertTrue(fixture.player.getInventory().isEmpty(), "saved delivery receipt prevents automatic duplicate maps");
+            QuestSiteMaps.give(fixture.player, fixture.quest, fixture.site, true);
+            helper.assertValueEqual(fixture.player.getInventory().items.stream().filter(stack -> stack.is(Items.FILLED_MAP)).count(), 1L,
+                    "lost map replacement does not prepare another site");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void guardDeathsReleaseAndEscortCompleteTheQuestObjective(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            var captive = fixture.captive();
+            fixture.site.guards.add(UUID.randomUUID());
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "living or unloaded guards cannot count as defeated");
+            fixture.site.defeated.addAll(fixture.site.guards);
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released && !captive.isNoAi(), "freeing the captive restores its AI");
+            helper.assertTrue(QuestFollowerService.retained(captive), "escort uses the existing follower runtime");
+            helper.assertFalse(fixture.site.rescued, "release alone does not satisfy an escort");
+            captive.moveTo(fixture.site.home.getCenter());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.rescued, "arrival at the saved home completes the rescue");
+            helper.assertFalse(QuestFollowerService.retained(captive), "rescued villagers stop following");
+            helper.assertValueEqual(fixture.progress.currentStage(), "return", "rescue event advances the quest to turn-in");
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.rescued, "repeat interactions cannot reset the rescue");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void releaseOnlyAndDeathHaveDistinctOutcomes(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "free_at_site")) {
+            var captive = fixture.captive();
+            fixture.interact(captive);
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.rescued, "release-only quests do not require an escort");
+            helper.assertFalse(QuestFollowerService.retained(captive), "release-only quests never acquire a follower");
+        }
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            var captive = fixture.captive();
+            QuestSiteService.died(captive);
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.progress.state() != VillagerQuestSavedData.QuestState.ACTIVE, "captive death fails the run");
+            helper.assertValueEqual(fixture.site.captive, captive.getUUID(), "dead actors are not replaced");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void anotherPlayerCannotReleaseOrClaimTheCaptive(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            var captive = fixture.captive();
+            var outsider = helper.makeMockServerPlayerInLevel();
+            try {
+                var event = new PlayerInteractEvent.EntityInteract(outsider, InteractionHand.MAIN_HAND, captive);
+                QuestSiteService.interact(event);
+                helper.assertTrue(event.isCanceled() && !fixture.site.released, "unrelated players cannot take the captive");
+                var shared = VillagerQuestSavedData.get(helper.getLevel()).getOrCreate(outsider.getUUID(), QUEST);
+                shared.start(null, helper.getLevel().dimension(), fixture.site.position, 0);
+                shared.beginRun(outsider.getUUID(), QUEST, fixture.site.run);
+                QuestSiteService.interact(event);
+                helper.assertTrue(fixture.site.released, "members of the same saved run can release the captive");
+                shared.fail(helper.getLevel().getGameTime(), "left_party");
+                QuestFollowerService.tickMob(captive);
+                helper.assertFalse(QuestFollowerService.retained(captive), "departing leader releases its follower binding");
+                fixture.interact(captive);
+                helper.assertTrue(QuestFollowerService.retained(captive), "remaining quest members can resume the same escort");
+            } finally { outsider.discard(); }
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void knownTerrainAndObstructionsNeverTriggerPlacement(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            fixture.site.template = TEMPLATE;
+            fixture.site.phase = Phase.CANDIDATE;
+            helper.assertFalse(QuestSitePlanner.candidate(helper.getLevel(), fixture.site, fixture.quest.target().site()),
+                    "new-terrain-only refuses already loaded terrain");
+            helper.assertValueEqual(fixture.site.phase, Phase.SEARCHING, "unsafe candidate is rejected");
+            var pos = helper.absolutePos(new BlockPos(48, 3, 48));
+            fixture.site.position = pos;
+            helper.getLevel().setBlockAndUpdate(pos, Blocks.CHEST.defaultBlockState());
+            helper.assertFalse(QuestSitePlanner.clear(helper.getLevel(), pos, 0, 3, true), "storage cannot be overwritten");
+            helper.assertTrue(helper.getLevel().getBlockState(pos).is(Blocks.CHEST), "inspection leaves player blocks unchanged");
+            fixture.site.attempt = fixture.quest.target().site().attempts();
+            helper.assertFalse(QuestSitePlanner.next(helper.getLevel(), fixture.site, fixture.quest.target().site()),
+                    "search stops at the authored attempt limit");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void holdingCampTemplateAndBuiltInQuestAreAvailable(GameTestHelper helper) {
+        var quest = VillagerQuestResources.quest(helper.getLevel().getServer(),
+                ResourceLocation.parse("villagerretaliation:missing_neighbor")).orElseThrow(() -> new IllegalStateException("Built-in rescue quest is missing: " + com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(helper.getLevel().getServer())));
+        helper.assertValueEqual(quest.target().site().selection(), QuestSiteDefinition.Selection.PREFER_EXISTING,
+                "shipped rescue prefers existing outposts");
+        helper.assertValueEqual(quest.target().site().rescue(), QuestSiteDefinition.Rescue.ESCORT_HOME, "shipped rescue requires escorting home");
+        var template = helper.getLevel().getStructureManager().get(TEMPLATE).orElseThrow(() -> new IllegalStateException("Holding camp template is missing"));
+        helper.assertValueEqual(template.getSize().getX(), 9, "holding camp is bounded");
+        helper.assertValueEqual(template.getSize().getZ(), 9, "holding camp is bounded");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void unloadedActorsPauseAndOfflineSharedRunsRetainTheirSite(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            fixture.site.captive = UUID.randomUUID();
+            fixture.site.actorPosition = fixture.site.position.offset(200000, 0, 0);
+            fixture.site.actorDimension = helper.getLevel().dimension().location();
+            fixture.site.activatedAt = helper.getLevel().getGameTime() - 1000;
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertValueEqual(fixture.progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "unloaded last-known actor chunks do not fail quests");
+            var shared = VillagerQuestSavedData.get(helper.getLevel()).getOrCreate(UUID.randomUUID(), QUEST);
+            shared.start(null, helper.getLevel().dimension(), fixture.site.position, 0);
+            shared.beginRun(UUID.randomUUID(), QUEST, fixture.site.run);
+            fixture.progress.fail(helper.getLevel().getGameTime(), "left_party");
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of());
+            helper.assertValueEqual(fixture.site.phase, Phase.ACTIVE, "offline shared members retain the encounter after its original owner leaves");
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_site_placement", timeoutTicks = 400)
+    public static void safePlacementCreatesOnePersistentEncounter(GameTestHelper helper) {
+        var fixture = new Fixture(helper, "escort_home");
+        var level = helper.getLevel();
+        var center = fixture.site.position;
+        for (int x = -32; x <= 32; x++) for (int z = -32; z <= 32; z++) {
+            level.setBlockAndUpdate(center.offset(x, -1, z), Blocks.GRASS_BLOCK.defaultBlockState());
+            for (int y = 0; y < 16; y++) level.setBlock(center.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+        }
+        fixture.player.moveTo(fixture.site.position.offset(-512, 0, 0).getCenter());
+        fixture.site.template = TEMPLATE;
+        fixture.site.phase = Phase.PREPARING;
+        fixture.site.validated = true;
+        fixture.site.accepted = false;
+        helper.startSequence().thenWaitUntil(() -> {
+            QuestSiteService.prepare(level, fixture.data, fixture.site, fixture.quest.target().site());
+            helper.assertValueEqual(fixture.site.phase, Phase.READY, "site preparation finishes: " + fixture.site.diagnostic);
+        }).thenExecute(() -> {
+            try {
+                fixture.captive = (Villager) level.getEntity(fixture.site.captive);
+                helper.assertTrue(fixture.captive != null && fixture.captive.isNoAi(), "prepared captive is persistent and held at the camp");
+                helper.assertTrue(level.getBlockState(center.below()).is(Blocks.COARSE_DIRT), "holding camp was placed");
+                helper.assertTrue(QuestSitePlanner.usable(level, fixture.site, fixture.quest.target().site()), "new holding camp supports its encounter");
+                var reloaded = QuestSiteSavedData.load(fixture.data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+                helper.assertValueEqual(reloaded.sites.get(fixture.site.id).phase, Phase.READY, "ready sites survive reload without another placement");
+                helper.assertValueEqual(reloaded.sites.get(fixture.site.id).captive, fixture.captive.getUUID(), "reload keeps the same captive");
+                VillagerQuestSavedData.get(level).remove(fixture.player.getUUID(), QUEST);
+                VillagerQuestService.startDiscoveredQuest(DialogueContext.forPlayer(fixture.player), QUEST);
+            } catch (Exception exception) { throw new IllegalStateException(exception); }
+        }).thenWaitUntil(() -> helper.assertValueEqual(fixture.site.phase, Phase.ACTIVE, "acceptance resumes after terrain verification"))
+                .thenExecute(() -> {
+            try {
+                var started = VillagerQuestSavedData.get(level).get(fixture.player.getUUID(), QUEST);
+                helper.assertTrue(started != null && started.state() == VillagerQuestSavedData.QuestState.ACTIVE, "quest starts only after preparation");
+                helper.assertValueEqual(started.questRunId(), fixture.site.run, "prepared actors belong to the accepted run");
+                helper.assertValueEqual(fixture.player.getInventory().items.stream().filter(stack -> stack.is(Items.FILLED_MAP)).count(), 1L,
+                        "acceptance issues exactly one map");
+                for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++)
+                    for (int y = 0; y < 4; y++) level.setBlock(center.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                helper.assertFalse(QuestSitePlanner.usable(level, fixture.site, fixture.quest.target().site()), "demolished camps fail activation checks");
+                fixture.site.discovered = false;
+                fixture.player.moveTo(center.getCenter());
+                QuestSiteService.maintain(level, fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+                helper.assertTrue(started.state() != VillagerQuestSavedData.QuestState.ACTIVE, "destroyed site gives a terminal lost-lead outcome");
+                fixture.close();
+            } catch (Exception exception) { throw new IllegalStateException(exception); }
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void realPartyEnrollmentReusesItsExistingEncounter(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "escort_home")) {
+            var member = helper.makeMockServerPlayerInLevel();
+            VillagerQuestService.setClientEffectsSuppressedForTests(member, true);
+            try {
+                helper.assertTrue(PartyQuestService.isShareable(fixture.quest), "site criteria support shared quest enrollment");
+                helper.assertTrue(com.jvn.villagerretaliation.party.PartyService.createParty(fixture.player).success(), "leader creates a party");
+                var invitation = com.jvn.villagerretaliation.party.PartyService.sendInvitation(fixture.player, member);
+                helper.assertTrue(invitation.success() && com.jvn.villagerretaliation.party.PartyService.acceptInvitation(member, invitation.invitationId()).success(),
+                        "member joins the party");
+                var party = com.jvn.villagerretaliation.party.PartyService.getPartyForPlayer(helper.getLevel(), member.getUUID()).orElseThrow();
+                var shared = new com.jvn.villagerretaliation.party.PartySharedQuestRecord(QUEST, null, helper.getLevel().getGameTime());
+                party.addSharedQuest(shared);
+                fixture.site.run = shared.instanceId();
+                var quests = VillagerQuestSavedData.get(helper.getLevel());
+                quests.remove(fixture.player.getUUID(), QUEST);
+                var leader = quests.getOrCreate(fixture.player.getUUID(), QUEST);
+                leader.start(null, helper.getLevel().dimension(), fixture.site.position, 0);
+                leader.beginRun(fixture.player.getUUID(), QUEST, shared.instanceId());
+                leader.linkPartyQuest(shared.instanceId());
+                leader.setCurrentStage("rescue");
+                shared.enroll(fixture.player.getUUID(), false);
+                var actor = fixture.captive();
+                helper.assertTrue(QuestSiteService.offerAvailable(DialogueContext.forPlayer(member), fixture.quest),
+                        "party eligibility resolves the existing site without preparing another");
+                var outcome = VillagerQuestService.startDiscoveredQuest(DialogueContext.forPlayer(member), QUEST);
+                helper.assertValueEqual(outcome.status(), "started", "member can enroll in the prepared encounter");
+                helper.assertValueEqual(quests.get(member.getUUID(), QUEST).questRunId(), shared.instanceId(), "members share the definitive run");
+                helper.assertValueEqual(fixture.data.sites.size(), 1, "party enrollment creates no duplicate site");
+                QuestSiteService.interact(new PlayerInteractEvent.EntityInteract(member, InteractionHand.MAIN_HAND, actor));
+                helper.assertTrue(fixture.site.released, "enrolled member can free the same captive");
+            } finally {
+                com.jvn.villagerretaliation.party.PartyVillagerContractService.disband(fixture.player);
+                VillagerQuestService.clearRuntimeState(member);
+                member.discard();
+            }
+            helper.succeed();
+        }
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites_rewards")
+    public static void builtInRewardsIncludeRescue(GameTestHelper helper) {
+        com.jvn.villagerretaliation.quest.content.QuestRewardBundleGameTests.allMigratedGenericRewardsCompileAndResolveFromBundles(helper);
+    }
+
+    private static JsonObject config(String rescue) {
+        var root = JsonParser.parseString("""
+                {"selection":"prefer_existing","structures":["minecraft:pillager_outpost"],
+                 "templates":["villagerretaliation:quest/holding_camp"],"map_style":"search_circle",
+                 "rescue":"escort_home","guards":0}
+                """).getAsJsonObject();
+        root.addProperty("rescue", rescue);
+        return root;
+    }
+
+    private static void expectInvalid(GameTestHelper helper, JsonObject root) {
+        try {
+            QuestSiteDefinition.read(root);
+            helper.fail("invalid site definition was accepted");
+        } catch (IllegalArgumentException expected) { }
+    }
+
+    private static final class Fixture implements AutoCloseable {
+        final GameTestHelper helper;
+        final AutoCloseable catalog;
+        final QuestSiteSavedData previousSites;
+        final VillagerQuestSavedData previousQuests;
+        final QuestFollowerSavedData previousFollowers;
+        final QuestSiteSavedData data = new QuestSiteSavedData();
+        final ServerPlayer player;
+        final QuestDefinition quest;
+        final Site site;
+        final VillagerQuestSavedData.QuestProgress progress;
+        Villager captive;
+
+        Fixture(GameTestHelper helper, String rescue) {
+            this.helper = helper;
+            var level = helper.getLevel();
+            var server = level.getServer();
+            catalog = VillagerQuestResources.preserveTestOverride();
+            previousSites = QuestSiteSavedData.get(level);
+            previousQuests = VillagerQuestSavedData.get(level);
+            previousFollowers = QuestFollowerSavedData.get(level);
+            server.overworld().getDataStorage().set("villagerretaliation_quest_sites", data);
+            server.overworld().getDataStorage().set("villagerretaliation_quests", new VillagerQuestSavedData());
+            server.overworld().getDataStorage().set("villagerretaliation_followers", new QuestFollowerSavedData());
+            var root = JsonParser.parseString("""
+                    {"schema":"villagerretaliation:quest/v2","id":"test:rescue","localization_prefix":"test.rescue",
+                     "provider":{"type":"villagerretaliation:discovery"},"entry_stage":"rescue",
+                     "stages":[{"id":"rescue","objectives":[{"id":"saved","type":"criterion",
+                       "criterion":"villagerretaliation:captive_rescued","match":{"quest":"test:rescue"}}],
+                       "next":{"stage":"return"}},{"id":"return","objectives":[]}]}
+                    """).getAsJsonObject();
+            var target = new JsonObject();
+            target.add("site", config(rescue));
+            root.add("target", target);
+            var envelope = QuestResourceEnvelope.read(ResourceLocation.parse("test:quests/rescues/rescue/quest.json"), root).orElseThrow();
+            var compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope, level.registryAccess()).orElseThrow();
+            VillagerQuestResources.installCompiledTestCatalog(server, List.of(compiled));
+            quest = compiled.asQuestDefinition();
+            player = helper.makeMockServerPlayerInLevel();
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            var position = helper.absolutePos(new BlockPos(48, 3, 48));
+            site = new Site(UUID.randomUUID(), player.getUUID(), QUEST, null, level.dimension().location(), position.offset(-32, 0, 0));
+            site.position = position;
+            site.run = UUID.randomUUID();
+            site.phase = Phase.ACTIVE;
+            site.discovered = true;
+            site.config = new Gson().toJson(quest.target().site());
+            data.sites.put(site.id, site);
+            progress = VillagerQuestSavedData.get(level).getOrCreate(player.getUUID(), QUEST);
+            progress.start(null, level.dimension(), position, 0);
+            progress.beginRun(player.getUUID(), QUEST, site.run);
+            progress.setCurrentStage("rescue");
+            player.moveTo(position.getCenter());
+        }
+
+        Villager captive() {
+            captive = EntityType.VILLAGER.create(helper.getLevel());
+            captive.setNoAi(true);
+            captive.moveTo(site.position.getCenter());
+            helper.getLevel().addFreshEntity(captive);
+            site.captive = captive.getUUID();
+            return captive;
+        }
+
+        void interact(Villager actor) {
+            helper.assertValueEqual(QuestSiteSavedData.get(helper.getLevel()), data, "site storage is current");
+            helper.assertValueEqual(progress.questRunId(), site.run, "owner run is unchanged");
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ACTIVE, "owner quest is active");
+            boolean held = !site.released && !site.rescued;
+            var event = new PlayerInteractEvent.EntityInteract(player, InteractionHand.MAIN_HAND, actor);
+            QuestSiteService.interact(event);
+            if (held) helper.assertTrue(event.isCanceled(), "captive interaction is intercepted");
+
+        }
+
+        @Override public void close() throws Exception {
+            if (captive != null) captive.discard();
+            VillagerQuestService.clearRuntimeState(player);
+            player.discard();
+            var storage = helper.getLevel().getServer().overworld().getDataStorage();
+            storage.set("villagerretaliation_quest_sites", previousSites);
+            storage.set("villagerretaliation_quests", previousQuests);
+            storage.set("villagerretaliation_followers", previousFollowers);
+            catalog.close();
+        }
+    }
+}

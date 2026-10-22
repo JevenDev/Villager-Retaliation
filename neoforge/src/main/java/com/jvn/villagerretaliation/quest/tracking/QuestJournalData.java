@@ -135,7 +135,9 @@ public final class QuestJournalData {
             String dimension,
             int x,
             int y,
-            int z) {
+            int z,
+            int radius) {
+        public Waypoint(String dimension, int x, int y, int z) { this(dimension, x, y, z, 0); }
         public static final Waypoint NONE = new Waypoint("", 0, 0, 0);
 
         public Waypoint {

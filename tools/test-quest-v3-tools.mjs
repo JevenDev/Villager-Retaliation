@@ -10,6 +10,21 @@ import { validateContentSchema } from "./content-schema-validation.mjs";
 const { V2, V3, migrate, runtime } = createRequire(import.meta.url)("./quest-v3-format.js");
 const schema = JSON.parse(await readFile(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 const fingerprints = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resources/quest_v3/migration_fingerprints.json", import.meta.url), "utf8"));
+for (const value of ["test:rescue", 3, true]) {
+  assert.deepEqual(validateContentSchema(value, { type: ["string", "number", "boolean"] }), []);
+}
+assert(validateContentSchema({}, { type: ["string", "number", "boolean"] }).length > 0);
+for (const selection of ["existing_only", "prefer_existing", "new_site"]) {
+  for (const terrain of ["new_terrain_only", "generated_wilderness"]) {
+    const site = { selection, terrain, structures: ["minecraft:pillager_outpost"],
+      templates: ["villagerretaliation:quest/holding_camp"], map_style: "search_circle", rescue: "escort_home" };
+    assert.deepEqual(validateContentSchema(site, schema.$defs.target.properties.site), []);
+    if (selection !== "existing_only") {
+      delete site.templates;
+      assert(validateContentSchema(site, schema.$defs.target.properties.site).length > 0);
+    }
+  }
+}
 for (const example of fingerprints.values) assert.equal(fingerprintJson(example.source), example.fingerprint, example.name);
 assert.throws(() => fingerprintJson('{"number":1.}'), SyntaxError);
 const bundleFixture = fingerprints.bundle;

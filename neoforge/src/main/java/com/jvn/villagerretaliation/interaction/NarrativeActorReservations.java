@@ -11,7 +11,8 @@ public final class NarrativeActorReservations {
     private NarrativeActorReservations() { }
 
     public static boolean scene(ServerLevel level, UUID actorId) {
-        return SceneSavedData.get(level).hasActiveActor(actorId);
+        return SceneSavedData.get(level).hasActiveActor(actorId)
+                || com.jvn.villagerretaliation.quest.site.QuestSiteService.reserved(level, actorId);
     }
 
     public static boolean conversation(Villager actor) {

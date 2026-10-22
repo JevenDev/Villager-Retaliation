@@ -1,0 +1,83 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "villagerretaliation.quest.missing_neighbor.start.preparing": {
+      "lines": ["Give me a moment to check that lead. Stay nearby and I will mark your map when it is ready."]
+    },
+    "villagerretaliation.quest.missing_neighbor.title": {
+      "lines": [
+        "A Missing Neighbor"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.description": {
+      "lines": [
+        "Find the pillager holding site, free the captive, and escort them home."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.rescue.tracker": {
+      "lines": [
+        "Search the marked area, defeat the guards, free the captive, and escort them home."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.offer.label": {
+      "lines": [
+        "A Missing Neighbor"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.offer.lines": {
+      "lines": [
+        "A neighbor has been taken by pillagers. I can mark the search area if you can bring them home."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.offer.accept": {
+      "lines": [
+        "I'll bring them home."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.reminder.label": {
+      "lines": [
+        "About our missing neighbor"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.reminder.lines": {
+      "lines": [
+        "Search the area on your map. Defeat the guards, speak to our neighbor, and lead them back here."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.reminder.response": {
+      "lines": [
+        "I'll keep looking."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.start.started": {
+      "lines": [
+        "The search area is marked on your map. Please bring our neighbor home."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.start.failed": {
+      "lines": [
+        "I cannot find a safe lead right now."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.return.label": {
+      "lines": [
+        "Our neighbor is home"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.return.lines": {
+      "lines": [
+        "You brought them back safely. We won't forget what you did."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.return.response": {
+      "lines": [
+        "They're safe now."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.return.completed": {
+      "lines": [
+        "Thank you for bringing our neighbor home."
+      ]
+    }
+  }
+}

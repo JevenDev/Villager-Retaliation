@@ -224,6 +224,7 @@ public final class QuestPresentationService {
             values.put("direction", "somewhere beyond the map");
             values.put("distance", "unknown");
         }
+        com.jvn.villagerretaliation.quest.site.QuestSiteService.sanitize(values, player, definition);
         return Map.copyOf(values);
     }
 
@@ -258,6 +259,7 @@ public final class QuestPresentationService {
             values.put("direction", "somewhere beyond my maps");
             values.put("distance", "unknown");
         }
+        com.jvn.villagerretaliation.quest.site.QuestSiteService.sanitize(values, context.player(), definition);
         return Map.copyOf(values);
     }
 

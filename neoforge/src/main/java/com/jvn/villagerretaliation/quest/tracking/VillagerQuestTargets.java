@@ -27,7 +27,7 @@ public final class VillagerQuestTargets {
     }
 
     public static boolean requiresLocatedTarget(QuestDefinition definition) {
-        return definition.target().hasStructureTarget()
+        return definition.target().site() != null || definition.target().hasStructureTarget()
                 || definition.objectives().stream()
                 .anyMatch(objective -> !objective.optional()
                         && QuestObjectiveRegistry.requiresLocatedTarget(objective));
@@ -37,13 +37,14 @@ public final class VillagerQuestTargets {
         if (definition == null) {
             return false;
         }
-        return definition.target().hasStructureTarget()
+        return definition.target().site() != null || definition.target().hasStructureTarget()
                 || QuestObjectiveQuery.stageObjectives(definition, stageId).stream()
                 .anyMatch(objective -> !objective.optional()
                         && QuestObjectiveRegistry.requiresLocatedTarget(objective));
     }
 
     public static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
+        if (definition.target().site() != null) return com.jvn.villagerretaliation.quest.site.QuestSiteService.request(context, definition);
         if (definition.target().hasStructureTarget()) {
             return locateTarget(context.level(), context.origin(), definition);
         }

@@ -278,6 +278,15 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
         return removed;
     }
 
+    public boolean hasActiveRun(ResourceLocation quest, UUID run) {
+        if (run == null) return false;
+        for (var player : this.entries.values()) {
+            var progress = player.get(quest);
+            if (progress != null && progress.state() == QuestState.ACTIVE && run.equals(progress.questRunId())) return true;
+        }
+        return false;
+    }
+
     public List<Map.Entry<ResourceLocation, QuestProgress>> activeProgress(UUID playerId) {
         Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
         if (playerEntries == null || playerEntries.isEmpty()) {

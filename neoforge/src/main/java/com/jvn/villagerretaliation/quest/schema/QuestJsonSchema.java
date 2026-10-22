@@ -67,8 +67,9 @@ public final class QuestJsonSchema {
         }
         JsonObject schema = rule.getAsJsonObject();
         if (schema.has("$ref")) validate(value, resolve(root, schema.get("$ref").getAsString()), root, pointer, depth + 1, budget, issues);
-        if (schema.has("type") && !matchesType(value, schema.get("type").getAsString())) {
-            issues.add(new Issue(pointer, "expected " + schema.get("type").getAsString()));
+        if (schema.has("type") && !matchesType(value, schema.get("type"))) {
+            issues.add(new Issue(pointer, "expected " + (schema.get("type").isJsonArray()
+                    ? schema.get("type").toString() : schema.get("type").getAsString())));
             return;
         }
         if (schema.has("const") && !schema.get("const").equals(value)) issues.add(new Issue(pointer, "unsupported value " + value));
@@ -188,6 +189,14 @@ public final class QuestJsonSchema {
         List<Issue> issues = new ArrayList<>();
         validate(value, schema, root, pointer, depth + 1, budget, issues);
         return issues.isEmpty();
+    }
+
+    private static boolean matchesType(JsonElement value, JsonElement type) {
+        if (type.isJsonArray()) {
+            for (var candidate : type.getAsJsonArray()) if (matchesType(value, candidate)) return true;
+            return false;
+        }
+        return matchesType(value, type.getAsString());
     }
 
     private static boolean matchesType(JsonElement value, String type) {

@@ -335,6 +335,7 @@ public record QuestTrackerSyncPayload(
             buffer.writeInt(journal.waypoint().x());
             buffer.writeInt(journal.waypoint().y());
             buffer.writeInt(journal.waypoint().z());
+            buffer.writeVarInt(journal.waypoint().radius());
         }
         buffer.writeUtf(journal.blocker(), MAX_TEXT_LENGTH);
         buffer.writeVarInt(journal.questlineCompleted());
@@ -356,7 +357,7 @@ public record QuestTrackerSyncPayload(
         long expiresAt = buffer.readLong();
         long completedAt = buffer.readLong();
         Waypoint waypoint = buffer.readBoolean()
-                ? new Waypoint(buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH), buffer.readInt(), buffer.readInt(), buffer.readInt())
+                ? new Waypoint(buffer.readUtf(MAX_JOURNAL_VALUE_LENGTH), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readVarInt())
                 : Waypoint.NONE;
         return new Journal(
                 questline,
@@ -720,11 +721,13 @@ public record QuestTrackerSyncPayload(
         }
     }
 
-    public record Waypoint(String dimension, int x, int y, int z) {
+    public record Waypoint(String dimension, int x, int y, int z, int radius) {
+        public Waypoint(String dimension, int x, int y, int z) { this(dimension, x, y, z, 0); }
         public static final Waypoint NONE = new Waypoint("", 0, 0, 0);
 
         public Waypoint {
             dimension = boundedUtf(dimension, MAX_JOURNAL_VALUE_LENGTH);
+            radius = Math.clamp(radius, 0, 192);
         }
 
         public boolean present() {

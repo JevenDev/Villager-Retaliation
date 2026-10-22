@@ -307,6 +307,8 @@ public final class QuestHud {
         if (!waypoint.present()) {
             return "";
         }
+        if (waypoint.radius() > 0) return Component.translatable("quest.villagerretaliation.search_area",
+                waypoint.x(), waypoint.z(), waypoint.radius()).getString();
         Minecraft minecraft = Minecraft.getInstance();
         String distance = "";
         if (minecraft.player != null && minecraft.level != null
