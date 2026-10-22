@@ -32,15 +32,15 @@ final class EditorTextPreview {
     private long renderedTick = -1;
 
     boolean render(String source, float fieldWidth, float fieldHeight) {
+        float scale = (float) ImGui.getFontSize() / Minecraft.getInstance().font.lineHeight;
         boolean activate = false;
         if (ImGui.beginChild("##preview", fieldWidth, fieldHeight, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.NavFlattened)) {
-            float scale = (float) ImGui.getFontSize() / Minecraft.getInstance().font.lineHeight;
             if (!source.equals(text)) {
                 ImGui.setScrollY(0);
                 source(source);
             }
             int width = Math.max(1, (int) ImGui.getContentRegionAvailX());
-            int height = Math.max(1, (int) (ImGui.getWindowSizeY() - 2 * ImGui.getStyle().getWindowPaddingY()));
+            int height = Math.max(1, (int) ImGui.getContentRegionAvailY());
             var origin = ImGui.getCursorScreenPos();
             origin.y += ImGui.getScrollY();
             scroll = ImGui.getScrollY() / scale;

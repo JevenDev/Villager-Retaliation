@@ -237,10 +237,13 @@ public final class AuthoringEditorClientSmoke {
         var original = new EditorGraph.Card[1];
         var history = new int[1];
         var position = new float[2];
+        var previewScale = new float[1];
         STEPS.add(() -> {
             previous[0] = document;
             document = workspace.createDocument(DefinitionKind.TREE, "test:resize_graph");
             DialogueGraph.addNode(document, "finish");
+            document.edit("Set node wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start")
+                    .getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Readable first line.\nSecond line.")));
             workspace.addDialogueResponse(document, "start", "go", "Continue", "finish");
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
             set("view", 0); set("focusMode", ""); set("showGraphTools", false); set("showMinimap", true);
@@ -249,6 +252,23 @@ public final class AuthoringEditorClientSmoke {
             history[0] = document.undoLabels().size();
         });
         pause(250);
+        STEPS.add(() -> previewScale[0] = (float) field(graphPreview(), "renderedScale") / .75f);
+        for (float zoom : new float[] {.35f, .56f, 1, 2, .75f}) {
+            STEPS.add(() -> set("zoom", zoom));
+            pause(150);
+            STEPS.add(() -> {
+                var preview = graphPreview();
+                float actualSize = (float) field(preview, "renderedScale") * Minecraft.getInstance().font.lineHeight;
+                float expectedSize = previewScale[0] * zoom * Minecraft.getInstance().font.lineHeight;
+                System.out.printf(java.util.Locale.ROOT, "Node text zoom %.2f: font %.2f px, expected %.2f px, viewport %d px%n",
+                        zoom, actualSize, expectedSize, (int) field(preview, "renderedHeight"));
+                require(Math.abs(actualSize - expectedSize) <= 1,
+                        "Inline text follows node zoom " + zoom + ": " + actualSize + " vs " + expectedSize);
+                require((int) field(preview, "renderedHeight") >= (int) (68 * zoom),
+                        "Inline text uses the full field viewport at zoom " + zoom + ": " + field(preview, "renderedHeight"));
+                if (zoom == .56f) capture("00-node-text-56-percent");
+            });
+        }
         STEPS.add(() -> {
             locateCanvas();
             System.arraycopy(positions().get("start"), 0, position, 0, 2);
