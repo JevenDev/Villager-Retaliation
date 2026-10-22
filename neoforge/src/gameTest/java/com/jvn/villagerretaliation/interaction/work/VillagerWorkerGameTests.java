@@ -4373,12 +4373,15 @@ public final class VillagerWorkerGameTests {
                 VillagerTaskNavigationUtil.ladderRouteDebug(level, villager, target),
                 "none",
                 "blocked diagonal corner should not be treated as a direct ladder entry");
-        helper.assertFalse(
-                VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target, 0.55D),
-                "ladder navigation should fail cleanly instead of steering into a blocking corner");
-
-        villager.discard();
-        helper.succeed();
+        villager.setNoAi(true);
+        helper.succeedWhen(() -> {
+            helper.assertFalse(
+                    VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target, 0.55D),
+                    "completed ladder search should reject the blocking corner");
+            helper.assertTrue(villager.getNavigation().isDone(), "blocked entry must not start a path");
+            helper.assertFalse(villager.getMoveControl().hasWanted(), "blocked entry must not steer through the corner");
+            villager.discard();
+        });
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)

@@ -1,16 +1,26 @@
 package com.jvn.villagerretaliation.villager;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.Vec3;
 
 /** Finds a complete, usable ladder route instead of selecting an isolated nearest rung. */
 final class VillagerLadderRoutePlanner {
+    private static final int MAX_PATH_ATTEMPTS_PER_TICK = 4;
+    private static final Map<Villager, Search> SEARCHES = new WeakHashMap<>();
+    private static final Map<Villager, PathBudget> PATH_BUDGETS = new WeakHashMap<>();
     private static final double DIRECT_ENTRY_HORIZONTAL_SQR = 2.25D;
     private static final double RECOVERY_DIRECT_ENTRY_HORIZONTAL_SQR = 16.0D;
 
@@ -24,35 +34,88 @@ final class VillagerLadderRoutePlanner {
             int horizontalRadius,
             int verticalRadius) {
         if (level == null || villager == null || target == null) {
+            SEARCHES.remove(villager);
             return null;
         }
         BlockPos origin = villager.blockPosition();
         int verticalDelta = target.getY() - origin.getY();
         if (Math.abs(verticalDelta) <= 1) {
+            SEARCHES.remove(villager);
             return null;
         }
 
-        Set<ColumnSegment> visited = new HashSet<>();
-        Route best = null;
-        for (BlockPos raw : BlockPos.betweenClosed(
-                origin.offset(-horizontalRadius, -verticalRadius, -horizontalRadius),
-                origin.offset(horizontalRadius, verticalRadius, horizontalRadius))) {
-            BlockPos rung = raw.immutable();
-            if (!isLoadedLadder(level, rung)) {
+        Search search = SEARCHES.get(villager);
+        if (search == null || !search.matches(level, villager, target, horizontalRadius, verticalRadius)) {
+            search = new Search(level.dimension(), villager.position(), target.immutable(), horizontalRadius, verticalRadius,
+                    collectCandidates(level, villager, target, horizontalRadius, verticalRadius));
+            SEARCHES.put(villager, search);
+        }
+        if (search.best != null && (!remainsUsable(level, villager, target, search.best)
+                || !VillagerNavigationSafety.isSafeLadderPosition(level, search.best.dismount()))) {
+            search.best = null;
+        }
+        PathBudget budget = PATH_BUDGETS.computeIfAbsent(villager, ignored -> new PathBudget());
+        while (!search.candidates.isEmpty()) {
+            Candidate candidate = search.candidates.peekFirst();
+            if (search.best != null && candidate.minimumScore() >= search.best.score()) {
+                break;
+            }
+            if (!budget.consume(level.getGameTime())) {
+                return null;
+            }
+            search.candidates.removeFirst();
+            if (!isLoadedLadder(level, candidate.rung())
+                    || !VillagerNavigationSafety.isSafeLadderPosition(level, candidate.dismount())) {
                 continue;
             }
-            BlockPos bottom = bottomOfColumn(level, rung);
-            BlockPos top = topOfColumn(level, rung);
-            ColumnSegment segment = new ColumnSegment(bottom, top);
-            if (!visited.add(segment)) {
+            Entry entry = reachableEntry(level, villager, candidate.rung(), candidate.approach());
+            if (entry == null) {
                 continue;
             }
-            Route candidate = evaluate(level, villager, target, bottom, top, verticalDelta > 0);
-            if (candidate != null && (best == null || candidate.score() < best.score())) {
-                best = candidate;
+            double score = entry.score() + candidate.routeCost();
+            if (search.best == null || score < search.best.score()) {
+                search.best = new Route(entry.rung(), entry.approach(), candidate.bottom(), candidate.top(),
+                        candidate.dismount(), candidate.climbingUp(), entry.direct(), score);
             }
         }
-        return best;
+        SEARCHES.remove(villager);
+        return search.best;
+    }
+
+    static boolean isSearching(Villager villager) {
+        return SEARCHES.containsKey(villager);
+    }
+
+    static void clearRuntimeState() {
+        SEARCHES.clear();
+        PATH_BUDGETS.clear();
+    }
+
+    static void clearRuntimeState(Villager villager) {
+        SEARCHES.remove(villager);
+        PATH_BUDGETS.remove(villager);
+    }
+
+    private static List<Candidate> collectCandidates(
+            ServerLevel level, Villager villager, BlockPos target, int horizontalRadius, int verticalRadius) {
+        BlockPos origin = villager.blockPosition();
+        List<Candidate> candidates = new ArrayList<>();
+        for (int x = origin.getX() - horizontalRadius; x <= origin.getX() + horizontalRadius; x++) {
+            for (int z = origin.getZ() - horizontalRadius; z <= origin.getZ() + horizontalRadius; z++) {
+                for (int y = origin.getY() - verticalRadius; y <= origin.getY() + verticalRadius; y++) {
+                    BlockPos rung = new BlockPos(x, y, z);
+                    if (!isLoadedLadder(level, rung)) {
+                        continue;
+                    }
+                    BlockPos bottom = bottomOfColumn(level, rung);
+                    BlockPos top = topOfColumn(level, rung);
+                    collectColumnEntries(level, villager, target, bottom, top, target.getY() > origin.getY(), candidates);
+                    y = top.getY();
+                }
+            }
+        }
+        candidates.sort(Comparator.comparingDouble(Candidate::minimumScore));
+        return candidates;
     }
 
     static boolean remainsUsable(ServerLevel level, Villager villager, BlockPos target, Route route) {
@@ -80,88 +143,56 @@ final class VillagerLadderRoutePlanner {
         return safeDismount(level, villager, columnEnd, target, climbingUp) != null;
     }
 
-    private static Route evaluate(
+    private static void collectColumnEntries(
             ServerLevel level,
             Villager villager,
             BlockPos target,
             BlockPos bottom,
             BlockPos top,
-            boolean climbingUp) {
+            boolean climbingUp,
+            List<Candidate> candidates) {
         BlockPos origin = villager.blockPosition();
         BlockPos columnEnd = climbingUp ? top : bottom;
         if (climbingUp ? columnEnd.getY() <= origin.getY() : columnEnd.getY() >= origin.getY()) {
-            return null;
+            return;
         }
         int currentVerticalMiss = Math.abs(target.getY() - origin.getY());
         int routeVerticalMiss = Math.abs(target.getY() - columnEnd.getY());
         if (routeVerticalMiss >= currentVerticalMiss) {
-            return null;
+            return;
         }
         BlockPos dismount = safeDismount(level, villager, columnEnd, target, climbingUp);
         if (dismount == null) {
-            return null;
+            return;
         }
-        Entry entry = bestEntry(level, villager, bottom, top, climbingUp);
-        if (entry == null) {
-            return null;
-        }
-        double score = entry.score()
-                + routeVerticalMiss * routeVerticalMiss * 4.0D
-                + dismount.distSqr(target) * 0.5D;
-        return new Route(
-                entry.rung(),
-                entry.approach(),
-                bottom.immutable(),
-                top.immutable(),
-                dismount.immutable(),
-                climbingUp,
-                entry.direct(),
-                score);
-    }
-
-    private static Entry bestEntry(
-            ServerLevel level,
-            Villager villager,
-            BlockPos bottom,
-            BlockPos top,
-            boolean climbingUp) {
-        BlockPos origin = villager.blockPosition();
-        Entry best = null;
+        double routeCost = routeVerticalMiss * routeVerticalMiss * 4.0D + dismount.distSqr(target) * 0.5D;
         for (int y = bottom.getY(); y <= top.getY(); y++) {
             if (climbingUp && y < origin.getY() - 1 || !climbingUp && y > origin.getY() + 1) {
                 continue;
             }
             BlockPos rung = new BlockPos(bottom.getX(), y, bottom.getZ());
-            if (!isLoadedLadder(level, rung)) {
-                continue;
-            }
-            Entry candidate = bestApproachForRung(level, villager, rung);
-            if (candidate != null && (best == null || candidate.score() < best.score())) {
-                best = candidate;
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                addCandidate(level, villager, rung, rung.relative(direction), bottom, top, dismount, climbingUp, routeCost, candidates);
             }
         }
         BlockPos entryEnd = climbingUp ? bottom : top;
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos side = entryEnd.relative(direction);
             BlockPos outsideLanding = climbingUp ? side.below() : side.above();
-            Entry candidate = reachableEntry(level, villager, entryEnd, outsideLanding);
-            if (candidate != null && (best == null || candidate.score() < best.score())) {
-                best = candidate;
-            }
+            addCandidate(level, villager, entryEnd, outsideLanding, bottom, top, dismount, climbingUp, routeCost, candidates);
         }
-        return best;
     }
 
-    private static Entry bestApproachForRung(ServerLevel level, Villager villager, BlockPos rung) {
-        Entry best = null;
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            BlockPos approach = rung.relative(direction);
-            Entry candidate = reachableEntry(level, villager, rung, approach);
-            if (candidate != null && (best == null || candidate.score() < best.score())) {
-                best = candidate;
-            }
+    private static void addCandidate(
+            ServerLevel level, Villager villager, BlockPos rung, BlockPos approach,
+            BlockPos bottom, BlockPos top, BlockPos dismount, boolean climbingUp,
+            double routeCost, List<Candidate> candidates) {
+        if (!VillagerNavigationSafety.isSafeLadderPosition(level, approach)) {
+            return;
         }
-        return best;
+        double minimumScore = villager.distanceToSqr(approach.getCenter())
+                + Math.abs(approach.getY() - villager.blockPosition().getY()) * 2.0D + routeCost;
+        candidates.add(new Candidate(rung, approach, bottom, top, dismount, climbingUp, routeCost, minimumScore));
     }
 
     private static Entry reachableEntry(
@@ -301,6 +332,51 @@ final class VillagerLadderRoutePlanner {
     private record Entry(BlockPos rung, BlockPos approach, boolean direct, double score) {
     }
 
-    private record ColumnSegment(BlockPos bottom, BlockPos top) {
+    private record Candidate(
+            BlockPos rung, BlockPos approach, BlockPos bottom, BlockPos top, BlockPos dismount,
+            boolean climbingUp, double routeCost, double minimumScore) {
+    }
+
+    private static final class Search {
+        private final ResourceKey<Level> dimension;
+        private final Vec3 origin;
+        private final BlockPos target;
+        private final int horizontalRadius;
+        private final int verticalRadius;
+        private final ArrayDeque<Candidate> candidates;
+        private Route best;
+
+        private Search(ResourceKey<Level> dimension, Vec3 origin, BlockPos target,
+                int horizontalRadius, int verticalRadius, List<Candidate> candidates) {
+            this.dimension = dimension;
+            this.origin = origin;
+            this.target = target;
+            this.horizontalRadius = horizontalRadius;
+            this.verticalRadius = verticalRadius;
+            this.candidates = new ArrayDeque<>(candidates);
+        }
+
+        private boolean matches(ServerLevel level, Villager villager, BlockPos target, int horizontalRadius, int verticalRadius) {
+            return dimension.equals(level.dimension()) && this.target.equals(target)
+                    && origin.distanceToSqr(villager.position()) < 0.0001D
+                    && this.horizontalRadius == horizontalRadius && this.verticalRadius == verticalRadius;
+        }
+    }
+
+    private static final class PathBudget {
+        private long tick = Long.MIN_VALUE;
+        private int attempts;
+
+        private boolean consume(long now) {
+            if (tick != now) {
+                tick = now;
+                attempts = 0;
+            }
+            if (attempts >= MAX_PATH_ATTEMPTS_PER_TICK) {
+                return false;
+            }
+            attempts++;
+            return true;
+        }
     }
 }

@@ -329,7 +329,7 @@ public final class VillagerLadderTraversal {
         }
         VillagerLadderRoutePlanner.Route route = nearestLadderRoute(level, villager, target);
         if (route == null) {
-            return false;
+            return VillagerLadderRoutePlanner.isSearching(villager);
         }
         BlockPos ladder = route.entryRung();
         BlockPos approach = route.approach();
@@ -655,6 +655,9 @@ public final class VillagerLadderTraversal {
                 target,
                 LADDER_ESCAPE_SEARCH_RADIUS,
                 LADDER_ESCAPE_VERTICAL_RADIUS);
+        if (best == null && VillagerLadderRoutePlanner.isSearching(villager)) {
+            return null;
+        }
         if (best != null
                 && stalledAttempts > 0
                 && horizontalDistanceSqr(best.approach(), origin) <= 16.0D
@@ -831,12 +834,14 @@ public final class VillagerLadderTraversal {
     }
 
     public static void clearRuntimeState() {
+        VillagerLadderRoutePlanner.clearRuntimeState();
         ACTIVE_LADDER_CLIMBS.clear();
         RECENT_LADDER_DISMOUNTS.clear();
         LADDER_SEARCHES.clear();
     }
 
     public static void clearRuntimeState(Villager villager) {
+        VillagerLadderRoutePlanner.clearRuntimeState(villager);
         clearActiveLadderClimb(villager);
         RECENT_LADDER_DISMOUNTS.remove(villager.getUUID());
         LADDER_SEARCHES.remove(villager.getUUID());

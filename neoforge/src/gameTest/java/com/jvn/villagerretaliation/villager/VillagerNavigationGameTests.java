@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -162,6 +163,78 @@ public final class VillagerNavigationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void ladderSearchResumesBeyondItsPerTickPathBudget(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos target = helper.absolutePos(new BlockPos(4, 7, 7));
+        villager.navigation().reachableFromSearch = 5;
+        helper.assertTrue(VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6) == null,
+                "the first batch cannot reach an entry");
+        helper.assertValueEqual(villager.navigation().blockSearches, 4, "one batch performs at most four path searches");
+        helper.assertTrue(VillagerLadderRoutePlanner.isSearching(villager), "untried entries stay pending");
+        for (int call = 0; call < 5; call++) {
+            VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+        }
+        helper.assertValueEqual(villager.navigation().blockSearches, 4, "repeated calls cannot replenish the tick budget");
+        helper.runAfterDelay(1, () -> finishLadderSearch(helper, villager, target, 0));
+    }
+
+    private static void finishLadderSearch(GameTestHelper helper, CountingVillager villager, BlockPos target, int retries) {
+        int before = villager.navigation().blockSearches;
+        var route = VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+        helper.assertTrue(villager.navigation().blockSearches - before <= 4, "resuming preserves the per-tick budget");
+        if (route == null) {
+            helper.assertTrue(retries < 10 && VillagerLadderRoutePlanner.isSearching(villager), "pending entries eventually complete");
+            helper.runAfterDelay(1, () -> finishLadderSearch(helper, villager, target, retries + 1));
+            return;
+        }
+        helper.assertTrue(villager.navigation().blockSearches >= 5, "a reachable entry after the first batch is not dropped");
+        helper.assertFalse(VillagerLadderRoutePlanner.isSearching(villager), "the completed search releases its candidates");
+        VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void ladderRetargetingCannotBypassTheBudgetAndCleanupCancelsPendingSearch(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos target = helper.absolutePos(new BlockPos(4, 7, 7));
+        try {
+            VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+            VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target.east(), 6, 6);
+            helper.assertValueEqual(villager.navigation().blockSearches, 4, "changing targets keeps the consumed budget");
+            helper.assertTrue(VillagerLadderRoutePlanner.isSearching(villager), "the replacement target is pending");
+            VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, villager.blockPosition().east(), 6, 6);
+            helper.assertFalse(VillagerLadderRoutePlanner.isSearching(villager), "a level target cancels the old vertical search");
+            VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+            helper.assertTrue(VillagerLadderRoutePlanner.isSearching(villager), "a new vertical search remains budgeted");
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
+            helper.assertFalse(VillagerLadderRoutePlanner.isSearching(villager), "cleanup releases pending searches");
+        } finally {
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        }
+        helper.succeed();
+    }
+
+    private static CountingVillager ladderSearchFixture(GameTestHelper helper) {
+        var level = helper.getLevel();
+        for (BlockPos relative : BlockPos.betweenClosed(new BlockPos(0, 1, 0), new BlockPos(8, 9, 8))) {
+            level.setBlock(helper.absolutePos(relative), relative.getY() == 1
+                    ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+        }
+        for (int x : new int[] { 2, 4, 6 }) {
+            for (int y = 2; y <= 6; y++) {
+                level.setBlock(helper.absolutePos(new BlockPos(x, y, 5)), Blocks.STONE.defaultBlockState(), 2);
+                level.setBlock(helper.absolutePos(new BlockPos(x, y, 6)),
+                        Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH), 2);
+            }
+            level.setBlock(helper.absolutePos(new BlockPos(x, 6, 7)), Blocks.STONE.defaultBlockState(), 2);
+        }
+        CountingVillager villager = new CountingVillager(level);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 2, 1));
+        villager.setPos(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D);
+        return villager;
+    }
+
     private static final class CountingVillager extends Villager {
         private CountingVillager(Level level) {
             super(EntityType.VILLAGER, level);
@@ -179,9 +252,18 @@ public final class VillagerNavigationGameTests {
 
     private static final class CountingNavigation extends GroundPathNavigation {
         private int entitySearches;
+        private int blockSearches;
+        private int reachableFromSearch = Integer.MAX_VALUE;
 
         private CountingNavigation(Villager villager, Level level) {
             super(villager, level);
+        }
+
+        @Override
+        public Path createPath(BlockPos target, int accuracy) {
+            blockSearches++;
+            return blockSearches >= reachableFromSearch
+                    ? new Path(List.of(new Node(target.getX(), target.getY(), target.getZ())), target, true) : null;
         }
 
         @Override
