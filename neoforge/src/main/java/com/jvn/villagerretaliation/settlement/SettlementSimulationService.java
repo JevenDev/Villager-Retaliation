@@ -60,13 +60,17 @@ public final class SettlementSimulationService {
         int cap = VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.get();
         if (foreground(level, town)) return backlog(level, town);
         if (cap <= 0) return "simulation_disabled";
-        var towns = SettlementSavedData.get(level).settlements().stream().filter(value -> value.territory().active())
+        var towns = SettlementSavedData.get(level).settlements().stream().filter(SettlementSimulationService::eligible)
                 .filter(value -> {
                     var dimension = level.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, value.dimension()));
                     return dimension != null && !foreground(dimension, value);
                 }).toList();
         return select(towns, Math.floorDiv(level.getServer().overworld().getGameTime(), 24_000L), cap).stream().anyMatch(value -> value.id().equals(town.id()))
                 ? backlog(level, town) : "simulation_capped";
+    }
+
+    private static boolean eligible(SettlementRecord town) {
+        return town.territory().active() && town.autonomous() == null;
     }
 
     static List<SettlementRecord> select(List<SettlementRecord> towns, long day, int limit) {
@@ -160,7 +164,7 @@ public final class SettlementSimulationService {
         var background = new ArrayList<SettlementRecord>();
         var jobs = new ArrayList<Runnable>();
         jobs.add(SettlementWork.each(towns, town -> {
-            if (!town.territory().active() || town.autonomous()!=null) return;
+            if (!eligible(town)) return;
             var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, town.dimension()));
             if (level == null) return;
             (foreground(level, town) ? foreground : background).add(town);

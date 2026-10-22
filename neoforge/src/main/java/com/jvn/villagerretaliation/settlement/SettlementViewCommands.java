@@ -109,7 +109,8 @@ final class SettlementViewCommands {
             var roles = session.level.getEntity(id) instanceof Villager villager
                     ? com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(session.level, villager)
                     : care == null ? List.of() : care.availableRoles(session.level);
-            if (!roles.contains(destination.type().role())) return new Outcome(id, Status.SKIPPED, "Incompatible workplace role");
+            if (destination.type() != SettlementAreaType.CONSTRUCTION && !roles.contains(destination.type().role()))
+                return new Outcome(id, Status.SKIPPED, "Incompatible workplace role");
         }
         boolean applied = request.action().execute(player, town, id, request.area(), request.order());
         return new Outcome(id, applied ? Status.APPLIED : Status.FAILED,
