@@ -37,6 +37,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 final class EditorTestWorld {
     private static final List<Session> sessions = new ArrayList<>();
+    private static final Map<Location, String> restored = new LinkedHashMap<>();
     private static Pending pending;
     private static boolean applying;
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
@@ -72,10 +73,8 @@ final class EditorTestWorld {
                 WorldCreationContext context = load(minecraft, pack);
                 var settings = new LevelSettings("Authoring Test", GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
                         new GameRules(), context.dataConfiguration());
-                Map<String, JsonObject> content = new LinkedHashMap<>();
-                workspace.documents().forEach(document -> content.put(document.resourcePath(), document.json()));
                 var create = CreateWorldScreen.createFromExisting(minecraft, new TitleScreen(), settings, context, pack);
-                pending = new Pending(create, workspace.directory(), Map.copyOf(content));
+                pending = new Pending(create, workspace.directory());
                 minecraft.setScreen(create);
             } catch (IOException | CompletionException exception) {
                 try { if (Files.exists(pack)) deleteSnapshot(pack); }
@@ -105,6 +104,17 @@ final class EditorTestWorld {
         return loaded.join();
     }
 
+    static void tick(AuthoringWorkspace workspace) {
+        if (pending != null && workspace != null) session(workspace);
+    }
+
+    static String problem(AuthoringWorkspace workspace) {
+        var server = Minecraft.getInstance().getSingleplayerServer();
+        if (server == null || workspace == null) return "";
+        var location = new Location(server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize(), workspace.directory());
+        return restored.getOrDefault(location, "");
+    }
+
     static boolean active(AuthoringWorkspace workspace) {
         return session(workspace) != null;
     }
@@ -117,12 +127,12 @@ final class EditorTestWorld {
 
     static Map<String, JsonObject> appliedContent(AuthoringWorkspace workspace) {
         Session session = session(workspace);
-        return session == null ? Map.of() : session.content();
+        return session == null ? Map.of() : session.snapshot().content();
     }
 
     static boolean currentLogic(AuthoringWorkspace workspace) {
         Session session = session(workspace);
-        return session != null && com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.sameLogic(session.content(), content(workspace));
+        return session != null && session.snapshot().current(workspace, true);
     }
 
     static boolean applying() { return applying; }
@@ -138,7 +148,7 @@ final class EditorTestWorld {
         var server = minecraft.getSingleplayerServer();
         if (session == null || server == null) throw new IllegalStateException("Enter the workspace's separate test world first");
         if (applying) throw new IllegalStateException("A draft is already being applied");
-        Map<String, JsonObject> draft = content(workspace);
+        EditorTestSnapshot draft = EditorTestSnapshot.capture(workspace);
         Path pack = session.world().resolve("datapacks/test_content");
         Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
         if (backup == null) throw new IllegalStateException("The running test pack has no previous snapshot");
@@ -198,8 +208,7 @@ final class EditorTestWorld {
 
     static boolean currentSnapshot(AuthoringWorkspace workspace) {
         Session session = session(workspace);
-        return session != null && session.content().size() == workspace.documents().size()
-                && workspace.documents().stream().allMatch(document -> document.json().equals(session.content().get(document.resourcePath())));
+        return session != null && session.snapshot().current(workspace, false);
     }
 
     private static Session session(AuthoringWorkspace workspace) {
@@ -209,11 +218,39 @@ final class EditorTestWorld {
         Path root = server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
         if (pending != null && root.equals(minecraft.getLevelSource().getBaseDir()
                 .resolve(pending.screen().getUiState().getTargetFolder()).toAbsolutePath().normalize())) {
-            EditorLiveQuestTest.reset();
-            sessions.add(new Session(root, pending.workspace(), pending.content()));
+            var created = pending;
             pending = null;
+            try {
+                var snapshot = EditorTestSnapshot.readPack(root.resolve("datapacks/test_content"), created.workspace());
+                EditorTestSnapshot.remember(root, created.workspace());
+                EditorLiveQuestTest.reset();
+                sessions.add(new Session(root, created.workspace(), snapshot));
+            } catch (IOException exception) {
+                LOGGER.error("Unable to register authoring test world", exception);
+                restored.put(new Location(root, created.workspace()), exception.getMessage());
+            }
         }
-        return sessions.stream().filter(session -> session.workspace().equals(workspace.directory()) && session.world().equals(root)).findFirst().orElse(null);
+        var existing = sessions.stream().filter(session -> session.workspace().equals(workspace.directory()) && session.world().equals(root)).findFirst().orElse(null);
+        var location = new Location(root, workspace.directory());
+        if (existing != null || restored.containsKey(location)) return existing;
+        restored.put(location, "");
+        try {
+            var snapshot = EditorTestSnapshot.restore(root, workspace.directory());
+            if (snapshot == null) return null;
+            EditorLiveQuestTest.reset();
+            var session = new Session(root, workspace.directory(), snapshot);
+            sessions.add(session);
+            return session;
+        } catch (IOException exception) {
+            LOGGER.error("Unable to restore authoring test world", exception);
+            restored.put(location, exception.getMessage());
+            return null;
+        }
+    }
+
+    static void disconnect() {
+        sessions.clear();
+        restored.clear();
     }
 
     static boolean sameWorld(MinecraftServer server, Path expected) {
@@ -227,6 +264,7 @@ final class EditorTestWorld {
     }
 
     private record Loaded(WorldGenSettings settings, WorldDataConfiguration configuration) { }
-    private record Pending(CreateWorldScreen screen, Path workspace, Map<String, JsonObject> content) { }
-    private record Session(Path world, Path workspace, Map<String, JsonObject> content) { }
+    private record Pending(CreateWorldScreen screen, Path workspace) { }
+    private record Location(Path world, Path workspace) { }
+    private record Session(Path world, Path workspace, EditorTestSnapshot snapshot) { }
 }

@@ -29,6 +29,9 @@ public final class AuthoringWorkspace {
     private Map<String, byte[]> savedAttachments = Map.of();
     private java.util.Set<String> savedFolders = java.util.Set.of();
     private JsonObject savedPack;
+    private Map<String, byte[]> hashedAttachments = Map.of();
+    private JsonObject hashedPack;
+    private Map<String, String> supportingHashes = Map.of();
     private boolean recovered;
     private AuthoringWorkspace recoveredBaseline;
     private JsonObject recoveryBuffers = new JsonObject();
@@ -209,6 +212,22 @@ public final class AuthoringWorkspace {
         byte[] bytes = attachments.get(path);
         if (bytes == null) throw new java.nio.file.NoSuchFileException(path);
         return bytes.clone();
+    }
+
+    public Map<String, String> supportingFileHashes() {
+        if (packMetadata.equals(hashedPack) && attachments.equals(hashedAttachments)) return supportingHashes;
+        try {
+            var digest = java.security.MessageDigest.getInstance("SHA-256");
+            var hashes = new LinkedHashMap<String, String>();
+            hashes.put("pack.mcmeta", java.util.HexFormat.of().formatHex(digest.digest(AuthoringDocument.JSON.toJson(packMetadata).getBytes(StandardCharsets.UTF_8))));
+            attachments.forEach((path, bytes) -> hashes.put(path, java.util.HexFormat.of().formatHex(digest.digest(bytes))));
+            hashedAttachments = Map.copyOf(attachments);
+            hashedPack = packMetadata.deepCopy();
+            supportingHashes = Map.copyOf(hashes);
+            return supportingHashes;
+        } catch (java.security.NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 
     public JsonObject packMetadata() { return packMetadata.deepCopy(); }

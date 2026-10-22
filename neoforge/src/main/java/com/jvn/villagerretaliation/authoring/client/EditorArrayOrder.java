@@ -31,7 +31,6 @@ final class EditorArrayOrder {
             for (int to = 0; to < values.size(); to++) {
                 int source = -1;
                 for (int from = 0; from < before.size(); from++) if (before.get(from) == values.get(to)) { source = from; break; }
-                if (source < 0) source = before.indexOf(values.get(to));
                 if (source >= 0) paths.get(pointer + "/" + source).add(pointer + "/" + to);
             }
         }, metadata -> {
