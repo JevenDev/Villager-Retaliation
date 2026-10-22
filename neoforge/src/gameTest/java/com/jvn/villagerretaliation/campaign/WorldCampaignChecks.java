@@ -132,9 +132,60 @@ public final class WorldCampaignChecks {
         quest.add("ui", new JsonObject());
         check(!QuestJsonSchema.validate(quest, QuestV3Schema.export()).isEmpty(), "V2 aliases are rejected in V3");
         System.out.println("PASS campaign ownership, permanent selection, and V3 lowering checks");
-        return 26 + addons() + markdownDescriptions() + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
+        authoringResourcesKeepSelectedScopesAndOwnership();
+        return 27 + addons() + markdownDescriptions() + malformedLayers() + migrationReceipts() + migrationFingerprintFixtures();
     }
 
+
+    private static void authoringResourcesKeepSelectedScopesAndOwnership() throws Exception {
+        var resources = new MemoryResources();
+        resources.add("test:world_campaigns/alpha/campaign.json", manifest("alpha", false));
+        resources.add("test:world_campaigns/beta/campaign.json", manifest("beta", false));
+        resources.add("test:campaign_addons/enabled/addon.json", addon("enabled", ""));
+        resources.add("test:campaign_addons/disabled/addon.json", addon("disabled", ""));
+        resources.add("test:world_campaigns/alpha/quests/story/a/quest.json", "{\"id\":\"test:story\"}");
+        resources.add("test:world_campaigns/beta/dialogue/en_us/other.json", "{}");
+        resources.add("test:campaign_addons/enabled/dialogue/en_us/addon.json", "{}");
+        resources.add("test:campaign_addons/disabled/dialogue/en_us/addon.json", "{}");
+        resources.add("test:dialogue/en_us/default.json", "{}");
+        resources.add("test:quests/story/shared/quest.json", "{\"world_campaign\":\"villagerretaliation:shared\"}");
+        resources.add("test:quests/story/shared/locales/en_us.json", "{\"title\":\"Shared quest\"}");
+        resources.add("test:quests/story/hidden/quest.json", "{\"world_campaign\":\"test:beta\"}");
+        resources.add("test:quests/story/hidden/locales/en_us.json", "{}");
+        resources.add("test:dialogue/en_us/mixed.json", "{\"entries\":[{\"id\":\"active\",\"world_campaign\":\"test:alpha\"},{\"id\":\"hidden\",\"world_campaign\":\"test:beta\"}]}");
+        resources.add("override", "test:campaign_addons/enabled/dialogue/en_us/addon.json", "{\"override\":true}");
+        resources.add("test:world_campaigns/alpha/campaign.json", manifest("alpha", false).replace("\"name\":", "\"description_file\":\"test:descriptions/alpha.md\",\"name\":"));
+        resources.add("test:descriptions/alpha.md", "Campaign description");
+        resources.add("test", "test:quests/story/layered/quest.json", "{\"world_campaign\":\"test:alpha\"}");
+        resources.add("test", "test:quests/story/layered/locales/en_us.json", "{\"title\":\"Alpha\"}");
+        resources.add("override", "test:quests/story/layered/quest.json", "{\"world_campaign\":\"test:beta\"}");
+        resources.add("override", "test:quests/story/layered/locales/en_us.json", "{\"title\":\"Beta\"}");
+        var selection = new WorldCampaignSelection.Selection(id("test:alpha"), false, List.of(id("test:enabled")));
+        var selected = WorldCampaignResources.authoringResources(resources, selection);
+        check(selected.containsKey(id("test:world_campaigns/alpha/campaign.json")), "editor includes the selected campaign card");
+        check(selected.containsKey(id("test:descriptions/alpha.md")), "editor includes external campaign descriptions");
+        check(selected.containsKey(id("test:world_campaigns/alpha/quests/story/a/quest.json")), "editor preserves physical quest scope");
+        check(selected.containsKey(id("test:campaign_addons/enabled/addon.json")), "editor includes enabled addon cards");
+        check(selected.keySet().stream().noneMatch(key -> key.getPath().contains("beta/") || key.getPath().contains("disabled/")
+                || key.getPath().contains("hidden/") || key.getPath().endsWith("default.json")), "editor excludes inactive scopes and their companions");
+        check(selected.containsKey(id("test:quests/story/shared/locales/en_us.json")), "editor includes shared quest localization");
+        check(selected.get(id("test:quests/story/layered/quest.json")).sourcePackId().equals("test"),
+                "an unselected higher layer does not hide the active quest");
+        check(selected.get(id("test:quests/story/layered/locales/en_us.json")).sourcePackId().equals("test"),
+                "quest companions follow the campaign ownership of their own layer");
+        try (var reader = selected.get(id("test:dialogue/en_us/mixed.json")).openAsReader()) {
+            var entries = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonArray("entries");
+            check(entries.size() == 1 && entries.get(0).getAsJsonObject().get("world_campaign").getAsString().equals("test:alpha"),
+                    "editor filters mixed entries while preserving their ownership");
+        }
+        check(selected.get(id("test:campaign_addons/enabled/dialogue/en_us/addon.json")).sourcePackId().equals("override"),
+                "editor uses datapack priority at each physical path");
+        check(WorldCampaignResources.authoringResources(resources, new WorldCampaignSelection.Selection(id("test:alpha"), true))
+                .containsKey(id("test:dialogue/en_us/default.json")), "editor honors include default content");
+        check(WorldCampaignResources.authoringResources(resources, new WorldCampaignSelection.Selection(null, true)).keySet().stream()
+                .noneMatch(key -> key.getPath().startsWith("world_campaigns/") || key.getPath().startsWith("campaign_addons/")),
+                "legacy worlds do not import every campaign and addon");
+    }
 
     private static int addons() throws Exception {
         var resources = new MemoryResources();

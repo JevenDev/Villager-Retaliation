@@ -79,6 +79,12 @@ public final class WorldCampaignResources {
     private static void append(net.minecraft.server.packs.resources.ResourceManager manager, Map<ResourceLocation, List<Resource>> mapped,
             ResourceLocation location, Resource resource, ResourceLocation folderOwner, String addonPrefix,
             WorldCampaignSelection.Selection selection, WorldCampaignCatalog catalog) {
+        append(manager, mapped, location, resource, folderOwner, addonPrefix, selection, catalog, false);
+    }
+
+    private static void append(net.minecraft.server.packs.resources.ResourceManager manager, Map<ResourceLocation, List<Resource>> mapped,
+            ResourceLocation location, Resource resource, ResourceLocation folderOwner, String addonPrefix,
+            WorldCampaignSelection.Selection selection, WorldCampaignCatalog catalog, boolean authoring) {
         JsonObject root;
         ResourceLocation inherited;
         try (var reader = resource.openAsReader()) {
@@ -103,19 +109,59 @@ public final class WorldCampaignResources {
                     ResourceLocation entryOwner = owner(entry, owner, folderOwner != null && addonPrefix == null, catalog);
                     if (selection.allows(entryOwner)) {
                         JsonObject accepted = entry.deepCopy();
-                        accepted.remove("world_campaign");
+                        if (!authoring) accepted.remove("world_campaign");
                         entries.add(accepted);
                     }
                 }
                 if (entries.isEmpty() && (!root.getAsJsonArray("entries").isEmpty() || !selection.allows(owner))) return;
                 filtered.add("entries", entries);
             } else if (!selection.allows(owner)) return;
-            if (!com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.isV3(filtered)) filtered.remove("world_campaign");
+            if (!authoring && !com.jvn.villagerretaliation.quest.schema.v3.QuestV3Format.isV3(filtered)) filtered.remove("world_campaign");
             byte[] bytes = filtered.toString().getBytes(StandardCharsets.UTF_8);
             appendLayer(mapped, location, new Resource(resource.source(), () -> new ByteArrayInputStream(bytes)));
         } catch (IllegalArgumentException | IllegalStateException exception) {
             throw new IllegalStateException("Invalid campaign content " + location + " from " + resource.sourcePackId() + ": " + exception.getMessage(), exception);
         }
+    }
+
+    public static Map<ResourceLocation, Resource> authoringResources(net.minecraft.server.packs.resources.ResourceManager manager,
+            WorldCampaignSelection.Selection selection) {
+        var catalog = WorldCampaignCatalog.load(manager);
+        catalog.validate(selection, false);
+        Map<ResourceLocation, Resource> result = new LinkedHashMap<>();
+        Map<ResourceLocation, Resource> available = new java.util.TreeMap<>();
+        for (String root : ROOTS) available.putAll(manager.listResources(root, id -> true));
+        for (String root : List.of("world_campaigns", "campaign_addons")) available.putAll(manager.listResources(root, id -> true));
+        available.entrySet().forEach(entry -> {
+            ResourceLocation id = entry.getKey();
+            String[] parts = id.getPath().split("/", 3);
+            if (parts[0].equals("world_campaigns") || parts[0].equals("campaign_addons")) {
+                if (parts.length != 3) return;
+                ResourceLocation owner = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), parts[1]);
+                if (parts[0].equals("world_campaigns") ? owner.equals(selection.id()) : selection.addons().contains(owner))
+                    result.put(id, entry.getValue());
+            } else if (supports(id.getPath()) && id.getPath().endsWith(".json")) {
+                Map<ResourceLocation, List<Resource>> filtered = new LinkedHashMap<>();
+                for (Resource layer : manager.getResourceStack(id))
+                    append(manager, filtered, id, layer, null, null, selection, catalog, true);
+                if (filtered.containsKey(id)) result.put(id, filtered.get(id).getLast());
+            }
+        });
+        for (var entry : List.copyOf(result.entrySet())) {
+            String path = entry.getKey().getPath();
+            if (!path.matches("(?:world_campaigns|campaign_addons)/[^/]+/(?:campaign|addon)\\.json")) continue;
+            try (var reader = entry.getValue().openAsReader()) {
+                var manifest = JsonParser.parseReader(reader).getAsJsonObject();
+                for (String field : List.of("description_file", "image")) {
+                    if (!manifest.has(field)) continue;
+                    ResourceLocation reference = ResourceLocation.parse(manifest.get(field).getAsString());
+                    manager.getResource(reference).ifPresent(resource -> result.putIfAbsent(reference, resource));
+                }
+            } catch (IOException exception) {
+                throw new java.io.UncheckedIOException("Could not read campaign manifest " + entry.getKey(), exception);
+            }
+        }
+        return java.util.Collections.unmodifiableMap(result);
     }
 
     private static void appendLayer(Map<ResourceLocation, List<Resource>> mapped, ResourceLocation location, Resource resource) {

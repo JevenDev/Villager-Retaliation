@@ -189,6 +189,9 @@ final class ImGuiAuthoringEditor {
     private boolean confirmClose;
     private long nextRecovery;
     private Entity target;
+    private java.util.concurrent.CompletableFuture<EditorWorldContent.Selection> worldSelection;
+    private java.util.concurrent.CompletableFuture<EditorWorldContent.Snapshot> worldContent;
+    private net.minecraft.server.MinecraftServer contentServer;
 
     static void initialize() {
         ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(INSTANCE::render);
@@ -199,10 +202,12 @@ final class ImGuiAuthoringEditor {
         if (MC.hitResult instanceof EntityHitResult hit) INSTANCE.target = hit.getEntity();
         if (INSTANCE.workspace == null && !INSTANCE.preferences.workspace().isBlank())
             INSTANCE.runOperation(() -> INSTANCE.openWorkspace(false));
+        INSTANCE.refreshWorldSelection();
         MC.setScreen(INSTANCE.screen);
     }
 
     static void tick() {
+        INSTANCE.finishWorldContent();
         EditorTestWorld.tick(INSTANCE.workspace);
         if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
@@ -231,6 +236,9 @@ final class ImGuiAuthoringEditor {
         INSTANCE.clearCampaignPreview();
         EditorTestWorld.disconnect();
         INSTANCE.target = null;
+        INSTANCE.worldSelection = null;
+        INSTANCE.worldContent = null;
+        INSTANCE.contentServer = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
     }
 
@@ -287,7 +295,7 @@ final class ImGuiAuthoringEditor {
             }
             if (view == 3) { playtest(); return; }
             shell();
-            ImGui.beginDisabled(showRecovery || confirmClose);
+            ImGui.beginDisabled(showRecovery || confirmClose || worldContent != null);
             if (focusMode.isEmpty() || focusMode.equals(CONTENT_PANEL)) browser();
             if (focusMode.isEmpty() || focusMode.equals(WORK_PANEL)) {
                 if (view == 0) graph();
@@ -390,7 +398,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void toolbar() {
-        ImGui.beginDisabled(showRecovery || confirmClose);
+        ImGui.beginDisabled(showRecovery || confirmClose || worldContent != null);
         if (ImGui.button("Workspace")) showWorkspace = !showWorkspace;
         sameLineFor("New");
         ImGui.beginDisabled(workspace == null);
@@ -549,9 +557,86 @@ final class ImGuiAuthoringEditor {
         status = create ? "Workspace created." : "Workspace opened.";
     }
 
+    private void refreshWorldSelection() {
+        var server = MC.getSingleplayerServer();
+        contentServer = server;
+        worldSelection = server == null ? null : server.submit(() -> EditorWorldContent.selection(server));
+    }
+
+    private void currentWorld() {
+        if (!ImGui.collapsingHeader("Current world", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (contentServer == null || contentServer != MC.getSingleplayerServer()) {
+            ImGui.textWrapped("Current world content is available in singleplayer. For a remote server, import its datapack from a folder or ZIP.");
+            return;
+        }
+        if (worldSelection == null || !worldSelection.isDone()) {
+            ImGui.textDisabled("Identifying campaign and addons...");
+            return;
+        }
+        EditorWorldContent.Selection selected;
+        try { selected = worldSelection.join(); }
+        catch (java.util.concurrent.CompletionException exception) {
+            ImGui.textWrapped("Could not identify current world content: " + exception.getCause().getMessage());
+            if (ImGui.smallButton("Retry current world")) refreshWorldSelection();
+            return;
+        }
+        ImGui.textWrapped("Campaign: " + selected.campaign());
+        ImGui.textWrapped("Default content: " + (selected.defaults() ? "included" : "excluded"));
+        if (selected.addons().isEmpty()) ImGui.textDisabled("Addons: none");
+        else {
+            ImGui.textUnformatted("Addons (low to high priority):");
+            for (String addon : selected.addons()) ImGui.bulletText(addon);
+        }
+        ImGui.beginDisabled(worldContent != null);
+        if (ImGui.button(worldContent == null ? "Load current world content" : "Loading current world content...", -1, 0))
+            operation(this::loadWorldContent);
+        ImGui.endDisabled();
+        ImGui.textWrapped("Copies loaded campaign, addon and shared definitions into a new draft workspace.");
+        ImGui.separator();
+    }
+
+    private void loadWorldContent() throws IOException {
+        if (worldContent != null) return;
+        if (contentServer == null || contentServer != MC.getSingleplayerServer())
+            throw new IllegalStateException("The current world is no longer available");
+        if (showRecovery) throw new IllegalStateException("Resolve workspace recovery before loading world content");
+        if (workspace != null) { save(); saveSession(); }
+        var server = contentServer;
+        worldContent = server.submit(() -> EditorWorldContent.capture(server));
+        status = "Copying current world content...";
+    }
+
+    private void finishWorldContent() {
+        if (worldContent == null || !worldContent.isDone()) return;
+        var pending = worldContent;
+        worldContent = null;
+        if (contentServer != MC.getSingleplayerServer() || contentServer == null) return;
+        operation(() -> {
+            EditorWorldContent.Snapshot snapshot;
+            try { snapshot = pending.join(); }
+            catch (java.util.concurrent.CompletionException exception) {
+                throw new IOException("Could not load current world content: " + exception.getCause().getMessage(), exception.getCause());
+            }
+            var next = EditorWorldContent.create(MC.gameDirectory.toPath().resolve("authoring/workspaces"), snapshot);
+            workspacePath.set(next.directory().toString());
+            openWorkspace(false);
+            filesMode = false;
+            groupContent = true;
+            showResources = true;
+            contentKind = "All";
+            saveViewPreferences();
+            showWorkspace = false;
+            var first = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.WORLD_CAMPAIGN).findFirst()
+                    .orElseGet(() -> workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).findFirst().orElse(null));
+            select(first);
+            status = "Loaded " + workspace.documents().size() + " definitions from " + snapshot.selection().campaign() + ".";
+        });
+    }
+
     private void browser() {
         panel(filesMode ? "Pack files###VR_Content" : CONTENT_PANEL);
         if (workspace == null || showWorkspace) {
+            currentWorld();
             ImGui.textUnformatted("Workspace");
             ImGui.textWrapped("Keep drafts in a folder, separate from your active game.");
             input("Workspace folder", workspacePath);

@@ -165,7 +165,42 @@ public final class AuthoringEditorClientSmoke {
         }
     }
 
+    private static void buildWorldContentSteps() {
+        STEPS.add(() -> {
+            set("showWorkspace", true);
+            invoke("refreshWorldSelection", new Class<?>[0]);
+        });
+        waitUntil(() -> ((java.util.concurrent.CompletableFuture<?>) field(editor, "worldSelection")).isDone());
+        STEPS.add(() -> {
+            var selection = (EditorWorldContent.Selection) ((java.util.concurrent.CompletableFuture<?>) field(editor, "worldSelection")).join();
+            require(!selection.campaign().isBlank(), "Current world identifies its campaign.");
+            capture("00-current-world-selection");
+            invoke("loadWorldContent", new Class<?>[0]);
+        });
+        waitUntil(() -> field(editor, "worldContent") == null);
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            require(imported != workspace && !imported.documents().isEmpty(), "Current world content opens in a fresh populated workspace: " + field(editor, "status"));
+            require(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.QUEST), "Current world import exposes quests.");
+            require(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.TREE), "Current world import exposes dialogue.");
+            require((boolean) field(editor, "showResources"), "World imports expose dialogue pools and supporting content.");
+            require(field(editor, "document") != null, "World imports select a campaign or quest to begin editing.");
+            require(Files.exists(workspace.directory().resolve("workspace.json")), "Earlier drafts are saved before switching workspaces.");
+            capture("00-current-world-content");
+            ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
+            invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            document = workspace.documents().stream().filter(value -> value.id().equals("test:editor_smoke")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("filesMode", false);
+            set("guideStep", 0);
+            set("groupContent", false);
+            set("showResources", false);
+        });
+    }
+
     private static void buildSteps() {
+        buildWorldContentSteps();
         buildInlineSteps();
         buildLayoutSteps();
         buildVariableSteps();

@@ -29,7 +29,35 @@ final class EditorWorkflowChecks {
         nodeDeletionHandlesStageArraysAndInternalLinks();
         triggeredDeletionIsAtomicAndKeepsAnEntry();
         graphArrangementFollowsTheAuthoredChoiceOrder();
-        return 12;
+        currentWorldCopiesKeepDraftsAndRejectInvalidImports();
+        return 13;
+    }
+
+    private static void currentWorldCopiesKeepDraftsAndRejectInvalidImports() throws IOException {
+        var parent = Files.createTempDirectory("editor-world-content");
+        var files = new java.util.LinkedHashMap<String, byte[]>();
+        String path = "data/test/world_campaigns/story/dialogue_trees/en_us/greeting.json";
+        files.put(path, "{\"id\":\"test:greeting\",\"nodes\":{}}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        files.put("data/test/world_campaigns/story/media/card.png", new byte[] {1, 2, 3});
+        var snapshot = new EditorWorldContent.Snapshot(new EditorWorldContent.Selection("Story", List.of("Addon"), false), files);
+        var first = EditorWorldContent.create(parent, snapshot);
+        var document = first.documents().getFirst();
+        document.edit("Keep draft", json -> json.addProperty("draft", true));
+        first.save();
+        var second = EditorWorldContent.create(parent, snapshot);
+        check(!first.directory().equals(second.directory()), "each current world import gets a new workspace");
+        check(AuthoringWorkspace.open(first.directory()).documents().getFirst().json().get("draft").getAsBoolean(), "loading again preserves earlier drafts");
+        check(second.documents().getFirst().kind() == DefinitionKind.TREE && second.documents().getFirst().resourcePath().equals(path),
+                "world copies keep editor document kinds and physical scope");
+        files.get("data/test/world_campaigns/story/media/card.png")[0] = 9;
+        check(first.readFile("data/test/world_campaigns/story/media/card.png")[0] == 1, "workspace owns copied attachment bytes");
+        var incoming = new java.util.LinkedHashMap<String, byte[]>();
+        incoming.put("data/test/dialogue_trees/en_us/valid.json", "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        incoming.put("data/test/dialogue_trees/en_us/invalid.json", "[".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try { second.importResources(incoming); throw new AssertionError("Invalid world JSON must be rejected"); }
+        catch (IOException expected) { check(second.documents().size() == 1, "failed import does not partially replace drafts"); }
+        try { second.importResources(Map.of("data/../outside.json", new byte[0])); throw new AssertionError("Unsafe resource paths must be rejected"); }
+        catch (IllegalArgumentException | IOException expected) { check(second.documents().size() == 1, "unsafe imports preserve drafts"); }
     }
 
     private static void nodeDeletionKeepsReferencesAndHistoryTogether() throws IOException {

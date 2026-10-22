@@ -1106,6 +1106,16 @@ public final class AuthoringWorkspace {
                 }
             }
         }
+        return importResources(incoming);
+    }
+
+    public int importResources(Map<String, byte[]> incoming) throws IOException {
+        for (var entry : incoming.entrySet()) {
+            String path = safeRelativePath(entry.getKey());
+            if (!importable(path)) throw new IOException("Unsupported pack path " + path);
+            if (entry.getValue().length > MAX_FILE_BYTES) throw new IOException("Pack file is too large: " + path);
+        }
+        checkPackSize(incoming);
         List<AuthoringDocument> imported = new ArrayList<>();
         Map<String, byte[]> binaries = new LinkedHashMap<>();
         JsonObject importedPack = null;
@@ -1130,7 +1140,7 @@ public final class AuthoringWorkspace {
             if (!paths.add(path.toLowerCase(java.util.Locale.ROOT))) throw new IOException("Case-colliding pack path " + path);
         }
         imported.forEach(this::add);
-        attachments.putAll(binaries);
+        binaries.forEach((path, bytes) -> attachments.put(path, bytes.clone()));
         if (importedPack != null && documents.size() == imported.size()) packMetadata = importedPack;
         return imported.size();
     }
