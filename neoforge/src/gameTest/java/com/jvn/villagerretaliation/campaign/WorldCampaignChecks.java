@@ -430,8 +430,7 @@ public final class WorldCampaignChecks {
                     definitions.getAsJsonObject(kind).add(value.get("id").getAsString(), value);
                 }
             }
-            String name = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(questId.toString().getBytes(StandardCharsets.UTF_8)));
+            String name = questId.getPath();
             var file = root.resolveSibling("quest_migrations").resolve(name + ".json");
             JsonObject receipt = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
             String current = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(definitions);

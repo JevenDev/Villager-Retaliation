@@ -57,6 +57,11 @@ export function migrationReceipts(files, sourceTexts = new Map()) {
     if (quest?.schema !== V2) continue;
     const match = file.replaceAll("\\", "/").match(/^(data\/([^/]+)\/(?:world_campaigns\/[^/]+\/)?quests\/[^/]+\/[^/]+\/)quest\.json$/);
     if (!match) continue;
+    const prefix = `${match[2]}:`;
+    const id = typeof quest.id === "string" && quest.id.startsWith(prefix) ? quest.id.slice(prefix.length) : "";
+    if (!/^[a-z0-9_.-]+$/.test(match[2]) || !id || id.split("/").some(part => !/^[a-z0-9_.-]+$/.test(part) || part === "." || part === "..")) {
+      throw new Error(`Migration receipt requires a valid quest ID in namespace ${match[2]}: ${quest.id}`);
+    }
     const before = { quest: { [quest.id]: original(file, quest) } };
     for (const [companionPath, companion] of files) {
       if (!companionPath.startsWith(match[1]) || companionPath === file) continue;
@@ -66,7 +71,6 @@ export function migrationReceipts(files, sourceTexts = new Map()) {
       (before[kind] ||= {})[companion.id] = original(companionPath, companion);
     }
     const after = { ...before, quest: { [quest.id]: migrate(quest) } };
-    const id = createHash("sha256").update(quest.id).digest("hex");
     receipts.set(`data/${match[2]}/quest_migrations/${id}.json`, {
       schema: "villagerretaliation:quest_migration/v1", quest: quest.id,
       from_fingerprint: digest(before), to_fingerprint: digest(after)

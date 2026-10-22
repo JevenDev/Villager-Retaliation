@@ -60,6 +60,18 @@ const original = {
   entry_stage: "first", stages: [{ id: "first", objectives: [{ id: "paper", type: "item_check", item: "minecraft:paper", count: 2 }],
     completion_mode: "all", entry_actions: [{ type: "experience", amount: 1 }], next: { complete: true } }]
 };
+const readableReceipts = migrationReceipts(new Map([["data/test/quests/village/delivery/quest.json", original]]));
+assert.deepEqual([...readableReceipts.keys()], ["data/test/quest_migrations/delivery.json"]);
+for (const id of ["test:../escape", "test:delivery/../../escape", "test:/absolute", "other:delivery"]) {
+  assert.throws(() => migrationReceipts(new Map([["data/test/quests/village/delivery/quest.json", { ...original, id }]])), /valid quest ID/);
+}
+const receiptDirectory = new URL("../neoforge/src/main/resources/data/villagerretaliation/quest_migrations/", import.meta.url);
+for (const file of await readdir(receiptDirectory)) {
+  const receipt = JSON.parse(await readFile(new URL(file, receiptDirectory), "utf8"));
+  assert.equal(file, receipt.quest.split(":")[1] + ".json", "bundled migration receipts use readable quest names");
+  assert.match(receipt.from_fingerprint, /^[a-f0-9]{64}$/);
+  assert.match(receipt.to_fingerprint, /^[a-f0-9]{64}$/);
+}
 const sourceCopy = structuredClone(original);
 const converted = migrate(original);
 assert.deepEqual(original, sourceCopy, "migration must not mutate input");
@@ -111,7 +123,7 @@ try {
   assert.equal(await readFile(path.join(input, questPath), "utf8"), content);
   assert.equal(JSON.parse(await readFile(path.join(output, questPath), "utf8")).schema, V3);
   const receipts = await readdir(path.join(output, "data", "test", "quest_migrations"));
-  assert.equal(receipts.length, 1, "migration writes a reward recovery receipt");
+  assert.deepEqual(receipts, ["delivery.json"], "migration writes a readable reward recovery receipt");
   const receipt = JSON.parse(await readFile(path.join(output, "data", "test", "quest_migrations", receipts[0]), "utf8"));
   assert.equal(receipt.quest, valid.id);
   assert.notEqual(receipt.from_fingerprint, receipt.to_fingerprint);
@@ -127,6 +139,7 @@ try {
   const numericRun = spawnSync(process.execPath, [command, numericInput, "--out-dir", numericOutput], { encoding: "utf8" });
   assert.equal(numericRun.status, 0, numericRun.stderr);
   const numericReceiptFiles = await readdir(path.join(numericOutput, "data/test/quest_migrations"));
+  assert.deepEqual(numericReceiptFiles, ["example.json"]);
   const actualReceipt = JSON.parse(await readFile(path.join(numericOutput, "data/test/quest_migrations", numericReceiptFiles[0]), "utf8"));
   assert.equal(actualReceipt.from_fingerprint, bundleFixture.before);
   assert.equal(actualReceipt.to_fingerprint, bundleFixture.after);
