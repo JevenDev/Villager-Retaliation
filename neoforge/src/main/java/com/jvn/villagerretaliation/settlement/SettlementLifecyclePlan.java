@@ -116,6 +116,8 @@ final class SettlementLifecyclePlan {
         var bankTag = new CompoundTag(); bankTag.put("Stocks", bankStocks); economy.put("BankStorage", bankTag);
         var orders = economy.getList("Orders", Tag.TAG_COMPOUND);
         oldEconomy.getList("Orders", Tag.TAG_COMPOUND).forEach(order -> orders.add(order.copy()));
+        var policySpending = economy.getList("PolicySpending", Tag.TAG_COMPOUND);
+        oldEconomy.getList("PolicySpending", Tag.TAG_COMPOUND).forEach(account -> policySpending.add(account.copy()));
         var markets = economy.getList("Markets", Tag.TAG_COMPOUND);
         for (Tag raw : oldEconomy.getList("Markets", Tag.TAG_COMPOUND)) {
             var previous = (CompoundTag) raw;

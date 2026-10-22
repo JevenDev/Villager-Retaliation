@@ -3,10 +3,14 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.mojang.authlib.GameProfile;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -15,6 +19,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
@@ -26,9 +31,86 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_lifecycle")
 @PrefixGameTestTemplate(false)
 public final class SettlementLifecycleGameTests {
+    @GameTest(template = "empty", batch = "settlement_lifecycle")
+    public static void dissolutionWaitsForConstructionMaterialRefunds(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.fixture(helper, true, Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState()), fixture -> {
+            var level = helper.getLevel();
+            var town = fixture.town();
+            var project = fixture.project();
+            var player = FakePlayerFactory.get(level, new GameProfile(town.leader(), "LifecycleLeader"));
+            helper.assertTrue(level.addFreshEntity(fixture.builder()), "the builder is loaded for dissolution");
+            level.setBlockAndUpdate(fixture.depot().position(), com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.SETTLEMENT_DEPOT.get().defaultBlockState());
+            ((com.jvn.villagerretaliation.block.SettlementDepotBlockEntity) level.getBlockEntity(fixture.depot().position())).bind(town.id(), fixture.depot().id());
+            fixture.depot().observeRules(List.of());
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 1));
+            var plan = fixture.plan();
+            var entry = plan.entry();
+            var exact = new BuilderStructureScanner.StructurePlan(new BuilderStructureCatalog.Entry(entry.id(), entry.category(), entry.label(), entry.baseCost(), BuilderConstructionCost.EXACT, ""),
+                    plan.rotation(), plan.templateSize(), plan.localMin(), plan.localMax(), plan.blocks(), plan.materials(), plan.price(), plan.clearingBlocks());
+            SettlementTestPlots.planSupplies(level, town);
+            helper.assertTrue(SettlementConstructionMaterials.reserve(level, town, project, exact, fixture.builder()), "construction reserves the plank");
+            helper.assertTrue(fixture.depot().isEmpty(), "the reserved plank is no longer in the depot");
+            helper.assertTrue(town.configureDepot(town.leader(), fixture.depot().id(), SettlementDepotPurpose.FOOD, 5), "the source now rejects construction materials");
+            helper.assertTrue(SettlementConstructionService.cancel(player, town, project.id()), "construction is cancelled");
+            helper.assertTrue(SettlementConstructionMaterials.refundPending(project), "the cancelled project retains its unreturned material");
+            helper.assertFalse(project.site().unsettled(), "there are no pending terrain changes");
+            var lifecycle = new Fixture(player, town);
+            var blocked = preview(lifecycle, SettlementLifecycleService.Operation.DISSOLVE, null, null);
+            helper.assertTrue(blocked.token() == null && !blocked.blockers().isEmpty(), "unreturned construction materials block dissolution");
+            helper.assertTrue(SettlementSavedData.get(level).get(town.id()).orElseThrow() == town, "the town remains managed");
+            var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+            helper.assertTrue(SettlementConstructionMaterials.refundPending(restored.projects().get(project.id())), "the blocked refund survives reload");
+            helper.assertTrue(town.configureDepot(town.leader(), fixture.depot().id(), SettlementDepotPurpose.MATERIALS, 5), "the source accepts materials again");
+            SettlementConstructionMaterials.refund(level, town, project);
+            helper.assertFalse(SettlementConstructionMaterials.refundPending(project), "the material is returned before dissolution");
+            helper.assertValueEqual(fixture.depot().removeItem(0, 1).getCount(), 1, "the returned plank can be collected exactly once");
+            var ready = preview(lifecycle, SettlementLifecycleService.Operation.DISSOLVE, null, null);
+            helper.assertTrue(ready.token() != null, "collecting the refund makes dissolution available");
+            helper.assertValueEqual(confirm(lifecycle, ready), "", "dissolution succeeds after returning the material");
+            helper.assertTrue(SettlementSavedData.get(level).get(town.id()).isEmpty(), "the settled town can be retired");
+        });
+    }
+
+    @GameTest(template = "empty", batch = "settlement_lifecycle")
+    public static void mergePreservesPurchasePolicyBudgetsThroughReload(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var source = fixture.town();
+        var target = neighbor(helper, source, source.center().east(48));
+        var sourcePolicy = UUID.randomUUID();
+        var targetPolicy = UUID.randomUUID();
+        var limit = CurrencyAmount.of(10, 1);
+        var targetSpent = CurrencyAmount.of(10, 3);
+        long now = helper.getLevel().getGameTime();
+        for (var town : List.of(source, target)) {
+            town.economy().beginTradeCycle(now);
+            town.economy().credit(CurrencyAmount.of(100, 1));
+            town.economy().configureBudget(CurrencyAmount.ZERO, CurrencyAmount.of(100, 1));
+        }
+        var group = ResourceLocation.withDefaultNamespace("stone");
+        source.economy().recordPolicyPurchase(sourcePolicy, limit, group, 10, limit);
+        target.economy().recordPolicyPurchase(targetPolicy, limit, group, 1, targetSpent);
+        helper.assertTrue(source.economy().availablePolicyBudget(sourcePolicy, limit).isZero(), "the source policy has exhausted its daily allowance");
+        var preview = preview(fixture, SettlementLifecycleService.Operation.MERGE, target, null);
+        helper.assertTrue(preview.token() != null, "the towns can merge with purchase accounts");
+        helper.assertValueEqual(confirm(fixture, preview), "", "the merger commits");
+        var merged = SettlementSavedData.get(helper.getLevel()).get(target.id()).orElseThrow();
+        var restored = SettlementRecord.load(merged.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+        for (var town : List.of(merged, restored)) {
+            helper.assertValueEqual(town.economy().policySpending(sourcePolicy), limit, "the source policy keeps its spending after merger and reload");
+            helper.assertValueEqual(town.economy().policySpending(targetPolicy), targetSpent, "the target policy retains exact fractional spending");
+            helper.assertValueEqual(town.economy().spent(), limit.add(targetSpent), "aggregate spending matches both policy accounts");
+            helper.assertTrue(town.economy().availablePolicyBudget(sourcePolicy, limit).isZero(), "merging cannot reopen the exhausted allowance");
+            helper.assertValueEqual(town.economy().availablePolicyBudget(targetPolicy, limit), limit.subtract(targetSpent), "the target keeps only its unspent allowance");
+        }
+        helper.assertTrue(restored.economy().beginTradeCycle((Math.floorDiv(now, 24_000L) + 1L) * 24_000L), "the next day starts a new trade period");
+        helper.assertValueEqual(restored.economy().availablePolicyBudget(sourcePolicy, limit), limit, "the source allowance renews on the next day");
+        helper.assertValueEqual(restored.economy().availablePolicyBudget(targetPolicy, limit), limit, "the target allowance renews on the next day");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", batch = "settlement_lifecycle")
     public static void emptyDissolutionRequiresPermissionAndConfirmationAndSurvivesRestart(GameTestHelper helper) throws Exception {
         var fixture = fixture(helper);
