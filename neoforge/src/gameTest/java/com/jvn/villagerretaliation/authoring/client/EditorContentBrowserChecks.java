@@ -29,9 +29,10 @@ final class EditorContentBrowserChecks {
         groupingAndSearchKeepEveryMatchAccessible();
         cachedRowsFollowEditsUndoAndMembershipChanges();
         validationCacheTracksDefinitionsAndSupportingFiles();
+        asyncValidationUsesIsolatedSnapshotsAndRejectsStaleResults();
         worldPreparationOwnsResourcesAndSavesDraftsOffThread();
         benchmarkLargeLibrary();
-        return 6;
+        return 7;
     }
 
     private static AuthoringWorkspace workspace() throws IOException { return AuthoringWorkspace.create(Files.createTempDirectory("editor-content-browser")); }
@@ -108,6 +109,55 @@ final class EditorContentBrowserChecks {
         var external = cache.get(workspace);
         workspace.importResources(Map.of("data/test/descriptions/story.md", "Story".getBytes(StandardCharsets.UTF_8)));
         check(!cache.get(workspace).equals(external) && cache.get(workspace).equals(workspace.validate()), "supporting file changes invalidate description diagnostics");
+    }
+
+    private static void asyncValidationUsesIsolatedSnapshotsAndRejectsStaleResults() throws IOException {
+        var workspace = workspace(); var document = workspace.createDocument(DefinitionKind.TREE, "test:async_validation");
+        document.edit("Break entry", root -> root.getAsJsonArray("entries").get(0).getAsJsonObject().addProperty("start", "missing"));
+        var tasks = new java.util.ArrayDeque<Runnable>();
+        java.util.concurrent.Executor executor = tasks::add;
+        var cache = new EditorValidationCache();
+        check(cache.getAsync(workspace, executor) == null && tasks.size() == 1, "cold validation schedules work without waiting");
+        check(cache.getAsync(workspace, executor) == null && tasks.size() == 1, "pending validation is scheduled once");
+        tasks.remove().run();
+        var invalid = cache.getAsync(workspace, executor);
+        check(invalid.equals(workspace.validate()) && !invalid.isEmpty(), "async validation preserves diagnostics");
+        var content = cache.content();
+        for (int i = 0; i < 20; i++) check(cache.getAsync(workspace, executor) == invalid && tasks.isEmpty(), "invalid drafts do not restart validation each tick");
+        document.editMetadata("Move node", root -> root.addProperty("position", 10));
+        check(cache.getAsync(workspace, executor) == invalid && cache.content() == content, "layout edits preserve validated content snapshots");
+        document.undo(); document.undo();
+        check(cache.getAsync(workspace, executor) == null, "undoing a content edit schedules validation");
+        var snapshot = workspace.validationSnapshot();
+        document.redo();
+        check(!snapshot.validate().equals(workspace.validate()), "background validation owns an isolated definition snapshot");
+        check(cache.getAsync(workspace, executor) == null && tasks.size() == 1, "edits coalesce while one validation is in flight");
+        for (int i = 0; i < 10; i++) check(cache.getAsync(workspace, executor) == null && tasks.size() == 1, "pending edits cannot flood the background executor");
+        tasks.remove().run();
+        check(cache.getAsync(workspace, executor) == null && tasks.size() == 1, "a stale completion schedules the newest draft without applying its result");
+        tasks.remove().run();
+        check(cache.getAsync(workspace, executor).equals(invalid), "the latest completed validation wins");
+        document.undo();
+        check(cache.getAsync(workspace, executor) == null, "repair schedules another validation");
+        var repaired = cache.get(workspace);
+        tasks.remove().run();
+        check(cache.getAsync(workspace, executor) == repaired && repaired.equals(workspace.validate()), "explicit validation supersedes pending background work");
+        workspace.remove(document);
+        check(cache.getAsync(workspace, executor) == null, "membership changes invalidate async diagnostics");
+        tasks.remove().run();
+        check(cache.getAsync(workspace, executor).isEmpty() && cache.content().isEmpty(), "removed definitions leave validated content");
+        var campaign = workspace.createDocument(DefinitionKind.WORLD_CAMPAIGN, "test:async_description");
+        campaign.edit("External description", root -> root.addProperty("description_file", "test:descriptions/story.md"));
+        var supportingSnapshot = workspace.validationSnapshot();
+        workspace.importResources(Map.of("data/test/descriptions/story.md", "Story".getBytes(StandardCharsets.UTF_8)));
+        check(!supportingSnapshot.validate().equals(workspace.validate()), "validation snapshots retain their supporting files");
+        check(cache.getAsync(workspace, executor) == null, "supporting changes schedule validation");
+        tasks.remove().run();
+        check(cache.getAsync(workspace, executor).equals(workspace.validate()), "async diagnostics include supporting file validation");
+        var other = workspace();
+        check(cache.getAsync(other, executor) == null, "workspace switches discard another workspace's diagnostics");
+        tasks.remove().run();
+        check(cache.getAsync(other, executor).isEmpty(), "the switched workspace uses its own result");
     }
 
     private static void worldPreparationOwnsResourcesAndSavesDraftsOffThread() throws IOException {

@@ -119,12 +119,6 @@ final class EditorTestWorld {
         return session(workspace) != null;
     }
 
-    static Map<String, JsonObject> content(AuthoringWorkspace workspace) {
-        Map<String, JsonObject> content = new LinkedHashMap<>();
-        workspace.documents().forEach(document -> content.put(document.resourcePath(), document.json()));
-        return Map.copyOf(content);
-    }
-
     static Map<String, JsonObject> appliedContent(AuthoringWorkspace workspace) {
         Session session = session(workspace);
         return session == null ? Map.of() : session.snapshot().content();

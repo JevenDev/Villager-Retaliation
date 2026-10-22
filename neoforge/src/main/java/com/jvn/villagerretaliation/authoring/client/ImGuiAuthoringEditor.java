@@ -2966,7 +2966,9 @@ final class ImGuiAuthoringEditor {
 
     private void updatePlaytestPresentation() {
         if (workspace == null || document == null || rawModified) return;
-        Map<String, JsonObject> latest = EditorTestWorld.content(workspace);
+        var issues = validationCache.getAsync(workspace, net.minecraft.Util.backgroundExecutor());
+        if (issues == null || issues.stream().anyMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)) return;
+        Map<String, JsonObject> latest = validationCache.content();
         var replacements = new java.util.LinkedHashMap<>(EditorLiveQuestTest.snapshot().replacements());
         replacements.putAll(conditions.placeholders());
         if (MC.player != null) replacements.putIfAbsent("player", MC.player.getName().getString());
@@ -2974,8 +2976,7 @@ final class ImGuiAuthoringEditor {
             replacements.putIfAbsent("villager", target.getName().getString());
             replacements.putIfAbsent("villager_name", target.getName().getString());
         }
-        if (latest.equals(playtestVisuals) && locale.get().equals(playtestLocale) && replacements.equals(playtestReplacements)) return;
-        if (workspace.validate().stream().anyMatch(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)) return;
+        if (latest == playtestVisuals && locale.get().equals(playtestLocale) && replacements.equals(playtestReplacements)) return;
         playtestVisuals = latest;
         playtestLocale = locale.get();
         playtestReplacements = Map.copyOf(replacements);

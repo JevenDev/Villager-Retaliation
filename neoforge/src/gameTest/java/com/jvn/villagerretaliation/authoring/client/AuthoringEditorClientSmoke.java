@@ -241,6 +241,25 @@ public final class AuthoringEditorClientSmoke {
                     "The largest bundled quest stays responsive with the full campaign loaded: " + profile);
             capture("00-largest-campaign-quest");
         });
+        STEPS.add(() -> {
+            long before = System.nanoTime();
+            invoke("updatePlaytestPresentation", new Class<?>[0]);
+            double elapsed = (System.nanoTime() - before) / 1e6;
+            System.out.printf(java.util.Locale.ROOT, "Campaign playtest presentation update: %.3f ms%n", elapsed);
+            require(elapsed < 50, "Opening Playtest reuses prepared campaign validation without blocking a tick.");
+            set("validationCache", new EditorValidationCache());
+            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = true;
+            invoke("enterPlaytest", new Class<?>[0]);
+        });
+        pause(3000);
+        STEPS.add(() -> {
+            measureWorldLoading = false;
+            require(EditorPlaytestViewport.layout() != null, "The full campaign opens the split game viewport.");
+            System.out.printf(java.util.Locale.ROOT, "Campaign Playtest with cold validation: longest frame gap %.3f ms%n", worldLoadingGap / 1e6);
+            require(worldLoadingGap < 500_000_000, "Cold campaign validation keeps the game rendering in Playtest.");
+            capture("00-campaign-playtest");
+            invoke("leavePlaytest", new Class<?>[] {int.class}, 0);
+        });
         buildDialoguePoolSteps();
         buildResourceViewSteps();
         STEPS.add(() -> {

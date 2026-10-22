@@ -15,7 +15,36 @@ final class EditorValidationCache {
     private Map<String, String> supporting = Map.of();
     private List<AuthoringDiagnostic> diagnostics = List.of();
 
+    private Map<String, JsonObject> content = Map.of();
+    private java.util.concurrent.CompletableFuture<List<AuthoringDiagnostic>> pending;
+    private boolean revalidate;
+
+    Map<String, JsonObject> content() { return content; }
+
     List<AuthoringDiagnostic> get(AuthoringWorkspace workspace) {
+        if (refresh(workspace) || pending != null) {
+            diagnostics = workspace.validate();
+            pending = null;
+            revalidate = false;
+        }
+        return diagnostics;
+    }
+
+    List<AuthoringDiagnostic> getAsync(AuthoringWorkspace workspace, java.util.concurrent.Executor executor) {
+        revalidate |= refresh(workspace);
+        if (pending != null && pending.isDone()) {
+            if (!revalidate) diagnostics = pending.join();
+            pending = null;
+        }
+        if (revalidate && pending == null) {
+            var snapshot = workspace.validationSnapshot();
+            pending = java.util.concurrent.CompletableFuture.supplyAsync(snapshot::validate, executor);
+            revalidate = false;
+        }
+        return pending == null ? diagnostics : null;
+    }
+
+    private boolean refresh(AuthoringWorkspace workspace) {
         var documents = workspace.documents();
         var hashes = workspace.supportingFileHashes();
         boolean changed = owner != workspace || documents.size() != states.size() || !supporting.equals(hashes);
@@ -30,8 +59,12 @@ final class EditorValidationCache {
                 next.add(state);
             }
         }
-        if (changed) diagnostics = workspace.validate();
+        if (changed) {
+            var definitions = new java.util.LinkedHashMap<String, JsonObject>();
+            next.forEach(state -> definitions.put(state.path(), state.json()));
+            content = Map.copyOf(definitions);
+        }
         owner = workspace; supporting = hashes; states = List.copyOf(next);
-        return diagnostics;
+        return changed;
     }
 }

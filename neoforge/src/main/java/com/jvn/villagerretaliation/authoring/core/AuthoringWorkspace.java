@@ -1165,6 +1165,15 @@ public final class AuthoringWorkspace {
         if (files.values().stream().mapToLong(bytes -> bytes.length).sum() > MAX_PACK_BYTES) throw new IOException("Pack exceeds the 256 MiB authoring import limit");
     }
 
+    public AuthoringWorkspace validationSnapshot() {
+        var snapshot = new AuthoringWorkspace(directory);
+        for (var document : documents)
+            snapshot.documents.add(new AuthoringDocument(document.kind(), document.resourcePath(), document.json()));
+        attachments.forEach((path, bytes) -> snapshot.attachments.put(path, bytes.clone()));
+        snapshot.packMetadata = packMetadata.deepCopy();
+        return snapshot;
+    }
+
     public List<AuthoringDiagnostic> validate() {
         List<AuthoringDiagnostic> result = new ArrayList<>(AuthoringValidation.validate(documents()));
         try { validatePackMetadata(packMetadata); }
