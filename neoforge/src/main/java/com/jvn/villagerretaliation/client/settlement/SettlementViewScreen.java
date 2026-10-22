@@ -147,6 +147,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private BlockPos routePlacementPreview;
     private final List<Button> routeButtons = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
+    private long commandSequence;
     private SettlementViewBatchPayload assignmentReview;
     private Button groupActions;
     private Button commandResults;
@@ -1189,7 +1190,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         this.areas.get(action == SettlementViewAction.ASSIGN ? area : resident.area())))
                 .map(resident -> new SettlementViewBatchPayload.Target(resident.id(), resident.area())).toList();
         if (targets.isEmpty()) return;
-        var request = new SettlementViewBatchPayload(this.session, UUID.randomUUID(), action, targets, area, order);
+        var request = new SettlementViewBatchPayload(this.session, SettlementViewBatchPayload.operation(this.session, ++this.commandSequence),
+                action, targets, area, order);
         if (action == SettlementViewAction.ASSIGN && targets.stream().anyMatch(target ->
                 target.expectedArea() != null && !target.expectedArea().equals(area)
                         && action.eligible(this.roster.get(target.resident()), this.areas.get(area)))) {
@@ -1201,7 +1203,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     void submitTemporaryTask(List<SettlementViewBatchPayload.Target> targets,
                              com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask task, boolean append) {
         if (this.commands.busy()) return;
-        sendBatch(new SettlementViewBatchPayload(this.session, UUID.randomUUID(), SettlementViewAction.TEMPORARY_TASK,
+        sendBatch(new SettlementViewBatchPayload(this.session, SettlementViewBatchPayload.operation(this.session, ++this.commandSequence),
+                SettlementViewAction.TEMPORARY_TASK,
                 targets, null, null, task, append));
     }
 

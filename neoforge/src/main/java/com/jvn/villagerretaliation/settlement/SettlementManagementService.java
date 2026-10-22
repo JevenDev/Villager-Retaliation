@@ -44,13 +44,8 @@ public final class SettlementManagementService {
                 || !ServerboundRequestLimiter.tryAcquire(player, SettlementManagementRequestPayload.TYPE.id(), 5L)) {
             return;
         }
-        var snapshot = snapshot(player, request);
-        if (snapshot == null) {
-            snapshot = snapshot(player, new SettlementManagementRequestPayload(null, Page.TOWNS, 0, "", request.requestId(), request.openScreen()));
-        }
-        if (snapshot.header() != null) SettlementSavedData.get(player.serverLevel()).get(new VillageAllegianceId(snapshot.header().id()))
-                .ifPresent(town -> SettlementSimulationService.managed(player, town));
-        PacketDistributor.sendToPlayer(player, snapshot);
+        SettlementSavedData.get(player.serverLevel()).simulation.requests.submit(player, request,
+                snapshot -> PacketDistributor.sendToPlayer(player, snapshot));
     }
 
     public static void action(ServerPlayer player, SettlementManagementActionPayload payload) {
@@ -74,109 +69,89 @@ public final class SettlementManagementService {
         String failure = SettlementManagementValidation.permission(player, town, payload.command());
         if (!failure.isEmpty()) return failure;
         SettlementSimulationService.managed(player, town);
-        if (payload.command() instanceof SettlementManagementActionPayload.ClaimPlot plot) {
-            return SettlementPlotService.claim(player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price());
-        }
-        if (payload.command() instanceof SettlementManagementActionPayload.CommissionBuilding build) {
-            return SettlementConstructionService.commission(player, town, build.request(), build.structure(), build.anchor(), build.rotation(), build.builder());
-        }
         failure = SettlementManagementValidation.selection(player, town, payload.command());
         if (!failure.isEmpty()) return failure;
-        if (payload.command() instanceof SettlementManagementActionPayload.SaveStorageFilter filter) {
-            return SettlementStorageService.saveFilter(player, town, filter);
-        }
-        if (payload.command() instanceof SettlementManagementActionPayload.StorageFilter filter) {
-            return SettlementStorageService.configureFilter(player, town, filter);
-        }
-        if (payload.command() instanceof SettlementManagementActionPayload.SaveStorage storage) {
-            return SettlementStorageService.configure(player, town, storage);
-        }
-        if (payload.command() instanceof SettlementManagementActionPayload.SaveRoute route) {
-            return SettlementGuardService.configure(player, town, route);
-        }
-        return apply(player, payload) ? "" : SettlementManagementValidation.rejected(payload.command());
+        return apply(player, town, payload.command());
     }
 
-    private static boolean apply(ServerPlayer player, SettlementManagementActionPayload payload) {
-        if (player == null || !player.isAlive() || player.isSpectator()) {
-            return false;
-        }
+    private static String apply(ServerPlayer player, SettlementRecord town, SettlementManagementActionPayload.Command command) {
         ServerLevel level = player.serverLevel();
         var data = SettlementSavedData.get(level);
-        var id = new VillageAllegianceId(payload.town());
-        var town = data.get(id).orElse(null);
-        if (town == null || !town.id().equals(id) || !town.dimension().equals(level.dimension().location())
-                || !town.permits(player.getUUID(), SettlementPermission.VIEW)) {
-            return false;
-        }
-        return switch (payload.command()) {
-            case SettlementManagementActionPayload.SaveStorageFilter filter -> SettlementStorageService.saveFilter(player, town, filter).isEmpty();
-            case SettlementManagementActionPayload.StorageFilter filter -> SettlementStorageService.configureFilter(player, town, filter).isEmpty();
-            case SettlementManagementActionPayload.SaveStorage storage -> SettlementStorageService.configure(player, town, storage).isEmpty();
-            case SettlementManagementActionPayload.SaveRoute route -> SettlementGuardService.configure(player, town, route).isEmpty();
+        var id = town.id();
+        return switch (command) {
+            case SettlementManagementActionPayload.SaveStorageFilter filter -> SettlementStorageService.saveFilter(player, town, filter);
+            case SettlementManagementActionPayload.StorageFilter filter -> SettlementStorageService.configureFilter(player, town, filter);
+            case SettlementManagementActionPayload.SaveStorage storage -> SettlementStorageService.configure(player, town, storage);
+            case SettlementManagementActionPayload.SaveRoute route -> SettlementGuardService.configure(player, town, route);
             case SettlementManagementActionPayload.ClaimPlot plot -> SettlementPlotService.claim(
-                    player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price()).isEmpty();
-            case SettlementManagementActionPayload.Home home -> home.assign()
-                    ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
-                    : SettlementHousingService.release(player, town, home.resident(), home.bed());
-            case SettlementManagementActionPayload.Management management -> town.setManualManagement(player.getUUID(), management.manual());
-            case SettlementManagementActionPayload.Advance ignored -> SettlementProgressionService.advance(player, id);
-            case SettlementManagementActionPayload.View ignored -> SettlementViewService.open(player, id);
-            case SettlementManagementActionPayload.DraftBlueprint draft -> SettlementBlueprintService.draft(player, town, draft.structure());
-            case SettlementManagementActionPayload.PlaceBlueprint place -> SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation());
+                    player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price());
             case SettlementManagementActionPayload.CommissionBuilding build -> SettlementConstructionService.commission(player, town,
-                    build.request(), build.structure(), build.anchor(), build.rotation(), build.builder()).isEmpty();
-            case SettlementManagementActionPayload.StartProject start -> SettlementConstructionService.start(player, town, start.resident(), start.blueprint());
-            case SettlementManagementActionPayload.ReorderProject project -> SettlementConstructionService.reorder(player, town,
-                    project.project(), project.before(), project.revision());
-            case SettlementManagementActionPayload.ConfigureProject project -> SettlementConstructionService.configureCrew(player, town,
-                    project.project(), project.revision(), project.priority(), project.assistants());
-            case SettlementManagementActionPayload.CancelProject cancel -> SettlementConstructionService.cancel(player, town, cancel.project());
-            case SettlementManagementActionPayload.Brew brew -> SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order());
-            case SettlementManagementActionPayload.SaveEquipment save -> save.configuration() == null
+                    build.request(), build.structure(), build.anchor(), build.rotation(), build.builder());
+            case SettlementManagementActionPayload.Home home -> result(home.assign()
+                    ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
+                    : SettlementHousingService.release(player, town, home.resident(), home.bed()), command);
+            case SettlementManagementActionPayload.Management management -> result(town.setManualManagement(player.getUUID(), management.manual()), command);
+            case SettlementManagementActionPayload.Advance ignored -> result(SettlementProgressionService.advance(player, id), command);
+            case SettlementManagementActionPayload.View ignored -> result(SettlementViewService.open(player, id), command);
+            case SettlementManagementActionPayload.DraftBlueprint draft -> result(SettlementBlueprintService.draft(player, town, draft.structure()), command);
+            case SettlementManagementActionPayload.PlaceBlueprint place -> result(SettlementBlueprintService.place(player, town, place.blueprint(), place.anchor(), place.rotation()), command);
+            case SettlementManagementActionPayload.StartProject start -> result(SettlementConstructionService.start(player, town, start.resident(), start.blueprint()), command);
+            case SettlementManagementActionPayload.ReorderProject project -> result(SettlementConstructionService.reorder(player, town,
+                    project.project(), project.before(), project.revision()), command);
+            case SettlementManagementActionPayload.ConfigureProject project -> result(SettlementConstructionService.configureCrew(player, town,
+                    project.project(), project.revision(), project.priority(), project.assistants()), command);
+            case SettlementManagementActionPayload.CancelProject cancel -> result(SettlementConstructionService.cancel(player, town, cancel.project()), command);
+            case SettlementManagementActionPayload.Brew brew -> result(SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order()), command);
+            case SettlementManagementActionPayload.SaveEquipment save -> result(save.configuration() == null
                     ? town.removeEquipmentPlan(player.getUUID(), save.area(), save.revision())
-                    : town.setEquipmentPlan(player.getUUID(), save.area(), save.configuration(), save.revision());
-            case SettlementManagementActionPayload.SaveWorksite save -> SettlementWorksiteService.configure(
-                    player, town, save.area(), save.plan(), save.adopt());
-            case SettlementManagementActionPayload.ResetWorker reset -> SettlementWorksiteService.reset(
-                    player, town, reset.resident(), reset.area(), reset.mask());
-            case SettlementManagementActionPayload.FillStaffing fill -> SettlementWorksiteService.fill(player, town, fill.area());
-            case SettlementManagementActionPayload.SaveWorker save -> SettlementWorkerConfigurationService.configure(
-                    player, town, save.resident(), save.area(), save.settings());
-            case SettlementManagementActionPayload.WorkerEnabled enabled -> SettlementWorkerConfigurationService.setEnabled(
-                    player, town, enabled.resident(), enabled.area(), enabled.enabled());
-            case SettlementManagementActionPayload.Guard guard -> SettlementGuardService.command(player, town, guard.resident(), guard.order());
-            case SettlementManagementActionPayload.Assign assign -> SettlementWorkforceService.assignResident(level, player, id, assign.resident(), assign.area());
-            case SettlementManagementActionPayload.AutomaticStaffing automatic -> SettlementWorkforceService.automaticStaffing(player, town, automatic.resident());
-            case SettlementManagementActionPayload.Release release -> SettlementWorkforceService.release(level, player, id, release.resident());
-            case SettlementManagementActionPayload.Applicant applicant -> applicant.approve()
-                    ? SettlementPopulationService.approve(player, id, applicant.id()) : SettlementPopulationService.decline(player, id, applicant.id());
-            case SettlementManagementActionPayload.SaveArea save -> SettlementBuildingService.register(player, id, save.area());
+                    : town.setEquipmentPlan(player.getUUID(), save.area(), save.configuration(), save.revision()), command);
+            case SettlementManagementActionPayload.SaveWorksite save -> result(SettlementWorksiteService.configure(
+                    player, town, save.area(), save.plan(), save.adopt()), command);
+            case SettlementManagementActionPayload.ResetWorker reset -> result(SettlementWorksiteService.reset(
+                    player, town, reset.resident(), reset.area(), reset.mask()), command);
+            case SettlementManagementActionPayload.FillStaffing fill -> result(SettlementWorksiteService.fill(player, town, fill.area()), command);
+            case SettlementManagementActionPayload.SaveWorker save -> result(SettlementWorkerConfigurationService.configure(
+                    player, town, save.resident(), save.area(), save.settings()), command);
+            case SettlementManagementActionPayload.WorkerEnabled enabled -> result(SettlementWorkerConfigurationService.setEnabled(
+                    player, town, enabled.resident(), enabled.area(), enabled.enabled()), command);
+            case SettlementManagementActionPayload.Guard guard -> result(SettlementGuardService.command(player, town, guard.resident(), guard.order()), command);
+            case SettlementManagementActionPayload.Assign assign -> result(SettlementWorkforceService.assignResident(level, player, id, assign.resident(), assign.area()), command);
+            case SettlementManagementActionPayload.AutomaticStaffing automatic -> result(SettlementWorkforceService.automaticStaffing(player, town, automatic.resident()), command);
+            case SettlementManagementActionPayload.Release release -> result(SettlementWorkforceService.release(level, player, id, release.resident()), command);
+            case SettlementManagementActionPayload.Applicant applicant -> result(applicant.approve()
+                    ? SettlementPopulationService.approve(player, id, applicant.id()) : SettlementPopulationService.decline(player, id, applicant.id()), command);
+            case SettlementManagementActionPayload.SaveArea save -> result(SettlementBuildingService.register(player, id, save.area()), command);
             case SettlementManagementActionPayload.RemoveArea remove ->
-                    data.removeArea(VillageAllegianceRegistrySavedData.get(level), id, player.getUUID(), remove.id());
+                    result(data.removeArea(VillageAllegianceRegistrySavedData.get(level), id, player.getUUID(), remove.id()), command);
             case SettlementManagementActionPayload.ConfigureDepot depot ->
-                    town.configureDepot(player.getUUID(), depot.id(), depot.purpose(), depot.priority());
+                    result(town.configureDepot(player.getUUID(), depot.id(), depot.purpose(), depot.priority()), command);
             case SettlementManagementActionPayload.StockTarget target ->
-                    town.setDepotStockTarget(player.getUUID(), target.depot(), player.getMainHandItem(), target.count());
-            case SettlementManagementActionPayload.Treasury treasury -> treasury.deposit()
+                    result(town.setDepotStockTarget(player.getUUID(), target.depot(), player.getMainHandItem(), target.count()), command);
+            case SettlementManagementActionPayload.Treasury treasury -> result(treasury.deposit()
                     ? SettlementTradeService.depositCurrency(player, id, treasury.amount())
-                    : SettlementTradeService.withdrawCurrency(player, id, treasury.amount());
-            case SettlementManagementActionPayload.Budget budget -> SettlementTradeService.configureBudget(player, id, budget.reserve(), budget.daily());
-            case SettlementManagementActionPayload.SaveOrder save -> SettlementTradeService.putOrder(player, id, save.order());
-            case SettlementManagementActionPayload.RemoveOrder remove -> SettlementTradeService.removeOrder(player, id, remove.id());
+                    : SettlementTradeService.withdrawCurrency(player, id, treasury.amount()), command);
+            case SettlementManagementActionPayload.Budget budget -> result(SettlementTradeService.configureBudget(player, id, budget.reserve(), budget.daily()), command);
+            case SettlementManagementActionPayload.SaveOrder save -> result(SettlementTradeService.putOrder(player, id, save.order()), command);
+            case SettlementManagementActionPayload.RemoveOrder remove -> result(SettlementTradeService.removeOrder(player, id, remove.id()), command);
             case SettlementManagementActionPayload.Permissions permissions ->
-                    town.setPermissions(player.getUUID(), permissions.player(), permissions.grants());
-            case SettlementManagementActionPayload.Transfer transfer -> {
-                yield SettlementOwnershipService.offer(player, town, transfer.successor());
-            }
-            case SettlementManagementActionPayload.Inventory inventory -> level.getEntity(inventory.resident()) instanceof Villager villager
+                    result(town.setPermissions(player.getUUID(), permissions.player(), permissions.grants()), command);
+            case SettlementManagementActionPayload.Transfer transfer -> result(SettlementOwnershipService.offer(player, town, transfer.successor()), command);
+            case SettlementManagementActionPayload.Inventory inventory -> result(level.getEntity(inventory.resident()) instanceof Villager villager
                     && SettlementWorkforceService.duty(villager).filter(duty -> duty.town().id().equals(id)).isPresent()
                     && SettlementWorkforceService.canManageEquipment(level, villager, player)
-                    && com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.openJobInventory(player, villager);
+                    && com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.openJobInventory(player, villager), command);
         };
     }
 
+    private static String result(boolean applied, SettlementManagementActionPayload.Command command) {
+        return applied ? "" : SettlementManagementValidation.rejected(command);
+    }
+
     static SettlementManagementPayload snapshot(ServerPlayer player, SettlementManagementRequestPayload request) {
+        return snapshot(player, request, null);
+    }
+
+    static SettlementManagementPayload snapshot(ServerPlayer player, SettlementManagementRequestPayload request, SettlementDemandService.Snapshot plannedSupply) {
         if (player == null || !player.isAlive() || player.isSpectator()) {
             return null;
         }
@@ -198,7 +173,7 @@ public final class SettlementManagementService {
                 }
             }
         } else {
-            var assessment = overviewHeader(player, town);
+            var assessment = plannedSupply == null ? overviewHeader(player, town) : overviewHeader(player, town, plannedSupply);
             header = assessment.header();
             var issues = assessment.issues();
             switch (request.page()) {
@@ -257,10 +232,13 @@ public final class SettlementManagementService {
                       SettlementDemandService.Snapshot supply, List<SettlementManagementPayload.Demand> demands) { }
 
     static Assessment overviewHeader(ServerPlayer player, SettlementRecord town) {
+        return overviewHeader(player, town, SettlementDemandService.inspect(player.serverLevel(), town, player));
+    }
+
+    private static Assessment overviewHeader(ServerPlayer player, SettlementRecord town, SettlementDemandService.Snapshot supply) {
         var level = player.serverLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var status = SettlementProgressionService.assess(level, town);
-        var supply = SettlementDemandService.inspect(level, town, player);
         var demands = SettlementDemandViewService.demands(level, town, supply);
         var issues = SettlementIssueService.issues(level, town, status, demands);
         Set<SettlementPermission> permissions = EnumSet.noneOf(SettlementPermission.class);
