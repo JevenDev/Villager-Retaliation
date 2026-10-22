@@ -43,6 +43,7 @@ public final class AuthoringEditorClientSmoke {
     private static final ArrayDeque<Runnable> STEPS = new ArrayDeque<>();
     private static Object editor;
     private static AuthoringWorkspace workspace;
+    private static AuthoringWorkspace campaignWorkspace;
     private static AuthoringDocument document;
     private static long started, resumeAt;
     private static java.util.concurrent.CompletableFuture<?> liveCheck;
@@ -190,6 +191,7 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             measureWorldLoading = false;
             var imported = (AuthoringWorkspace) field(editor, "workspace");
+            campaignWorkspace = imported;
             require(imported != workspace && !imported.documents().isEmpty(), "Current world content opens in a fresh populated workspace: " + field(editor, "status"));
             require(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.QUEST), "Current world import exposes quests.");
             require(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.TREE), "Current world import exposes dialogue.");
@@ -291,6 +293,54 @@ public final class AuthoringEditorClientSmoke {
             set("guideStep", 0);
             set("groupContent", false);
             set("showResources", false);
+        });
+    }
+
+    private static void buildCampaignLiveWorldSteps() {
+        STEPS.add(() -> liveCheck = Minecraft.getInstance().getSingleplayerServer().submit(() ->
+                EditorWorldContent.source(Minecraft.getInstance().getSingleplayerServer())).thenApplyAsync(source ->
+                EditorWorldContent.prepare(source, output().resolve("live-world-drafts"), null, "en_us", ignored -> { }), net.minecraft.Util.backgroundExecutor()));
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> campaignWorkspace = ((EditorWorldContent.Prepared) liveCheck.join()).workspace());
+        for (String id : List.of("villagerretaliation:blank_map_promise", "villagerretaliation:missing_neighbor")) {
+            STEPS.add(() -> {
+                workspace = campaignWorkspace;
+                set("workspace", workspace);
+                document = workspace.documents().stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
+                invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+                invoke("enterPlaytest", new Class<?>[0]);
+                invoke("prepareTestWorld", new Class<?>[0]);
+                require(Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen,
+                        "The full default campaign prepares a test world for " + id + ": " + field(editor, "status"));
+                Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            });
+        }
+        STEPS.add(() -> {
+            originalWorld = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            invoke("prepareTestWorld", new Class<?>[0]);
+            Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
+        });
+        waitUntil(() -> Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen);
+        STEPS.add(() -> {
+            var create = (net.minecraft.client.gui.screens.worldselection.CreateWorldScreen) Minecraft.getInstance().screen;
+            require(create.getUiState().getSettings().dataConfiguration().dataPacks().getEnabled().contains("file/test_content"),
+                    "The default campaign test pack is enabled in the new world.");
+            capture("90-campaign-test-world-ready");
+            Minecraft.getInstance().tell(() -> create.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0));
+        });
+        waitUntil(() -> {
+            if (Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen) Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
+            return Minecraft.getInstance().player != null && Minecraft.getInstance().screen == null && EditorTestWorld.active(workspace);
+        });
+        STEPS.add(() -> {
+            var world = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            require(!world.equals(originalWorld) && !Files.exists(originalWorld.resolve("datapacks/test_content")),
+                    "Creating a campaign test world preserves the original world.");
+            require(EditorTestWorld.currentSnapshot(workspace), "The created live world contains the full exported campaign snapshot.");
+            ImGuiAuthoringEditor.open();
+            require(EditorPlaytestViewport.active(), "Reopening Playtest after the world switch restores the split game viewport.");
+            capture("91-campaign-live-world-missing-neighbor");
+            System.out.println("Default campaign live world: Missing Neighbor and Blank Map Promise setup passed, separate world created and entered.");
         });
     }
 
@@ -570,7 +620,7 @@ public final class AuthoringEditorClientSmoke {
         buildDropdownSteps();
         buildDeletionSteps();
         if (Boolean.getBoolean("villagerretaliation.authoringEditorWorkflowSmokeOnly")) {
-            buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
+            buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps(); buildCampaignLiveWorldSteps(); finishSteps("Focused editor workflow, quality and productivity controls passed."); return;
         }
         STEPS.add(() -> {
             try { EditorClientChecks.questSimulationUsesRuntimeCompletionRules(); }

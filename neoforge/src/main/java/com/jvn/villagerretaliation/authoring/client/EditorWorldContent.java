@@ -32,7 +32,8 @@ final class EditorWorldContent {
 
     record Selection(String campaign, List<String> addons, boolean defaults) { }
     record Snapshot(Selection selection, Map<String, byte[]> files) { }
-    record Source(WorldCampaignSelection.Selection selected, List<Pack> packs) {
+    record Source(WorldCampaignSelection.Selection selected, List<Pack> packs, net.minecraft.core.HolderLookup.Provider registries) {
+        Source(WorldCampaignSelection.Selection selected, List<Pack> packs) { this(selected, packs, null); }
         CloseableResourceManager open() {
             var opened = new ArrayList<PackResources>();
             try {
@@ -47,7 +48,8 @@ final class EditorWorldContent {
     record Prepared(AuthoringWorkspace workspace, Selection selection, EditorContentBrowser browser, EditorValidationCache validation, EditorGraphModel graph) { }
 
     static Source source(MinecraftServer server) {
-        return new Source(WorldCampaignSelection.get(server), List.copyOf(server.getPackRepository().getSelectedPacks()));
+        return new Source(WorldCampaignSelection.get(server), List.copyOf(server.getPackRepository().getSelectedPacks()),
+                com.jvn.villagerretaliation.quest.content.reward.QuestRewardRegistryContext.create(server));
     }
 
     static Selection identify(Source source) {
@@ -91,6 +93,7 @@ final class EditorWorldContent {
             var snapshot = capture(source);
             progress.accept("3/4 Creating draft workspace");
             var workspace = create(parent, snapshot);
+            workspace.validationRegistries(source.registries());
             progress.accept("4/4 Indexing and checking content");
             var browser = new EditorContentBrowser();
             browser.get(workspace, locale);

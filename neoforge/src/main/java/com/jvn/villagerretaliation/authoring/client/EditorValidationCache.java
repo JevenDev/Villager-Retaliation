@@ -11,6 +11,7 @@ import java.util.Map;
 final class EditorValidationCache {
     private record State(AuthoringDocument document, long revision, String path, JsonObject json) { }
     private AuthoringWorkspace owner;
+    private net.minecraft.core.HolderLookup.Provider registries;
     private List<State> states = List.of();
     private Map<String, String> supporting = Map.of();
     private List<AuthoringDiagnostic> diagnostics = List.of();
@@ -47,7 +48,7 @@ final class EditorValidationCache {
     private boolean refresh(AuthoringWorkspace workspace) {
         var documents = workspace.documents();
         var hashes = workspace.supportingFileHashes();
-        boolean changed = owner != workspace || documents.size() != states.size() || !supporting.equals(hashes);
+        boolean changed = owner != workspace || registries != workspace.validationRegistries() || documents.size() != states.size() || !supporting.equals(hashes);
         var next = new ArrayList<State>(documents.size());
         for (int i = 0; i < documents.size(); i++) {
             var document = documents.get(i);
@@ -64,7 +65,7 @@ final class EditorValidationCache {
             next.forEach(state -> definitions.put(state.path(), state.json()));
             content = Map.copyOf(definitions);
         }
-        owner = workspace; supporting = hashes; states = List.copyOf(next);
+        owner = workspace; registries = workspace.validationRegistries(); supporting = hashes; states = List.copyOf(next);
         return changed;
     }
 }

@@ -18,8 +18,43 @@ final class EditorRegressionChecks {
         listEditsKeepCameraThumbnailsWithTheirOwners();
         cleanRecoveryDropsAbandonedEditsButKeepsBuffers();
         playtestSnapshotsIncludeSupportingFiles();
+        builtInQuestPrefixesUseRuntimeCompatibilityRules();
         testWorldAssociationsRestoreOnlyTheirOwnPack();
-        return 6;
+        return 7;
+    }
+
+    private static void builtInQuestPrefixesUseRuntimeCompatibilityRules() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-built-in-export"));
+        var files = new java.util.LinkedHashMap<String, byte[]>();
+        var root = java.nio.file.Path.of("src/main/resources/data/villagerretaliation/quests");
+        if (!Files.isDirectory(root)) root = java.nio.file.Path.of("neoforge/src/main/resources/data/villagerretaliation/quests");
+        for (String bundle : java.util.List.of("cartographers_atlas/blank_map_promise", "roadside_rescues/missing_neighbor")) {
+            try (var paths = Files.walk(root.resolve(bundle))) {
+                for (var file : paths.filter(Files::isRegularFile).filter(file -> !file.getParent().getFileName().toString().equals("rewards")).toList())
+                    files.put("data/villagerretaliation/quests/" + root.relativize(file).toString().replace('\\', '/'), Files.readAllBytes(file));
+            }
+        }
+        workspace.importResources(files);
+        var errors = workspace.validate().stream().filter(issue -> issue.severity()
+                == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+        check(errors.isEmpty(), "built-in legacy and current localization prefixes both validate: " + errors);
+        var registries = net.minecraft.core.HolderLookup.Provider.create(java.util.stream.Stream.empty());
+        workspace.validationRegistries(registries);
+        check(workspace.validationSnapshot().validationRegistries() == registries, "background validation retains the captured registry context");
+        var cache = new EditorValidationCache(); cache.get(workspace);
+        var content = cache.content();
+        workspace.validationRegistries(net.minecraft.core.HolderLookup.Provider.create(java.util.stream.Stream.empty()));
+        cache.get(workspace);
+        check(cache.content() != content, "changing registry context invalidates cached validation");
+        var frozen = workspace.documents().stream().filter(document -> document.id().equals("villagerretaliation:blank_map_promise")).findFirst().orElseThrow();
+        frozen.edit("Break frozen prefix", value -> value.addProperty("localization_prefix", "villagerretaliation.quest.changed"));
+        check(workspace.validate().stream().anyMatch(issue -> issue.message().contains("built-in localization_prefix is frozen")),
+                "authoring still enforces frozen built-in prefixes");
+        frozen.undo();
+        var custom = workspace.createDocument(DefinitionKind.QUEST, "test:custom_prefix");
+        custom.edit("Invalid new prefix", value -> value.addProperty("localization_prefix", "quest.legacy.custom"));
+        check(workspace.validate().stream().anyMatch(issue -> issue.message().contains("new localization_prefix must begin with test.quest.")),
+                "new authored quests still require namespaced prefixes");
     }
 
     private static void graphStorageCollisionsPreserveExistingNodes() throws IOException {

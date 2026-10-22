@@ -201,6 +201,8 @@ final class ImGuiAuthoringEditor {
     private volatile String worldLoadStatus = "";
     private EditorContentBrowser contentBrowser = new EditorContentBrowser();
     private EditorValidationCache validationCache = new EditorValidationCache();
+    private net.minecraft.core.HolderLookup.Provider validationLookup, validationRegistries;
+    private net.minecraft.server.MinecraftServer validationServer;
     private boolean revealBrowserSelection;
     private net.minecraft.server.MinecraftServer contentServer;
     private net.minecraft.server.MinecraftServer loadingServer;
@@ -215,12 +217,14 @@ final class ImGuiAuthoringEditor {
         if (INSTANCE.workspace == null && !INSTANCE.preferences.workspace().isBlank())
             INSTANCE.runOperation(() -> INSTANCE.openWorkspace(false));
         INSTANCE.refreshWorldSelection();
+        if (INSTANCE.view == 3 && !EditorPlaytestViewport.active()) INSTANCE.enterPlaytest();
         MC.setScreen(INSTANCE.screen);
     }
 
     static void tick() {
         INSTANCE.finishWorldContent();
         if (INSTANCE.worldContent != null) return;
+        INSTANCE.updateValidationContext();
         EditorTestWorld.tick(INSTANCE.workspace);
         if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
@@ -549,6 +553,7 @@ final class ImGuiAuthoringEditor {
 
     private void installWorkspace(AuthoringWorkspace next, boolean create) throws IOException {
         workspace = next;
+        updateValidationContext();
         documentCache.clear();
         graphModel.clear();
         packFiles.reset();
@@ -2857,6 +2862,28 @@ final class ImGuiAuthoringEditor {
         resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);
     }
 
+    private void updateValidationContext() {
+        var server = MC.getSingleplayerServer();
+        net.minecraft.core.HolderLookup.Provider lookup = server == null ? MC.level == null ? null : MC.level.registryAccess()
+                : server.reloadableRegistries().get();
+        boolean changed = server != validationServer || lookup != validationLookup;
+        if (changed) {
+            validationServer = server; validationLookup = lookup;
+            validationRegistries = server == null ? lookup : com.jvn.villagerretaliation.quest.content.reward.QuestRewardRegistryContext.create(server);
+        }
+        if (workspace != null && (changed || workspace.validationRegistries() == null)) workspace.validationRegistries(validationRegistries);
+    }
+
+    private void prepareTestWorld() throws IOException {
+        try { EditorTestWorld.prepare(workspace, screen); }
+        catch (IOException | IllegalArgumentException | IllegalStateException exception) {
+            String message = exception.getMessage() == null ? exception.toString() : exception.getMessage();
+            MC.setScreen(new net.minecraft.client.gui.screens.AlertScreen(() -> MC.setScreen(screen),
+                    Component.literal("Test world setup failed"), Component.literal(message)));
+            throw exception;
+        }
+    }
+
     private void enterPlaytest() {
         view = 3;
         EditorCameraPanel.close();
@@ -3081,7 +3108,7 @@ final class ImGuiAuthoringEditor {
             String problem = EditorTestWorld.problem(workspace);
             if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
             ImGui.textWrapped("Create a separate test world for quest playtesting.");
-            if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+            if (ImGui.button("Create live quest test world")) operation(this::prepareTestWorld);
             return;
         }
         var state = EditorLiveQuestTest.snapshot();
@@ -3236,7 +3263,7 @@ final class ImGuiAuthoringEditor {
             String problem = EditorTestWorld.problem(workspace);
             if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
             ImGui.textWrapped("Create a separate test world to execute real objectives, actions, and rewards.");
-            if (ImGui.button("Create live quest test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+            if (ImGui.button("Create live quest test world")) operation(this::prepareTestWorld);
             return;
         }
         var state = EditorLiveQuestTest.view();
@@ -3255,7 +3282,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Clear live quest progress")) operation(() -> EditorLiveQuestTest.clear(workspace, document));
         ImGui.endDisabled();
         if (ImGui.button("Return to game")) closeEditor();
-        if (ImGui.button("Create fresh test world")) operation(() -> EditorTestWorld.prepare(workspace, screen));
+        if (ImGui.button("Create fresh test world")) operation(this::prepareTestWorld);
         if (state.quest().equals(document.id()) && EditorWidgets.section("Live quest diagnostics"))
             for (String line : state.lines()) ImGui.textWrapped(line);
     }
@@ -3514,7 +3541,7 @@ final class ImGuiAuthoringEditor {
             Path output = Path.of(exportPath.get());
             net.minecraft.Util.getPlatform().openFile((packBuild.zip() ? output.getParent() : output).toFile());
         });
-        if (ImGui.button("Prepare separate test world")) operation(() -> { save(); EditorTestWorld.prepare(workspace, screen); });
+        if (ImGui.button("Prepare separate test world")) operation(() -> { save(); prepareTestWorld(); });
         ImGui.separator();
         ImGui.textWrapped(status);
         ImGui.separator();

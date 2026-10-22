@@ -26,6 +26,10 @@ public final class AuthoringValidation {
     }
 
     public static List<AuthoringDiagnostic> validate(List<AuthoringDocument> documents) {
+        return validate(documents, null);
+    }
+
+    public static List<AuthoringDiagnostic> validate(List<AuthoringDocument> documents, net.minecraft.core.HolderLookup.Provider registries) {
         Map<String, List<AuthoringDocument>> scopes = new LinkedHashMap<>();
         for (AuthoringDocument document : documents) {
             String root = DefinitionKind.contentRoot(document.resourcePath());
@@ -33,11 +37,11 @@ public final class AuthoringValidation {
             scopes.computeIfAbsent(scope, ignored -> new ArrayList<>()).add(document);
         }
         List<AuthoringDiagnostic> result = new ArrayList<>();
-        scopes.values().forEach(scope -> result.addAll(validateScope(scope)));
+        scopes.values().forEach(scope -> result.addAll(validateScope(scope, registries)));
         return List.copyOf(result);
     }
 
-    private static List<AuthoringDiagnostic> validateScope(List<AuthoringDocument> documents) {
+    private static List<AuthoringDiagnostic> validateScope(List<AuthoringDocument> documents, net.minecraft.core.HolderLookup.Provider registries) {
         List<AuthoringDiagnostic> result = new ArrayList<>();
         Set<String> paths = new HashSet<>();
         Map<String, AuthoringDocument> ids = new LinkedHashMap<>();
@@ -160,14 +164,14 @@ public final class AuthoringValidation {
                 error(result, document, "", "Invalid structure: " + ex.getMessage());
             }
         }
-        if (!bundleResources.isEmpty()) validateBundles(result, bundleResources, documents, bundlePaths);
+        if (!bundleResources.isEmpty()) validateBundles(result, bundleResources, documents, bundlePaths, registries);
         return List.copyOf(result);
     }
 
     private static void validateBundles(List<AuthoringDiagnostic> result, List<QuestBundleTransactions.RawResource> resources,
-            List<AuthoringDocument> documents, Map<ResourceLocation, String> bundlePaths) {
+            List<AuthoringDocument> documents, Map<ResourceLocation, String> bundlePaths, net.minecraft.core.HolderLookup.Provider registries) {
         try {
-            var bundles = QuestBundleTransactions.compile(resources, QuestBundleTransactions.CompatibilityRules.empty());
+            var bundles = QuestBundleTransactions.compile(resources, com.jvn.villagerretaliation.quest.content.bundle.BuiltInQuestBundleCompatibility.rules(), registries);
             for (var issue : bundles.diagnostics()) {
                 result.add(new AuthoringDiagnostic(issue.rejected() ? AuthoringDiagnostic.Severity.ERROR : AuthoringDiagnostic.Severity.WARNING,
                         bundlePath(bundlePaths, issue.location()), "", issue.message()));

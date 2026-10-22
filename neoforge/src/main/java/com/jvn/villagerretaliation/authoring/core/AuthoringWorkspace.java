@@ -39,6 +39,7 @@ public final class AuthoringWorkspace {
     private int savedDeleted;
     private static final long MAX_FILE_BYTES = 32L * 1024 * 1024;
     private static final long MAX_PACK_BYTES = 256L * 1024 * 1024;
+    private net.minecraft.core.HolderLookup.Provider validationRegistries;
     private final Path directory;
     private final List<AuthoringDocument> documents = new ArrayList<>();
     private List<AuthoringDocument> indexedDocuments = List.of();
@@ -405,9 +406,9 @@ public final class AuthoringWorkspace {
         }
         List<AuthoringDocument> candidates = new ArrayList<>();
         for (AuthoringDocument document : documents) candidates.add(new AuthoringDocument(document.kind(), paths.getOrDefault(document.resourcePath(), document.resourcePath()), definitions.getOrDefault(document, document.json())));
-        var existingErrors = AuthoringValidation.validate(documents()).stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)
+        var existingErrors = AuthoringValidation.validate(documents(), validationRegistries).stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR)
                 .map(issue -> paths.getOrDefault(issue.resourcePath(), issue.resourcePath()) + issue.pointer() + ":" + issue.message()).collect(java.util.stream.Collectors.toSet());
-        for (var issue : AuthoringValidation.validate(candidates)) if (issue.severity() == AuthoringDiagnostic.Severity.ERROR && !existingErrors.contains(issue.resourcePath() + issue.pointer() + ":" + issue.message()))
+        for (var issue : AuthoringValidation.validate(candidates, validationRegistries)) if (issue.severity() == AuthoringDiagnostic.Severity.ERROR && !existingErrors.contains(issue.resourcePath() + issue.pointer() + ":" + issue.message()))
             throw new IllegalArgumentException(issue.resourcePath() + issue.pointer() + ": " + issue.message());
         Map<String, byte[]> assets = new LinkedHashMap<>();
         attachments.forEach((path, bytes) -> {
@@ -1165,17 +1166,21 @@ public final class AuthoringWorkspace {
         if (files.values().stream().mapToLong(bytes -> bytes.length).sum() > MAX_PACK_BYTES) throw new IOException("Pack exceeds the 256 MiB authoring import limit");
     }
 
+    public net.minecraft.core.HolderLookup.Provider validationRegistries() { return validationRegistries; }
+    public void validationRegistries(net.minecraft.core.HolderLookup.Provider value) { validationRegistries = value; }
+
     public AuthoringWorkspace validationSnapshot() {
         var snapshot = new AuthoringWorkspace(directory);
         for (var document : documents)
             snapshot.documents.add(new AuthoringDocument(document.kind(), document.resourcePath(), document.json()));
         attachments.forEach((path, bytes) -> snapshot.attachments.put(path, bytes.clone()));
         snapshot.packMetadata = packMetadata.deepCopy();
+        snapshot.validationRegistries = validationRegistries;
         return snapshot;
     }
 
     public List<AuthoringDiagnostic> validate() {
-        List<AuthoringDiagnostic> result = new ArrayList<>(AuthoringValidation.validate(documents()));
+        List<AuthoringDiagnostic> result = new ArrayList<>(AuthoringValidation.validate(documents(), validationRegistries));
         try { validatePackMetadata(packMetadata); }
         catch (IllegalArgumentException exception) {
             result.add(new AuthoringDiagnostic(AuthoringDiagnostic.Severity.ERROR, "pack.mcmeta", "/pack", exception.getMessage()));
