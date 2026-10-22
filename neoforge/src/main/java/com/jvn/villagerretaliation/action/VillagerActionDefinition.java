@@ -313,6 +313,11 @@ public record VillagerActionDefinition(
 
     static java.util.Optional<VillagerActionDefinition> readRegistered(
             ResourceLocation location, String context, JsonObject entry, ResourceLocation defaultQuestId, Kind kind) {
+        if (kind == Kind.KNOWLEDGE && !com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(
+                entry, com.jvn.villagerretaliation.dialogue.Knowledge.actionSchema()).isEmpty()) {
+            com.jvn.villagerretaliation.util.DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "invalid knowledge action");
+            return java.util.Optional.empty();
+        }
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
         if (questId == null && (kind == Kind.TUTORIAL || kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.CAMPAIGN_OUTCOME || kind == Kind.CAMPAIGN_FACT || kind == Kind.CAMPAIGN_REWARD || kind == Kind.CAMPAIGN_STANDING || kind == Kind.CAMPAIGN_PAYMENT || kind == Kind.NOTIFICATION || kind == Kind.START_SCENE || kind == Kind.FOLLOWER || kind.isQuestFact()) && !hasExplicitQuestId) {
@@ -334,10 +339,10 @@ public record VillagerActionDefinition(
         String forcedDialogue = DatapackJsonReader.readString(entry, "forced_dialogue");
         boolean flashTracker = DatapackJsonReader.readBoolean(entry, "flash_tracker", true);
         QuestFactScope factScope = readFactScope(entry, kind, questId);
-        ResourceLocation factTag = readFactTag(location, context, entry, kind);
-        String factKey = kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "role") : kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id")
+        ResourceLocation factTag = kind == Kind.KNOWLEDGE ? ResourceLocation.parse(entry.get("topic").getAsString()) : readFactTag(location, context, entry, kind);
+        String factKey = kind == Kind.KNOWLEDGE ? entry.get("recipient").getAsString() : kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "role") : kind == Kind.COMPANION_BOND ? DatapackJsonReader.readString(entry, "experience_id")
                 : kind == Kind.COMPANION_SERVICE ? DatapackJsonReader.readString(entry, "service_id") : readFactKey(entry, kind);
-        String factValue = kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "operation") : kind == Kind.COMPANION_SERVICE ? Integer.toString(DatapackJsonReader.readInt(entry, "minimum_reputation", 0)) : kind == Kind.COMPANION_UNLOCK
+        String factValue = kind == Kind.KNOWLEDGE ? entry.get("operation").getAsString() : kind == Kind.TUTORIAL ? DatapackJsonReader.readString(entry, "operation") : kind == Kind.COMPANION_SERVICE ? Integer.toString(DatapackJsonReader.readInt(entry, "minimum_reputation", 0)) : kind == Kind.COMPANION_UNLOCK
                 ? (DatapackJsonReader.readBoolean(entry, "free", false) ? "free" : "paid") : readFactValue(entry, kind);
         CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
                 ? CompiledQuestTransition.read(location, entry, questId)
@@ -728,6 +733,7 @@ public record VillagerActionDefinition(
         REPUTATION("reputation"),
         GOSSIP("gossip"),
         MEMORY("memory"),
+        KNOWLEDGE("knowledge"),
         LOOT("loot"),
         SET_TAG("set_tag"),
         PROFILE_ATTRIBUTE("profile_attribute"),

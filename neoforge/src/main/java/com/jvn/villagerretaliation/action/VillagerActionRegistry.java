@@ -104,6 +104,8 @@ public final class VillagerActionRegistry {
                     VillagerActionDefinition.Kind.PROFILE_ATTRIBUTE,
                     aliases("social_attribute", "attribute_reward"),
                     capabilities(ActionCapability.PROVIDER_LIVE)),
+            register("knowledge", VillagerActionDefinition.Kind.KNOWLEDGE, aliases(),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
                     "memory",
                     VillagerActionDefinition.Kind.MEMORY,
@@ -411,6 +413,9 @@ public final class VillagerActionRegistry {
             case COMPANION_BOND -> registration(descriptor, action -> !action.factKey().isBlank() && action.amount() >= 1 && action.amount() <= 5,
                     (context, action, replacements, actor) -> com.jvn.villagerretaliation.party.CompanionRelationshipService.execute(context, action),
                     com.jvn.villagerretaliation.party.CompanionRelationshipService::bondSchema, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case KNOWLEDGE -> registration(descriptor, action -> action.factTag() != null,
+                    (context, action, replacements, actor) -> com.jvn.villagerretaliation.dialogue.Knowledge.execute(context, action),
+                    com.jvn.villagerretaliation.dialogue.Knowledge::actionSchema, RecoveryMode.NATURALLY_IDEMPOTENT);
             case FOLLOWER -> registration(descriptor, action -> true,
                     (context, action, replacements, actor) -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.execute(context, action),
                     com.jvn.villagerretaliation.quest.follower.QuestFollowerDirective::schema, RecoveryMode.NATURALLY_IDEMPOTENT);

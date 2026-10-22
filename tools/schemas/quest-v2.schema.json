@@ -6700,6 +6700,7 @@
             "health",
             "held_item",
             "item",
+            "knowledge",
             "memory",
             "mood",
             "nearby_entities",
@@ -8042,6 +8043,61 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "knowledge"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "topic",
+              "subject"
+            ],
+            "properties": {
+              "type": {
+                "const": "knowledge"
+              },
+              "topic": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "subject": {
+                "enum": [
+                  "speaker",
+                  "player"
+                ]
+              },
+              "state": {
+                "enum": [
+                  "known",
+                  "complete",
+                  "witnessed",
+                  "heard",
+                  "partial"
+                ]
+              },
+              "source": {
+                "enum": [
+                  "speaker",
+                  "player"
+                ]
+              }
+            }
           }
         },
         {
@@ -9428,6 +9484,57 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "knowledge"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "topic",
+              "recipient",
+              "operation"
+            ],
+            "properties": {
+              "type": {
+                "const": "knowledge"
+              },
+              "topic": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "recipient": {
+                "enum": [
+                  "speaker",
+                  "player"
+                ]
+              },
+              "operation": {
+                "enum": [
+                  "witness",
+                  "share",
+                  "hint",
+                  "forget"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              }
+            }
+          }
         }
       ],
       "properties": {
@@ -9461,6 +9568,7 @@
             "gossip_reputation",
             "hud",
             "increment_counter",
+            "knowledge",
             "loot",
             "loot_table",
             "memory",
@@ -9543,6 +9651,7 @@
             "gossip_reputation",
             "hud",
             "increment_counter",
+            "knowledge",
             "lock",
             "loot",
             "loot_table",

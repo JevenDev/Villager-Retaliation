@@ -41,7 +41,7 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
         DialogueCondition.Scoreboard, DialogueCondition.NearbyEntity, DialogueCondition.Village,
         DialogueCondition.Mood, DialogueCondition.Weather, DialogueCondition.Time,
         DialogueCondition.TriggerPayload, DialogueCondition.ContextRule, DialogueCondition.Health,
-        DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState, SpeakingStyle.Condition,
+        DialogueCondition.PhysicalState, DialogueCondition.CompanionState, DialogueCondition.WorkState, SpeakingStyle.Condition, Knowledge.Condition,
         com.jvn.villagerretaliation.dialogue.PlayerHistoryConditions.Check, PlayerStatCondition, ProgressConditions.Check, ExplorationConditions.Check {
 
     boolean matches(DialogueContext context);
@@ -1132,6 +1132,9 @@ public sealed interface DialogueCondition permits DialogueCondition.Invalid, Dia
                             }
                             return Optional.of(new WorkState(value));
                         }, com.jvn.villagerretaliation.quest.tutorial.WorkStatePredicate.schema()),
+                register("knowledge", Knowledge.Condition.class, Set.of(), capabilities(ConditionCapability.WORLD_KNOWN,
+                        ConditionCapability.PLAYER_LIVE, ConditionCapability.PROVIDER_LIVE, ConditionCapability.PROVIDER_SNAPSHOT),
+                        (location, context, condition, quest) -> Knowledge.read(location, context, condition), Knowledge.conditionSchema()),
                 register("speaking_style", SpeakingStyle.Condition.class, Set.of(), capabilities(ConditionCapability.PROVIDER_LIVE),
                         (location, context, condition, quest) -> DialogueContextConditions.read(location, context, condition, "speaking_style"),
                         DialogueContextConditions.schema("speaking_style")),

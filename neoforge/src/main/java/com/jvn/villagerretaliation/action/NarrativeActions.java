@@ -163,6 +163,8 @@ public final class NarrativeActions {
 
     private static NarrativeActions commonActions() {
         var actions = adapt((context, action, replacements) -> unavailable("This action requires a registered narrative handler."));
+        actions = actions.with(VillagerActionDefinition.Kind.KNOWLEDGE, (context, action, replacements) ->
+                com.jvn.villagerretaliation.dialogue.Knowledge.execute(context, action));
         actions = actions.with(VillagerActionDefinition.Kind.EXPERIENCE, (context, action, replacements) ->
                 awardExperience(context, action.amount()) ? success(VillagerActionResult.success()) : ActionResult.skipped("experience is empty", Set.of()));
         actions = actions.with(VillagerActionDefinition.Kind.TRACKER, (context, action, replacements) ->

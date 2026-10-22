@@ -110,6 +110,9 @@ public final class VillagerConditionAccess implements ConditionLeafAccess {
 
     @Override
     public ConditionOutcome evaluate(DialogueCondition condition, QuestTriggerContext trigger) {
+        if (condition instanceof com.jvn.villagerretaliation.dialogue.Knowledge.Condition knowledge)
+            return knowledge.evaluate(this.level, this.player, this.live != null ? this.live.providerId()
+                    : this.progress == null ? null : this.progress.startedVillagerId());
         if (condition instanceof com.jvn.villagerretaliation.dialogue.ExplorationConditions.Check check)
             return check.reference().evaluate(this.level, this.player, this.live, this.progress);
         if (condition instanceof com.jvn.villagerretaliation.dialogue.ProgressConditions.Check check)

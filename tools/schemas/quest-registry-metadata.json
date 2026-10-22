@@ -1143,6 +1143,57 @@
         }
       },
       {
+        "id": "knowledge",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ],
+        "implementation": "Condition",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "topic",
+            "subject"
+          ],
+          "properties": {
+            "type": {
+              "const": "knowledge"
+            },
+            "topic": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "subject": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            },
+            "state": {
+              "enum": [
+                "known",
+                "complete",
+                "witnessed",
+                "heard",
+                "partial"
+              ]
+            },
+            "source": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            }
+          }
+        }
+      },
+      {
         "id": "speaking_style",
         "aliases": [],
         "capabilities": [
@@ -2748,6 +2799,54 @@
         "reconciles_prepared_operation": false,
         "capabilities": [
           "provider_live"
+        ]
+      },
+      {
+        "id": "knowledge",
+        "aliases": [],
+        "kind": "knowledge",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "topic",
+            "recipient",
+            "operation"
+          ],
+          "properties": {
+            "type": {
+              "const": "knowledge"
+            },
+            "topic": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "recipient": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            },
+            "operation": {
+              "enum": [
+                "witness",
+                "share",
+                "hint",
+                "forget"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "world_known"
         ]
       },
       {
@@ -5182,6 +5281,58 @@
         }
       },
       {
+        "id": "villagerretaliation:knowledge",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Knowledge",
+        "description": "Built-in Knowledge type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "knowledge"
+            },
+            "topic": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "recipient": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            },
+            "operation": {
+              "enum": [
+                "witness",
+                "share",
+                "hint",
+                "forget"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "topic",
+            "recipient",
+            "operation"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:loot",
         "aliases": [
           "villagerretaliation:loot_table"
@@ -6282,6 +6433,64 @@
           },
           "required": [
             "type",
+            "subject"
+          ],
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:knowledge",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Knowledge",
+        "description": "Built-in Knowledge type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "knowledge"
+            },
+            "topic": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "subject": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            },
+            "state": {
+              "enum": [
+                "known",
+                "complete",
+                "witnessed",
+                "heard",
+                "partial"
+              ]
+            },
+            "source": {
+              "enum": [
+                "speaker",
+                "player"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "topic",
             "subject"
           ],
           "type": "object"
@@ -8414,6 +8623,7 @@
         "health",
         "held_item",
         "item",
+        "knowledge",
         "memory",
         "mood",
         "nearby_entities",
@@ -8510,6 +8720,7 @@
         "gossip_reputation",
         "hud",
         "increment_counter",
+        "knowledge",
         "loot",
         "loot_table",
         "memory",

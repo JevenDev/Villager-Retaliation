@@ -49,6 +49,7 @@ public final class VillagerActionExecutor {
         }
 
         return switch (action.kind()) {
+            case KNOWLEDGE -> com.jvn.villagerretaliation.dialogue.Knowledge.execute(context, action).legacyResult();
             case TUTORIAL -> com.jvn.villagerretaliation.quest.tutorial.TutorialService.execute(context, action).legacyResult();
             case COMPANION_UNLOCK, COMPANION_BOND -> com.jvn.villagerretaliation.party.CompanionRelationshipService.execute(context, action).legacyResult();
             case COMPANION_SERVICE -> com.jvn.villagerretaliation.party.CompanionServiceOffers.execute(context, action).legacyResult();
