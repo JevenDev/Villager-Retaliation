@@ -242,6 +242,7 @@ public final class AuthoringEditorClientSmoke {
             capture("00-largest-campaign-quest");
         });
         buildDialoguePoolSteps();
+        buildResourceViewSteps();
         STEPS.add(() -> {
             ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
             invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
@@ -336,6 +337,79 @@ public final class AuthoringEditorClientSmoke {
             require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
                     "Large dialogue pools render only visible cards: " + profile);
             capture("00-dialogue-pool-500-entries");
+        });
+    }
+
+    private static void buildResourceViewSteps() {
+        var scene = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            scene[0] = imported.documents().stream().filter(value -> value.resourcePath().endsWith(
+                    "/last_ember/breath_after_the_roar/scenes/last_ember_charge.json")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, scene[0]);
+            invoke("setPointer", new Class<?>[] {String.class}, "/steps/2");
+            set("fieldFocus", "/steps/2/data/ticks");
+        });
+        pause(250);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("75");
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> require(scene[0].value("/steps/2/data/ticks").getAsInt() == 75, "Scene fields are editable in the work area."));
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(scene[0].value("/steps/2/data/ticks").getAsInt() == 50, "Scene work area edits support undo."));
+        click(() -> toolbar("Redo"));
+        STEPS.add(() -> {
+            require(scene[0].value("/steps/2/data/ticks").getAsInt() == 75, "Scene work area edits support redo.");
+            invoke("setPointer", new Class<?>[] {String.class}, "/steps/1");
+        });
+        pause(250);
+        STEPS.add(() -> { capture("00-scene-step-editor"); EditorCampaignProfile.start("scene-resource"); });
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Scene editing stays responsive: " + profile);
+            invoke("setPointer", new Class<?>[] {String.class}, "/actors/1");
+        });
+        pause(250);
+        STEPS.add(() -> capture("00-scene-actor-editor"));
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var encounter = imported.documents().stream().filter(value -> value.resourcePath().endsWith("/encounters/atlas_risky_patrol.json")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, encounter);
+        });
+        pause(250);
+        STEPS.add(() -> capture("00-encounter-editor"));
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var messages = imported.documents().stream().filter(value -> value.resourcePath().endsWith("/professions/weaponsmith/messages/00_messages.json")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, messages);
+        });
+        pause(250);
+        STEPS.add(() -> { capture("00-dialogue-message-editor"); EditorCampaignProfile.start("dialogue-message-resource"); });
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Remaining dialogue formats edit one entry at a time: " + profile);
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var words = imported.documents().stream().filter(value -> value.resourcePath().endsWith("/dialogue_words/en_us/greetings/voice.json")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, words);
+        });
+        pause(250);
+        STEPS.add(() -> capture("00-word-pool-editor"));
+        STEPS.add(() -> {
+            var imported = (AuthoringWorkspace) field(editor, "workspace");
+            var root = new com.google.gson.JsonObject(); var messages = new com.google.gson.JsonObject();
+            for (int i = 0; i < 5000; i++) messages.addProperty("translation." + i, "Readable translation " + i);
+            root.add("messages", messages);
+            var locale = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/quests/example/locales/en_us.json", root);
+            imported.add(locale); invoke("select", new Class<?>[] {AuthoringDocument.class}, locale);
+        });
+        pause(500);
+        STEPS.add(() -> { capture("00-translation-editor"); EditorCampaignProfile.start("translations-5000-entries"); });
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Large translation resources render only visible entries: " + profile);
         });
     }
 

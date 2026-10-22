@@ -120,6 +120,7 @@ final class ImGuiAuthoringEditor {
     private final Map<String, ImString> fields = new HashMap<>();
     private final EditorTextField textFields = new EditorTextField();
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
+    private final EditorResourceView resourceView = new EditorResourceView();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
@@ -1311,7 +1312,13 @@ final class ImGuiAuthoringEditor {
                 dialoguePool.render(document, pointer.get(), preferences.textScale(), this::poolField,
                         path -> { setPointer(path); focusPanel = DETAIL_PANEL; }, this::operation, this::refresh);
                 ImGui.endDisabled();
-            } else ImGui.textWrapped("Edit resource pools and localization in Properties. Select a dialogue-bearing object to preview it.");
+            } else {
+                ImGui.beginDisabled(rawModified);
+                resourceView.render(document, documentCache.json(document), pointer.get(), preferences.textScale(),
+                        this::resourceFields, this::resourceCollectionTools,
+                        path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
+                ImGui.endDisabled();
+            }
             ImGui.end();
             return;
         }
@@ -2060,7 +2067,10 @@ final class ImGuiAuthoringEditor {
             return;
         }
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
-        if (ImGui.button("File settings", -1, 0)) operation(() -> { selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer(""); });
+        if (ImGui.button("File settings", -1, 0)) operation(() -> {
+            selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer("");
+            if (document.kind() == DefinitionKind.RESOURCE) resourceView.settings();
+        });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
                     && ImGui.button(document.kind() == DefinitionKind.CONVERSATION ? "Add spoken line" : "Add line variation", -1, 0)) operation(() -> { workspace.addDialogueLine(document, selectedNode); refresh(); });
@@ -2380,6 +2390,35 @@ final class ImGuiAuthoringEditor {
         });
     }
 
+    private void resourceFields(JsonElement value, String path, boolean settings) {
+        if (!value.isJsonObject()) {
+            if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
+                    && (document.resourcePath().contains("/locales/") || document.resourcePath().contains("/dialogue_words/")))
+                inspectValue(value, path, "Text", 0, true);
+            else inspectValue(value, path, "Value", 0);
+            return;
+        }
+        var object = value.getAsJsonObject();
+        for (var entry : object.entrySet()) {
+            if (settings && !entry.getKey().equals("metadata") && (entry.getValue().isJsonArray() || entry.getValue().isJsonObject())) continue;
+            if (settings && document.resourcePath().contains("/locales/") && !List.of("schema", "metadata", "locale").contains(entry.getKey())) continue;
+            inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
+        }
+        schemaObjectTools(object, path);
+    }
+
+    private void resourceCollectionTools(EditorResourceView.Section section) {
+        if (section.value().isJsonArray()) {
+            var rule = propertySchema.at(document, documentCache.json(document), section.pointer());
+            ImGui.setNextItemWidth(-1);
+            if (ImGui.beginCombo("##resource_add_entry", "Add entry...")) {
+                for (var option : propertySchema.options(EditorSchema.object(rule.get("items"))).entrySet())
+                    if (ImGui.selectable(option.getKey())) editArray(section.pointer(), values -> values.add(option.getValue().get()));
+                ImGui.endCombo();
+            }
+        } else if (section.value().isJsonObject()) schemaObjectTools(section.value().getAsJsonObject(), section.pointer());
+    }
+
     private void poolField(JsonElement value, String path, String label, boolean text) {
         if (!value.isJsonPrimitive()) { inspectValue(value, path, label, 0); return; }
         ImGui.pushID(path);
@@ -2403,6 +2442,11 @@ final class ImGuiAuthoringEditor {
     }
 
     private void selectedDetails() {
+        if (view == 0 && !focusMode.equals(DETAIL_PANEL) && document.kind() == DefinitionKind.RESOURCE && !dialoguePool.supports(document, documentCache.json(document))) {
+            ImGui.textWrapped("Edit this resource in the work area. Choose a section, then select an entry.");
+            ImGui.textWrapped(pointer.get().isEmpty() ? document.resourcePath() : pointer.get());
+            return;
+        }
         JsonElement selected = JsonPointers.get(documentCache.json(document), pointer.get());
         if (selected.isJsonObject() && document.kind() == DefinitionKind.RESOURCE
                 && dialoguePool.supports(document, documentCache.json(document))
@@ -2597,6 +2641,10 @@ final class ImGuiAuthoringEditor {
     }
 
     private void inspectValue(JsonElement value, String path, String label, int depth) {
+        inspectValue(value, path, label, depth, false);
+    }
+
+    private void inspectValue(JsonElement value, String path, String label, int depth, boolean styledText) {
         if (depth > 16) { ImGui.textUnformatted("Use advanced JSON for deeper nesting."); return; }
         ImGui.pushID(path);
         boolean scalar = value.isJsonPrimitive() || value.isJsonNull();
@@ -2701,7 +2749,7 @@ final class ImGuiAuthoringEditor {
                 if (text) textFields.focus(path);
                 ImGui.setKeyboardFocusHere();
             }
-            if (text && (path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+            if (text && (styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false, preferences.textScale());

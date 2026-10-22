@@ -33,10 +33,27 @@ final class EditorSchema {
             case CONVERSATION -> com.jvn.villagerretaliation.dialogue.conversation.ConversationSchema.export();
             case WORLD_CAMPAIGN -> com.jvn.villagerretaliation.campaign.selection.WorldCampaignSchema.export();
             case CAMPAIGN_ADDON -> com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.schema();
+            case RESOURCE -> resourceSchema(document);
             default -> new JsonObject();
         };
         if (!root.has("$defs")) root.add("$defs", com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions());
         return new EditorSchema(root);
+    }
+
+    private static JsonObject resourceSchema(AuthoringDocument document) {
+        var root = document.json();
+        if (!root.has("schema") || !root.get("schema").isJsonPrimitive()) return new JsonObject();
+        var schema = switch (root.get("schema").getAsString()) {
+            case "villagerretaliation:scene/v1" -> com.jvn.villagerretaliation.scene.schema.SceneSchema.sceneV1();
+            case "villagerretaliation:encounter/v1" -> com.jvn.villagerretaliation.scene.schema.SceneSchema.encounterV1();
+            default -> new JsonObject();
+        };
+        if (schema.has("$defs")) {
+            var definitions = com.jvn.villagerretaliation.quest.schema.ContentSchemaDefinitions.definitions();
+            schema.getAsJsonObject("$defs").entrySet().forEach(entry -> definitions.add(entry.getKey(), entry.getValue()));
+            schema.add("$defs", definitions);
+        }
+        return schema;
     }
 
     JsonObject at(JsonObject document, String pointer) {
