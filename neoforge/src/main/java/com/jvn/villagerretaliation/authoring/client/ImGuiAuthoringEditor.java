@@ -89,6 +89,7 @@ final class ImGuiAuthoringEditor {
     private final ImString quickQuery = new ImString(256);
     private int quickIndex;
     private String searchQuery = "", searchLocale = "";
+    private boolean searchWording;
     private List<EditorSearch.Hit> searchHits = List.of();
     private float workScroll, restoreWorkScroll = Float.NaN;
     private boolean showBranch;
@@ -119,7 +120,7 @@ final class ImGuiAuthoringEditor {
     private final EditorTextField textFields = new EditorTextField();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
-    private final EditorGraphModel graphModel = new EditorGraphModel();
+    private EditorGraphModel graphModel = new EditorGraphModel();
     private final EditorFieldEdits pendingFields = new EditorFieldEdits();
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
@@ -191,8 +192,14 @@ final class ImGuiAuthoringEditor {
     private long nextRecovery;
     private Entity target;
     private java.util.concurrent.CompletableFuture<EditorWorldContent.Selection> worldSelection;
-    private java.util.concurrent.CompletableFuture<EditorWorldContent.Snapshot> worldContent;
+    private java.util.concurrent.CompletableFuture<EditorWorldContent.Prepared> worldContent;
+    private java.util.concurrent.CompletableFuture<EditorWorldContent.Source> worldContentSource;
+    private volatile String worldLoadStatus = "";
+    private EditorContentBrowser contentBrowser = new EditorContentBrowser();
+    private EditorValidationCache validationCache = new EditorValidationCache();
+    private boolean revealBrowserSelection;
     private net.minecraft.server.MinecraftServer contentServer;
+    private net.minecraft.server.MinecraftServer loadingServer;
 
     static void initialize() {
         ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(INSTANCE::render);
@@ -209,6 +216,7 @@ final class ImGuiAuthoringEditor {
 
     static void tick() {
         INSTANCE.finishWorldContent();
+        if (INSTANCE.worldContent != null) return;
         EditorTestWorld.tick(INSTANCE.workspace);
         if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
@@ -228,7 +236,9 @@ final class ImGuiAuthoringEditor {
     }
 
     static void disconnect() {
-        if (!INSTANCE.showRecovery) INSTANCE.attempt(INSTANCE::writeRecovery);
+        if (INSTANCE.worldContentSource != null)
+            INSTANCE.worldContentSource.completeExceptionally(new IllegalStateException("World closed before the import started"));
+        if ((INSTANCE.worldContent == null || INSTANCE.worldContent.isDone()) && !INSTANCE.showRecovery) INSTANCE.attempt(INSTANCE::writeRecovery);
         AuthoringDialoguePreview.stop();
         EditorPlaytestViewport.close();
         EditorCameraPanel.close();
@@ -239,7 +249,6 @@ final class ImGuiAuthoringEditor {
         INSTANCE.target = null;
         INSTANCE.nodeResize = null;
         INSTANCE.worldSelection = null;
-        INSTANCE.worldContent = null;
         INSTANCE.contentServer = null;
         if (MC.screen == INSTANCE.screen) MC.setScreen(null);
     }
@@ -275,7 +284,7 @@ final class ImGuiAuthoringEditor {
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) return;
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
-        if (!playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
+        if (worldContent == null && !playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
             if (nodeResize != null) { nodeResize = null; return; }
             if (!selectedEdge.isEmpty()) {
                 selectedEdge = "";
@@ -284,12 +293,13 @@ final class ImGuiAuthoringEditor {
             else screen.onClose();
             return;
         }
-        recordLocation();
+        if (worldContent == null) recordLocation();
         rendering = true;
         float fontScale = ImGui.getStyle().getFontScaleMain();
         ImGui.getStyle().setFontScaleMain(fontScale * preferences.textScale());
         pushEditorStyle();
         try {
+            if (worldContent != null) { loadingWorldContent(); return; }
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
                 if (shortcuts.pressed()) shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
                         library, this::operation, ImGui.getIO().getWantTextInput() || ImGui.isAnyItemActive());
@@ -320,7 +330,7 @@ final class ImGuiAuthoringEditor {
             ImGui.getStyle().setFontScaleMain(fontScale);
             rendering = false;
             while (!operations.isEmpty()) runOperation(operations.removeFirst());
-            recordLocation();
+            if (worldContent == null) recordLocation();
         }
     }
 
@@ -523,29 +533,23 @@ final class ImGuiAuthoringEditor {
         }
     }
 
-    private static String kindLabel(DefinitionKind kind) {
-        return switch (kind) {
-            case TREE -> "Dialogue tree";
-            case CONVERSATION -> "Conversation";
-            case FORCED -> "Triggered dialogue";
-            case QUEST -> "Quest";
-            case WORLD_CAMPAIGN -> "World campaign";
-            case CAMPAIGN_ADDON -> "Campaign addon";
-            case RESOURCE -> "Supporting resource";
-        };
-    }
+    private static String kindLabel(DefinitionKind kind) { return EditorContentBrowser.kindLabel(kind); }
 
     private void openWorkspace(boolean create) throws IOException {
         if (workspace != null) { saveSession(); workspace.save(); }
         AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
                 : AuthoringWorkspace.open(Path.of(workspacePath.get()));
+        installWorkspace(next, create);
+    }
+
+    private void installWorkspace(AuthoringWorkspace next, boolean create) throws IOException {
         workspace = next;
         documentCache.clear();
         graphModel.clear();
         packFiles.reset();
         packBuild.load(next);
         createScope = null;
-        searchQuery = ""; searchHits = List.of();
+        searchQuery = ""; searchHits = List.of(); searchWording = false;
         activeDiagnostic = null; replacementPreview = null;
         select(null);
         showWorkspace = false;
@@ -563,7 +567,8 @@ final class ImGuiAuthoringEditor {
     private void refreshWorldSelection() {
         var server = MC.getSingleplayerServer();
         contentServer = server;
-        worldSelection = server == null ? null : server.submit(() -> EditorWorldContent.selection(server));
+        worldSelection = server == null ? null : server.submit(() -> EditorWorldContent.source(server))
+                .thenApplyAsync(EditorWorldContent::identify, net.minecraft.Util.backgroundExecutor());
     }
 
     private void currentWorld() {
@@ -603,36 +608,51 @@ final class ImGuiAuthoringEditor {
         if (contentServer == null || contentServer != MC.getSingleplayerServer())
             throw new IllegalStateException("The current world is no longer available");
         if (showRecovery) throw new IllegalStateException("Resolve workspace recovery before loading world content");
-        if (workspace != null) { save(); saveSession(); }
+        if (workspace != null) {
+            packFiles.apply(workspace);
+            packBuild.load(workspace);
+            packBuild.apply();
+            saveSession();
+        }
+        var previous = workspace;
+        var parent = MC.gameDirectory.toPath().resolve("authoring/workspaces");
+        String language = locale.get();
+        worldLoadStatus = "Preparing selected datapacks";
         var server = contentServer;
-        worldContent = server.submit(() -> EditorWorldContent.capture(server));
-        status = "Copying current world content...";
+        loadingServer = server;
+        worldContentSource = server.submit(() -> EditorWorldContent.source(server));
+        worldContent = worldContentSource.thenApplyAsync(
+                source -> EditorWorldContent.prepare(source, parent, previous, language, stage -> worldLoadStatus = stage), net.minecraft.Util.backgroundExecutor());
+        status = "Loading current world content...";
     }
 
     private void finishWorldContent() {
         if (worldContent == null || !worldContent.isDone()) return;
         var pending = worldContent;
+        var server = loadingServer;
         worldContent = null;
-        if (contentServer != MC.getSingleplayerServer() || contentServer == null) return;
+        worldContentSource = null;
+        loadingServer = null;
+        if (server != MC.getSingleplayerServer() || server == null) return;
         operation(() -> {
-            EditorWorldContent.Snapshot snapshot;
-            try { snapshot = pending.join(); }
+            EditorWorldContent.Prepared prepared;
+            try { prepared = pending.join(); }
             catch (java.util.concurrent.CompletionException exception) {
                 throw new IOException("Could not load current world content: " + exception.getCause().getMessage(), exception.getCause());
             }
-            var next = EditorWorldContent.create(MC.gameDirectory.toPath().resolve("authoring/workspaces"), snapshot);
-            workspacePath.set(next.directory().toString());
-            openWorkspace(false);
+            contentBrowser = prepared.browser();
+            validationCache = prepared.validation();
+            workspacePath.set(prepared.workspace().directory().toString());
+            installWorkspace(prepared.workspace(), false);
             filesMode = false;
             groupContent = true;
             showResources = true;
             contentKind = "All";
             saveViewPreferences();
             showWorkspace = false;
-            var first = workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.WORLD_CAMPAIGN).findFirst()
-                    .orElseGet(() -> workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).findFirst().orElse(null));
-            select(first);
-            status = "Loaded " + workspace.documents().size() + " definitions from " + snapshot.selection().campaign() + ".";
+            graphModel = prepared.graph();
+            select(EditorWorldContent.firstDocument(workspace));
+            status = "Loaded " + workspace.documents().size() + " definitions from " + prepared.selection().campaign() + ".";
         });
     }
 
@@ -743,31 +763,18 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(filter.get().isEmpty());
         if (ImGui.button("Clear##search")) { filter.set(""); focusSearch = true; }
         ImGui.endDisabled();
-        if (!filter.get().isBlank()) contextualSearch();
+        if (!filter.get().isBlank()) {
+            boolean library = !filesMode && workspace.documents().size() > 30;
+            if (library && ImGui.checkbox("Show matching lines", searchWording)) searchWording = !searchWording;
+            if (!library || searchWording) contextualSearch();
+        }
         if (filesMode) {
             ImGui.textDisabled("Paths in the built pack");
             packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
             if (ImGui.smallButton("Use content list")) { filesMode = false; saveViewPreferences(); }
         } else {
             if (ImGui.checkbox("Supporting files", showResources)) { showResources = !showResources; saveViewPreferences(); }
-            int visible = 0;
-            String previousGroup = "";
-            var listed = groupContent ? workspace.documents().stream().sorted(java.util.Comparator.comparing(this::contentGroup).thenComparing(AuthoringDocument::id)).toList() : workspace.documents();
-            for (AuthoringDocument candidate : listed) {
-                if (!showResources && candidate.kind() == DefinitionKind.RESOURCE) continue;
-                if (!EditorContentTools.matches(candidate, filter.get())) continue;
-                if (!contentKind.equals("All") && !kindLabel(candidate.kind()).equals(contentKind)) continue;
-                visible++;
-                String group = contentGroup(candidate);
-                if (groupContent && !group.equals(previousGroup)) { ImGui.textDisabled(group); previousGroup = group; }
-                String name = candidate.kind() == DefinitionKind.RESOURCE
-                        ? candidate.resourcePath().substring(candidate.resourcePath().lastIndexOf('/') + 1) : candidate.id();
-                if (ImGui.selectable((candidate.dirty() ? "* " : "") + shortText(name, Math.max(15, (int) (ImGui.getContentRegionAvailX() / ImGui.calcTextSize("M").x) - 3)) + "##" + candidate.resourcePath(), document == candidate))
-                    operation(() -> { select(candidate); view = 0; });
-                if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + candidate.resourcePath());
-            }
-            if (visible == 0 && !showCreate) ImGui.textWrapped(filter.get().isBlank()
-                    ? "No dialogue yet. Create a dialogue or import a pack." : "No matches. Clear the search to see all content.");
+            contentBrowser();
         }
         ImGui.separator();
         if (EditorWidgets.section("Import existing pack")) {
@@ -842,12 +849,79 @@ final class ImGuiAuthoringEditor {
         return workspace.createDocument(kind, newContentId(kind), kind.campaignManifest() ? null : createScope);
     }
 
-    private String contentGroup(AuthoringDocument value) {
-        String[] parts = value.resourcePath().split("/");
-        String campaign = parts.length > 3 && (parts[2].equals("world_campaigns") || parts[2].equals("campaign_addons"))
-                ? (parts[2].equals("campaign_addons") ? "Addon " : "Campaign ") + parts[1] + ":" + parts[3]
-                : DialogueGraph.string(value.json(), "world_campaign");
-        return (campaign.isBlank() ? "Default content" : campaign) + " / " + kindLabel(value.kind());
+    private void loadingWorldContent() {
+        var viewport = ImGui.getMainViewport();
+        ImGui.setNextWindowPos(viewport.getWorkPosX(), viewport.getWorkPosY());
+        ImGui.setNextWindowSize(viewport.getWorkSizeX(), viewport.getWorkSizeY());
+        ImGui.begin("Authoring###VR_AuthoringShell", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking
+                | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings);
+        ImGui.dockSpace(ImGui.getID("VR_AuthoringDock"), 0, 0, imgui.flag.ImGuiDockNodeFlags.KeepAliveOnly);
+        ImGui.end();
+        ImGui.setNextWindowPos(viewport.getWorkPosX() + viewport.getWorkSizeX() / 2, viewport.getWorkPosY() + viewport.getWorkSizeY() / 2,
+                ImGuiCond.Always, .5f, .5f);
+        ImGui.setNextWindowSize(Math.min(480 * preferences.textScale(), viewport.getWorkSizeX() - 28), 0, ImGuiCond.Always);
+        ImGui.begin("Loading current world###VR_Loading", ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove);
+        ImGui.textWrapped(worldLoadStatus);
+        ImGui.textDisabled("The editor will open when the content is ready.");
+        ImGui.end();
+    }
+
+    private void contentBrowser() {
+        var index = contentBrowser.get(workspace, locale.get());
+        boolean library = index.entries().size() > 30;
+        if (library) {
+            ImGui.textDisabled(index.quests() + " quests / " + index.dialogue() + " dialogue / " + index.entries().size() + " files");
+            if (ImGui.checkbox("Group content##library", groupContent)) { groupContent = !groupContent; saveViewPreferences(); }
+            if (ImGui.smallButton("Collapse all")) contentBrowser.collapse();
+            EditorWidgets.sameLineFor("Show selected");
+            ImGui.beginDisabled(document == null);
+            if (ImGui.smallButton("Show selected")) {
+                filter.set(""); contentKind = "All";
+                if (document.kind() == DefinitionKind.RESOURCE) showResources = true;
+                contentBrowser.reveal(document); revealBrowserSelection = true;
+            }
+            ImGui.endDisabled();
+            ImGui.beginChild("##content_library", 0, Math.max(180, ImGui.getContentRegionAvailY() - 150), true);
+        }
+        var listing = contentBrowser.rows(workspace, locale.get(), filter.get(), showResources, contentKind, groupContent, document);
+        var rows = listing.rows();
+        float height = ImGui.getTextLineHeightWithSpacing();
+        if (revealBrowserSelection) {
+            for (int i = 0; i < rows.size(); i++) if (rows.get(i).entry() != null && rows.get(i).entry().document() == document)
+                ImGui.setScrollY(i * height);
+            revealBrowserSelection = false;
+        }
+        float left = ImGui.getCursorPosX();
+        var clipper = new imgui.ImGuiListClipper();
+        try {
+            clipper.begin(rows.size(), height);
+            while (clipper.step()) for (int i = clipper.getDisplayStart(); i < clipper.getDisplayEnd(); i++) {
+                var row = rows.get(i);
+                ImGui.setCursorPosX(left + row.depth() * ImGui.getFontSize() * .8f);
+                if (row.entry() == null) {
+                    ImGui.setNextItemOpen(contentBrowser.expanded(row.key()), ImGuiCond.Always);
+                    boolean open = ImGui.treeNodeEx(row.key(), imgui.flag.ImGuiTreeNodeFlags.NoTreePushOnOpen | imgui.flag.ImGuiTreeNodeFlags.SpanAvailWidth,
+                            row.label() + " (" + row.count() + ")");
+                    if (open != contentBrowser.expanded(row.key())) contentBrowser.toggle(row.key());
+                    if (ImGui.isItemHovered()) ImGui.setTooltip(row.label() + " (" + row.count() + " files)");
+                } else {
+                    var entry = row.entry();
+                    var candidate = entry.document();
+                    if (ImGui.selectable((candidate.dirty() ? "* " : "") + entry.title() + "###content:" + entry.path(), document == candidate))
+                        operation(() -> { select(candidate); view = 0; });
+                    if (ImGui.isItemHovered()) ImGui.setTooltip(entry.title() + "\n" + kindLabel(candidate.kind()) + "\n" + entry.id() + "\n" + entry.path());
+                }
+            }
+            clipper.end();
+        } finally { clipper.destroy(); }
+        ImGui.setCursorPosX(left);
+        if (library) ImGui.dummy(0, 0);
+        if (rows.isEmpty() && !showCreate) ImGui.textWrapped(filter.get().isBlank()
+                ? "No content in this view. Choose New content or include supporting files." : "No matches. Try a title, resource ID or phrase.");
+        if (library) {
+            ImGui.endChild();
+            if (!filter.get().isBlank()) ImGui.textDisabled(listing.matches() + " matching files");
+        }
     }
 
     private void contentTools() {
@@ -3449,7 +3523,7 @@ final class ImGuiAuthoringEditor {
 
     private void validate() {
         searchQuery = "";
-        if (workspace != null) diagnostics = workspace.validate();
+        if (workspace != null) diagnostics = validationCache.get(workspace);
     }
 
     private void select(AuthoringDocument next) {
@@ -3645,6 +3719,7 @@ final class ImGuiAuthoringEditor {
         @Override public boolean isPauseScreen() { return false; }
         @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) { }
         @Override public void onClose() {
+            if (worldContent != null) return;
             if (showRecovery) { closeEditor(); return; }
             if (workspace != null && (workspace.dirty() || hasPendingFields() || rawModified)) confirmClose = true;
             else closeEditor();

@@ -73,6 +73,9 @@ public final class AuthoringEditorClientSmoke {
     private static int featureStage = -1;
     private static float[] featureActionPoint;
     private static final List<Long> dropdownFrameTimes = new ArrayList<>();
+    private static final List<Long> contentBrowserTimes = new ArrayList<>();
+    private static boolean measureContentBrowser, measureWorldLoading;
+    private static long worldLoadingFrame, worldLoadingGap;
     private static String qualityResource = "minecraft:stone";
     private static float[] qualityPickerPoint;
     private static boolean finished, installed, mouseDown, previousDown, stepping, mouseDoubleClicked;
@@ -154,6 +157,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiAuthoringEditor.open();
             buildSteps();
             ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(AuthoringEditorClientSmoke::frame);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderContentBrowserBenchmark);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
@@ -175,10 +179,16 @@ public final class AuthoringEditorClientSmoke {
             var selection = (EditorWorldContent.Selection) ((java.util.concurrent.CompletableFuture<?>) field(editor, "worldSelection")).join();
             require(!selection.campaign().isBlank(), "Current world identifies its campaign.");
             capture("00-current-world-selection");
+            long started = System.nanoTime();
             invoke("loadWorldContent", new Class<?>[0]);
+            long elapsed = System.nanoTime() - started;
+            System.out.printf(java.util.Locale.ROOT, "World content import request: %.3f ms on the client thread%n", elapsed / 1e6);
+            require(elapsed < 250_000_000, "Starting a world import does not parse or validate the library on the client thread.");
+            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = true;
         });
         waitUntil(() -> field(editor, "worldContent") == null);
         STEPS.add(() -> {
+            measureWorldLoading = false;
             var imported = (AuthoringWorkspace) field(editor, "workspace");
             require(imported != workspace && !imported.documents().isEmpty(), "Current world content opens in a fresh populated workspace: " + field(editor, "status"));
             require(imported.documents().stream().anyMatch(value -> value.kind() == DefinitionKind.QUEST), "Current world import exposes quests.");
@@ -186,7 +196,30 @@ public final class AuthoringEditorClientSmoke {
             require((boolean) field(editor, "showResources"), "World imports expose dialogue pools and supporting content.");
             require(field(editor, "document") != null, "World imports select a campaign or quest to begin editing.");
             require(Files.exists(workspace.directory().resolve("workspace.json")), "Earlier drafts are saved before switching workspaces.");
+            var browser = (EditorContentBrowser) field(editor, "contentBrowser");
+            var index = browser.get(imported, "en_us");
+            require(index == browser.get(imported, "en_us"), "Imported content adopts the prepared browser index.");
+            require(index.entries().stream().anyMatch(entry -> entry.title().equals("Blank Map Promise")), "The library displays localized quest titles.");
+            System.out.printf(java.util.Locale.ROOT, "World content loading and handoff: longest rendered frame gap %.3f ms%n", worldLoadingGap / 1e6);
+            require(worldLoadingGap < 500_000_000, "World loading and handoff keep rendering without a long client stall.");
             capture("00-current-world-content");
+            set("groupContent", false);
+            contentBrowserTimes.clear(); measureContentBrowser = true;
+        });
+        pause(1250);
+        STEPS.add(() -> {
+            measureContentBrowser = false;
+            require(contentBrowserTimes.size() >= 20, "The imported library renders through multiple frames.");
+            var times = contentBrowserTimes.stream().sorted().toList();
+            double median = times.get(times.size() / 2) / 1e6;
+            System.out.printf(java.util.Locale.ROOT, "Content library (%d entries): %.3f ms median render%n", ((AuthoringWorkspace) field(editor, "workspace")).documents().size(), median);
+            require(median < 8, "A large content list renders only visible rows: " + median + " ms.");
+            set("groupContent", true);
+            ((EditorContentBrowser) field(editor, "contentBrowser")).reveal((AuthoringDocument) field(editor, "document"));
+        });
+        pause(250);
+        STEPS.add(() -> {
+            capture("00-readable-library");
             ((imgui.type.ImString) field(editor, "workspacePath")).set(workspace.directory().toString());
             invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
             workspace = (AuthoringWorkspace) field(editor, "workspace");
@@ -2453,8 +2486,24 @@ public final class AuthoringEditorClientSmoke {
         return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
     }
 
+    private static void renderContentBrowserBenchmark() {
+        if (!measureContentBrowser) return;
+        ImGui.setNextWindowPos(ImGui.getMainViewport().getWorkPosX() + 450, ImGui.getMainViewport().getWorkPosY() + 220);
+        ImGui.setNextWindowSize(440, 440);
+        ImGui.begin("Content library performance", imgui.flag.ImGuiWindowFlags.NoDocking | imgui.flag.ImGuiWindowFlags.NoResize);
+        long started = System.nanoTime();
+        invoke("contentBrowser", new Class<?>[0]);
+        contentBrowserTimes.add(System.nanoTime() - started);
+        ImGui.end();
+    }
+
     private static void frame() {
         if (finished || stepping) return;
+        if (measureWorldLoading) {
+            long now = System.nanoTime();
+            if (worldLoadingFrame != 0) worldLoadingGap = Math.max(worldLoadingGap, now - worldLoadingFrame);
+            worldLoadingFrame = now;
+        }
         stepping = true;
         try {
             if (keyRelease >= 0) { ImGui.getIO().addKeyEvent(keyRelease, false); keyRelease = -1; }
