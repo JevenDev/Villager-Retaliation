@@ -69,7 +69,7 @@ public final class VillagerSurfaceEscapePlanner {
         rememberSurfaceEscapeSearch(level, villager, target, null);
         return false;
     }
-    private static boolean moveToSurfaceEscapeTarget(ServerLevel level, Villager villager, BlockPos target, double speed) {
+    static boolean moveToSurfaceEscapeTarget(ServerLevel level, Villager villager, BlockPos target, double speed) {
         if (VillagerLadderTraversal.moveOnLadderToward(level, villager, target, speed)) {
             return true;
         }
@@ -77,11 +77,8 @@ public final class VillagerSurfaceEscapePlanner {
         if (path != null && path.canReach() && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target, speed, 0)) {
             return true;
         }
-        if (VillagerLadderTraversal.moveTowardNearbyLadderThenClimb(level, villager, target, speed)) {
-            return true;
-        }
-        if (villager.distanceToSqr(target.getCenter()) <= 16.0D) {
-            villager.getMoveControl().setWantedPosition(target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, speed);
+        if (Math.abs(target.getY() - villager.blockPosition().getY()) > 1
+                && VillagerLadderTraversal.moveTowardNearbyLadderThenClimb(level, villager, target, speed)) {
             return true;
         }
         return false;
@@ -139,7 +136,7 @@ public final class VillagerSurfaceEscapePlanner {
         return feet.isAir()
                 && head.isAir()
                 && floor.isSolid()
-                && !floor.liquid();
+                && VillagerNavigationSafety.isSafeLadderPosition(level, pos);
     }
     private static double surfaceEscapeScore(Villager villager, BlockPos target, BlockPos pos) {
         double targetDistance = pos.distSqr(target);

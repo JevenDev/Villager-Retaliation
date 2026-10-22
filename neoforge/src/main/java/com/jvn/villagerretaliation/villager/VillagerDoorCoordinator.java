@@ -70,7 +70,7 @@ public final class VillagerDoorCoordinator {
             if (isCurrentPathNode(pos, previousNode) || isCurrentPathNode(pos, nextNode)) {
                 continue;
             }
-            if (!canReachDoor(level, villager, pos)) {
+            if (!level.hasChunkAt(pos)) {
                 iterator.remove();
                 continue;
             }
@@ -79,7 +79,12 @@ public final class VillagerDoorCoordinator {
                 iterator.remove();
                 continue;
             }
-            if (anotherVillagerIsUsingDoor(level, villager, pos)) {
+            boolean handedOff = handOffDoorToNearbyVillagers(level, villager, door);
+            if (!canReachDoor(level, villager, pos)) {
+                iterator.remove();
+                continue;
+            }
+            if (handedOff) {
                 continue;
             }
             setOpen(villager, level, state, pos, false);
@@ -95,9 +100,13 @@ public final class VillagerDoorCoordinator {
     private static boolean canReachDoor(ServerLevel level, Villager villager, BlockPos pos) {
         return level.hasChunkAt(pos) && villager.distanceToSqr(pos.getCenter()) <= DOOR_REACH_DISTANCE_SQR;
     }
-    private static boolean anotherVillagerIsUsingDoor(ServerLevel level, Villager villager, BlockPos pos) {
-        AABB area = new AABB(pos).inflate(1.25D);
-        return !level.getEntitiesOfClass(Villager.class, area, other -> other != villager && other.isAlive()).isEmpty();
+    private static boolean handOffDoorToNearbyVillagers(ServerLevel level, Villager villager, GlobalPos door) {
+        AABB area = new AABB(door.pos()).inflate(1.25D);
+        var users = level.getEntitiesOfClass(Villager.class, area, other -> other != villager && other.isAlive());
+        for (Villager other : users) {
+            DOORS_TO_CLOSE.computeIfAbsent(other.getUUID(), ignored -> new HashSet<>()).add(door);
+        }
+        return !users.isEmpty();
     }
     private static boolean isDoorOrGate(BlockState state) {
         return state.hasProperty(BlockStateProperties.OPEN)

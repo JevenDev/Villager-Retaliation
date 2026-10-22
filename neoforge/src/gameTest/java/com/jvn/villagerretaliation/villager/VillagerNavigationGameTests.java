@@ -2,10 +2,18 @@ package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.VillagerWorkerGameTests;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -16,6 +24,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
@@ -30,6 +39,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathType;
@@ -89,6 +100,43 @@ public final class VillagerNavigationGameTests {
                     "vanilla movement behaviors do not replace the controlled walk target");
         } finally {
             hostile.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void hiredWorkerSensesNewHostileAndReleasesBrainSuppression(GameTestHelper helper) {
+        var level = helper.getLevel();
+        long previousDayTime = level.getDayTime();
+        level.setDayTime(1000L);
+        var hirer = helper.makeMockServerPlayerInLevel();
+        CountingVillager villager = new CountingVillager(level);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        villager.setPos(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D);
+        Zombie hostile = new Zombie(EntityType.ZOMBIE, level);
+        hostile.setPos(villager.getX() + 2, villager.getY(), villager.getZ());
+        hostile.setNoAi(true);
+        try {
+            helper.assertTrue(HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8),
+                    "the fixture accepts its hire contract");
+            HiredVillagerWorkService.initializeWorkArea(level, villager);
+            var state = HiredWorkStateStore.state(villager);
+            state.putBoolean("Enabled", true);
+            HiredWorkerBrain.setState(state, HiredWorkerTaskState.SELECTING_TARGET, null);
+            helper.assertTrue(VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, villager),
+                    "hired work initially owns the brain's behavior");
+            level.addFreshEntity(hostile);
+            for (int tick = 0; tick < 60 && !villager.getBrain().hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE); tick++) {
+                villager.runBrainAiStep();
+            }
+            helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.NEAREST_HOSTILE).orElse(null) == hostile,
+                    "an unarmed worker notices the approaching zombie before being hit");
+            helper.assertFalse(VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, villager),
+                    "new threat memory releases the brain to handle danger");
+        } finally {
+            hostile.discard();
+            HiredVillagerContractService.endHireContract(level, villager, hirer);
+            level.setDayTime(previousDayTime);
         }
         helper.succeed();
     }
@@ -294,6 +342,226 @@ public final class VillagerNavigationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void ladderSearchKeepsPendingCandidatesAfterSmallMovement(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos target = helper.absolutePos(new BlockPos(4, 7, 7));
+        villager.navigation().reachableFromSearch = 5;
+        VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+        var tried = new HashSet<>(villager.navigation().searchedBlocks);
+        helper.assertValueEqual(villager.navigation().blockSearches, 4, "the first batch exhausts its search budget");
+        helper.runAfterDelay(1, () -> {
+            villager.setPos(villager.getX() + 0.05D, villager.getY(), villager.getZ());
+            var route = VillagerLadderRoutePlanner.findBest(helper.getLevel(), villager, target, 6, 6);
+            helper.assertTrue(villager.navigation().blockSearches > 4, "the next tick advances the search");
+            helper.assertFalse(tried.contains(villager.navigation().searchedBlocks.get(4)),
+                    "a small push does not restart previously rejected approaches");
+            if (route != null) {
+                VillagerTaskNavigationUtil.clearRuntimeState(villager);
+                helper.succeed();
+            } else {
+                helper.runAfterDelay(1, () -> finishLadderSearch(helper, villager, target, 0));
+            }
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 140)
+    public static void blockedLadderClimbsTimeOutAndCanRetry(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos rung = helper.absolutePos(new BlockPos(4, 3, 6));
+        BlockPos target = helper.absolutePos(new BlockPos(4, 7, 7));
+        villager.setPos(rung.getX() + 0.5D, rung.getY(), rung.getZ() + 0.5D);
+        villager.blockMovement = true;
+        long started = helper.getLevel().getGameTime();
+        checkBlockedClimb(helper, villager, target, started);
+    }
+
+    private static void checkBlockedClimb(GameTestHelper helper, CountingVillager villager, BlockPos target, long started) {
+        boolean moving = VillagerTaskNavigationUtil.moveOnLadderToward(helper.getLevel(), villager, target, 0.5D);
+        VillagerTaskNavigationUtil.tickPathLadders(helper.getLevel(), villager);
+        if (helper.getLevel().getGameTime() - started < 80) {
+            helper.assertTrue(moving, "a climb may attempt movement before the stall timeout");
+            helper.runAfterDelay(1, () -> checkBlockedClimb(helper, villager, target, started));
+            return;
+        }
+        helper.assertFalse(moving, "repeated climb requests cannot renew a stalled climb forever");
+        helper.assertFalse(villager.isNoGravity(), "a timed-out climb restores gravity");
+        helper.assertFalse(VillagerTaskNavigationUtil.moveOnLadderToward(helper.getLevel(), villager, target, 0.5D),
+                "the failed route cannot restart in the same tick");
+        helper.runAfterDelay(21, () -> {
+            villager.blockMovement = false;
+            double before = villager.getY();
+            helper.assertTrue(VillagerTaskNavigationUtil.moveOnLadderToward(helper.getLevel(), villager, target, 0.5D),
+                    "a cleared obstruction can be retried after the cooldown");
+            helper.assertTrue(villager.getY() > before, "the retried climb makes vertical progress");
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void ladderLandingYieldsToNewMovementOwners(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos rung = helper.absolutePos(new BlockPos(4, 6, 6));
+        BlockPos target = helper.absolutePos(new BlockPos(4, 7, 7));
+        try {
+            for (int owner = 0; owner < 3; owner++) {
+                VillagerTaskNavigationUtil.clearRuntimeState(villager);
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+                villager.setTarget(null);
+                villager.setPos(rung.getX() + 0.5D, rung.getY(), rung.getZ() + 0.5D);
+                helper.assertTrue(VillagerTaskNavigationUtil.moveOnLadderToward(helper.getLevel(), villager, target, 0.5D),
+                        "the fixture dismounts at the top of the ladder");
+                BlockPos landing = villager.blockPosition();
+                helper.assertFalse(landing.equals(rung), "the villager has landed off the ladder");
+                BlockPos destination = landing.east(3);
+                WalkTarget walkTarget = new WalkTarget(destination, 0.5F, 0);
+                Path path = simplePath(destination);
+                if (owner == 0) {
+                    villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, walkTarget);
+                } else if (owner == 1) {
+                    villager.getNavigation().moveTo(path, 0.5D);
+                } else {
+                    villager.setTarget(new Villager(EntityType.VILLAGER, helper.getLevel()));
+                }
+                villager.setPos(villager.getX() + 0.15D, villager.getY(), villager.getZ());
+                Vec3 position = villager.position();
+                VillagerTaskNavigationUtil.tickPathLadders(helper.getLevel(), villager);
+                helper.assertValueEqual(villager.position(), position, "landing stabilization does not pull movement owner " + owner + " back");
+                if (owner == 0) {
+                    helper.assertTrue(villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET).orElse(null) == walkTarget,
+                            "a new vanilla walk target survives landing stabilization");
+                } else if (owner == 1) {
+                    helper.assertFalse(villager.getNavigation().isDone(), "a new ordinary path survives landing stabilization");
+                }
+            }
+        } finally {
+            VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void trafficSidestepsRejectMagmaAndFire(GameTestHelper helper) {
+        CountingVillager villager = ladderSearchFixture(helper);
+        BlockPos origin = villager.blockPosition();
+        helper.getLevel().setBlock(origin.north().below(), Blocks.MAGMA_BLOCK.defaultBlockState(), 2);
+        helper.getLevel().setBlock(origin.south().below(), Blocks.MAGMA_BLOCK.defaultBlockState(), 2);
+        helper.assertTrue(VillagerTrafficService.safeSidestep(helper.getLevel(), villager, new Vec3(1, 0, 0)) == null,
+                "traffic holds rather than steering onto magma on either side");
+        helper.getLevel().setBlock(origin.north().below(), Blocks.STONE.defaultBlockState(), 2);
+        Vec3 safe = VillagerTrafficService.safeSidestep(helper.getLevel(), villager, new Vec3(1, 0, 0));
+        helper.assertTrue(safe != null && safe.z < villager.getZ(), "traffic chooses the safe side");
+        helper.getLevel().setBlock(origin.north(), Blocks.FIRE.defaultBlockState(), 2);
+        helper.assertTrue(VillagerTrafficService.safeSidestep(helper.getLevel(), villager, new Vec3(1, 0, 0)) == null,
+                "non-solid fire cannot be a passing position");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void trafficScansAreStaggeredWithoutInterruptingActiveYield(GameTestHelper helper) {
+        CountingVillager trailing = ladderSearchFixture(helper);
+        Villager leading = new Villager(EntityType.VILLAGER, helper.getLevel());
+        leading.setNoAi(true);
+        leading.setNoGravity(true);
+        leading.setPos(trailing.getX() + 1, trailing.getY(), trailing.getZ());
+        helper.getLevel().addFreshEntity(leading);
+        BlockPos destination = trailing.blockPosition().east(4);
+        trailing.getNavigation().moveTo(simplePath(destination), 0.5D);
+        leading.getNavigation().moveTo(simplePath(destination), 0.5D);
+        checkTrafficScan(helper, trailing, leading, 0);
+    }
+
+    private static void checkTrafficScan(GameTestHelper helper, Villager trailing, Villager leading, int checks) {
+        trailing.setOnGround(true);
+        leading.setOnGround(true);
+        boolean scanTick = TickThrottle.isSpreadTick(trailing.getUUID(), helper.getLevel().getGameTime(), 3);
+        boolean yielding = VillagerTrafficService.controlNavigation(trailing);
+        helper.assertValueEqual(yielding, scanTick, "new conflict detection only runs on the villager's scan tick");
+        if (!yielding) {
+            helper.assertTrue(checks < 3, "a new conflict is detected within three ticks");
+            helper.runAfterDelay(1, () -> checkTrafficScan(helper, trailing, leading, checks + 1));
+            return;
+        }
+        helper.runAfterDelay(1, () -> {
+            try {
+                trailing.setOnGround(true);
+                leading.setOnGround(true);
+                helper.assertFalse(TickThrottle.isSpreadTick(trailing.getUUID(), helper.getLevel().getGameTime(), 3),
+                        "the tick after detection is not another scan tick");
+                helper.assertTrue(VillagerTrafficService.controlNavigation(trailing), "an active yield is still applied on non-scan ticks");
+                helper.succeed();
+            } finally {
+                leading.discard();
+            }
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void surfaceEscapeDoesNotSteerIntoAnUnreachableLedge(GameTestHelper helper) {
+        CountingVillager villager = new CountingVillager(helper.getLevel());
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 2, 2));
+        villager.setPos(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 0.5D);
+        BlockPos ledge = origin.above(3);
+        helper.getLevel().setBlock(ledge.below(), Blocks.STONE.defaultBlockState(), 2);
+        helper.assertFalse(VillagerSurfaceEscapePlanner.moveToSurfaceEscapeTarget(helper.getLevel(), villager, ledge, 0.5D),
+                "a nearby ledge without a path or ladder reports failure");
+        helper.assertFalse(villager.getMoveControl().hasWanted(), "failure does not steer into the ledge");
+        helper.assertFalse(VillagerSurfaceEscapePlanner.moveToSurfaceEscapeTarget(helper.getLevel(), villager, origin.east(3).above(), 0.5D),
+                "the ladder fallback cannot bypass a failed path to a lower ledge");
+        helper.assertFalse(villager.getMoveControl().hasWanted(), "the lower ledge does not receive unchecked direct steering");
+        villager.navigation().reachableFromSearch = 1;
+        helper.assertTrue(VillagerSurfaceEscapePlanner.moveToSurfaceEscapeTarget(helper.getLevel(), villager, ledge, 0.5D),
+                "a reachable surface path is still accepted");
+        VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void lastDoorUserClosesGateAfterOpenerLeaves(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos gate = helper.absolutePos(new BlockPos(3, 2, 3));
+        level.setBlock(gate.below(), Blocks.STONE.defaultBlockState(), 2);
+        level.setBlock(gate, Blocks.OAK_FENCE_GATE.defaultBlockState(), 2);
+        Villager first = new Villager(EntityType.VILLAGER, level);
+        Villager last = new Villager(EntityType.VILLAGER, level);
+        first.setNoAi(true);
+        last.setNoAi(true);
+        first.setPos(gate.getX() + 0.5D, gate.getY(), gate.getZ() - 0.5D);
+        last.setPos(gate.getX() + 0.5D, gate.getY(), gate.getZ() - 1.0D);
+        level.addFreshEntity(first);
+        level.addFreshEntity(last);
+        try {
+            first.getNavigation().moveTo(simplePath(gate), 0.5D);
+            VillagerTaskNavigationUtil.tickPathDoors(level, first);
+            helper.assertTrue(level.getBlockState(gate).getValue(BlockStateProperties.OPEN), "the opener opens the gate");
+            first.getNavigation().stop();
+            VillagerTaskNavigationUtil.tickPathDoors(level, first);
+            helper.assertTrue(level.getBlockState(gate).getValue(BlockStateProperties.OPEN), "the gate stays open for the next user");
+            first.setPos(gate.getX() + 0.5D, gate.getY(), gate.getZ() + 4.5D);
+            VillagerTaskNavigationUtil.tickPathDoors(level, first);
+            last.setPos(gate.getX() + 0.5D, gate.getY(), gate.getZ() + 1.5D);
+            VillagerTaskNavigationUtil.tickPathDoors(level, last);
+            helper.assertFalse(level.getBlockState(gate).getValue(BlockStateProperties.OPEN), "the last user inherits closing responsibility");
+            level.setBlock(gate, level.getBlockState(gate).setValue(BlockStateProperties.OPEN, true), 2);
+            last.getNavigation().moveTo(simplePath(gate), 0.5D);
+            VillagerTaskNavigationUtil.tickPathDoors(level, last);
+            last.getNavigation().stop();
+            VillagerTaskNavigationUtil.tickPathDoors(level, last);
+            helper.assertTrue(level.getBlockState(gate).getValue(BlockStateProperties.OPEN), "a gate left open by a player remains open");
+        } finally {
+            VillagerTaskNavigationUtil.clearRuntimeState(first);
+            VillagerTaskNavigationUtil.clearRuntimeState(last);
+            first.discard();
+            last.discard();
+        }
+        helper.succeed();
+    }
+
+    private static Path simplePath(BlockPos target) {
+        return new Path(List.of(new Node(target.getX(), target.getY(), target.getZ())), target, true);
+    }
+
     private static CountingVillager ladderSearchFixture(GameTestHelper helper) {
         var level = helper.getLevel();
         for (BlockPos relative : BlockPos.betweenClosed(new BlockPos(0, 1, 0), new BlockPos(8, 9, 8))) {
@@ -315,6 +583,7 @@ public final class VillagerNavigationGameTests {
     }
 
     private static final class CountingVillager extends Villager {
+        private boolean blockMovement;
         private CountingVillager(Level level) {
             super(EntityType.VILLAGER, level);
         }
@@ -322,6 +591,13 @@ public final class VillagerNavigationGameTests {
         @Override
         protected PathNavigation createNavigation(Level level) {
             return new CountingNavigation(this, level);
+        }
+
+        @Override
+        public void move(MoverType type, Vec3 movement) {
+            if (!blockMovement) {
+                super.move(type, movement);
+            }
         }
 
         private void runBrainAiStep() {
@@ -336,6 +612,7 @@ public final class VillagerNavigationGameTests {
     private static final class CountingNavigation extends GroundPathNavigation {
         private int entitySearches;
         private int blockSearches;
+        private final List<BlockPos> searchedBlocks = new ArrayList<>();
         private int reachableFromSearch = Integer.MAX_VALUE;
 
         private CountingNavigation(Villager villager, Level level) {
@@ -345,6 +622,7 @@ public final class VillagerNavigationGameTests {
         @Override
         public Path createPath(BlockPos target, int accuracy) {
             blockSearches++;
+            searchedBlocks.add(target.immutable());
             return blockSearches >= reachableFromSearch
                     ? new Path(List.of(new Node(target.getX(), target.getY(), target.getZ())), target, true) : null;
         }

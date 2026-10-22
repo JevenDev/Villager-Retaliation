@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.villager;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public final class VillagerTrafficService {
     private static final int HOLD_TICKS = 5;
     private static final int SIDESTEP_TICKS = 10;
     private static final int MANEUVER_COOLDOWN_TICKS = 10;
+    private static final int CONFLICT_SCAN_INTERVAL_TICKS = 3;
     private static final Map<Villager, Maneuver> MANEUVERS = new WeakHashMap<>();
     private static final Map<Villager, Long> COOLDOWN_UNTIL = new WeakHashMap<>();
 
@@ -72,6 +74,10 @@ public final class VillagerTrafficService {
                 return false;
             }
             COOLDOWN_UNTIL.remove(villager);
+        }
+
+        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, CONFLICT_SCAN_INTERVAL_TICKS)) {
+            return false;
         }
 
         Vec3 heading = navigationHeading(villager);
@@ -224,8 +230,7 @@ public final class VillagerTrafficService {
 
         BlockPos feet = BlockPos.containing(target.x, villager.getY() + 0.05D, target.z);
         BlockPos floor = feet.below();
-        return level.getFluidState(feet).isEmpty()
-                && level.getFluidState(floor).isEmpty()
+        return VillagerNavigationSafety.isSafeLadderPosition(level, feet)
                 && level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP);
     }
 

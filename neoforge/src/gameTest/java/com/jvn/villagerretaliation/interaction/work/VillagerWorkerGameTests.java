@@ -4205,6 +4205,7 @@ public final class VillagerWorkerGameTests {
         setBlock(helper, new BlockPos(3, 2, 2), Blocks.AIR.defaultBlockState());
 
         Villager villager = spawnVillager(helper, new BlockPos(2, 1, 2));
+        villager.setNoAi(true);
         BlockPos lowerLanding = helper.absolutePos(new BlockPos(3, 0, 2));
         moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(2, 1, 2)));
 

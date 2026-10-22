@@ -57,7 +57,8 @@ final class VillagerLadderRoutePlanner {
         PathBudget budget = PATH_BUDGETS.computeIfAbsent(villager, ignored -> new PathBudget());
         while (!search.candidates.isEmpty()) {
             Candidate candidate = search.candidates.peekFirst();
-            if (search.best != null && candidate.minimumScore() >= search.best.score()) {
+            if (search.best != null && search.origin.equals(villager.position())
+                    && candidate.minimumScore() >= search.best.score()) {
                 break;
             }
             if (!budget.consume(level.getGameTime())) {
@@ -358,7 +359,7 @@ final class VillagerLadderRoutePlanner {
 
         private boolean matches(ServerLevel level, Villager villager, BlockPos target, int horizontalRadius, int verticalRadius) {
             return dimension.equals(level.dimension()) && this.target.equals(target)
-                    && origin.distanceToSqr(villager.position()) < 0.0001D
+                    && origin.distanceToSqr(villager.position()) <= 1.0D
                     && this.horizontalRadius == horizontalRadius && this.verticalRadius == verticalRadius;
         }
     }
