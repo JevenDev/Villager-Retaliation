@@ -4383,8 +4383,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderInteractionDialogue(GuiGraphics graphics, int left, int top) {
-        if (this.responseTimerTicks >= 0 && this.campaignConversation.session() == null) {
-            long remaining = Math.max(0, this.responseTimerTicks - (net.minecraft.Util.getMillis() - this.responseTimerReceivedAt) / 50);
+        long remaining = this.campaignConversation.session() != null ? this.campaignConversation.responseRemainingTicks()
+                : this.responseTimerTicks < 0 ? -1
+                : Math.max(0, this.responseTimerTicks - (net.minecraft.Util.getMillis() - this.responseTimerReceivedAt) / 50);
+        if (remaining >= 0) {
             graphics.drawString(this.font, Component.translatable("villagerretaliation.gui.conversation.response_timer", (remaining + 19) / 20),
                     left + INTERACTION_DIALOGUE_LEFT, top + INTERACTION_DIALOGUE_BOTTOM + 2, INTERACTION_DIALOGUE_COLOR, false);
         }

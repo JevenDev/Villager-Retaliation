@@ -15,6 +15,37 @@ public final class DialogueTreeSessionGameTests {
     private DialogueTreeSessionGameTests() { }
 
     @GameTest(template = "empty", batch = "conversation_sessions")
+    public static void timedSchedulingStaysBoundedAndFairAcrossMutationsAndReload(GameTestHelper helper) {
+        var data = new DialogueTreeSessionSavedData();
+        var tree = ResourceLocation.parse("fixture:timed");
+        var timed = new DialogueTreeService.Session(UUID.randomUUID(), tree, "choice", 10, Map.of(), 40, false);
+        var untimed = new DialogueTreeService.Session(UUID.randomUUID(), tree, "choice", 10, Map.of());
+        for (int index = 0; index < 1000; index++) {
+            data.put(new DialogueTreeService.SessionKey(UUID.randomUUID(), UUID.randomUUID()), untimed);
+        }
+        var keys = new java.util.ArrayList<DialogueTreeService.SessionKey>();
+        for (int index = 0; index < 70; index++) {
+            var key = new DialogueTreeService.SessionKey(UUID.randomUUID(), UUID.randomUUID());
+            keys.add(key);
+            data.put(key, timed);
+        }
+        var first = data.nextTimedKeys(64);
+        helper.assertValueEqual(first, keys.subList(0, 64), "the first tick stays within its budget and skips untimed sessions");
+        var second = data.nextTimedKeys(64);
+        helper.assertValueEqual(second.subList(0, 6), keys.subList(64, 70), "remaining timers get their turn before earlier timers repeat");
+        helper.assertValueEqual(new java.util.HashSet<>(second).size(), 64, "each timer runs at most once per batch");
+        data.put(keys.getFirst(), new DialogueTreeService.Session(timed.id(), tree, "choice", 10, Map.of(), 40, true));
+        for (int index = 1; index < keys.size(); index++) data.remove(keys.get(index));
+        helper.assertTrue(data.nextTimedKeys(64).isEmpty(), "completed and removed timers leave the queue");
+        data.put(keys.get(1), timed);
+        data = DialogueTreeSessionSavedData.load(data.save(new CompoundTag(), helper.getLevel().registryAccess()));
+        helper.assertValueEqual(data.nextTimedKeys(64), java.util.List.of(keys.get(1)), "reload restores only unresolved timers");
+        data.put(keys.get(1), untimed);
+        helper.assertTrue(data.nextTimedKeys(64).isEmpty(), "moving to an untimed node removes scheduling");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_sessions")
     public static void ordinaryDialogueRetainsItsCursorAndSubstitutionsAcrossReload(GameTestHelper helper) {
         var data = new DialogueTreeSessionSavedData();
         var key = new DialogueTreeService.SessionKey(UUID.randomUUID(), UUID.randomUUID());

@@ -79,6 +79,12 @@ public final class CampaignConversationScreenController {
 
     public UUID characterId() { return character; }
 
+    public long responseRemainingTicks() {
+        var session = session();
+        return session == null || session.history() != null || session.responseRemainingTicks() < 0 ? -1
+                : Math.max(0, session.responseRemainingTicks() - Math.max(0, host.now() - timerReceivedAt) / 50);
+    }
+
     public CampaignConversationViewPayload.Line presentationLine() {
         var session = session();
         return session != null && session.history() == null && state.diagnostic().isBlank()
@@ -240,10 +246,6 @@ public final class CampaignConversationScreenController {
             }
             for (var transaction : session.transactions()) append(text, transactionText(session, transaction));
             if (!session.outcome().isBlank()) append(text, session.outcome());
-            if (session.responseRemainingTicks() >= 0) {
-                long remaining = Math.max(0, session.responseRemainingTicks() - Math.max(0, host.now() - timerReceivedAt) / 50);
-                append(text, host.translate("conversation.response_timer", (remaining + 19) / 20));
-            }
         }
         if (!state.diagnostic().isBlank()) append(text, state.diagnostic());
         return text.toString();

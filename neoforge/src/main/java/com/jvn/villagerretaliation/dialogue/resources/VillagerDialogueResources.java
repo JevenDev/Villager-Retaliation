@@ -443,14 +443,13 @@ public final class VillagerDialogueResources {
             return activeTreeOptions.get();
         }
 
-        List<DialogueOptionDefinition> options = new ArrayList<>(load(context.level().getServer(), context.locale()).options().stream()
-                .filter(option -> option.matches(context, disposition) || option.choice().showUnavailable())
-                .map(option -> option.withChoice(option.choice(), option.matches(context, disposition),
-                        option.matches(context, disposition) ? "" : option.choice().reason(context)))
-                .sorted(Comparator.comparingInt(DialogueOptionDefinition::priority).reversed()
-                        .thenComparingInt(DialogueOptionDefinition::order)
-                        .thenComparing(DialogueOptionDefinition::id))
-                .toList());
+        List<DialogueOptionDefinition> options = new ArrayList<>();
+        for (var option : load(context.level().getServer(), context.locale()).options()) {
+            boolean available = option.matches(context, disposition);
+            if (available || option.choice().showUnavailable()) {
+                options.add(option.withChoice(option.choice(), available, available ? "" : option.choice().reason(context)));
+            }
+        }
         options.addAll(DialogueTreeResources.entryOptions(context, disposition));
         options.addAll(VillagerQuestService.embeddedDialogueOptions(context, disposition));
         options.addAll(VillagerQuestService.stageBranchOptions(context));

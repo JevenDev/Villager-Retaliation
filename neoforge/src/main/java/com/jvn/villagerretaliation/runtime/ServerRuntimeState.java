@@ -11,7 +11,6 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
@@ -94,7 +93,6 @@ public final class ServerRuntimeState {
         VillagerSocialGraphService.clearRuntimeState();
         VillagerStoryHintService.clearRuntimeState();
         ForcedDialogueService.clearRuntimeState();
-        DialogueTreeService.clearRuntimeState();
         VillagerQuestService.clearRuntimeState();
         ServerboundRequestLimiter.clearRuntimeState();
         HiredDebugPreviewService.clearRuntimeState();

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -20,9 +21,11 @@ public final class DialogueUsageSavedData extends SavedData {
     private static final String TAG_DIALOGUE_ID = "DialogueId";
     private static final String TAG_COUNT = "Count";
     private static final String TAG_GAME_TIME = "GameTime";
-    private static final int MAX_ENTRIES = 16_384;
+    private static final String TAG_PERSISTENT = "Persistent";
+    private static final int MAX_RECENT_ENTRIES = 16_384;
 
     private final LinkedHashMap<Key, Usage> entries = new LinkedHashMap<>();
+    private final LinkedHashSet<Key> recent = new LinkedHashSet<>();
 
     public static DialogueUsageSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -41,8 +44,10 @@ public final class DialogueUsageSavedData extends SavedData {
             if (scope.isBlank() || dialogueId.isBlank()) {
                 continue;
             }
-            data.entries.put(new Key(scope, dialogueId), new Usage(
-                    Math.max(0, entry.getInt(TAG_COUNT)), entry.getLong(TAG_GAME_TIME)));
+            // older saves do not distinguish durable limits from repetition history
+            data.put(new Key(scope, dialogueId), new Usage(
+                    Math.max(0, entry.getInt(TAG_COUNT)), entry.getLong(TAG_GAME_TIME)),
+                    !entry.contains(TAG_PERSISTENT) || entry.getBoolean(TAG_PERSISTENT));
         }
         data.trim();
         return data;
@@ -63,22 +68,32 @@ public final class DialogueUsageSavedData extends SavedData {
     }
 
     public void remember(String scope, String dialogueId, long gameTime) {
+        remember(scope, dialogueId, gameTime, true);
+    }
+
+    public void remember(String scope, String dialogueId, long gameTime, boolean persistent) {
         if (scope == null || scope.isBlank() || dialogueId == null || dialogueId.isBlank()) {
             return;
         }
         Key key = new Key(scope, dialogueId);
-        Usage previous = this.entries.remove(key);
-        this.entries.put(key, new Usage(previous == null ? 1 : (int) Math.min(Integer.MAX_VALUE, (long) previous.count() + 1L), gameTime));
+        Usage previous = this.entries.get(key);
+        put(key, new Usage(previous == null ? 1 : (int) Math.min(Integer.MAX_VALUE, (long) previous.count() + 1L), gameTime), persistent);
         trim();
         setDirty();
     }
 
+    private void put(Key key, Usage usage, boolean persistent) {
+        persistent |= this.entries.containsKey(key) && !this.recent.contains(key)
+                || key.dialogueId().startsWith("paired_dialogue:") || key.dialogueId().startsWith("paired_greeting:");
+        this.entries.remove(key);
+        this.entries.put(key, usage);
+        this.recent.remove(key);
+        if (!persistent) this.recent.add(key);
+    }
+
     private void trim() {
-        while (this.entries.size() > MAX_ENTRIES) {
-            var oldest = this.entries.keySet().stream().filter(k -> !k.dialogueId().startsWith("paired_dialogue:")
-                    && !k.dialogueId().startsWith("paired_greeting:")).findFirst();
-            if (oldest.isEmpty()) return;
-            this.entries.remove(oldest.get());
+        while (this.recent.size() > MAX_RECENT_ENTRIES) {
+            this.entries.remove(this.recent.removeFirst());
         }
     }
 
@@ -91,6 +106,7 @@ public final class DialogueUsageSavedData extends SavedData {
             entry.putString(TAG_DIALOGUE_ID, value.getKey().dialogueId());
             entry.putInt(TAG_COUNT, value.getValue().count());
             entry.putLong(TAG_GAME_TIME, value.getValue().lastUsedGameTime());
+            entry.putBoolean(TAG_PERSISTENT, !this.recent.contains(value.getKey()));
             entriesTag.add(entry);
         }
         tag.put(TAG_ENTRIES, entriesTag);
