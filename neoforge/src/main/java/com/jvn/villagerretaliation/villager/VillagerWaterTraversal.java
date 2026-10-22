@@ -7,6 +7,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.pathfinder.PathType;
@@ -217,7 +218,7 @@ public final class VillagerWaterTraversal {
         }
         return best;
     }
-    private static boolean isWaterEscapeTarget(ServerLevel level, BlockPos pos) {
+    static boolean isWaterEscapeTarget(ServerLevel level, BlockPos pos) {
         if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
             return false;
         }
@@ -226,10 +227,14 @@ public final class VillagerWaterTraversal {
         BlockState floor = level.getBlockState(pos.below());
         return isWaterPassable(feet)
                 && isWaterPassable(head)
-                && (feet.liquid() || floor.isSolid() || floor.liquid());
+                && !VillagerNavigationSafety.isDangerous(floor)
+                && (feet.getFluidState().is(FluidTags.WATER)
+                || floor.isSolid() || floor.getFluidState().is(FluidTags.WATER));
     }
     private static boolean isWaterPassable(BlockState state) {
-        return state.isAir() || state.liquid() || state.is(Blocks.LADDER);
+        return state.isAir()
+                || state.liquid() && state.getFluidState().is(FluidTags.WATER)
+                || state.is(Blocks.LADDER) && state.getFluidState().isEmpty();
     }
     private static double waterClearance(ServerLevel level, BlockPos pos) {
         double clearance = 0.0D;
@@ -295,7 +300,6 @@ public final class VillagerWaterTraversal {
     }
 
     public static void clearRuntimeState(Villager villager) {
-        HIRED_NAVIGATION_SETTINGS.remove(villager.getUUID());
-        WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
+        restoreHiredWaterTraversal(villager);
     }
 }

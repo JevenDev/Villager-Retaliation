@@ -5,11 +5,8 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 
 /** Finds a complete, usable ladder route instead of selecting an isolated nearest rung. */
@@ -62,7 +59,7 @@ final class VillagerLadderRoutePlanner {
         if (route == null
                 || target == null
                 || !isLoadedLadder(level, route.entryRung())
-                || !isWalkable(level, route.approach())) {
+                || !VillagerNavigationSafety.isSafeLadderPosition(level, route.approach())) {
             return false;
         }
         if (route.directApproach()) {
@@ -172,7 +169,7 @@ final class VillagerLadderRoutePlanner {
             Villager villager,
             BlockPos rung,
             BlockPos approach) {
-        if (!isWalkable(level, approach)) {
+        if (!VillagerNavigationSafety.isSafeLadderPosition(level, approach)) {
             return null;
         }
         double distance = villager.distanceToSqr(approach.getCenter());
@@ -198,7 +195,7 @@ final class VillagerLadderRoutePlanner {
         if (level == null
                 || villager == null
                 || approach == null
-                || !isWalkable(level, approach)) {
+                || !VillagerNavigationSafety.isSafeLadderPosition(level, approach)) {
             return false;
         }
         int verticalDelta = approach.getY() - villager.blockPosition().getY();
@@ -244,7 +241,7 @@ final class VillagerLadderRoutePlanner {
                     ? new BlockPos[] { side, side.above() }
                     : new BlockPos[] { side, side.below() };
             for (BlockPos candidate : candidates) {
-                if (!isWalkable(level, candidate)) {
+                if (!VillagerNavigationSafety.isSafeLadderPosition(level, candidate)) {
                     continue;
                 }
                 double score = candidate.distSqr(target)
@@ -257,37 +254,6 @@ final class VillagerLadderRoutePlanner {
             }
         }
         return best;
-    }
-
-    private static boolean isWalkable(ServerLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
-            return false;
-        }
-        BlockState feet = level.getBlockState(pos);
-        BlockState head = level.getBlockState(pos.above());
-        BlockState floor = level.getBlockState(pos.below());
-        if (!feet.getFluidState().isEmpty()
-                || !head.getFluidState().isEmpty()
-                || !floor.getFluidState().isEmpty()
-                || isDangerous(feet)
-                || isDangerous(head)
-                || isDangerous(floor)
-                || VillagerContainerClimbGuard.isForbiddenStandingFloor(level, pos.below())) {
-            return false;
-        }
-        return (feet.isAir() || feet.is(Blocks.LADDER) || feet.getCollisionShape(level, pos).isEmpty())
-                && (head.isAir() || head.is(Blocks.LADDER) || head.getCollisionShape(level, pos.above()).isEmpty())
-                && (floor.isSolid() || feet.is(Blocks.LADDER));
-    }
-
-    private static boolean isDangerous(BlockState state) {
-        return state.getBlock() instanceof BaseFireBlock
-                || state.is(Blocks.MAGMA_BLOCK)
-                || state.is(Blocks.CAMPFIRE)
-                || state.is(Blocks.SOUL_CAMPFIRE)
-                || state.is(Blocks.CACTUS)
-                || state.is(Blocks.POWDER_SNOW)
-                || state.getFluidState().is(FluidTags.LAVA);
     }
 
     private static boolean isLoadedLadder(ServerLevel level, BlockPos pos) {
