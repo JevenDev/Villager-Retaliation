@@ -53,7 +53,8 @@ public record HiredWorkerFacts(WorkerStatus status, boolean inventoryFull, boole
             case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA -> WorkerStatus.PATHING;
             case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET, WORKING, COLLECTING_OUTPUT ->
                     activeWorkStatus(role);
-            case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
+            case MOVING_TO_STORAGE -> WorkerStatus.PATHING;
+            case DEPOSITING -> WorkerStatus.DEPOSITING;
             case PAUSED_OUTPUT_BACKPRESSURE -> WorkerStatus.OUTPUT_BACKPRESSURE;
             case PAUSED_STORAGE_FULL -> WorkerStatus.STORAGE_FULL;
             case PAUSED_NO_STORAGE -> WorkerStatus.NO_STORAGE;
@@ -62,7 +63,9 @@ public record HiredWorkerFacts(WorkerStatus status, boolean inventoryFull, boole
             case PAUSED_FULL_INVENTORY -> inventory.isCapacityBlockedForFailure(brain.failureReason())
                     ? WorkerStatus.INVENTORY_FULL
                     : WorkerStatus.WAITING;
-            case IDLE, WAITING_FOR_MATERIALS, FAILED_COOLDOWN, AWAITING_INSTRUCTION -> WorkerStatus.WAITING;
+            case WAITING_FOR_MATERIALS -> role == HiredVillagerRole.ANIMAL_HANDLING
+                    ? WorkerStatus.MISSING_MATERIALS : WorkerStatus.WAITING;
+            case IDLE, FAILED_COOLDOWN, AWAITING_INSTRUCTION -> WorkerStatus.WAITING;
         };
     }
 
@@ -124,7 +127,8 @@ public record HiredWorkerFacts(WorkerStatus status, boolean inventoryFull, boole
         return switch (taskState) {
             case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA -> WorkerStatus.PATHING;
             case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> activeWorkStatus(role);
-            case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
+            case MOVING_TO_STORAGE -> WorkerStatus.PATHING;
+            case DEPOSITING -> WorkerStatus.DEPOSITING;
             case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
             case PAUSED_OUTPUT_BACKPRESSURE -> WorkerStatus.OUTPUT_BACKPRESSURE;
             case WORKING, COLLECTING_OUTPUT -> activeWorkStatus(role);
@@ -179,6 +183,9 @@ public record HiredWorkerFacts(WorkerStatus status, boolean inventoryFull, boole
             boolean materialStorageUnreachable) {
         if (brain.taskState() != HiredWorkerTaskState.WAITING_FOR_MATERIALS) {
             return false;
+        }
+        if (role == HiredVillagerRole.ANIMAL_HANDLING) {
+            return !noStorage && !materialStorageUnreachable;
         }
         if (role == HiredVillagerRole.CRAFTSMAN) {
             return !noStorage
@@ -250,6 +257,8 @@ public record HiredWorkerFacts(WorkerStatus status, boolean inventoryFull, boole
             return false;
         }
         return switch (role) {
+            case ANIMAL_HANDLING -> failure.equals("animal_food_storage_path_failed")
+                    || failure.equals("animal_product_storage_path_failed");
             case BREWING -> failure.contains("brewing_storage_path_failed");
             case CRAFTSMAN -> failure.contains("craftsman_storage_path_failed");
             case COOK -> failure.contains("cooking_storage_path_failed");

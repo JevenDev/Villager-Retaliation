@@ -109,6 +109,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
                 .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodes::syncCatalog)
                 .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodeDefinitions::onTagsUpdated)
+                .listener(com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets::onTagsUpdated)
                 .listener(VillagerSkillTradeEvents::onVillagerTrades)
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
