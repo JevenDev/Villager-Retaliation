@@ -1,0 +1,185 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "villagerretaliation.quest.last_light.watch_torches.tracker": {
+      "lines": [
+        "Bring 8 torches back before the watch departs."
+      ]
+    },
+    "villagerretaliation.quest.last_light.watch_torches.ready": {
+      "lines": [
+        "Ready to hand in."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver_leave.label": {
+      "lines": [
+        "I will get those supplies."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.reminder.lines": {
+      "lines": [
+        "Bring eight torches before the watch sets out."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.reminder.title": {
+      "lines": [
+        "About Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver_handin.label": {
+      "lines": [
+        "Here are the supplies."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver_notyet.label": {
+      "lines": [
+        "Not just yet."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.turn_in.lines": {
+      "lines": [
+        "Just in time. The watch can leave with a light for everyone."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.turn_in.title": {
+      "lines": [
+        "About Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.hand_in.completed": {
+      "lines": [
+        "Just in time. The watch can leave with a light for everyone. Thank you."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.hand_in.completed": {
+      "lines": [
+        "The first watch went without, but these supplies will put the next one in better shape. Thank you for returning."
+      ]
+    },
+    "villagerretaliation.quest.last_light.hand_in.missing_objectives": {
+      "lines": [
+        "Some supplies are still missing. Bring them together."
+      ]
+    },
+    "villagerretaliation.quest.last_light.hand_in.unavailable": {
+      "lines": [
+        "We have already settled this watch."
+      ]
+    },
+    "villagerretaliation.quest.last_light.leave.lines": {
+      "lines": [
+        "I will be here."
+      ]
+    },
+    "villagerretaliation.quest.last_light.deliver.tracker": {
+      "lines": [
+        "Bring eight torches before the watch sets out."
+      ]
+    },
+    "villagerretaliation.quest.last_light.accept.label": {
+      "lines": [
+        "I will bring eight torches."
+      ]
+    },
+    "villagerretaliation.quest.last_light.decline.label": {
+      "lines": [
+        "I cannot take that on."
+      ]
+    },
+    "villagerretaliation.quest.last_light.offer.lines": {
+      "lines": [
+        "The watch needs eight torches before it sets out. Can you bring them within ten minutes? If we miss it, we will have to prepare replacement lights and route notes for the next watch."
+      ]
+    },
+    "villagerretaliation.quest.last_light.offer.title": {
+      "lines": [
+        "About Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.start_quest.started": {
+      "lines": [
+        "Thank you. The countdown starts now. Ask me about the watch signals when you have a moment."
+      ]
+    },
+    "villagerretaliation.quest.last_light.start_quest.unavailable": {
+      "lines": [
+        "This watch already has its arrangements."
+      ]
+    },
+    "villagerretaliation.quest.last_light.replacement_torches.tracker": {
+      "lines": [
+        "Bring 16 torches for the replacement lights."
+      ]
+    },
+    "villagerretaliation.quest.last_light.replacement_torches.ready": {
+      "lines": [
+        "Ready to hand in."
+      ]
+    },
+    "villagerretaliation.quest.last_light.route_notes.tracker": {
+      "lines": [
+        "Bring 4 paper for the new route notes."
+      ]
+    },
+    "villagerretaliation.quest.last_light.route_notes.ready": {
+      "lines": [
+        "Ready to hand in."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair_leave.label": {
+      "lines": [
+        "I will get those supplies."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.reminder.lines": {
+      "lines": [
+        "The first watch has gone. Bring sixteen torches and four paper so we can prepare replacement lights and route notes. There is no deadline now."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.reminder.title": {
+      "lines": [
+        "About Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair_handin.label": {
+      "lines": [
+        "Here are the supplies."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair_notyet.label": {
+      "lines": [
+        "Not just yet."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.turn_in.lines": {
+      "lines": [
+        "The first watch went without, but these supplies will put the next one in better shape. Thank you for returning."
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.turn_in.title": {
+      "lines": [
+        "About Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.repair.tracker": {
+      "lines": [
+        "The first watch has gone. Bring sixteen torches and four paper so we can prepare replacement lights and route notes. There is no deadline now."
+      ]
+    },
+    "villagerretaliation.quest.last_light.title": {
+      "lines": [
+        "Last Light"
+      ]
+    },
+    "villagerretaliation.quest.last_light.description": {
+      "lines": [
+        "Supply the departing watch, or help prepare its replacement if you miss the deadline."
+      ]
+    },
+    "villagerretaliation.quest.last_light.reminder.details.label": {
+      "lines": [
+        "Remind me what supplies you need."
+      ]
+    }
+  }
+}

@@ -784,6 +784,13 @@ public final class EditorClientChecks {
         JsonObject before = document.json();
         rejects(() -> EditorDocumentOperations.nextStage(document, "first", "missing"));
         check(document.json().equals(before), "missing destinations cannot mutate the quest");
+        document.edit("Add deadline", root -> root.getAsJsonArray("stages").get(0).getAsJsonObject()
+                .add("timer", json("{\"duration_ticks\":1200,\"mode\":\"deadline\",\"timeout_stage\":\"second\"}")));
+        check(DialogueGraph.edges(document).stream().anyMatch(edge -> edge.pointer().equals("/stages/0/timer/timeout_stage")
+                && edge.to().equals("second")), "deadline routes appear in the quest graph");
+        EditorContentTools.renameNode(document, "second", "recovery");
+        check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonObject("timer")
+                .get("timeout_stage").getAsString().equals("recovery"), "renaming a recovery stage preserves the deadline route");
     }
 
     private static void cameraOwnersFollowRuntimeFormats() {

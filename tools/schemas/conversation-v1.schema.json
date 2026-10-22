@@ -196,6 +196,7 @@
             "player_structure_visited",
             "player_used_item",
             "quest",
+            "quest_aftermath",
             "quest_choice_selected",
             "quest_counter",
             "quest_fact",
@@ -1513,6 +1514,49 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quest_aftermath"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "quest"
+            ],
+            "properties": {
+              "type": {
+                "const": "quest_aftermath"
+              },
+              "quest": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "maxLength": 256
+              },
+              "min_days": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "max_days": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            }
           }
         },
         {

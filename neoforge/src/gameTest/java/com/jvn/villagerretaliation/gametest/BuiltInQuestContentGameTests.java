@@ -84,7 +84,7 @@ public final class BuiltInQuestContentGameTests {
             questline("village_supply",
                     "beetroot_bundle", "berry_picking", "bottle_stock", "bread_delivery",
                     "clay_repairs", "egg_baskets", "feather_fletching", "fresh_cod",
-                    "ink_supply", "kiln_fuel", "leather_repairs", "map_paper",
+                    "ink_supply", "kiln_fuel", "last_light", "leather_repairs", "map_paper",
                     "seed_stockpile", "torch_bundle", "village_lanterns", "wool_blankets"),
             questline("workshop_oaths", "honed_handles", "temper_and_tally"));
 
@@ -355,6 +355,14 @@ public final class BuiltInQuestContentGameTests {
                                     + " is not ready when every objective is complete");
                 }
                 assertLifecycleTransition(helper, definition, progress, stage.id(), stage.next());
+            }
+            var timers = new java.util.ArrayList<com.jvn.villagerretaliation.quest.QuestTimer>();
+            if (stage.timer() != null) timers.add(stage.timer());
+            definition.objectives().stream().filter(objective -> stage.objectives().contains(objective.id()) && objective.timer() != null)
+                    .map(QuestDefinition.Objective::timer).forEach(timers::add);
+            for (var timer : timers) if (!timer.timeoutStage().isBlank()) {
+                assertStageTarget(helper, definition, stage.id(), timer.timeoutStage());
+                graph.get(stage.id()).add(timer.timeoutStage());
             }
             for (QuestDefinition.StageBranch branch : stage.branches()) {
                 if (!branch.next().isBlank()) {

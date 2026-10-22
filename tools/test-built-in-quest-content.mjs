@@ -669,6 +669,7 @@ function objectiveSignature(objective) {
 function transitionTargets(stage) {
   const targets = new Set();
   walk(stage, (node) => {
+    if (typeof node.timer?.timeout_stage === "string") targets.add(node.timer.timeout_stage);
     if (node.transition && typeof node.transition.stage === "string") {
       targets.add(node.transition.stage);
     }

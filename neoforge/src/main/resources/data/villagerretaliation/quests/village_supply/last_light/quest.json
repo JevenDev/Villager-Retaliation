@@ -1,0 +1,629 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "villagerretaliation:last_light",
+  "localization_prefix": "villagerretaliation.quest.last_light",
+  "metadata": {
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply",
+      "role.story",
+      "activity.deliver",
+      "activity.gather",
+      "destination.village",
+      "tier.early",
+      "difficulty.easy",
+      "commitment.standard",
+      "theme.community"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer"
+      ]
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_starts": 1,
+    "max_completions": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "abandonment": "remove_forever",
+    "consume_on_completion": true,
+    "consume_on_abandonment": true
+  },
+  "entry_stage": "deliver",
+  "stages": [
+    {
+      "id": "deliver",
+      "objectives": [
+        {
+          "id": "watch_torches",
+          "type": "item_check",
+          "item": "minecraft:torch",
+          "count": 8,
+          "tracker": {
+            "text": {
+              "key": "#watch_torches.tracker"
+            },
+            "complete_text": {
+              "key": "#watch_torches.ready"
+            },
+            "show_progress": true
+          }
+        }
+      ],
+      "complete_when": [
+        "watch_torches"
+      ],
+      "on_enter": [
+        {
+          "type": "set_variable",
+          "scope": "quest",
+          "key": "outcome",
+          "value": "on_time"
+        },
+        {
+          "type": "knowledge",
+          "topic": "villagerretaliation:watch_signal",
+          "recipient": "speaker",
+          "operation": "witness",
+          "required": true
+        }
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#deliver.reminder.title"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#deliver.reminder.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#deliver.reminder.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "deliver_details",
+              "label": {
+                "key": "#reminder.details.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#reminder.details.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
+            },
+            {
+              "id": "deliver_leave",
+              "label": {
+                "key": "#deliver_leave.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#deliver_leave.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        },
+        "turn_in": {
+          "label": {
+            "key": "#deliver.turn_in.title"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#deliver.turn_in.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#deliver.turn_in.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "deliver_handin",
+              "label": {
+                "key": "#deliver_handin.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#deliver_handin.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "hand_in"
+              }
+            },
+            {
+              "id": "deliver_notyet",
+              "label": {
+                "key": "#deliver_notyet.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#deliver_notyet.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        },
+        "offer": {
+          "label": {
+            "key": "#offer.title"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#offer.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#offer.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": {
+                "key": "#accept.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#accept.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "start_quest"
+              }
+            },
+            {
+              "id": "decline",
+              "label": {
+                "key": "#decline.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#decline.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "hand_in",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#deliver.hand_in.completed"
+                },
+                "missing_objectives": {
+                  "key": "#hand_in.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#hand_in.unavailable"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#leave.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#leave.lines"
+              }
+            }
+          ]
+        },
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": {
+                  "key": "#start_quest.started"
+                },
+                "unavailable": {
+                  "key": "#start_quest.unavailable"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#deliver.reminder.lines"
+                },
+                "unavailable": {
+                  "key": "#hand_in.unavailable"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "display": {
+        "tracker_text": {
+          "key": "#deliver.tracker"
+        }
+      },
+      "timer": {
+        "duration_ticks": 12000,
+        "mode": "deadline",
+        "pause_when_inactive": false,
+        "pause_when_offline": true,
+        "warning_ticks": 1200,
+        "timeout_stage": "repair"
+      }
+    },
+    {
+      "id": "repair",
+      "objectives": [
+        {
+          "id": "replacement_torches",
+          "type": "item_check",
+          "item": "minecraft:torch",
+          "count": 16,
+          "tracker": {
+            "text": {
+              "key": "#replacement_torches.tracker"
+            },
+            "complete_text": {
+              "key": "#replacement_torches.ready"
+            },
+            "show_progress": true
+          }
+        },
+        {
+          "id": "route_notes",
+          "type": "item_check",
+          "item": "minecraft:paper",
+          "count": 4,
+          "tracker": {
+            "text": {
+              "key": "#route_notes.tracker"
+            },
+            "complete_text": {
+              "key": "#route_notes.ready"
+            },
+            "show_progress": true
+          }
+        }
+      ],
+      "complete_when": [
+        "replacement_torches",
+        "route_notes"
+      ],
+      "on_enter": [
+        {
+          "type": "set_variable",
+          "scope": "quest",
+          "key": "outcome",
+          "value": "late"
+        }
+      ],
+      "dialogue": {
+        "reminder": {
+          "label": {
+            "key": "#repair.reminder.title"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#repair.reminder.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#repair.reminder.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "repair_details",
+              "label": {
+                "key": "#reminder.details.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#reminder.details.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "reminder_details"
+              }
+            },
+            {
+              "id": "repair_leave",
+              "label": {
+                "key": "#repair_leave.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#repair_leave.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        },
+        "turn_in": {
+          "label": {
+            "key": "#repair.turn_in.title"
+          },
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": {
+            "key": "#repair.turn_in.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#repair.turn_in.lines"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "id": "repair_handin",
+              "label": {
+                "key": "#repair_handin.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#repair_handin.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "hand_in"
+              }
+            },
+            {
+              "id": "repair_notyet",
+              "label": {
+                "key": "#repair_notyet.label"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#repair_notyet.label"
+                  }
+                }
+              ],
+              "transition": {
+                "scene": "leave"
+              }
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "hand_in",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": {
+                  "key": "#repair.hand_in.completed"
+                },
+                "missing_objectives": {
+                  "key": "#hand_in.missing_objectives"
+                },
+                "unavailable": {
+                  "key": "#hand_in.unavailable"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": {
+            "key": "#leave.lines"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#leave.lines"
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": {
+                  "key": "#repair.reminder.lines"
+                },
+                "unavailable": {
+                  "key": "#hand_in.unavailable"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "display": {
+        "tracker_text": {
+          "key": "#repair.tracker"
+        }
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 25,
+    "gossip_reputation": 1,
+    "memory_event": "villagerretaliation:player_completed_quest",
+    "reputation": 2,
+    "loot_table": "villagerretaliation:quest/last_light"
+  },
+  "events": [
+    {
+      "id": "punctual_bonus",
+      "event": "completed",
+      "repeatable": false,
+      "conditions": [
+        {
+          "type": "quest_fact",
+          "scope": "quest",
+          "quest": "villagerretaliation:last_light",
+          "key": "outcome",
+          "value": "on_time"
+        }
+      ],
+      "actions": [
+        {
+          "type": "experience",
+          "amount": 25
+        },
+        {
+          "type": "reputation",
+          "amount": 3
+        }
+      ]
+    }
+  ],
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    },
+    "icon": "minecraft:torch",
+    "color": "#D4A35A"
+  }
+}

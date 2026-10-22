@@ -1,0 +1,205 @@
+{
+  "lines": [
+    {
+      "id": "aftermath.bread",
+      "request": "greeting",
+      "priority": 15,
+      "weight": 20,
+      "chance": 0.45,
+      "conditions": [
+        {
+          "type": "quest_aftermath",
+          "quest": "villagerretaliation:bread_delivery",
+          "min_days": 0
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4,
+        "anti_repeat": true
+      },
+      "metadata": {
+        "topic": "quest_aftermath"
+      },
+      "variants": [
+        {
+          "id": "0",
+          "text": "Good to see you. Those loaves you brought kept our shelves full."
+        },
+        {
+          "id": "1",
+          "text": "I still appreciate that bread delivery. A full larder makes the day easier."
+        }
+      ]
+    },
+    {
+      "id": "aftermath.neighbor",
+      "request": "greeting",
+      "priority": 15,
+      "weight": 20,
+      "chance": 0.45,
+      "conditions": [
+        {
+          "type": "quest_aftermath",
+          "quest": "villagerretaliation:missing_neighbor",
+          "min_days": 0
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4,
+        "anti_repeat": true
+      },
+      "metadata": {
+        "topic": "quest_aftermath"
+      },
+      "variants": [
+        {
+          "id": "0",
+          "text": "Our neighbor is home because of you. I have not forgotten."
+        },
+        {
+          "id": "1",
+          "text": "It is good to count everyone home again. Thank you for seeing that through."
+        }
+      ]
+    },
+    {
+      "id": "aftermath.restitution",
+      "request": "greeting",
+      "priority": 15,
+      "weight": 20,
+      "chance": 0.45,
+      "conditions": [
+        {
+          "type": "quest_aftermath",
+          "quest": "villagerretaliation:second_dispatch",
+          "min_days": 1
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4,
+        "anti_repeat": true
+      },
+      "metadata": {
+        "topic": "quest_aftermath"
+      },
+      "variants": [
+        {
+          "id": "0",
+          "text": "You came back and put that dispatch right. That matters to me."
+        },
+        {
+          "id": "1",
+          "text": "A missed departure could have been the end of it. You made sure it was not."
+        }
+      ]
+    },
+    {
+      "id": "aftermath.last_light_on_time",
+      "request": "greeting",
+      "priority": 15,
+      "weight": 20,
+      "chance": 0.45,
+      "conditions": [
+        {
+          "type": "quest_aftermath",
+          "quest": "villagerretaliation:last_light",
+          "min_days": 1
+        },
+        {
+          "type": "quest_fact",
+          "scope": "quest",
+          "quest": "villagerretaliation:last_light",
+          "key": "outcome",
+          "value": "on_time"
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4,
+        "anti_repeat": true
+      },
+      "metadata": {
+        "topic": "quest_aftermath"
+      },
+      "variants": [
+        {
+          "id": "0",
+          "text": "Your torches reached us before the watch set out. Thank you."
+        }
+      ]
+    },
+    {
+      "id": "aftermath.last_light_late",
+      "request": "greeting",
+      "priority": 15,
+      "weight": 20,
+      "chance": 0.45,
+      "conditions": [
+        {
+          "type": "quest_aftermath",
+          "quest": "villagerretaliation:last_light",
+          "min_days": 1
+        },
+        {
+          "type": "quest_fact",
+          "scope": "quest",
+          "quest": "villagerretaliation:last_light",
+          "key": "outcome",
+          "value": "late"
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4,
+        "anti_repeat": true
+      },
+      "metadata": {
+        "topic": "quest_aftermath"
+      },
+      "variants": [
+        {
+          "id": "0",
+          "text": "The first watch went without, but your repair supplies put things right."
+        }
+      ]
+    },
+    {
+      "id": "aftermath.rescued_me",
+      "request": "greeting",
+      "priority": 20,
+      "weight": 25,
+      "chance": 0.5,
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "villagerretaliation:player_rescued_me",
+          "source": "villager",
+          "player": true
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_days": 1,
+        "max_uses": 4
+      },
+      "variants": [
+        {
+          "id": "home",
+          "text": "I thought I would never see home again. Thank you for bringing me back."
+        },
+        {
+          "id": "safe",
+          "text": "I sleep easier here. I have you to thank for that."
+        }
+      ]
+    }
+  ]
+}

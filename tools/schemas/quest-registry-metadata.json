@@ -1143,6 +1143,45 @@
         }
       },
       {
+        "id": "quest_aftermath",
+        "aliases": [],
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ],
+        "implementation": "QuestAftermathCondition",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "quest"
+          ],
+          "properties": {
+            "type": {
+              "const": "quest_aftermath"
+            },
+            "quest": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "min_days": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "max_days": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          }
+        }
+      },
+      {
         "id": "knowledge",
         "aliases": [],
         "capabilities": [
@@ -7463,6 +7502,52 @@
         }
       },
       {
+        "id": "villagerretaliation:quest_aftermath",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/provider_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/provider_snapshot"
+        ],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Quest aftermath",
+        "description": "Built-in Quest aftermath type.",
+        "browser_available": true,
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "quest_aftermath"
+            },
+            "quest": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "maxLength": 256
+            },
+            "min_days": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "max_days": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "type",
+            "quest"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:quest_fact",
         "aliases": [
           "villagerretaliation:fact",
@@ -8649,6 +8734,7 @@
         "player_structure_visited",
         "player_used_item",
         "quest",
+        "quest_aftermath",
         "quest_choice_selected",
         "quest_counter",
         "quest_fact",

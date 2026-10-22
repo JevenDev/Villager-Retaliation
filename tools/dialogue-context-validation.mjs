@@ -18,6 +18,8 @@ export function validateContextDocuments(documents, schema) {
       references.push({ id: value.id, pointer });
       if (owner) dependencies.get(owner).push(value.id);
     }
+    if (value.type === "quest_aftermath" && (value.min_days ?? 0) > (value.max_days ?? Infinity))
+      errors.push(pointer + ": quest aftermath requires min_days <= max_days");
     if (value.type === "health" && (value.min ?? 0) > (value.max ?? 1))
       errors.push(pointer + ": health requires min <= max");
     for (const [key, child] of Object.entries(value)) walk(child, pointer + "/" + key, owner);

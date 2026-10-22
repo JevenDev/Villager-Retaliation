@@ -1,0 +1,77 @@
+{
+  "values": [
+    "Hello.",
+    {
+      "text": "There you are.",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "blunt"
+        }
+      ]
+    },
+    {
+      "text": "All right. What do you need?",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "blunt"
+        }
+      ]
+    },
+    {
+      "text": "Good to see you safe.",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cautious"
+        }
+      ]
+    },
+    {
+      "text": "Everything all right out there?",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cautious"
+        }
+      ]
+    },
+    {
+      "text": "Now there is a welcome face!",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cheerful"
+        }
+      ]
+    },
+    {
+      "text": "Good to see you! How have you been?",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cheerful"
+        }
+      ]
+    },
+    {
+      "text": "A pleasure to see you again.",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "formal"
+        }
+      ]
+    },
+    {
+      "text": "Good day. How may I help?",
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "formal"
+        }
+      ]
+    }
+  ]
+}

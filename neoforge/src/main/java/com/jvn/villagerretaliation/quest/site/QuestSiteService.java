@@ -368,6 +368,10 @@ public final class QuestSiteService {
         if (site.released && !site.rescued && (quest.target().site().rescue() == QuestSiteDefinition.Rescue.FREE_AT_SITE
                 || captive != null && captive.level() == level && captive.blockPosition().distSqr(destination) <= 12 * 12)) {
             site.rescued = true;
+            if (captive != null) for (var player : players)
+                com.jvn.villagerretaliation.village.VillageEventMemory.remember(level,
+                        ResourceLocation.parse("villagerretaliation:player_rescued_me"), captive.blockPosition(), captive, player,
+                        com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.VILLAGER);
             if (site.captive != null) QuestFollowerService.release(level, site.captive);
             data.setDirty();
         }

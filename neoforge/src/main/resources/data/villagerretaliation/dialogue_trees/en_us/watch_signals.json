@@ -1,0 +1,145 @@
+{
+  "id": "villagerretaliation:watch_signals",
+  "display": {
+    "title": "Watch Signals"
+  },
+  "entries": [
+    {
+      "id": "ask",
+      "label": "Ask about the watch signals.",
+      "request": "story",
+      "start": "hint",
+      "conditions": [
+        {
+          "type": "knowledge",
+          "subject": "speaker",
+          "topic": "villagerretaliation:watch_signal",
+          "state": "complete"
+        }
+      ]
+    },
+    {
+      "id": "teach",
+      "label": "Share the watch signals.",
+      "request": "story",
+      "start": "teach",
+      "conditions": [
+        {
+          "type": "knowledge",
+          "subject": "player",
+          "topic": "villagerretaliation:watch_signal",
+          "state": "complete"
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "knowledge",
+            "subject": "speaker",
+            "topic": "villagerretaliation:watch_signal",
+            "state": "complete"
+          }
+        },
+        {
+          "type": "reputation",
+          "min": 0
+        }
+      ]
+    }
+  ],
+  "nodes": {
+    "hint": {
+      "conditions": [
+        {
+          "type": "knowledge",
+          "subject": "speaker",
+          "topic": "villagerretaliation:watch_signal",
+          "state": "complete"
+        }
+      ],
+      "lines": [
+        "The night watch uses a lamp code. I can tell you that much, but the full code stays with people I trust."
+      ],
+      "actions": [
+        {
+          "type": "knowledge",
+          "topic": "villagerretaliation:watch_signal",
+          "recipient": "player",
+          "operation": "hint",
+          "required": true
+        }
+      ],
+      "responses": [
+        {
+          "id": "full",
+          "label": "You can trust me with it.",
+          "next": "full",
+          "conditions": [
+            {
+              "type": "reputation",
+              "min": 20
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "label": "I understand.",
+          "end": true
+        }
+      ]
+    },
+    "full": {
+      "conditions": [
+        {
+          "type": "knowledge",
+          "subject": "speaker",
+          "topic": "villagerretaliation:watch_signal",
+          "state": "complete"
+        },
+        {
+          "type": "reputation",
+          "min": 20
+        }
+      ],
+      "lines": [
+        "Two short flashes mean the route is clear. Three mean trouble. Keep that between people who will use it to help."
+      ],
+      "actions": [
+        {
+          "type": "knowledge",
+          "topic": "villagerretaliation:watch_signal",
+          "recipient": "player",
+          "operation": "share",
+          "required": true
+        }
+      ],
+      "end": true
+    },
+    "teach": {
+      "conditions": [
+        {
+          "type": "knowledge",
+          "subject": "player",
+          "topic": "villagerretaliation:watch_signal",
+          "state": "complete"
+        },
+        {
+          "type": "reputation",
+          "min": 0
+        }
+      ],
+      "lines": [
+        "Two for a clear route, three for trouble. I will remember who taught me."
+      ],
+      "actions": [
+        {
+          "type": "knowledge",
+          "topic": "villagerretaliation:watch_signal",
+          "recipient": "speaker",
+          "operation": "share",
+          "required": true
+        }
+      ],
+      "end": true
+    }
+  }
+}

@@ -209,6 +209,12 @@ public final class QuestSiteGameTests {
             captive.moveTo(fixture.site.home.getCenter());
             QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
             helper.assertTrue(fixture.site.rescued, "arrival at the saved home completes the rescue");
+            var memory = new com.jvn.villagerretaliation.dialogue.DialogueCondition.Memory(
+                    java.util.Set.of(ResourceLocation.parse("villagerretaliation:player_rescued_me")),
+                    com.jvn.villagerretaliation.dialogue.DialogueCondition.MemorySource.THIS_VILLAGER, true,
+                    com.jvn.villagerretaliation.dialogue.DialogueCondition.MemoryKind.EVENT_TAG);
+            helper.assertTrue(memory.matches(com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(
+                    helper.getLevel(), fixture.player, captive)), "rescued villager remembers the player who brought them home");
             helper.assertFalse(QuestFollowerService.retained(captive), "rescued villagers stop following");
             helper.assertValueEqual(fixture.progress.currentStage(), "return", "rescue event advances the quest to turn-in");
             fixture.interact(captive);

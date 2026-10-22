@@ -100,6 +100,12 @@ public final class DialogueGraph {
                 }
                 continue;
             }
+            if (document.kind() == DefinitionKind.QUEST) {
+                addTimeout(result, node.id(), value, node.pointer());
+                var objectives = array(value, "objectives");
+                for (int i = 0; i < objectives.size(); i++) if (objectives.get(i).isJsonObject())
+                    addTimeout(result, node.id(), objectives.get(i).getAsJsonObject(), node.pointer() + "/objectives/" + i);
+            }
             if (document.kind() == DefinitionKind.QUEST && value.has("transition"))
                 addNext(result, node.id(), value.get("transition"), node.pointer() + "/transition", "Next");
             if (value.has("next")) addNext(result, node.id(), value.get("next"), node.pointer() + "/next", "Next");
@@ -150,6 +156,13 @@ public final class DialogueGraph {
             }
         }
         return List.copyOf(result);
+    }
+
+    private static void addTimeout(List<Edge> edges, String from, JsonObject value, String pointer) {
+        if (value.has("timer") && value.get("timer").isJsonObject()) {
+            var timer = value.getAsJsonObject("timer");
+            if (timer.has("timeout_stage")) addNext(edges, from, timer.get("timeout_stage"), pointer + "/timer/timeout_stage", "Deadline");
+        }
     }
 
     private static void addNext(List<Edge> edges, String from, JsonElement next, String pointer, String label) {

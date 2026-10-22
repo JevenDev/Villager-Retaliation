@@ -1,0 +1,33 @@
+{
+  "lines": [
+    {
+      "id": "greeting.speaking_style",
+      "request": "greeting",
+      "weight": 20,
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "content"
+        },
+        {
+          "type": "reputation",
+          "min": 0
+        },
+        {
+          "type": "villager_age",
+          "adult": true
+        }
+      ],
+      "usage": {
+        "scope": "player_villager",
+        "cooldown_seconds": 60
+      },
+      "variants": [
+        {
+          "id": "voice",
+          "text": "{word:villagerretaliation:greetings/voice}"
+        }
+      ]
+    }
+  ]
+}
