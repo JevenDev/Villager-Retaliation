@@ -33,9 +33,15 @@ final class ConversationResponseTimers {
         ConversationService.require(ConversationService.near(player, character),
                 "Return to the conversation to resolve its deadline.");
         var request = UUID.nameUUIDFromBytes((session.identity.id() + "/" + session.visit + "/timeout").getBytes(StandardCharsets.UTF_8));
+        // an unavailable default must leave the original visit open for manual choices
+        session = new ConversationSession(session);
         session.responseTimerResolved = true;
-        if (!timer.response().isBlank()) ConversationService.choose(player, session, definition, request, timer.response());
-        else ConversationService.enter(session, timer.next());
+        if (!timer.response().isBlank()) {
+            try { ConversationService.choose(player, session, definition, request, timer.response()); }
+            catch (ConversationService.Unavailable unavailable) { return false; }
+        } else {
+            ConversationService.enter(session, timer.next());
+        }
         ConversationService.save(player, data, session);
         ConversationRuntime.drive(player, session.identity.id());
         return true;

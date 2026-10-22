@@ -131,8 +131,7 @@ public final class ConversationService {
                     case ADVANCE -> advance(player, session, definition);
                     case CHOOSE -> {
                         require(session.phase == ConversationSession.Phase.RESPONSES, "The conversation is not waiting for a response.");
-                        if (ConversationResponseTimers.expired(session, player.serverLevel().getGameTime())) {
-                            ConversationResponseTimers.expire(player, data, session);
+                        if (ConversationResponseTimers.expire(player, data, session)) {
                             return view(player, sessionId);
                         }
                         choose(player, session, definition, requestId, argument);
@@ -200,13 +199,14 @@ public final class ConversationService {
                 boolean authorized = controller != null && member(controller, session) && canControl(controller, session) && near(controller, character);
                 var context = authorized ? ConversationActors.context(controller, character) : null;
                 for (var response : definition.nodes().get(session.node).responses().values()) {
-                    if (authorized && !response.showUnavailable() && !conditions(context, response.conditions())) continue;
+                    boolean available = authorized && conditions(context, response.conditions());
+                    if (authorized && !response.showUnavailable() && !available) continue;
                     responses.add(new Response(response.id(),
                             com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(
                                     text(player, response.labelKey()), session.replacements),
-                            authorized && conditions(context, response.conditions()),
+                            available,
                             !authorized ? "An authorized controller must be present."
-                                    : conditions(context, response.conditions()) ? ""
+                                    : available ? ""
                                     : response.unavailableKey().isEmpty()
                                             ? com.jvn.villagerretaliation.dialogue.DialogueChoice.DISABLED.reason(context)
                                             : text(player, response.unavailableKey())));

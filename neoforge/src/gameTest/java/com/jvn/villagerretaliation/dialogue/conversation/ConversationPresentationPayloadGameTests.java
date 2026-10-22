@@ -21,6 +21,36 @@ public final class ConversationPresentationPayloadGameTests {
     private ConversationPresentationPayloadGameTests() { }
 
     @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void countdownRefreshesDoNotReplaceDialogueText(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        var id = UUID.randomUUID();
+        var line = new Line("1/mentor", host.character, 4, "Mira", "A long prompt. ".repeat(60), 0, 1);
+        for (int seconds = 0; seconds < 3; seconds++) {
+            host.now = seconds * 1000;
+            var session = new Session(id, 1, "Guidance", ConversationSession.Phase.RESPONSES, line, true, false, "Player",
+                    List.of(), List.of(), null, "", null, List.of(), false, false, null, 100 - seconds * 20);
+            controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), session, ""));
+            helper.assertValueEqual(controller.responseRemainingTicks(), (long) (100 - seconds * 20), "snapshot updates the separate countdown");
+            helper.assertValueEqual(host.texts.size(), 1, "countdown polling cannot restart playback or scrolling");
+            helper.assertValueEqual(host.texts.getFirst(), line.text(), "the countdown is not part of animated dialogue");
+        }
+        host.now += 500;
+        helper.assertValueEqual(controller.responseRemainingTicks(), 50L, "countdown advances between server polls");
+        host.now += 5000;
+        helper.assertValueEqual(controller.responseRemainingTicks(), 0L, "countdown stops at zero");
+        var history = new Session(id, 1, "Guidance", ConversationSession.Phase.RESPONSES, line, false, false, "Player",
+                List.of(), List.of(), null, "", null, List.of(), false, false, new History(0, 1, List.of("Earlier dialogue.")), 60);
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), history, ""));
+        helper.assertValueEqual(controller.responseRemainingTicks(), -1L, "history does not display a live countdown");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), null, ""));
+        helper.assertValueEqual(controller.responseRemainingTicks(), -1L, "leaving clears the countdown");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_payloads")
     public static void conversationMessagesPreserveIdentitySpeakersAndSavedChecks(GameTestHelper helper) {
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {

@@ -16,7 +16,6 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public class EntityDialogueRuntime implements DialogueRuntimeAdapter {
     public static final EntityDialogueRuntime INSTANCE = new EntityDialogueRuntime();
-    private static final Map<net.minecraft.server.MinecraftServer, Integer> CURSORS = new java.util.WeakHashMap<>();
 
     @Override public boolean forced(DialogueRuntimeContext context) { return false; }
     @Override public DialogueDisposition disposition(DialogueRuntimeContext context) { return DialogueDisposition.NEUTRAL; }
@@ -52,13 +51,7 @@ public class EntityDialogueRuntime implements DialogueRuntimeAdapter {
     public static void onServerTickPost(ServerTickEvent.Post event) {
         if (!NarrativeActors.hasRegistrations()) return;
         var server = event.getServer();
-        var keys = DialogueTreeSessionSavedData.get(server.overworld()).keys();
-        if (keys.isEmpty()) return;
-        int cursor = CURSORS.getOrDefault(server, 0);
-        for (int inspected = 0; inspected < Math.min(keys.size(), 64); inspected++) {
-            int index = Math.floorMod(cursor + inspected, keys.size());
-            CURSORS.put(server, (index + 1) % keys.size());
-            var key = keys.get(index);
+        for (var key : DialogueTreeSessionSavedData.get(server.overworld()).nextTimedKeys(64)) {
             var player = server.getPlayerList().getPlayer(key.playerId());
             if (player == null) continue;
             var entity = player.serverLevel().getEntity(key.villagerId());

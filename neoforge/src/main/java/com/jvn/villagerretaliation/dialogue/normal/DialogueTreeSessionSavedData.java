@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.normal;
 
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +16,7 @@ import net.minecraft.world.level.storage.LevelResource;
 public final class DialogueTreeSessionSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_dialogue_trees";
     private final Map<DialogueTreeService.SessionKey, DialogueTreeService.Session> sessions = new LinkedHashMap<>();
-    java.util.List<DialogueTreeService.SessionKey> keys() { return java.util.List.copyOf(this.sessions.keySet()); }
+    private final LinkedHashSet<DialogueTreeService.SessionKey> timedSessions = new LinkedHashSet<>();
 
     private final ListTag quarantined = new ListTag();
     private final Map<DialogueTreeService.SessionKey, String> issues = new LinkedHashMap<>();
@@ -81,6 +82,7 @@ public final class DialogueTreeSessionSavedData extends SavedData {
             data.preserved = tag.copy();
             data.diagnostic = exception.getMessage() + ". Restore compatible dialogue tree data or a known-good backup.";
         }
+        data.sessions.forEach(data::schedule);
         return data;
     }
 
@@ -95,14 +97,33 @@ public final class DialogueTreeSessionSavedData extends SavedData {
     void put(DialogueTreeService.SessionKey key, DialogueTreeService.Session session) {
         if (!diagnostic(key).isBlank()) throw new IllegalStateException(diagnostic(key));
         sessions.put(key, session);
+        schedule(key, session);
         setDirty();
     }
 
     DialogueTreeService.Session remove(DialogueTreeService.SessionKey key) {
         if (!diagnostic(key).isBlank()) return null;
         var removed = sessions.remove(key);
+        timedSessions.remove(key);
         if (removed != null) setDirty();
         return removed;
+    }
+
+    private void schedule(DialogueTreeService.SessionKey key, DialogueTreeService.Session session) {
+        if (session.responseDeadline() >= 0 && !session.timerResolved()) timedSessions.add(key);
+        else timedSessions.remove(key);
+    }
+
+    java.util.List<DialogueTreeService.SessionKey> nextTimedKeys(int limit) {
+        int count = Math.min(Math.max(limit, 0), timedSessions.size());
+        if (count == 0) return java.util.List.of();
+        var keys = new java.util.ArrayList<DialogueTreeService.SessionKey>(count);
+        for (int index = 0; index < count; index++) {
+            var key = timedSessions.removeFirst();
+            timedSessions.add(key);
+            keys.add(key);
+        }
+        return keys;
     }
 
     @Override

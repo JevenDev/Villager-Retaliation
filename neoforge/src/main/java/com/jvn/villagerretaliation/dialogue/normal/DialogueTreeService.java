@@ -78,6 +78,7 @@ public final class DialogueTreeService {
     private DialogueTreeService() {
     }
 
+    @Deprecated
     public static void clearRuntimeState() {
         // sessions now belong to each world's saved data
     }

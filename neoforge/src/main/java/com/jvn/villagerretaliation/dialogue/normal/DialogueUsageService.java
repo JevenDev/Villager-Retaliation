@@ -48,7 +48,8 @@ public final class DialogueUsageService {
         }
         DialogueUsagePolicy effective = policy == null ? DialogueUsagePolicy.DEFAULT : policy;
         DialogueUsageSavedData.get(context.level()).remember(
-                scopeKey(context, effective.scope()), dialogueId, context.level().getGameTime());
+                scopeKey(context, effective.scope()), dialogueId, context.level().getGameTime(),
+                effective.maxUses() > 0 || effective.cooldownTicks() > 0);
     }
 
     private static String scopeKey(DialogueRuntimeContext context, DialogueUsagePolicy.Scope scope) {

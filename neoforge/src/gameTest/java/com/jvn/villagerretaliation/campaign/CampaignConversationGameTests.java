@@ -46,6 +46,50 @@ public final class CampaignConversationGameTests {
     private CampaignConversationGameTests() { }
 
     @GameTest(template = "empty", batch = "conversation_runtime")
+    public static void unavailableTimeoutsLeaveManualChoicesOpenAcrossReload(GameTestHelper helper) throws IOException {
+        for (boolean available : List.of(false, true)) {
+            for (boolean maintainFirst : List.of(false, true)) {
+                try (var fixture = CampaignConversationConfirmationGameTests.fixture(helper, "[]", false)) {
+                    var opening = fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject();
+                    opening.add("response_timer", JsonParser.parseString("""
+                            {"duration_ticks":40,"response":"appeal"}
+                            """));
+                    var response = opening.getAsJsonArray("responses").get(0).getAsJsonObject();
+                    response.add("conditions", JsonParser.parseString("""
+                            [{"type":"health","subject":"player","min":0.5}]
+                            """));
+                    response.add("effects", JsonParser.parseString("""
+                            [{"id":"reward","action":{"type":"experience","amount":3}}]
+                            """));
+                    opening.getAsJsonArray("responses").get(1).getAsJsonObject().add("effects", JsonParser.parseString("""
+                            [{"id":"reward","action":{"type":"experience","amount":7}}]
+                            """));
+                    fixture.install(fixture.graph);
+                    var player = fixture.player();
+                    player.setHealth(player.getMaxHealth());
+                    var result = fixture.start(player);
+                    var id = result.session().identity().id();
+                    if (!available) player.setHealth(player.getMaxHealth() / 4);
+                    fixture.storage.setResponseDeadline(id, helper.getLevel().getGameTime());
+                    fixture.storage.reload();
+                    if (maintainFirst) fixture.storage.maintain();
+                    result = ConversationService.view(player, id);
+                    if (!maintainFirst || !available) {
+                        result = fixture.intent(player, result, ConversationSession.Intent.CHOOSE, "leave");
+                    }
+                    helper.assertValueEqual(result.session().node(), available ? "agreed" : "declined",
+                            "only an available timeout takes precedence: " + result.diagnostic());
+                    helper.assertValueEqual(player.totalExperience, available ? 3 : 7, "only the selected response applies its reward");
+                    fixture.storage.reload();
+                    fixture.storage.maintain();
+                    helper.assertValueEqual(player.totalExperience, available ? 3 : 7, "reload cannot replay the selected response");
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_runtime")
     public static void lateChoicesResolveTheSavedDefaultResponseOnce(GameTestHelper helper) throws IOException {
         try (var fixture = new Fixture(helper)) {
             fixture.graph.getAsJsonArray("nodes").get(0).getAsJsonObject().add("response_timer",
