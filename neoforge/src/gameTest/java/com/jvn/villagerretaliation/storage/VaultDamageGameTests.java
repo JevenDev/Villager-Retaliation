@@ -62,6 +62,11 @@ public final class VaultDamageGameTests {
         bank.loadWithComponents(saved,h.getLevel().registryAccess());
         tick(bank);
         h.assertValueEqual(victim.getHealth(),health,"reloading a breached vault cannot replay impact");
+        victim.setHealth(1F);
+        var lethalImpact=new VaultDoorImpact();
+        for(int i=0;i<10;i++) lethalImpact.tick(bank);
+        h.assertTrue(victim.isDeadOrDying(),"door impact can kill a mob");
+        h.assertValueEqual(victim.getLastDamageSource().getLocalizedDeathMessage(victim).getString(),"Iron Golem got squashed by the vault door","mob death names the vault door");
         victim.discard(); h.succeed();
     }
 
@@ -90,6 +95,7 @@ public final class VaultDamageGameTests {
         var player=new ServerPlayer(h.getLevel().getServer(),h.getLevel(),cookie.gameProfile(),cookie.clientInformation());
         var connection=new Connection(PacketFlow.SERVERBOUND);
         new EmbeddedChannel(connection);
+        net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
         h.getLevel().getServer().getPlayerList().placeNewPlayer(connection,player,cookie);
         player.getAbilities().invulnerable=false;
         player.setPos(bank.getBlockPos().getCenter().add(0,0,-2));
@@ -107,6 +113,12 @@ public final class VaultDamageGameTests {
             for(int i=0;i<10;i++) impact.tick(bank);
             h.assertValueEqual(player.getHealth(),20F,"invulnerable player takes no damage");
             h.assertFalse(player.getAdvancements().getOrStartProgress(advancement).isDone(),"rejected hit awards no advancement");
+            player.getAbilities().invulnerable=false;
+            player.setHealth(1F);
+            impact=new VaultDoorImpact();
+            for(int i=0;i<10;i++) impact.tick(bank);
+            h.assertTrue(player.isDeadOrDying(),"door impact can kill a player");
+            h.assertValueEqual(player.getLastDamageSource().getLocalizedDeathMessage(player).getString(),"DoorTest got squashed by the vault door","player death names the vault door");
         } finally { h.getLevel().getServer().getPlayerList().remove(player); }
         h.succeed();
     }
