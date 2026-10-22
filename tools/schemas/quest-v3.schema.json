@@ -864,9 +864,32 @@
                         "maxLength": 64
                       },
                       "label": {
+                        "description": "Use a localized reference such as {key: #route.rear} in quest bundles.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "key"
+                            ],
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 256
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "label_key": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 128
+                        "maxLength": 256
                       },
                       "radius": {
                         "type": "integer",

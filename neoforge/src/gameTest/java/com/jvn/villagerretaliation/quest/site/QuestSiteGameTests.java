@@ -408,12 +408,47 @@ public final class QuestSiteGameTests {
     public static void holdingCampTemplateAndBuiltInQuestAreAvailable(GameTestHelper helper) {
         var quest = VillagerQuestResources.quest(helper.getLevel().getServer(),
                 ResourceLocation.parse("villagerretaliation:missing_neighbor")).orElseThrow(() -> new IllegalStateException("Built-in rescue quest is missing: " + com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(helper.getLevel().getServer())));
+        var fingerprint = com.jvn.villagerretaliation.campaign.CampaignRewardRecovery.fingerprint(helper.getLevel().getServer(), quest.id());
+        helper.assertTrue(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(helper.getLevel().getServer(), quest.id(),
+                "3fb79eb68ab3f0b37a2be37bc1d035ff0e8f5627331d6a9a3bacbb5270781bd8", fingerprint), "pending rewards from the previous definition remain recoverable");
+        helper.assertFalse(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(helper.getLevel().getServer(), quest.id(),
+                "0".repeat(64), fingerprint), "the migration does not authorize unrelated definitions");
         helper.assertValueEqual(quest.target().site().selection(), QuestSiteDefinition.Selection.PREFER_EXISTING,
                 "shipped rescue prefers existing outposts");
         helper.assertValueEqual(quest.target().site().rescue(), QuestSiteDefinition.Rescue.ESCORT_HOME, "shipped rescue requires escorting home");
         var template = helper.getLevel().getStructureManager().get(TEMPLATE).orElseThrow(() -> new IllegalStateException("Holding camp template is missing"));
         helper.assertValueEqual(template.getSize().getX(), 9, "holding camp is bounded");
         helper.assertValueEqual(template.getSize().getZ(), 9, "holding camp is bounded");
+        helper.assertValueEqual(quest.target().site().access().approaches().size(), 2, "the shipped quest defines two approaches");
+        helper.assertTrue(quest.target().site().access().guardPositions().stream().allMatch(position -> position.getZ() < 0), "guards start on the front side");
+        var origin = helper.absolutePos(new BlockPos(1, 1, 1));
+        helper.assertTrue(template.placeInWorld(helper.getLevel(), origin, origin,
+                new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings().setIgnoreEntities(true),
+                helper.getLevel().getRandom(), 2), "the authored camp can be placed");
+        var center = origin.offset(4, 1, 4);
+        var guard = EntityType.PILLAGER.create(helper.getLevel());
+        for (var offset : quest.target().site().access().guardPositions()) {
+            guard.moveTo(center.offset(offset).getBottomCenter());
+            helper.assertTrue(helper.getLevel().noCollision(guard), "authored guard spawns must clear the camp geometry: " + offset);
+        }
+        var captive = EntityType.VILLAGER.create(helper.getLevel());
+        for (int z = 0; z <= 3; z++) {
+            captive.moveTo(center.offset(0, 0, z).getBottomCenter());
+            helper.assertTrue(helper.getLevel().noCollision(captive), "the captive has a clear passage through the rear entrance");
+        }
+        var structure = template.save(new CompoundTag());
+        var palette = structure.getList("palette", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        var blocks = structure.getList("blocks", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int y = 1; y <= 2; y++) {
+            boolean open = false;
+            for (var raw : blocks) {
+                var block = (CompoundTag) raw;
+                var position = block.getList("pos", net.minecraft.nbt.Tag.TAG_INT);
+                if (position.getInt(0) == 4 && position.getInt(1) == y && position.getInt(2) == 5)
+                    open = palette.getCompound(block.getInt("state")).getString("Name").equals("minecraft:air");
+            }
+            helper.assertTrue(open, "the rear entrance has two blocks of clearance");
+        }
         helper.succeed();
     }
 
@@ -529,6 +564,88 @@ public final class QuestSiteGameTests {
     @GameTest(template = "empty", batch = "quest_sites_rewards")
     public static void builtInRewardsIncludeRescue(GameTestHelper helper) {
         com.jvn.villagerretaliation.quest.content.QuestRewardBundleGameTests.allMigratedGenericRewardsCompileAndResolveFromBundles(helper);
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void missingNeighborDialogueRevealsTheSameExplorableEntrance(GameTestHelper helper) throws Exception {
+        var id = ResourceLocation.parse("villagerretaliation:missing_neighbor");
+        var compiled = VillagerQuestResources.compiledQuest(helper.getLevel().getServer(), id).orElseThrow();
+        try (var fixture = new Fixture(helper, "escort_home", null, compiled)) {
+            var captive = fixture.captive();
+            fixture.guard();
+            fixture.guard();
+            fixture.player.moveTo(fixture.provider.position());
+            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(helper.getLevel(), fixture.player, fixture.provider);
+            var binding = VillagerQuestResources.questDialogueCatalog(helper.getLevel().getServer()).bindings(id).stream()
+                    .filter(value -> value.stageId().equals("rescue") && value.slot().equals("reminder")).findFirst().orElseThrow();
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(context, binding.treeId(), binding.entryId()).isPresent(), "authored rescue reminder opens");
+            var option = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(context).orElseThrow().stream()
+                    .filter(value -> value.label().equals("Is there another way inside?")).findFirst().orElseThrow();
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.handleDialogueOption(context, option).isPresent(), "authored route explanation executes");
+            var topic = ResourceLocation.parse("villagerretaliation:missing_neighbor_rear_entrance");
+            helper.assertTrue(new com.jvn.villagerretaliation.dialogue.Knowledge.Condition(topic, "player", "heard", "speaker").matches(context), "giver shares the entrance with a remembered source");
+            com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.leaveActiveSession(context);
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.knownRoutes.get(fixture.player.getUUID()).contains("rear_entrance"), "dialogue reveals the route location");
+            helper.assertTrue(fixture.site.reachedRoutes.isEmpty(), "learning the location does not complete the approach");
+            fixture.player.moveTo(fixture.site.position.offset(0, 0, 3).getBottomCenter());
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "visiting the rear entrance permits rescue with guards alive");
+            helper.assertValueEqual(fixture.site.approach, "rear_entrance", "the authored route is recorded");
+            helper.assertTrue(QuestFollowerService.retained(captive), "the rescued neighbor follows the player");
+            captive.moveTo(fixture.site.home.getBottomCenter());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertValueEqual(fixture.progress.currentStage(), "return", "the alternate approach reaches the normal turn-in");
+            var knowledge = com.jvn.villagerretaliation.dialogue.KnowledgeSavedData.get(helper.getLevel());
+            knowledge.forget(fixture.player.getUUID(), topic);
+            knowledge.forget(fixture.provider.getUUID(), topic);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void approachConditionsStillApplyAfterVisitingARoute(GameTestHelper helper) throws Exception {
+        var access = access();
+        access.getAsJsonArray("approaches").get(1).getAsJsonObject().add("conditions",
+                access.getAsJsonArray("routes").get(0).getAsJsonObject().get("reveal_when").deepCopy());
+        try (var fixture = new Fixture(helper, "free_at_site", access)) {
+            var captive = fixture.captive();
+            fixture.guard();
+            fixture.player.moveTo(fixture.site.position.offset(0, 0, 6).getBottomCenter());
+            QuestSiteAccessService.observe(helper.getLevel(), fixture.site, fixture.quest, List.of(fixture.player));
+            fixture.player.moveTo(fixture.site.position.getBottomCenter());
+            fixture.interact(captive);
+            helper.assertFalse(fixture.site.released, "a visited route cannot bypass extra approach conditions");
+            var topic = ResourceLocation.parse("test:route");
+            var knowledge = com.jvn.villagerretaliation.dialogue.KnowledgeSavedData.get(helper.getLevel());
+            knowledge.witness(fixture.player.getUUID(), topic, helper.getLevel().getGameTime());
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "the same approach succeeds once all conditions match");
+            knowledge.forget(fixture.player.getUUID(), topic);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void accessSnapshotsAllowTextEditsButRejectChangedRules(GameTestHelper helper) throws Exception {
+        try (var fixture = new Fixture(helper, "free_at_site", access())) {
+            var captive = fixture.captive();
+            var saved = JsonParser.parseString(fixture.site.config).getAsJsonObject();
+            var route = saved.getAsJsonObject("access").getAsJsonObject("definition").getAsJsonArray("routes").get(0).getAsJsonObject();
+            route.addProperty("label", "An earlier translation");
+            fixture.site.config = saved.toString();
+            helper.assertTrue(QuestSiteAccessService.compatible(fixture.site, fixture.quest.target().site()), "display text changes preserve active sites");
+            route.getAsJsonObject("offset").addProperty("x", 4);
+            fixture.site.config = saved.toString();
+            helper.assertFalse(QuestSiteAccessService.compatible(fixture.site, fixture.quest.target().site()), "changed route geometry is detected");
+            for (String malformed : List.of("broken", "[]", "{", "{\"access\":null}", "{\"access\":{\"definition\":{\"routes\":[3]}}}")) {
+                fixture.site.config = malformed;
+                helper.assertFalse(QuestSiteAccessService.compatible(fixture.site, fixture.quest.target().site()), "malformed snapshots cannot silently change access rules");
+                fixture.interact(captive);
+                helper.assertFalse(fixture.site.released, "malformed snapshots preserve the encounter without releasing it");
+            }
+        }
+        helper.succeed();
     }
 
     private static JsonObject access() {
@@ -696,13 +813,17 @@ public final class QuestSiteGameTests {
         final Site site;
         final VillagerQuestSavedData.QuestProgress progress;
         final List<net.minecraft.world.entity.monster.Pillager> guards = new java.util.ArrayList<>();
-        Villager captive;
+        Villager captive, provider;
 
         Fixture(GameTestHelper helper, String rescue) {
             this(helper, rescue, null);
         }
 
         Fixture(GameTestHelper helper, String rescue, JsonObject access) {
+            this(helper, rescue, access, null);
+        }
+
+        Fixture(GameTestHelper helper, String rescue, JsonObject access, com.jvn.villagerretaliation.quest.compiled.CompiledQuest supplied) {
             this.helper = helper;
             var level = helper.getLevel();
             var server = level.getServer();
@@ -726,22 +847,28 @@ public final class QuestSiteGameTests {
             target.add("site", config);
             root.add("target", target);
             var envelope = QuestResourceEnvelope.read(ResourceLocation.parse("test:quests/rescues/rescue/quest.json"), root).orElseThrow();
-            var compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope, level.registryAccess()).orElseThrow();
-            VillagerQuestResources.installCompiledTestCatalog(server, List.of(compiled));
+            var compiled = supplied == null ? QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope, level.registryAccess()).orElseThrow() : supplied;
+            if (supplied == null) VillagerQuestResources.installCompiledTestCatalog(server, List.of(compiled));
             quest = compiled.asQuestDefinition();
             player = helper.makeMockServerPlayerInLevel();
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
             var position = helper.absolutePos(new BlockPos(48, 3, 48));
-            site = new Site(UUID.randomUUID(), player.getUUID(), QUEST, null, level.dimension().location(), position.offset(-32, 0, 0));
+            site = new Site(UUID.randomUUID(), player.getUUID(), quest.id(), null, level.dimension().location(), position.offset(-32, 0, 0));
             site.position = position;
             site.run = UUID.randomUUID();
             site.phase = Phase.ACTIVE;
             site.discovered = true;
             site.config = new Gson().toJson(quest.target().site());
             data.add(site);
-            progress = VillagerQuestSavedData.get(level).getOrCreate(player.getUUID(), QUEST);
-            progress.start(null, level.dimension(), position, 0);
-            progress.beginRun(player.getUUID(), QUEST, site.run);
+            if (supplied != null) {
+                provider = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+                provider.setNoAi(true);
+                provider.setVillagerData(provider.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.CARTOGRAPHER));
+                provider.moveTo(site.home.getBottomCenter());
+            }
+            progress = VillagerQuestSavedData.get(level).getOrCreate(player.getUUID(), quest.id());
+            progress.start(provider == null ? null : provider.getUUID(), level.dimension(), position, 0);
+            progress.beginRun(player.getUUID(), quest.id(), site.run);
             progress.setCurrentStage("rescue");
             player.moveTo(position.getCenter());
         }
@@ -778,6 +905,7 @@ public final class QuestSiteGameTests {
 
         @Override public void close() throws Exception {
             if (captive != null) captive.discard();
+            if (provider != null) provider.discard();
             guards.forEach(net.minecraft.world.entity.Entity::discard);
             VillagerQuestService.clearRuntimeState(player);
             player.discard();

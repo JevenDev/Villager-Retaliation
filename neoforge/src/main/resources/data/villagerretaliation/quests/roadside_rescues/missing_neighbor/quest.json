@@ -53,7 +53,53 @@
       "map_style": "search_circle",
       "search_radius": 96,
       "rescue": "escort_home",
-      "guards": 2
+      "guards": 2,
+      "access": {
+        "routes": [
+          {
+            "id": "rear_entrance",
+            "label": {
+              "key": "#route.label"
+            },
+            "offset": {
+              "x": 0,
+              "y": 0,
+              "z": 3
+            },
+            "radius": 1,
+            "reveal_when": [
+              {
+                "type": "knowledge",
+                "topic": "villagerretaliation:missing_neighbor_rear_entrance",
+                "subject": "player",
+                "state": "complete"
+              }
+            ]
+          }
+        ],
+        "approaches": [
+          {
+            "id": "direct",
+            "guards_defeated": true
+          },
+          {
+            "id": "rear_entrance",
+            "route": "rear_entrance"
+          }
+        ],
+        "guard_positions": [
+          {
+            "x": -2,
+            "y": 0,
+            "z": -3
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "z": -3
+          }
+        ]
+      }
     }
   },
   "entry_stage": "rescue",
@@ -128,6 +174,33 @@
           },
           "responses": [
             {
+              "id": "ask_route",
+              "label": {
+                "key": "#route.question"
+              },
+              "conditions": [
+                {
+                  "type": "quest_site",
+                  "quest": "villagerretaliation:missing_neighbor",
+                  "state": "route_exists",
+                  "route": "rear_entrance"
+                }
+              ],
+              "transition": {
+                "scene": "reveal_route"
+              },
+              "exchanges": [
+                {
+                  "speaker": {
+                    "type": "player"
+                  },
+                  "text": {
+                    "key": "#route.question"
+                  }
+                }
+              ]
+            },
+            {
               "id": "remind",
               "label": {
                 "key": "#reminder.response"
@@ -187,6 +260,47 @@
             {
               "type": "quest",
               "action": "remind"
+            }
+          ]
+        },
+        {
+          "id": "reveal_route",
+          "conditions": [
+            {
+              "type": "quest_site",
+              "quest": "villagerretaliation:missing_neighbor",
+              "state": "route_exists",
+              "route": "rear_entrance"
+            }
+          ],
+          "lines": {
+            "key": "#route.answer"
+          },
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "role",
+                "role": "provider"
+              },
+              "text": {
+                "key": "#route.answer"
+              }
+            }
+          ],
+          "actions": [
+            {
+              "type": "knowledge",
+              "topic": "villagerretaliation:missing_neighbor_rear_entrance",
+              "recipient": "speaker",
+              "operation": "witness",
+              "required": true
+            },
+            {
+              "type": "knowledge",
+              "topic": "villagerretaliation:missing_neighbor_rear_entrance",
+              "recipient": "player",
+              "operation": "share",
+              "required": true
             }
           ]
         }

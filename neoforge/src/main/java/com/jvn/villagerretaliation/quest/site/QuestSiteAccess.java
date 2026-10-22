@@ -14,13 +14,14 @@ public final class QuestSiteAccess {
     private final transient List<Approach> approaches;
     private final transient List<BlockPos> guardPositions;
 
-    public record Route(String id, String label, BlockPos offset, int radius, List<DialogueCondition> revealWhen) { }
+    public record Route(String id, String label, String labelKey, BlockPos offset, int radius, List<DialogueCondition> revealWhen) { }
     public record Approach(String id, String route, boolean guardsDefeated, List<DialogueCondition> conditions) { }
 
     public QuestSiteAccess(JsonObject value) {
         definition = value.deepCopy();
         routes = objects(value, "routes").stream().map(route -> new Route(route.get("id").getAsString(),
-                route.get("label").getAsString(), position(route.getAsJsonObject("offset")),
+                route.get("label").isJsonObject() ? route.getAsJsonObject("label").get("key").getAsString() : route.get("label").getAsString(),
+                route.has("label_key") ? route.get("label_key").getAsString() : "", position(route.getAsJsonObject("offset")),
                 route.has("radius") ? route.get("radius").getAsInt() : 2, conditions(route, "reveal_when"))).toList();
         approaches = objects(value, "approaches").stream().map(approach -> new Approach(approach.get("id").getAsString(),
                 approach.has("route") ? approach.get("route").getAsString() : "",
@@ -98,7 +99,9 @@ public final class QuestSiteAccess {
                   "routes":{"type":"array","maxItems":16,"items":{"type":"object","additionalProperties":false,
                     "required":["id","label","offset"],"properties":{
                       "id":{"type":"string","pattern":"^[a-z0-9_.-]+$","maxLength":64},
-                      "label":{"type":"string","minLength":1,"maxLength":128},
+                      "label":{"description":"Use a localized reference such as {key: #route.rear} in quest bundles.","anyOf":[{"type":"string","minLength":1,"maxLength":128},
+                        {"type":"object","additionalProperties":false,"required":["key"],"properties":{"key":{"type":"string","minLength":1,"maxLength":256}}}]},
+                      "label_key":{"type":"string","maxLength":256},
                       "radius":{"type":"integer","minimum":1,"maximum":8},
                       "reveal_when":{"type":"array","minItems":1,"maxItems":16,"items":{"$ref":"#/$defs/condition"}}}}},
                   "approaches":{"type":"array","minItems":1,"maxItems":16,"items":{"type":"object","additionalProperties":false,

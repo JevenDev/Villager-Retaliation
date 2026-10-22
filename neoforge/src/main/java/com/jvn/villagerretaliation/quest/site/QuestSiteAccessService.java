@@ -20,10 +20,43 @@ final class QuestSiteAccessService {
     private QuestSiteAccessService() { }
 
     static boolean compatible(Site site, QuestSiteDefinition config) {
-        var saved = JsonParser.parseString(site.config).getAsJsonObject();
+        var saved = snapshot(site);
+        if (saved == null) return false;
         var current = new Gson().toJsonTree(config).getAsJsonObject();
         if (!saved.has("access")) current.remove("access");
+        removeLabels(saved);
+        removeLabels(current);
         return saved.equals(current);
+    }
+
+    private static com.google.gson.JsonObject snapshot(Site site) {
+        try {
+            var value = JsonParser.parseString(site.config);
+            if (!value.isJsonObject()) return null;
+            var object = value.getAsJsonObject();
+            if (object.has("access") && (!object.get("access").isJsonObject()
+                    || !object.getAsJsonObject("access").has("definition")
+                    || !object.getAsJsonObject("access").get("definition").isJsonObject())) return null;
+            if (object.has("access")) {
+                var definition = object.getAsJsonObject("access").getAsJsonObject("definition");
+                if (definition.has("routes") && (!definition.get("routes").isJsonArray()
+                        || java.util.stream.StreamSupport.stream(definition.getAsJsonArray("routes").spliterator(), false)
+                                .anyMatch(route -> !route.isJsonObject()))) return null;
+            }
+            return object;
+        } catch (com.google.gson.JsonParseException exception) {
+            return null;
+        }
+    }
+
+    private static void removeLabels(com.google.gson.JsonObject config) {
+        if (!config.has("access")) return;
+        var definition = config.getAsJsonObject("access").getAsJsonObject("definition");
+        if (!definition.has("routes")) return;
+        for (var route : definition.getAsJsonArray("routes")) {
+            route.getAsJsonObject().remove("label");
+            route.getAsJsonObject().remove("label_key");
+        }
     }
 
     static QuestSiteAccess access(Site site, QuestDefinition quest) {
@@ -31,7 +64,8 @@ final class QuestSiteAccessService {
     }
 
     static QuestSiteAccess access(Site site, QuestSiteDefinition config) {
-        return JsonParser.parseString(site.config).getAsJsonObject().has("access") ? config.access() : null;
+        var saved = snapshot(site);
+        return saved != null && saved.has("access") ? config.access() : null;
     }
 
     static void observe(ServerLevel level, Site site, QuestDefinition quest, List<ServerPlayer> players) {
@@ -47,7 +81,10 @@ final class QuestSiteAccessService {
                 boolean revealed = reached || !route.revealWhen().isEmpty() && matches(level, player, quest, route.revealWhen());
                 if (revealed && site.knownRoutes.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashSet<>()).add(route.id())) {
                     QuestSiteSavedData.get(level).setDirty();
-                    player.displayClientMessage(Component.translatable("quest.villagerretaliation.site.route_found", route.label(),
+                    String label = route.labelKey().isBlank() ? route.label()
+                            : com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.current(player.server).localization()
+                                    .plainText(player.clientInformation().language(), route.labelKey()).orElse(route.label());
+                    player.displayClientMessage(Component.translatable("quest.villagerretaliation.site.route_found", label,
                             position.getX(), position.getY(), position.getZ()), false);
                 }
                 if (reached && site.reachedRoutes.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashSet<>()).add(route.id()))

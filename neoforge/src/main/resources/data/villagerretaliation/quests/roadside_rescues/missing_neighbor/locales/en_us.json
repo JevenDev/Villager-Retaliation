@@ -16,7 +16,7 @@
     },
     "villagerretaliation.quest.missing_neighbor.rescue.tracker": {
       "lines": [
-        "Search the marked area, defeat the guards, free the captive, and escort them home."
+        "Find the holding site, reach the captive through the guards or another entrance, and escort them home."
       ]
     },
     "villagerretaliation.quest.missing_neighbor.offer.label": {
@@ -41,7 +41,22 @@
     },
     "villagerretaliation.quest.missing_neighbor.reminder.lines": {
       "lines": [
-        "Search the area on your map. Defeat the guards, speak to our neighbor, and lead them back here."
+        "Search the area on your map. Find a way to reach our neighbor, speak to them, and lead them back here."
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.route.label": {
+      "lines": [
+        "Rear entrance"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.route.question": {
+      "lines": [
+        "Is there another way inside?"
+      ]
+    },
+    "villagerretaliation.quest.missing_neighbor.route.answer": {
+      "lines": [
+        "Look around the south side of the holding area. There is an opening behind the captive, away from the guards at the front. Reach that entrance, then get our neighbor out. The guards can still spot you, so take care."
       ]
     },
     "villagerretaliation.quest.missing_neighbor.reminder.response": {
