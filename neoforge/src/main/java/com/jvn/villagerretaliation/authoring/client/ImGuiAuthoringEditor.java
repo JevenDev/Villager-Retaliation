@@ -3262,7 +3262,7 @@ final class ImGuiAuthoringEditor {
         if (!state.playerOnly()) {
             if (!state.state().equals("not started") && ImGui.checkbox("Focus provider menu", EditorLiveQuestTest.focusMenu()))
                 operation(() -> EditorLiveQuestTest.focusDialogue(workspace, document, !EditorLiveQuestTest.focusMenu()));
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Optional: hides unrelated provider offers. Other characters and open conversations keep their normal options.");
+            if (ImGui.isItemHovered()) ImGui.setTooltip("Hides unrelated interactions and quests at this provider, including when this quest has no available offer. Other characters and open conversations keep their normal options.");
             ImGui.beginDisabled(state.state().equals("not started"));
             if (ImGui.button("Return to quest provider")) operation(() -> EditorLiveQuestTest.returnToProvider(workspace, document));
             ImGui.beginDisabled(state.provider() < 0);

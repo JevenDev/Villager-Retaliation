@@ -118,7 +118,7 @@ public final class QuestPlaytestOffers {
                 .toList();
         boolean focused = QuestPlaytestSession.require(context.player(), quest).focusDialogue();
         if (!bindings.isEmpty() || !definition.links().isEmpty() || !relevant.isEmpty())
-            return focused && !relevant.isEmpty() ? relevant : List.copyOf(options);
+            return focused ? relevant : List.copyOf(options);
         var action = progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 ? DialogueQuestAction.Action.START : DialogueQuestAction.Action.TURN_IN;
         var metadata = new DialogueEntryMetadata("quest", Set.of("quest_v2"), "", quest.toString(), "", "");

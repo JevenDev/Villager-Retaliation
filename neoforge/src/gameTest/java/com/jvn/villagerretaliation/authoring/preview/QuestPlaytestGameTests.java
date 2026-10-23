@@ -178,6 +178,59 @@ public final class QuestPlaytestGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "authoring_playtest_focus")
+    public static void focusedQuestHidesUnrelatedOffersWhenItsOwnDialogueIsUnavailable(GameTestHelper helper) throws Exception {
+        var level = helper.getLevel();
+        var server = level.getServer();
+        var player = helper.makeMockServerPlayerInLevel();
+        var provider = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 2, 1, 2);
+        var other = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 4, 1, 2);
+        var quest = ResourceLocation.parse("villagerretaliation:missing_neighbor");
+        var selected = java.util.List.copyOf(server.getPackRepository().getSelectedIds());
+        try {
+            enableTestPack(server);
+            QuestPlaytestSession.bind(player, quest, provider, false);
+            var controls = QuestPlaytestSession.require(player, quest);
+            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, provider);
+            var catalog = com.jvn.villagerretaliation.quest.VillagerQuestResources.questDialogueCatalog(server);
+            var binding = catalog.bindings(quest).stream().filter(value -> value.slot().equals("offer")).findFirst().orElseThrow();
+            var tree = catalog.tree(binding.treeId()).orElseThrow();
+            var offer = tree.entry(binding.entryId()).orElseThrow().toOption(context, tree.id(),
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata.EMPTY);
+            var unrelated = com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition.quest("other_quest", "Other quest",
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.QUESTION,
+                    new com.jvn.villagerretaliation.dialogue.normal.DialogueQuestAction(ResourceLocation.parse("villagerretaliation:blank_map_promise"),
+                            com.jvn.villagerretaliation.dialogue.normal.DialogueQuestAction.Action.START),
+                    com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata.EMPTY, 0);
+            var options = java.util.List.of(unrelated, offer);
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, options, false), options, "unchecked focus retains both quests");
+            controls.focusDialogue(true);
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, options, false), java.util.List.of(offer),
+                    "focus retains the selected quest's authored offer and hides another quest");
+            helper.assertTrue(QuestPlaytestOffers.filter(context, java.util.List.of(unrelated), false).isEmpty(),
+                    "a blocked offer or stage without dialogue never restores unrelated quests");
+            helper.assertTrue(QuestPlaytestOffers.filter(context, java.util.List.of(), false).isEmpty(),
+                    "repeated filtering keeps an empty focused menu empty");
+            var disabled = offer.withChoice(offer.choice(), false, "Requirements unmet");
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, java.util.List.of(unrelated, disabled), false), java.util.List.of(disabled),
+                    "authored disabled choices keep their availability and explanation");
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, options, true), options,
+                    "open conversations keep their authored choices");
+            var otherContext = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, other);
+            helper.assertValueEqual(QuestPlaytestOffers.filter(otherContext, options, false), options,
+                    "other characters remain available for quest interactions");
+            controls.focusDialogue(false);
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, java.util.List.of(unrelated), false), java.util.List.of(unrelated),
+                    "unchecking focus restores unrelated quests even when the selected offer is absent");
+        } finally {
+            QuestPlaytestSession.close(server, player.getUUID());
+            server.getPackRepository().setSelected(selected);
+            provider.discard();
+            other.discard();
+        }
+        helper.succeed();
+    }
+
     private static void enableTestPack(net.minecraft.server.MinecraftServer server) throws java.io.IOException {
         var directory = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("datapacks/test_content");
         java.nio.file.Files.createDirectories(directory);
