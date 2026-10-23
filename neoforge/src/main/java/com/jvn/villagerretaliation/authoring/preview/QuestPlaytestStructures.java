@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.authoring.preview;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
@@ -12,7 +11,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public final class QuestPlaytestStructures {
     private QuestPlaytestStructures() { }
@@ -24,13 +22,16 @@ public final class QuestPlaytestStructures {
 
     public static String spawn(ServerPlayer player, ResourceLocation quest, String objectiveId) {
         var controls = QuestPlaytestSession.require(player, quest);
+        if (QuestPlaytestStructureWork.pending(player)) return "A structure is already being prepared. Watch the test log for progress.";
         var definition = VillagerQuestResources.quest(player.server, quest).orElseThrow(() -> new IllegalArgumentException("Unknown quest " + quest));
         var selection = QuestPlaytestSession.selection(player);
         if (selection == null || !selection.quest().equals(quest)) throw new IllegalStateException("Prepare a quest offer first");
         if (objectiveId.isBlank() && definition.target().site() != null) {
             var provider = VillagerEntityResolver.loaded(player.server, selection.provider());
-            if (provider == null || provider.level() != player.level()) throw new IllegalStateException("Return to the quest provider before preparing its site");
-            var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+            if (selection.provider() != null && (provider == null || provider.level() != player.level()))
+                throw new IllegalStateException("Return to the quest provider before preparing its site");
+            var context = provider == null ? DialogueContext.forPlayer(player)
+                    : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
             if (!com.jvn.villagerretaliation.quest.site.QuestSiteService.offerAvailable(context, definition))
                 throw new IllegalStateException(com.jvn.villagerretaliation.quest.site.QuestSiteService.issue(context, definition));
             return "Quest site preparation requested. Accept the quest from its provider when the site is ready.";
@@ -47,7 +48,8 @@ public final class QuestPlaytestStructures {
         var holder = VillagerWorldTargetCache.structureHolder(level.registryAccess().registryOrThrow(Registries.STRUCTURE), structureId)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown structure " + structureId));
         var generator = level.getChunkSource().getGenerator();
-        var origin = new ChunkPos(player.blockPosition().offset(256, 0, 0));
+        int attempt = controls.nextStructureAttempt();
+        var origin = new ChunkPos(player.blockPosition().offset(256 * (1 + attempt % 8), 0, 256 * (attempt / 8)));
         var start = holder.value().generate(level.registryAccess(), generator, generator.getBiomeSource(), level.getChunkSource().randomState(),
                 level.getStructureManager(), level.getSeed(), origin, 0, level, biome -> true);
         if (!start.isValid()) throw new IllegalStateException("This structure cannot generate in the current terrain. Travel to suitable terrain and retry.");
@@ -65,32 +67,7 @@ public final class QuestPlaytestStructures {
                 || !level.getWorldBorder().isWithinBounds(new net.minecraft.core.BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()))) || bounds.minY() < level.getMinBuildHeight() || bounds.maxY() >= level.getMaxBuildHeight())
             throw new IllegalStateException("The structure would extend outside the world bounds");
         var chunks = ChunkPos.rangeClosed(first, last).toList();
-        for (var chunk : chunks) {
-            var loaded = level.getChunk(chunk.x, chunk.z);
-            if (!loaded.getBlockEntities().isEmpty() || loaded.getAllStarts().values().stream().anyMatch(existing -> existing.isValid() && existing.getBoundingBox().intersects(bounds)))
-                throw new IllegalStateException("The structure area contains an existing structure or block entity. Move to a clear area and retry.");
-        }
-        for (var entity : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
-                net.minecraft.world.phys.AABB.of(bounds).inflate(16))) {
-            if (entity instanceof net.minecraft.world.entity.player.Player || entity instanceof net.minecraft.world.entity.npc.Villager)
-                throw new IllegalStateException("The structure area contains a player or villager. Move to a clear area and retry.");
-        }
-        for (var chunk : chunks) start.placeInChunk(level, level.structureManager(), generator, level.getRandom(),
-                new BoundingBox(chunk.getMinBlockX(), level.getMinBuildHeight(), chunk.getMinBlockZ(),
-                        chunk.getMaxBlockX(), level.getMaxBuildHeight(), chunk.getMaxBlockZ()), chunk);
-        // visit objectives query structure starts and references, not just the placed blocks
-        level.getChunk(origin.x, origin.z).setStartForStructure(holder.value(), start);
-        for (var chunk : chunks) level.getChunk(chunk.x, chunk.z).addReferenceForStructure(holder.value(), origin.toLong());
         var target = new VillagerQuestTargets.LocatedTarget(level.dimension(), destination.getBoundingBox().getCenter(), objectiveId);
-        controls.target(target);
-        var data = VillagerQuestSavedData.get(player.serverLevel());
-        var progress = data.get(player.getUUID(), quest);
-        if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
-                && (objectiveId.isBlank() || objectiveId.equals(progress.targetObjectiveId()))) {
-            progress.setTarget(progress.startedVillagerId(), target.dimension(), target.pos(), objectiveId);
-            data.setDirty();
-            com.jvn.villagerretaliation.quest.VillagerQuestService.refreshTracker(player);
-        }
-        return "Spawned " + structureId + " at " + target.pos().toShortString() + ". Travel to the target to test it.";
+        return QuestPlaytestStructureWork.start(player, quest, level, origin, start, destination, chunks, target);
     }
 }

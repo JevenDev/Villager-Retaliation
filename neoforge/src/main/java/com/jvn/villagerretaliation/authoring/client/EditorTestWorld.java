@@ -147,45 +147,65 @@ final class EditorTestWorld {
         if (server == null || minecraft.level == null || minecraft.player == null) throw new IllegalStateException("Enter a singleplayer world to set up a quest test");
         if (applying) throw new IllegalStateException("A draft is already being applied");
         Path world = server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
-        EditorTestSnapshot.checkAssociation(world, workspace.directory());
-        EditorTestSnapshot draft = EditorTestSnapshot.capture(workspace);
+        var frozen = workspace.validationSnapshot();
         Path pack = world.resolve("datapacks/test_content");
-        Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
         applying = true;
         var playerId = minecraft.player.getUUID();
         var result = new java.util.concurrent.CompletableFuture<Void>();
-        server.execute(() -> {
-            Runnable resume = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspend(server, playerId);
-            var baseline = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server).entries();
-            var repository = server.getPackRepository();
-            var selected = List.copyOf(repository.getSelectedIds());
-            repository.reload();
-            var enabled = new ArrayList<>(selected);
-            if (!enabled.contains("file/test_content")) enabled.add("file/test_content");
-            repository.setSelected(enabled);
-            reloader.apply(server).whenComplete((ignored, failure) -> server.execute(() -> {
-                Throwable issue = failure;
-                if (issue == null) {
-                    var report = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server);
-                    var error = report.entries().stream().filter(entry -> entry.severity()
-                            == com.jvn.villagerretaliation.quest.content.QuestContentLoadReport.Severity.ERROR && !baseline.contains(entry)).findFirst();
-                    if (error.isPresent()) issue = new IllegalStateException(error.get().source() + ": " + error.get().message());
-                }
-                if (issue == null) {
-                    try { EditorTestSnapshot.remember(world, workspace.directory()); }
-                    catch (IOException exception) { issue = exception; }
-                }
-                if (issue == null) {
-                    resume.run();
-                    minecraft.execute(() -> {
-                        sessions.removeIf(existing -> existing.world().equals(world) && existing.workspace().equals(workspace.directory()));
-                        sessions.add(new Session(world, workspace.directory(), draft));
-                        restored.remove(new Location(world, workspace.directory()));
-                        applying = false;
-                        result.complete(null);
-                    });
-                } else rollback(server, minecraft, pack, backup, selected, result, issue, reloader, resume);
-            }));
+        record ExportedDraft(Path backup, EditorTestSnapshot snapshot) { }
+        java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+            try {
+                EditorTestSnapshot.checkAssociation(world, frozen.directory());
+                var draft = EditorTestSnapshot.capture(frozen);
+                return new ExportedDraft(com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(frozen, pack), draft);
+            } catch (IOException exception) {
+                throw new CompletionException(exception);
+            }
+        }, Util.ioPool()).whenComplete((exported, exportFailure) -> {
+            if (exportFailure != null) {
+                minecraft.execute(() -> { applying = false; result.completeExceptionally(exportFailure); });
+                return;
+            }
+            if (server.isStopped() || minecraft.getSingleplayerServer() != server) {
+                minecraft.execute(() -> {
+                    applying = false;
+                    result.completeExceptionally(new IllegalStateException("The test world was closed. The exported draft will load when it is reopened."));
+                });
+                return;
+            }
+            server.execute(() -> {
+                Runnable resume = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspend(server, playerId);
+                var baseline = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server).entries();
+                var repository = server.getPackRepository();
+                var selected = List.copyOf(repository.getSelectedIds());
+                repository.reload();
+                var enabled = new ArrayList<>(selected);
+                if (!enabled.contains("file/test_content")) enabled.add("file/test_content");
+                repository.setSelected(enabled);
+                reloader.apply(server).whenComplete((ignored, failure) -> server.execute(() -> {
+                    Throwable issue = failure;
+                    if (issue == null) {
+                        var report = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server);
+                        var error = report.entries().stream().filter(entry -> entry.severity()
+                                == com.jvn.villagerretaliation.quest.content.QuestContentLoadReport.Severity.ERROR && !baseline.contains(entry)).findFirst();
+                        if (error.isPresent()) issue = new IllegalStateException(error.get().source() + ": " + error.get().message());
+                    }
+                    if (issue == null) {
+                        try { EditorTestSnapshot.remember(world, workspace.directory()); }
+                        catch (IOException exception) { issue = exception; }
+                    }
+                    if (issue == null) {
+                        resume.run();
+                        minecraft.execute(() -> {
+                            sessions.removeIf(existing -> existing.world().equals(world) && existing.workspace().equals(workspace.directory()));
+                            sessions.add(new Session(world, workspace.directory(), exported.snapshot()));
+                            restored.remove(new Location(world, workspace.directory()));
+                            applying = false;
+                            result.complete(null);
+                        });
+                    } else rollback(server, minecraft, pack, exported.backup(), selected, result, issue, reloader, resume);
+                }));
+            });
         });
         return result;
     }

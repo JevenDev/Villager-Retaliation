@@ -20,6 +20,11 @@ public final class EditorLiveQuestTest {
     private static volatile com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView snapshot = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
     private static net.minecraft.server.MinecraftServer testServer;
     private static volatile boolean focused;
+    private static volatile boolean focusMenu;
+    private static volatile boolean diagnostics;
+    private static volatile boolean inspecting;
+    static boolean focusMenu() { return focusMenu; }
+    static void diagnostics(boolean value) { diagnostics = value; }
     private static volatile List<String> baselineNames = List.of();
     static List<String> baselineNames() { return baselineNames; }
     private static UUID testPlayer;
@@ -36,14 +41,20 @@ public final class EditorLiveQuestTest {
 
     static void stop() {
         focused = false;
+        focusMenu = false;
+        diagnostics = false;
+        inspecting = false;
         baselineNames = List.of();
         requests.incrementAndGet();
         var server = testServer;
         var player = testPlayer;
         testServer = null;
         testPlayer = null;
-        if (server != null && player != null && !server.isStopped()) server.execute(() ->
-                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.close(server, player));
+        if (server != null && player != null && !server.isStopped()) server.execute(() -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.close(server, player);
+            var connected = server.getPlayerList().getPlayer(player);
+            if (connected != null) VillagerQuestService.debugTraceSetEnabled(connected, false);
+        });
         snapshot = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
         view = new View("", "", "Not started", List.of(), false);
     }
@@ -58,6 +69,13 @@ public final class EditorLiveQuestTest {
 
     static void startAt(AuthoringWorkspace workspace, AuthoringDocument document, Boolean hold, String stage) {
         submit(workspace, document, (player, quest) -> {
+            if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestDiscovery.playerOnly(player.server, quest)) {
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bindDiscovery(player, quest, Boolean.TRUE.equals(hold));
+                focused = true;
+                var result = VillagerQuestService.debugPlaytestStartDiscovery(player, quest);
+                if (result.status().equals("started") && !stage.isBlank()) VillagerQuestService.debugSetQuestStage(player, quest, stage);
+                return result.status() + ": " + result.text();
+            }
             Villager provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, quest, null);
             com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, Boolean.TRUE.equals(hold));
             focused = true;
@@ -71,25 +89,35 @@ public final class EditorLiveQuestTest {
         });
     }
 
-    public static boolean focusedInteractions() {
-        return focused && testServer == Minecraft.getInstance().getSingleplayerServer();
+    public static boolean focusedInteractions(int villager) {
+        return focused && focusMenu && snapshot.provider() == villager
+                && testServer == Minecraft.getInstance().getSingleplayerServer();
     }
 
     public static boolean requiresInteraction(String type) {
-        return focusedInteractions() && snapshot.objectives().stream().anyMatch(objective -> objective.type().equals(type));
+        return snapshot.objectives().stream().anyMatch(objective -> objective.type().equals(type));
     }
 
     static void offer(AuthoringWorkspace workspace, AuthoringDocument document, boolean hold, boolean restart) {
         UUID requested = Minecraft.getInstance().hitResult instanceof net.minecraft.world.phys.EntityHitResult hit
                 && hit.getEntity() instanceof Villager ? hit.getEntity().getUUID() : null;
         submit(workspace, document, (player, quest) -> {
+            if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestDiscovery.playerOnly(player.server, quest)) {
+                if (restart) {
+                    VillagerQuestService.debugRemoveQuest(player, quest);
+                    com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(player.serverLevel()).remove(player.getUUID(), quest);
+                }
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bindDiscovery(player, quest, hold);
+                focused = true;
+                return "Discovery test ready. Trigger an authored discovery route, then accept journal offers normally.";
+            }
             var provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, quest, requested);
             if (restart) VillagerQuestService.debugRemoveQuest(player, quest);
             com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, hold);
             focused = true;
             VillagerQuestService.debugTraceSetEnabled(player, true);
             return "Quest provider: " + provider.getName().getString() + ". Talk to this villager to accept the quest.";
-        }, !restart);
+        }, false);
     }
 
     static void returnToProvider(AuthoringWorkspace workspace, AuthoringDocument document) {
@@ -124,9 +152,7 @@ public final class EditorLiveQuestTest {
             if (target == null) throw new IllegalStateException("Accept the quest or prepare a structure to resolve its target first");
             var level = player.server.getLevel(target.dimension());
             if (level == null) throw new IllegalStateException("The target dimension is unavailable");
-            level.getChunkAt(target.pos());
-            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, target.pos().getX(), target.pos().getZ());
-            player.teleportTo(level, target.pos().getX() + .5, y, target.pos().getZ() + .5, player.getYRot(), player.getXRot());
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.teleport(player, level, target.pos());
             return "Travelled to the quest target. Return to the provider when you are ready to turn it in.";
         });
     }
@@ -136,7 +162,7 @@ public final class EditorLiveQuestTest {
     }
 
     static void inspect(AuthoringWorkspace workspace, AuthoringDocument document) {
-        submit(workspace, document, (player, quest) -> "", false);
+        submit(workspace, document, (player, quest) -> "", false, true);
     }
 
     static void clear(AuthoringWorkspace workspace, AuthoringDocument document) {
@@ -157,8 +183,11 @@ public final class EditorLiveQuestTest {
             var data = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel());
             var progress = data.get(player.getUUID(), quest);
             var provider = progress == null || progress.startedVillagerId() == null ? null : player.serverLevel().getEntity(progress.startedVillagerId());
-            if (!(provider instanceof Villager villager)) return "The quest provider is not loaded. Start a live test first.";
-            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
+            if (!(provider instanceof Villager) && (progress == null || progress.startedVillagerId() != null))
+                return "The quest provider is not loaded. Start a live test first.";
+            var context = provider instanceof Villager villager
+                    ? com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager)
+                    : com.jvn.villagerretaliation.dialogue.DialogueContext.forPlayer(player);
             return VillagerQuestService.performAction(context, quest, com.jvn.villagerretaliation.action.VillagerActionDefinition.QuestAction.TURN_IN)
                     .map(result -> result.status() + ": " + result.text()).orElse("Quest is unavailable");
         });
@@ -176,6 +205,15 @@ public final class EditorLiveQuestTest {
             com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, context.villager().getId(), option);
             return "Selected " + choice.label();
         });
+    }
+
+    static void focusDialogue(AuthoringWorkspace workspace, AuthoringDocument document, boolean value) {
+        submit(workspace, document, (player, quest) -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).focusDialogue(value);
+            focusMenu = value;
+            return value ? "Provider dialogue focused on this quest. Other characters and open conversations remain available."
+                    : "All normal dialogue available.";
+        }, false);
     }
 
     static void hold(AuthoringWorkspace workspace, AuthoringDocument document, boolean value) {
@@ -223,6 +261,48 @@ public final class EditorLiveQuestTest {
         });
     }
 
+    static void simulateCriterion(AuthoringWorkspace workspace, AuthoringDocument document, String objective) {
+        submit(workspace, document, (player, quest) -> {
+            var context = VillagerQuestService.debugPlaytestContext(player, quest);
+            var definition = context.definition().objectives().stream().filter(candidate -> candidate.id().equals(objective))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unknown objective " + objective));
+            return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.simulateCriterion(context, definition);
+        });
+    }
+
+    static void discovery(AuthoringWorkspace workspace, AuthoringDocument document, String route, boolean travel) {
+        submit(workspace, document, (player, quest) ->
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestDiscovery.prepare(player, quest, route, travel));
+    }
+
+    static void travelObjective(AuthoringWorkspace workspace, AuthoringDocument document, String objective) {
+        submit(workspace, document, (player, quest) -> {
+            var context = VillagerQuestService.debugPlaytestContext(player, quest);
+            var definition = context.definition().objectives().stream().filter(candidate -> candidate.id().equals(objective))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unknown objective " + objective));
+            return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.travel(context, definition);
+        });
+    }
+
+    static void environment(AuthoringWorkspace workspace, AuthoringDocument document, String preset) {
+        submit(workspace, document, (player, quest) -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest);
+            switch (preset) {
+                case "Day" -> player.serverLevel().setDayTime(1000);
+                case "Night" -> player.serverLevel().setDayTime(13000);
+                case "Clear weather" -> player.serverLevel().setWeatherParameters(12000, 0, false, false);
+                case "Rain" -> player.serverLevel().setWeatherParameters(0, 12000, true, false);
+                case "Thunder" -> player.serverLevel().setWeatherParameters(0, 12000, true, true);
+                case "Survival" -> player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+                case "Creative" -> player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                case "Peaceful" -> player.server.setDifficulty(net.minecraft.world.Difficulty.PEACEFUL, true);
+                case "Normal difficulty" -> player.server.setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+                default -> throw new IllegalArgumentException("Unknown test environment preset");
+            }
+            return "Test environment: " + preset;
+        });
+    }
+
     static void prepare(AuthoringWorkspace workspace, AuthoringDocument document, String objective, String value) {
         submit(workspace, document, (player, quest) -> {
             var context = VillagerQuestService.debugPlaytestContext(player, quest);
@@ -237,10 +317,17 @@ public final class EditorLiveQuestTest {
     }
 
     private static void submit(AuthoringWorkspace workspace, AuthoringDocument document, Action action, boolean requireCurrent) {
+        submit(workspace, document, action, requireCurrent, false);
+    }
+
+    private static void submit(AuthoringWorkspace workspace, AuthoringDocument document, Action action, boolean requireCurrent, boolean inspection) {
+        if (inspection && (inspecting || view.busy() || EditorTestWorld.applying())) return;
         var minecraft = Minecraft.getInstance();
         var server = minecraft.getSingleplayerServer();
         if (document.kind() != DefinitionKind.QUEST || minecraft.player == null || !EditorTestWorld.active(workspace))
             throw new IllegalArgumentException("Set up quest testing in the current world first");
+        if (EditorTestWorld.applying()) throw new IllegalStateException("Wait for the draft to finish applying");
+        if (view.busy()) throw new IllegalStateException("Wait for the current quest operation to finish");
         if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply changes in Playtest to load this draft.");
         boolean trackCoverage = EditorTestWorld.currentLogic(workspace);
         var source = document.json();
@@ -251,41 +338,56 @@ public final class EditorLiveQuestTest {
         testServer = server;
         testPlayer = playerId;
         var previous = view;
-        view = new View(quest.toString(), previous.message(), previous.summary(), previous.lines(), true);
+        if (inspection) inspecting = true;
+        else view = new View(quest.toString(), previous.message(), previous.summary(), previous.lines(), true);
         server.execute(() -> {
-            if (requests.get() != request || !EditorTestWorld.sameWorld(server, world)) return;
-            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-            if (player == null) { view = new View(quest.toString(), "Player left the test world", "", List.of(), false); return; }
-            String message;
             try {
+                if (requests.get() != request || !EditorTestWorld.sameWorld(server, world)) return;
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player == null) {
+                    minecraft.execute(() -> {
+                        if (requests.get() == request) view = new View(quest.toString(), "Player left the test world", "", List.of(), false);
+                    });
+                    return;
+                }
                 String problem = EditorContentTools.playtestProblem(document, com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.get(server));
                 if (problem != null) throw new IllegalStateException(problem);
-                message = action.run(player, quest);
+                String message = action.run(player, quest);
+                var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
+                if (controls != null) controls.log(message);
+                boolean nextFocus = controls != null && controls.focusDialogue();
+                var nextSnapshot = VillagerQuestService.debugPlaytestView(player, quest);
+                var nextBaselines = controls == null ? List.<String>of() : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, quest);
+                List<String> lines = new ArrayList<>();
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, quest);
+                if (diagnostics) {
+                    var state = VillagerQuestService.debugInspectQuest(player, quest);
+                    lines.addAll(state.lines());
+                    if (!state.message().isBlank()) lines.add(state.message());
+                    if (progress != null) lines.addAll(VillagerQuestService.debugObjectives(player, quest).lines());
+                    lines.addAll(VillagerQuestService.debugTraceRecent(player, 48).lines());
+                }
+                String summary = progress == null ? "Not started" : "State: " + progress.state().name().toLowerCase(java.util.Locale.ROOT)
+                        + " | Stage: " + progress.currentStage();
+                if (requests.get() != request) return;
+                if (trackCoverage && controls != null) {
+                    var batch = controls.drainCoverage();
+                    minecraft.execute(() -> coverage.accept(document, source, batch));
+                }
+                minecraft.execute(() -> {
+                    if (requests.get() != request) return;
+                    focusMenu = nextFocus;
+                    baselineNames = nextBaselines;
+                    snapshot = nextSnapshot;
+                    view = new View(quest.toString(), message.isBlank() ? previous.message() : message, summary, List.copyOf(lines), false);
+                });
+            } catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException exception) {
+                minecraft.execute(() -> {
+                    if (requests.get() == request) view = new View(quest.toString(), exception.getMessage(), previous.summary(), previous.lines(), false);
+                });
+            } finally {
+                if (inspection) inspecting = false;
             }
-            catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException exception) {
-                if (requests.get() == request) view = new View(quest.toString(), exception.getMessage(), previous.summary(), previous.lines(), false);
-                return;
-            }
-            var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
-            if (controls != null) controls.log(message);
-            var nextSnapshot = VillagerQuestService.debugPlaytestView(player, quest);
-            baselineNames = controls == null ? List.of() : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, quest);
-            List<String> lines = new ArrayList<>();
-            var state = VillagerQuestService.debugInspectQuest(player, quest);
-            lines.addAll(state.lines());
-            if (!state.message().isBlank()) lines.add(state.message());
-            var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, quest);
-            if (progress != null) lines.addAll(VillagerQuestService.debugObjectives(player, quest).lines());
-            lines.addAll(VillagerQuestService.debugTraceRecent(player, 48).lines());
-            String summary = progress == null ? "Not started" : "State: " + progress.state().name().toLowerCase(java.util.Locale.ROOT)
-                    + " | Stage: " + progress.currentStage();
-            if (requests.get() != request) return;
-            if (trackCoverage && controls != null) {
-                var batch = controls.drainCoverage();
-                minecraft.execute(() -> coverage.accept(document, source, batch));
-            }
-            snapshot = nextSnapshot;
-            view = new View(quest.toString(), message.isBlank() ? previous.message() : message, summary, List.copyOf(lines), false);
         });
     }
 

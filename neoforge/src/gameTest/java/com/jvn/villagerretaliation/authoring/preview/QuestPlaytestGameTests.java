@@ -41,9 +41,15 @@ public final class QuestPlaytestGameTests {
             var unrelated = com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition.simple("unrelated", "Small talk",
                     com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.QUESTION, 0);
             var offer = QuestPlaytestOffers.filter(context, java.util.List.of(unrelated), false);
-            helper.assertValueEqual(offer.size(), 1, "the test offers only its selected quest");
-            helper.assertFalse(offer.getFirst().id().equals(unrelated.id()), "unrelated dialogue is hidden");
-            helper.assertTrue(QuestPlaytestOffers.filter(otherContext, java.util.List.of(unrelated), false).isEmpty(), "a different villager cannot offer the selected quest");
+            helper.assertValueEqual(offer.size(), 2, "normal dialogue remains available beside the test offer");
+            QuestPlaytestSession.require(player, quest.id()).focusDialogue(true);
+            var focused = QuestPlaytestOffers.filter(context, java.util.List.of(unrelated), false);
+            helper.assertValueEqual(focused.size(), 1, "focused provider dialogue shows the selected quest");
+            helper.assertFalse(focused.getFirst().id().equals(unrelated.id()), "focus hides unrelated provider offers");
+            helper.assertValueEqual(QuestPlaytestOffers.filter(otherContext, java.util.List.of(unrelated), false), java.util.List.of(unrelated),
+                    "other characters remain available for quest conversations");
+            helper.assertValueEqual(QuestPlaytestOffers.filter(context, java.util.List.of(unrelated), true), java.util.List.of(unrelated),
+                    "active dialogue trees retain every authored response");
             var service = com.jvn.villagerretaliation.quest.VillagerQuestService.performAction(context, quest.id(),
                     com.jvn.villagerretaliation.action.VillagerActionDefinition.QuestAction.START).orElseThrow();
             helper.assertValueEqual(service.status(), "started", "normal acceptance starts the quest");
@@ -79,7 +85,7 @@ public final class QuestPlaytestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "authoring_playtest_structure", timeoutTicks = 200)
+    @GameTest(template = "empty", batch = "authoring_playtest_structure", timeoutTicks = 1400)
     public static void spawnedStructureIsBoundBeforeAcceptanceAndDetectedDuringGameplay(GameTestHelper helper) throws Exception {
         var level = helper.getLevel();
         var server = level.getServer();
@@ -89,15 +95,31 @@ public final class QuestPlaytestGameTests {
         player.teleportTo(provider.getX() - 1, provider.getY(), provider.getZ());
         var quest = fixture(true);
         var selected = java.util.List.copyOf(server.getPackRepository().getSelectedIds());
-        try (var restore = com.jvn.villagerretaliation.quest.VillagerQuestResources.preserveTestOverride()) {
-            enableTestPack(server);
-            com.jvn.villagerretaliation.quest.VillagerQuestResources.installCompiledTestCatalog(server, java.util.List.of(quest));
-            QuestPlaytestSession.open(player, quest.id(), false);
-            var controls = QuestPlaytestSession.require(player, quest.id());
-            controls.provider(provider);
-            QuestPlaytestStructures.spawn(player, quest.id(), "");
+        var restore = com.jvn.villagerretaliation.quest.VillagerQuestResources.preserveTestOverride();
+        helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
+            public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo test) { }
+            public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo original, net.minecraft.gametest.framework.GameTestInfo rerun, net.minecraft.gametest.framework.GameTestRunner runner) { }
+            public void testPassed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            public void testFailed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) { cleanup(); }
+            private void cleanup() {
+                QuestPlaytestSession.close(server, player.getUUID());
+                server.getPackRepository().setSelected(selected);
+                provider.discard();
+                try { restore.close(); } catch (Exception exception) { throw new IllegalStateException(exception); }
+            }
+        });
+        enableTestPack(server);
+        com.jvn.villagerretaliation.quest.VillagerQuestResources.installCompiledTestCatalog(server, java.util.List.of(quest));
+        QuestPlaytestSession.open(player, quest.id(), false);
+        var controls = QuestPlaytestSession.require(player, quest.id());
+        controls.provider(provider);
+        QuestPlaytestStructures.spawn(player, quest.id(), "");
+        helper.assertTrue(controls.target("") == null, "structure preparation returns before loading and placement");
+        helper.assertTrue(QuestPlaytestStructureWork.pending(player), "preparation is queued");
+        QuestPlaytestStructures.spawn(player, quest.id(), "");
+        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(controls.target("") != null,
+                "waiting for asynchronous structure preparation: " + controls.log())).thenExecute(() -> {
             var target = controls.target("");
-            helper.assertTrue(target != null, "the spawned structure has a bound test target before accepting");
             var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, provider);
             helper.assertValueEqual(com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.locateInitialTarget(context, quest.asQuestDefinition()).orElseThrow(), target,
                     "normal acceptance locates the spawned structure");
@@ -107,12 +129,8 @@ public final class QuestPlaytestGameTests {
                     "real structure starts and references satisfy normal visit detection");
             QuestPlaytestStructures.spawn(player, quest.id(), "");
             helper.assertValueEqual(controls.target(""), target, "repeated setup reuses the same structure");
-        } finally {
-            QuestPlaytestSession.close(server, player.getUUID());
-            server.getPackRepository().setSelected(selected);
-            provider.discard();
-        }
-        helper.succeed();
+            helper.assertFalse(QuestPlaytestStructureWork.pending(player), "completed preparation leaves no queued job");
+        }).thenSucceed();
     }
 
     private static void enableTestPack(net.minecraft.server.MinecraftServer server) throws java.io.IOException {

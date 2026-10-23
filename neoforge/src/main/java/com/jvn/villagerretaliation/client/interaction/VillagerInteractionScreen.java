@@ -3993,7 +3993,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             buttons.add(followInteractionButton());
             buttons.add(stayInteractionButton(stayAvailable));
         }
-        if (com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedInteractions()) {
+        if (com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedInteractions(this.villagerEntityId)) {
             buttons.removeIf(button -> switch (button.id()) {
                 case ADVENTURES, INVENTORY, FOLLOW, STAY -> false;
                 case TALK -> this.dialogueOptions.stream().noneMatch(option -> !isQuestOption(option)) && !this.campaignConversation.hasTopics();

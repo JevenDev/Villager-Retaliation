@@ -25,7 +25,8 @@ public final class QuestPlaytestBaseline {
     private record Snapshot(ResourceKey<Level> dimension, Vec3 position, float yaw, float pitch,
             List<ItemStack> inventory, int selected, int experienceLevel, int totalExperience, float experienceProgress,
             CompoundTag progress, Map<String, VillagerQuestFacts.FactSnapshot> facts,
-            QuestPlaytestSession.Selection provider, Integer reputation) { }
+            QuestPlaytestSession.Selection provider, Integer reputation,
+            com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.Offer discovery) { }
 
     public static String name(String value) {
         String name = value.trim();
@@ -52,12 +53,13 @@ public final class QuestPlaytestBaseline {
         var facts = VillagerQuestFacts.get(player.serverLevel());
         var scopes = Map.of(QuestScopeKey.player(player.getUUID()).asString(), facts.debugSnapshot(QuestScopeKey.player(player.getUUID()).asString()),
                 QuestScopeKey.quest(player.getUUID(), quest).asString(), facts.debugSnapshot(QuestScopeKey.quest(player.getUUID(), quest).asString()));
-        var reputation = VillagerReputationSavedData.get(player.serverLevel()).get(selection.provider(), player.getUUID());
+        var reputation = selection.provider() == null ? null : VillagerReputationSavedData.get(player.serverLevel()).get(selection.provider(), player.getUUID());
         var inventory = new java.util.ArrayList<ItemStack>();
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) inventory.add(player.getInventory().getItem(i).copy());
         saved.put(name, new Snapshot(player.level().dimension(), player.position(), player.getYRot(), player.getXRot(),
                 inventory, player.getInventory().selected, player.experienceLevel, player.totalExperience, player.experienceProgress,
-                progress, scopes, selection, reputation == null ? null : reputation.reputation()));
+                progress, scopes, selection, reputation == null ? null : reputation.reputation(),
+                com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(player.serverLevel()).offers(player.getUUID()).get(quest)));
     }
 
     public static void restore(ServerPlayer player, ResourceLocation quest, String value) {
@@ -68,7 +70,8 @@ public final class QuestPlaytestBaseline {
         if (level == null || providerLevel == null) throw new IllegalStateException("A baseline dimension is unavailable");
         providerLevel.getChunkAt(baseline.provider().position());
         var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(player.server, baseline.provider().provider());
-        if (provider == null || !provider.isAlive()) throw new IllegalStateException("The baseline provider is no longer alive or loaded");
+        if (baseline.provider().provider() != null && (provider == null || !provider.isAlive()))
+            throw new IllegalStateException("The baseline provider is no longer alive or loaded");
         var data = VillagerQuestSavedData.get(player.serverLevel());
         var facts = VillagerQuestFacts.get(player.serverLevel());
         data.debugSnapshotQuest(player.getUUID(), quest);
@@ -88,8 +91,14 @@ public final class QuestPlaytestBaseline {
             player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
             player.getInventory().setChanged();
             player.inventoryMenu.broadcastChanges();
-            VillagerReputationSavedData.get(player.serverLevel()).debugRestoreEntry(provider.getUUID(), player.getUUID(), baseline.reputation());
-            QuestPlaytestSession.bind(player, quest, provider, QuestPlaytestSession.require(player, quest).hold());
+            var discoveries = com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(player.serverLevel());
+            discoveries.remove(player.getUUID(), quest);
+            if (baseline.discovery() != null) discoveries.offer(player.getUUID(), quest, baseline.discovery());
+            if (provider == null) QuestPlaytestSession.bindDiscovery(player, quest, QuestPlaytestSession.require(player, quest).hold());
+            else {
+                VillagerReputationSavedData.get(player.serverLevel()).debugRestoreEntry(provider.getUUID(), player.getUUID(), baseline.reputation());
+                QuestPlaytestSession.bind(player, quest, provider, QuestPlaytestSession.require(player, quest).hold());
+            }
             player.teleportTo(level, baseline.position().x, baseline.position().y, baseline.position().z, baseline.yaw(), baseline.pitch());
             com.jvn.villagerretaliation.quest.VillagerQuestService.refreshTracker(player);
         } finally { suspend.run(); }

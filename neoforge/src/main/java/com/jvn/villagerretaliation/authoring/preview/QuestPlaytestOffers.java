@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueQuestAction;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -89,24 +88,22 @@ public final class QuestPlaytestOffers {
 
     public static List<DialogueOptionDefinition> filter(DialogueContext context, List<DialogueOptionDefinition> options, boolean activeTree) {
         var selection = QuestPlaytestSession.selection(context.player());
-        if (selection == null) return List.copyOf(options);
+        if (selection == null || selection.provider() == null) return List.copyOf(options);
         var quest = selection.quest();
         var bindings = VillagerQuestResources.questDialogueCatalog(context.player().server).bindings(quest);
         var definition = VillagerQuestResources.quest(context.player().server, quest).orElse(null);
-        if (definition == null) return List.of();
+        if (definition == null) return List.copyOf(options);
         var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest);
-        if (progress == null && !selection.provider().equals(context.providerId())) return List.of();
+        if (activeTree || !selection.provider().equals(context.providerId())) return List.copyOf(options);
         var relevant = options.stream().filter(option -> quest.equals(option.questAction().questId())
                 || quest.toString().equals(option.metadata().quest())
                 || QuestStageBranchOptionIds.parse(option.id()).map(key -> key.questId().equals(quest)).orElse(false)
                 || option.treeReference() != null && (bindings.stream().anyMatch(binding -> binding.treeId().equals(option.treeReference().treeId()))
                         || definition.links().dialogueTree() != null && definition.links().dialogueTree().equals(option.treeReference().treeId())))
                 .toList();
-        if (activeTree) {
-            if (relevant.isEmpty()) return List.of();
-            return options.stream().filter(option -> relevant.contains(option) || DialogueTreeService.LEAVE_OPTION_ID.equals(option.id())).toList();
-        }
-        if (!selection.provider().equals(context.providerId()) || !bindings.isEmpty() || !definition.links().isEmpty() || !relevant.isEmpty()) return relevant;
+        boolean focused = QuestPlaytestSession.require(context.player(), quest).focusDialogue();
+        if (!bindings.isEmpty() || !definition.links().isEmpty() || !relevant.isEmpty())
+            return focused && !relevant.isEmpty() ? relevant : List.copyOf(options);
         var action = progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 ? DialogueQuestAction.Action.START : DialogueQuestAction.Action.TURN_IN;
         var metadata = new DialogueEntryMetadata("quest", Set.of("quest_v2"), "", quest.toString(), "", "");
@@ -114,6 +111,8 @@ public final class QuestPlaytestOffers {
                 action == DialogueQuestAction.Action.START ? "Accept quest" : "Turn in quest", DialogueRequestType.QUESTION,
                 new DialogueQuestAction(quest, action), metadata, 0);
         boolean available = action != DialogueQuestAction.Action.START || VillagerQuestService.matchesState(context, quest, Set.of("available"));
-        return List.of(option.withChoice(option.choice(), available, available ? "" : "Quest offer conditions or prerequisites are not met. Check runtime diagnostics."));
+        var result = new java.util.ArrayList<>(focused ? List.<DialogueOptionDefinition>of() : options);
+        result.add(option.withChoice(option.choice(), available, available ? "" : "Quest offer conditions or prerequisites are not met. Check runtime diagnostics."));
+        return List.copyOf(result);
     }
 }

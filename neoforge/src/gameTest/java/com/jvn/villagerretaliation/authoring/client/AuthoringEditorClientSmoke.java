@@ -268,8 +268,8 @@ public final class AuthoringEditorClientSmoke {
             require(worldLoadingGap < 500_000_000, "Cold campaign validation keeps the game rendering in Playtest.");
             capture("00-campaign-playtest");
         });
-        replaceText(() -> poolPoint(1450, 178), () -> "missing neighbour");
-        click(() -> poolPoint(1450, 218));
+        replaceText(() -> poolPoint(1450, 98), () -> "missing neighbour");
+        click(() -> poolPoint(1450, 138));
         STEPS.add(() -> {
             var query = ((imgui.type.ImString) field(editor, "playtestSearch")).get();
             require(query.equals("missing neighbour"), "Playtest exposes an editable search field.");
@@ -279,10 +279,10 @@ public final class AuthoringEditorClientSmoke {
                     && matches.getFirst().title().equals("A Missing Neighbor"), "The default campaign's Missing Neighbor quest is discoverable by either spelling.");
             capture("00-campaign-playtest-search");
         });
-        click(() -> poolPoint(1450, 250));
+        click(() -> poolPoint(1450, 170));
         STEPS.add(() -> require(((AuthoringDocument) field(editor, "document")).id().equals("villagerretaliation:missing_neighbor")
                 && (int) field(editor, "view") == 3, "Selecting the search result opens Missing Neighbor inside Playtest."));
-        click(() -> poolPoint(1870, 178));
+        click(() -> poolPoint(1870, 98));
         STEPS.add(() -> {
             require(((imgui.type.ImString) field(editor, "playtestSearch")).get().isEmpty(), "Clear restores the full Playtest content list.");
             capture("00-campaign-playtest-missing-neighbor");
@@ -459,6 +459,8 @@ public final class AuthoringEditorClientSmoke {
         waitUntil(() -> reloadCheck.isDone());
         STEPS.add(() -> {
             reloadCheck.join();
+            EditorLiveQuestTest.inspect(workspace, document);
+            require(!EditorLiveQuestTest.view().busy(), "Background inspection never locks the playtest controls.");
             EditorLiveQuestTest.offer(workspace, document, false, false);
         });
         waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("offered"));
@@ -483,8 +485,8 @@ public final class AuthoringEditorClientSmoke {
                 method.setAccessible(true);
                 var buttons = (java.util.List<?>) method.invoke(interaction);
                 var ids = buttons.stream().map(button -> field(button, "id").toString()).toList();
-                require(ids.contains("ADVENTURES") && ids.contains("INVENTORY") && ids.contains("FOLLOW"), "The focused menu keeps quests, inventory, and follow: " + ids);
-                require(!ids.contains("PROFILE") && !ids.contains("STUDY") && !ids.contains("RECRUIT") && !ids.contains("DUEL"), "Unrelated villager options are suspended: " + ids);
+                require(ids.contains("ADVENTURES") && ids.contains("INVENTORY") && ids.contains("FOLLOW"), "The normal test menu keeps quests, inventory, and follow: " + ids);
+                require(ids.contains("PROFILE"), "Normal villager options remain available by default: " + ids);
             } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
             capture("91a-natural-quest-provider");
             var server = Minecraft.getInstance().getSingleplayerServer();
@@ -495,6 +497,7 @@ public final class AuthoringEditorClientSmoke {
                 var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
                 var data = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel());
                 require(data.get(playerId, selection.quest()) == null, "An offer waits for the player's acceptance.");
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, selection.quest()).focusDialogue(true);
                 var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
                 for (int step = 0; step < 8 && data.get(playerId, selection.quest()) == null; step++) {
                     var choices = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.dialogueOptions(context,
@@ -833,7 +836,8 @@ public final class AuthoringEditorClientSmoke {
                 set("guideStep", -1);
             });
             buildLiveWorldSteps();
-            finishSteps("Playtest apply, explicit replay, baseline restore and reload rollback passed.");
+            buildDiscoveryPlaytestSteps();
+            finishSteps("Playtest apply, replay, baselines, reload rollback, menu tabs and discovery quest completion passed.");
             return;
         }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorPlaytestSmokeOnly")) {
@@ -2489,7 +2493,11 @@ public final class AuthoringEditorClientSmoke {
         });
         waitUntil(() -> {
             if (EditorLiveQuestTest.view().busy()) return false;
+            long started = System.nanoTime();
             invoke("applyPlaytestDraft", new Class<?>[0]);
+            double elapsed = (System.nanoTime() - started) / 1e6;
+            System.out.printf(java.util.Locale.ROOT, "Playtest apply dispatch: %.3f ms%n", elapsed);
+            require(elapsed < 100, "Applying a draft returns to rendering while export and validation run in the background.");
             return true;
         });
         waitUntil(() -> {
@@ -2507,6 +2515,17 @@ public final class AuthoringEditorClientSmoke {
                     "Applying logic keeps the same test world.");
             capture("31-playtest-applied-draft");
         });
+        click(() -> poolPoint(1570, 337));
+        pause(300);
+        STEPS.add(() -> capture("31a-playtest-tools"));
+        click(() -> poolPoint(1650, 337));
+        pause(900);
+        STEPS.add(() -> {
+            require(!EditorLiveQuestTest.view().lines().isEmpty(), "The visible Log tab loads runtime diagnostics.");
+            capture("31b-playtest-log");
+        });
+        click(() -> poolPoint(1320, 337));
+        pause(300);
         waitUntil(() -> liveCheck.isDone());
         STEPS.add(() -> {
             liveCheck.join();
@@ -2581,8 +2600,79 @@ public final class AuthoringEditorClientSmoke {
             document.undo();
             require(EditorTestWorld.currentSnapshot(workspace), "Rollback restores the last applied draft.");
             capture("32-playtest-reload-rollback");
-            invoke("leavePlaytest", new Class<?>[] {int.class}, 1);
+            document.edit("Require explicit restart", root -> {
+                root.addProperty("revision", 4);
+                root.add("migration", JsonParser.parseString("{\"active_policy\":\"restart\"}").getAsJsonObject());
+            });
+            require(!EditorTestWorld.currentLogic(workspace), "The migration draft is intentionally unapplied.");
         });
+        waitUntil(() -> {
+            if (EditorLiveQuestTest.view().busy()) return false;
+            EditorLiveQuestTest.offer(workspace, document, false, true);
+            return true;
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("offered"));
+        STEPS.add(() -> {
+            require(invoke("playtestRestartReason", new Class<?>[0]).toString().isEmpty(),
+                    "Restarting an unapplied migration removes the apply deadlock.");
+            invoke("applyPlaytestDraft", new Class<?>[0]);
+        });
+        waitUntil(() -> !EditorTestWorld.applying() && EditorTestWorld.currentSnapshot(workspace));
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().state().equals("offered"), "Applying after restart keeps normal acceptance explicit.");
+            capture("33-playtest-restart-after-edit");
+            if (!"improvements".equals(System.getProperty("villagerretaliation.authoringEditorPlaytestSmokeOnly")))
+                invoke("leavePlaytest", new Class<?>[] {int.class}, 1);
+        });
+    }
+
+    private static void buildDiscoveryPlaytestSteps() {
+        STEPS.add(() -> {
+            document = workspace.createDocument(DefinitionKind.QUEST, "test:discovery_playtest");
+            document.replaceJson("""
+                    {"schema":"villagerretaliation:quest/v3","id":"test:discovery_playtest","localization_prefix":"test.quest.discovery_playtest",
+                     "provider":{"type":"villagerretaliation:discovery"},"metadata":{"questline":"authored"},"display":{"title":{"key":"#title"}},
+                     "availability":{"max_starts":0,"max_completions":0},
+                     "discovery":[{"id":"letter","event":"item_acquired","mode":"automatic","match":{"book":"test:letter"}}],
+                     "entry_stage":"work","stages":[
+                       {"id":"work","objectives":[{"id":"diamond","type":"item_check","item":"minecraft:diamond","count":1}],"transition":{"stage":"return"}},
+                       {"id":"return","objectives":[]}]}
+                    """);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            workspace.documents().stream().filter(value -> value.resourcePath().endsWith("/discovery_playtest/locales/en_us.json"))
+                    .findFirst().orElseThrow().edit("Set discovery title", root -> root.addProperty("test.quest.discovery_playtest.title", "Discovery playtest"));
+            var errors = workspace.validate().stream().filter(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+            require(errors.isEmpty(), "The discovery client fixture is valid: " + errors);
+            try { reloadCheck = EditorTestWorld.apply(workspace); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> {
+            reloadCheck.join();
+            EditorLiveQuestTest.offer(workspace, document, true, true);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().playerOnly());
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().provider() == -1 && EditorLiveQuestTest.snapshot().discoveries().size() == 1,
+                    "Discovery playtesting exposes the route without fabricating a villager.");
+            capture("34-discovery-playtest-offer");
+            EditorLiveQuestTest.baseline(workspace, document, "Before discovery", "save");
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> EditorLiveQuestTest.discovery(workspace, document, "letter", false));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("active"));
+        STEPS.add(() -> EditorLiveQuestTest.prepare(workspace, document, EditorLiveQuestTest.snapshot().objectives().getFirst().id(), ""));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().ready());
+        STEPS.add(() -> {
+            capture("35-discovery-playtest-ready");
+            EditorLiveQuestTest.next(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("return"));
+        STEPS.add(() -> EditorLiveQuestTest.turnIn(workspace, document));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("completed"));
+        STEPS.add(() -> EditorLiveQuestTest.baseline(workspace, document, "Before discovery", "restore"));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("offered"));
+        STEPS.add(() -> invoke("leavePlaytest", new Class<?>[] {int.class}, 1));
     }
 
     private static void confirmYes() {

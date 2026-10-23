@@ -29,7 +29,7 @@ public final class QuestPlaytestSession {
 
     public static void bind(ServerPlayer player, ResourceLocation quest, net.minecraft.world.entity.npc.Villager provider, boolean hold) {
         var selected = selection(player);
-        if (selected == null || !selected.quest().equals(quest) || !selected.provider().equals(provider.getUUID())) {
+        if (selected == null || !selected.quest().equals(quest) || !java.util.Objects.equals(selected.provider(), provider.getUUID())) {
             close(player.server, player.getUUID());
             open(player, quest, hold);
         }
@@ -42,12 +42,27 @@ public final class QuestPlaytestSession {
         controls.provider(provider);
     }
 
+    public static void bindDiscovery(ServerPlayer player, ResourceLocation quest, boolean hold) {
+        var selected = selection(player);
+        if (selected == null || !selected.quest().equals(quest) || selected.provider() != null) {
+            close(player.server, player.getUUID());
+            open(player, quest, hold);
+        }
+        var controls = require(player, quest);
+        controls.clear();
+        controls.hold(hold);
+        controls.provider = null;
+        controls.dimension = player.level().dimension();
+        controls.providerPosition = player.blockPosition();
+    }
+
     public static synchronized Controls controls(ServerPlayer player, ResourceLocation quest) {
         if (player == null) return null;
         var sessions = SESSIONS.get(player.server);
         var session = sessions == null ? null : sessions.get(new Key(player.getUUID(), quest));
         if (session == null || !player.server.getPackRepository().getSelectedIds().contains("file/test_content")
                 || !session.world().equals(player.server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize())) return null;
+        session.controls().definition(com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(player.server, quest).orElse(null));
         return session.controls();
     }
 
@@ -58,7 +73,7 @@ public final class QuestPlaytestSession {
         for (var key : sessions.keySet()) {
             if (!key.player().equals(player.getUUID())) continue;
             var controls = controls(player, key.quest());
-            if (controls != null && controls.provider != null)
+            if (controls != null && controls.dimension != null)
                 return new Selection(key.quest(), controls.provider, controls.dimension, controls.providerPosition);
         }
         return null;
@@ -149,6 +164,28 @@ public final class QuestPlaytestSession {
         }
         public com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget target(String objective) { return targets.get(objective); }
         public void target(com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget target) { targets.put(target.objectiveId(), target); }
+
+        private com.jvn.villagerretaliation.quest.QuestDefinition definition;
+        private void definition(com.jvn.villagerretaliation.quest.QuestDefinition next) {
+            if (definition == next) return;
+            targets.keySet().removeIf(objective -> !java.util.Objects.equals(targetDefinition(definition, objective), targetDefinition(next, objective)));
+            definition = next;
+        }
+        private static TargetDefinition targetDefinition(com.jvn.villagerretaliation.quest.QuestDefinition definition, String objective) {
+            if (definition == null) return null;
+            if (objective.isBlank()) return new TargetDefinition(definition.target().structure(), definition.target().dimension(), definition.target().pieces());
+            return definition.objectives().stream().filter(value -> value.id().equals(objective)).findFirst()
+                    .map(value -> new TargetDefinition(value.structure(), value.dimension(), value.pieces())).orElse(null);
+        }
+        private record TargetDefinition(ResourceLocation structure, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension,
+                java.util.List<String> pieces) { }
+
+        private int structureAttempts;
+        public int nextStructureAttempt() { return structureAttempts++; }
+
+        private boolean focusDialogue;
+        public boolean focusDialogue() { return focusDialogue; }
+        public void focusDialogue(boolean value) { focusDialogue = value; }
 
         private boolean hold = true;
         private boolean suspended;
