@@ -14,14 +14,12 @@ import net.minecraft.world.entity.LivingEntity;
 public final class VillagerDialoguePerformance {
     private static LivingEntity speaker;
     private static DialoguePlayback playback;
-    private static long refreshedAt;
 
     private VillagerDialoguePerformance() { }
 
     public static void update(Entity entity, DialoguePlayback clock) {
         speaker = entity instanceof LivingEntity living ? living : null;
         playback = speaker == null ? null : clock;
-        refreshedAt = Util.getMillis();
     }
 
     public static void emitParticles(Entity entity, DialoguePlayback clock, long now) {
@@ -44,15 +42,22 @@ public final class VillagerDialoguePerformance {
     }
 
     public static void apply(LivingEntity entity, ModelPart head) {
+        apply(entity, head, 1);
+    }
+
+    public static void apply(LivingEntity entity, ModelPart head, float partialTick) {
         long now = Util.getMillis();
-        if (now - refreshedAt > 250) clear();
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen) screen.updateDialoguePerformance();
+        else clear();
         if (entity != speaker || playback == null || VillagerModelPreviewRenderContext.isRenderingInventoryPreview(entity)) return;
         float playerYaw = 0;
         float playerPitch = 0;
-        var player = Minecraft.getInstance().player;
+        var player = minecraft.player;
         if (player != null && !VillagerModelPreviewRenderContext.isRendering(entity)) {
-            var delta = player.getEyePosition().subtract(entity.getEyePosition());
-            playerYaw = Mth.clamp(Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90 - entity.yBodyRot), -70, 70);
+            var delta = player.getEyePosition(partialTick).subtract(entity.getEyePosition(partialTick));
+            float bodyYaw = Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
+            playerYaw = Mth.clamp(Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90 - bodyYaw), -70, 70);
             playerPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(delta.y, Math.sqrt(delta.x * delta.x + delta.z * delta.z))), -45, 45);
         }
         var pose = playback.pose(now, head.yRot * Mth.RAD_TO_DEG, head.xRot * Mth.RAD_TO_DEG, playerYaw, playerPitch);

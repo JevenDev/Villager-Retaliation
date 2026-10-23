@@ -40,7 +40,8 @@ public final class DialogueCueClientSmoke {
     private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<particle:smoke amount:2><pause=650>"
             + "<look=left> Over there...<pause=700><look=right> or there?<pause=650>"
             + "<look=player><disagree> No. Stay here.<pause=600><look=up> Above us?<pause=650>"
-            + "<look=down> Nothing below.<pause=600><reset><speed=0.5> Let's think.<particle:minecraft:heart amount:3>";
+            + "<look=down> Nothing below.<pause=600><reset><disagree>Wait.<pause=100>"
+            + "<agree> Maybe.<pause=100><reset><pause=300><speed=0.5> Let's think.<particle:minecraft:heart amount:3>";
     private static CompletableFuture<Integer> preparing;
     private static int phase;
     private static int entityId;
@@ -116,6 +117,7 @@ public final class DialogueCueClientSmoke {
                     "the render hook applies held gaze to the actual speaker model");
             invoke(screen, "trySkipDialogueTextAnimation");
             require(playback(screen).complete(now), "native skip bypasses the pending pause");
+            verifyHeadPoseAcrossSlowFrame();
             verifyParticleEmission();
             screen.acceptDialogueExchanges(List.of(speech(PERFORMANCE)));
             shownAt = now;
@@ -169,6 +171,29 @@ public final class DialogueCueClientSmoke {
             phase = 99;
             minecraft.stop();
         }
+    }
+
+    private static void verifyHeadPoseAcrossSlowFrame() {
+        var minecraft = Minecraft.getInstance();
+        var entity = (Villager) minecraft.level.getEntity(entityId);
+        var renderer = (LivingEntityRenderer<?, ?>) minecraft.getEntityRenderDispatcher().getRenderer(entity);
+        var head = ((HeadedModel) renderer.getModel()).getHead();
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(exception);
+        }
+        head.yRot = 0;
+        head.xRot = 0;
+        VillagerDialoguePerformance.apply(entity, head);
+        require(Math.abs(head.yRot - Math.toRadians(35)) < 0.04,
+                "a slow frame cannot briefly drop the held dialogue head pose");
+        VillagerDialoguePerformance.clear();
+        head.yRot = 0;
+        VillagerDialoguePerformance.apply(entity, head);
+        require(Math.abs(head.yRot - Math.toRadians(35)) < 0.04,
+                "active dialogue restores its pose before rendering after screen replacement");
     }
 
     private static void verifyParticleEmission() {

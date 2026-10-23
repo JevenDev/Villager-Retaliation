@@ -22,6 +22,6 @@ public abstract class DialogueSpeakerPoseMixin<T extends LivingEntity> {
                     shift = At.Shift.AFTER))
     private void villagerretaliation$animateDialogueSpeaker(T entity, float yaw, float partialTick,
             PoseStack poses, MultiBufferSource buffers, int light, CallbackInfo callback) {
-        if (model instanceof HeadedModel headed) VillagerDialoguePerformance.apply(entity, headed.getHead());
+        if (model instanceof HeadedModel headed) VillagerDialoguePerformance.apply(entity, headed.getHead(), partialTick);
     }
 }

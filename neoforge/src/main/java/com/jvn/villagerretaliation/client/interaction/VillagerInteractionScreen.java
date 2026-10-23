@@ -4670,7 +4670,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         boolean talking = isDialogueMouthAnimationActive();
         var speaker = dialogueSpeakerEntity();
         if (speaker instanceof Villager) VillagerDialogueMouthAnimation.update(speaker.getId(), talking);
-        VillagerDialoguePerformance.update(shouldRenderInteractionContainer() && !this.closingWithAnimation ? speaker : null,
+        updateDialoguePerformance();
+    }
+
+    void updateDialoguePerformance() {
+        VillagerDialoguePerformance.update(shouldRenderInteractionContainer() && !this.closingWithAnimation ? dialogueSpeakerEntity() : null,
                 dialoguePlaybackState());
     }
 

@@ -9,6 +9,7 @@ public final class DialoguePlayback {
     private final long startedAt;
     private final List<Double> revealTimes;
     private final List<TimedCue> cues;
+    private final List<TimedCue> gestureCues;
     private final List<Pause> pauses;
     private final double duration;
     private final boolean instant;
@@ -29,7 +30,8 @@ public final class DialoguePlayback {
         double time = 0;
         double speed = 1;
         double end = 0;
-        double gestureEnd = 0;
+        double gazeEnd = 0;
+        boolean customGaze = false;
         for (var segment : segments) {
             int cueIndex = 0;
             int offset = 0;
@@ -45,8 +47,14 @@ public final class DialoguePlayback {
                             end = Math.max(end, time);
                         }
                         case SPEED -> speed = cue.value();
-                        case AGREE, DISAGREE -> gestureEnd = time + gestureDuration(cue.kind());
-                        case RESET -> gestureEnd = Math.min(gestureEnd, time);
+                        case LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER -> {
+                            gazeEnd = time + LOOK_TRANSITION_MILLIS;
+                            customGaze = true;
+                        }
+                        case RESET -> {
+                            if (customGaze) gazeEnd = time + LOOK_TRANSITION_MILLIS;
+                            customGaze = false;
+                        }
                         default -> { }
                     }
                 }
@@ -57,17 +65,34 @@ public final class DialoguePlayback {
                 time += instant ? 0 : millisPerCharacter / speed;
             }
         }
+        var gestures = new ArrayList<TimedCue>();
+        for (var event : events) {
+            if (event.cue().kind() != DialogueCue.Kind.AGREE && event.cue().kind() != DialogueCue.Kind.DISAGREE
+                    && event.cue().kind() != DialogueCue.Kind.RESET) continue;
+            if (!gestures.isEmpty() && gestures.getLast().time() == event.time()) gestures.removeLast();
+            gestures.add(event);
+        }
+        double gestureEnd = 0;
+        for (int index = 0; index < gestures.size(); index++) {
+            var event = gestures.get(index);
+            if (event.cue().kind() == DialogueCue.Kind.RESET) continue;
+            double until = event.time() + gestureDuration(event.cue().kind());
+            if (index + 1 < gestures.size()) until = Math.min(until, gestures.get(index + 1).time() + LOOK_TRANSITION_MILLIS);
+            gestureEnd = Math.max(gestureEnd, until);
+        }
+        this.gestureCues = List.copyOf(gestures);
         this.revealTimes = List.copyOf(reveal);
         this.cues = List.copyOf(events);
         this.particles = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.PARTICLE).toList();
         this.pauses = List.copyOf(waits);
-        this.duration = Math.max(Math.max(end, gestureEnd), events.isEmpty() ? 0 : events.getLast().time());
+        this.duration = Math.max(Math.max(end, Math.max(gestureEnd, gazeEnd)), events.isEmpty() ? 0 : events.getLast().time());
     }
 
     private DialoguePlayback(DialoguePlayback source) {
         startedAt = source.startedAt;
         revealTimes = source.revealTimes;
         cues = source.cues;
+        gestureCues = source.gestureCues;
         pauses = source.pauses;
         duration = source.duration;
         instant = source.instant;
@@ -124,7 +149,6 @@ public final class DialoguePlayback {
         Pose from = new Pose(neutralYaw, neutralPitch);
         Pose target = from;
         double turnStarted = -LOOK_TRANSITION_MILLIS;
-        TimedCue gesture = null;
         for (var event : cues) {
             if (event.time() > elapsed) break;
             Pose next = switch (event.cue().kind()) {
@@ -141,18 +165,25 @@ public final class DialoguePlayback {
                 target = next;
                 turnStarted = event.time();
             }
-            if (event.cue().kind() == DialogueCue.Kind.AGREE || event.cue().kind() == DialogueCue.Kind.DISAGREE)
-                gesture = event;
-            if (event.cue().kind() == DialogueCue.Kind.RESET) gesture = null;
         }
         Pose pose = interpolate(from, target, (elapsed - turnStarted) / LOOK_TRANSITION_MILLIS);
-        if (gesture == null || skipped) return pose;
-        double progress = (elapsed - gesture.time()) / gestureDuration(gesture.cue().kind());
-        if (progress < 0 || progress >= 1) return pose;
-        float movement = (float) (Math.sin(progress * Math.PI * 4) * Math.sin(progress * Math.PI));
-        return gesture.cue().kind() == DialogueCue.Kind.AGREE
-                ? new Pose(pose.yaw(), pose.pitch() + movement * 12)
-                : new Pose(pose.yaw() + movement * 18, pose.pitch());
+        if (skipped) return pose;
+        float yaw = 0;
+        float pitch = 0;
+        for (var gesture : gestureCues) {
+            if (gesture.time() > elapsed) break;
+            float retained = 1 - smoothstep((elapsed - gesture.time()) / LOOK_TRANSITION_MILLIS);
+            yaw *= retained;
+            pitch *= retained;
+            if (gesture.cue().kind() == DialogueCue.Kind.RESET) continue;
+            double progress = (elapsed - gesture.time()) / gestureDuration(gesture.cue().kind());
+            if (progress >= 1) continue;
+            double envelope = Math.sin(progress * Math.PI);
+            float movement = (float) (Math.sin(progress * Math.PI * 4) * envelope * envelope);
+            if (gesture.cue().kind() == DialogueCue.Kind.AGREE) pitch += movement * 12;
+            else yaw += movement * 18;
+        }
+        return new Pose(pose.yaw() + yaw, pose.pitch() + pitch);
     }
 
     private double elapsed(long now) { return Math.max(0L, now - startedAt); }
@@ -161,9 +192,13 @@ public final class DialoguePlayback {
         return kind == DialogueCue.Kind.AGREE ? 650 : 800;
     }
 
-    private static Pose interpolate(Pose from, Pose to, double progress) {
+    private static float smoothstep(double progress) {
         float amount = (float) Math.clamp(progress, 0, 1);
-        amount = amount * amount * (3 - 2 * amount);
+        return amount * amount * (3 - 2 * amount);
+    }
+
+    private static Pose interpolate(Pose from, Pose to, double progress) {
+        float amount = smoothstep(progress);
         return new Pose(from.yaw() + (to.yaw() - from.yaw()) * amount,
                 from.pitch() + (to.pitch() - from.pitch()) * amount);
     }

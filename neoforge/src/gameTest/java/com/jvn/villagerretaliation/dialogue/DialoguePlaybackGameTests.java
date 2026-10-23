@@ -109,6 +109,33 @@ public final class DialoguePlaybackGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void interruptedGesturesBlendWithoutSingleFrameSnaps(GameTestHelper helper) {
+        for (String cue : java.util.List.of("<reset>", "<agree>", "<disagree>")) {
+            var clock = clock("<disagree>A" + cue + "<pause=1000>B", 120);
+            var before = clock.pose(119, 0, 0, 0, 0);
+            var after = clock.pose(120, 0, 0, 0, 0);
+            helper.assertTrue(Math.abs(before.yaw() - after.yaw()) < 0.3
+                            && Math.abs(before.pitch() - after.pitch()) < 0.3,
+                    "gesture handoff preserves head position: " + cue);
+            var earlier = clock.pose(118, 0, 0, 0, 0);
+            var later = clock.pose(121, 0, 0, 0, 0);
+            helper.assertTrue(Math.abs((after.yaw() - later.yaw()) - (earlier.yaw() - before.yaw())) < 0.02,
+                    "gesture handoff preserves smooth movement: " + cue);
+        }
+        var reset = clock("<disagree>A<reset>", 120);
+        helper.assertFalse(reset.complete(299), "completion waits for the gesture to ease out");
+        helper.assertTrue(reset.complete(300), "gesture reset settles within the transition");
+        helper.assertValueEqual(reset.pose(300, 0, 0, 0, 0), new DialoguePlayback.Pose(0, 0),
+                "reset finishes at neutral");
+        helper.assertValueEqual(clock("<agree><disagree><reset>A", 100).pose(100, 0, 0, 0, 0),
+                new DialoguePlayback.Pose(0, 0), "simultaneous cues do not leave ghost gestures");
+        var look = clock("<look=left>", 100);
+        helper.assertFalse(look.complete(179), "cue-only gaze waits for its turn to finish");
+        helper.assertTrue(look.complete(180), "cue-only gaze eventually finishes");
+        helper.succeed();
+    }
+
     private static DialoguePlayback clock(String text, long millisPerCharacter) {
         return new DialoguePlayback(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 0, millisPerCharacter);
     }
