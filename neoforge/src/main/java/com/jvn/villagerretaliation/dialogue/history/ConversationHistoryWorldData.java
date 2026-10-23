@@ -26,7 +26,7 @@ public final class ConversationHistoryWorldData extends SavedData {
 
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player) || !player.connection.hasChannel(ConversationHistoryWorldPayload.TYPE)) return;
         var data = player.server.overworld().getDataStorage().computeIfAbsent(
                 new Factory<>(ConversationHistoryWorldData::new, ConversationHistoryWorldData::load, DataFixTypes.LEVEL),
                 "villagerretaliation_conversation_history_world");
