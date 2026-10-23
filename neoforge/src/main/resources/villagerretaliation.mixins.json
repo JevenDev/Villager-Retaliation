@@ -134,6 +134,8 @@
     "client.MerchantResultSlotMixin",
     "client.ModelPartAccessor",
     "client.DialogueSpeakerPoseMixin",
+    "client.ParticleEngineAccessor",
+    "client.DialoguePreviewParticleMixin",
     "client.QuestItemEntityGlowMixin",
     "client.QuestItemEntityOutlineColorMixin",
     "client.QuestItemHeldGlowMixin"

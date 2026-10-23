@@ -50,6 +50,7 @@ public final class DialogueCueClientSmoke {
     private static long shownAt;
     private static long lastCapture;
     private static long finishedAt;
+    private static boolean timelineWindowRendered;
 
     private DialogueCueClientSmoke() { }
 
@@ -66,6 +67,10 @@ public final class DialogueCueClientSmoke {
         var server = minecraft.getSingleplayerServer();
         var playerId = minecraft.player.getUUID();
         if (phase == 0 && minecraft.screen == null) {
+            foundry.imgui.api.ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(() -> {
+                if (com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.active())
+                    timelineWindowRendered |= imgui.internal.ImGui.findWindowByName("Dialogue timeline###VR_DialogueTimeline").isValidPtr();
+            });
             minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
             minecraft.options.fov().set(70);
             VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
@@ -120,6 +125,7 @@ public final class DialogueCueClientSmoke {
             verifyHeadPoseAcrossSlowFrame();
             verifyParticleEmission();
             verifySoundEmission();
+            verifyPreviewParticles();
             screen.acceptDialogueExchanges(List.of(speech(PERFORMANCE)));
             shownAt = now;
             phase = 4;
@@ -165,6 +171,31 @@ public final class DialogueCueClientSmoke {
             phase = 9;
         } else if (phase == 9 && now - shownAt >= 1000) {
             ConversationHistoryClientChecks.verifyRendered();
+            minecraft.setScreen(null);
+            startTimelinePreview();
+            shownAt = now;
+            phase = 10;
+        } else if (phase == 10 && now - shownAt >= 750) {
+            var timeline = com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline();
+            require(timeline != null && !timeline.playing() && timeline.position() == 250,
+                    "editor timeline stays at the scrubbed position across native frames");
+            require(timeline.visibleCharacters() == 0, "editor timeline holds back text during its leading pause");
+            require(timelineWindowRendered, "the editor renders its timeline controls");
+            captureTimeline("dialogue-timeline-paused");
+            com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.seek(700);
+            require(com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline().visibleCharacters() > 0,
+                    "scrubbing forward reveals text through the native dialogue screen");
+            com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.replay();
+            shownAt = now;
+            phase = 11;
+        } else if (phase == 11 && now - shownAt >= 750) {
+            var timeline = com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline();
+            require(timeline != null && timeline.playing() && timeline.position() >= 700,
+                    "editor replay advances the shared timeline");
+            captureTimeline("dialogue-timeline-playing");
+            com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.stop();
+            require(!com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.active(),
+                    "closing preview releases the timeline");
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"),
                         "Dialogue cue client smoke passed\nRecorded frames: " + frame + "\n");
@@ -195,6 +226,78 @@ public final class DialogueCueClientSmoke {
         VillagerDialoguePerformance.apply(entity, head);
         require(Math.abs(head.yRot - Math.toRadians(35)) < 0.04,
                 "active dialogue restores its pose before rendering after screen replacement");
+    }
+
+    private static void captureTimeline(String name) {
+        try (var image = com.jvn.villagerretaliation.authoring.client.AuthoringEditorClientSmoke.renderedImage()) {
+            image.writeToFile(Path.of(System.getProperty(OUTPUT), "screenshots", name + ".png"));
+        } catch (IOException exception) { throw new UncheckedIOException(exception); }
+    }
+
+    private static void startTimelinePreview() {
+        var minecraft = Minecraft.getInstance();
+        var json = JsonParser.parseString("""
+                {"entries":[{"id":"talk","label":"Talk","start":"start"}],"nodes":{
+                  "start":{"lines":["<look=left><pause=500>A<sound:entity.villager.yes><particle:heart amount=3><agree> hello.<pause=500>"],
+                    "end":true}}}
+                """).getAsJsonObject();
+        var document = new com.jvn.villagerretaliation.authoring.core.AuthoringDocument(
+                com.jvn.villagerretaliation.authoring.core.DefinitionKind.TREE,
+                "data/fixture/dialogue_trees/en_us/timeline.json", json);
+        VillagerRetaliationConfig.DIALOGUE_TEXT_SPEED.set(DialogueTextSpeed.INSTANT);
+        com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.start(document, "start",
+                minecraft.level.getEntity(entityId), new com.jvn.villagerretaliation.authoring.preview.PreviewConditions(),
+                () -> minecraft.setScreen(null));
+        com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.seek(250);
+        json.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0,
+                new com.google.gson.JsonPrimitive("<look=left><pause=500>A<sound:entity.villager.yes><particle:heart amount=3><agree><wave> hello again.</wave><pause=500>"));
+        com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.refreshPresentation(json);
+        var updated = com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline();
+        require(updated.position() == 250 && !updated.playing(), "draft edits preserve the scrubbed position");
+        require(com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline().duration() > 4000,
+                "preview keeps a particle effect tail even with instant text selected");
+    }
+
+    private static void verifyPreviewParticles() {
+        var minecraft = Minecraft.getInstance();
+        var entity = minecraft.level.getEntity(entityId);
+        var preview = new DialoguePreviewParticles();
+        var clock = new DialoguePlayback(DialogueTextSegment.parse(
+                "A<particle:smoke amount=2><pause=300><particle:heart>", DialogueTextEffects.NONE), 0, 100);
+        preview.update(entity, clock, 99);
+        require(((java.util.List<?>) field(preview, "particles")).isEmpty(), "preview particles wait for the cue");
+        preview.update(entity, clock, 100);
+        var active = (java.util.List<?>) field(preview, "particles");
+        require(active.size() == 2, "preview builds the authored particle count");
+        var particle = (net.minecraft.client.particle.Particle) field(active.getFirst(), "particle");
+        var bounds = particle.getBoundingBox();
+        try {
+            var tick = minecraft.particleEngine.getClass().getDeclaredMethod("tickParticle", net.minecraft.client.particle.Particle.class);
+            tick.setAccessible(true);
+            tick.invoke(minecraft.particleEngine, particle);
+            require(particle.getBoundingBox().equals(bounds), "native particle ticks cannot advance preview-owned particles");
+            var normal = ((com.jvn.villagerretaliation.mixin.client.ParticleEngineAccessor) minecraft.particleEngine)
+                    .villagerretaliation$makeParticle(net.minecraft.core.particles.ParticleTypes.SMOKE,
+                            entity.getX(), entity.getEyeY(), entity.getZ(), 0, 0.1, 0);
+            var before = normal.getBoundingBox();
+            tick.invoke(minecraft.particleEngine, normal);
+            require(!normal.getBoundingBox().equals(before), "unrelated world particles tick normally");
+            normal.remove();
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+        clock.seek(125, 0);
+        preview.update(entity, clock, 9000);
+        require(DialoguePreviewParticles.partialTick(particle, 0) == 0.5F, "preview particle interpolation follows the scrubbed time");
+        var paused = particle.getBoundingBox();
+        preview.update(entity, clock, 12000);
+        require(particle.getBoundingBox().equals(paused), "preview particles stay still while paused");
+        clock.seek(0, 0);
+        preview.update(entity, clock, 0);
+        require(!particle.isAlive() && ((java.util.List<?>) field(preview, "particles")).isEmpty(),
+                "rewinding removes earlier particle bursts");
+        clock.seek(clock.previewDurationMillis(), 0);
+        preview.update(entity, clock, 0);
+        require(((java.util.List<?>) field(preview, "particles")).isEmpty(), "seeking past a burst respects particle lifetime");
+        preview.clear();
     }
 
     private static void verifySoundEmission() {

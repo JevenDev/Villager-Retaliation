@@ -154,6 +154,39 @@ public final class DialoguePlaybackGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void previewSeekingFreezesTextGesturesAndSoundTiming(GameTestHelper helper) {
+        String text = "<look=left>A<sound:entity.villager.yes><particle:heart><pause=500>B<disagree>";
+        var clock = clock(text, 100);
+        helper.assertValueEqual(clock.timelineCues().size(), 5, "preview exposes every authored cue");
+        clock.seek(125, 2000);
+        var pose = clock.pose(2000, 0, 0, 0, 0);
+        helper.assertValueEqual(clock.positionMillis(9000), 125L, "seeking freezes the preview clock");
+        helper.assertValueEqual(clock.visibleCharacters(9000), 1, "text stays at the selected position");
+        helper.assertValueEqual(clock.pose(9000, 0, 0, 0, 0), pose, "head animation stays at the selected position");
+        helper.assertFalse(clock.talking(9000), "paused preview does not animate the mouth");
+        helper.assertTrue(clock.pollSounds(9000).isEmpty(), "scrubbing never plays sounds");
+        helper.assertValueEqual(clock.copy().positionMillis(9000), 125L, "copy preserves paused position");
+        var retimed = clock.retime(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 50);
+        helper.assertValueEqual(retimed.positionMillis(9000), 125L, "retiming preserves paused position");
+        clock.seek(50, 2000);
+        clock.play(2000);
+        helper.assertTrue(clock.pollSounds(2049).isEmpty(), "resumed sounds wait for their remaining delay");
+        helper.assertValueEqual(clock.pollSounds(2050).size(), 1, "resumed sound stays aligned to the cue");
+        helper.assertValueEqual(clock.pollParticles(2050).size(), 1, "resumed particles stay aligned to the sound");
+        clock.pause(2075);
+        helper.assertValueEqual(clock.positionMillis(3000), 125L, "pause holds the current playback position");
+        clock.seek(Long.MAX_VALUE, 3000);
+        helper.assertValueEqual(clock.positionMillis(4000), clock.previewDurationMillis(), "seek clamps to the preview end");
+        clock.restart(5000);
+        helper.assertValueEqual(clock.positionMillis(5000), 0L, "replay starts from zero");
+        helper.assertFalse(clock.playbackPaused(), "replay resumes playback");
+        helper.assertTrue(clock.pollSounds(5099).isEmpty(), "replay respects cue timing");
+        helper.assertValueEqual(clock.pollSounds(5100).size(), 1, "replay permits hearing the cue again");
+        helper.assertTrue(clock.pollSounds(5100).isEmpty(), "replayed cue fires only once");
+        helper.succeed();
+    }
+
     private static DialoguePlayback clock(String text, long millisPerCharacter) {
         return new DialoguePlayback(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 0, millisPerCharacter);
     }

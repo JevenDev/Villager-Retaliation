@@ -3598,7 +3598,7 @@ public final class AuthoringEditorClientSmoke {
         }
     }
 
-    private static NativeImage renderedImage() {
+    public static NativeImage renderedImage() {
         var window = Minecraft.getInstance().getWindow();
         int width = window.getWidth(), height = window.getHeight();
         int framebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);

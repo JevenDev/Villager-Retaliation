@@ -297,7 +297,10 @@ final class ImGuiAuthoringEditor {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);
-        if (MC.screen != screen && !playtesting) return;
+        if (MC.screen != screen && !playtesting) {
+            if (AuthoringDialoguePreview.active()) EditorDialogueTimeline.window();
+            return;
+        }
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
         if (worldContent == null && !playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
             if (nodeResize != null) { nodeResize = null; return; }
@@ -3176,6 +3179,7 @@ final class ImGuiAuthoringEditor {
         var cursor = AuthoringDialoguePreview.cursor();
         if (cursor != null) {
             ImGui.textWrapped("Playing " + cursor.node() + " | Exchange " + (cursor.exchange() + 1) + "/" + cursor.exchanges());
+            EditorDialogueTimeline.render();
             ImGui.beginDisabled(!cursor.previous());
             if (ImGui.button("Previous exchange")) operation(AuthoringDialoguePreview::previous);
             ImGui.endDisabled();

@@ -37,6 +37,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private VillagerInteractionScreen screen;
     private SoundInstance voice;
     private int shownRevision = -1;
+    private String shownLine = "";
     private boolean disposed;
     private Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool> wordPools;
     private final java.util.Map<String, String> resolvedWords = new java.util.HashMap<>();
@@ -100,6 +101,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         active = preview;
         try {
             preview.screen = VillagerInteractionScreen.localPreview(target, preview);
+            preview.screen.enablePreviewTimeline();
             minecraft.setScreen(preview.screen);
             preview.tick(preview.screen);
         } catch (RuntimeException exception) {
@@ -118,6 +120,44 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     }
 
     public static DialoguePreviewSession.Cursor cursor() { return active == null ? null : active.session.cursor(); }
+
+    public record Timeline(long position, long duration, boolean playing, int visibleCharacters,
+            List<com.jvn.villagerretaliation.dialogue.DialoguePlayback.TimedCue> cues) { }
+
+    public static Timeline timeline() {
+        var preview = active;
+        if (preview == null) return null;
+        var clock = preview.screen.previewTimeline();
+        long now = net.minecraft.Util.getMillis();
+        return new Timeline(clock.positionMillis(now), clock.previewDurationMillis(), !clock.playbackPaused(),
+                clock.visibleCharacters(now), clock.timelineCues());
+    }
+
+    public static void seek(long position) {
+        var preview = active;
+        if (preview == null) return;
+        preview.stopVoice();
+        preview.screen.seekPreviewTimeline(position);
+    }
+
+    public static void pause() {
+        var preview = active;
+        if (preview == null) return;
+        preview.stopVoice();
+        preview.screen.pausePreviewTimeline();
+    }
+
+    public static void play() {
+        if (active != null) active.screen.playPreviewTimeline();
+    }
+
+    public static void replay() {
+        var preview = active;
+        if (preview == null) return;
+        preview.stopVoice();
+        preview.screen.restartPreviewTimeline();
+        preview.playVoice(preview.session.currentLine());
+    }
     public static List<DialoguePreviewSession.Choice> choices() {
         var preview = active;
         return preview == null ? List.of() : preview.session.choices().stream().map(choice -> new DialoguePreviewSession.Choice(
@@ -137,7 +177,13 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     public static void stop() { if (active != null) active.close(); }
 
     @Override public void tick(VillagerInteractionScreen screen) {
-        perform(() -> update(screen));
+        perform(() -> {
+            update(screen);
+            if (disposed) return;
+            var clock = screen.previewTimeline();
+            if (!clock.playbackPaused() && clock.positionMillis(net.minecraft.Util.getMillis()) >= clock.previewDurationMillis())
+                pause();
+        });
     }
 
     private void update(VillagerInteractionScreen screen) {
@@ -149,6 +195,11 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
             return;
         }
         if (shownRevision == session.revision()) return;
+        var previous = shownRevision < 0 ? null : timeline();
+        var cursor = session.cursor();
+        String lineKey = cursor.node() + "/" + cursor.exchange();
+        boolean preserve = previous != null && lineKey.equals(shownLine);
+        shownLine = lineKey;
         shownRevision = session.revision();
         coverage.accept(session.drainCoverage());
         stopVoice();
@@ -167,7 +218,16 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
                 speaker == null ? "" : speaker.getName().getString(),
                 DialogueTextSegment.parse(text, DialogueTextEffects.read(line)), presentation.camera());
         screen.presentLocalLine(speech);
-        ResourceLocation sound = presentation.voice(minecraft.options.languageCode);
+        if (preserve) {
+            screen.seekPreviewTimeline(previous.position());
+            if (previous.playing()) screen.playPreviewTimeline();
+        } else playVoice(line);
+    }
+
+    private void playVoice(JsonObject line) {
+        if (line == null) return;
+        var minecraft = Minecraft.getInstance();
+        ResourceLocation sound = ConversationLinePresentation.read(line).voice(minecraft.options.languageCode);
         if (sound != null && minecraft.getSoundManager().getSoundEvent(sound) != null) {
             voice = new SimpleSoundInstance(sound, SoundSource.VOICE, 1.0F, 1.0F, RandomSource.create(),
                     false, 0, SoundInstance.Attenuation.NONE, 0, 0, 0, true);

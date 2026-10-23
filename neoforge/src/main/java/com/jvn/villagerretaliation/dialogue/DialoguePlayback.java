@@ -6,6 +6,7 @@ import java.util.List;
 
 public final class DialoguePlayback {
     private static final double LOOK_TRANSITION_MILLIS = 180;
+    private static final long PREVIEW_EFFECT_TAIL_MILLIS = 4000;
     private final long startedAt;
     private final List<Double> revealTimes;
     private final List<TimedCue> cues;
@@ -16,10 +17,13 @@ public final class DialoguePlayback {
     private boolean skipped;
     private int nextParticle;
     private int nextSound;
+    private boolean playbackPaused;
+    private double pausedPosition;
+    private double timeOffset;
     private final List<TimedCue> sounds;
     private final List<TimedCue> particles;
 
-    private record TimedCue(double time, DialogueCue cue) { }
+    public record TimedCue(double time, DialogueCue cue) { }
     private record Pause(double start, double end) { }
     public record Pose(float yaw, float pitch) { }
 
@@ -104,6 +108,9 @@ public final class DialoguePlayback {
         nextParticle = source.nextParticle;
         sounds = source.sounds;
         nextSound = source.nextSound;
+        playbackPaused = source.playbackPaused;
+        pausedPosition = source.pausedPosition;
+        timeOffset = source.timeOffset;
     }
 
     public DialoguePlayback copy() { return new DialoguePlayback(this); }
@@ -114,6 +121,9 @@ public final class DialoguePlayback {
         result.skipped = skipped;
         result.nextParticle = Math.min(nextParticle, result.particles.size());
         result.nextSound = Math.min(nextSound, result.sounds.size());
+        result.playbackPaused = playbackPaused;
+        result.pausedPosition = Math.min(pausedPosition, result.previewDurationMillis());
+        result.timeOffset = timeOffset;
         return result;
     }
 
@@ -126,6 +136,7 @@ public final class DialoguePlayback {
     }
 
     public List<DialogueCue> pollSounds(long now) {
+        if (playbackPaused || skipped) return List.of();
         var due = new ArrayList<DialogueCue>();
         double elapsed = elapsed(now);
         while (nextSound < sounds.size() && sounds.get(nextSound).time() <= elapsed)
@@ -155,7 +166,7 @@ public final class DialoguePlayback {
     }
 
     public boolean talking(long now) {
-        return !paused(now) && visibleCharacters(now) < revealTimes.size();
+        return !playbackPaused && !paused(now) && visibleCharacters(now) < revealTimes.size();
     }
 
     public Pose pose(long now, float neutralYaw, float neutralPitch, float playerYaw, float playerPitch) {
@@ -200,7 +211,50 @@ public final class DialoguePlayback {
         return new Pose(pose.yaw() + yaw, pose.pitch() + pitch);
     }
 
-    private double elapsed(long now) { return Math.max(0L, now - startedAt); }
+    public long durationMillis() { return (long) Math.ceil(duration); }
+    public long previewDurationMillis() {
+        double end = duration;
+        if (!particles.isEmpty()) end = Math.max(end, particles.getLast().time() + PREVIEW_EFFECT_TAIL_MILLIS);
+        if (!sounds.isEmpty()) end = Math.max(end, sounds.getLast().time() + PREVIEW_EFFECT_TAIL_MILLIS);
+        return (long) Math.ceil(end);
+    }
+
+    public long positionMillis(long now) { return (long) Math.min(previewDurationMillis(), skipped ? duration : elapsed(now)); }
+    public boolean playbackPaused() { return playbackPaused; }
+    public List<TimedCue> timelineCues() { return cues; }
+
+    public void pause(long now) {
+        pausedPosition = Math.min(previewDurationMillis(), skipped ? duration : elapsed(now));
+        playbackPaused = true;
+    }
+
+    public void play(long now) {
+        if (!playbackPaused) return;
+        timeOffset = pausedPosition - (now - startedAt);
+        playbackPaused = false;
+    }
+
+    public void seek(long position, long now) {
+        skipped = false;
+        pausedPosition = Math.clamp((double) position, 0, previewDurationMillis());
+        timeOffset = pausedPosition - (now - startedAt);
+        playbackPaused = true;
+        nextParticle = 0;
+        while (nextParticle < particles.size() && particles.get(nextParticle).time() <= pausedPosition) nextParticle++;
+        nextSound = 0;
+        while (nextSound < sounds.size() && sounds.get(nextSound).time() <= pausedPosition) nextSound++;
+    }
+
+    public void restart(long now) {
+        seek(0, now);
+        nextParticle = 0;
+        nextSound = 0;
+        play(now);
+    }
+
+    private double elapsed(long now) {
+        return playbackPaused ? pausedPosition : Math.max(0, now - startedAt + timeOffset);
+    }
 
     private static double gestureDuration(DialogueCue.Kind kind) {
         return kind == DialogueCue.Kind.AGREE ? 650 : 800;

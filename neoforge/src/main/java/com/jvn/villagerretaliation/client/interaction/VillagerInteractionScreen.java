@@ -482,6 +482,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long lastInteractionPortraitAnimationMillis = -1L;
 
     private LocalPresentation localPresentation;
+    private boolean previewTimelineEnabled;
+    private final DialoguePreviewParticles previewParticles = new DialoguePreviewParticles();
 
     public static VillagerInteractionScreen localPreview(Entity target, LocalPresentation presentation) {
         var screen = new VillagerInteractionScreen(
@@ -513,6 +515,49 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     public record LocalOption(String label, Runnable action, boolean locked) { }
+
+    public void enablePreviewTimeline() {
+        if (localPresentation == null) throw new IllegalStateException("Not a local presentation");
+        previewTimelineEnabled = true;
+    }
+
+    public DialoguePlayback previewTimeline() {
+        if (!previewTimelineEnabled) throw new IllegalStateException("Timeline controls require a local preview");
+        return dialoguePlaybackState();
+    }
+
+    public void seekPreviewTimeline(long position) {
+        var clock = previewTimeline();
+        stopDialogueCueSounds();
+        previewParticles.clear();
+        clock.seek(position, Util.getMillis());
+        this.lastDialogueBlipVisibleCharacters = clock.visibleCharacters(Util.getMillis());
+        this.nextDialogueBlipVisibleCharacter = this.lastDialogueBlipVisibleCharacters + randomDialogueBlipGap();
+        this.dialogueTextAnimationSkipped = false;
+        emitDialogueEffects();
+        updateDialogueMouthAnimation();
+    }
+
+    public void pausePreviewTimeline() {
+        previewTimeline().pause(Util.getMillis());
+        stopDialogueCueSounds();
+        updateDialogueMouthAnimation();
+    }
+
+    public void playPreviewTimeline() {
+        previewTimeline().play(Util.getMillis());
+    }
+
+    public void restartPreviewTimeline() {
+        stopDialogueCueSounds();
+        previewParticles.clear();
+        previewTimeline().restart(Util.getMillis());
+        this.lastDialogueBlipVisibleCharacters = 0;
+        this.nextDialogueBlipVisibleCharacter = randomDialogueBlipGap();
+        this.dialogueTextAnimationSkipped = false;
+        emitDialogueEffects();
+        updateDialogueMouthAnimation();
+    }
 
     public void presentLocalLine(com.jvn.villagerretaliation.dialogue.DialogueSpeech speech) {
         if (localPresentation == null) throw new IllegalStateException("Not a local presentation");
@@ -935,7 +980,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if(!resolved.equals(this.villagerDialogueTextSegments)){
             this.villagerDialogueTextSegments=resolved;
             this.villagerDialogueText=DialogueTextSegment.plainText(resolved);
-            this.dialoguePlayback = this.dialoguePlayback.retime(resolved, dialogueTextSpeed().millisPerCharacter());
+            this.dialoguePlayback = this.dialoguePlayback.retime(resolved, dialoguePlaybackInterval());
         }
     }
 
@@ -951,10 +996,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.villagerDialogueText = DialogueTextSegment.plainText(this.villagerDialogueTextSegments);
         this.dialogueLineScroll = 0;
         this.dialogueTextAnimationStartMillis = Util.getMillis();
-        this.dialoguePlaybackMillisPerCharacter = dialogueTextSpeed().millisPerCharacter();
+        this.dialoguePlaybackMillisPerCharacter = dialoguePlaybackInterval();
         this.dialoguePlayback = new DialoguePlayback(this.villagerDialogueTextSegments,
                 this.dialogueTextAnimationStartMillis, this.dialoguePlaybackMillisPerCharacter);
-        this.dialogueTextAnimationSkipped = dialogueTextSpeed().instant();
+        this.dialogueTextAnimationSkipped = this.dialoguePlaybackMillisPerCharacter <= 0;
         this.lastDialogueBlipVisibleCharacters = 0;
         this.nextDialogueBlipVisibleCharacter = this.dialogueTextAnimationSkipped
                 ? Integer.MAX_VALUE
@@ -4675,7 +4720,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         var clock = dialoguePlaybackState();
         var speaker = dialogueSpeakerEntity();
         long now = Util.getMillis();
-        VillagerDialoguePerformance.emitParticles(speaker, clock, now);
+        if (previewTimelineEnabled) previewParticles.update(speaker, clock, now);
+        else VillagerDialoguePerformance.emitParticles(speaker, clock, now);
         var manager = Minecraft.getInstance().getSoundManager();
         this.dialogueCueSounds.removeIf(sound -> !manager.isActive(sound));
         this.dialogueCueSounds.addAll(VillagerDialoguePerformance.emitSounds(speaker, clock, now));
@@ -4699,6 +4745,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void clearDialogueMouthAnimation() {
+        previewParticles.clear();
         stopDialogueCueSounds();
         VillagerDialoguePerformance.clear();
         VillagerDialogueMouthAnimation.clear(this.villagerEntityId);
@@ -4739,13 +4786,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && mouseY < top + INTERACTION_DIALOGUE_SCROLL_BOTTOM;
     }
 
-    private DialoguePlayback dialoguePlaybackState() {
+    private long dialoguePlaybackInterval() {
         long interval = dialogueTextSpeed().millisPerCharacter();
+        return previewTimelineEnabled && interval <= 0 ? DialogueTextSpeed.MEDIUM.millisPerCharacter() : interval;
+    }
+
+    private DialoguePlayback dialoguePlaybackState() {
+        long interval = dialoguePlaybackInterval();
         if (interval != this.dialoguePlaybackMillisPerCharacter) {
             this.dialoguePlaybackMillisPerCharacter = interval;
             this.dialoguePlayback = this.dialoguePlayback.retime(this.villagerDialogueTextSegments, interval);
         }
-        if (this.dialogueTextAnimationSkipped && !dialogueTextSpeed().instant()) this.dialoguePlayback.skip();
+        if (this.dialogueTextAnimationSkipped && interval > 0) this.dialoguePlayback.skip();
         return this.dialoguePlayback;
     }
 
@@ -4758,7 +4810,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void maybePlayDialogueBlip() {
-        if (this.dialogueTextAnimationSkipped || dialoguePlaybackState().paused(Util.getMillis())
+        if (this.dialogueTextAnimationSkipped || dialoguePlaybackState().playbackPaused()
+                || dialoguePlaybackState().paused(Util.getMillis())
                 || this.villagerDialogueText.isBlank() || this.campaignMedia.voicedLine()
                 || !VillagerRetaliationConfig.ENABLE_DIALOGUE_BLIP_AUDIO.get()) {
             return;
@@ -4890,8 +4943,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int x,
             int y,
             int fallbackColor) {
-        VillagerStyledTextRenderer.renderOutlinedLine(graphics, this.font, text, segments, x, y, fallbackColor,
-                Minecraft.getInstance().gui.getGuiTicks());
+        int effectTick = previewTimelineEnabled
+                ? (int) (dialoguePlaybackState().positionMillis(Util.getMillis()) / 50)
+                : Minecraft.getInstance().gui.getGuiTicks();
+        VillagerStyledTextRenderer.renderOutlinedLine(graphics, this.font, text, segments, x, y, fallbackColor, effectTick);
     }
 
     private void renderInteractionStatTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
