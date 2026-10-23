@@ -1,6 +1,19 @@
 {
   "schema": "villagerretaliation:quest_locale/v1",
   "messages": {
+    "quest.performance.base": "Base rewards",
+    "quest.performance.result": "Performance: {tier}",
+    "quest.performance.requirements": "Performance rewards",
+    "quest.performance.maximum": "at most {value}",
+    "quest.performance.minimum": "at least {value}",
+    "quest.performance.range": "{min} to {max}",
+    "quest.performance.metric.elapsed_ticks": "Time (ticks)",
+    "quest.performance.metric.final_health_percent": "Final health",
+    "quest.performance.metric.lowest_health_percent": "Lowest health",
+    "quest.performance.metric.deaths": "Player deaths",
+    "quest.performance.metric.damage_taken": "Damage taken",
+    "quest.performance.metric.kills": "Kills",
+    "quest.performance.metric.optional_objectives": "Optional objectives completed",
     "quest.dialogue.abandoned": {
       "lines": [
         "You walked away from {quest}.",

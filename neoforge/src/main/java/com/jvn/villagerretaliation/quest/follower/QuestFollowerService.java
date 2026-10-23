@@ -77,6 +77,8 @@ public final class QuestFollowerService {
                 mob.blockPosition(), mob.level().dimension().location().toString());
         entry.runtime = runtime.id();
         data.entries.put(mob.getUUID(), entry);
+        progress.performance().actorBound(directive.actor().alias());
+        samplePerformance(mob, false);
         data.setDirty();
         install(mob);
         mob.getNavigation().stop();
@@ -137,6 +139,30 @@ public final class QuestFollowerService {
         var progress = runtime.progress(level).get(entry.player, entry.quest);
         return quest != null && progress != null && progress.status() == QuestProgressTypes.QuestState.ACTIVE
                 && entry.run.equals(progress.questRunId()) && (entry.stage.isEmpty() || entry.stage.equals(progress.currentStage()));
+    }
+
+    public static Double healthPercent(ServerLevel level, UUID run, String alias) {
+        for (var entry : QuestFollowerSavedData.get(level).entries.values()) {
+            if (!entry.run.equals(run) || !entry.directive.actor().alias().equals(alias)) continue;
+            if (entry.dead) return 0.0;
+            var actor = find(level.getServer(), entry.actor);
+            if (!(actor instanceof LivingEntity living)) return null;
+            return living.getMaxHealth() > 0 ? Math.clamp(100.0 * living.getHealth() / living.getMaxHealth(), 0.0, 100.0) : null;
+        }
+        return null;
+    }
+
+    public static void samplePerformance(LivingEntity actor, boolean dead) {
+        if (!(actor.level() instanceof ServerLevel level)) return;
+        var entry = QuestFollowerSavedData.get(level).entries.get(actor.getUUID());
+        if (entry == null) return;
+        var runtime = QuestRuntimes.find(entry.runtime).orElse(null);
+        var progress = runtime == null ? null : runtime.progress(level).get(entry.player, entry.quest);
+        var definition = runtime == null ? null : runtime.content(level.getServer()).quest(entry.quest).orElse(null);
+        if (progress == null || definition == null) return;
+        progress.performance().health(definition.rewards().performance(), entry.directive.actor().alias(),
+                dead ? 0.0 : Math.clamp(100.0 * actor.getHealth() / Math.max(1.0, actor.getMaxHealth()), 0.0, 100.0));
+        runtime.progress(level).changed();
     }
 
     public static boolean protects(LivingEntity entity) {
@@ -244,6 +270,14 @@ public final class QuestFollowerService {
 
     public static void release(ServerLevel level, UUID actor) {
         var data = QuestFollowerSavedData.get(level);
+        var retained = data.entries.get(actor);
+        var living = find(level.getServer(), actor);
+        if (retained != null && living instanceof LivingEntity follower) {
+            samplePerformance(follower, !follower.isAlive());
+            var runtime = QuestRuntimes.find(retained.runtime).orElse(null);
+            var progress = runtime == null ? null : runtime.progress(level).get(retained.player, retained.quest);
+            if (progress != null) progress.performance().actorReleased(retained.directive.actor().alias());
+        }
         if (data.entries.remove(actor) == null) return;
         var entity = find(level.getServer(), actor);
         if (entity instanceof Mob mob) mob.getNavigation().stop();

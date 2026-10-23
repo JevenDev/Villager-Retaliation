@@ -91,6 +91,7 @@ public final class QuestParallelService {
                 progress.parallelPaths.put(branch, new QuestParallelPath(arrived ? stage.id() : path.target(), "",
                         arrived ? QuestParallelPath.Phase.ARRIVED : QuestParallelPath.Phase.ENTERING));
                 if (!arrived) QuestTimers.enter(definition, progress, path.target(), time);
+                progress.performance().refreshScopes(definition, progress, time);
                 changed = true;
             }
         }

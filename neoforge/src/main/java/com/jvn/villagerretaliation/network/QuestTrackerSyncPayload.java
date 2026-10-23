@@ -21,7 +21,7 @@ public record QuestTrackerSyncPayload(
     public static final int MAX_SYNC_ENTRIES = 32;
     public static final int MAX_QUEST_ITEMS = 16;
     public static final int MAX_QUEST_ITEM_ENCHANTMENTS = 16;
-    public static final int MAX_REWARD_PREVIEWS = 8;
+    public static final int MAX_REWARD_PREVIEWS = 32;
     public static final int MAX_PREREQUISITES = 8;
     public static final int MAX_OBJECTIVE_STEPS = 24;
     public static final int MAX_JOURNAL_TAGS = 16;
@@ -30,6 +30,7 @@ public record QuestTrackerSyncPayload(
     private static final int MAX_QUEST_ID_LENGTH = 128;
     private static final int MAX_TITLE_LENGTH = 128;
     private static final int MAX_TEXT_LENGTH = 256;
+    private static final int MAX_DESCRIPTION_LENGTH = 4096;
     private static final int MAX_STATE_LENGTH = 32;
     private static final int MAX_STATUS_LENGTH = 96;
     private static final int MAX_ISSUER_LENGTH = 160;
@@ -110,7 +111,7 @@ public record QuestTrackerSyncPayload(
             buffer.writeUtf(entry.questId(), 128);
             buffer.writeUtf(entry.title(), 128);
             buffer.writeUtf(entry.objective(), 256);
-            buffer.writeUtf(entry.description(), 256);
+            buffer.writeUtf(entry.description(), MAX_DESCRIPTION_LENGTH);
             buffer.writeUtf(entry.metadata(), 256);
             buffer.writeFloat(entry.progress());
             buffer.writeBoolean(entry.showProgress());
@@ -191,7 +192,7 @@ public record QuestTrackerSyncPayload(
                     buffer.readUtf(128),
                     buffer.readUtf(128),
                     buffer.readUtf(256),
-                    buffer.readUtf(256),
+                    buffer.readUtf(MAX_DESCRIPTION_LENGTH),
                     buffer.readUtf(256),
                     buffer.readFloat(),
                     buffer.readBoolean(),
@@ -533,7 +534,7 @@ public record QuestTrackerSyncPayload(
             questId = boundedUtf(questId, MAX_QUEST_ID_LENGTH);
             title = boundedUtf(title, MAX_TITLE_LENGTH);
             objective = boundedUtf(objective, MAX_TEXT_LENGTH);
-            description = boundedUtf(description, MAX_TEXT_LENGTH);
+            description = boundedUtf(description, MAX_DESCRIPTION_LENGTH);
             metadata = boundedUtf(metadata, MAX_TEXT_LENGTH);
             progress = Float.isFinite(progress) ? Math.max(0.0F, Math.min(1.0F, progress)) : 0.0F;
             state = boundedUtf(state, MAX_STATE_LENGTH);

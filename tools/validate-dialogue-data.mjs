@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { validateContentSchema } from "./content-schema-validation.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { validateQuestSiteAccess } from "./quest-site-validation.mjs";
+import { validateQuestPerformance } from "./quest-performance-validation.mjs";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
 import { validateWordDirectory } from "./dialogue-word-validation.mjs";
@@ -1908,6 +1909,7 @@ function indexQuestResource(file, data) {
 
 function checkQuestResource(file, data) {
   for (const issue of validateQuestSiteAccess(data)) errors.push(relative(file) + issue);
+  for (const issue of validateQuestPerformance(data)) errors.push(relative(file) + issue);
   if (data?.schema === questV3Format.V3) {
     for (const issue of validateContentSchema(data, questV3Schema)) errors.push(`${relative(file)}${issue.pointer}: ${issue.message}`);
     data = { ...questV3Format.runtime(data), schema: questV3Format.V2 };

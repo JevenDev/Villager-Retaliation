@@ -208,6 +208,7 @@ public final class QuestLifecycleService {
             QuestTimers.enter(definition, progress, nextStage, gameTime);
             QuestParallelService.enter(definition, progress, nextStage, gameTime);
         }
+        progress.performance().refreshScopes(definition, progress, gameTime);
         return new StageTransition(
                 !previousStage.equals(progress.currentStage()),
                 previousStage,

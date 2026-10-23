@@ -42,8 +42,14 @@ public class QuestProgressModel {
     protected boolean pendingPartyReward;
     protected boolean partyRewardClaimed;
     protected boolean completionPending;
+    protected QuestPerformanceState performance = new QuestPerformanceState(false);
+
+    public QuestPerformanceState performance() { return performance; }
+    public void performance(QuestPerformanceState value) { performance = java.util.Objects.requireNonNull(value); }
+
     protected QuestRewardDelivery rewardDelivery;
     protected Tag preservedRewardDelivery;
+    protected Tag preservedPerformance;
     protected String rewardDeliveryIssue = "";
     protected UUID partyQuestInstanceId;
     protected UUID questRunId;
@@ -423,7 +429,9 @@ public class QuestProgressModel {
         this.partyRewardClaimed = false;
         this.completionPending = false;
         this.rewardDelivery = null;
+        this.performance = new QuestPerformanceState(true);
         this.preservedRewardDelivery = null;
+        this.preservedPerformance = null;
         this.rewardDeliveryIssue = "";
         this.partyQuestInstanceId = null;
         this.questRunId = null;

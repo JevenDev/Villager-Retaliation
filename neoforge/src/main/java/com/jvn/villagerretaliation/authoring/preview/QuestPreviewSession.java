@@ -26,6 +26,26 @@ public final class QuestPreviewSession {
     private final List<String> log = new ArrayList<>();
     private final Set<String> visitedNodes = new HashSet<>();
     private final Set<String> chosenPaths = new HashSet<>();
+    private final java.util.Map<String, Double> performanceValues = new java.util.LinkedHashMap<>();
+
+    public Set<String> performanceMeasurements() { return compiled.rewards().definition().performance().measurements().keySet(); }
+    public Double performanceValue(String id) { return performanceValues.get(id); }
+    public void performanceValue(String id, Double value) {
+        if (!performanceMeasurements().contains(id)) throw new IllegalArgumentException("Unknown performance measurement: " + id);
+        if (value == null) performanceValues.remove(id);
+        else {
+            if (!Double.isFinite(value) || value < 0
+                    || compiled.rewards().definition().performance().measurements().get(id).health() && value > 100)
+                throw new IllegalArgumentException("Performance values must be in the measurement's valid range");
+            performanceValues.put(id, value);
+        }
+    }
+
+    public String performanceResult() {
+        var selected = compiled.rewards().definition().performance().select(performanceValues);
+        return selected == null ? "Base rewards" : selected.id();
+    }
+
     private String current;
     private String outcome = "";
 
@@ -45,7 +65,7 @@ public final class QuestPreviewSession {
 
     public void startAt(String stage) {
         if (!compiled.stagesById().containsKey(stage)) throw new IllegalArgumentException("Missing start stage " + stage);
-        completed.clear(); log.clear(); outcome = ""; current = stage;
+        completed.clear(); performanceValues.clear(); log.clear(); outcome = ""; current = stage;
         visitedNodes.add(stagePath());
         log.add("Started isolated quest simulation");
         log.add("Entry effects: " + stage().entryActions());
@@ -150,7 +170,12 @@ public final class QuestPreviewSession {
         for (String terminal : List.of("complete", "fail", "abandon")) if (transition.has(terminal) && transition.get(terminal).getAsBoolean()) {
             outcome = terminal;
             log.add("Quest " + terminal);
-            if (terminal.equals("complete")) log.add("Reward effects: " + compiled.rewards());
+            if (terminal.equals("complete")) {
+                var base = compiled.rewards().definition();
+                var selected = base.performance().select(performanceValues);
+                log.add("Performance tier: " + performanceResult());
+                log.add("Reward effects: " + (selected == null ? base : selected.rewards().apply(base)));
+            }
             return;
         }
         throw new IllegalStateException("No stage or terminal outcome configured");

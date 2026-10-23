@@ -280,7 +280,8 @@ public final class QuestV2Compiler {
                 default -> { }
             }
         }
-        return new QuestDefinition.Rewards(Math.max(0, experience), reputation, gossip, loot, memory, scope);
+        return new QuestDefinition.Rewards(Math.max(0, experience), reputation, gossip, loot, memory, scope,
+                QuestPerformance.read(data.get("performance")));
     }
 
     private static List<VillagerActionDefinition> rewardActions(ResourceLocation questId, QuestSourcePointer source, QuestV2Resource.Rewards rewards) {

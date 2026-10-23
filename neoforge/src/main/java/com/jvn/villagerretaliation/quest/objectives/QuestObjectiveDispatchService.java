@@ -21,9 +21,11 @@ public final class QuestObjectiveDispatchService {
     public static boolean poll(QuestObjectiveEvaluationContext context, boolean executionAllowed,
             Consumer<QuestDefinition.Objective> completed) {
         if (!executionAllowed) return false;
-        return QuestObjectiveDispatcher.poll(context.model(),
+        boolean changed = QuestObjectiveDispatcher.poll(context.model(),
                 QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), executionAllowed,
                 objective -> isComplete(context, objective), completed);
+        if (changed) updatePerformance(context);
+        return changed;
     }
 
     public static boolean dispatch(QuestObjectiveEvaluationContext context, QuestObjectiveEvent event,
@@ -40,10 +42,19 @@ public final class QuestObjectiveDispatchService {
                                 + " event=" + update.eventKind().name().toLowerCase(Locale.ROOT)
                                 + " counter_delta=" + update.counterDelta()
                                 + " complete_delta=" + update.completed()) : null;
-        return QuestObjectiveDispatcher.dispatch(context.model(),
+        boolean changed = QuestObjectiveDispatcher.dispatch(context.model(),
                 QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), true, event.kind(),
                 objective -> QuestObjectiveRegistry.matchesEvent(context, objective, event),
                 objective -> isComplete(context, objective), completed, observer);
+        if (changed) updatePerformance(context);
+        return changed;
+    }
+
+    private static void updatePerformance(QuestObjectiveEvaluationContext context) {
+        if (context.player() != null && context.level() != null
+                && context.model() instanceof com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestProgress progress)
+            com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.update(
+                    context.level(), context.player().getUUID(), context.definition(), progress);
     }
 
     private static boolean executionAllowed(QuestObjectiveEvaluationContext context) {

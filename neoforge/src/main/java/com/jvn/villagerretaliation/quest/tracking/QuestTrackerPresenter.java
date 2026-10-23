@@ -35,7 +35,8 @@ public final class QuestTrackerPresenter {
                 definition.id().toString(),
                 resolveText(input.player(), input.title(), input.replacements()),
                 objective,
-                resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements()),
+                QuestPerformancePresentation.description(input.player(), definition,
+                        resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements())),
                 appendSceneStatus(metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
                         SceneJournalPresenter.status(input.player(), definition.id())),
                 Mth.clamp(input.progress(), 0.0F, 1.0F),
@@ -517,6 +518,26 @@ public final class QuestTrackerPresenter {
             return List.of();
         }
         QuestDefinition.Rewards rewards = definition.rewards();
+        if (rewards.performance().tiers().isEmpty()) return rewardPreviews(player, rewards, replacements);
+        var progress = player == null ? null : VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), definition.id());
+        List<QuestTrackerSyncPayload.RewardPreview> previews = new ArrayList<>();
+        if (progress != null && progress.performance().frozen()) {
+            previews.add(new QuestTrackerSyncPayload.RewardPreview("performance", QuestPerformancePresentation.result(player, definition), 0));
+            previews.addAll(rewardPreviews(player, progress.performance().resolvedRewards(), replacements));
+        } else {
+            previews.add(new QuestTrackerSyncPayload.RewardPreview("performance",
+                    QuestPerformancePresentation.text(player, "base", "Base rewards", Map.of()), 0));
+            previews.addAll(rewardPreviews(player, rewards, replacements));
+            for (var tier : rewards.performance().tiers()) {
+                previews.add(new QuestTrackerSyncPayload.RewardPreview("performance", QuestPerformancePresentation.title(player, tier), 0));
+                previews.addAll(rewardPreviews(player, tier.rewards().apply(rewards), replacements));
+            }
+        }
+        return previews.stream().limit(QuestTrackerSyncPayload.MAX_REWARD_PREVIEWS).toList();
+    }
+
+    private static List<QuestTrackerSyncPayload.RewardPreview> rewardPreviews(ServerPlayer player,
+            QuestDefinition.Rewards rewards, Map<String, String> replacements) {
         List<QuestTrackerSyncPayload.RewardPreview> previews = new ArrayList<>();
         if (player != null && player.getServer() != null && rewards.lootTable() != null) {
             for (QuestRewardPreviewResources.ItemPreview item : QuestRewardPreviewResources.itemPreviews(

@@ -50,6 +50,7 @@ public final class ContentSchemaDefinitions {
         properties.add("localization_prefix", localizationPrefix());
         properties.add("metadata", ref("#/$defs/metadata"));
         properties.add("provider", ref("#/$defs/provider"));
+        properties.add("performance", com.jvn.villagerretaliation.quest.QuestPerformance.schema());
         properties.add("discovery", com.jvn.villagerretaliation.quest.discovery.QuestDiscoveryDefinition.arraySchema());
         properties.add("availability", ref("#/$defs/availability"));
         properties.add("lifecycle", ref("#/$defs/lifecycle"));

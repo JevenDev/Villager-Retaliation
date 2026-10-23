@@ -63,6 +63,10 @@ final class PartyQuestRewardService {
                 continue;
             }
             PartyQuestService.syncPersonalProgress(shared, definition, progress);
+            progress.performance(completingProgress.performance());
+            if (completingProgress.performance().resolvedRewards() != null)
+                progress.recordRewardDelivery(new com.jvn.villagerretaliation.quest.runtime.QuestRewardDelivery(
+                        completingProgress.performance().resolvedRewards(), 0));
             QuestLifecycleService.complete(
                     definition.id(),
                     progress,

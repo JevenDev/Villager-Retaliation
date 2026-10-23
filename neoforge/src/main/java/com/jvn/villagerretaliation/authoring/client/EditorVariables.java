@@ -63,6 +63,9 @@ final class EditorVariables {
                     quest_transition_status quest_transition_scene quest_transition_response quest_transition_prior_stage
                     quest_transition_next_stage quest_transition_source reward_id
                     """),
+            group("Performance rewards", "Tier names and requirement bounds supplied by performance reward journal text.", """
+                    tier min value
+                    """),
             group("Quest objectives", "Values from the current quest objective. Fields depend on its type. Journal-only fields include objective target coordinates.", """
                     objective_id objective_type objective_item objective_item_id objective_count objective_progress_count
                     objective_entity objective_block objective_block_id objective_memory objective_memory_id objective_gift_reaction

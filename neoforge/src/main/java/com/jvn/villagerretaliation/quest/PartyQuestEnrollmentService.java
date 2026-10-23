@@ -255,6 +255,9 @@ final class PartyQuestEnrollmentService {
                 VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), shared.questId());
                 if (progress != null && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE) {
                     PartyQuestService.syncPersonalProgress(shared, definition, progress);
+                    if (progress.performance().resolvedRewards() != null)
+                        progress.recordRewardDelivery(new com.jvn.villagerretaliation.quest.runtime.QuestRewardDelivery(
+                                progress.performance().resolvedRewards(), 0));
                     QuestLifecycleService.complete(
                             definition.id(),
                             progress,

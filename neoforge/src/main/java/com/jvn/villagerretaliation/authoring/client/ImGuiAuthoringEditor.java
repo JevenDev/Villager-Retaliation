@@ -132,6 +132,7 @@ final class ImGuiAuthoringEditor {
     private final Map<String, float[]> positions = new HashMap<>();
     private final PreviewConditions conditions = new PreviewConditions();
     private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
+    private final Map<String, imgui.type.ImString> performanceInputs = new java.util.LinkedHashMap<>();
     private EditorSchema propertySchema;
     private boolean liveQuestMode = true;
     private float playtestFraction = 2F / 3;
@@ -3266,6 +3267,7 @@ final class ImGuiAuthoringEditor {
         ImGui.textWrapped("Isolated quest simulation. Objective completion is simulated. Actions and rewards are logged.");
         if (ImGui.button("Start / restart quest test")) operation(() -> {
             questPreview = new com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession(document, conditions);
+            performanceInputs.clear();
             simulationCoverage = coverage.observe(document);
             simulationCoverage.accept(questPreview.drainCoverage());
         });
@@ -3275,6 +3277,17 @@ final class ImGuiAuthoringEditor {
                 boolean complete = questPreview.completed(objective);
                 if (ImGui.checkbox(objective, complete)) questPreview.completed(objective, !complete);
             }
+            for (String measurement : questPreview.performanceMeasurements()) {
+                var value = performanceInputs.computeIfAbsent(measurement, id -> new imgui.type.ImString("", 64));
+                ImGui.inputText("Performance: " + measurement, value);
+                try {
+                    questPreview.performanceValue(measurement, value.get().isBlank() ? null : Double.parseDouble(value.get()));
+                } catch (IllegalArgumentException invalid) {
+                    questPreview.performanceValue(measurement, null);
+                    ImGui.textWrapped("Enter a nonnegative number, or leave the measurement unavailable.");
+                }
+            }
+            if (!questPreview.performanceMeasurements().isEmpty()) ImGui.textWrapped("Performance result: " + questPreview.performanceResult());
             if (questPreview.ready()) ImGui.textWrapped("Stage requirements met.");
             else for (String blocker : questPreview.blockers()) ImGui.textWrapped(blocker);
             ImGui.beginDisabled(!questPreview.ready());

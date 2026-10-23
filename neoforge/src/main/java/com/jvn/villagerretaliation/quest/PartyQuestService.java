@@ -124,6 +124,10 @@ public final class PartyQuestService {
             PartySharedQuestRecord shared,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
+        if (!definition.rewards().performance().measurements().isEmpty()) {
+            if (shared.performance() == null) shared.performance(progress.performance());
+            progress.performance(shared.performance());
+        }
         for (QuestDefinition.Objective objective : definition.objectives()) {
             int delta = shared.objectiveCounter(objective.id()) - progress.objectiveCounter(objective.id());
             if (delta > 0) {
@@ -155,6 +159,8 @@ public final class PartyQuestService {
                     questData.setDirty();
                 }
             }
+            if (progress != null && shared.performance() != null)
+                progress.performance(com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState.load(shared.performance().save()));
             shared.removeEnrollment(playerId);
             changed = true;
             if (shared.enrollments().isEmpty() || shared.settled()) {
@@ -200,6 +206,8 @@ public final class PartyQuestService {
                     questData.setDirty();
                 }
             }
+            if (progress != null && shared.performance() != null)
+                progress.performance(com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState.load(shared.performance().save()));
             shared.removeEnrollment(playerId);
             if (shared.enrollments().isEmpty() || shared.settled()) {
                 party.removeSharedQuest(shared.instanceId());

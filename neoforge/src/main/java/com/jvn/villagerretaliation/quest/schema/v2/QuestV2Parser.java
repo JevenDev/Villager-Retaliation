@@ -99,6 +99,18 @@ public final class QuestV2Parser {
         Map<String, QuestV2Resource.Stage> stagesById = indexStages(validator, stages);
         List<QuestV2Resource.Event> events = readEvents(validator, root.get("events"), "/events");
         QuestV2Resource.Rewards rewards = readRewards(validator, root.get("rewards"), "/rewards");
+        try {
+            var performance = com.jvn.villagerretaliation.quest.QuestPerformance.read(root.get("performance"));
+            for (String issue : performance.referenceErrors(root))
+                validator.error("/performance", issue, "Reference declared stages, objectives and followers.", Set.of());
+            if (root.has("performance")) {
+                var rewardData = rewards.data().deepCopy();
+                rewardData.add("performance", root.get("performance").deepCopy());
+                rewards = new QuestV2Resource.Rewards(rewards.actions(), rewardData);
+            }
+        } catch (IllegalArgumentException exception) {
+            validator.error("/performance", exception.getMessage(), "Correct the performance definition.", Set.of());
+        }
         QuestV2Resource.UiHints ui = readUi(validator, root.get("ui"), "/ui");
 
         QuestV2Resource resource = id == null

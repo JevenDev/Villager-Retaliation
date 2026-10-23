@@ -287,6 +287,7 @@ public final class VillagerRetaliationEvents {
     public static void onServerTickPost(ServerTickEvent.Post event) {
         com.jvn.villagerretaliation.party.CompanionAmbientService.tick(event.getServer());
         com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker.tick();
+        com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.tick(event.getServer());
         com.jvn.villagerretaliation.quest.follower.QuestFollowerService.maintain(event.getServer());
         com.jvn.villagerretaliation.social.VillagerBirthService.finishAcceptedSpawns();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
@@ -334,6 +335,10 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerService.samplePerformance(event.getEntity(), false);
+        if (event.getEntity() instanceof ServerPlayer damagedPlayer)
+            com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.playerEvent(damagedPlayer,
+                    com.jvn.villagerretaliation.quest.QuestPerformance.Metric.DAMAGE_TAKEN, event.getNewDamage(), null);
         if (event.getEntity() instanceof LivingEntity living
                 && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
 
@@ -427,6 +432,10 @@ public final class VillagerRetaliationEvents {
             event.getEntity().setHealth(Math.max(1.0F, event.getEntity().getHealth()));
             return;
         }
+        com.jvn.villagerretaliation.quest.follower.QuestFollowerService.samplePerformance(event.getEntity(), true);
+        if (event.getEntity() instanceof ServerPlayer deadPlayer)
+            com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.playerEvent(deadPlayer,
+                    com.jvn.villagerretaliation.quest.QuestPerformance.Metric.DEATHS, 1, null);
         HiredCombatSkillPracticeService.onKill(event);
         com.jvn.villagerretaliation.party.CompanionAmbientService.onDeath(event.getEntity());
         EncounterService.onDeath(event.getEntity());

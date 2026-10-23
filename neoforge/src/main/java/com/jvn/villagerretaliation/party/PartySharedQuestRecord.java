@@ -41,6 +41,11 @@ public final class PartySharedQuestRecord {
     private final Map<String, Integer> objectiveCounters;
     private final Set<String> completedObjectives;
     private final LinkedHashSet<String> processedDeaths;
+    private com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState performance;
+
+    public com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState performance() { return performance; }
+    public void performance(com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState value) { performance = value; }
+
     private boolean completed;
 
     public PartySharedQuestRecord(ResourceLocation questId, UUID sourceVillagerId, long createdGameTime) {
@@ -191,6 +196,7 @@ public final class PartySharedQuestRecord {
         }
         tag.putLong(TAG_CREATED_GAME_TIME, this.createdGameTime);
         tag.putBoolean(TAG_COMPLETED, this.completed);
+        if (performance != null) tag.put("Performance", performance.save());
         ListTag enrollmentsTag = new ListTag();
         for (Enrollment enrollment : this.enrollments.values()) {
             enrollmentsTag.add(enrollment.save());
@@ -241,7 +247,7 @@ public final class PartySharedQuestRecord {
         while (processedDeaths.size() > MAX_PROCESSED_DEATHS) {
             processedDeaths.remove(processedDeaths.iterator().next());
         }
-        return new PartySharedQuestRecord(
+        var result = new PartySharedQuestRecord(
                 instanceId,
                 questId,
                 tag.hasUUID(TAG_SOURCE_VILLAGER) ? tag.getUUID(TAG_SOURCE_VILLAGER) : null,
@@ -251,6 +257,9 @@ public final class PartySharedQuestRecord {
                 completedObjectives,
                 processedDeaths,
                 tag.getBoolean(TAG_COMPLETED));
+        if (tag.contains("Performance", Tag.TAG_COMPOUND))
+            result.performance = com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState.load(tag.getCompound("Performance"));
+        return result;
     }
 
     private static List<String> readStringList(CompoundTag tag, String key) {

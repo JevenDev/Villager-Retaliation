@@ -25,10 +25,16 @@ public final class QuestRewardService {
     }
 
     public static String unresolvedDiagnostic(MinecraftServer server, QuestDefinition definition) {
-        ResourceLocation rewardId = definition == null ? null : definition.rewards().lootTable();
-        if (rewardId == null) return "";
-        QuestRewardResolver.Resolution resolution = QuestRewardResolver.resolve(server, rewardId);
-        return resolution.resolved() ? "" : resolution.diagnostic();
+        if (definition == null) return "";
+        var rewards = new java.util.ArrayList<QuestDefinition.Rewards>();
+        rewards.add(definition.rewards());
+        definition.rewards().performance().tiers().forEach(tier -> rewards.add(tier.rewards().apply(definition.rewards())));
+        for (var reward : rewards) {
+            if (reward.lootTable() == null) continue;
+            var resolution = QuestRewardResolver.resolve(server, reward.lootTable());
+            if (!resolution.resolved()) return resolution.diagnostic();
+        }
+        return "";
     }
 
     public static ActionResult award(DialogueContext context, QuestDefinition definition, Map<String, String> replacements) {
@@ -45,7 +51,8 @@ public final class QuestRewardService {
             return ActionResult.unavailable("Quest reward delivery is already in progress.", Set.of(), VillagerActionResult.EMPTY);
         }
         try {
-            ActionResult outcome = QuestRewardDeliveryService.deliver(progress, definition.rewards(), replacements,
+            ActionResult outcome = QuestRewardDeliveryService.deliver(progress,
+                    progress.performance().resolvedRewards() == null ? definition.rewards() : progress.performance().resolvedRewards(), replacements,
                     (action, inherited) -> action.kind() == VillagerActionDefinition.Kind.MEMORY
                             ? remember(context, action) : VillagerActionRegistry.execute(context, action, inherited),
                     (action, result) -> QuestDebugTraceService.recordIfEnabled(context.player(), QuestDebugTraceService.EventType.REWARD, definition.id(),

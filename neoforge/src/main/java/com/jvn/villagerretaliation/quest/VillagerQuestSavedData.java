@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -299,6 +300,15 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             }
         }
         return List.copyOf(active);
+    }
+
+    public List<QuestEntry> activeEntries(Set<ResourceLocation> questIds) {
+        List<QuestEntry> result = new ArrayList<>();
+        entries.forEach((player, quests) -> questIds.forEach(quest -> {
+            var progress = quests.get(quest);
+            if (progress != null && progress.state() == QuestState.ACTIVE) result.add(new QuestEntry(player, quest, progress));
+        }));
+        return List.copyOf(result);
     }
 
     public List<QuestEntry> activeProgressStartedBy(UUID villagerId) {
@@ -639,6 +649,15 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             progress.pendingPartyReward = tag.getBoolean(TAG_PENDING_PARTY_REWARD);
             progress.partyRewardClaimed = tag.getBoolean(TAG_PARTY_REWARD_CLAIMED);
             progress.completionPending = tag.getBoolean("CompletionPending");
+            if (tag.contains("Performance")) {
+                try {
+                    if (!tag.contains("Performance", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid saved performance state");
+                    progress.performance = com.jvn.villagerretaliation.quest.runtime.QuestPerformanceState.load(tag.getCompound("Performance"));
+                } catch (IllegalArgumentException exception) {
+                    progress.preservedPerformance = tag.get("Performance").copy();
+                    progress.rewardDeliveryIssue = exception.getMessage();
+                }
+            }
             if (tag.contains("RewardDelivery")) {
                 try {
                     if (!tag.contains("RewardDelivery", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid saved reward plan");
@@ -795,6 +814,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             tag.putBoolean(TAG_PENDING_PARTY_REWARD, this.pendingPartyReward);
             tag.putBoolean(TAG_PARTY_REWARD_CLAIMED, this.partyRewardClaimed);
             tag.putBoolean("CompletionPending", this.completionPending);
+            tag.put("Performance", this.preservedPerformance == null ? this.performance.save() : this.preservedPerformance.copy());
             if (this.preservedRewardDelivery != null) tag.put("RewardDelivery", this.preservedRewardDelivery.copy());
             else if (this.rewardDelivery != null) tag.put("RewardDelivery", this.rewardDelivery.save());
             if (this.partyQuestInstanceId != null) {

@@ -2181,7 +2181,9 @@ public final class VillagerQuestService {
         }
         String campaignIssue = CampaignQuestEntries.completionIssue(context.level(), context.player().getUUID(), definition, progress);
         if (!campaignIssue.isBlank()) return result("unavailable", lineId(definition, "unavailable"), campaignIssue, replacements(context, definition, progress));
-        ResourceLocation rewardId = progress.campaignAlternateEntry() ? null : definition.rewards().lootTable();
+        var selectedRewards = progress.campaignAlternateEntry() ? QuestDefinition.Rewards.EMPTY
+                : com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.freeze(context, definition, progress);
+        ResourceLocation rewardId = selectedRewards.lootTable();
         if (rewardId != null) {
             QuestRewardResolver.Resolution rewardResolution =
                     QuestRewardResolver.resolve(context.level().getServer(), rewardId);
@@ -2214,7 +2216,7 @@ public final class VillagerQuestService {
         }
 
         progress.markHasProof();
-        progress.beginCompletion(progress.campaignAlternateEntry() ? QuestDefinition.Rewards.EMPTY : definition.rewards());
+        progress.beginCompletion(selectedRewards);
         data.setDirty();
         return finishQuestCompletion(context, definition, progress);
     }
@@ -2250,6 +2252,8 @@ public final class VillagerQuestService {
         }
         CampaignQuestEntries.syncCompletion(context.player(), definition, progress);
         sendQuestNotification(context, "quest.completed", definition, progress, "Quest completed: {quest}");
+        String performanceResult = com.jvn.villagerretaliation.quest.tracking.QuestPerformancePresentation.result(context.player(), definition);
+        if (!performanceResult.isBlank()) context.player().displayClientMessage(Component.literal(performanceResult), false);
         if (!progress.campaignAlternateEntry() && dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED)) {
             data.setDirty();
         }
@@ -2881,6 +2885,14 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         return CampaignQuestAccess.executionIssue(player.serverLevel(), player.getUUID(), definition, progress).isBlank()
                 && activeConditionsStateForPlayer(player, definition, progress) == ConditionMatch.MET;
+    }
+
+    public static boolean performanceActive(ServerPlayer player, QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        return !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(player, definition.id())
+                && CampaignQuestAccess.executionIssue(player.serverLevel(), player.getUUID(), definition, progress).isBlank()
+                && (!definition.rules().activeState().pauseProgressWhenUnmet()
+                || activeConditionsStateForPlayer(player, definition, progress) == ConditionMatch.MET);
     }
 
     private static boolean updateQuestTimers(ServerPlayer player, QuestDefinition definition,
@@ -5601,14 +5613,17 @@ public final class VillagerQuestService {
         if (contributor == null) {
             contributor = killed.getKillCredit();
         }
-        Set<ResourceLocation> sharedQuestIds = contributor == null
-                ? Set.of()
-                : onSharedPartyKill(level, killed, contributor);
         ServerPlayer player = contributor instanceof ServerPlayer serverPlayer
                 ? serverPlayer
                 : killed.getKillCredit() instanceof ServerPlayer serverPlayer
                         ? serverPlayer
                         : null;
+        if (player != null && player.level() == level)
+            com.jvn.villagerretaliation.quest.runtime.QuestPerformanceService.playerEvent(player,
+                    QuestPerformance.Metric.KILLS, 1, killed);
+        Set<ResourceLocation> sharedQuestIds = contributor == null
+                ? Set.of()
+                : onSharedPartyKill(level, killed, contributor);
         if (player == null || player.level() != level) {
             return;
         }

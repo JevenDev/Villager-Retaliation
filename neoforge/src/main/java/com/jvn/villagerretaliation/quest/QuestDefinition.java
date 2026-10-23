@@ -263,13 +263,20 @@ public record QuestDefinition(
             int gossipReputation,
             ResourceLocation lootTable,
             ResourceLocation memoryEvent,
-            com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope memoryScope
+            com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope memoryScope,
+            QuestPerformance performance
     ) {
+        public Rewards(int experience, int reputation, int gossipReputation, ResourceLocation lootTable,
+                ResourceLocation memoryEvent, com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope memoryScope) {
+            this(experience, reputation, gossipReputation, lootTable, memoryEvent, memoryScope, QuestPerformance.EMPTY);
+        }
+
         public static final Rewards EMPTY = new Rewards(
                 0, 0, 0, null, null,
                 com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH);
 
         public Rewards {
+            performance = performance == null ? QuestPerformance.EMPTY : performance;
             memoryScope = memoryScope == null
                     ? com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH
                     : memoryScope;

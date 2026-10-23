@@ -78,6 +78,7 @@ public final class QuestStageTransitionCoordinator {
                 objective -> access.objectiveComplete(context.player(), context, context.level(), definition, progress, objective),
                 conditions -> DialogueCondition.matchesAll(context, conditions),
                 (stage, key, actions) -> {
+                    QuestPerformanceService.update(context.level(), context.player().getUUID(), definition, progress);
                     VillagerQuestSavedData.get(context.level()).setDirty();
                     return access.runParallelStageActions(context, definition, progress, stage, key, actions).success();
                 }, stage -> access.dispatchParallelStageChangedTriggers(context, definition, progress, stage));
@@ -114,6 +115,7 @@ public final class QuestStageTransitionCoordinator {
         if (!campaignEntry.available() || campaignEntry.catchUp() || !CampaignQuestAccess.executionIssue(context, definition).isBlank()) return false;
         QuestDefinition.Stage previous = definition.stages().get(progress.currentStage());
         if (previous != null && previous.next().equals(stage.trim()) && !QuestParallelService.complete(previous, progress)) return false;
+        QuestPerformanceService.update(context.level(), context.player().getUUID(), definition, progress);
         if (runExitActions && previous != null) {
             progress.requestStageTransition(stage);
             VillagerQuestSavedData.get(context.level()).setDirty();
