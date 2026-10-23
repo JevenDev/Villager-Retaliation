@@ -136,6 +136,24 @@ public final class DialoguePlaybackGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void soundsShareParticleTimingWithoutReplaying(GameTestHelper helper) {
+        String text = "😀<speed=2>A<pause=500><sound:entity.villager.yes><particle:heart>B<sound:entity.villager.no>";
+        var clock = clock(text, 100);
+        helper.assertTrue(clock.pollSounds(649).isEmpty(), "sounds wait for text and pauses");
+        helper.assertValueEqual(clock.pollSounds(650).size(), 1, "sound starts at the authored word");
+        helper.assertValueEqual(clock.pollParticles(650).size(), 1, "particles use the same timeline position");
+        helper.assertTrue(clock.pollSounds(650).isEmpty(), "sound does not repeat on another frame");
+        helper.assertTrue(clock.copy().pollSounds(650).isEmpty(), "screen replacement preserves consumed sounds");
+        helper.assertValueEqual(clock.retime(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 50).pollSounds(700).size(),
+                1, "retiming preserves consumed sounds");
+        clock.skip();
+        helper.assertTrue(clock.pollSounds(900).isEmpty(), "skipping avoids playing a backlog of sounds together");
+        var instant = clock("<sound:entity.villager.yes>A<pause=500><sound:entity.villager.no>", 0);
+        helper.assertValueEqual(instant.pollSounds(0).size(), 2, "instant text schedules authored sounds immediately");
+        helper.succeed();
+    }
+
     private static DialoguePlayback clock(String text, long millisPerCharacter) {
         return new DialoguePlayback(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 0, millisPerCharacter);
     }

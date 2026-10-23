@@ -6,12 +6,12 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
-public record DialogueCue(Kind kind, double value, ResourceLocation particle) {
+public record DialogueCue(Kind kind, double value, ResourceLocation particle, Sound sound) {
     public static final int MAX_CUES = 64;
     public static final int MAX_PARTICLE_AMOUNT = 64;
-    private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed", "particle");
+    private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed", "particle", "sound");
 
-    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE }
+    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE, SOUND }
 
     public DialogueCue {
         java.util.Objects.requireNonNull(kind);
@@ -23,10 +23,25 @@ public record DialogueCue(Kind kind, double value, ResourceLocation particle) {
         }) throw new IllegalArgumentException("Invalid dialogue cue value");
         if ((kind == Kind.PARTICLE) != (particle != null))
             throw new IllegalArgumentException("Particle resource must match dialogue cue kind");
+        if ((kind == Kind.SOUND) != (sound != null))
+            throw new IllegalArgumentException("Sound parameters must match dialogue cue kind");
+    }
+
+    public DialogueCue(Kind kind, double value, ResourceLocation particle) {
+        this(kind, value, particle, null);
     }
 
     public DialogueCue(Kind kind, double value) {
-        this(kind, value, null);
+        this(kind, value, null, null);
+    }
+
+    public record Sound(ResourceLocation id, float volume, float pitch) {
+        public Sound {
+            java.util.Objects.requireNonNull(id);
+            if (!Float.isFinite(volume) || volume < 0 || volume > 1
+                    || !Float.isFinite(pitch) || pitch < 0.5F || pitch > 2)
+                throw new IllegalArgumentException("Invalid dialogue sound volume or pitch");
+        }
     }
 
     public record At(int offset, DialogueCue cue) {
@@ -54,9 +69,36 @@ public record DialogueCue(Kind kind, double value, ResourceLocation particle) {
         }
     }
 
+    private static DialogueCue parseSound(String raw) {
+        String[] tokens = raw.split("\\s+");
+        String[] resource = tokens[0].split("[=:]", 2);
+        if (resource.length != 2 || !resource[1].matches("(?:[a-z0-9_.-]+:)?[a-z0-9/._-]+")) return null;
+        var id = ResourceLocation.tryParse(resource[1]);
+        if (id == null) return null;
+        float volume = 1;
+        float pitch = 1;
+        var seen = new java.util.HashSet<String>();
+        try {
+            for (int index = 1; index < tokens.length; index++) {
+                String[] argument = tokens[index].split("[=:]", -1);
+                if (argument.length != 2 || !seen.add(argument[0])
+                        || !argument[1].matches("[0-9]+(?:\\.[0-9]+)?")) return null;
+                switch (argument[0]) {
+                    case "volume" -> volume = Float.parseFloat(argument[1]);
+                    case "pitch" -> pitch = Float.parseFloat(argument[1]);
+                    default -> { return null; }
+                }
+            }
+            return new DialogueCue(Kind.SOUND, 0, null, new Sound(id, volume, pitch));
+        } catch (IllegalArgumentException invalid) {
+            return null;
+        }
+    }
+
     public static DialogueCue parse(String raw) {
         String normalized = raw.trim().toLowerCase(Locale.ROOT);
         if (normalized.split("[=:]", 2)[0].trim().equals("particle")) return parseParticle(normalized);
+        if (normalized.split("[=:]", 2)[0].trim().equals("sound")) return parseSound(normalized);
         String[] parts = normalized.split("[=:]", -1);
         String name = parts[0].trim();
         if (!TAGS.contains(name)) return null;

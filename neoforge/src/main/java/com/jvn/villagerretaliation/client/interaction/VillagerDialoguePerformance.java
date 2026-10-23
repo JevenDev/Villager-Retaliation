@@ -5,6 +5,10 @@ import com.jvn.villagerretaliation.dialogue.DialoguePlayback;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
@@ -34,6 +38,25 @@ public final class VillagerDialoguePerformance {
                         entity.getZ() + (random.nextDouble() - 0.5) * entity.getBbWidth(),
                         (random.nextDouble() - 0.5) * 0.02, 0.02, (random.nextDouble() - 0.5) * 0.02);
         }
+    }
+
+    public static java.util.List<SoundInstance> emitSounds(Entity entity, DialoguePlayback clock, long now) {
+        var minecraft = Minecraft.getInstance();
+        var result = new java.util.ArrayList<SoundInstance>();
+        for (var cue : clock.pollSounds(now)) {
+            var sound = cue.sound();
+            if (minecraft.getSoundManager().getSoundEvent(sound.id()) == null) {
+                com.mojang.logging.LogUtils.getLogger().warn("Unknown dialogue cue sound: {}", sound.id());
+                continue;
+            }
+            var instance = new SimpleSoundInstance(sound.id(), SoundSource.VOICE, sound.volume(), sound.pitch(),
+                    RandomSource.create(), false, 0, entity == null ? SoundInstance.Attenuation.NONE : SoundInstance.Attenuation.LINEAR,
+                    entity == null ? 0 : entity.getX(), entity == null ? 0 : entity.getEyeY(),
+                    entity == null ? 0 : entity.getZ(), entity == null);
+            minecraft.getSoundManager().play(instance);
+            result.add(instance);
+        }
+        return java.util.List.copyOf(result);
     }
 
     public static void clear() {

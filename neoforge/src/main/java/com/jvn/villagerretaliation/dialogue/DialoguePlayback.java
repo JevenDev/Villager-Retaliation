@@ -15,6 +15,8 @@ public final class DialoguePlayback {
     private final boolean instant;
     private boolean skipped;
     private int nextParticle;
+    private int nextSound;
+    private final List<TimedCue> sounds;
     private final List<TimedCue> particles;
 
     private record TimedCue(double time, DialogueCue cue) { }
@@ -84,6 +86,7 @@ public final class DialoguePlayback {
         this.revealTimes = List.copyOf(reveal);
         this.cues = List.copyOf(events);
         this.particles = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.PARTICLE).toList();
+        this.sounds = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.SOUND).toList();
         this.pauses = List.copyOf(waits);
         this.duration = Math.max(Math.max(end, Math.max(gestureEnd, gazeEnd)), events.isEmpty() ? 0 : events.getLast().time());
     }
@@ -99,15 +102,18 @@ public final class DialoguePlayback {
         skipped = source.skipped;
         particles = source.particles;
         nextParticle = source.nextParticle;
+        sounds = source.sounds;
+        nextSound = source.nextSound;
     }
 
     public DialoguePlayback copy() { return new DialoguePlayback(this); }
-    public void skip() { skipped = true; }
+    public void skip() { skipped = true; nextSound = sounds.size(); }
 
     public DialoguePlayback retime(List<DialogueTextSegment> segments, long millisPerCharacter) {
         var result = new DialoguePlayback(segments, startedAt, millisPerCharacter);
         result.skipped = skipped;
         result.nextParticle = Math.min(nextParticle, result.particles.size());
+        result.nextSound = Math.min(nextSound, result.sounds.size());
         return result;
     }
 
@@ -116,6 +122,14 @@ public final class DialoguePlayback {
         var due = new ArrayList<DialogueCue>();
         while (nextParticle < particles.size() && particles.get(nextParticle).time() <= elapsed)
             due.add(particles.get(nextParticle++).cue());
+        return List.copyOf(due);
+    }
+
+    public List<DialogueCue> pollSounds(long now) {
+        var due = new ArrayList<DialogueCue>();
+        double elapsed = elapsed(now);
+        while (nextSound < sounds.size() && sounds.get(nextSound).time() <= elapsed)
+            due.add(sounds.get(nextSound++).cue());
         return List.copyOf(due);
     }
 

@@ -8,10 +8,22 @@ const groups = [
 ];
 const tags = new Map(groups.flatMap(group => group.map(tag => [tag, group[0]])));
 
-const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset", "particle"]);
+const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset", "particle", "sound"]);
 
 function validCue(raw) {
   const normalized = raw.trim().toLowerCase();
+  if (normalized.split(/[=:]/)[0].trim() === "sound") {
+    const [resource, ...arguments_] = normalized.split(/\s+/);
+    if (!/^sound[=:](?:[a-z0-9_.-]+:)?[a-z0-9/._-]+$/.test(resource)) return false;
+    const seen = new Set();
+    return arguments_.every(argument => {
+      const match = /^(volume|pitch)[=:]([0-9]+(?:\.[0-9]+)?)$/.exec(argument);
+      if (!match || seen.has(match[1])) return false;
+      seen.add(match[1]);
+      const value = Number(match[2]);
+      return Number.isFinite(value) && (match[1] === "volume" ? value >= 0 && value <= 1 : value >= 0.5 && value <= 2);
+    });
+  }
   if (normalized.split(/[=:]/)[0].trim() === "particle") {
     const match = /^particle[=:]([a-z0-9_.-]+(?::[a-z0-9/._-]+)?)(?:\s+amount[=:]([0-9]+))?$/.exec(normalized);
     if (!match) return false;

@@ -37,7 +37,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
 public final class DialogueCueClientSmoke {
     private static final String OUTPUT = "villagerretaliation.dialogueCueClientSmoke";
-    private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<particle:smoke amount:2><pause=650>"
+    private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<sound:entity.villager.yes volume=0.5 pitch=1.1><particle:smoke amount:2><pause=650>"
             + "<look=left> Over there...<pause=700><look=right> or there?<pause=650>"
             + "<look=player><disagree> No. Stay here.<pause=600><look=up> Above us?<pause=650>"
             + "<look=down> Nothing below.<pause=600><reset><disagree>Wait.<pause=100>"
@@ -119,6 +119,7 @@ public final class DialogueCueClientSmoke {
             require(playback(screen).complete(now), "native skip bypasses the pending pause");
             verifyHeadPoseAcrossSlowFrame();
             verifyParticleEmission();
+            verifySoundEmission();
             screen.acceptDialogueExchanges(List.of(speech(PERFORMANCE)));
             shownAt = now;
             phase = 4;
@@ -194,6 +195,20 @@ public final class DialogueCueClientSmoke {
         VillagerDialoguePerformance.apply(entity, head);
         require(Math.abs(head.yRot - Math.toRadians(35)) < 0.04,
                 "active dialogue restores its pose before rendering after screen replacement");
+    }
+
+    private static void verifySoundEmission() {
+        var minecraft = Minecraft.getInstance();
+        var clock = new DialoguePlayback(DialogueTextSegment.parse(
+                "A<sound:entity.villager.yes volume=0.5 pitch=1.2><particle:heart>", DialogueTextEffects.NONE), 0, 100);
+        require(VillagerDialoguePerformance.emitSounds(minecraft.level.getEntity(entityId), clock, 99).isEmpty(),
+                "native sounds wait for their text position");
+        var played = VillagerDialoguePerformance.emitSounds(minecraft.level.getEntity(entityId), clock, 100);
+        require(played.size() == 1 && played.getFirst().getLocation().toString().equals("minecraft:entity.villager.yes")
+                        && played.getFirst().getVolume() == 0.5F && played.getFirst().getPitch() == 1.2F,
+                "native sound uses the authored resource, volume and pitch");
+        require(VillagerDialoguePerformance.emitSounds(null, clock.copy(), 200).isEmpty(), "native sounds never replay on copying");
+        played.forEach(minecraft.getSoundManager()::stop);
     }
 
     private static void verifyParticleEmission() {

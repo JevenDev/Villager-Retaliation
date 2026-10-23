@@ -448,6 +448,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long dialogueTextAnimationStartMillis;
     private long dialoguePlaybackMillisPerCharacter;
     private DialoguePlayback dialoguePlayback = new DialoguePlayback(List.of(), 0, 0);
+    private final List<net.minecraft.client.resources.sounds.SoundInstance> dialogueCueSounds = new ArrayList<>();
     private String campaignPlaybackKey = "";
     private boolean dialogueTextAnimationSkipped;
     private boolean awaitingExchangeCompletion;
@@ -701,7 +702,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void tick() {
-        emitDialogueParticles();
+        emitDialogueEffects();
         if (localPresentation != null) {
             localPresentation.tick(this);
             if (this.minecraft == null || this.minecraft.screen != this) return;
@@ -872,7 +873,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void showNextDialogueExchange() {
         if (this.dialogueExchanges.isEmpty()) return;
         if (trySkipDialogueTextAnimation()) return;
-        emitDialogueParticles();
+        emitDialogueEffects();
         clearDialogueMouthAnimation();
         this.dialogueSpeech = this.dialogueExchanges.removeFirst();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
@@ -972,6 +973,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         target.acceptVillagerDialogue(this.tutorialRawSegments.isEmpty()?this.villagerDialogueText:DialogueTextSegment.plainText(this.tutorialRawSegments),
                 this.tutorialRawSegments.isEmpty()?this.villagerDialogueTextSegments:this.tutorialRawSegments);
         target.dialoguePlayback = this.dialoguePlayback.copy();
+        target.dialogueCueSounds.addAll(this.dialogueCueSounds);
+        this.dialogueCueSounds.clear();
         target.dialoguePlaybackMillisPerCharacter = this.dialoguePlaybackMillisPerCharacter;
         target.dialogueTextAnimationStartMillis = this.dialogueTextAnimationStartMillis;
         target.dialogueTextAnimationSkipped = this.dialogueTextAnimationSkipped;
@@ -1004,7 +1007,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        emitDialogueParticles();
+        emitDialogueEffects();
         refreshAuthoringPresentation();
         refreshTutorialControlHints();
         int slideOffset = slideOffsetY();
@@ -4656,14 +4659,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         this.dialogueTextAnimationSkipped = true;
         updateDialogueMouthAnimation();
-        emitDialogueParticles();
+        emitDialogueEffects();
         return true;
     }
 
-    private void emitDialogueParticles() {
+    private void stopDialogueCueSounds() {
+        var manager = Minecraft.getInstance().getSoundManager();
+        this.dialogueCueSounds.forEach(manager::stop);
+        this.dialogueCueSounds.clear();
+    }
+
+    private void emitDialogueEffects() {
         if (this.minecraft == null || this.minecraft.screen != this
                 || !shouldRenderInteractionContainer() || this.closingWithAnimation) return;
-        VillagerDialoguePerformance.emitParticles(dialogueSpeakerEntity(), dialoguePlaybackState(), Util.getMillis());
+        var clock = dialoguePlaybackState();
+        var speaker = dialogueSpeakerEntity();
+        long now = Util.getMillis();
+        VillagerDialoguePerformance.emitParticles(speaker, clock, now);
+        var manager = Minecraft.getInstance().getSoundManager();
+        this.dialogueCueSounds.removeIf(sound -> !manager.isActive(sound));
+        this.dialogueCueSounds.addAll(VillagerDialoguePerformance.emitSounds(speaker, clock, now));
     }
 
     private void updateDialogueMouthAnimation() {
@@ -4684,6 +4699,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void clearDialogueMouthAnimation() {
+        stopDialogueCueSounds();
         VillagerDialoguePerformance.clear();
         VillagerDialogueMouthAnimation.clear(this.villagerEntityId);
         var speaker = dialogueSpeakerEntity();

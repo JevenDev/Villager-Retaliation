@@ -219,6 +219,11 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
                 buffer.writeEnum(cue.cue().kind());
                 buffer.writeDouble(cue.cue().value());
                 if (cue.cue().kind() == DialogueCue.Kind.PARTICLE) buffer.writeResourceLocation(cue.cue().particle());
+                if (cue.cue().kind() == DialogueCue.Kind.SOUND) {
+                    buffer.writeResourceLocation(cue.cue().sound().id());
+                    buffer.writeFloat(cue.cue().sound().volume());
+                    buffer.writeFloat(cue.cue().sound().pitch());
+                }
             }
         }
     }
@@ -244,7 +249,9 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
                 var kind = buffer.readEnum(DialogueCue.Kind.class);
                 double value = buffer.readDouble();
                 var particle = kind == DialogueCue.Kind.PARTICLE ? buffer.readResourceLocation() : null;
-                cues.add(new DialogueCue.At(offset, new DialogueCue(kind, value, particle)));
+                var sound = kind == DialogueCue.Kind.SOUND
+                        ? new DialogueCue.Sound(buffer.readResourceLocation(), buffer.readFloat(), buffer.readFloat()) : null;
+                cues.add(new DialogueCue.At(offset, new DialogueCue(kind, value, particle, sound)));
             }
             segments.add(new DialogueTextSegment(text, effects, cues));
         }

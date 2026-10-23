@@ -103,6 +103,29 @@ public final class DialogueCueGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void soundCuesValidateAndSurvivePackets(GameTestHelper helper) {
+        var segments = parse("<b>A😀<sound:minecraft:entity.villager.yes pitch=1.2 volume:0.5></b><sound:custom:dialogue/hello>");
+        helper.assertValueEqual(DialogueTextSegment.plainText(segments), "A😀", "sound tags stay invisible");
+        var events = cues(segments);
+        helper.assertValueEqual(events.stream().map(DialogueCue.At::offset).toList(), List.of(3, 3), "sound cue Unicode offsets");
+        helper.assertValueEqual(events.getFirst().cue().sound().id().toString(), "minecraft:entity.villager.yes", "sound resource");
+        helper.assertValueEqual(events.getFirst().cue().sound().volume(), 0.5F, "sound volume");
+        helper.assertValueEqual(events.getFirst().cue().sound().pitch(), 1.2F, "sound pitch");
+        helper.assertValueEqual(events.getLast().cue().sound().volume(), 1.0F, "default volume");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            DialogueTextSegment.writeList(buffer, segments);
+            helper.assertValueEqual(DialogueTextSegment.readList(buffer), segments, "sound packet round trip");
+            helper.assertFalse(buffer.isReadable(), "sound packet is fully consumed");
+        } finally { buffer.release(); }
+        for (String invalid : List.of("sound:", "sound:entity.villager.yes volume=2",
+                "sound:entity.villager.yes pitch=0", "sound:entity.villager.yes pitch=NaN",
+                "sound:entity.villager.yes volume=1 volume=0.5", "sound:entity.villager.yes loop=1"))
+            helper.assertTrue(DialogueCue.parse(invalid) == null, "invalid sound rejected: " + invalid);
+        helper.succeed();
+    }
+
     private static List<DialogueTextSegment> parse(String text) {
         return DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
     }
