@@ -59,6 +59,10 @@ public final class AuthoringEditorClientSmoke {
     private static final imgui.type.ImString deletionText = new imgui.type.ImString("Keep typing", 128);
     private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
     private static float[] workflowFieldPoint;
+    private static boolean confirmationChecks;
+    private static int confirmationFrames;
+    private static final int[] confirmationViewport = new int[4];
+    private static float confirmationPixelScaleX, confirmationPixelScaleY;
     private static boolean qualityControls;
     private static boolean layoutChecks;
     private static boolean variableControls;
@@ -293,6 +297,82 @@ public final class AuthoringEditorClientSmoke {
             set("guideStep", 0);
             set("groupContent", false);
             set("showResources", false);
+        });
+    }
+
+    @SubscribeEvent
+    public static void checkConfirmationViewport(net.neoforged.neoforge.client.event.ScreenEvent.Render.Post event) {
+        if (!confirmationChecks || !(event.getScreen() instanceof net.minecraft.client.gui.screens.ConfirmScreen)) return;
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, confirmationViewport);
+        var projection = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
+        confirmationPixelScaleX = Math.abs(projection.m00()) * confirmationViewport[2];
+        confirmationPixelScaleY = Math.abs(projection.m11()) * confirmationViewport[3];
+        confirmationFrames++;
+    }
+
+    private static void buildConfirmationViewportSteps() {
+        int[] originalOptions = new int[2];
+        float[] originalFraction = new float[1];
+        STEPS.add(() -> {
+            var mc = Minecraft.getInstance();
+            originalOptions[0] = mc.options.guiScale().get();
+            originalOptions[1] = mc.options.menuBackgroundBlurriness().get();
+            originalFraction[0] = (float) field(editor, "playtestFraction");
+            invoke("enterPlaytest", new Class<?>[0]);
+            invoke("prepareTestWorld", new Class<?>[0]);
+            require(mc.screen instanceof net.minecraft.client.gui.screens.ConfirmScreen, "Live test setup opens its confirmation in split Playtest.");
+            confirmationChecks = true;
+        });
+        for (int variant = 0; variant < 3; variant++) {
+            int index = variant;
+            STEPS.add(() -> {
+                var mc = Minecraft.getInstance();
+                set("playtestFraction", new float[] {2F / 3, .55F, .75F}[index]);
+                mc.options.guiScale().set(new int[] {3, 2, 4}[index]);
+                mc.options.menuBackgroundBlurriness().set(index == 2 ? 0 : 5);
+                mc.resizeDisplay();
+                confirmationFrames = 0;
+            });
+            pause(250);
+            STEPS.add(() -> {
+                var layout = EditorPlaytestViewport.layout();
+                var screen = Minecraft.getInstance().screen;
+                require(confirmationFrames > 3, "The confirmation renders across multiple frames.");
+                capture("00-live-world-confirmation-" + index);
+                require(confirmationViewport[0] == 0 && confirmationViewport[1] == 0
+                        && confirmationViewport[2] == layout.width() && confirmationViewport[3] == layout.height(),
+                        "The confirmation restores the split framebuffer viewport after blur: " + java.util.Arrays.toString(confirmationViewport));
+                require(Math.abs(confirmationPixelScaleX - confirmationPixelScaleY) < .01f,
+                        "Confirmation text keeps equal horizontal and vertical pixel scales: " + confirmationPixelScaleX + " / " + confirmationPixelScaleY);
+                require(screen.width == layout.guiWidth() && screen.height == layout.guiHeight(), "The dialog wraps within the game pane.");
+                for (var child : screen.children()) if (child instanceof net.minecraft.client.gui.components.Button button)
+                    require(button.getX() >= 0 && button.getX() + button.getWidth() <= screen.width, "Confirmation buttons remain inside the game pane.");
+            });
+        }
+        STEPS.add(() -> {
+            var mc = Minecraft.getInstance();
+            var cancel = mc.screen.children().stream().filter(net.minecraft.client.gui.components.Button.class::isInstance)
+                    .map(net.minecraft.client.gui.components.Button.class::cast)
+                    .filter(button -> button.getMessage().getString().equals(net.minecraft.network.chat.CommonComponents.GUI_NO.getString())).findFirst().orElseThrow();
+            mc.screen.mouseClicked(cancel.getX() + cancel.getWidth() / 2d, cancel.getY() + cancel.getHeight() / 2d, 0);
+            require(mc.screen == field(editor, "screen"), "The resized No button cancels setup and returns to the editor.");
+            mc.options.menuBackgroundBlurriness().set(5);
+            invoke("leavePlaytest", new Class<?>[] {int.class}, 0);
+            invoke("prepareTestWorld", new Class<?>[0]);
+            confirmationFrames = 0;
+        });
+        pause(250);
+        STEPS.add(() -> {
+            var mc = Minecraft.getInstance();
+            require(confirmationFrames > 3 && confirmationViewport[2] == mc.getWindow().getWidth()
+                    && confirmationViewport[3] == mc.getWindow().getHeight(), "Full-window confirmations retain their native viewport.");
+            require(Math.abs(confirmationPixelScaleX - confirmationPixelScaleY) < .01f, "Full-window confirmation text retains its proportions.");
+            mc.screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            confirmationChecks = false;
+            mc.options.guiScale().set(originalOptions[0]);
+            mc.options.menuBackgroundBlurriness().set(originalOptions[1]);
+            set("playtestFraction", originalFraction[0]);
+            mc.resizeDisplay();
         });
     }
 
@@ -610,6 +690,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        buildConfirmationViewportSteps();
         buildInlineSteps();
         buildWorldContentSteps();
         buildResizeSteps();

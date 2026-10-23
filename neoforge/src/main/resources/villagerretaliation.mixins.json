@@ -90,6 +90,7 @@
   ],
   "client": [
     "client.AuthoringPlaytestRenderMixin",
+    "client.AuthoringPlaytestScreenMixin",
     "client.AuthoringPlaytestWindowMixin",
     "client.AuthoringPlaytestMouseMixin",
     "client.AuthoringPlaytestKeyMixin",
