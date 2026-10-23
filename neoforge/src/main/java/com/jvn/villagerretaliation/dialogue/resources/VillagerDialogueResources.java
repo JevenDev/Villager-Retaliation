@@ -440,7 +440,7 @@ public final class VillagerDialogueResources {
     public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {
         Optional<List<DialogueOptionDefinition>> activeTreeOptions = DialogueTreeService.activeOptions(context);
         if (activeTreeOptions.isPresent()) {
-            return activeTreeOptions.get();
+            return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(context, activeTreeOptions.get(), true);
         }
 
         List<DialogueOptionDefinition> options = new ArrayList<>();
@@ -456,7 +456,7 @@ public final class VillagerDialogueResources {
         options.sort(Comparator.comparingInt(DialogueOptionDefinition::priority).reversed()
                 .thenComparingInt(DialogueOptionDefinition::order)
                 .thenComparing(DialogueOptionDefinition::id));
-        return List.copyOf(options);
+        return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(context, options, false);
     }
 
     public static List<String> explainChoices(DialogueContext context, String optionId) {

@@ -61,6 +61,8 @@ public final class VillagerInteractionScreenOpener {
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
                 level, player, villager, dialogueOptions);
+        dialogueOptions = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(dialogueContext, dialogueOptions,
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(dialogueContext).isPresent());
         var studyGreeting = VillagerStudyDialogueService.openingLine(dialogueContext);
         var greeting = studyGreeting.isPresent() ? com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(villager,
                 com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(studyGreeting.get(),
@@ -144,6 +146,8 @@ public final class VillagerInteractionScreenOpener {
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
                 level, player, villager, dialogueOptions);
+        dialogueOptions = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(dialogueContext, dialogueOptions,
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(dialogueContext).isPresent());
         trySendToPlayer(player, createPayload(
                 level,
                 player,

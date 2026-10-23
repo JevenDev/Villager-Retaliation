@@ -1621,14 +1621,31 @@ public final class VillagerQuestService {
         var definition = VillagerQuestResources.quest(player.server, quest).orElseThrow(() -> new IllegalArgumentException("Unknown quest " + quest));
         var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
         if (progress == null) throw new IllegalStateException("Start the quest first");
-        var context = contextForStartedVillager(player.serverLevel(), player, progress).orElseThrow(() -> new IllegalStateException("The quest provider is not loaded"));
+        var context = contextForStartedVillager(player.serverLevel(), player, progress).orElse(null);
+        if (context == null && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest) == null)
+            throw new IllegalStateException("The quest provider is not loaded");
         return objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress);
     }
 
     public static com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView debugPlaytestView(ServerPlayer player, ResourceLocation quest) {
         var definition = VillagerQuestResources.quest(player.server, quest).orElse(null);
         var progress = VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
-        if (definition == null || progress == null) return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
+        if (definition == null) return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
+        if (progress == null) {
+            var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+            if (selection == null || !selection.quest().equals(quest)) return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
+            var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(player.server, selection.provider());
+            var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest);
+            if (provider != null) controls.provider(provider);
+            var requirements = com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.stageObjectives(definition,
+                    com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService.initialStage(definition)).stream()
+                    .map(objective -> new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective(objective.id(),
+                            QuestObjectiveRegistry.canonicalTypeId(objective), false, 0, "Accept the quest before preparing supplies or making progress.",
+                            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.label(objective))).toList();
+            return new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView("", "offered", provider == null || provider.level() != player.level() ? -1 : provider.getId(),
+                    controls.hold(), false, definition.target().hasStructureTarget() || definition.target().site() != null, controls.target("") != null, provider == null ? "The bound provider is not loaded. Return to the provider to continue." : "Talk to the quest provider to accept this quest.",
+                    requirements, definition.stages().keySet().stream().toList(), List.of(), controls.log(), Map.of());
+        }
         var context = contextForStartedVillager(player.serverLevel(), player, progress).orElse(null);
         var evaluation = objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress);
         var rows = new java.util.ArrayList<com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective>();
@@ -1649,15 +1666,18 @@ public final class VillagerQuestService {
                             || option.treeReference() != null && VillagerQuestResources.questDialogueCatalog(player.server).bindings(quest).stream().anyMatch(binding -> binding.treeId().equals(option.treeReference().treeId())))
                     .map(option -> new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Transition(option.id(), option.label(), option.available(), option.unavailableReason())).toList();
         var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
-        var provider = progress.startedVillagerId() == null ? null : player.serverLevel().getEntity(progress.startedVillagerId());
+        var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(player.server, progress.startedVillagerId());
+        if (controls != null && provider != null) controls.provider(provider);
         return new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView(progress.currentStage(), progress.state().name().toLowerCase(java.util.Locale.ROOT),
-                provider == null ? -1 : provider.getId(), controls == null || controls.hold(), readiness.ready(), readiness.reason(), rows,
+                provider == null || provider.level() != player.level() ? -1 : provider.getId(), controls != null && controls.hold(), readiness.ready(),
+                definition.target().hasStructureTarget() || definition.target().site() != null, progress.targetPos() != null, readiness.reason(), rows,
                 definition.stages().keySet().stream().toList(), transitions, controls == null ? List.of() : controls.log(), context == null ? Map.of() : replacements(context, definition, progress));
     }
 
     public static void debugPlaytestAdvance(ServerPlayer player, ResourceLocation quest) {
         var evaluation = debugPlaytestContext(player, quest);
         var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest);
+        if (evaluation.dialogueContext() == null) throw new IllegalStateException("Return to the quest provider before advancing a stage");
         controls.advance(evaluation.progress().currentStage(), () -> {
             advanceStageIfComplete(evaluation.dialogueContext(), evaluation.definition(), evaluation.progress());
             VillagerQuestSavedData.get(player.serverLevel()).setDirty();
@@ -1669,6 +1689,7 @@ public final class VillagerQuestService {
         var evaluation = debugPlaytestContext(player, quest);
         com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).clear();
         var progress = evaluation.progress();
+        if (evaluation.dialogueContext() == null) throw new IllegalStateException("Return to the quest provider before replaying a stage");
         if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) throw new IllegalStateException("Restart the completed quest before replaying a stage");
         if (!QuestStageActionService.ready(evaluation.dialogueContext(), progress)) throw new IllegalStateException("Resolve pending stage actions before replaying");
         var stage = evaluation.definition().stages().get(progress.currentStage());
@@ -2429,7 +2450,8 @@ public final class VillagerQuestService {
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
-        if (!bypassOfferRequirements && !poolEvaluation.allows(definition)) {
+        if (!bypassOfferRequirements && !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selected(context.player(), definition.id())
+                && !poolEvaluation.allows(definition)) {
             return false;
         }
         return QuestAvailabilityService.canStart(

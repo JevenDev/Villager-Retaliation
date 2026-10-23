@@ -448,6 +448,7 @@ public final class AuthoringEditorClientSmoke {
             EditorContentTools.recipe(workspace, document, "Fetch quest");
             DialogueGraph.addNode(document, "finish");
             DialogueGraph.connect(document, "/stages/0/transition", "finish");
+            document.edit("Require provider turn-in", root -> root.getAsJsonArray("stages").get(1).getAsJsonObject().remove("transition"));
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
             try { reloadCheck = EditorTestWorld.apply(workspace); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
@@ -455,6 +456,87 @@ public final class AuthoringEditorClientSmoke {
         waitUntil(() -> reloadCheck.isDone());
         STEPS.add(() -> {
             reloadCheck.join();
+            EditorLiveQuestTest.offer(workspace, document, false, false);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("offered"));
+        STEPS.add(() -> {
+            require(!EditorLiveQuestTest.snapshot().hold(), "Natural playtesting runs without manual stepping.");
+            EditorLiveQuestTest.returnToProvider(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1000);
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            var provider = minecraft.level.getEntity(EditorLiveQuestTest.snapshot().provider());
+            require(provider != null, "The natural test has a loaded provider.");
+            minecraft.gameMode.interact(minecraft.player, provider, net.minecraft.world.InteractionHand.MAIN_HAND);
+        });
+        pause(1200);
+        STEPS.add(() -> {
+            var interaction = Minecraft.getInstance().screen;
+            require(interaction instanceof com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreen, "Talking to the test provider opens the normal interaction screen.");
+            try {
+                var method = interaction.getClass().getDeclaredMethod("interactionMenuButtons");
+                method.setAccessible(true);
+                var buttons = (java.util.List<?>) method.invoke(interaction);
+                var ids = buttons.stream().map(button -> field(button, "id").toString()).toList();
+                require(ids.contains("ADVENTURES") && ids.contains("INVENTORY") && ids.contains("FOLLOW"), "The focused menu keeps quests, inventory, and follow: " + ids);
+                require(!ids.contains("PROFILE") && !ids.contains("STUDY") && !ids.contains("RECRUIT") && !ids.contains("DUEL"), "Unrelated villager options are suspended: " + ids);
+            } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+            capture("91a-natural-quest-provider");
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
+                var data = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel());
+                require(data.get(playerId, selection.quest()) == null, "An offer waits for the player's acceptance.");
+                var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+                for (int step = 0; step < 8 && data.get(playerId, selection.quest()) == null; step++) {
+                    var choices = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.dialogueOptions(context,
+                            com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.moodFor(context));
+                    var choice = choices.stream().filter(option -> option.available() && !option.id().equals(com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.LEAVE_OPTION_ID))
+                            .findFirst().orElseThrow(() -> new IllegalStateException("The natural quest offer has no available choice: " + choices));
+                    com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, provider.getId(), choice.id());
+                }
+                var progress = data.get(playerId, selection.quest());
+                require(progress != null && progress.startedVillagerId().equals(provider.getUUID()), "Normal dialogue acceptance binds this exact quest provider.");
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            EditorLiveQuestTest.inspect(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && !EditorLiveQuestTest.snapshot().stage().isBlank());
+        STEPS.add(() -> EditorLiveQuestTest.prepare(workspace, document, EditorLiveQuestTest.snapshot().objectives().getFirst().id(), ""));
+        waitUntil(() -> {
+            require(!EditorLiveQuestTest.snapshot().state().equals("completed"), "The manual turn-in fixture must wait for the quest provider.");
+            return !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("finish");
+        });
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
+                var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+                var choices = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.dialogueOptions(context,
+                        com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.moodFor(context));
+                var turnIn = choices.stream().filter(option -> option.available() && option.questAction().action()
+                        == com.jvn.villagerretaliation.dialogue.normal.DialogueQuestAction.Action.TURN_IN).findFirst().orElseThrow();
+                com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, provider.getId(), turnIn.id());
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, selection.quest());
+                require(progress.state() == com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestState.COMPLETED,
+                        "Normal dialogue turn-in completes the quest with its original provider.");
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            Minecraft.getInstance().setScreen((net.minecraft.client.gui.screens.Screen) field(editor, "screen"));
             EditorLiveQuestTest.start(workspace, document, true);
         });
         waitUntil(() -> !EditorLiveQuestTest.view().busy());

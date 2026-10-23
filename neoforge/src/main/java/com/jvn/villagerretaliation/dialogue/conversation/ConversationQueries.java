@@ -67,6 +67,16 @@ public final class ConversationQueries {
         for (var saved : ConversationSavedData.get(player.serverLevel()).finishedSessions(character.getUUID()))
             if (ConversationService.member(player, saved)) topics.add(new Topic(saved.identity.conversation(),
                     saved.identity.id().toString(), saved.identity.title(), true, true, "", TopicGroup.HISTORY));
+        var playtest = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+        if (playtest != null) {
+            var quest = com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(player.server, playtest.quest()).orElse(null);
+            topics.removeIf(topic -> {
+                var definition = QuestContentCatalogs.current(player.server).conversations().get(topic.conversation());
+                return definition == null || !playtest.quest().equals(definition.quest()) && (quest == null || quest.objectives().stream()
+                        .noneMatch(objective -> objective.story() instanceof com.jvn.villagerretaliation.campaign.CampaignStoryObjective.Speak speak
+                                && speak.conversation().equals(topic.conversation())));
+            });
+        }
         topics.sort(java.util.Comparator.comparing(Topic::group));
         return List.copyOf(topics);
     }

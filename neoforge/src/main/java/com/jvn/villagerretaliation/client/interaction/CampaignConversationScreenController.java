@@ -92,6 +92,8 @@ public final class CampaignConversationScreenController {
                 ? session.line() : null;
     }
 
+    public boolean hasTopics() { return state != null && !state.topics().isEmpty(); }
+
     public void addTopics() {
         if (state == null || session() != null) return;
         CampaignConversationViewPayload.TopicGroup group = null;

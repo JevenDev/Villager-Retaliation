@@ -114,7 +114,8 @@ public final class QuestPlaytestSetup {
 
     private static String travel(QuestObjectiveEvaluationContext context, QuestDefinition.Objective objective) {
         var progress = context.progress();
-        var target = !objective.campaignLocation().isBlank()
+        var prepared = QuestPlaytestSession.require(context.player(), context.definition().id()).target(objective.id());
+        var target = prepared != null ? prepared : !objective.campaignLocation().isBlank()
                 ? VillagerQuestTargets.locateCampaignLocation(context.level(), context.definition(), objective).orElse(null)
                 : objective.location() != null
                     ? new VillagerQuestTargets.LocatedTarget(objective.dimension() == null ? context.level().dimension() : objective.dimension(), objective.location(), objective.id())
@@ -210,6 +211,8 @@ public final class QuestPlaytestSetup {
                             com.jvn.villagerretaliation.reputation.VillagerReputationLevel.fromReputation(candidate))))
                     .findFirst().orElseThrow(() -> new IllegalStateException("The reputation requirements do not have a setup value"));
         }
+        if (context.dialogueContext() == null || context.dialogueContext().villager() == null)
+            throw new IllegalStateException("Return to the quest provider before changing its reputation");
         com.jvn.villagerretaliation.reputation.VillagerReputationManager.setReputation(context.level(), context.dialogueContext().villager(), context.player().getUUID(), desired);
         return "Set provider reputation to " + desired;
     }

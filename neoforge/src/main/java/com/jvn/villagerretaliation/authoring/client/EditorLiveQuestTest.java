@@ -11,15 +11,15 @@ import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.storage.LevelResource;
 
-final class EditorLiveQuestTest {
+public final class EditorLiveQuestTest {
     private static volatile View view = new View("", "", "Not started", List.of(), false);
 
     private static volatile com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView snapshot = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
     private static net.minecraft.server.MinecraftServer testServer;
+    private static volatile boolean focused;
     private static UUID testPlayer;
     private static final java.util.concurrent.atomic.AtomicLong requests = new java.util.concurrent.atomic.AtomicLong();
 
@@ -33,6 +33,7 @@ final class EditorLiveQuestTest {
     static com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView snapshot() { return snapshot; }
 
     static void stop() {
+        focused = false;
         requests.incrementAndGet();
         var server = testServer;
         var player = testPlayer;
@@ -54,20 +55,9 @@ final class EditorLiveQuestTest {
 
     static void startAt(AuthoringWorkspace workspace, AuthoringDocument document, Boolean hold, String stage) {
         submit(workspace, document, (player, quest) -> {
-            Villager provider = player.serverLevel().getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(24)).stream()
-                    .min(java.util.Comparator.comparingDouble(entity -> entity.distanceToSqr(player))).orElse(null);
-            if (provider == null) {
-                provider = EntityType.VILLAGER.create(player.serverLevel());
-                if (provider == null) throw new IllegalStateException("Unable to create a test provider");
-                provider.setPos(player.getX() + 2, player.getY(), player.getZ());
-                provider.setNoAi(true);
-                provider.setInvulnerable(true);
-                player.serverLevel().addFreshEntity(provider);
-            }
-            if (hold != null) {
-                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.close(player.server, player.getUUID());
-                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.open(player, quest, hold);
-            }
+            Villager provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, quest, null);
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, Boolean.TRUE.equals(hold));
+            focused = true;
             VillagerQuestService.debugTraceSetEnabled(player, true);
             var result = VillagerQuestService.debugStartQuest(player, provider, quest, true);
             if (result.started() && !stage.isBlank()) {
@@ -76,6 +66,70 @@ final class EditorLiveQuestTest {
             }
             return result.message();
         });
+    }
+
+    public static boolean focusedInteractions() {
+        return focused && testServer == Minecraft.getInstance().getSingleplayerServer();
+    }
+
+    public static boolean requiresInteraction(String type) {
+        return focusedInteractions() && snapshot.objectives().stream().anyMatch(objective -> objective.type().equals(type));
+    }
+
+    static void offer(AuthoringWorkspace workspace, AuthoringDocument document, boolean hold, boolean restart) {
+        UUID requested = Minecraft.getInstance().hitResult instanceof net.minecraft.world.phys.EntityHitResult hit
+                && hit.getEntity() instanceof Villager ? hit.getEntity().getUUID() : null;
+        submit(workspace, document, (player, quest) -> {
+            var provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, quest, requested);
+            if (restart) VillagerQuestService.debugRemoveQuest(player, quest);
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, hold);
+            focused = true;
+            VillagerQuestService.debugTraceSetEnabled(player, true);
+            return "Quest provider: " + provider.getName().getString() + ". Talk to this villager to accept the quest.";
+        });
+    }
+
+    static void returnToProvider(AuthoringWorkspace workspace, AuthoringDocument document) {
+        submit(workspace, document, (player, quest) -> {
+            var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+            if (selection == null || !selection.quest().equals(quest)) throw new IllegalStateException("Prepare a quest offer first");
+            var level = player.server.getLevel(selection.dimension());
+            if (level == null) throw new IllegalStateException("The provider dimension is unavailable");
+            level.getChunkAt(selection.position());
+            var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(player.server, selection.provider());
+            if (provider == null || !provider.isAlive()) throw new IllegalStateException("The bound quest provider is not loaded or is no longer alive");
+            var destination = provider.blockPosition();
+            var offset = java.util.stream.Stream.of(destination.north(), destination.south(), destination.east(), destination.west())
+                    .filter(pos -> provider.level().getBlockState(pos).getCollisionShape(provider.level(), pos).isEmpty()
+                            && provider.level().getBlockState(pos.above()).getCollisionShape(provider.level(), pos.above()).isEmpty()
+                            && provider.level().getFluidState(pos).isEmpty()
+                            && provider.level().getBlockState(pos.below()).isFaceSturdy(provider.level(), pos.below(), net.minecraft.core.Direction.UP))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("There is no clear space beside the quest provider"));
+            player.teleportTo((net.minecraft.server.level.ServerLevel) provider.level(), offset.getX() + .5, offset.getY(), offset.getZ() + .5,
+                    player.getYRot(), player.getXRot());
+            return "Returned to the quest provider. Talk to them to continue or turn in the quest.";
+        });
+    }
+
+    static void travelTarget(AuthoringWorkspace workspace, AuthoringDocument document) {
+        submit(workspace, document, (player, quest) -> {
+            var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest);
+            var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(player.getUUID(), quest);
+            var target = progress != null && progress.targetPos() != null
+                    ? new com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget(progress.targetDimension(), progress.targetPos(), progress.targetObjectiveId())
+                    : controls.target("");
+            if (target == null) throw new IllegalStateException("Accept the quest or prepare a structure to resolve its target first");
+            var level = player.server.getLevel(target.dimension());
+            if (level == null) throw new IllegalStateException("The target dimension is unavailable");
+            level.getChunkAt(target.pos());
+            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, target.pos().getX(), target.pos().getZ());
+            player.teleportTo(level, target.pos().getX() + .5, y, target.pos().getZ() + .5, player.getYRot(), player.getXRot());
+            return "Travelled to the quest target. Return to the provider when you are ready to turn it in.";
+        });
+    }
+
+    static void structure(AuthoringWorkspace workspace, AuthoringDocument document, String objective) {
+        submit(workspace, document, (player, quest) -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestStructures.spawn(player, quest, objective));
     }
 
     static void inspect(AuthoringWorkspace workspace, AuthoringDocument document) {
@@ -110,6 +164,7 @@ final class EditorLiveQuestTest {
     static void transition(AuthoringWorkspace workspace, AuthoringDocument document, String option) {
         submit(workspace, document, (player, quest) -> {
             var context = VillagerQuestService.debugPlaytestContext(player, quest).dialogueContext();
+            if (context == null) throw new IllegalStateException("Return to the quest provider before choosing a dialogue transition");
             var choice = java.util.stream.Stream.concat(VillagerQuestService.stageBranchOptions(context).stream(),
                     VillagerQuestService.embeddedDialogueOptions(context, com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition.NEUTRAL).stream())
                     .filter(candidate -> candidate.id().equals(option)).findFirst().orElseThrow(() -> new IllegalStateException("The transition is no longer available"));

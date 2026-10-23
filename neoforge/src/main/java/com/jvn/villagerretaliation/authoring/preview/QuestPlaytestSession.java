@@ -27,6 +27,21 @@ public final class QuestPlaytestSession {
                 new Session(server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize(), controls));
     }
 
+    public static void bind(ServerPlayer player, ResourceLocation quest, net.minecraft.world.entity.npc.Villager provider, boolean hold) {
+        var selected = selection(player);
+        if (selected == null || !selected.quest().equals(quest) || !selected.provider().equals(provider.getUUID())) {
+            close(player.server, player.getUUID());
+            open(player, quest, hold);
+        }
+        var controls = require(player, quest);
+        com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.leaveActiveSession(
+                com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(
+                        (net.minecraft.server.level.ServerLevel) provider.level(), player, provider));
+        controls.clear();
+        controls.hold(hold);
+        controls.provider(provider);
+    }
+
     public static synchronized Controls controls(ServerPlayer player, ResourceLocation quest) {
         if (player == null) return null;
         var sessions = SESSIONS.get(player.server);
@@ -35,6 +50,26 @@ public final class QuestPlaytestSession {
                 || !session.world().equals(player.server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize())) return null;
         return session.controls();
     }
+
+    public static synchronized Selection selection(ServerPlayer player) {
+        if (player == null) return null;
+        var sessions = SESSIONS.get(player.server);
+        if (sessions == null) return null;
+        for (var key : sessions.keySet()) {
+            if (!key.player().equals(player.getUUID())) continue;
+            var controls = controls(player, key.quest());
+            if (controls != null && controls.provider != null)
+                return new Selection(key.quest(), controls.provider, controls.dimension, controls.providerPosition);
+        }
+        return null;
+    }
+
+    public static boolean selected(ServerPlayer player, ResourceLocation quest) {
+        var selected = selection(player);
+        return selected != null && selected.quest().equals(quest);
+    }
+
+    public record Selection(ResourceLocation quest, UUID provider, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension, net.minecraft.core.BlockPos position) { }
 
     public static Controls require(ServerPlayer player, ResourceLocation quest) {
         var controls = controls(player, quest);
@@ -101,6 +136,19 @@ public final class QuestPlaytestSession {
         public PreviewCoverage drainCoverage() {
             var result = new PreviewCoverage(visitedStages, chosenPaths); visitedStages.clear(); chosenPaths.clear(); return result;
         }
+
+        private net.minecraft.core.BlockPos providerPosition;
+        private UUID provider;
+        private net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension;
+        private final Map<String, com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget> targets = new HashMap<>();
+
+        public void provider(net.minecraft.world.entity.npc.Villager villager) {
+            providerPosition = villager.blockPosition();
+            provider = villager.getUUID();
+            dimension = villager.level().dimension();
+        }
+        public com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget target(String objective) { return targets.get(objective); }
+        public void target(com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets.LocatedTarget target) { targets.put(target.objectiveId(), target); }
 
         private boolean hold = true;
         private boolean suspended;

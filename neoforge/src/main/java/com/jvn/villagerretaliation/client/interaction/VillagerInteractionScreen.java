@@ -3991,6 +3991,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             buttons.add(followInteractionButton());
             buttons.add(stayInteractionButton(stayAvailable));
         }
+        if (com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedInteractions()) {
+            buttons.removeIf(button -> switch (button.id()) {
+                case ADVENTURES, INVENTORY, FOLLOW, STAY -> false;
+                case TALK -> this.dialogueOptions.stream().noneMatch(option -> !isQuestOption(option)) && !this.campaignConversation.hasTopics();
+                case GIFT -> !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("gift");
+                case TRADE -> !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("trade");
+                default -> true;
+            });
+        }
         return buttons;
     }
 

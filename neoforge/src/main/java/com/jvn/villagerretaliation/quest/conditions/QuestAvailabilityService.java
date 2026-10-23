@@ -47,7 +47,8 @@ public final class QuestAvailabilityService {
         if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
-        if (context.villager() != null && !bypassQuestPools && !QuestPoolResources.allows(context, definition)) {
+        if (context.villager() != null && !bypassQuestPools && !com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selected(context.player(), definition.id())
+                && !QuestPoolResources.allows(context, definition)) {
             return false;
         }
         if (!parentCompletionLookup.parentCompleted(context, definition)) {

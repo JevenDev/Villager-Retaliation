@@ -46,7 +46,8 @@ public final class VillagerQuestTargets {
     public static Optional<LocatedTarget> locateInitialTarget(DialogueContext context, QuestDefinition definition) {
         if (definition.target().site() != null) return com.jvn.villagerretaliation.quest.site.QuestSiteService.request(context, definition);
         if (definition.target().hasStructureTarget()) {
-            return locateTarget(context.level(), context.origin(), definition);
+            return com.jvn.villagerretaliation.authoring.preview.QuestPlaytestStructures.target(context, definition.id(), "")
+                    .or(() -> locateTarget(context.level(), context.origin(), definition));
         }
         return locateStageTarget(context, definition, QuestLifecycleService.initialStage(definition));
     }
@@ -62,7 +63,8 @@ public final class VillagerQuestTargets {
                 .filter(QuestObjectiveRegistry::requiresLocatedTarget)
                 .findFirst()
                 .flatMap(objective -> objective.campaignLocation().isBlank()
-                        ? locateTarget(context.level(), context.origin(), objective)
+                        ? com.jvn.villagerretaliation.authoring.preview.QuestPlaytestStructures.target(context, definition.id(), objective.id())
+                                .or(() -> locateTarget(context.level(), context.origin(), objective))
                         : locateCampaignLocation(context.level(), definition, objective));
     }
 

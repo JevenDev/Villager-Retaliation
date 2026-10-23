@@ -2797,6 +2797,8 @@ public final class VillagerInteractionService {
                 player,
                 villager,
                 VillagerDialogueResources.dialogueOptions(context, mood));
+        dialogueOptions = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(context, dialogueOptions,
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(context).isPresent());
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         trySendToPlayer(player, new VillagerDialogueResponsePayload(
