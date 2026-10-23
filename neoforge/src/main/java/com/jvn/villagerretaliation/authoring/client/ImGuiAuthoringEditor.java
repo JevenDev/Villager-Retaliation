@@ -3262,7 +3262,14 @@ final class ImGuiAuthoringEditor {
         if (!state.playerOnly()) {
             if (!state.state().equals("not started") && ImGui.checkbox("Focus provider menu", EditorLiveQuestTest.focusMenu()))
                 operation(() -> EditorLiveQuestTest.focusDialogue(workspace, document, !EditorLiveQuestTest.focusMenu()));
-            if (ImGui.isItemHovered()) ImGui.setTooltip("Hides unrelated interactions and quests at this provider, including when this quest has no available offer. Other characters and open conversations keep their normal options.");
+            if (ImGui.isItemHovered()) ImGui.setTooltip("Hides unrelated interactions and quests on the provider and rescued villager. Other characters and open conversations keep their normal options.");
+            if (EditorLiveQuestTest.rescue().present()) {
+                ImGui.textWrapped(EditorLiveQuestTest.rescue().guidance());
+                if (!EditorLiveQuestTest.rescue().rescued()
+                        && ImGui.checkbox("Bring rescued villager when teleporting", EditorLiveQuestTest.bringRescue()))
+                    operation(() -> EditorLiveQuestTest.bringRescue(workspace, document, !EditorLiveQuestTest.bringRescue()));
+                if (ImGui.isItemHovered()) ImGui.setTooltip("Applies to quest travel after freeing the captive. The rescued villager must be loaded.");
+            }
             ImGui.beginDisabled(state.state().equals("not started"));
             if (ImGui.button("Return to quest provider")) operation(() -> EditorLiveQuestTest.returnToProvider(workspace, document));
             ImGui.beginDisabled(state.provider() < 0);

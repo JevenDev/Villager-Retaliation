@@ -109,7 +109,8 @@ public final class QuestPlaytestOffers {
         var definition = VillagerQuestResources.quest(context.player().server, quest).orElse(null);
         if (definition == null) return List.copyOf(options);
         var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), quest);
-        if (activeTree || !selection.provider().equals(context.providerId())) return List.copyOf(options);
+        boolean rescue = com.jvn.villagerretaliation.quest.site.QuestSiteService.isRescueActor(context.player(), quest, context.providerId());
+        if (activeTree || !selection.provider().equals(context.providerId()) && !rescue) return List.copyOf(options);
         var relevant = options.stream().filter(option -> quest.equals(option.questAction().questId())
                 || quest.toString().equals(option.metadata().quest())
                 || QuestStageBranchOptionIds.parse(option.id()).map(key -> key.questId().equals(quest)).orElse(false)
@@ -117,7 +118,7 @@ public final class QuestPlaytestOffers {
                         || definition.links().dialogueTree() != null && definition.links().dialogueTree().equals(option.treeReference().treeId())))
                 .toList();
         boolean focused = QuestPlaytestSession.require(context.player(), quest).focusDialogue();
-        if (!bindings.isEmpty() || !definition.links().isEmpty() || !relevant.isEmpty())
+        if (rescue || !bindings.isEmpty() || !definition.links().isEmpty() || !relevant.isEmpty())
             return focused ? relevant : List.copyOf(options);
         var action = progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
                 ? DialogueQuestAction.Action.START : DialogueQuestAction.Action.TURN_IN;

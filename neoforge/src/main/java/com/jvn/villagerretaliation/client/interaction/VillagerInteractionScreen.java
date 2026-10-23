@@ -3995,12 +3995,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedInteractions(this.villagerEntityId)) {
             buttons.removeIf(button -> switch (button.id()) {
-                case ADVENTURES, INVENTORY, FOLLOW, STAY -> false;
+                case ADVENTURES -> false;
+                case FOLLOW, STAY -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedRescueInteractions(this.villagerEntityId);
+                case INVENTORY -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedRescueInteractions(this.villagerEntityId);
                 case TALK -> this.dialogueOptions.stream().noneMatch(option -> !isQuestOption(option)) && !this.campaignConversation.hasTopics();
-                case GIFT -> !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("gift");
-                case TRADE -> !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("trade");
+                case GIFT -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedRescueInteractions(this.villagerEntityId)
+                        || !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("gift");
+                case TRADE -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.focusedRescueInteractions(this.villagerEntityId)
+                        || !com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.requiresInteraction("trade");
                 default -> true;
             });
+            if (com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.canCommandRescue(this.villagerEntityId)) {
+                buttons.add(new InteractionMenuButton(InteractionMenuAction.FOLLOW,
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
+                        translate("recruit.follow_me"), translate("interaction_button.follow_me.description"),
+                        () -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.commandRescue(this.villagerEntityId, true), true));
+                buttons.add(new InteractionMenuButton(InteractionMenuAction.STAY,
+                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
+                        translate("recruit.stay_here"), translate("interaction_button.stay_here.description"),
+                        () -> com.jvn.villagerretaliation.authoring.client.EditorLiveQuestTest.commandRescue(this.villagerEntityId, false), true));
+            }
         }
         return buttons;
     }

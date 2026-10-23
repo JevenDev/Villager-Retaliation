@@ -259,15 +259,31 @@ public final class QuestPlaytestSetup {
     public static void teleport(net.minecraft.server.level.ServerPlayer player, net.minecraft.server.level.ServerLevel level,
             net.minecraft.core.BlockPos target) {
         if (level == null) throw new IllegalStateException("The target dimension is unavailable");
+        var selection = QuestPlaytestSession.selection(player);
+        var controls = selection == null ? null : QuestPlaytestSession.controls(player, selection.quest());
+        var escort = controls != null && controls.bringRescue()
+                ? com.jvn.villagerretaliation.quest.site.QuestSiteService.playtestEscort(player, selection.quest()) : null;
+        var destination = arrival(player, level, target);
+        if (escort != null) {
+            var escortDestination = arrival(escort, level, destination.east());
+            escort.getNavigation().stop();
+            if (!escort.teleportTo(level, escortDestination.getX() + .5, escortDestination.getY(), escortDestination.getZ() + .5,
+                    java.util.Set.of(), escort.getYRot(), escort.getXRot()))
+                throw new IllegalStateException("The rescued villager could not teleport. The player has not moved.");
+        }
+        player.teleportTo(level, destination.getX() + .5, destination.getY(), destination.getZ() + .5, player.getYRot(), player.getXRot());
+    }
+
+    private static net.minecraft.core.BlockPos arrival(net.minecraft.world.entity.Entity entity,
+            net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos target) {
         level.getChunkAt(target);
         for (var candidate : net.minecraft.core.BlockPos.withinManhattan(target, 3, 8, 3)) {
             if (!level.isInWorldBounds(candidate) || !level.getWorldBorder().isWithinBounds(candidate)) continue;
-            var bounds = player.getBoundingBox().move(candidate.getX() + .5 - player.getX(),
-                    candidate.getY() - player.getY(), candidate.getZ() + .5 - player.getZ());
-            if (!level.noCollision(player, bounds) || !level.getFluidState(candidate).isEmpty()
+            var bounds = entity.getBoundingBox().move(candidate.getX() + .5 - entity.getX(),
+                    candidate.getY() - entity.getY(), candidate.getZ() + .5 - entity.getZ());
+            if (!level.noCollision(entity, bounds) || !level.getFluidState(candidate).isEmpty()
                     || !level.getBlockState(candidate.below()).isFaceSturdy(level, candidate.below(), net.minecraft.core.Direction.UP)) continue;
-            player.teleportTo(level, candidate.getX() + .5, candidate.getY(), candidate.getZ() + .5, player.getYRot(), player.getXRot());
-            return;
+            return candidate.immutable();
         }
         throw new IllegalStateException("No safe arrival space near " + target.toShortString() + ". Travel there manually.");
     }

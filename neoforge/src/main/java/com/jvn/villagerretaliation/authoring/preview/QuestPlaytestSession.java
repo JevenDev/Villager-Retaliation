@@ -187,6 +187,10 @@ public final class QuestPlaytestSession {
         public boolean focusDialogue() { return focusDialogue; }
         public void focusDialogue(boolean value) { focusDialogue = value; }
 
+        private boolean bringRescue;
+        public boolean bringRescue() { return bringRescue; }
+        public void bringRescue(boolean value) { bringRescue = value; }
+
         private boolean hold = true;
         private boolean suspended;
         private String stepping;

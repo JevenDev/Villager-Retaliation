@@ -487,6 +487,123 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(EditorLiveQuestTest.snapshot().state().equals("active"), "Missing Neighbor starts through its authored offer and acceptance.");
             capture("90a-missing-neighbor-accepted");
+            EditorLiveQuestTest.travelTarget(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1000);
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var rescue = com.jvn.villagerretaliation.quest.site.QuestSiteService.rescue(player, selection.quest());
+                var captive = player.serverLevel().getEntity(rescue.entity());
+                require(captive != null && !rescue.released(), "Travel reaches the actual captive before release.");
+                require(com.jvn.villagerretaliation.quest.site.QuestSiteService.playtestEscort(player, selection.quest()) == null,
+                        "Teleport assistance cannot bypass freeing the captive.");
+                var guards = player.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Pillager.class, captive.getBoundingBox().inflate(20));
+                require(guards.size() == 2, "The shipped rescue has its two authored guards.");
+                guards.forEach(guard -> guard.hurt(player.damageSources().playerAttack(player), 1000));
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            var minecraft = Minecraft.getInstance();
+            var captive = minecraft.level.getEntity(EditorLiveQuestTest.rescue().entity());
+            require(captive != null, "The captive is visible to the client.");
+            minecraft.gameMode.interact(minecraft.player, captive, net.minecraft.world.InteractionHand.MAIN_HAND);
+        });
+        pause(1000);
+        STEPS.add(() -> EditorLiveQuestTest.inspect(workspace, document));
+        waitUntil(() -> EditorLiveQuestTest.rescue().released());
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            var captive = minecraft.level.getEntity(EditorLiveQuestTest.rescue().entity());
+            require(EditorLiveQuestTest.focusedRescueInteractions(captive.getId()), "The focused menu includes the rescued villager.");
+            minecraft.gameMode.interact(minecraft.player, captive, net.minecraft.world.InteractionHand.MAIN_HAND);
+        });
+        pause(1000);
+        STEPS.add(() -> {
+            var interaction = Minecraft.getInstance().screen;
+            require(interaction instanceof com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreen,
+                    "The released captive opens the interaction menu.");
+            try {
+                var method = interaction.getClass().getDeclaredMethod("interactionMenuButtons");
+                method.setAccessible(true);
+                var buttons = (java.util.List<?>) method.invoke(interaction);
+                var ids = buttons.stream().map(button -> field(button, "id").toString()).toList();
+                require(ids.equals(List.of("FOLLOW", "STAY")), "The rescue menu contains only escort commands: " + ids);
+                require(buttons.stream().allMatch(button -> Boolean.TRUE.equals(field(button, "active"))),
+                        "Escort commands work without recruitment trust.");
+            } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+            capture("90b-rescued-villager-menu");
+            EditorLiveQuestTest.commandRescue(EditorLiveQuestTest.rescue().entity(), false);
+        });
+        pause(500);
+        STEPS.add(() -> EditorLiveQuestTest.commandRescue(EditorLiveQuestTest.rescue().entity(), true));
+        pause(500);
+        STEPS.add(() -> {
+            Minecraft.getInstance().setScreen((net.minecraft.client.gui.screens.Screen) field(editor, "screen"));
+            EditorLiveQuestTest.bringRescue(workspace, document, true);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.bringRescue());
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
+                provider.setNoAi(true);
+                provider.moveTo(provider.position().add(40, 0, 0));
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            rescueDeadline[0] = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(60);
+            EditorLiveQuestTest.returnToProvider(workspace, document);
+        });
+        waitUntil(() -> {
+            require(System.nanoTime() < rescueDeadline[0], "Rescue return timed out: " + EditorLiveQuestTest.view()
+                    + " / " + EditorLiveQuestTest.rescue());
+            return !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("return");
+        });
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.rescue().rescued(), "Teleporting with the released captive satisfies the real rescue at the moved provider.");
+            capture("90c-missing-neighbor-returned");
+            var minecraft = Minecraft.getInstance();
+            minecraft.gameMode.interact(minecraft.player, minecraft.level.getEntity(EditorLiveQuestTest.snapshot().provider()),
+                    net.minecraft.world.InteractionHand.MAIN_HAND);
+        });
+        pause(1000);
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
+                var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+                for (int step = 0; step < 2; step++) {
+                    var choices = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.dialogueOptions(context,
+                            com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.moodFor(context));
+                    var choice = choices.stream().filter(option -> option.available()
+                            && !option.id().equals(com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.LEAVE_OPTION_ID)).findFirst().orElseThrow();
+                    com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, provider.getId(), choice.id());
+                }
+                var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, selection.quest());
+                require(progress.state() == com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestState.CONSUMED
+                                && progress.completionCount() == 1,
+                        "The one-time rescue completes and is consumed through authored dialogue.");
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            Minecraft.getInstance().setScreen((net.minecraft.client.gui.screens.Screen) field(editor, "screen"));
             invoke("closeEditor", new Class<?>[0]);
         });
         pause(750);
@@ -554,6 +671,9 @@ public final class AuthoringEditorClientSmoke {
                 var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
                 var data = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel());
                 require(data.get(playerId, selection.quest()) == null, "An offer waits for the player's acceptance.");
+                for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++)
+                    if (player.getInventory().getItem(slot).is(net.minecraft.world.item.Items.EMERALD))
+                        player.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY);
                 com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, selection.quest()).focusDialogue(true);
                 var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
                 for (int step = 0; step < 8 && data.get(playerId, selection.quest()) == null; step++) {
@@ -572,7 +692,8 @@ public final class AuthoringEditorClientSmoke {
             liveCheck.join();
             EditorLiveQuestTest.inspect(workspace, document);
         });
-        waitUntil(() -> !EditorLiveQuestTest.view().busy() && !EditorLiveQuestTest.snapshot().stage().isBlank());
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("active")
+                && !EditorLiveQuestTest.snapshot().objectives().isEmpty());
         STEPS.add(() -> EditorLiveQuestTest.prepare(workspace, document, EditorLiveQuestTest.snapshot().objectives().getFirst().id(), ""));
         waitUntil(() -> {
             require(!EditorLiveQuestTest.snapshot().state().equals("completed"), "The manual turn-in fixture must wait for the quest provider.");

@@ -21,6 +21,11 @@ public final class EditorLiveQuestTest {
     private static net.minecraft.server.MinecraftServer testServer;
     private static volatile boolean focused;
     private static volatile boolean focusMenu;
+    private static volatile boolean bringRescue;
+    private static volatile com.jvn.villagerretaliation.quest.site.QuestSiteService.Rescue rescue =
+            com.jvn.villagerretaliation.quest.site.QuestSiteService.Rescue.EMPTY;
+    static boolean bringRescue() { return bringRescue; }
+    static com.jvn.villagerretaliation.quest.site.QuestSiteService.Rescue rescue() { return rescue; }
     private static volatile boolean diagnostics;
     private static volatile boolean inspecting;
     static boolean focusMenu() { return focusMenu; }
@@ -42,6 +47,8 @@ public final class EditorLiveQuestTest {
     static void stop() {
         focused = false;
         focusMenu = false;
+        bringRescue = false;
+        rescue = com.jvn.villagerretaliation.quest.site.QuestSiteService.Rescue.EMPTY;
         diagnostics = false;
         inspecting = false;
         baselineNames = List.of();
@@ -90,8 +97,30 @@ public final class EditorLiveQuestTest {
     }
 
     public static boolean focusedInteractions(int villager) {
-        return focused && focusMenu && snapshot.provider() == villager
+        return focused && focusMenu && (snapshot.provider() == villager || rescue.entity() == villager)
                 && testServer == Minecraft.getInstance().getSingleplayerServer();
+    }
+
+    public static boolean focusedRescueInteractions(int villager) {
+        return focusedInteractions(villager) && rescue.entity() == villager;
+    }
+
+    public static boolean canCommandRescue(int villager) {
+        return focusedRescueInteractions(villager) && rescue.released() && !rescue.rescued();
+    }
+
+    public static void commandRescue(int villager, boolean follow) {
+        var minecraft = Minecraft.getInstance();
+        var entity = minecraft.level == null ? null : minecraft.level.getEntity(villager);
+        if (minecraft.player != null && entity != null && canCommandRescue(villager))
+            minecraft.player.connection.sendCommand("vr escort " + (follow ? "follow " : "wait ") + entity.getUUID());
+    }
+
+    static void bringRescue(AuthoringWorkspace workspace, AuthoringDocument document, boolean value) {
+        submit(workspace, document, (player, quest) -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, quest).bringRescue(value);
+            return value ? "Quest travel will bring the released rescue villager with you." : "Quest travel moves only the player.";
+        }, false);
     }
 
     public static boolean requiresInteraction(String type) {
@@ -141,8 +170,8 @@ public final class EditorLiveQuestTest {
                             && provider.level().getFluidState(pos).isEmpty()
                             && provider.level().getBlockState(pos.below()).isFaceSturdy(provider.level(), pos.below(), net.minecraft.core.Direction.UP))
                     .findFirst().orElseThrow(() -> new IllegalStateException("There is no clear space beside the quest provider"));
-            player.teleportTo((net.minecraft.server.level.ServerLevel) provider.level(), offset.getX() + .5, offset.getY(), offset.getZ() + .5,
-                    player.getYRot(), player.getXRot());
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.teleport(player,
+                    (net.minecraft.server.level.ServerLevel) provider.level(), offset);
             return "Returned to the quest provider. Talk to them to continue or turn in the quest.";
         });
     }
@@ -361,6 +390,8 @@ public final class EditorLiveQuestTest {
                 var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
                 if (controls != null) controls.log(message);
                 boolean nextFocus = controls != null && controls.focusDialogue();
+                boolean nextBringRescue = controls != null && controls.bringRescue();
+                var nextRescue = com.jvn.villagerretaliation.quest.site.QuestSiteService.rescue(player, quest);
                 var nextSnapshot = VillagerQuestService.debugPlaytestView(player, quest);
                 var nextBaselines = controls == null ? List.<String>of() : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, quest);
                 List<String> lines = new ArrayList<>();
@@ -382,6 +413,8 @@ public final class EditorLiveQuestTest {
                 minecraft.execute(() -> {
                     if (requests.get() != request) return;
                     focusMenu = nextFocus;
+                    bringRescue = nextBringRescue;
+                    rescue = nextRescue;
                     baselineNames = nextBaselines;
                     snapshot = nextSnapshot;
                     view = new View(quest.toString(), message.isBlank() ? previous.message() : message, summary, List.copyOf(lines), false);

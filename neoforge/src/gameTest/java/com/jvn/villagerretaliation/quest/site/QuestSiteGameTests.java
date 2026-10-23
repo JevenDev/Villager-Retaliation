@@ -801,6 +801,45 @@ public final class QuestSiteGameTests {
         } catch (IllegalArgumentException expected) { }
     }
 
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void returnedCaptiveUsesTheMovedQuestProvider(GameTestHelper helper) throws Exception {
+        var compiled = VillagerQuestResources.compiledQuest(helper.getLevel().getServer(),
+                ResourceLocation.parse("villagerretaliation:missing_neighbor")).orElseThrow();
+        try (var fixture = new Fixture(helper, "escort_home", null, compiled)) {
+            var captive = fixture.captive();
+            fixture.interact(captive);
+            helper.assertTrue(fixture.site.released, "the shipped quest releases the captive through its direct approach");
+            fixture.provider.moveTo(fixture.site.home.offset(-40, 0, 0).getCenter());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertValueEqual(fixture.progress.targetPos(), fixture.provider.blockPosition(), "the return waypoint follows the moved provider");
+            helper.assertFalse(fixture.site.rescued, "moving only the provider does not complete the rescue");
+            captive.moveTo(fixture.provider.position());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.rescued, "bringing the captive to the provider completes the rescue away from the original position");
+            helper.assertValueEqual(fixture.progress.currentStage(), "return", "the real rescued criterion advances the shipped quest");
+            helper.assertFalse(QuestFollowerService.retained(captive), "completed rescue releases the follower");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_sites")
+    public static void authoredEscortDestinationStillRequiresTheAuthoredLocation(GameTestHelper helper) throws Exception {
+        var destination = helper.absolutePos(new BlockPos(100, 3, 100));
+        try (var fixture = new Fixture(helper, "escort_home", null, null, destination)) {
+            var captive = fixture.captive();
+            fixture.interact(captive);
+            captive.moveTo(fixture.provider.position());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertFalse(fixture.site.rescued, "a fixed destination cannot be replaced by the provider's position");
+            helper.assertValueEqual(fixture.progress.targetPos(), destination, "fixed destinations retain their waypoint");
+            captive.moveTo(destination.getCenter());
+            QuestSiteService.maintain(helper.getLevel(), fixture.data, fixture.site, fixture.quest, List.of(fixture.player));
+            helper.assertTrue(fixture.site.rescued, "arrival at the authored destination completes the rescue");
+            helper.assertValueEqual(fixture.progress.currentStage(), "return", "the fixed-destination rescue advances normally");
+        }
+        helper.succeed();
+    }
+
     private static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
         final AutoCloseable catalog;
@@ -824,6 +863,10 @@ public final class QuestSiteGameTests {
         }
 
         Fixture(GameTestHelper helper, String rescue, JsonObject access, com.jvn.villagerretaliation.quest.compiled.CompiledQuest supplied) {
+            this(helper, rescue, access, supplied, null);
+        }
+
+        Fixture(GameTestHelper helper, String rescue, JsonObject access, com.jvn.villagerretaliation.quest.compiled.CompiledQuest supplied, BlockPos destination) {
             this.helper = helper;
             var level = helper.getLevel();
             var server = level.getServer();
@@ -844,6 +887,13 @@ public final class QuestSiteGameTests {
             var target = new JsonObject();
             var config = config(rescue);
             if (access != null) config.add("access", access);
+            if (destination != null) {
+                var fixed = new JsonObject();
+                fixed.addProperty("x", destination.getX());
+                fixed.addProperty("y", destination.getY());
+                fixed.addProperty("z", destination.getZ());
+                config.add("escort_destination", fixed);
+            }
             target.add("site", config);
             root.add("target", target);
             var envelope = QuestResourceEnvelope.read(ResourceLocation.parse("test:quests/rescues/rescue/quest.json"), root).orElseThrow();
@@ -853,19 +903,20 @@ public final class QuestSiteGameTests {
             player = helper.makeMockServerPlayerInLevel();
             VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
             var position = helper.absolutePos(new BlockPos(48, 3, 48));
-            site = new Site(UUID.randomUUID(), player.getUUID(), quest.id(), null, level.dimension().location(), position.offset(-32, 0, 0));
+            if (supplied != null || destination != null) {
+                provider = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+                provider.setNoAi(true);
+                provider.setVillagerData(provider.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.CARTOGRAPHER));
+            }
+            site = new Site(UUID.randomUUID(), player.getUUID(), quest.id(), provider == null ? null : provider.getUUID(),
+                    level.dimension().location(), position.offset(-32, 0, 0));
             site.position = position;
             site.run = UUID.randomUUID();
             site.phase = Phase.ACTIVE;
             site.discovered = true;
             site.config = new Gson().toJson(quest.target().site());
             data.add(site);
-            if (supplied != null) {
-                provider = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
-                provider.setNoAi(true);
-                provider.setVillagerData(provider.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.CARTOGRAPHER));
-                provider.moveTo(site.home.getBottomCenter());
-            }
+            if (provider != null) provider.moveTo(site.home.getBottomCenter());
             progress = VillagerQuestSavedData.get(level).getOrCreate(player.getUUID(), quest.id());
             progress.start(provider == null ? null : provider.getUUID(), level.dimension(), position, 0);
             progress.beginRun(player.getUUID(), quest.id(), site.run);

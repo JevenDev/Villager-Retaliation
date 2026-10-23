@@ -373,7 +373,7 @@ public final class QuestSiteService {
             for (var player : players) QuestRuntimes.forQuest(site.quest).fail(player, site.quest, site.run);
             return;
         }
-        var destination = quest.target().site().escortDestination() == null ? site.home : quest.target().site().escortDestination();
+        var destination = escortDestination(level, site, quest);
         var captive = site.captive == null ? null : actor(level.getServer(), site.captive);
         if (captive != null && (!captive.blockPosition().equals(site.actorPosition)
                 || !captive.level().dimension().location().equals(site.actorDimension))) {
@@ -422,7 +422,8 @@ public final class QuestSiteService {
         for (var player : players) {
             if (site.released && quest.target().site().rescue() == QuestSiteDefinition.Rescue.ESCORT_HOME) {
                 var progress = VillagerQuestSavedData.get(level).get(player.getUUID(), site.quest);
-                if (progress != null && !destination.equals(progress.targetPos())) {
+                if (progress != null && (progress.targetPos() == null || !level.dimension().equals(progress.targetDimension())
+                        || destination.distSqr(progress.targetPos()) > 4 * 4)) {
                     progress.setTarget(progress.startedVillagerId(), level.dimension(), destination, "");
                     VillagerQuestSavedData.get(level).setDirty();
                     VillagerQuestService.refreshTracker(player);
@@ -436,6 +437,52 @@ public final class QuestSiteService {
             }
             QuestSiteMaps.give(player, quest, site, false);
         }
+    }
+
+    private static BlockPos escortDestination(ServerLevel level, Site site, QuestDefinition quest) {
+        if (quest.target().site().escortDestination() != null) return quest.target().site().escortDestination();
+        var provider = site.provider == null ? null : level.getEntity(site.provider);
+        return provider != null && provider.isAlive() ? provider.blockPosition() : site.home;
+    }
+
+    public static boolean isRescueActor(ServerPlayer player, ResourceLocation quest, UUID actorId) {
+        var site = find(player.serverLevel(), player.getUUID(), quest);
+        return site != null && site.phase == Phase.ACTIVE && owns(player.serverLevel(), site, player)
+                && actorId != null && actorId.equals(site.captive);
+    }
+
+    public record Rescue(int entity, boolean present, boolean released, boolean rescued, String guidance) {
+        public static final Rescue EMPTY = new Rescue(-1, false, false, false, "");
+    }
+
+    public static Rescue rescue(ServerPlayer player, ResourceLocation questId) {
+        var site = find(player.serverLevel(), player.getUUID(), questId);
+        var quest = VillagerQuestResources.quest(player.server, questId).orElse(null);
+        if (site == null || site.phase != Phase.ACTIVE || !owns(player.serverLevel(), site, player)
+                || quest == null || quest.target().site() == null || site.captive == null) return Rescue.EMPTY;
+        var captive = actor(player.server, site.captive);
+        String guidance = site.rescued ? "Rescue complete. Return to the quest provider to continue."
+                : !site.released ? "Free the captive through an authored approach before bringing them back."
+                : captive == null ? "The rescued villager is not loaded. Return to their last location before teleporting together."
+                : "Bring the rescued villager within 12 blocks of "
+                        + (quest.target().site().escortDestination() == null ? "the quest provider." : "the authored escort destination.");
+        return new Rescue(captive != null && captive.level() == player.level() ? captive.getId() : -1,
+                true, site.released, site.rescued, guidance);
+    }
+
+    public static Mob playtestEscort(ServerPlayer player, ResourceLocation questId) {
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, questId);
+        var site = find(player.serverLevel(), player.getUUID(), questId);
+        var quest = VillagerQuestResources.quest(player.server, questId).orElse(null);
+        if (site == null || site.phase != Phase.ACTIVE || !owns(player.serverLevel(), site, player)
+                || !site.released || site.rescued || quest == null || quest.target().site() == null
+                || quest.target().site().rescue() != QuestSiteDefinition.Rescue.ESCORT_HOME) return null;
+        var captive = actor(player.server, site.captive);
+        if (!(captive instanceof Mob mob) || !mob.isAlive() || site.dead)
+            throw new IllegalStateException("The rescued villager is not loaded or alive. Return to them before teleporting together.");
+        if (mob.isPassenger() || mob.isVehicle())
+            throw new IllegalStateException("The rescued villager must leave their vehicle and passengers before teleporting together.");
+        return mob;
     }
 
     private static void criterion(ServerPlayer player, Site site, String event, Entity actor) {
