@@ -2,20 +2,31 @@ package com.jvn.villagerretaliation.dialogue;
 
 import java.util.Locale;
 import java.util.Set;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 
-public record DialogueCue(Kind kind, double value) {
+public record DialogueCue(Kind kind, double value, ResourceLocation particle) {
     public static final int MAX_CUES = 64;
-    private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed");
+    public static final int MAX_PARTICLE_AMOUNT = 64;
+    private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed", "particle");
 
-    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED }
+    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE }
 
     public DialogueCue {
         java.util.Objects.requireNonNull(kind);
         if (!Double.isFinite(value) || switch (kind) {
             case PAUSE -> value < 0 || value > 60_000 || value != Math.rint(value);
             case SPEED -> value < 0.1 || value > 10;
+            case PARTICLE -> value < 1 || value > MAX_PARTICLE_AMOUNT || value != Math.rint(value);
             default -> value != 0;
         }) throw new IllegalArgumentException("Invalid dialogue cue value");
+        if ((kind == Kind.PARTICLE) != (particle != null))
+            throw new IllegalArgumentException("Particle resource must match dialogue cue kind");
+    }
+
+    public DialogueCue(Kind kind, double value) {
+        this(kind, value, null);
     }
 
     public record At(int offset, DialogueCue cue) {
@@ -29,8 +40,24 @@ public record DialogueCue(Kind kind, double value) {
         return TAGS.contains(raw.trim().toLowerCase(Locale.ROOT).split("[=:]", 2)[0].trim());
     }
 
+    private static DialogueCue parseParticle(String raw) {
+        var matcher = java.util.regex.Pattern.compile(
+                "particle[=:]([a-z0-9_.-]+(?::[a-z0-9/._-]+)?)(?:\\s+amount[=:]([0-9]+))?").matcher(raw);
+        if (!matcher.matches()) return null;
+        var resource = ResourceLocation.tryParse(matcher.group(1));
+        if (resource == null || !(BuiltInRegistries.PARTICLE_TYPE.get(resource) instanceof SimpleParticleType)) return null;
+        try {
+            int amount = matcher.group(2) == null ? 1 : Integer.parseInt(matcher.group(2));
+            return new DialogueCue(Kind.PARTICLE, amount, resource);
+        } catch (IllegalArgumentException invalid) {
+            return null;
+        }
+    }
+
     public static DialogueCue parse(String raw) {
-        String[] parts = raw.trim().toLowerCase(Locale.ROOT).split("[=:]", -1);
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (normalized.split("[=:]", 2)[0].trim().equals("particle")) return parseParticle(normalized);
+        String[] parts = normalized.split("[=:]", -1);
         String name = parts[0].trim();
         if (!TAGS.contains(name)) return null;
         if (Set.of("agree", "disagree", "reset").contains(name)) {

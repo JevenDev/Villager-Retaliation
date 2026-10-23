@@ -13,6 +13,8 @@ public final class DialoguePlayback {
     private final double duration;
     private final boolean instant;
     private boolean skipped;
+    private int nextParticle;
+    private final List<TimedCue> particles;
 
     private record TimedCue(double time, DialogueCue cue) { }
     private record Pause(double start, double end) { }
@@ -57,6 +59,7 @@ public final class DialoguePlayback {
         }
         this.revealTimes = List.copyOf(reveal);
         this.cues = List.copyOf(events);
+        this.particles = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.PARTICLE).toList();
         this.pauses = List.copyOf(waits);
         this.duration = Math.max(Math.max(end, gestureEnd), events.isEmpty() ? 0 : events.getLast().time());
     }
@@ -69,10 +72,27 @@ public final class DialoguePlayback {
         duration = source.duration;
         instant = source.instant;
         skipped = source.skipped;
+        particles = source.particles;
+        nextParticle = source.nextParticle;
     }
 
     public DialoguePlayback copy() { return new DialoguePlayback(this); }
     public void skip() { skipped = true; }
+
+    public DialoguePlayback retime(List<DialogueTextSegment> segments, long millisPerCharacter) {
+        var result = new DialoguePlayback(segments, startedAt, millisPerCharacter);
+        result.skipped = skipped;
+        result.nextParticle = Math.min(nextParticle, result.particles.size());
+        return result;
+    }
+
+    public List<DialogueCue> pollParticles(long now) {
+        double elapsed = skipped ? Double.POSITIVE_INFINITY : elapsed(now);
+        var due = new ArrayList<DialogueCue>();
+        while (nextParticle < particles.size() && particles.get(nextParticle).time() <= elapsed)
+            due.add(particles.get(nextParticle++).cue());
+        return List.copyOf(due);
+    }
 
     public int visibleCharacters(long now) {
         if (skipped || instant) return revealTimes.size();

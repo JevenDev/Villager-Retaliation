@@ -78,6 +78,31 @@ public final class DialogueCueGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void particleCuesValidateAndSurvivePackets(GameTestHelper helper) {
+        var segments = parse("<b>{player}<particle:smoke amount:2></b>😀<particle:minecraft:heart>");
+        var mapped = segments.stream().map(segment -> segment.mapText(text -> text.replace("{player}", "Alex"))).toList();
+        var events = cues(mapped);
+        helper.assertValueEqual(DialogueTextSegment.plainText(mapped), "Alex😀", "particle tags stay invisible");
+        helper.assertValueEqual(events.stream().map(DialogueCue.At::offset).toList(), List.of(4, 6),
+                "particle offsets follow placeholders and Unicode");
+        helper.assertValueEqual(events.getFirst().cue().particle().toString(), "minecraft:smoke", "default particle namespace");
+        helper.assertValueEqual(events.getFirst().cue().value(), 2.0, "authored particle count");
+        helper.assertValueEqual(events.getLast().cue().value(), 1.0, "omitted particle count defaults to one");
+        helper.assertValueEqual(cues(DialogueTextSegment.slice(mapped, 4, 6)).size(), 2,
+                "slices retain boundary particles");
+        for (String invalid : List.of("<particle:missing_particle>", "<particle:dust>", "<particle:smoke amount:0>",
+                "<particle:smoke amount:65>", "<particle:smoke amount:1.5>"))
+            helper.assertTrue(!DialogueTextSegment.markupWarnings(invalid).isEmpty(), "invalid particle warns: " + invalid);
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            DialogueTextSegment.writeList(buffer, mapped);
+            helper.assertValueEqual(DialogueTextSegment.readList(buffer), mapped, "particle resources and counts round trip");
+            helper.assertFalse(buffer.isReadable(), "particle packet is fully consumed");
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
     private static List<DialogueTextSegment> parse(String text) {
         return DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
     }

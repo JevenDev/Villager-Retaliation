@@ -83,6 +83,32 @@ public final class DialoguePlaybackGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void particlesFollowTimelineAndFireOnlyOnce(GameTestHelper helper) {
+        var clock = clock("😀<speed=2>A<pause=500><particle:smoke amount:2>B<particle:heart>", 100);
+        helper.assertTrue(clock.pollParticles(649).isEmpty(), "particles wait for earlier text, speed changes and pauses");
+        var due = clock.pollParticles(650);
+        helper.assertValueEqual(due.size(), 1, "particle fires at its authored text position");
+        helper.assertValueEqual(due.getFirst().value(), 2.0, "timeline retains particle amount");
+        helper.assertTrue(clock.pollParticles(650).isEmpty(), "repeated frames do not spawn duplicate particles");
+        var copy = clock.copy();
+        helper.assertTrue(copy.pollParticles(650).isEmpty(), "screen replacement preserves consumed particles");
+        helper.assertValueEqual(copy.pollParticles(700).size(), 1, "trailing particles fire after the last character");
+        helper.assertTrue(copy.pollParticles(900).isEmpty(), "completed playback cannot repeat particles");
+        var retimed = clock.retime(DialogueTextSegment.parse(
+                "😀<speed=2>A<pause=500><particle:smoke amount:2>B<particle:heart>", DialogueTextEffects.NONE), 50);
+        helper.assertValueEqual(retimed.pollParticles(700).size(), 1, "speed changes preserve consumed particles");
+        var skipped = clock("<particle:smoke>A<pause=500><particle:heart>B", 100);
+        helper.assertValueEqual(skipped.pollParticles(0).size(), 1, "leading particle fires immediately");
+        skipped.skip();
+        helper.assertValueEqual(skipped.pollParticles(0).size(), 1, "skip flushes remaining particles once");
+        helper.assertTrue(skipped.pollParticles(0).isEmpty(), "skip does not replay particles");
+        var instant = clock("A<pause=500><particle:smoke>B<particle:heart>", 0);
+        helper.assertValueEqual(instant.pollParticles(0).size(), 2, "instant text fires particles without authored waits");
+        helper.assertTrue(instant.pollParticles(1).isEmpty(), "instant particles still fire once");
+        helper.succeed();
+    }
+
     private static DialoguePlayback clock(String text, long millisPerCharacter) {
         return new DialoguePlayback(DialogueTextSegment.parse(text, DialogueTextEffects.NONE), 0, millisPerCharacter);
     }

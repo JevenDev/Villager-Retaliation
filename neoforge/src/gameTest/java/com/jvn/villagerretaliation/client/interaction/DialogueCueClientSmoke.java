@@ -37,10 +37,10 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
 public final class DialogueCueClientSmoke {
     private static final String OUTPUT = "villagerretaliation.dialogueCueClientSmoke";
-    private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<pause=650>"
+    private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<particle:smoke amount:2><pause=650>"
             + "<look=left> Over there...<pause=700><look=right> or there?<pause=650>"
             + "<look=player><disagree> No. Stay here.<pause=600><look=up> Above us?<pause=650>"
-            + "<look=down> Nothing below.<pause=600><reset><speed=0.5> Let's think.";
+            + "<look=down> Nothing below.<pause=600><reset><speed=0.5> Let's think.<particle:minecraft:heart amount:3>";
     private static CompletableFuture<Integer> preparing;
     private static int phase;
     private static int entityId;
@@ -116,6 +116,7 @@ public final class DialogueCueClientSmoke {
                     "the render hook applies held gaze to the actual speaker model");
             invoke(screen, "trySkipDialogueTextAnimation");
             require(playback(screen).complete(now), "native skip bypasses the pending pause");
+            verifyParticleEmission();
             screen.acceptDialogueExchanges(List.of(speech(PERFORMANCE)));
             shownAt = now;
             phase = 4;
@@ -129,6 +130,7 @@ public final class DialogueCueClientSmoke {
             if (finishedAt != 0 && now - finishedAt >= 1200) {
                 require(frame >= 50, "performance recording contains enough rendered frames");
                 require(!((String) field(screen, "villagerDialogueText")).contains("<pause"), "cue tags are absent from rendered text");
+                require((int) field(playback(screen), "nextParticle") == 2, "native screen dispatches both authored particle bursts");
                 verifyCampaignRefreshes(screen);
                 minecraft.setScreen(null);
                 phase = 5;
@@ -167,6 +169,25 @@ public final class DialogueCueClientSmoke {
             phase = 99;
             minecraft.stop();
         }
+    }
+
+    private static void verifyParticleEmission() {
+        var minecraft = Minecraft.getInstance();
+        minecraft.options.particles().set(net.minecraft.client.ParticleStatus.ALL);
+        var entity = minecraft.level.getEntity(entityId);
+        var clock = new DialoguePlayback(DialogueTextSegment.parse(
+                "<particle:smoke amount:2><pause=500><particle:heart amount:3>", DialogueTextEffects.NONE), 0, 35);
+        var pending = (java.util.Queue<?>) field(minecraft.particleEngine, "particlesToAdd");
+        int before = pending.size();
+        VillagerDialoguePerformance.emitParticles(entity, clock, 0);
+        require(pending.size() == before + 2, "particle cue creates the authored number of real client particles");
+        VillagerDialoguePerformance.emitParticles(entity, clock, 499);
+        require(pending.size() == before + 2, "particles do not repeat or fire during the pause");
+        var copy = clock.copy();
+        VillagerDialoguePerformance.emitParticles(entity, copy, 500);
+        require(pending.size() == before + 5, "copied playback emits only the remaining burst");
+        VillagerDialoguePerformance.emitParticles(entity, copy, 900);
+        require(pending.size() == before + 5, "completed particle bursts never repeat");
     }
 
     private static void verifyCampaignRefreshes(VillagerInteractionScreen screen) {

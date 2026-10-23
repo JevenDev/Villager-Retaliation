@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.dialogue.DialoguePlayback;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,6 +22,20 @@ public final class VillagerDialoguePerformance {
         speaker = entity instanceof LivingEntity living ? living : null;
         playback = speaker == null ? null : clock;
         refreshedAt = Util.getMillis();
+    }
+
+    public static void emitParticles(Entity entity, DialoguePlayback clock, long now) {
+        if (entity == null || !entity.level().isClientSide()) return;
+        var random = entity.getRandom();
+        for (var cue : clock.pollParticles(now)) {
+            if (!(BuiltInRegistries.PARTICLE_TYPE.get(cue.particle()) instanceof SimpleParticleType particle)) continue;
+            for (int index = 0; index < (int) cue.value(); index++)
+                entity.level().addParticle(particle,
+                        entity.getX() + (random.nextDouble() - 0.5) * entity.getBbWidth(),
+                        entity.getEyeY() + 0.15 + random.nextDouble() * 0.2,
+                        entity.getZ() + (random.nextDouble() - 0.5) * entity.getBbWidth(),
+                        (random.nextDouble() - 0.5) * 0.02, 0.02, (random.nextDouble() - 0.5) * 0.02);
+        }
     }
 
     public static void clear() {

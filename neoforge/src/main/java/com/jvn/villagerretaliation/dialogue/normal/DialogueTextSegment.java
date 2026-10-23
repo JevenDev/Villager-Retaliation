@@ -218,6 +218,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
                 buffer.writeVarInt(cue.offset());
                 buffer.writeEnum(cue.cue().kind());
                 buffer.writeDouble(cue.cue().value());
+                if (cue.cue().kind() == DialogueCue.Kind.PARTICLE) buffer.writeResourceLocation(cue.cue().particle());
             }
         }
     }
@@ -238,8 +239,13 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
                 throw new IllegalArgumentException("Too many dialogue cues");
             cueCount += count;
             var cues = new ArrayList<DialogueCue.At>();
-            for (int cue = 0; cue < count; cue++) cues.add(new DialogueCue.At(buffer.readVarInt(),
-                    new DialogueCue(buffer.readEnum(DialogueCue.Kind.class), buffer.readDouble())));
+            for (int cue = 0; cue < count; cue++) {
+                int offset = buffer.readVarInt();
+                var kind = buffer.readEnum(DialogueCue.Kind.class);
+                double value = buffer.readDouble();
+                var particle = kind == DialogueCue.Kind.PARTICLE ? buffer.readResourceLocation() : null;
+                cues.add(new DialogueCue.At(offset, new DialogueCue(kind, value, particle)));
+            }
             segments.add(new DialogueTextSegment(text, effects, cues));
         }
         return List.copyOf(segments);

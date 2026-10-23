@@ -8,10 +8,17 @@ const groups = [
 ];
 const tags = new Map(groups.flatMap(group => group.map(tag => [tag, group[0]])));
 
-const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset"]);
+const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset", "particle"]);
 
 function validCue(raw) {
-  const parts = raw.trim().toLowerCase().split(/[=:]/).map(part => part.trim());
+  const normalized = raw.trim().toLowerCase();
+  if (normalized.split(/[=:]/)[0].trim() === "particle") {
+    const match = /^particle[=:]([a-z0-9_.-]+(?::[a-z0-9/._-]+)?)(?:\s+amount[=:]([0-9]+))?$/.exec(normalized);
+    if (!match) return false;
+    const amount = match[2] === undefined ? 1 : Number(match[2]);
+    return Number.isInteger(amount) && amount >= 1 && amount <= 64;
+  }
+  const parts = normalized.split(/[=:]/).map(part => part.trim());
   const [name, argument] = parts;
   if (["agree", "disagree", "reset"].includes(name)) return parts.length === 1;
   if (parts.length !== 2) return false;

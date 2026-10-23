@@ -701,6 +701,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void tick() {
+        emitDialogueParticles();
         if (localPresentation != null) {
             localPresentation.tick(this);
             if (this.minecraft == null || this.minecraft.screen != this) return;
@@ -871,6 +872,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void showNextDialogueExchange() {
         if (this.dialogueExchanges.isEmpty()) return;
         if (trySkipDialogueTextAnimation()) return;
+        emitDialogueParticles();
         clearDialogueMouthAnimation();
         this.dialogueSpeech = this.dialogueExchanges.removeFirst();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
@@ -932,7 +934,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if(!resolved.equals(this.villagerDialogueTextSegments)){
             this.villagerDialogueTextSegments=resolved;
             this.villagerDialogueText=DialogueTextSegment.plainText(resolved);
-            this.dialoguePlayback = new DialoguePlayback(resolved, this.dialogueTextAnimationStartMillis, dialogueTextSpeed().millisPerCharacter());
+            this.dialoguePlayback = this.dialoguePlayback.retime(resolved, dialogueTextSpeed().millisPerCharacter());
         }
     }
 
@@ -1002,6 +1004,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        emitDialogueParticles();
         refreshAuthoringPresentation();
         refreshTutorialControlHints();
         int slideOffset = slideOffsetY();
@@ -4653,7 +4656,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         this.dialogueTextAnimationSkipped = true;
         updateDialogueMouthAnimation();
+        emitDialogueParticles();
         return true;
+    }
+
+    private void emitDialogueParticles() {
+        if (this.minecraft == null || this.minecraft.screen != this
+                || !shouldRenderInteractionContainer() || this.closingWithAnimation) return;
+        VillagerDialoguePerformance.emitParticles(dialogueSpeakerEntity(), dialoguePlaybackState(), Util.getMillis());
     }
 
     private void updateDialogueMouthAnimation() {
@@ -4713,7 +4723,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         long interval = dialogueTextSpeed().millisPerCharacter();
         if (interval != this.dialoguePlaybackMillisPerCharacter) {
             this.dialoguePlaybackMillisPerCharacter = interval;
-            this.dialoguePlayback = new DialoguePlayback(this.villagerDialogueTextSegments, this.dialogueTextAnimationStartMillis, interval);
+            this.dialoguePlayback = this.dialoguePlayback.retime(this.villagerDialogueTextSegments, interval);
         }
         if (this.dialogueTextAnimationSkipped && !dialogueTextSpeed().instant()) this.dialoguePlayback.skip();
         return this.dialoguePlayback;
