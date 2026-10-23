@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 48,
+    "description": "Performance reward tiers for escorts, speed, and optional objectives"
+  },
+  "villagerretaliation": {
+    "pack_version": "1.0.0-beta.14"
+  }
+}

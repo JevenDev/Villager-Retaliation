@@ -1,0 +1,148 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "performance_rewards:optional_objectives",
+  "localization_prefix": "performance_rewards.quest.optional_objectives",
+  "metadata": {
+    "questline": "performance_examples"
+  },
+  "provider": {
+    "type": "villagerretaliation:discovery"
+  },
+  "discovery": [
+    {
+      "id": "notice",
+      "event": "item_acquired",
+      "mode": "offer",
+      "match": {
+        "item": "minecraft:stick"
+      }
+    }
+  ],
+  "entry_stage": "gather",
+  "stages": [
+    {
+      "id": "gather",
+      "objectives": [
+        {
+          "id": "deliver",
+          "type": "item_check",
+          "item": "minecraft:oak_log",
+          "count": 16,
+          "consume": true,
+          "tracker": {
+            "text": {
+              "key": "#objective.deliver"
+            }
+          }
+        },
+        {
+          "id": "bonus",
+          "type": "item_check",
+          "item": "minecraft:apple",
+          "count": 8,
+          "optional": true,
+          "tracker": {
+            "text": {
+              "key": "#objective.bonus"
+            }
+          }
+        }
+      ],
+      "transition": {
+        "complete": true
+      },
+      "display": {
+        "title": {
+          "key": "#stage.gather"
+        }
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 10
+  },
+  "performance": {
+    "measurements": {
+      "bonus": {
+        "metric": "optional_objectives",
+        "objective": "gather.bonus"
+      },
+      "deaths": {
+        "metric": "deaths"
+      },
+      "damage": {
+        "metric": "damage_taken"
+      },
+      "kills": {
+        "metric": "kills",
+        "entity_types": [
+          "minecraft:zombie"
+        ]
+      }
+    },
+    "tiers": [
+      {
+        "id": "gold",
+        "title": {
+          "key": "#tier.gold"
+        },
+        "requirements": {
+          "bonus": {
+            "min": 1
+          },
+          "deaths": {
+            "max": 0
+          },
+          "damage": {
+            "max": 4
+          },
+          "kills": {
+            "min": 1
+          }
+        },
+        "rewards": {
+          "experience": 100,
+          "loot_table": "performance_rewards:gold"
+        }
+      },
+      {
+        "id": "iron",
+        "title": {
+          "key": "#tier.iron"
+        },
+        "requirements": {
+          "bonus": {
+            "min": 1
+          }
+        },
+        "rewards": {
+          "experience": 50,
+          "loot_table": "performance_rewards:iron"
+        }
+      },
+      {
+        "id": "copper",
+        "title": {
+          "key": "#tier.copper"
+        },
+        "requirements": {
+          "bonus": {
+            "min": 0
+          }
+        },
+        "rewards": {
+          "experience": 20,
+          "loot_table": "performance_rewards:copper"
+        }
+      }
+    ]
+  },
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
+}

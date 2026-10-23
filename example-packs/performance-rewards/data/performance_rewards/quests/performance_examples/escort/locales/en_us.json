@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "performance_rewards.quest.escort.title": "A Careful Escort",
+    "performance_rewards.quest.escort.description": "Acquire a bone to discover this quest. Run the companion setup function, then escort the wolf home. Gold requires at least 80% final health and 60% lowest health.",
+    "performance_rewards.quest.escort.stage.home": "Bring the companion home",
+    "performance_rewards.quest.escort.objective.arrive": "Bring the companion to the tagged receiver.",
+    "performance_rewards.quest.escort.tier.gold": "Gold",
+    "performance_rewards.quest.escort.tier.iron": "Iron",
+    "performance_rewards.quest.escort.tier.copper": "Copper"
+  }
+}

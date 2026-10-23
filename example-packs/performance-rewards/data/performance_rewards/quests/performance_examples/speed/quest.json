@@ -1,0 +1,119 @@
+{
+  "schema": "villagerretaliation:quest/v3",
+  "id": "performance_rewards:speed",
+  "localization_prefix": "performance_rewards.quest.speed",
+  "metadata": {
+    "questline": "performance_examples"
+  },
+  "provider": {
+    "type": "villagerretaliation:discovery"
+  },
+  "discovery": [
+    {
+      "id": "notice",
+      "event": "item_acquired",
+      "mode": "offer",
+      "match": {
+        "item": "minecraft:paper"
+      }
+    }
+  ],
+  "entry_stage": "run",
+  "stages": [
+    {
+      "id": "run",
+      "objectives": [
+        {
+          "id": "visit",
+          "type": "location_visit",
+          "dimension": "minecraft:overworld",
+          "location": {
+            "x": 20,
+            "y": 64,
+            "z": 0
+          },
+          "radius": 3,
+          "tracker": {
+            "text": {
+              "key": "#objective.visit"
+            }
+          }
+        }
+      ],
+      "transition": {
+        "complete": true
+      },
+      "display": {
+        "title": {
+          "key": "#stage.run"
+        }
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 10
+  },
+  "performance": {
+    "measurements": {
+      "time": {
+        "metric": "elapsed_ticks",
+        "objective": "run.visit"
+      }
+    },
+    "tiers": [
+      {
+        "id": "gold",
+        "title": {
+          "key": "#tier.gold"
+        },
+        "requirements": {
+          "time": {
+            "max": 600
+          }
+        },
+        "rewards": {
+          "experience": 100,
+          "loot_table": "performance_rewards:gold"
+        }
+      },
+      {
+        "id": "iron",
+        "title": {
+          "key": "#tier.iron"
+        },
+        "requirements": {
+          "time": {
+            "max": 1200
+          }
+        },
+        "rewards": {
+          "experience": 50,
+          "loot_table": "performance_rewards:iron"
+        }
+      },
+      {
+        "id": "copper",
+        "title": {
+          "key": "#tier.copper"
+        },
+        "requirements": {
+          "time": {
+            "min": 0
+          }
+        },
+        "rewards": {
+          "experience": 20,
+          "loot_table": "performance_rewards:copper"
+        }
+      }
+    ]
+  },
+  "display": {
+    "title": {
+      "key": "#title"
+    },
+    "description": {
+      "key": "#description"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "performance_rewards.quest.speed.title": "Against the Clock",
+    "performance_rewards.quest.speed.description": "Acquire paper to discover this quest. Reach the marked position. Gold takes at most 30 seconds of active play, iron at most one minute.",
+    "performance_rewards.quest.speed.stage.run": "Finish the task",
+    "performance_rewards.quest.speed.objective.visit": "Reach 20, 64, 0 in the Overworld.",
+    "performance_rewards.quest.speed.tier.gold": "Gold",
+    "performance_rewards.quest.speed.tier.iron": "Iron",
+    "performance_rewards.quest.speed.tier.copper": "Copper"
+  }
+}

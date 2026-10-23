@@ -1,0 +1,13 @@
+{
+  "schema": "villagerretaliation:quest_locale/v1",
+  "messages": {
+    "performance_rewards.quest.optional_objectives.title": "Well Prepared",
+    "performance_rewards.quest.optional_objectives.description": "Acquire a stick to discover this quest. Collect 16 oak logs. Collect apples first for an optional objective. Gold also requires no deaths, at most four health points of damage, and a zombie kill.",
+    "performance_rewards.quest.optional_objectives.stage.gather": "Finish the task",
+    "performance_rewards.quest.optional_objectives.objective.deliver": "Collect 16 oak logs.",
+    "performance_rewards.quest.optional_objectives.objective.bonus": "Collect 8 apples before finishing.",
+    "performance_rewards.quest.optional_objectives.tier.gold": "Gold",
+    "performance_rewards.quest.optional_objectives.tier.iron": "Iron",
+    "performance_rewards.quest.optional_objectives.tier.copper": "Copper"
+  }
+}
