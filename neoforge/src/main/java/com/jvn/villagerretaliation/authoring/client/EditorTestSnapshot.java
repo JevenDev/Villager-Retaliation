@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.authoring.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
 import com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace;
 import com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts;
 import java.io.IOException;
@@ -12,17 +13,27 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-record EditorTestSnapshot(Map<String, JsonObject> content, Map<String, String> supportingFiles) {
+final class EditorTestSnapshot {
+    private final Map<String, JsonObject> content;
+    private final Map<String, String> supportingFiles;
+    private AuthoringWorkspace owner;
+    private List<AuthoringDocument> documents = List.of();
+    private long[] revisions = new long[0];
+    private Map<String, String> hashes = Map.of();
+    private boolean currentContent, currentLogic;
     private static final String ASSOCIATION = "authoring-workspace.json";
 
-    EditorTestSnapshot {
+    EditorTestSnapshot(Map<String, JsonObject> content, Map<String, String> supportingFiles) {
         var definitions = new LinkedHashMap<String, JsonObject>();
         content.forEach((path, json) -> definitions.put(path, json.deepCopy()));
-        content = Map.copyOf(definitions);
-        supportingFiles = Map.copyOf(supportingFiles);
+        this.content = Map.copyOf(definitions);
+        this.supportingFiles = Map.copyOf(supportingFiles);
     }
+
+    Map<String, JsonObject> content() { return content; }
 
     static EditorTestSnapshot capture(AuthoringWorkspace workspace) {
         var content = new LinkedHashMap<String, JsonObject>();
@@ -31,19 +42,41 @@ record EditorTestSnapshot(Map<String, JsonObject> content, Map<String, String> s
     }
 
     boolean current(AuthoringWorkspace workspace, boolean logicOnly) {
-        if (!supportingFiles.equals(workspace.supportingFileHashes())) return false;
-        var draft = new LinkedHashMap<String, JsonObject>();
-        workspace.documents().forEach(document -> draft.put(document.resourcePath(), document.json()));
-        return logicOnly ? PlaytestDrafts.sameLogic(content, draft) : content.equals(draft);
+        var latest = workspace.documents();
+        var supporting = workspace.supportingFileHashes();
+        boolean changed = owner != workspace || !latest.equals(documents) || hashes != supporting;
+        if (!changed) for (int i = 0; i < latest.size(); i++) {
+            if (revisions[i] != latest.get(i).revision()) { changed = true; break; }
+        }
+        if (changed) {
+            owner = workspace;
+            documents = latest;
+            hashes = supporting;
+            revisions = new long[latest.size()];
+            for (int i = 0; i < latest.size(); i++) revisions[i] = latest.get(i).revision();
+            currentContent = false;
+            currentLogic = false;
+            if (supportingFiles.equals(supporting)) {
+                var draft = new LinkedHashMap<String, JsonObject>();
+                latest.forEach(document -> draft.put(document.resourcePath(), document.json()));
+                currentContent = content.equals(draft);
+                currentLogic = currentContent || PlaytestDrafts.sameLogic(content, draft);
+            }
+        }
+        return logicOnly ? currentLogic : currentContent;
+    }
+
+    static void checkAssociation(Path world, Path workspace) throws IOException {
+        Path marker = world.resolve(ASSOCIATION);
+        rejectLinks(marker);
+        if (Files.exists(marker, LinkOption.NOFOLLOW_LINKS) && !belongsTo(readObject(marker, 4096), workspace))
+            throw new IOException("Quest testing in this world belongs to another workspace");
     }
 
     static void remember(Path world, Path workspace) throws IOException {
+        checkAssociation(world, workspace);
         Path marker = world.resolve(ASSOCIATION);
-        rejectLinks(marker);
-        if (Files.exists(marker, LinkOption.NOFOLLOW_LINKS)) {
-            if (!belongsTo(readObject(marker, 4096), workspace)) throw new IOException("This test world belongs to another workspace");
-            return;
-        }
+        if (Files.exists(marker, LinkOption.NOFOLLOW_LINKS)) return;
         JsonObject association = new JsonObject();
         association.addProperty("version", 1);
         association.addProperty("workspace", workspace.toAbsolutePath().normalize().toString());

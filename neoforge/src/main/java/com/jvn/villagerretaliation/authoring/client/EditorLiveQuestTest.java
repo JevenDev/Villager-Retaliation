@@ -170,7 +170,7 @@ final class EditorLiveQuestTest {
         var minecraft = Minecraft.getInstance();
         var server = minecraft.getSingleplayerServer();
         if (document.kind() != DefinitionKind.QUEST || minecraft.player == null || !EditorTestWorld.active(workspace))
-            throw new IllegalArgumentException("Create and enter a separate editor test world first");
+            throw new IllegalArgumentException("Set up quest testing in the current world first");
         if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply & replay in Playtest to load this draft.");
         boolean trackCoverage = EditorTestWorld.currentLogic(workspace);
         var source = document.json();
@@ -203,9 +203,9 @@ final class EditorLiveQuestTest {
             var state = VillagerQuestService.debugInspectQuest(player, quest);
             lines.addAll(state.lines());
             if (!state.message().isBlank()) lines.add(state.message());
-            lines.addAll(VillagerQuestService.debugObjectives(player, quest).lines());
-            lines.addAll(VillagerQuestService.debugTraceRecent(player, 48).lines());
             var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, quest);
+            if (progress != null) lines.addAll(VillagerQuestService.debugObjectives(player, quest).lines());
+            lines.addAll(VillagerQuestService.debugTraceRecent(player, 48).lines());
             String summary = progress == null ? "Not started" : "State: " + progress.state().name().toLowerCase(java.util.Locale.ROOT)
                     + " | Stage: " + progress.currentStage();
             if (requests.get() != request) return;

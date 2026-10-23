@@ -129,6 +129,11 @@ final class EditorTestWorld {
         return session != null && session.snapshot().current(workspace, true);
     }
 
+    static java.util.concurrent.CompletableFuture<Void> prepareCurrent(AuthoringWorkspace workspace) throws IOException {
+        workspace.save();
+        return apply(workspace);
+    }
+
     static boolean applying() { return applying; }
 
     static java.util.concurrent.CompletableFuture<Void> apply(AuthoringWorkspace workspace) throws IOException {
@@ -137,21 +142,27 @@ final class EditorTestWorld {
 
     static java.util.concurrent.CompletableFuture<Void> apply(AuthoringWorkspace workspace,
             java.util.function.Function<MinecraftServer, java.util.concurrent.CompletableFuture<Void>> reloader) throws IOException {
-        Session session = session(workspace);
         var minecraft = Minecraft.getInstance();
         var server = minecraft.getSingleplayerServer();
-        if (session == null || server == null) throw new IllegalStateException("Enter the workspace's separate test world first");
+        if (server == null || minecraft.level == null || minecraft.player == null) throw new IllegalStateException("Enter a singleplayer world to set up a quest test");
         if (applying) throw new IllegalStateException("A draft is already being applied");
+        Path world = server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
+        EditorTestSnapshot.checkAssociation(world, workspace.directory());
         EditorTestSnapshot draft = EditorTestSnapshot.capture(workspace);
-        Path pack = session.world().resolve("datapacks/test_content");
+        Path pack = world.resolve("datapacks/test_content");
         Path backup = com.jvn.villagerretaliation.authoring.core.ManagedPackExport.export(workspace, pack);
-        if (backup == null) throw new IllegalStateException("The running test pack has no previous snapshot");
         applying = true;
         var playerId = minecraft.player.getUUID();
         var result = new java.util.concurrent.CompletableFuture<Void>();
         server.execute(() -> {
             Runnable resume = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspend(server, playerId);
             var baseline = com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.loadReport(server).entries();
+            var repository = server.getPackRepository();
+            var selected = List.copyOf(repository.getSelectedIds());
+            repository.reload();
+            var enabled = new ArrayList<>(selected);
+            if (!enabled.contains("file/test_content")) enabled.add("file/test_content");
+            repository.setSelected(enabled);
             reloader.apply(server).whenComplete((ignored, failure) -> server.execute(() -> {
                 Throwable issue = failure;
                 if (issue == null) {
@@ -161,14 +172,19 @@ final class EditorTestWorld {
                     if (error.isPresent()) issue = new IllegalStateException(error.get().source() + ": " + error.get().message());
                 }
                 if (issue == null) {
+                    try { EditorTestSnapshot.remember(world, workspace.directory()); }
+                    catch (IOException exception) { issue = exception; }
+                }
+                if (issue == null) {
                     resume.run();
                     minecraft.execute(() -> {
-                        sessions.remove(session);
-                        sessions.add(new Session(session.world(), session.workspace(), draft));
+                        sessions.removeIf(existing -> existing.world().equals(world) && existing.workspace().equals(workspace.directory()));
+                        sessions.add(new Session(world, workspace.directory(), draft));
+                        restored.remove(new Location(world, workspace.directory()));
                         applying = false;
                         result.complete(null);
                     });
-                } else rollback(server, minecraft, pack, backup, result, issue, reloader, resume);
+                } else rollback(server, minecraft, pack, backup, selected, result, issue, reloader, resume);
             }));
         });
         return result;
@@ -179,10 +195,15 @@ final class EditorTestWorld {
         catch (IllegalArgumentException | IllegalStateException exception) { return java.util.concurrent.CompletableFuture.failedFuture(exception); }
     }
 
-    private static void rollback(MinecraftServer server, Minecraft minecraft, Path pack, Path backup,
+    private static void rollback(MinecraftServer server, Minecraft minecraft, Path pack, Path backup, List<String> selected,
             java.util.concurrent.CompletableFuture<Void> result, Throwable failure,
             java.util.function.Function<MinecraftServer, java.util.concurrent.CompletableFuture<Void>> reloader, Runnable resume) {
-        try { com.jvn.villagerretaliation.authoring.core.ManagedPackExport.restore(pack, backup); }
+        try {
+            if (backup == null) Files.move(pack, pack.resolveSibling("test_content.rejected-" + java.util.UUID.randomUUID()));
+            else com.jvn.villagerretaliation.authoring.core.ManagedPackExport.restore(pack, backup);
+            server.getPackRepository().reload();
+            server.getPackRepository().setSelected(selected);
+        }
         catch (IOException recovery) {
             failure.addSuppressed(recovery);
             resume.run();
@@ -194,8 +215,9 @@ final class EditorTestWorld {
             minecraft.execute(() -> {
                 if (recovery != null) failure.addSuppressed(recovery);
                 applying = false;
-                result.completeExceptionally(new IllegalStateException(recovery == null ? "Previous test pack restored. " + failure.getMessage()
-                        : "Previous pack files restored, but its resource reload failed: " + recovery.getMessage(), failure));
+                result.completeExceptionally(new IllegalStateException(recovery == null
+                        ? (backup == null ? "Original world content restored. " : "Previous test pack restored. ") + failure.getMessage()
+                        : "Pack files and selection restored, but the resource reload failed: " + recovery.getMessage(), failure));
             });
         }));
     }

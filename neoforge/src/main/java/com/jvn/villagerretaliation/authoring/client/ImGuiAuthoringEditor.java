@@ -231,8 +231,9 @@ final class ImGuiAuthoringEditor {
             INSTANCE.attempt(INSTANCE::writeRecovery);
         }
         if (INSTANCE.questPreview != null) INSTANCE.simulationCoverage.accept(INSTANCE.questPreview.drainCoverage());
-        if (INSTANCE.view == 3 && !EditorTestWorld.applying()) INSTANCE.updatePlaytestPresentation();
-        if (INSTANCE.view == 3 && !EditorTestWorld.applying() && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
+        boolean playtesting = INSTANCE.view == 3 && EditorPlaytestViewport.active() && !EditorTestWorld.applying();
+        if (playtesting) INSTANCE.updatePlaytestPresentation();
+        if (playtesting && INSTANCE.document != null && INSTANCE.document.kind() == DefinitionKind.QUEST
                 && EditorTestWorld.active(INSTANCE.workspace) && !EditorLiveQuestTest.view().busy()
                 && net.minecraft.Util.getMillis() >= INSTANCE.nextPlaytestRefresh) {
             INSTANCE.nextPlaytestRefresh = net.minecraft.Util.getMillis() + 250;
@@ -2875,6 +2876,15 @@ final class ImGuiAuthoringEditor {
         if (workspace != null && (changed || workspace.validationRegistries() == null)) workspace.validationRegistries(validationRegistries);
     }
 
+    private void prepareLiveTest() throws IOException {
+        status = "Loading quest setup into the current world...";
+        EditorTestWorld.prepareCurrent(workspace).whenComplete((ignored, failure) -> MC.execute(() -> {
+            playtestVisuals = Map.of();
+            status = failure == null ? "Quest setup is ready in this world. Start a quest to test it."
+                    : "Quest setup failed: " + failure.getMessage();
+        }));
+    }
+
     private void prepareTestWorld() throws IOException {
         try { EditorTestWorld.prepare(workspace, screen); }
         catch (IOException | IllegalArgumentException | IllegalStateException exception) {
@@ -3051,7 +3061,7 @@ final class ImGuiAuthoringEditor {
             playtestVisuals = Map.of();
             if (view != 3 || document != expected || MC.getSingleplayerServer() != world) return;
             if (replay) attempt(() -> EditorLiveQuestTest.startAt(workspace, document, playtestHold, stage));
-            status = replay ? "Draft applied in this test world. Replaying " + stage : "Draft applied. Selected step was removed. Replay the entry step explicitly.";
+            status = replay ? "Draft applied in this world. Replaying " + stage : "Draft applied. Selected step was removed. Replay the entry step explicitly.";
         }));
     }
 
@@ -3107,9 +3117,12 @@ final class ImGuiAuthoringEditor {
     private void playtestQuest() {
         if (!EditorTestWorld.active(workspace)) {
             String problem = EditorTestWorld.problem(workspace);
-            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
-            ImGui.textWrapped("Create a separate test world for quest playtesting.");
-            if (ImGui.button("Create live quest test world")) operation(this::prepareTestWorld);
+            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume quest testing: " + problem);
+            ImGui.textWrapped(MC.getSingleplayerServer() == null ? "Enter a singleplayer world to playtest quests."
+                    : "Load this draft into the current world, then start a quest and use its requirement setup controls. Live tests execute real actions and rewards here.");
+            ImGui.beginDisabled(MC.getSingleplayerServer() == null || EditorTestWorld.applying());
+            if (ImGui.button("Set up quest testing here")) operation(this::prepareLiveTest);
+            ImGui.endDisabled();
             return;
         }
         var state = EditorLiveQuestTest.snapshot();
@@ -3222,7 +3235,7 @@ final class ImGuiAuthoringEditor {
 
     private void questSimulation() {
         if (EditorTestWorld.active(workspace)) {
-            if (ImGui.checkbox("Use live test world", liveQuestMode)) liveQuestMode = !liveQuestMode;
+            if (ImGui.checkbox("Test in current world", liveQuestMode)) liveQuestMode = !liveQuestMode;
             if (liveQuestMode) { liveQuestTest(); return; }
         }
         conditions.worldTime(MC.level.getDayTime());
@@ -3262,9 +3275,11 @@ final class ImGuiAuthoringEditor {
         if (!EditorWidgets.section("Live quest test", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) return;
         if (!EditorTestWorld.active(workspace)) {
             String problem = EditorTestWorld.problem(workspace);
-            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume this test world: " + problem);
-            ImGui.textWrapped("Create a separate test world to execute real objectives, actions, and rewards.");
-            if (ImGui.button("Create live quest test world")) operation(this::prepareTestWorld);
+            if (!problem.isEmpty()) ImGui.textWrapped("Could not resume quest testing: " + problem);
+            ImGui.textWrapped("Set up quest testing in the current singleplayer world. Live tests execute real objectives, actions, and rewards here.");
+            ImGui.beginDisabled(MC.getSingleplayerServer() == null || EditorTestWorld.applying());
+            if (ImGui.button("Set up quest testing here")) operation(this::prepareLiveTest);
+            ImGui.endDisabled();
             return;
         }
         var state = EditorLiveQuestTest.view();
@@ -3272,7 +3287,7 @@ final class ImGuiAuthoringEditor {
             ImGui.textWrapped(state.summary());
             ImGui.textWrapped(state.message());
         }
-        ImGui.textWrapped("Live tests change this test world. Restarting a quest repeats its actions. Return to the game to make objective progress, then refresh here.");
+        ImGui.textWrapped("Live tests change this world. Restarting a quest repeats its actions. Return to the game to make objective progress, then refresh here.");
         boolean current = EditorTestWorld.currentSnapshot(workspace);
         if (!current) ImGui.textWrapped("Content changed after export. Open Playtest and use Apply & replay to load your latest draft.");
         ImGui.beginDisabled(!current || EditorLiveQuestTest.view().busy());
@@ -3283,7 +3298,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Clear live quest progress")) operation(() -> EditorLiveQuestTest.clear(workspace, document));
         ImGui.endDisabled();
         if (ImGui.button("Return to game")) closeEditor();
-        if (ImGui.button("Create fresh test world")) operation(this::prepareTestWorld);
+        if (ImGui.button("Reload quest setup here")) operation(this::prepareLiveTest);
         if (state.quest().equals(document.id()) && EditorWidgets.section("Live quest diagnostics"))
             for (String line : state.lines()) ImGui.textWrapped(line);
     }

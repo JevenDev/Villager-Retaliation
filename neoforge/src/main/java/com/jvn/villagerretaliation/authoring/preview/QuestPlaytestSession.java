@@ -38,7 +38,7 @@ public final class QuestPlaytestSession {
 
     public static Controls require(ServerPlayer player, ResourceLocation quest) {
         var controls = controls(player, quest);
-        if (controls == null) throw new IllegalStateException("Start a quest playtest in the editor test world first");
+        if (controls == null) throw new IllegalStateException("Start a quest playtest in the current world first");
         return controls;
     }
 

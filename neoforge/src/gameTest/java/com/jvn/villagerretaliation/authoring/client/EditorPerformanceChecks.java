@@ -27,7 +27,8 @@ final class EditorPerformanceChecks {
         benchmarkGraphPreparation();
         schemaCachesTrackRevisionsAndPendingValues();
         fileIndexesTrackEveryMembershipChange();
-        return 9;
+        playtestSnapshotsAvoidIdleJsonCopies();
+        return 10;
     }
 
     private static AuthoringWorkspace workspace() throws IOException {
@@ -269,6 +270,45 @@ final class EditorPerformanceChecks {
         check(!workspace.filePaths().contains("data/test/descriptions/note.md") && workspace.filePaths().contains("data/test/descriptions/moved.md"), "moving attachments refreshes the index");
         workspace.undoFileMove();
         check(workspace.filePaths().equals(attached), "undoing attachment moves restores the paths");
+    }
+
+    private static void playtestSnapshotsAvoidIdleJsonCopies() throws IOException {
+        var workspace = workspace();
+        var document = largeDocument(1000);
+        workspace.add(document);
+        var snapshot = EditorTestSnapshot.capture(workspace);
+        check(snapshot.current(workspace, false) && snapshot.current(workspace, true), "the initial applied snapshot matches both content and logic");
+        var threads = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
+        long thread = Thread.currentThread().threadId();
+        for (int i = 0; i < 100; i++) snapshot.current(workspace, true);
+        long allocated = threads.getThreadAllocatedBytes(thread);
+        long start = System.nanoTime();
+        for (int i = 0; i < 1000; i++) {
+            check(snapshot.current(workspace, false) && snapshot.current(workspace, true), "idle reads retain the applied snapshot");
+        }
+        long bytes = threads.getThreadAllocatedBytes(thread) - allocated;
+        check(bytes < 2_000_000, "idle checks must not copy or project all document JSON: " + bytes + " bytes");
+        System.out.printf(java.util.Locale.ROOT, "Editor playtest snapshot (1000 nodes): %.6f ms, %d bytes per idle check%n",
+                (System.nanoTime() - start) / 2_000_000_000.0, bytes / 2000);
+        document.edit("Change wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("node_0").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Updated")));
+        check(!snapshot.current(workspace, false) && snapshot.current(workspace, true), "wording edits invalidate content while retaining live logic");
+        document.edit("Change logic", root -> root.getAsJsonObject("nodes").getAsJsonObject("node_0").addProperty("next", "node_2"));
+        check(!snapshot.current(workspace, true), "logic edits invalidate the cached result");
+        document.undo(); document.undo();
+        check(snapshot.current(workspace, false), "undo restores the applied snapshot");
+        workspace.rename(document, "test:moved_performance");
+        check(!snapshot.current(workspace, true), "renames invalidate the cached paths");
+        document.undo();
+        check(snapshot.current(workspace, true), "undo rename restores applied logic");
+        var extra = workspace.createDocument(DefinitionKind.TREE, "test:extra_playtest");
+        check(!snapshot.current(workspace, true), "new documents invalidate cached membership");
+        workspace.remove(extra);
+        check(snapshot.current(workspace, true), "removing the new document restores applied membership");
+        var other = workspace();
+        other.add(new AuthoringDocument(document.kind(), document.resourcePath(), document.json()));
+        check(snapshot.current(other, false), "matching content in another workspace can be compared");
+        other.documents().getFirst().edit("Different logic", root -> root.addProperty("different", true));
+        check(!snapshot.current(other, true) && snapshot.current(workspace, true), "workspace switches never reuse another workspace's comparison");
     }
 
     private static void check(boolean passed, String message) { if (!passed) throw new AssertionError(message); }

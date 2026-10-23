@@ -50,7 +50,7 @@ public final class AuthoringEditorClientSmoke {
     private static Path originalWorld;
     private static Path reloadWorld;
     private static AuthoringDocument playtestTitleLocale;
-    private static int reloadExperience, playtestLogSize;
+    private static int initialLiveExperience, reloadExperience, playtestLogSize;
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
     private static int keyRelease = -1;
@@ -377,51 +377,101 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildCampaignLiveWorldSteps() {
+        var selectedPacks = new ArrayList<String>();
         STEPS.add(() -> liveCheck = Minecraft.getInstance().getSingleplayerServer().submit(() ->
                 EditorWorldContent.source(Minecraft.getInstance().getSingleplayerServer())).thenApplyAsync(source ->
                 EditorWorldContent.prepare(source, output().resolve("live-world-drafts"), null, "en_us", ignored -> { }), net.minecraft.Util.backgroundExecutor()));
         waitUntil(() -> liveCheck.isDone());
-        STEPS.add(() -> campaignWorkspace = ((EditorWorldContent.Prepared) liveCheck.join()).workspace());
-        for (String id : List.of("villagerretaliation:blank_map_promise", "villagerretaliation:missing_neighbor")) {
-            STEPS.add(() -> {
-                workspace = campaignWorkspace;
-                set("workspace", workspace);
+        STEPS.add(() -> {
+            campaignWorkspace = ((EditorWorldContent.Prepared) liveCheck.join()).workspace();
+            workspace = campaignWorkspace;
+            set("workspace", workspace);
+            document = workspace.documents().stream().filter(value -> value.id().equals("villagerretaliation:missing_neighbor")).findFirst().orElseThrow();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            invoke("enterPlaytest", new Class<?>[0]);
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            originalWorld = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            selectedPacks.addAll(server.getPackRepository().getSelectedIds());
+            var attempts = new java.util.concurrent.atomic.AtomicInteger();
+            try {
+                reloadCheck = EditorTestWorld.apply(workspace, target -> attempts.getAndIncrement() == 0
+                        ? java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Injected initial setup failure"))
+                        : target.reloadResources(target.getPackRepository().getSelectedIds()));
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> {
+            require(reloadCheck.isCompletedExceptionally(), "Initial setup reports a failed reload.");
+            require(!Files.exists(originalWorld.resolve("datapacks/test_content")) && !EditorTestWorld.active(workspace),
+                    "Failed initial setup removes the unready pack from live use.");
+            require(List.copyOf(Minecraft.getInstance().getSingleplayerServer().getPackRepository().getSelectedIds()).equals(selectedPacks),
+                    "Failed initial setup restores the world's original pack selection.");
+            invoke("prepareLiveTest", new Class<?>[0]);
+        });
+        waitUntil(() -> !EditorTestWorld.applying());
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            require(originalWorld.equals(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
+                    "Quest setup stays in the current world.");
+            require(Minecraft.getInstance().screen == field(editor, "screen"), "Quest setup keeps the editor open.");
+            require(EditorTestWorld.active(workspace) && EditorTestWorld.currentSnapshot(workspace),
+                    "The full default campaign is ready for live testing: " + field(editor, "status"));
+            for (String id : List.of("villagerretaliation:blank_map_promise", "villagerretaliation:missing_neighbor")) {
                 document = workspace.documents().stream().filter(value -> value.id().equals(id)).findFirst().orElseThrow();
                 invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
-                invoke("enterPlaytest", new Class<?>[0]);
-                invoke("prepareTestWorld", new Class<?>[0]);
-                require(Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen,
-                        "The full default campaign prepares a test world for " + id + ": " + field(editor, "status"));
-                Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-            });
-        }
-        STEPS.add(() -> {
-            originalWorld = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
-            invoke("prepareTestWorld", new Class<?>[0]);
-            Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
+                require(EditorTestWorld.currentLogic(workspace), "Campaign quest setup is available for " + id);
+            }
+            EditorLiveQuestTest.inspect(workspace, document);
         });
-        waitUntil(() -> Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen);
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
         STEPS.add(() -> {
-            var create = (net.minecraft.client.gui.screens.worldselection.CreateWorldScreen) Minecraft.getInstance().screen;
-            require(create.getUiState().getSettings().dataConfiguration().dataPacks().getEnabled().contains("file/test_content"),
-                    "The default campaign test pack is enabled in the new world.");
-            capture("90-campaign-test-world-ready");
-            Minecraft.getInstance().tell(() -> create.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0));
+            require(EditorLiveQuestTest.view().summary().equals("Not started"), "Inspecting an unstarted quest finishes without leaving live controls busy.");
+            capture("90-campaign-current-world-ready");
+            invoke("closeEditor", new Class<?>[0]);
         });
-        waitUntil(() -> {
-            if (Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen) Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
-            return Minecraft.getInstance().player != null && Minecraft.getInstance().screen == null && EditorTestWorld.active(workspace);
-        });
+        pause(750);
         STEPS.add(() -> {
-            var world = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
-            require(!world.equals(originalWorld) && !Files.exists(originalWorld.resolve("datapacks/test_content")),
-                    "Creating a campaign test world preserves the original world.");
-            require(EditorTestWorld.currentSnapshot(workspace), "The created live world contains the full exported campaign snapshot.");
+            require(EditorLiveQuestTest.view().quest().isEmpty(), "Closing Playtest stops background live polling.");
             ImGuiAuthoringEditor.open();
-            require(EditorPlaytestViewport.active(), "Reopening Playtest after the world switch restores the split game viewport.");
-            capture("91-campaign-live-world-missing-neighbor");
-            System.out.println("Default campaign live world: Missing Neighbor and Blank Map Promise setup passed, separate world created and entered.");
+            require(EditorPlaytestViewport.active(), "Reopening Playtest restores the split game viewport.");
         });
+        pause(3000);
+        STEPS.add(() -> EditorCampaignProfile.start("current-world-playtest-reopened"));
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
+                    "Reopened Playtest remains responsive with the complete campaign: " + profile);
+            capture("91-campaign-current-world-playtest");
+            System.out.println("Default campaign quest testing passed in the current world, including setup rollback and reopened editor performance.");
+            document = workspace.createDocument(DefinitionKind.QUEST, "test:current_world_setup");
+            EditorContentTools.recipe(workspace, document, "Fetch quest");
+            DialogueGraph.addNode(document, "finish");
+            DialogueGraph.connect(document, "/stages/0/transition", "finish");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            try { reloadCheck = EditorTestWorld.apply(workspace); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> {
+            reloadCheck.join();
+            EditorLiveQuestTest.start(workspace, document, true);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().hold() && !EditorLiveQuestTest.snapshot().objectives().isEmpty(),
+                    "A quest starts with live requirement controls in the current world: " + EditorLiveQuestTest.view());
+            EditorLiveQuestTest.prepare(workspace, document, EditorLiveQuestTest.snapshot().objectives().getFirst().id(), "");
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1500);
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().ready(), "Requirement setup supplies real matching items in the current world: " + EditorLiveQuestTest.snapshot() + " / " + EditorLiveQuestTest.view());
+            capture("92-current-world-quest-requirements");
+            EditorLiveQuestTest.clear(workspace, document);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        STEPS.add(() -> require(EditorLiveQuestTest.view().summary().equals("Not started"), "Clearing the test quest keeps live controls responsive."));
     }
 
     private static void buildDialoguePoolSteps() {
@@ -690,6 +740,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorPlaytestSmokeOnly")) {
+            buildCampaignLiveWorldSteps();
+            finishSteps("Current-world quest setup, reload recovery and Playtest performance passed.");
+            return;
+        }
         buildConfirmationViewportSteps();
         buildInlineSteps();
         buildWorldContentSteps();
@@ -2170,38 +2225,27 @@ public final class AuthoringEditorClientSmoke {
             document = quest;
             invoke("select", new Class<?>[] {AuthoringDocument.class}, quest);
             originalWorld = Minecraft.getInstance().getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
-            require(!EditorTestWorld.active(workspace), "Ordinary worlds cannot execute editor live tests.");
-            try { EditorLiveQuestTest.start(workspace, quest); throw new IllegalStateException("Live start escaped its separate test world"); }
+            require(!EditorTestWorld.active(workspace), "Live testing waits for explicit setup in this world.");
+            try { EditorLiveQuestTest.start(workspace, quest); throw new IllegalStateException("Live start escaped setup"); }
             catch (IllegalArgumentException expected) { }
-            try { EditorTestWorld.prepare(workspace, Minecraft.getInstance().screen); }
+            try { reloadCheck = EditorTestWorld.prepareCurrent(workspace); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
-            Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
         });
-        waitUntil(() -> Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen);
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> reloadCheck.join());
         STEPS.add(() -> {
             var minecraft = Minecraft.getInstance();
-            require(minecraft.screen instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen,
-                    "Confirmed setup opens the vanilla world creation screen.");
-            var create = (net.minecraft.client.gui.screens.worldselection.CreateWorldScreen) minecraft.screen;
-            require(create.getUiState().getSettings().dataConfiguration().dataPacks().getEnabled().contains("file/test_content"),
-                    "The exported test pack is enabled automatically.");
-            capture("27-test-world-ready");
-            minecraft.tell(() -> create.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0));
-        });
-        waitUntil(() -> {
-            if (Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen) Minecraft.getInstance().tell(AuthoringEditorClientSmoke::confirmYes);
-            return Minecraft.getInstance().player != null && Minecraft.getInstance().screen == null && EditorTestWorld.active(workspace);
-        });
-        STEPS.add(() -> {
-            var minecraft = Minecraft.getInstance();
-            require(!originalWorld.equals(minecraft.getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
-                    "Live testing creates a different world directory.");
-            require(Files.isRegularFile(originalWorld.resolve("level.dat")) && !Files.exists(originalWorld.resolve("datapacks/test_content")),
-                    "The original world remains available without the test pack.");
+            require(originalWorld.equals(minecraft.getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
+                    "Live quest testing keeps the current world directory.");
+            require(Files.isRegularFile(originalWorld.resolve("datapacks/test_content/pack.mcmeta")),
+                    "The current world contains the managed test pack.");
             require(minecraft.getSingleplayerServer().getPackRepository().getSelectedIds().contains("file/test_content"), "The created server loaded the test pack.");
             require(EditorTestWorld.currentSnapshot(workspace), "Live execution identifies the exported snapshot.");
             EditorTestWorld.disconnect();
             require(EditorTestWorld.active(workspace) && EditorTestWorld.currentSnapshot(workspace), "Live controls restore their workspace and snapshot after losing the in-memory session.");
+            var server = minecraft.getSingleplayerServer();
+            var playerId = minecraft.player.getUUID();
+            liveCheck = server.submit(() -> initialLiveExperience = server.getPlayerList().getPlayer(playerId).totalExperience);
             EditorLiveQuestTest.start(workspace, document);
         });
         waitUntil(() -> !EditorLiveQuestTest.view().busy());
@@ -2211,7 +2255,7 @@ public final class AuthoringEditorClientSmoke {
             var playerId = Minecraft.getInstance().player.getUUID();
             liveCheck = server.submit(() -> {
                 var player = server.getPlayerList().getPlayer(playerId);
-                require(player.totalExperience == 7, "Live entry actions grant real experience exactly once.");
+                require(player.totalExperience == initialLiveExperience + 7, "Live entry actions grant real experience exactly once.");
                 var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel())
                         .get(playerId, net.minecraft.resources.ResourceLocation.parse(document.id()));
                 require(progress != null && progress.currentStage().equals("start"), "Unmet live objectives keep the quest at its first stage.");
@@ -2232,7 +2276,7 @@ public final class AuthoringEditorClientSmoke {
                         .get(playerId, net.minecraft.resources.ResourceLocation.parse(document.id()));
                 require(progress != null && progress.state() == com.jvn.villagerretaliation.quest.VillagerQuestSavedData.QuestState.COMPLETED,
                         "Real inventory progress completes the live quest: " + (progress == null ? "missing" : progress.state() + "/" + progress.currentStage()));
-                require(player.totalExperience == 24, "Live quest rewards execute exactly once: " + player.totalExperience);
+                require(player.totalExperience == initialLiveExperience + 24, "Live quest rewards execute exactly once: " + player.totalExperience);
             });
             ImGuiAuthoringEditor.open();
             invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
