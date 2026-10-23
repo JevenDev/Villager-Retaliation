@@ -261,15 +261,28 @@ public final class VillagerInteractionClientHandler {
             return;
         }
         if (screen != null) {
-            if (payload.exchanges().isEmpty()) screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
+            if (payload.exchanges().isEmpty()) {
+                recordNotice(minecraft, payload);
+                screen.acceptVillagerDialogue(payload.text(), payload.textSegments());
+            }
             else screen.acceptDialogueExchanges(payload.exchanges(), payload.autoAdvance(), payload.greetingRequestId());
             return;
         }
         if (payload.exchanges().isEmpty()) {
+            recordNotice(minecraft, payload);
             pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
         } else for (var line : payload.exchanges()) {
+            var speaker = minecraft.level == null || line.speaker() == null ? null : minecraft.level.getEntity(line.entityId());
+            if (speaker != null && !speaker.getUUID().equals(line.speaker())) speaker = null;
+            ConversationHistoryClient.record(line.presentationId().toString(), speaker, line.name(), line.text(), line.segments());
             pushVillagerChatMessage(minecraft, payload.entityId(), line.text(), line.speaker() == null ? gui("dialogue.narrator") : line.name(), line.segments());
         }
+    }
+
+    private static void recordNotice(Minecraft minecraft, VillagerInteractionNoticePayload payload) {
+        var speaker = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
+        String name = payload.speakerLabel().isBlank() ? resolveVillagerSpeakerName(minecraft, payload.entityId()) : payload.speakerLabel();
+        ConversationHistoryClient.record(UUID.randomUUID().toString(), speaker, name, payload.text(), payload.textSegments());
     }
 
     public static void acceptRecruitmentResult(RecruitmentResultPayload payload) {

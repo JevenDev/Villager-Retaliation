@@ -22,13 +22,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "112";
+    private static final String PROTOCOL_VERSION = "113";
 
     private VillagerReputationNetworking() {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
+        network.safePlayToClientThreaded(ConversationHistoryWorldPayload.TYPE, ConversationHistoryWorldPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.ConversationHistoryClient", "accept");
         network.safePlayToClientThreaded(OreNodeCatalogPayload.TYPE, OreNodeCatalogPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.settlement.OreNodeCatalogClient", "accept");
         network.playToServer(

@@ -1,4 +1,9 @@
 {
+  "key.villagerretaliation.open_conversation_history": "Open Conversation History",
+  "villagerretaliation.gui.conversation_history.title": "Conversation History",
+  "villagerretaliation.gui.conversation_history.back": "Esc • Back",
+  "villagerretaliation.gui.conversation_history.empty": "No recent conversations in this world.",
+  "villagerretaliation.gui.conversation_history.you": "You",
   "quest.villagerretaliation.site_map": "Quest Map",
   "quest.villagerretaliation.search_area": "Search near %s, %s within %s blocks",
   "quest.villagerretaliation.site.route_found": "Route discovered: %s (%s, %s, %s)",

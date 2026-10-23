@@ -61,6 +61,16 @@ public final class VillagerStyledTextRenderer {
         return formatted;
     }
 
+    static void renderOutlinedLine(GuiGraphics graphics, Font font, String text, List<DialogueTextSegment> segments,
+            int x, int y, int color, int tickCount) {
+        graphics.drawString(font, text, x - 1, y, 0xFF000000, false);
+        graphics.drawString(font, text, x + 1, y, 0xFF000000, false);
+        graphics.drawString(font, text, x, y - 1, 0xFF000000, false);
+        graphics.drawString(font, text, x, y + 1, 0xFF000000, false);
+        var styled = component(segments, Style.EMPTY, color & 0x00FFFFFF);
+        renderLine(graphics, font, styled.getVisualOrderText(), segments, x, y, color, (color >>> 24) & 0xFF, tickCount);
+    }
+
     static void renderLine(
             GuiGraphics graphics,
             Font font,

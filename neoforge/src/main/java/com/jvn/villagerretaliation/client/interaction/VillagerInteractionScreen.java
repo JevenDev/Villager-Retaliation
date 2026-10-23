@@ -11,7 +11,6 @@ import com.jvn.villagerretaliation.client.party.PartyRosterClient;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
-import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.client.villager.VillagerStudyClientCache;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
@@ -101,7 +100,6 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.renderer.RenderType;
@@ -120,10 +118,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.joml.Quaternionf;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
-import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
@@ -176,8 +172,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_SKILL_COLUMNS = 2;
     private static final long PROFILE_KEEPALIVE_INTERVAL_MILLIS = 20_000L;
     private static final ResourceLocation DEFAULT_CURRENCY_ICON_SPRITE = ResourceLocation.withDefaultNamespace("item/emerald");
-    private static final int INTERACTION_CONTAINER_WIDTH = 283;
-    private static final int INTERACTION_CONTAINER_HEIGHT = 85;
+    static final int INTERACTION_CONTAINER_WIDTH = 283;
+    static final int INTERACTION_CONTAINER_HEIGHT = 85;
     private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 5;
     private static final int INTERACTION_JOB_ICON_SIZE = 18;
     private static final int INTERACTION_JOB_ICON_BOTTOM_INSET = 4;
@@ -219,10 +215,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_NAMEPLATE_SLICE_RIGHT = 8;
     private static final int INTERACTION_NAMEPLATE_SLICE_TOP = 8;
     private static final int INTERACTION_NAMEPLATE_SLICE_BOTTOM = 8;
-    private static final int INTERACTION_DIALOGUE_LEFT = 62;
+    static final int INTERACTION_DIALOGUE_LEFT = 62;
     private static final int INTERACTION_DIALOGUE_TOP = 7;
     private static final int INTERACTION_DIALOGUE_RIGHT = 263;
-    private static final int INTERACTION_DIALOGUE_EXTENDED_RIGHT = 275;
+    static final int INTERACTION_DIALOGUE_EXTENDED_RIGHT = 275;
     private static final int INTERACTION_DIALOGUE_BOTTOM = 47;
     private static final int INTERACTION_DIALOGUE_SCROLL_LEFT = 59;
     private static final int INTERACTION_DIALOGUE_SCROLL_TOP = 4;
@@ -232,14 +228,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_BOTTOM = 56;
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH = 7;
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT = 5;
-    private static final int INTERACTION_PORTRAIT_LEFT = 5;
-    private static final int INTERACTION_PORTRAIT_TOP = 4;
-    private static final int INTERACTION_PORTRAIT_RIGHT = 55;
-    private static final int INTERACTION_PORTRAIT_BOTTOM = 60;
+    static final int INTERACTION_PORTRAIT_LEFT = 5;
+    static final int INTERACTION_PORTRAIT_TOP = 4;
+    static final int INTERACTION_PORTRAIT_RIGHT = 55;
+    static final int INTERACTION_PORTRAIT_BOTTOM = 60;
     private static final int INTERACTION_PORTRAIT_SCISSOR_LEFT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION = 1;
-    private static final int INTERACTION_PORTRAIT_SCALE = 54;
-    private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
+    static final int INTERACTION_PORTRAIT_SCALE = 54;
+    static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
     private static final float INTERACTION_PORTRAIT_LOOK_RESPONSE_MILLIS = 55.0F;
     private static final int QUEST_INDICATOR_WIDTH = 6;
     private static final int QUEST_INDICATOR_HEIGHT = 13;
@@ -836,7 +832,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (payload.autoAdvance()) {
             acceptDialogueExchanges(payload.exchanges(), true, payload.greetingRequestId());
         } else if (this.greetingRequest.accept(payload.greetingRequestId(), Util.getMillis())) {
-            if (payload.exchanges().isEmpty()) acceptVillagerDialogue(payload.text(), payload.textSegments());
+            if (payload.exchanges().isEmpty()) {
+                acceptVillagerDialogue(payload.text(), payload.textSegments());
+                ConversationHistoryClient.record(payload.greetingRequestId().toString(), dialogueSpeakerEntity(),
+                        this.villagerName, this.villagerDialogueText, this.villagerDialogueTextSegments);
+            }
             else acceptDialogueExchanges(payload.exchanges());
         }
     }
@@ -875,6 +875,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.dialogueSpeech = this.dialogueExchanges.removeFirst();
         dialogueCameraRevision = ++nextDialogueCameraRevision;
         setDialogueText(this.dialogueSpeech.text(), this.dialogueSpeech.segments());
+        ConversationHistoryClient.record(this.dialogueSpeech.presentationId().toString(), dialogueSpeakerEntity(),
+                campaignSpeakerName(), this.villagerDialogueText, this.villagerDialogueTextSegments);
         if (this.automaticDialogue.active()) this.automaticDialogue.lineStarted(
                 this.villagerDialogueText.codePointCount(0, this.villagerDialogueText.length()));
         rebuildOptionsKeepingListPosition();
@@ -4278,51 +4280,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         float targetMouseYaw = (float) Math.atan((centerX - this.lastMouseX) / 40.0F);
         float targetMousePitch = (float) Math.atan((centerY - this.lastMouseY) / 40.0F);
         updateInteractionPortraitLook(targetMouseYaw, targetMousePitch);
-        Quaternionf entityRotation = new Quaternionf().rotateZ((float) Math.PI);
-        Quaternionf cameraRotation = new Quaternionf().rotateX(
-                this.interactionPortraitPitch * 20.0F * ((float) Math.PI / 180.0F));
-        entityRotation.mul(cameraRotation);
-
-        float previousBodyRot = livingEntity.yBodyRot;
-        float previousYRot = livingEntity.getYRot();
-        float previousXRot = livingEntity.getXRot();
-        float previousHeadRotO = livingEntity.yHeadRotO;
-        float previousHeadRot = livingEntity.yHeadRot;
-        boolean previousSprinting = livingEntity.isSprinting();
-        livingEntity.yBodyRot = 180.0F + this.interactionPortraitYaw * 20.0F;
-        livingEntity.setYRot(180.0F + this.interactionPortraitYaw * 40.0F);
-        livingEntity.setXRot(-this.interactionPortraitPitch * 20.0F);
-        livingEntity.yHeadRot = livingEntity.getYRot();
-        livingEntity.yHeadRotO = livingEntity.getYRot();
-        livingEntity.setSprinting(isDialogueMouthAnimationActive());
-
-        float scale = livingEntity.getScale();
         graphics.enableScissor(
                 portraitLeft - INTERACTION_PORTRAIT_SCISSOR_LEFT_EXTENSION,
                 portraitTop + this.renderSlideOffsetY,
                 portraitRight + INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION,
                 portraitBottom + this.renderSlideOffsetY);
-        try (VillagerModelPreviewRenderContext.Scope ignored = VillagerModelPreviewRenderContext.begin(
-                livingEntity,
-                VillagerModelPreviewRenderContext.PreviewType.INTERACTION)) {
-            InventoryScreen.renderEntityInInventory(
-                    graphics,
-                    centerX,
-                    renderY,
-                    INTERACTION_PORTRAIT_SCALE / scale,
-                    new Vector3f(0.0F, livingEntity.getBbHeight() / 2.0F + 0.0625F * scale, 0.0F),
-                    entityRotation,
-                    cameraRotation,
-                    livingEntity
-            );
+        try {
+            VillagerInteractionPortraitRenderer.render(graphics, livingEntity, centerX, renderY, INTERACTION_PORTRAIT_SCALE,
+                    this.interactionPortraitYaw, this.interactionPortraitPitch, isDialogueMouthAnimationActive());
         } finally {
             graphics.disableScissor();
-            livingEntity.yBodyRot = previousBodyRot;
-            livingEntity.setYRot(previousYRot);
-            livingEntity.setXRot(previousXRot);
-            livingEntity.yHeadRotO = previousHeadRotO;
-            livingEntity.yHeadRot = previousHeadRot;
-            livingEntity.setSprinting(previousSprinting);
         }
         renderInteractionQuestIndicator(graphics, left, top, livingEntity);
     }
@@ -4470,18 +4437,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private List<String> wrappedInteractionDialogueLines(String dialogue) {
+        return wrappedInteractionDialogueLines(this.font, dialogue);
+    }
+
+    static List<String> wrappedInteractionDialogueLines(net.minecraft.client.gui.Font font, String dialogue) {
         if (dialogue == null || dialogue.isBlank()) {
             return List.of();
         }
 
         List<String> lines = new ArrayList<>();
         for (String paragraph : dialogue.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
-            appendWrappedInteractionDialogueParagraph(lines, paragraph);
+            appendWrappedInteractionDialogueParagraph(font, lines, paragraph);
         }
         return lines;
     }
 
-    private void appendWrappedInteractionDialogueParagraph(List<String> lines, String paragraph) {
+    private static void appendWrappedInteractionDialogueParagraph(net.minecraft.client.gui.Font font, List<String> lines, String paragraph) {
         if (paragraph == null || paragraph.isBlank()) {
             lines.add("");
             return;
@@ -4489,8 +4460,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         String remaining = paragraph.stripLeading();
         while (!remaining.isEmpty()) {
-            int wrapWidth = interactionDialogueLineWidth(lines.size());
-            String line = this.font.plainSubstrByWidth(remaining, wrapWidth);
+            int wrapWidth = interactionDialogueLineWidth(font, lines.size());
+            String line = font.plainSubstrByWidth(remaining, wrapWidth);
             if (line.isEmpty()) {
                 int nextCodePointEnd = remaining.offsetByCodePoints(0, 1);
                 lines.add(remaining.substring(0, nextCodePointEnd));
@@ -4513,8 +4484,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private int interactionDialogueLineWidth(int lineIndex) {
-        int visibleLines = interactionDialogueVisibleLineCount();
+    private static int interactionDialogueLineWidth(net.minecraft.client.gui.Font font, int lineIndex) {
+        int visibleLines = interactionDialogueVisibleLineCount(font);
         boolean bottomRow = visibleLines > 0 && Math.floorMod(lineIndex, visibleLines) == visibleLines - 1;
         int right = bottomRow ? INTERACTION_DIALOGUE_RIGHT : INTERACTION_DIALOGUE_EXTENDED_RIGHT;
         return Math.max(1, right - INTERACTION_DIALOGUE_LEFT - 2);
@@ -4532,8 +4503,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionDialogueVisibleLineCount() {
+        return interactionDialogueVisibleLineCount(this.font);
+    }
+
+    private static int interactionDialogueVisibleLineCount(net.minecraft.client.gui.Font font) {
         int strokedHeight = Math.max(1, INTERACTION_DIALOGUE_BOTTOM - INTERACTION_DIALOGUE_TOP - 2);
-        return Math.max(1, strokedHeight / Math.max(1, this.font.lineHeight));
+        return Math.max(1, strokedHeight / Math.max(1, font.lineHeight));
     }
 
     private int maxInteractionDialogueLineScroll(List<String> lines) {
@@ -4871,24 +4846,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int x,
             int y,
             int fallbackColor) {
-        graphics.drawString(this.font, text, x - 1, y, TEXT_OUTLINE_COLOR, false);
-        graphics.drawString(this.font, text, x + 1, y, TEXT_OUTLINE_COLOR, false);
-        graphics.drawString(this.font, text, x, y - 1, TEXT_OUTLINE_COLOR, false);
-        graphics.drawString(this.font, text, x, y + 1, TEXT_OUTLINE_COLOR, false);
-
-        Component styledText = VillagerStyledTextRenderer.component(
-                segments,
-                Style.EMPTY,
-                fallbackColor & 0x00FFFFFF);
-        VillagerStyledTextRenderer.renderLine(
-                graphics,
-                this.font,
-                styledText.getVisualOrderText(),
-                segments,
-                x,
-                y,
-                fallbackColor,
-                (fallbackColor >>> 24) & 0xFF,
+        VillagerStyledTextRenderer.renderOutlinedLine(graphics, this.font, text, segments, x, y, fallbackColor,
                 Minecraft.getInstance().gui.getGuiTicks());
     }
 
@@ -6358,6 +6316,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                         .map(segment -> new DialogueTextSegment(segment.text(), segment.effects())).toList();
                 acceptVillagerDialogue(text, segments);
                 campaignPlaybackKey = key;
+                if (line != null && !preserve) ConversationHistoryClient.record(key, dialogueSpeakerEntity(),
+                        campaignSpeakerName(), villagerDialogueText, villagerDialogueTextSegments);
                 if (preserve) {
                     dialoguePlayback = previousPlayback;
                     dialogueTextAnimationStartMillis = previousStart;

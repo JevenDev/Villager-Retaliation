@@ -138,6 +138,28 @@ public final class DialogueCueClientSmoke {
             var entity = (Villager) minecraft.level.getEntity(entityId);
             require(!VillagerDialogueMouthAnimation.isTalking(entity), "closing dialogue clears mouth animation");
             require(field(VillagerDialoguePerformance.class, "speaker") == null, "closing dialogue clears the held speaker pose");
+            ConversationHistoryClientChecks.run(entity);
+            shownAt = now;
+            phase = 6;
+        } else if (phase == 6 && now - shownAt >= 500) {
+            Screenshot.grab(Path.of(System.getProperty(OUTPUT)).toFile(), "conversation-history.png",
+                    minecraft.getMainRenderTarget(), ignored -> { });
+            ConversationHistoryClientChecks.showPauseMenu();
+            shownAt = now;
+            phase = 7;
+        } else if (phase == 7 && now - shownAt >= 500) {
+            Screenshot.grab(Path.of(System.getProperty(OUTPUT)).toFile(), "conversation-history-button.png",
+                    minecraft.getMainRenderTarget(), ignored -> { });
+            ConversationHistoryClientChecks.showSmallScreen();
+            shownAt = now;
+            phase = 8;
+        } else if (phase == 8 && now - shownAt >= 500) {
+            Screenshot.grab(Path.of(System.getProperty(OUTPUT)).toFile(), "conversation-history-small.png",
+                    minecraft.getMainRenderTarget(), ignored -> { });
+            shownAt = now;
+            phase = 9;
+        } else if (phase == 9 && now - shownAt >= 1000) {
+            ConversationHistoryClientChecks.verifyRendered();
             try {
                 Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"),
                         "Dialogue cue client smoke passed\nRecorded frames: " + frame + "\n");

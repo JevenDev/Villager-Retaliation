@@ -22,6 +22,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.renderer.SafeRenderer::registerModels);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.ConversationHistoryClient::registerKeys);
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandKeyMappings::register);
