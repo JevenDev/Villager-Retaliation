@@ -1657,7 +1657,8 @@ public final class VillagerQuestService {
                             objective.location() != null || objective.dimension() != null, false)).toList();
             return new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView("", "offered", provider == null || provider.level() != player.level() ? -1 : provider.getId(),
                     controls.hold(), false, definition.target().hasStructureTarget() || definition.target().site() != null, controls.target("") != null, playerOnly ? "Trigger a discovery route. Accept offers through the quest journal."
-                            : provider == null ? "The bound provider is not loaded. Return to the provider to continue." : "Talk to the quest provider to accept this quest.",
+                            : provider == null ? "The bound provider is not loaded. Return to the provider to continue."
+                            : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.guidance(player, provider, quest),
                     requirements, definition.stages().keySet().stream().toList(), List.of(), controls.log(), Map.of(), playerOnly, discoveries);
         }
         var context = contextForStartedVillager(player.serverLevel(), player, progress).orElse(null);

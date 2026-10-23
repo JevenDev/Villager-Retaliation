@@ -73,6 +73,8 @@ public final class QuestPlaytestOffers {
             }
         }
         if (!positioned) throw new IllegalStateException("No clear ground is available for a quest provider. Move to an open area and retry.");
+        // spawned providers have no workstation, so keep vanilla AI from clearing their profession
+        villager.setVillagerXp(1);
         villager.setPersistenceRequired();
         villager.setInvulnerable(true);
         if (!player.serverLevel().addFreshEntity(villager)) throw new IllegalStateException("Unable to spawn a test provider");
@@ -84,6 +86,19 @@ public final class QuestPlaytestOffers {
         return villager != null && villager.isAlive() && !villager.isBaby()
                 && VillagerQuestProviderType.INSTANCE.matchesProviderFilters(
                         VillagerInteractionService.createDialogueContext((net.minecraft.server.level.ServerLevel) villager.level(), player, villager), definition);
+    }
+
+    public static String guidance(ServerPlayer player, Villager provider, ResourceLocation quest) {
+        var definition = VillagerQuestResources.quest(player.server, quest).orElseThrow();
+        var context = VillagerInteractionService.createDialogueContext((net.minecraft.server.level.ServerLevel) provider.level(), player, provider);
+        if (!eligible(player, provider, definition))
+            return "This villager no longer matches the quest's provider requirements. Stop the test and prepare a new provider.";
+        if (definition.target().site() != null
+                && !com.jvn.villagerretaliation.quest.site.QuestSiteService.offerAvailable(context, definition))
+            return com.jvn.villagerretaliation.quest.site.QuestSiteService.issue(context, definition);
+        if (VillagerQuestService.matchesState(context, quest, Set.of("available")))
+            return "Talk to the quest provider and open Adventures to accept this quest.";
+        return "The quest offer is blocked by its conditions or prerequisites. Check runtime diagnostics in Log.";
     }
 
     public static List<DialogueOptionDefinition> filter(DialogueContext context, List<DialogueOptionDefinition> options, boolean activeTree) {

@@ -133,6 +133,51 @@ public final class QuestPlaytestGameTests {
         }).thenSucceed();
     }
 
+    @GameTest(template = "empty", batch = "authoring_playtest_provider")
+    public static void spawnedRescueProviderKeepsItsProfessionWithoutAWorkstation(GameTestHelper helper) throws Exception {
+        var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel();
+        var position = helper.absolutePos(new net.minecraft.core.BlockPos(40, 2, 40));
+        player.teleportTo(position.getX() + .5, position.getY(), position.getZ() + .5);
+        level.setBlockAndUpdate(position.north(2).below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        var id = ResourceLocation.parse("villagerretaliation:missing_neighbor");
+        var quest = com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(level.getServer(), id).orElseThrow();
+        var provider = QuestPlaytestOffers.provider(player, id, null);
+        var selected = java.util.List.copyOf(level.getServer().getPackRepository().getSelectedIds());
+        net.minecraft.world.entity.npc.Villager replacement = null;
+        try {
+            helper.assertTrue(quest.offer().professions().contains(provider.getVillagerData().getProfession()),
+                    "the spawned villager meets the shipped rescue quest's provider filter");
+            provider.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.JOB_SITE);
+            net.minecraft.world.entity.ai.behavior.ResetProfession.create().tryStart(level, provider, level.getGameTime());
+            helper.assertTrue(quest.offer().professions().contains(provider.getVillagerData().getProfession()),
+                    "normal AI cannot remove the test provider's profession before the player accepts");
+            helper.assertFalse(provider.isNoAi(), "test providers retain normal villager behavior");
+            var guidance = QuestPlaytestOffers.guidance(player, provider, id);
+            helper.assertTrue(guidance.contains("Searching for a safe quest site"),
+                    "preparing a rescue offer explains the site search instead of claiming it is ready: " + guidance);
+            provider.setVillagerXp(0);
+            net.minecraft.world.entity.ai.behavior.ResetProfession.create().tryStart(level, provider, level.getGameTime() + 1);
+            helper.assertValueEqual(provider.getVillagerData().getProfession(), net.minecraft.world.entity.npc.VillagerProfession.NONE,
+                    "the same vanilla behavior reproduces the old unprotected provider failure");
+            helper.assertTrue(QuestPlaytestOffers.guidance(player, provider, id).contains("no longer matches"),
+                    "an invalid existing provider gets an actionable explanation");
+            enableTestPack(level.getServer());
+            replacement = QuestPlaytestOffers.provider(player, id, null);
+            QuestPlaytestSession.bind(player, id, replacement, false);
+            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(level, player, replacement);
+            com.jvn.villagerretaliation.quest.site.QuestSiteService.preparePlaytestOffer(context, quest);
+            helper.assertTrue(QuestPlaytestOffers.guidance(player, replacement, id).contains("Searching for a safe quest site"),
+                    "a replacement test provider is not blocked by the old provider's unaccepted search");
+        } finally {
+            QuestPlaytestSession.close(level.getServer(), player.getUUID());
+            level.getServer().getPackRepository().setSelected(selected);
+            if (replacement != null) replacement.discard();
+            provider.discard();
+        }
+        helper.succeed();
+    }
+
     private static void enableTestPack(net.minecraft.server.MinecraftServer server) throws java.io.IOException {
         var directory = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("datapacks/test_content");
         java.nio.file.Files.createDirectories(directory);

@@ -380,6 +380,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildCampaignLiveWorldSteps() {
+        long[] rescueDeadline = {0L};
         var selectedPacks = new ArrayList<String>();
         STEPS.add(() -> liveCheck = Minecraft.getInstance().getSingleplayerServer().submit(() ->
                 EditorWorldContent.source(Minecraft.getInstance().getSingleplayerServer())).thenApplyAsync(source ->
@@ -430,6 +431,62 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(EditorLiveQuestTest.view().summary().equals("Not started"), "Inspecting an unstarted quest finishes without leaving live controls busy.");
             capture("90-campaign-current-world-ready");
+            EditorLiveQuestTest.offer(workspace, document, false, false);
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().state().equals("offered"));
+        pause(10000);
+        STEPS.add(() -> EditorLiveQuestTest.returnToProvider(workspace, document));
+        waitUntil(() -> !EditorLiveQuestTest.view().busy());
+        pause(1000);
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            var provider = minecraft.level.getEntity(EditorLiveQuestTest.snapshot().provider());
+            require(provider != null, "The rescue quest provider is loaded.");
+            minecraft.gameMode.interact(minecraft.player, provider, net.minecraft.world.InteractionHand.MAIN_HAND);
+        });
+        pause(1200);
+        STEPS.add(() -> {
+            require(Minecraft.getInstance().screen instanceof com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreen,
+                    "The rescue provider opens the normal conversation screen.");
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var selection = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, selection.provider());
+                var quest = com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(server, selection.quest()).orElseThrow();
+                require(quest.offer().professions().contains(provider.getVillagerData().getProfession()),
+                        "The rescue provider retains its authored profession without a workstation.");
+                player.teleportTo(provider.getX() - 1, provider.getY(), provider.getZ());
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(player, selection.quest()).focusDialogue(true);
+                var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+                for (int step = 0; step < 2; step++) {
+                    var choices = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.dialogueOptions(context,
+                            com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.moodFor(context));
+                    choices = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(context, choices, step > 0);
+                    var choice = choices.stream().filter(option -> option.available()
+                            && !option.id().equals(com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.LEAVE_OPTION_ID))
+                            .findFirst().orElseThrow(() -> new IllegalStateException("Missing Neighbor has no natural offer: "
+                                    + com.jvn.villagerretaliation.quest.VillagerQuestService.debugWhyAvailable(player, provider, selection.quest())));
+                    com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, provider.getId(), choice.id());
+                }
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            Minecraft.getInstance().setScreen((net.minecraft.client.gui.screens.Screen) field(editor, "screen"));
+            EditorLiveQuestTest.inspect(workspace, document);
+            rescueDeadline[0] = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(60);
+        });
+        waitUntil(() -> {
+            require(System.nanoTime() < rescueDeadline[0], "Rescue acceptance timed out: "
+                    + EditorLiveQuestTest.view() + " / " + EditorLiveQuestTest.snapshot());
+            return EditorLiveQuestTest.snapshot().stage().equals("rescue");
+        });
+        STEPS.add(() -> {
+            require(EditorLiveQuestTest.snapshot().state().equals("active"), "Missing Neighbor starts through its authored offer and acceptance.");
+            capture("90a-missing-neighbor-accepted");
             invoke("closeEditor", new Class<?>[0]);
         });
         pause(750);

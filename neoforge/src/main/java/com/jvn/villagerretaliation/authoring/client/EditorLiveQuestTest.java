@@ -114,9 +114,14 @@ public final class EditorLiveQuestTest {
             var provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, quest, requested);
             if (restart) VillagerQuestService.debugRemoveQuest(player, quest);
             com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, hold);
+            var definition = com.jvn.villagerretaliation.quest.VillagerQuestResources.quest(player.server, quest).orElseThrow();
+            var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(
+                    (net.minecraft.server.level.ServerLevel) provider.level(), player, provider);
+            com.jvn.villagerretaliation.quest.site.QuestSiteService.preparePlaytestOffer(context, definition);
             focused = true;
             VillagerQuestService.debugTraceSetEnabled(player, true);
-            return "Quest provider: " + provider.getName().getString() + ". Talk to this villager to accept the quest.";
+            return "Quest provider: " + provider.getName().getString() + ". "
+                    + com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.guidance(player, provider, quest);
         }, false);
     }
 

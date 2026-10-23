@@ -92,6 +92,16 @@ public final class QuestSiteService {
                 && (site.phase == Phase.PREPARING || site.phase == Phase.READY || site.phase == Phase.ACTIVE);
     }
 
+    public static void preparePlaytestOffer(DialogueContext context, QuestDefinition quest) {
+        com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.require(context.player(), quest.id());
+        if (quest.target().site() == null) return;
+        var site = find(context.level(), context.player().getUUID(), quest.id());
+        if (site != null && site.run == null && !site.accepted && site.captive == null
+                && !java.util.Objects.equals(site.provider, context.providerId()))
+            QuestSiteSavedData.get(context.level()).retire(site);
+        ensure(context, quest);
+    }
+
     private static Site ensure(DialogueContext context, QuestDefinition quest) {
         var config = quest.target().site();
         if (quest.target().dimension() != null && !quest.target().dimension().equals(context.level().dimension())) return null;
@@ -138,8 +148,15 @@ public final class QuestSiteService {
 
     public static String issue(DialogueContext context, QuestDefinition quest) {
         var site = find(context.level(), context.player().getUUID(), quest.id());
-        return site == null ? "No safe quest site is available in this dimension."
-                : site.phase == Phase.UNAVAILABLE ? site.diagnostic : "I am checking that lead. Stay nearby and I will mark your map when it is ready.";
+        if (quest.target().dimension() != null && !quest.target().dimension().equals(context.level().dimension()))
+            return "Return to " + quest.target().dimension().location() + " to prepare this quest's site.";
+        if (site == null) return "No safe quest site is available in this dimension.";
+        if (site.provider != null && !site.provider.equals(context.providerId()))
+            return "This rescue site belongs to another quest provider. Return to the original provider.";
+        if (site.phase == Phase.UNAVAILABLE) return site.diagnostic;
+        if (site.phase == Phase.SEARCHING || site.phase == Phase.CANDIDATE)
+            return "Searching for a safe quest site. Stay nearby while preparation runs. Open Adventures to check the quest offer.";
+        return "I am checking that lead. Stay nearby and I will mark your map when it is ready.";
     }
 
     public static void bind(DialogueContext context, QuestDefinition quest, UUID run) {
