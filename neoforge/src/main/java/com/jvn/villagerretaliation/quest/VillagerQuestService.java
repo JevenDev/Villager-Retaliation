@@ -1652,8 +1652,10 @@ public final class VillagerQuestService {
         for (var objective : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.activeObjectives(definition, progress)) {
             var result = QuestObjectiveRegistry.evaluate(evaluation, objective).orElse(com.jvn.villagerretaliation.quest.objectives.QuestObjectiveResult.incomplete(0, "No evaluator"));
             boolean complete = objectiveComplete(player, context, player.serverLevel(), definition, progress, objective);
+            var debug = QuestObjectiveRegistry.debugState(evaluation, objective, result);
+            String reason = debug.itemCount() == null ? result.message() : "Required: " + objective.count() + ". Player has: " + debug.itemCount() + ". " + result.message();
             rows.add(new com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.Objective(objective.id(),
-                    QuestObjectiveRegistry.canonicalTypeId(objective), complete, complete ? 1 : result.progress(), result.message(),
+                    QuestObjectiveRegistry.canonicalTypeId(objective), complete, complete ? 1 : result.progress(), reason,
                     com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSetup.label(objective)));
         }
         var readiness = com.jvn.villagerretaliation.quest.tracking.QuestStageReadiness.forCurrentStage(definition, progress, player.serverLevel().getGameTime(),

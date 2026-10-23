@@ -137,13 +137,17 @@ final class ImGuiAuthoringEditor {
     private boolean liveQuestMode = true;
     private float playtestFraction = 2F / 3;
     private boolean playtestHold;
+    private final ImString playtestBaselineName = new ImString("Before quest", 128);
+    private final ImString playtestStepSearch = new ImString(256);
     private long nextPlaytestRefresh;
     private final ImString playtestValue = new ImString(256);
     private final ImString playtestSearch = new ImString(256);
     private Map<String, JsonObject> playtestVisuals = Map.of();
     private String playtestLocale = "";
+    private long playtestSourcesRevision = -1;
     private Map<String, String> playtestReplacements = Map.of();
     private boolean playtestEditing;
+    private boolean playtestFocusDetails;
     private boolean playtestStepRemoved;
     private final ImString scenarioName = new ImString("New scenario", 256);
     private final EditorScenarioTests scenarioTests = new EditorScenarioTests();
@@ -2987,23 +2991,33 @@ final class ImGuiAuthoringEditor {
             }
             if (!playtestSearch.get().isBlank()) ImGui.textDisabled(matches.size() + " matching quests or dialogue");
             if (document != null) {
+                playtestStatus();
+                ImGui.beginChild("playtest_body", 0, -ImGui.getTextLineHeightWithSpacing() * 3, false);
+                if (document.kind() == DefinitionKind.QUEST) playtestQuest();
+                else playtestDialogue();
                 ImGui.separatorText("Steps");
+                ImGui.setNextItemWidth(-1);
+                ImGui.inputTextWithHint("##playtest_step_search", "Find a step...", playtestStepSearch);
+                ImGui.beginChild("playtest_steps", 0, 150 * preferences.textScale(), true);
+                String running = document.kind() == DefinitionKind.QUEST ? EditorLiveQuestTest.snapshot().stage()
+                        : AuthoringDialoguePreview.cursor() == null ? "" : AuthoringDialoguePreview.cursor().node();
                 for (var node : documentCache.nodes(document)) {
-                    String running = document.kind() == DefinitionKind.QUEST ? EditorLiveQuestTest.snapshot().stage()
-                            : AuthoringDialoguePreview.cursor() == null ? "" : AuthoringDialoguePreview.cursor().node();
-                    if (ImGui.selectable((node.id().equals(running) ? "> " : "") + node.id(), node.id().equals(selectedNode))) operation(() -> {
+                    if (!node.id().toLowerCase(Locale.ROOT).contains(playtestStepSearch.get().toLowerCase(Locale.ROOT))) continue;
+                    if (ImGui.selectable(node.id() + (node.id().equals(running) ? " (running)" : ""), node.id().equals(selectedNode))) operation(() -> {
                         selectedNode = node.id(); setPointer(node.pointer()); fields.clear(); textFields.clear();
                     });
                 }
-                if (document.kind() == DefinitionKind.QUEST) playtestQuest();
-                else playtestDialogue();
+                ImGui.endChild();
+                if (playtestFocusDetails) ImGui.setNextItemOpen(true);
                 if (EditorWidgets.section("Step properties", imgui.flag.ImGuiTreeNodeFlags.DefaultOpen)) {
+                    if (playtestFocusDetails) { ImGui.setScrollHereY(.1f); playtestFocusDetails = false; }
                     try { selectedDetails(); }
                     catch (IllegalArgumentException | IllegalStateException | ClassCastException | IndexOutOfBoundsException exception) {
                         ImGui.textWrapped("Choose an existing step: " + exception.getMessage());
                     }
                 }
                 if (hasPendingFields() && ImGui.button("Apply field edits")) operation(() -> { });
+                ImGui.endChild();
             }
         }
         ImGui.endDisabled();
@@ -3018,6 +3032,53 @@ final class ImGuiAuthoringEditor {
                 && ImGui.isMouseClicked(0) && !confirmClose && !showRecovery) MC.setScreen(null);
     }
 
+    private void playtestStatus() {
+        String running = document.kind() == DefinitionKind.QUEST ? EditorLiveQuestTest.snapshot().stage()
+                : AuthoringDialoguePreview.cursor() == null ? "" : AuthoringDialoguePreview.cursor().node();
+        ImGui.separatorText("Test status");
+        ImGui.textWrapped("Running: " + (running.isBlank() ? "not started" : running) + " | Selected: "
+                + (selectedNode.isBlank() ? "entry" : selectedNode));
+        var issues = validationCache.getAsync(workspace, net.minecraft.Util.backgroundExecutor());
+        var error = issues == null ? null : issues.stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR).findFirst().orElse(null);
+        if (rawModified || hasPendingFields()) ImGui.textWrapped("Field edits pending. Commit valid edits before applying the draft.");
+        else if (issues == null) ImGui.textWrapped("Checking draft. Presentation refresh is waiting for validation.");
+        else if (error != null) {
+            ImGui.textWrapped("Draft invalid. Presentation refresh paused: " + error.message());
+            if (ImGui.button("Open validation error")) operation(() -> { leavePlaytest(0); openDiagnostic(error); });
+        } else if (document.kind() == DefinitionKind.QUEST) {
+            ImGui.textWrapped(!EditorTestWorld.active(workspace) ? "Draft has not been loaded into this world."
+                    : !EditorTestWorld.currentLogic(workspace) ? "Logic changes pending. Apply changes to load this draft."
+                    : !EditorTestWorld.currentSnapshot(workspace) ? "Visual preview only. Apply changes to update the test pack."
+                    : "Draft matches game.");
+        } else {
+            ImGui.textWrapped(!AuthoringDialoguePreview.active() ? "Dialogue is not running."
+                    : com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(AuthoringDialoguePreview.definition())
+                        .equals(com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(documentCache.json(document)))
+                        ? "Dialogue preview matches draft presentation. Actions are simulated."
+                        : "Logic changes pending. Restart dialogue to load them.");
+        }
+        if (document.kind() == DefinitionKind.QUEST && EditorTestWorld.active(workspace)) {
+            var state = EditorLiveQuestTest.snapshot();
+            ImGui.textWrapped("Quest state: " + state.state());
+            if (!state.blocker().isBlank() && (state.state().equals("active") || state.state().equals("offered")))
+                ImGui.textWrapped(state.ready() ? "Ready to advance." : "Waiting: " + state.blocker());
+            ImGui.beginDisabled(EditorLiveQuestTest.view().busy() || issues == null || error != null);
+            String restart = issues == null || error != null ? "" : playtestRestartReason();
+            if (!restart.isEmpty()) ImGui.textWrapped(restart);
+            ImGui.beginDisabled(!restart.isEmpty());
+            if (ImGui.button("Apply changes")) operation(this::applyPlaytestDraft);
+            ImGui.endDisabled();
+            String offer = state.stage().isBlank() ? "Prepare quest offer" : "Restart from offer";
+            EditorWidgets.sameLineFor(offer);
+            if (ImGui.button(offer)) operation(() -> EditorLiveQuestTest.offer(workspace, document, playtestHold, !state.stage().isBlank()));
+            ImGui.beginDisabled(!EditorTestWorld.currentLogic(workspace) || state.stage().isBlank() || !state.state().equals("active"));
+            if (ImGui.button("Replay current stage")) operation(() -> EditorLiveQuestTest.replay(workspace, document));
+            if (ImGui.isItemHovered()) ImGui.setTooltip("Resets stage objectives and executes its entry actions again. World effects and rewards remain.");
+            ImGui.endDisabled();
+            ImGui.endDisabled();
+        }
+    }
+
     private void updatePlaytestPresentation() {
         if (workspace == null || document == null || rawModified) return;
         var issues = validationCache.getAsync(workspace, net.minecraft.Util.backgroundExecutor());
@@ -3030,12 +3091,21 @@ final class ImGuiAuthoringEditor {
             replacements.putIfAbsent("villager", target.getName().getString());
             replacements.putIfAbsent("villager_name", target.getName().getString());
         }
-        if (latest == playtestVisuals && locale.get().equals(playtestLocale) && replacements.equals(playtestReplacements)) return;
+        long sourceRevision = com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.revision();
+        if (latest == playtestVisuals && locale.get().equals(playtestLocale) && replacements.equals(playtestReplacements)
+                && sourceRevision == playtestSourcesRevision) return;
+        playtestSourcesRevision = sourceRevision;
         playtestVisuals = latest;
         playtestLocale = locale.get();
         playtestReplacements = Map.copyOf(replacements);
         EditorPlaytestPresentation.update(workspace, document, EditorTestWorld.appliedContent(workspace), replacements, locale.get(), conditions.speakers());
         if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(documentCache.json(document)));
+    }
+
+    private String playtestRestartReason() {
+        if (document == null || document.kind() != DefinitionKind.QUEST || !EditorLiveQuestTest.snapshot().state().equals("active")) return "";
+        return EditorPlaytestState.restartReason(EditorTestWorld.appliedContent(workspace).get(document.resourcePath()),
+                documentCache.json(document), EditorLiveQuestTest.snapshot().stage());
     }
 
     private void applyPlaytestDraft() throws IOException {
@@ -3048,24 +3118,17 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (EditorLiveQuestTest.view().busy()) throw new IllegalStateException("Wait for the current quest operation to finish");
+        String restart = playtestRestartReason();
+        if (!restart.isEmpty()) throw new IllegalStateException(restart);
         AuthoringDialoguePreview.stop();
         if (MC.screen != screen) MC.setScreen(screen);
-        var expected = document;
-        String stage = EditorLiveQuestTest.snapshot().stage();
-        boolean replay = !playtestStepRemoved;
-        var world = MC.getSingleplayerServer();
         EditorTestWorld.apply(workspace).whenComplete((ignored, failure) -> MC.execute(() -> {
             if (failure != null) {
                 status = "Draft reload failed: " + failure.getMessage();
                 return;
             }
             playtestVisuals = Map.of();
-            if (view != 3 || document != expected || MC.getSingleplayerServer() != world) return;
-            if (replay) attempt(() -> {
-                if (stage.isBlank()) EditorLiveQuestTest.offer(workspace, document, playtestHold, false);
-                else EditorLiveQuestTest.startAt(workspace, document, playtestHold, stage);
-            });
-            status = replay ? "Draft applied in this world. Replaying " + stage : "Draft applied. Selected step was removed. Replay the entry step explicitly.";
+            status = "Draft applied. Quest progress retained. Replay a stage or restart from offer explicitly to rerun actions.";
         }));
     }
 
@@ -3081,7 +3144,7 @@ final class ImGuiAuthoringEditor {
             if (!com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(AuthoringDialoguePreview.definition())
                     .equals(com.jvn.villagerretaliation.authoring.preview.PlaytestDrafts.logic(documentCache.json(document))))
                 ImGui.textWrapped("Logic changes pending. Visual edits update automatically.");
-            if (ImGui.button("Apply & replay")) operation(this::applyPlaytestDraft);
+            if (ImGui.button("Restart with draft")) operation(this::applyPlaytestDraft);
         }
         ImGui.endDisabled();
         var cursor = AuthoringDialoguePreview.cursor();
@@ -3118,6 +3181,35 @@ final class ImGuiAuthoringEditor {
         if (EditorWidgets.section("Dialogue log")) for (String entry : AuthoringDialoguePreview.log()) ImGui.textWrapped(entry);
     }
 
+    private void focusPlaytestRequirement(String id) {
+        var root = documentCache.json(document);
+        var objectives = root.get("objectives");
+        String path = "";
+        if (objectives != null && objectives.isJsonArray()) {
+            for (int i = 0; i < objectives.getAsJsonArray().size(); i++) {
+                var value = objectives.getAsJsonArray().get(i);
+                if (value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id"))) path = "/objectives/" + i;
+            }
+        } else if (objectives != null && objectives.isJsonObject() && objectives.getAsJsonObject().has(id))
+            path = "/objectives/" + id.replace("~", "~0").replace("/", "~1");
+        if (path.isEmpty()) for (var node : documentCache.nodes(document)) {
+            if (!node.id().equals(EditorLiveQuestTest.snapshot().stage())) continue;
+            var stage = JsonPointers.get(root, node.pointer()).getAsJsonObject();
+            var nested = stage.get("objectives");
+            if (nested != null && nested.isJsonArray()) for (int i = 0; i < nested.getAsJsonArray().size(); i++) {
+                var objective = nested.getAsJsonArray().get(i);
+                if (!objective.isJsonObject()) continue;
+                String local = DialogueGraph.string(objective.getAsJsonObject(), "id");
+                if (id.equals(local) || id.equals(node.id() + "." + local)) path = node.pointer() + "/objectives/" + i;
+            }
+            if (path.isEmpty()) path = node.pointer();
+            selectedNode = node.id();
+        }
+        setPointer(path);
+        playtestFocusDetails = true;
+        status = "Selected requirement " + id + ". Its fields are in Step properties.";
+    }
+
     private void playtestQuest() {
         if (!EditorTestWorld.active(workspace)) {
             String problem = EditorTestWorld.problem(workspace);
@@ -3130,17 +3222,13 @@ final class ImGuiAuthoringEditor {
             return;
         }
         var state = EditorLiveQuestTest.snapshot();
-        if (EditorPlaytestPresentation.ambiguousEdits()) ImGui.textWrapped("Repeated wording needs Apply & replay to update the intended live line.");
-        ImGui.textWrapped("Live stage: " + state.stage() + " | " + state.state());
+        if (EditorPlaytestPresentation.ambiguousEdits()) ImGui.textWrapped("Some presentation edits have no unique source. Apply changes to load them into the test pack.");
         if (!EditorTestWorld.currentSnapshot(workspace)) {
             ImGui.textWrapped(EditorTestWorld.currentLogic(workspace) ? "Visual changes previewed. Apply to load them into the test pack."
-                    : "Logic changes pending. Apply & replay to load this draft.");
+                    : "Logic changes pending. Apply changes to load this draft.");
         }
-        if (ImGui.button("Apply & replay")) operation(this::applyPlaytestDraft);
         ImGui.beginDisabled(!EditorTestWorld.currentLogic(workspace) || EditorLiveQuestTest.view().busy());
         boolean started = !state.stage().isBlank();
-        if (ImGui.button(started ? "Restart from offer" : "Prepare quest offer"))
-            operation(() -> EditorLiveQuestTest.offer(workspace, document, playtestHold, started));
         ImGui.textWrapped("Uses the villager under your crosshair, the bound campaign character, or a matching test provider. Accept and turn in the quest through their dialogue.");
         ImGui.beginDisabled(state.state().equals("not started"));
         if (ImGui.button("Return to quest provider")) operation(() -> EditorLiveQuestTest.returnToProvider(workspace, document));
@@ -3155,13 +3243,16 @@ final class ImGuiAuthoringEditor {
         if (state.target() && ImGui.button("Travel to quest target")) operation(() -> EditorLiveQuestTest.travelTarget(workspace, document));
         ImGui.endDisabled();
         if (ImGui.button("Open quest journal")) MC.setScreen(new com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen());
-        if (!state.blocker().isBlank()) ImGui.textWrapped(state.blocker());
+        if (!state.blocker().isBlank() && (state.state().equals("active") || state.state().equals("offered"))) ImGui.textWrapped(state.blocker());
         ImGui.separatorText(started ? "Current requirements" : "Quest setup");
+        if (state.objectives().stream().anyMatch(objective -> objective.type().equals("fact") || objective.type().equals("reputation")))
+            ImGui.inputTextWithHint("Setup value", "Leave blank to choose a matching value", playtestValue);
         for (var objective : state.objectives()) {
             ImGui.pushID(objective.id());
             ImGui.textWrapped((objective.complete() ? "Complete: " : "Pending: ") + objective.id() + " (" + objective.type() + ")");
             ImGui.progressBar(objective.progress(), -1, 0);
             ImGui.textWrapped(objective.reason());
+            if (ImGui.smallButton("Edit requirement")) operation(() -> focusPlaytestRequirement(objective.id()));
             if (objective.type().equals("structure_visit") && ImGui.button("Spawn objective structure"))
                 operation(() -> EditorLiveQuestTest.structure(workspace, document, objective.id()));
             ImGui.beginDisabled(!started);
@@ -3169,6 +3260,31 @@ final class ImGuiAuthoringEditor {
                 operation(() -> EditorLiveQuestTest.prepare(workspace, document, objective.id(), playtestValue.get()));
             ImGui.endDisabled();
             ImGui.popID();
+        }
+        for (var transition : state.transitions()) if (!transition.available()) {
+            ImGui.textWrapped("Unavailable: " + transition.label() + ". " + transition.reason());
+            if (ImGui.smallButton("Inspect running stage##" + transition.id())) operation(() -> {
+                var node = documentCache.nodes(document).stream().filter(value -> value.id().equals(state.stage())).findFirst().orElseThrow();
+                selectedNode = node.id(); setPointer(node.pointer()); playtestFocusDetails = true;
+            });
+        }
+        if (EditorWidgets.section("Test baselines")) {
+            ImGui.textWrapped("Named baselines last for this world session. Restore inventory, experience, this quest's progress, player and quest facts, provider binding, provider reputation and player position.");
+            ImGui.textWrapped("Blocks, spawned entities, shared campaign facts and other world effects remain. Use a separate test world for repeatable world changes.");
+            ImGui.setNextItemWidth(-1);
+            if (ImGui.beginCombo("Saved baselines", playtestBaselineName.get())) {
+                for (String name : EditorLiveQuestTest.baselineNames())
+                    if (ImGui.selectable(name, name.equals(playtestBaselineName.get()))) playtestBaselineName.set(name);
+                ImGui.endCombo();
+            }
+            ImGui.setNextItemWidth(-1);
+            ImGui.inputText("Baseline name", playtestBaselineName);
+            if (ImGui.button("Save baseline")) operation(() -> EditorLiveQuestTest.baseline(workspace, document, playtestBaselineName.get(), "save"));
+            EditorWidgets.sameLineFor("Restore baseline");
+            if (ImGui.button("Restore baseline")) operation(() -> EditorLiveQuestTest.baseline(workspace, document, playtestBaselineName.get(), "restore"));
+            EditorWidgets.sameLineFor("Delete baseline");
+            if (ImGui.button("Delete baseline")) operation(() -> EditorLiveQuestTest.baseline(workspace, document, playtestBaselineName.get(), "delete"));
+            if (ImGui.button("Create separate test world")) operation(this::prepareTestWorld);
         }
         if (EditorWidgets.section("Debug controls")) {
             ImGui.textWrapped("These shortcuts bypass parts of the normal quest flow.");
@@ -3179,7 +3295,6 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Force start / restart quest")) operation(() -> EditorLiveQuestTest.start(workspace, document, playtestHold));
             ImGui.beginDisabled(!started);
             if (ImGui.button("Jump to selected stage")) operation(() -> EditorLiveQuestTest.stage(workspace, document, selectedNode));
-            if (ImGui.button("Replay current stage")) operation(() -> EditorLiveQuestTest.replay(workspace, document));
             ImGui.beginDisabled(!state.ready());
             if (ImGui.button("Next stage")) operation(() -> EditorLiveQuestTest.next(workspace, document));
             ImGui.endDisabled();
@@ -3191,7 +3306,6 @@ final class ImGuiAuthoringEditor {
                 if (!transition.available()) ImGui.textWrapped(transition.reason());
             }
             if (ImGui.button("Turn in quest")) operation(() -> EditorLiveQuestTest.turnIn(workspace, document));
-            ImGui.inputText(EditorWidgets.field("Fact / reputation value"), playtestValue);
             for (var objective : state.objectives()) {
                 ImGui.pushID(objective.id());
                 if (ImGui.button("Force complete " + objective.id())) operation(() -> EditorLiveQuestTest.force(workspace, document, objective.id()));

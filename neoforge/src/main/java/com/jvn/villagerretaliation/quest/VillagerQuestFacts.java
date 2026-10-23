@@ -296,6 +296,20 @@ public class VillagerQuestFacts extends SavedData implements com.jvn.villagerret
         return bucket == null ? FactSnapshot.EMPTY : bucket.snapshot();
     }
 
+    public void debugRestoreScope(String scopeKey, FactSnapshot snapshot) {
+        if (scopeKey == null || scopeKey.isBlank()) throw new IllegalArgumentException("Choose a fact scope");
+        if (futureVersionData != null || !effectDiagnostic.isBlank()) throw new IllegalStateException("Repair quest fact data before restoring a baseline");
+        if (snapshot.empty()) factsByScope.remove(scopeKey);
+        else {
+            var bucket = new FactBucket();
+            bucket.tags.addAll(snapshot.tags());
+            bucket.variables.putAll(snapshot.variables());
+            bucket.counters.putAll(snapshot.counters());
+            factsByScope.put(scopeKey, bucket);
+        }
+        setDirty();
+    }
+
     public ScopeMergeResult mergeScope(String sourceScopeKey, String targetScopeKey) {
         sourceScopeKey = sourceScopeKey == null ? "" : sourceScopeKey.trim();
         targetScopeKey = targetScopeKey == null ? "" : targetScopeKey.trim();

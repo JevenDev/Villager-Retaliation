@@ -265,6 +265,12 @@ final class EditorTestWorld {
     }
 
     static void disconnect() {
+        var mc = Minecraft.getInstance();
+        if (mc.getSingleplayerServer() != null && mc.player != null) {
+            var server = mc.getSingleplayerServer();
+            var player = mc.player.getUUID();
+            server.execute(() -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.clear(server, player));
+        }
         sessions.clear();
         restored.clear();
     }

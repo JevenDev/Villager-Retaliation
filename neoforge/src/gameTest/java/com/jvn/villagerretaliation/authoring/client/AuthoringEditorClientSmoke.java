@@ -51,6 +51,9 @@ public final class AuthoringEditorClientSmoke {
     private static Path reloadWorld;
     private static AuthoringDocument playtestTitleLocale;
     private static int initialLiveExperience, reloadExperience, playtestLogSize;
+    private static String reloadStage;
+    private static AuthoringDocument repeatedLiveTree;
+    private static List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> repeatedLiveSpeech;
     private static java.util.concurrent.CompletableFuture<Void> reloadCheck;
     private static int frames;
     private static int keyRelease = -1;
@@ -822,6 +825,17 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if ("improvements".equals(System.getProperty("villagerretaliation.authoringEditorPlaytestSmokeOnly"))) {
+            STEPS.add(() -> {
+                try { workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-playtest-improvements")); }
+                catch (IOException exception) { throw new UncheckedIOException(exception); }
+                invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, workspace, true);
+                set("guideStep", -1);
+            });
+            buildLiveWorldSteps();
+            finishSteps("Playtest apply, explicit replay, baseline restore and reload rollback passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorPlaytestSmokeOnly")) {
             buildCampaignLiveWorldSteps();
             finishSteps("Current-world quest setup, reload recovery and Playtest performance passed.");
@@ -2290,6 +2304,15 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildLiveWorldSteps() {
         STEPS.add(() -> {
+            repeatedLiveTree = workspace.createDocument(DefinitionKind.TREE, "test:live_repeated_lines");
+            repeatedLiveTree.edit("Set repeated exchanges", root -> {
+                var node = root.getAsJsonObject("nodes").getAsJsonObject("start");
+                node.remove("lines");
+                node.add("exchanges", com.google.gson.JsonParser.parseString("""
+                        [{"id":"a","speaker":{"type":"role","role":"provider"},"text":"Repeated line"},
+                         {"id":"b","speaker":{"type":"role","role":"provider"},"text":"Repeated line"}]
+                        """));
+            });
             var quest = workspace.createDocument(DefinitionKind.QUEST, "test:live_execution");
             EditorContentTools.recipe(workspace, quest, "Fetch quest");
             DialogueGraph.addNode(quest, "finish");
@@ -2398,6 +2421,8 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(EditorLiveQuestTest.snapshot().stage().equals("start") && EditorLiveQuestTest.snapshot().ready(),
                     "Real inventory requirements become ready while the stage stays held: " + EditorLiveQuestTest.snapshot());
+            invoke("focusPlaytestRequirement", new Class<?>[] {String.class}, EditorLiveQuestTest.snapshot().objectives().getFirst().id());
+            require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/stages/0/objectives/0"), "Requirement links select the authored objective.");
             capture("29-playtest-quest-ready");
             String localePath = document.resourcePath().substring(0, document.resourcePath().lastIndexOf('/') + 1) + "locales/en_us.json";
             playtestTitleLocale = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(localePath)).findFirst().orElseThrow();
@@ -2450,6 +2475,7 @@ public final class AuthoringEditorClientSmoke {
             var server = Minecraft.getInstance().getSingleplayerServer();
             var playerId = Minecraft.getInstance().player.getUUID();
             reloadWorld = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            reloadStage = EditorLiveQuestTest.snapshot().stage();
             liveCheck = server.submit(() -> reloadExperience = server.getPlayerList().getPlayer(playerId).totalExperience);
         });
         waitUntil(() -> liveCheck.isDone());
@@ -2470,13 +2496,13 @@ public final class AuthoringEditorClientSmoke {
             if (!EditorTestWorld.applying() && field(editor, "status").toString().startsWith("Draft reload failed"))
                 throw new IllegalStateException(field(editor, "status").toString());
             return !EditorTestWorld.applying() && EditorTestWorld.currentSnapshot(workspace)
-                    && !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("start");
+                    && !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals(reloadStage);
         });
         STEPS.add(() -> {
             var server = Minecraft.getInstance().getSingleplayerServer();
             var playerId = Minecraft.getInstance().player.getUUID();
-            liveCheck = server.submit(() -> require(server.getPlayerList().getPlayer(playerId).totalExperience == reloadExperience + 11,
-                    "Apply & replay executes the updated entry action exactly once."));
+            liveCheck = server.submit(() -> require(server.getPlayerList().getPlayer(playerId).totalExperience == reloadExperience,
+                    "Apply changes retains progress without replaying entry actions."));
             require(reloadWorld.equals(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize()),
                     "Applying logic keeps the same test world.");
             capture("31-playtest-applied-draft");
@@ -2484,6 +2510,62 @@ public final class AuthoringEditorClientSmoke {
         waitUntil(() -> liveCheck.isDone());
         STEPS.add(() -> {
             liveCheck.join();
+            EditorLiveQuestTest.startAt(workspace, document, true, "start");
+        });
+        waitUntil(() -> !EditorLiveQuestTest.view().busy() && EditorLiveQuestTest.snapshot().stage().equals("start"));
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                require(player.totalExperience == reloadExperience + 11, "Explicit restart executes the updated entry action once.");
+                var quest = net.minecraft.resources.ResourceLocation.parse(document.id());
+                var facts = com.jvn.villagerretaliation.quest.VillagerQuestFacts.get(player.serverLevel());
+                String scope = com.jvn.villagerretaliation.quest.QuestScopeKey.quest(playerId, quest).asString();
+                facts.setVariable(scope, "baseline_check", "before");
+                var position = player.position();
+                var inventory = player.getInventory().getItem(0).copy();
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.capture(player, quest, "Repeatable run");
+                player.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 9));
+                player.giveExperiencePoints(37);
+                var data = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel());
+                data.get(playerId, quest).setCurrentStage("finish");
+                player.teleportTo(player.serverLevel(), position.x + 5, position.y, position.z, player.getYRot(), player.getXRot());
+                facts.setVariable(scope, "baseline_check", "after");
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.restore(player, quest, "Repeatable run");
+                require(player.totalExperience == reloadExperience + 11, "Baseline restores experience after test rewards.");
+                require(net.minecraft.world.item.ItemStack.matches(inventory, player.getInventory().getItem(0)), "Baseline restores inventory without retaining test supplies.");
+                require(player.position().distanceToSqr(position) < .001 && facts.variable(scope, "baseline_check").orElseThrow().equals("before"), "Baseline restores position and quest facts.");
+                require(data.get(playerId, quest).currentStage().equals("start"), "Baseline restores the saved quest stage.");
+                var binding = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.selection(player);
+                var provider = com.jvn.villagerretaliation.util.VillagerEntityResolver.loaded(server, binding.provider());
+                var context = com.jvn.villagerretaliation.interaction.VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+                repeatedLiveSpeech = com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.startEntry(context,
+                        net.minecraft.resources.ResourceLocation.parse(repeatedLiveTree.id()), "default").orElseThrow().exchanges();
+                require(repeatedLiveSpeech.size() == 2, "Repeated authored exchanges reach the runtime.");
+                require(com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.get(repeatedLiveSpeech.get(0).presentationId()).line().equals("a")
+                        && com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.get(repeatedLiveSpeech.get(1).presentationId()).line().equals("b"),
+                        "Runtime speech carries distinct source identities without changing packets.");
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            repeatedLiveTree.edit("Edit identical live lines", root -> {
+                var exchanges = root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("exchanges");
+                exchanges.get(0).getAsJsonObject().addProperty("text", "First independent edit");
+                exchanges.get(1).getAsJsonObject().addProperty("text", "Second independent edit");
+            });
+        });
+        pause(500);
+        STEPS.add(() -> {
+            require(EditorPlaytestPresentation.speech(repeatedLiveSpeech.get(0)).text().equals("First independent edit")
+                    && EditorPlaytestPresentation.speech(repeatedLiveSpeech.get(1)).text().equals("Second independent edit"),
+                    "Identical live wording updates independently by document, node and exchange identity.");
+            repeatedLiveTree.undo();
+        });
+        pause(300);
+        STEPS.add(() -> {
             document.edit("Rejected logic", root -> root.addProperty("revision", 3));
             var attempts = new java.util.concurrent.atomic.AtomicInteger();
             try {

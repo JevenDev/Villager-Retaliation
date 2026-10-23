@@ -42,7 +42,7 @@ public record DialogueSpeech(UUID speaker, int entityId, String name, List<Dialo
         for (var line : lines) {
             if (java.util.Objects.equals(line.speaker(), reply.speaker())) {
                 if (!replaced) result.add(reply.camera() != null || line.camera() == null ? reply
-                        : new DialogueSpeech(reply.speaker(), reply.entityId(), reply.name(), reply.segments(), line.camera()));
+                        : new DialogueSpeech(reply.speaker(), reply.entityId(), reply.name(), reply.segments(), line.camera(), reply.presentationId()));
                 replaced = true;
             } else result.add(line);
         }

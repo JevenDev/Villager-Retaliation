@@ -221,6 +221,29 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
         setDirty(false);
     }
 
+    public CompoundTag debugSnapshotQuest(UUID playerId, ResourceLocation questId) {
+        if (futureVersion()) throw new IllegalStateException("Quest data uses a newer save format");
+        var result = new CompoundTag();
+        var progress = get(playerId, questId);
+        if (progress != null) result.put("Progress", progress.save());
+        result.putInt("TrackedIndex", getTrackedQuests(playerId).indexOf(questId));
+        return result;
+    }
+
+    public void debugRestoreQuest(UUID playerId, ResourceLocation questId, CompoundTag snapshot) {
+        if (futureVersion()) throw new IllegalStateException("Quest data uses a newer save format");
+        QuestProgress progress = snapshot.contains("Progress", Tag.TAG_COMPOUND) ? QuestProgress.load(snapshot.getCompound("Progress").copy()) : null;
+        if (progress == null) remove(playerId, questId);
+        else entries.computeIfAbsent(playerId, ignored -> new HashMap<>()).put(questId, progress);
+        var tracked = new ArrayList<>(getTrackedQuests(playerId));
+        tracked.remove(questId);
+        int index = snapshot.getInt("TrackedIndex");
+        if (index >= 0) tracked.add(Math.min(index, tracked.size()), questId);
+        if (tracked.isEmpty()) trackedQuests.remove(playerId);
+        else trackedQuests.put(playerId, tracked);
+        setDirty();
+    }
+
     public QuestProgress get(UUID playerId, ResourceLocation questId) {
         Map<ResourceLocation, QuestProgress> playerEntries = this.entries.get(playerId);
         return playerEntries == null ? null : playerEntries.get(questId);

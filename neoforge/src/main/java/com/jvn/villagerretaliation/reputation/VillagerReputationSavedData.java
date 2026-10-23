@@ -105,6 +105,17 @@ public class VillagerReputationSavedData extends SavedData implements com.jvn.vi
         return playerEntries == null ? null : playerEntries.get(playerId);
     }
 
+    public void debugRestoreEntry(UUID villagerId, UUID playerId, Integer reputation) {
+        if (reputation == null) {
+            var playerEntries = entries.get(villagerId);
+            if (playerEntries != null) {
+                playerEntries.remove(playerId);
+                if (playerEntries.isEmpty()) entries.remove(villagerId);
+            }
+        } else getOrCreate(villagerId, playerId).setReputation(reputation);
+        setDirty();
+    }
+
     public boolean hasEntry(UUID villagerId, UUID playerId) {
         Map<UUID, ReputationEntry> playerEntries = this.entries.get(villagerId);
         return playerEntries != null && playerEntries.containsKey(playerId);

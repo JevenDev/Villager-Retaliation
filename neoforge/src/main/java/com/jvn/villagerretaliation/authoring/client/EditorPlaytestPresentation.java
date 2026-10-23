@@ -19,6 +19,7 @@ import java.util.Set;
 
 public final class EditorPlaytestPresentation {
     private static Map<String, Visual> visuals = Map.of();
+    private static Map<com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source, Visual> sourcedVisuals = Map.of();
     private static String quest = "";
     private static String questTitle;
     private static String questDescription;
@@ -35,7 +36,7 @@ public final class EditorPlaytestPresentation {
     private EditorPlaytestPresentation() { }
 
     public static void clear() {
-        visuals = Map.of(); quest = ""; questTitle = null; questDescription = null; speakers = Map.of();
+        visuals = Map.of(); sourcedVisuals = Map.of(); quest = ""; questTitle = null; questDescription = null; speakers = Map.of();
         stopVoice();
     }
 
@@ -45,7 +46,7 @@ public final class EditorPlaytestPresentation {
     }
 
     public static boolean refreshVoice(DialogueSpeech original) {
-        var visual = original == null || !EditorPlaytestViewport.active() ? null : visuals.get(original.text());
+        var visual = original == null || !EditorPlaytestViewport.active() ? null : visual(original);
         if (visual == null || !visual.voiceEdited()) { stopVoice(); return false; }
         String key = original.presentationId() + ":" + visual.presentation().get("voices");
         if (voiceKey.equals(key)) return false;
@@ -68,6 +69,7 @@ public final class EditorPlaytestPresentation {
     static void update(AuthoringWorkspace workspace, AuthoringDocument selected, Map<String, JsonObject> applied,
             Map<String, String> replacements, String locale, Map<String, java.util.UUID> bindings) {
         var result = new HashMap<String, Visual>();
+        var sources = new HashMap<com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source, Visual>();
         AMBIGUOUS.clear();
         SEEN.clear();
         ambiguousEdits = false;
@@ -79,15 +81,88 @@ public final class EditorPlaytestPresentation {
         var description = reference(display, "description");
         questTitle = title == null ? null : workspace.resolveText(selected, title, locale);
         questDescription = description == null ? null : workspace.resolveText(selected, description, locale);
+        var sourceDocuments = com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.documents();
         for (var owner : workspace.documents()) {
             boolean relevant = owner == selected || selected.kind() == DefinitionKind.QUEST
                     && owner.kind() == DefinitionKind.CONVERSATION && owner.json().has("quest") && owner.json().get("quest").getAsString().equals(selected.id());
             JsonObject previous = applied.get(owner.resourcePath());
-            if (relevant && previous != null) visit(workspace, owner, previous,
-                    PlaytestDrafts.presentation(previous, owner.json()), new JsonObject(), new JsonObject(), applied, replacements, locale, result);
+            if ((relevant || selected.kind() == DefinitionKind.QUEST && owner.kind() == DefinitionKind.TREE && sourceDocuments.contains(owner.id())) && previous != null) {
+                var projected = PlaytestDrafts.presentation(previous, owner.json());
+                visit(workspace, owner, previous, projected, new JsonObject(), new JsonObject(), applied, replacements, locale, result);
+                if (owner.kind() == DefinitionKind.TREE) indexSources(workspace, owner, previous, projected, applied, replacements, locale, sources);
+            }
         }
         visuals = Map.copyOf(result);
+        sourcedVisuals = Map.copyOf(sources);
 
+    }
+
+    private static void indexSources(AuthoringWorkspace workspace, AuthoringDocument owner, JsonObject previous, JsonObject projected,
+            Map<String, JsonObject> applied, Map<String, String> replacements, String locale,
+            Map<com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source, Visual> sources) {
+        var nodes = previous.getAsJsonObject("nodes");
+        var nextNodes = projected.getAsJsonObject("nodes");
+        if (nodes == null || nextNodes == null) return;
+        for (var entry : nodes.entrySet()) {
+            if (!entry.getValue().isJsonObject() || !nextNodes.has(entry.getKey())) continue;
+            var old = inheritedNode(previous, entry.getValue().getAsJsonObject());
+            var next = inheritedNode(projected, nextNodes.getAsJsonObject(entry.getKey()));
+            indexLines(workspace, owner, entry.getKey(), "", old, next, applied, replacements, locale, sources);
+            if (old.has("responses") && old.get("responses").isJsonArray() && next.has("responses")) {
+                var responses = old.getAsJsonArray("responses");
+                var updated = next.getAsJsonArray("responses");
+                for (int i = 0; i < Math.min(responses.size(), updated.size()); i++) {
+                    if (!responses.get(i).isJsonObject() || !updated.get(i).isJsonObject()) continue;
+                    var response = responses.get(i).getAsJsonObject();
+                    indexLines(workspace, owner, entry.getKey(), com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(response, "id"),
+                            inheritedNode(old, response), inheritedNode(next, updated.get(i).getAsJsonObject()), applied, replacements, locale, sources);
+                }
+            }
+        }
+    }
+
+    private static JsonObject inheritedNode(JsonObject parent, JsonObject node) {
+        var result = node.deepCopy();
+        for (String field : java.util.List.of("text_effects", "camera", "speaker", "voices"))
+            if (!result.has(field) && parent.has(field)) result.add(field, parent.get(field));
+        return result;
+    }
+
+    private static void indexLines(AuthoringWorkspace workspace, AuthoringDocument owner, String node, String response,
+            JsonObject old, JsonObject next, Map<String, JsonObject> applied, Map<String, String> replacements, String locale,
+            Map<com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source, Visual> sources) {
+        String ownerId = response.isBlank() ? node : response;
+        for (String field : java.util.List.of("lines", "variants", "exchanges")) {
+            if (!old.has(field) || !old.get(field).isJsonArray() || !next.has(field) || !next.get(field).isJsonArray()) continue;
+            var before = old.getAsJsonArray(field); var after = next.getAsJsonArray(field);
+            for (int i = 0; i < Math.min(before.size(), after.size()); i++) {
+                JsonElement a = before.get(i), b = after.get(i);
+                var oldStyle = inherit(new JsonObject(), old); var style = inherit(new JsonObject(), next);
+                String id = field.equals("exchanges") ? Integer.toString(i) : before.size() == 1 ? ownerId : ownerId + "#line_" + i;
+                if (a.isJsonObject() && b.isJsonObject()) {
+                    var object = a.getAsJsonObject();
+                    if (object.has("id")) {
+                        id = object.get("id").getAsString();
+                        if (!field.equals("exchanges") && !id.startsWith(ownerId + "#")) id = ownerId + "#" + id;
+                    }
+                    oldStyle = inherit(oldStyle, object); style = inherit(style, b.getAsJsonObject());
+                    a = reference(object, "text"); b = reference(b.getAsJsonObject(), "text");
+                }
+                if (a == null || b == null) continue;
+                String text = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(workspace.resolveText(owner, b, locale), replacements);
+                sources.put(new com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source(owner.id(), node, response,
+                        field.equals("exchanges") ? field : "variants", id), new Visual(text, style,
+                        !java.util.Objects.equals(oldStyle.get("camera"), style.get("camera")),
+                        !java.util.Objects.equals(oldStyle.get("voices"), style.get("voices"))));
+            }
+        }
+        if (old.has("text") && next.has("text")) {
+            var oldStyle = inherit(new JsonObject(), old); var style = inherit(new JsonObject(), next);
+            String text = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(workspace.resolveText(owner, reference(next, "text"), locale), replacements);
+            sources.put(new com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source(owner.id(), node, response, "variants", ownerId),
+                    new Visual(text, style, !java.util.Objects.equals(oldStyle.get("camera"), style.get("camera")),
+                            !java.util.Objects.equals(oldStyle.get("voices"), style.get("voices"))));
+        }
     }
 
     private static void visit(AuthoringWorkspace workspace, AuthoringDocument owner, JsonElement old, JsonElement next,
@@ -170,7 +245,7 @@ public final class EditorPlaytestPresentation {
 
     public static DialogueSpeech speech(DialogueSpeech original) {
         if (original == null || !EditorPlaytestViewport.active()) return original;
-        var visual = visuals.get(original.text());
+        var visual = visual(original);
         if (visual == null) return original;
         var camera = visual.cameraEdited() ? ConversationLinePresentation.read(visual.presentation()).camera() : original.camera();
         var speaker = original.speaker(); var entityId = original.entityId(); String name = original.name();
@@ -193,6 +268,16 @@ public final class EditorPlaytestPresentation {
             }
         }
         return new DialogueSpeech(speaker, entityId, name, DialogueTextSegment.parse(visual.text(), DialogueTextEffects.read(visual.presentation())), camera, original.presentationId());
+    }
+
+    private static Visual visual(DialogueSpeech speech) {
+        var source = com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.get(speech.presentationId());
+        return source == null ? visuals.get(speech.text()) : sourcedVisuals.get(source);
+    }
+
+    static String sourcedText(com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source source) {
+        var visual = sourcedVisuals.get(source);
+        return visual == null ? null : visual.text();
     }
 
     public static QuestTrackerSyncPayload.Entry entry(QuestTrackerSyncPayload.Entry value) {

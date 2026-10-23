@@ -261,10 +261,21 @@ public final class DialogueTreeService {
         var selectedResponse = response.selectText(context);
         String responseTemplate = selectedResponse.text();
         var responseExchanges = response.exchanges();
-        if (responseExchanges.isEmpty() && selectedResponse.camera() != null && !responseTemplate.isBlank())
+        if (responseExchanges.isEmpty() && (selectedResponse.camera() != null || com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.active()) && !responseTemplate.isBlank())
             responseExchanges = List.of(new com.jvn.villagerretaliation.dialogue.DialogueExchange(
                     com.jvn.villagerretaliation.dialogue.conversation.ConversationDefinition.SpeakerKind.ROLE,
                     responseTemplate, "", selectedResponse.camera()));
+        if (com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.active()) {
+            var sourced = new java.util.ArrayList<com.jvn.villagerretaliation.dialogue.DialogueExchange>();
+            for (int i = 0; i < responseExchanges.size(); i++) {
+                var exchange = responseExchanges.get(i);
+                String collection = response.exchanges().isEmpty() ? "variants" : "exchanges";
+                String line = response.exchanges().isEmpty() ? selectedResponse.id() : exchange.id().isBlank() ? Integer.toString(i) : exchange.id();
+                sourced.add(exchange.withSource(new com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source(
+                        tree.id().toString(), node.id(), response.id(), collection, line)));
+            }
+            responseExchanges = List.copyOf(sourced);
+        }
         ActionText responseActionText = executeActions(context, response.actions(), session.replacements(),
                 tree.id() + "/" + node.id() + "/response/" + response.id(),
                 new SceneContinuation.DialogueResume(tree.id(), response.end() ? "" : response.next(),
@@ -331,10 +342,16 @@ public final class DialogueTreeService {
         var exchanges = new java.util.ArrayList<>(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(leadingExchanges, context, replacements));
         if (!node.exchanges().isEmpty()) {
             if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
-            exchanges.addAll(com.jvn.villagerretaliation.dialogue.DialogueExchange.resolve(node.exchanges(), context, replacements));
-        } else if ((!exchanges.isEmpty() || selected.camera() != null) && !nodeLine.isBlank()) {
+            for (int i = 0; i < node.exchanges().size(); i++) {
+                var exchange = node.exchanges().get(i);
+                var source = new com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source(tree.id().toString(), node.id(), "", "exchanges",
+                        exchange.id().isBlank() ? Integer.toString(i) : exchange.id());
+                exchanges.add(exchange.withSource(source).resolve(context, replacements));
+            }
+        } else if ((!exchanges.isEmpty() || selected.camera() != null || com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.active()) && !nodeLine.isBlank()) {
             if (exchanges.isEmpty() && !leadingText.isBlank()) exchanges.add(npcSpeech(context, leadingText));
-            exchanges.add(npcSpeech(context, nodeLine, selected.camera()));
+            exchanges.add(com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.register(npcSpeech(context, nodeLine, selected.camera()),
+                    new com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.Source(tree.id().toString(), node.id(), "", "variants", selected.id())));
         }
         return withExchanges(result(resultLineId, text), exchanges);
     }

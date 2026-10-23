@@ -32,6 +32,7 @@ public final class EditorPlaytestViewport {
 
     static void open(float value, Runnable release) {
         enabled = true;
+        com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.active(true);
         fraction = value;
         releaseInput = release;
     }
@@ -89,6 +90,7 @@ public final class EditorPlaytestViewport {
     static void close() {
         if (!enabled && target == null) return;
         enabled = false;
+        com.jvn.villagerretaliation.authoring.preview.PlaytestLineSources.active(false);
         releaseInput = null;
         layout = null;
         if (target != null) { target.destroyBuffers(); target = null; }

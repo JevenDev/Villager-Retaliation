@@ -20,6 +20,8 @@ public final class EditorLiveQuestTest {
     private static volatile com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView snapshot = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestView.empty();
     private static net.minecraft.server.MinecraftServer testServer;
     private static volatile boolean focused;
+    private static volatile List<String> baselineNames = List.of();
+    static List<String> baselineNames() { return baselineNames; }
     private static UUID testPlayer;
     private static final java.util.concurrent.atomic.AtomicLong requests = new java.util.concurrent.atomic.AtomicLong();
 
@@ -34,6 +36,7 @@ public final class EditorLiveQuestTest {
 
     static void stop() {
         focused = false;
+        baselineNames = List.of();
         requests.incrementAndGet();
         var server = testServer;
         var player = testPlayer;
@@ -86,7 +89,7 @@ public final class EditorLiveQuestTest {
             focused = true;
             VillagerQuestService.debugTraceSetEnabled(player, true);
             return "Quest provider: " + provider.getName().getString() + ". Talk to this villager to accept the quest.";
-        });
+        }, !restart);
     }
 
     static void returnToProvider(AuthoringWorkspace workspace, AuthoringDocument document) {
@@ -208,6 +211,18 @@ public final class EditorLiveQuestTest {
         });
     }
 
+    static void baseline(AuthoringWorkspace workspace, AuthoringDocument document, String name, String action) {
+        submit(workspace, document, (player, quest) -> {
+            switch (action) {
+                case "save" -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.capture(player, quest, name);
+                case "restore" -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.restore(player, quest, name);
+                case "delete" -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.remove(player, quest, name);
+                default -> throw new IllegalArgumentException("Unknown baseline action");
+            }
+            return "Baseline " + name + ": " + action + " complete";
+        });
+    }
+
     static void prepare(AuthoringWorkspace workspace, AuthoringDocument document, String objective, String value) {
         submit(workspace, document, (player, quest) -> {
             var context = VillagerQuestService.debugPlaytestContext(player, quest);
@@ -226,7 +241,7 @@ public final class EditorLiveQuestTest {
         var server = minecraft.getSingleplayerServer();
         if (document.kind() != DefinitionKind.QUEST || minecraft.player == null || !EditorTestWorld.active(workspace))
             throw new IllegalArgumentException("Set up quest testing in the current world first");
-        if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply & replay in Playtest to load this draft.");
+        if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply changes in Playtest to load this draft.");
         boolean trackCoverage = EditorTestWorld.currentLogic(workspace);
         var source = document.json();
         UUID playerId = minecraft.player.getUUID();
@@ -254,6 +269,7 @@ public final class EditorLiveQuestTest {
             var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
             if (controls != null) controls.log(message);
             var nextSnapshot = VillagerQuestService.debugPlaytestView(player, quest);
+            baselineNames = controls == null ? List.of() : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, quest);
             List<String> lines = new ArrayList<>();
             var state = VillagerQuestService.debugInspectQuest(player, quest);
             lines.addAll(state.lines());
