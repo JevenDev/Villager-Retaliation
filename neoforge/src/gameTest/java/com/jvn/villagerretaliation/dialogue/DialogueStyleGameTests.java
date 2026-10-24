@@ -117,6 +117,38 @@ public final class DialogueStyleGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void animationSettingsInheritRestoreAndSurvivePackets(GameTestHelper helper) {
+        var subtle = style("{\"tag\":\"subtle\",\"text_effects\":{\"shake\":{\"strength\":0.25,\"speed\":2},\"wavy\":{\"speed\":0}}}");
+        var strong = style("{\"tag\":\"strong\",\"text_effects\":{\"shake\":{\"strength\":3}}}");
+        var segments = DialogueTextSegment.parse("<subtle>A<b>B</b><strong>C</strong>D</subtle>E", null, Map.of("subtle", subtle, "strong", strong));
+        var outer = DialogueTextSegment.slice(segments, 0, 1).getFirst().effects();
+        helper.assertValueEqual(outer.shakeAnimation().strength(), 0.25F, "style supplies shake strength");
+        helper.assertValueEqual(outer.shakeAnimation().speed(), 2.0F, "style supplies animation speed");
+        helper.assertValueEqual(outer.waveAnimation().speed(), 0.0F, "zero animation speed is supported");
+        helper.assertValueEqual(DialogueTextSegment.slice(segments, 1, 2).getFirst().effects().shakeAnimation(), outer.shakeAnimation(), "ordinary formatting retains motion settings");
+        helper.assertValueEqual(DialogueTextSegment.slice(segments, 2, 3).getFirst().effects().shakeAnimation().strength(), 3.0F, "nested styles override motion settings");
+        helper.assertValueEqual(DialogueTextSegment.slice(segments, 3, 4).getFirst().effects().shakeAnimation(), outer.shakeAnimation(), "closing style restores motion settings");
+        helper.assertFalse(DialogueTextSegment.slice(segments, 4, 5).getFirst().effects().shake(), "closing outer style restores surrounding effects");
+        helper.assertValueEqual(style("{\"tag\":\"legacy\",\"text_effects\":{\"shake\":true}}").effects().shakeAnimation(),
+                com.jvn.villagerretaliation.dialogue.normal.DialogueTextAnimation.DEFAULT, "boolean effects preserve legacy animation defaults");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            var catalog = new DialogueStylesPayload(Map.of("subtle", subtle));
+            DialogueStylesPayload.STREAM_CODEC.encode(buffer, catalog);
+            helper.assertValueEqual(DialogueStylesPayload.STREAM_CODEC.decode(buffer), catalog, "style animation settings survive catalog synchronization");
+            DialogueTextSegment.writeList(buffer, segments);
+            helper.assertValueEqual(DialogueTextSegment.readList(buffer), segments, "per-span animation settings survive dialogue packets");
+        } finally { buffer.release(); }
+        for (String motion : java.util.List.of("{\"strength\":-1}", "{\"strength\":4.1}", "{\"speed\":10.1}", "{\"speed\":\"1\"}", "{\"extra\":1}")) {
+            boolean rejected = false;
+            try { style("{\"tag\":\"invalid\",\"text_effects\":{\"shake\":" + motion + "}}"); }
+            catch (IllegalArgumentException invalid) { rejected = true; }
+            helper.assertTrue(rejected, "invalid motion settings rejected: " + motion);
+        }
+        helper.succeed();
+    }
+
     private static DialogueStyle style(String json) { return DialogueStyle.read(json(json)); }
     private static JsonObject json(String json) { return JsonParser.parseString(json).getAsJsonObject(); }
 }

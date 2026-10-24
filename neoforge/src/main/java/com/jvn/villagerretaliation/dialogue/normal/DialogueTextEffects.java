@@ -20,7 +20,25 @@ public record DialogueTextEffects(
         boolean rainbow,
         Integer color,
         Integer gradientStartColor,
-        Integer gradientEndColor) {
+        Integer gradientEndColor,
+        DialogueTextAnimation waveAnimation,
+        DialogueTextAnimation shakeAnimation,
+        DialogueTextAnimation pulseAnimation,
+        DialogueTextAnimation jumpAnimation) {
+    public DialogueTextEffects {
+        java.util.Objects.requireNonNull(waveAnimation);
+        java.util.Objects.requireNonNull(shakeAnimation);
+        java.util.Objects.requireNonNull(pulseAnimation);
+        java.util.Objects.requireNonNull(jumpAnimation);
+    }
+
+    public DialogueTextEffects(boolean italic, boolean bold, boolean underlined, boolean strikethrough,
+            boolean obfuscated, boolean wavy, boolean shake, boolean pulse, boolean jump, boolean rainbow,
+            Integer color, Integer gradientStartColor, Integer gradientEndColor) {
+        this(italic, bold, underlined, strikethrough, obfuscated, wavy, shake, pulse, jump, rainbow,
+                color, gradientStartColor, gradientEndColor, DialogueTextAnimation.DEFAULT, DialogueTextAnimation.DEFAULT,
+                DialogueTextAnimation.DEFAULT, DialogueTextAnimation.DEFAULT);
+    }
     public static final DialogueTextEffects NONE = new DialogueTextEffects(
             false, false, false, false, false, false, false, false, false, false, null, null, null);
 
@@ -84,7 +102,11 @@ public record DialogueTextEffects(
                 this.rainbow || other.rainbow(),
                 other.color() == null ? this.color : other.color(),
                 other.gradientStartColor() == null ? this.gradientStartColor : other.gradientStartColor(),
-                other.gradientEndColor() == null ? this.gradientEndColor : other.gradientEndColor()
+                other.gradientEndColor() == null ? this.gradientEndColor : other.gradientEndColor(),
+                other.wavy() ? other.waveAnimation() : this.waveAnimation,
+                other.shake() ? other.shakeAnimation() : this.shakeAnimation,
+                other.pulse() ? other.pulseAnimation() : this.pulseAnimation,
+                other.jump() ? other.jumpAnimation() : this.jumpAnimation
         );
     }
 
@@ -98,14 +120,18 @@ public record DialogueTextEffects(
                 readEffectBoolean(entry, effects, "underlined", "underline"),
                 readEffectBoolean(entry, effects, "strikethrough", "strikethrough"),
                 readEffectBoolean(entry, effects, "obfuscated", "obfuscate"),
-                readEffectBoolean(entry, effects, "wavy", "wave"),
-                readEffectBoolean(entry, effects, "shake", "shaky"),
-                readEffectBoolean(entry, effects, "pulse", "pulsing"),
-                readEffectBoolean(entry, effects, "jump", "jumping"),
+                readAnimatedBoolean(entry, effects, "wavy", "wave"),
+                readAnimatedBoolean(entry, effects, "shake", "shaky"),
+                readAnimatedBoolean(entry, effects, "pulse", "pulsing"),
+                readAnimatedBoolean(entry, effects, "jump", "jumping"),
                 readEffectBoolean(entry, effects, "rainbow", "rainbow_text"),
                 readColor(entry, effects, "color", "text_color"),
                 gradientStart,
-                gradientEnd
+                gradientEnd,
+                readAnimation(entry, effects, "wavy", "wave"),
+                readAnimation(entry, effects, "shake", "shaky"),
+                readAnimation(entry, effects, "pulse", "pulsing"),
+                readAnimation(entry, effects, "jump", "jumping")
         );
     }
 
@@ -124,6 +150,10 @@ public record DialogueTextEffects(
         writeNullableColor(buffer, safeEffects.color());
         writeNullableColor(buffer, safeEffects.gradientStartColor());
         writeNullableColor(buffer, safeEffects.gradientEndColor());
+        safeEffects.waveAnimation().write(buffer);
+        safeEffects.shakeAnimation().write(buffer);
+        safeEffects.pulseAnimation().write(buffer);
+        safeEffects.jumpAnimation().write(buffer);
     }
 
     public static DialogueTextEffects read(RegistryFriendlyByteBuf buffer) {
@@ -140,7 +170,9 @@ public record DialogueTextEffects(
                 buffer.readBoolean(),
                 readNullableColor(buffer),
                 readNullableColor(buffer),
-                readNullableColor(buffer)
+                readNullableColor(buffer),
+                DialogueTextAnimation.read(buffer), DialogueTextAnimation.read(buffer),
+                DialogueTextAnimation.read(buffer), DialogueTextAnimation.read(buffer)
         );
     }
 
@@ -233,6 +265,22 @@ public record DialogueTextEffects(
 
     private static Integer readNullableColor(RegistryFriendlyByteBuf buffer) {
         return buffer.readBoolean() ? buffer.readInt() : null;
+    }
+
+    private static JsonObject animationObject(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
+        for (var owner : effects == null ? java.util.List.of(entry) : java.util.List.of(entry, effects))
+            for (String key : java.util.List.of(primaryKey, aliasKey))
+                if (owner.has(key) && owner.get(key).isJsonObject()) return owner.getAsJsonObject(key);
+        return null;
+    }
+
+    private static boolean readAnimatedBoolean(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
+        return animationObject(entry, effects, primaryKey, aliasKey) != null || readEffectBoolean(entry, effects, primaryKey, aliasKey);
+    }
+
+    private static DialogueTextAnimation readAnimation(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
+        var object = animationObject(entry, effects, primaryKey, aliasKey);
+        return object == null ? DialogueTextAnimation.DEFAULT : DialogueTextAnimation.read(object);
     }
 
     private static boolean readEffectBoolean(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {

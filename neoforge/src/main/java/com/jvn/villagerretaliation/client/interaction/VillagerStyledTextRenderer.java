@@ -229,11 +229,8 @@ public final class VillagerStyledTextRenderer {
                 continue;
             }
 
-            float yOffset = effects.wavy() ? Mth.sin((tickCount + drawX * 0.55F) * 0.24F) * 1.75F : 0.0F;
-            if (effects.jump()) {
-                yOffset -= Math.abs(Mth.sin(tickCount * 0.28F - charIndex * 0.55F)) * 2.4F;
-            }
-            float xOffset = effects.shake() ? Mth.sin((tickCount * 1.7F) + charIndex * 1.31F) * 1.15F : 0.0F;
+            float yOffset = waveOffset(effects, tickCount, drawX) - jumpOffset(effects, tickCount, charIndex);
+            float xOffset = shakeOffset(effects, tickCount, charIndex);
             int color = colorWithAlpha(glyph.style(), effects, fallbackRgb, alpha, tickCount, charIndex);
             Style renderStyle = glyph.style().withColor(color & 0x00FFFFFF);
             graphics.pose().pushPose();
@@ -245,7 +242,22 @@ public final class VillagerStyledTextRenderer {
         }
     }
 
-    private static int colorWithAlpha(
+    static float waveOffset(DialogueTextEffects effects, int tickCount, int drawX) {
+        return effects.wavy() ? Mth.sin((tickCount * effects.waveAnimation().speed() + drawX * 0.55F) * 0.24F)
+                * 1.75F * effects.waveAnimation().strength() : 0;
+    }
+
+    static float shakeOffset(DialogueTextEffects effects, int tickCount, int charIndex) {
+        return effects.shake() ? Mth.sin(tickCount * 1.7F * effects.shakeAnimation().speed() + charIndex * 1.31F)
+                * 1.15F * effects.shakeAnimation().strength() : 0;
+    }
+
+    static float jumpOffset(DialogueTextEffects effects, int tickCount, int charIndex) {
+        return effects.jump() ? Math.abs(Mth.sin(tickCount * 0.28F * effects.jumpAnimation().speed() - charIndex * 0.55F))
+                * 2.4F * effects.jumpAnimation().strength() : 0;
+    }
+
+    static int colorWithAlpha(
             Style style,
             DialogueTextEffects effects,
             int fallbackRgb,
@@ -262,9 +274,10 @@ public final class VillagerStyledTextRenderer {
             rgb = rainbowColor(tickCount * 0.006F + charIndex * 0.025F);
         }
         if (effects.pulse()) {
-            float pulse = 0.72F + (Mth.sin(tickCount * 0.22F + charIndex * 0.18F) * 0.5F + 0.5F) * 0.28F;
-            adjustedAlpha = Mth.clamp(Math.round(alpha * pulse), 0, 255);
-            rgb = scaleColor(rgb, 0.86F + pulse * 0.24F);
+            float pulse = 0.72F + (Mth.sin(tickCount * 0.22F * effects.pulseAnimation().speed() + charIndex * 0.18F) * 0.5F + 0.5F) * 0.28F;
+            float strength = effects.pulseAnimation().strength();
+            adjustedAlpha = Mth.clamp(Math.round(alpha * (1 + (pulse - 1) * strength)), 0, 255);
+            rgb = scaleColor(rgb, Math.max(0, 1 + (0.86F + pulse * 0.24F - 1) * strength));
         }
         return rgb | (adjustedAlpha << 24);
     }

@@ -133,6 +133,10 @@ public final class EditorClientChecks {
         check(com.jvn.villagerretaliation.authoring.core.AuthoringValidation.validate(workspace.documents()).isEmpty(), "valid style drafts pass export validation");
         check(EditorSchema.forDocument(document).at(document.json(), "/speed").get("minimum").getAsDouble() == 0.1,
                 "style speed receives a bounded schema form");
+        document.edit("Tune shake", value -> value.getAsJsonObject("text_effects").add("shake", JsonParser.parseString("{\"strength\":0.35,\"speed\":0.8}")));
+        check(catalog.catalog(workspace).get("uneasy").effects().shakeAnimation().strength() == 0.35F, "draft catalogs retain tuned animation settings");
+        check(EditorSchema.forDocument(document).at(document.json(), "/text_effects/shake/strength").get("maximum").getAsInt() == 4,
+                "animated effect objects receive bounded schema forms");
         document.edit("Change speed", value -> value.addProperty("speed", 0.5));
         check(catalog.catalog(workspace).get("uneasy").speed() == 0.5, "draft edits invalidate the style catalog");
         document.undo();

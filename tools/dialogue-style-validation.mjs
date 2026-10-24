@@ -5,6 +5,16 @@ import { reservedDialogueTag } from "./dialogue-markup-validation.mjs";
 
 export const builtInStyleData = fileURLToPath(new URL("../neoforge/src/main/resources/data", import.meta.url));
 const flags = new Set(["italic", "bold", "underlined", "strikethrough", "obfuscated", "wavy", "shake", "pulse", "jump", "rainbow"]);
+const animated = new Set(["wavy", "shake", "pulse", "jump"]);
+export function animationIssues(value) {
+  if (!object(value)) return ["animation must be an object"];
+  const errors = [];
+  if (Object.keys(value).some(key => !["strength", "speed"].includes(key))) errors.push("unknown animation field");
+  for (const [field, maximum] of [["strength", 4], ["speed", 10]])
+    if (field in value && (typeof value[field] !== "number" || !Number.isFinite(value[field]) || value[field] < 0 || value[field] > maximum))
+      errors.push(field + " must be a number from 0 to " + maximum);
+  return errors;
+}
 const colors = new Set(["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray",
   "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white", "purple", "magenta", "grey", "dark_grey"]);
 const colorFields = new Set(["color", "gradient_start", "gradient_end"]);
@@ -24,7 +34,8 @@ export function styleIssues(value) {
     if (!object(value.text_effects)) errors.push("text_effects must be an object");
     else {
       for (const [field, setting] of Object.entries(value.text_effects)) {
-        if (flags.has(field)) { if (typeof setting !== "boolean") errors.push(field + " must be a boolean"); }
+        if (animated.has(field) && object(setting)) errors.push(...animationIssues(setting).map(issue => field + ": " + issue));
+        else if (flags.has(field)) { if (typeof setting !== "boolean") errors.push(field + " must be a boolean or an animation object"); }
         else if (colorFields.has(field)) { if (!validColor(setting)) errors.push(field + " must be a color or null"); }
         else errors.push("unknown text effect: " + field);
       }

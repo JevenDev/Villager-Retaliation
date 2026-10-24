@@ -24,7 +24,9 @@ public record DialogueStyle(DialogueTextEffects effects, int overrides, Double s
                 flag(6, base.shake(), effects.shake()), flag(7, base.pulse(), effects.pulse()),
                 flag(8, base.jump(), effects.jump()), flag(9, base.rainbow(), effects.rainbow()),
                 has(10) ? effects.color() : base.color(), has(11) ? effects.gradientStartColor() : base.gradientStartColor(),
-                has(12) ? effects.gradientEndColor() : base.gradientEndColor());
+                has(12) ? effects.gradientEndColor() : base.gradientEndColor(),
+                has(5) ? effects.waveAnimation() : base.waveAnimation(), has(6) ? effects.shakeAnimation() : base.shakeAnimation(),
+                has(7) ? effects.pulseAnimation() : base.pulseAnimation(), has(8) ? effects.jumpAnimation() : base.jumpAnimation());
     }
 
     private boolean has(int index) { return (overrides & 1 << index) != 0; }
@@ -63,6 +65,12 @@ public record DialogueStyle(DialogueTextEffects effects, int overrides, Double s
                 """).getAsJsonObject();
         var properties = schema.getAsJsonObject("properties").getAsJsonObject("text_effects").getAsJsonObject("properties");
         for (String flag : FLAGS.subList(0, 10)) properties.add(flag, JsonParser.parseString("{\"type\":\"boolean\"}"));
+        for (String flag : FLAGS.subList(5, 9)) {
+            var options = new com.google.gson.JsonArray();
+            options.add(JsonParser.parseString("{\"type\":\"boolean\"}"));
+            options.add(com.jvn.villagerretaliation.dialogue.normal.DialogueTextAnimation.schema());
+            var rule = new JsonObject(); rule.add("anyOf", options); properties.add(flag, rule);
+        }
         for (String flag : FLAGS.subList(10, 13)) properties.add(flag, JsonParser.parseString("""
                 {"anyOf":[{"type":"null"},{"type":"integer","minimum":0,"maximum":16777215},{"type":"string","minLength":1,"maxLength":32}]}
                 """));

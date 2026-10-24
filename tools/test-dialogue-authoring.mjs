@@ -11,6 +11,12 @@ const cases = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resour
 for (const entry of cases) assert.equal(markupWarnings(entry.text).length > 0, entry.warning, entry.text);
 const nervous = { tag: "nervous", text_effects: { shake: true }, speed: 0.8 };
 assert.deepEqual(styleIssues(nervous), []);
+for (const field of ["wavy", "shake", "pulse", "jump"]) {
+  assert.deepEqual(styleIssues({ tag: "tuned", text_effects: { [field]: { strength: 0.35, speed: 0.8 } } }), []);
+  assert.deepEqual(styleIssues({ tag: "tuned", text_effects: { [field]: { strength: 0, speed: 0 } } }), []);
+  for (const setting of [{ strength: -1 }, { strength: 4.1 }, { speed: 10.1 }, { speed: "1" }, { extra: 1 }])
+    assert(styleIssues({ tag: "tuned", text_effects: { [field]: setting } }).length);
+}
 assert.deepEqual(styleIssues({ tag: "calm", text_effects: { shake: false, color: null, gradient_start: null, gradient_end: null } }), []);
 for (const invalid of [{}, { tag: "shake" }, { tag: "pause" }, { tag: "abcdef" }, { tag: "Nervous" },
   { tag: "nervous", extra: true }, { tag: "nervous", speed: 0 }, { tag: "nervous", speed: "1" },

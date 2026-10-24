@@ -126,6 +126,7 @@ public final class DialogueCueClientSmoke {
                     "server style catalog reaches the client before dialogue");
             var nervous = DialogueTextSegment.parse("<nervous>Listen.</nervous> Fine.", DialogueTextEffects.NONE);
             require(nervous.getFirst().effects().shake() && !nervous.getLast().effects().shake(), "client renders scoped custom styles");
+            verifyAnimatedTextSettings();
             verifyParticipantTargets();
             verifyHeadPoseAcrossSlowFrame();
             verifyParticleEmission();
@@ -208,6 +209,23 @@ public final class DialogueCueClientSmoke {
             phase = 99;
             minecraft.stop();
         }
+    }
+
+    private static void verifyAnimatedTextSettings() {
+        var defaults = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"wavy\":true,\"shake\":true,\"jump\":true,\"pulse\":true}}").getAsJsonObject());
+        var tuned = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"wavy\":{\"strength\":0.25,\"speed\":2},\"shake\":{\"strength\":0.25,\"speed\":2},\"jump\":{\"strength\":0.25,\"speed\":2},\"pulse\":{\"speed\":2}}}").getAsJsonObject());
+        require(Math.abs(VillagerStyledTextRenderer.waveOffset(tuned, 17, 24) - VillagerStyledTextRenderer.waveOffset(defaults, 34, 24) * 0.25F) < 0.0001,
+                "wave strength and speed reach the renderer");
+        require(Math.abs(VillagerStyledTextRenderer.shakeOffset(tuned, 17, 4) - VillagerStyledTextRenderer.shakeOffset(defaults, 34, 4) * 0.25F) < 0.0001,
+                "shake strength and speed reach the renderer");
+        require(Math.abs(VillagerStyledTextRenderer.jumpOffset(tuned, 17, 4) - VillagerStyledTextRenderer.jumpOffset(defaults, 34, 4) * 0.25F) < 0.0001,
+                "jump strength and speed reach the renderer");
+        require(VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, tuned, 0xabcdef, 255, 17, 4)
+                == VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, defaults, 0xabcdef, 255, 34, 4), "pulse animation speed reaches the renderer");
+        var quiet = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"shake\":{\"strength\":0},\"pulse\":{\"strength\":0}}}").getAsJsonObject());
+        require(VillagerStyledTextRenderer.shakeOffset(quiet, 17, 4) == 0, "zero shake strength is stationary");
+        require(VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, quiet, 0xabcdef, 255, 17, 4) == 0xffabcdef,
+                "zero pulse strength preserves the original color and opacity");
     }
 
     private static void verifyParticipantTargets() {
