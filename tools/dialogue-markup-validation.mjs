@@ -30,6 +30,7 @@ function validCue(raw) {
     const amount = match[2] === undefined ? 1 : Number(match[2]);
     return Number.isInteger(amount) && amount >= 1 && amount <= 64;
   }
+  if (/^look[=:](?:nearest_participant|role:[a-z0-9][a-z0-9_./-]{0,255})$/.test(normalized)) return true;
   const parts = normalized.split(/[=:]/).map(part => part.trim());
   const [name, argument] = parts;
   if (["agree", "disagree", "reset"].includes(name)) return parts.length === 1;
@@ -41,36 +42,58 @@ function validCue(raw) {
     ? Number.isInteger(value) && value >= 0 && value <= 60000 : value >= 0.1 && value <= 10);
 }
 
-export function markupWarnings(text) {
+export function reservedDialogueTag(tag) {
+  return tags.has(tag) || cueTags.has(tag) || /^[a-f0-9]{6}$/.test(tag);
+}
+
+export function markupWarnings(text, styles = new Map()) {
   const warnings = [];
   const stack = [];
+  const priorSpeeds = [];
+  let speed = 1;
   let cueCount = 0;
   for (const match of text.matchAll(/<(\/?)([a-zA-Z_][^<>]*)>/g)) {
     const raw = match[2].trim();
     const cueName = raw.toLowerCase().split(/[=:]/)[0].trim();
     if (cueTags.has(cueName)) {
       if (match[1] || !validCue(raw)) warnings.push("invalid dialogue cue: " + match[0]);
-      else if (++cueCount > 64) warnings.push("too many dialogue cues");
+      else {
+        if (cueName === "speed") speed = Number(raw.split(/[=:]/)[1].trim());
+        if (++cueCount > 64) warnings.push("too many dialogue cues");
+      }
       continue;
     }
     const tag = raw.split(":")[0].toLowerCase();
-    const canonical = tags.get(tag);
+    const canonical = tags.get(tag) ?? (styles.has(tag) ? tag : undefined);
     if (!canonical) {
       warnings.push("unknown text tag: " + match[0]);
     } else if (!match[1]) {
+      const style = styles.get(tag);
+      priorSpeeds.push(style ? speed : null);
+      if (style?.speed !== undefined && speed !== style.speed) {
+        speed = style.speed;
+        if (++cueCount > 64) warnings.push("too many dialogue cues");
+      }
       stack.push(canonical);
     } else if (stack.at(-1) !== canonical) {
       warnings.push("unmatched closing text tag: " + match[0]);
-    } else stack.pop();
+    } else {
+      stack.pop();
+      const previous = priorSpeeds.pop();
+      if (previous !== null && speed !== previous) {
+        speed = previous;
+        if (++cueCount > 64) warnings.push("too many dialogue cues");
+      }
+    }
   }
   for (const tag of stack) warnings.push("unclosed text tag: " + tag);
   return warnings;
 }
 
-export function inspectDialogueMarkup(value, pointer = "", text = false) {
-  if (typeof value === "string") return text ? markupWarnings(value).map(warning => pointer + ": " + warning) : [];
-  if (Array.isArray(value)) return value.flatMap((child, index) => inspectDialogueMarkup(child, pointer + "/" + index, text));
+export function inspectDialogueMarkup(value, pointer = "", text = false, styles = new Map()) {
+  if (typeof value === "string") return text ? markupWarnings(value, styles).map(warning => pointer + ": " + warning) : [];
+  if (Array.isArray(value)) return value.flatMap((child, index) => inspectDialogueMarkup(child, pointer + "/" + index, text, styles));
   if (value && typeof value === "object") return Object.entries(value).flatMap(([key, child]) =>
-    inspectDialogueMarkup(child, pointer + "/" + key, ["text", "lines", "label", "unavailable", "response", "responses"].includes(key)));
+    inspectDialogueMarkup(child, pointer + "/" + key, ["text", "lines", "label", "unavailable", "response", "responses"].includes(key), styles));
   return [];
 }

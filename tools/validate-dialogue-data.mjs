@@ -5,6 +5,7 @@ import { validateQuestSiteAccess } from "./quest-site-validation.mjs";
 import { validateQuestPerformance } from "./quest-performance-validation.mjs";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
+import { builtInStyleData, loadDialogueStyles } from "./dialogue-style-validation.mjs";
 import { validateWordDirectory } from "./dialogue-word-validation.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -939,6 +940,18 @@ const questV2LifecycleCoverageSlots = new Set(["offer", "reminder", "turn_in"]);
 
 const cli = parseValidatorArgs(process.argv.slice(2));
 await readValidatorFileLists(cli);
+const dialogueStyleCatalogs = new Map();
+const styleDirectories = new Set([builtInStyleData]);
+for (const file of [...cli.questFiles, ...cli.conversationFiles, ...cli.campaignFiles]) {
+  const normalized = file.replaceAll("\\", "/");
+  const index = normalized.lastIndexOf("/data/");
+  if (index >= 0) styleDirectories.add(normalized.slice(0, index + 5));
+}
+for (const directory of styleDirectories) {
+  const catalog = await loadDialogueStyles(directory);
+  errors.push(...catalog.errors);
+  dialogueStyleCatalogs.set(directory.replaceAll("\\", "/"), catalog.styles);
+}
 const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
 const skillTradeSchema = await loadSkillTradeSchema();
@@ -5240,7 +5253,11 @@ function entriesFor(data) {
 }
 
 function checkPlaceholders(file, value) {
-  warnings.push(...inspectDialogueMarkup(value, relative(file)));
+  const normalized = file.replaceAll("\\", "/");
+  const index = normalized.lastIndexOf("/data/");
+  const styles = dialogueStyleCatalogs.get(normalized.slice(0, index + 5))
+    ?? dialogueStyleCatalogs.get(builtInStyleData.replaceAll("\\", "/"));
+  warnings.push(...inspectDialogueMarkup(value, relative(file), false, styles));
   walkStrings(value, (text) => {
     for (const match of text.matchAll(textTokenPattern)) {
       const token = match[1];

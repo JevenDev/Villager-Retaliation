@@ -172,10 +172,13 @@ public final class ConversationPresentationService {
             line = new Line(entry.visit() + "/" + entry.exchange(), entry.speaker(), speaker == null ? -1 : speaker.getId(),
                     label(entry.name()), parts.get(part), part, parts.size(), presentation.camera(),
                     presentation.voice(com.jvn.villagerretaliation.util.VillagerLocale.locale(player)),
-                    java.util.stream.Stream.concat(snapshot.speakers().values().stream().map(value -> player.serverLevel().getEntity(value.entity())),
-                                    snapshot.participants().stream().map(value -> player.serverLevel().getEntity(value)))
-                            .filter(java.util.Objects::nonNull).distinct().limit(64)
-                            .map(value -> new com.jvn.villagerretaliation.network.CampaignConversationViewPayload.CameraSubject(value.getUUID(), value.getId())).toList());
+                    java.util.stream.Stream.concat(snapshot.speakers().entrySet().stream().map(value -> {
+                                var entity = player.serverLevel().getEntity(value.getValue().entity());
+                                return entity == null ? null : new CampaignConversationViewPayload.CameraSubject(entity.getUUID(), entity.getId(), value.getKey());
+                            }), snapshot.participants().stream().map(value -> {
+                                var entity = player.serverLevel().getEntity(value);
+                                return entity == null ? null : new CampaignConversationViewPayload.CameraSubject(entity.getUUID(), entity.getId());
+                            })).filter(java.util.Objects::nonNull).distinct().limit(64).toList());
         }
         Check check = null;
         if (snapshot.phase() == ConversationSession.Phase.CHECK || snapshot.phase() == ConversationSession.Phase.ROLLED) {

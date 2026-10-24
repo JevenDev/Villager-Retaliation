@@ -1,4 +1,9 @@
 [
+  {"text":"<look=nearest_participant>Hello<look=role:guard> there.","warning":false},
+  {"text":"<look:role:provider>","warning":false},
+  {"text":"<look=role:>","warning":true},
+  {"text":"<look=role:bad role>","warning":true},
+  {"text":"</look=nearest_participant>","warning":true},
   {"text":"<sound:minecraft:entity.villager.yes volume=0.5 pitch=1.2><particle:heart amount=2>Yes.","warning":false},
   {"text":"<sound=entity.villager.no pitch:0.5 volume:0><sound:custom:dialogue/greeting>","warning":false},
   {"text":"<sound:>","warning":true},

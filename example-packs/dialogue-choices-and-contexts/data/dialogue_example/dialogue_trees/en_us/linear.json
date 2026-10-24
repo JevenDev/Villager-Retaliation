@@ -21,7 +21,7 @@
             "type": "role",
             "role": "provider"
           },
-          "text": "Good to see you."
+          "text": "<look=nearest_participant>Good to see you. <uneasy>Did you hear that?</uneasy>"
         },
         {
           "speaker": {

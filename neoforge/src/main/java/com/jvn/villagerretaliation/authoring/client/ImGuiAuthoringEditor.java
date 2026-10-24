@@ -206,6 +206,7 @@ final class ImGuiAuthoringEditor {
     private java.util.concurrent.CompletableFuture<EditorWorldContent.Source> worldContentSource;
     private volatile String worldLoadStatus = "";
     private EditorContentBrowser contentBrowser = new EditorContentBrowser();
+    private final EditorDialogueStyles dialogueStyles = new EditorDialogueStyles();
     private EditorValidationCache validationCache = new EditorValidationCache();
     private net.minecraft.core.HolderLookup.Provider validationLookup, validationRegistries;
     private net.minecraft.server.MinecraftServer validationServer;
@@ -294,6 +295,12 @@ final class ImGuiAuthoringEditor {
     }
 
     private void render() {
+        try (var ignored = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.preview(dialogueStyles.catalog(workspace))) {
+            renderEditor();
+        }
+    }
+
+    private void renderEditor() {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);

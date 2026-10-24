@@ -131,6 +131,7 @@ public final class WorldCampaignResources {
         Map<ResourceLocation, Resource> result = new LinkedHashMap<>();
         Map<ResourceLocation, Resource> available = new java.util.TreeMap<>();
         for (String root : ROOTS) available.putAll(manager.listResources(root, id -> true));
+        available.putAll(manager.listResources("dialogue_styles", id -> true));
         for (String root : List.of("world_campaigns", "campaign_addons")) available.putAll(manager.listResources(root, id -> true));
         available.entrySet().forEach(entry -> {
             ResourceLocation id = entry.getKey();
@@ -140,6 +141,8 @@ public final class WorldCampaignResources {
                 ResourceLocation owner = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), parts[1]);
                 if (parts[0].equals("world_campaigns") ? owner.equals(selection.id()) : selection.addons().contains(owner))
                     result.put(id, entry.getValue());
+            } else if (id.getPath().startsWith("dialogue_styles/") && id.getPath().endsWith(".json")) {
+                result.put(id, entry.getValue());
             } else if (supports(id.getPath()) && id.getPath().endsWith(".json")) {
                 Map<ResourceLocation, List<Resource>> filtered = new LinkedHashMap<>();
                 for (Resource layer : manager.getResourceStack(id))

@@ -70,6 +70,7 @@ final class EditorResourceView {
         if (schema.equals("villagerretaliation:encounter/v1")) return "Encounter";
         String path = DefinitionKind.unscopedPath(document.resourcePath());
         if (path.contains("/locales/")) return "Translations";
+        if (path.contains("/dialogue_styles/")) return "Dialogue style";
         if (path.contains("/dialogue_words/")) return "Word pool";
         if (path.contains("/dialogue/")) return "Dialogue resource";
         if (path.contains("/campaign_scenarios/")) return "Scenario";

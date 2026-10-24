@@ -53,7 +53,7 @@ public final class DialoguePlayback {
                             end = Math.max(end, time);
                         }
                         case SPEED -> speed = cue.value();
-                        case LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER -> {
+                        case LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, LOOK_TARGET -> {
                             gazeEnd = time + LOOK_TRANSITION_MILLIS;
                             customGaze = true;
                         }
@@ -170,6 +170,11 @@ public final class DialoguePlayback {
     }
 
     public Pose pose(long now, float neutralYaw, float neutralPitch, float playerYaw, float playerPitch) {
+        return pose(now, neutralYaw, neutralPitch, playerYaw, playerPitch, target -> null);
+    }
+
+    public Pose pose(long now, float neutralYaw, float neutralPitch, float playerYaw, float playerPitch,
+            java.util.function.Function<String, Pose> targets) {
         double elapsed = skipped ? duration + LOOK_TRANSITION_MILLIS : elapsed(now);
         Pose from = new Pose(neutralYaw, neutralPitch);
         Pose target = from;
@@ -182,6 +187,7 @@ public final class DialoguePlayback {
                 case LOOK_UP -> new Pose(0, -22);
                 case LOOK_DOWN -> new Pose(0, 22);
                 case LOOK_PLAYER -> new Pose(playerYaw, playerPitch);
+                case LOOK_TARGET -> targets.apply(event.cue().target());
                 case RESET -> new Pose(neutralYaw, neutralPitch);
                 default -> null;
             };

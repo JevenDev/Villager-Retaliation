@@ -13,6 +13,17 @@ public final class DialoguePlaybackGameTests {
     private DialoguePlaybackGameTests() { }
 
     @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void participantGazeBlendsAndMissingBindingsLeaveThePoseAlone(GameTestHelper helper) {
+        var clock = clock("<look=left>A<look=role:guard>B<look=nearest_participant>C<reset>D", 500);
+        java.util.function.Function<String, DialoguePlayback.Pose> targets = name -> name.equals("role:guard")
+                ? new DialoguePlayback.Pose(-40, 10) : null;
+        helper.assertValueEqual(clock.pose(680, 0, 0, 0, 0, targets), new DialoguePlayback.Pose(-40, 10), "named participant gaze settles");
+        helper.assertValueEqual(clock.pose(1180, 0, 0, 0, 0, targets), new DialoguePlayback.Pose(-40, 10), "missing participant retains previous gaze");
+        helper.assertValueEqual(clock.pose(1680, 3, 2, 0, 0, targets), new DialoguePlayback.Pose(3, 2), "reset restores neutral tracking");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
     public static void pausesStopRevealAndSpeechIncludingAtLineBoundaries(GameTestHelper helper) {
         var clock = clock("<pause=500>A<pause=200>B<pause=300>", 50);
         helper.assertValueEqual(clock.visibleCharacters(499), 0, "leading pause precedes first character");

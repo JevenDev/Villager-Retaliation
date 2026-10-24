@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import io.netty.buffer.Unpooled;
+import com.jvn.villagerretaliation.network.CampaignConversationViewPayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTest;
@@ -123,6 +124,34 @@ public final class DialogueCueGameTests {
                 "sound:entity.villager.yes pitch=0", "sound:entity.villager.yes pitch=NaN",
                 "sound:entity.villager.yes volume=1 volume=0.5", "sound:entity.villager.yes loop=1"))
             helper.assertTrue(DialogueCue.parse(invalid) == null, "invalid sound rejected: " + invalid);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_cues")
+    public static void participantGazeCuesValidateAndRoundTrip(GameTestHelper helper) {
+        var segments = parse("<look=nearest_participant>A<look=role:guard>B<look:role:provider>C");
+        helper.assertValueEqual(DialogueTextSegment.plainText(segments), "ABC", "participant cues stay invisible");
+        helper.assertValueEqual(cues(segments).stream().map(cue -> cue.cue().target()).toList(),
+                List.of("nearest_participant", "role:guard", "role:provider"), "participant selectors retain their bindings");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            DialogueTextSegment.writeList(buffer, segments);
+            helper.assertValueEqual(DialogueTextSegment.readList(buffer), segments, "gaze selectors survive the wire");
+            helper.assertFalse(buffer.isReadable(), "gaze packet is fully consumed");
+            buffer.clear();
+            var speaker = java.util.UUID.randomUUID();
+            var line = new CampaignConversationViewPayload.Line("1/guard", speaker, 4, "Guard", "Welcome.", 0, 1, null, null,
+                    List.of(new CampaignConversationViewPayload.CameraSubject(speaker, 4, "guard")));
+            var session = new CampaignConversationViewPayload.Session(java.util.UUID.randomUUID(), 1, "Greeting",
+                    com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES, line,
+                    true, false, "Player", List.of(), List.of(), null, "");
+            var view = new CampaignConversationViewPayload(java.util.UUID.randomUUID(), 4, speaker, 0, 1, List.of(), session, "");
+            CampaignConversationViewPayload.STREAM_CODEC.encode(buffer, view);
+            helper.assertValueEqual(CampaignConversationViewPayload.STREAM_CODEC.decode(buffer), view, "named participant bindings survive the conversation packet");
+            helper.assertFalse(buffer.isReadable(), "participant binding packet is fully consumed");
+        } finally { buffer.release(); }
+        for (String invalid : List.of("look=role:", "look=role:bad role", "look=role:" + "x".repeat(257), "look=nearest_villager"))
+            helper.assertTrue(DialogueCue.parse(invalid) == null, "invalid selector rejected: " + invalid);
         helper.succeed();
     }
 

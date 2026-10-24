@@ -69,9 +69,12 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             this(key, speaker, entityId, name, text, part, parts, null, null);
         }
     }
-    public record CameraSubject(UUID id, int entityId) {
+    public record CameraSubject(UUID id, int entityId, String role) {
+        public CameraSubject(UUID id, int entityId) { this(id, entityId, ""); }
         public CameraSubject {
-            if (id == null || entityId < 0) throw new IllegalArgumentException("Invalid camera subject");
+            if (id == null || entityId < 0 || role == null
+                    || !role.isEmpty() && !role.matches("[a-z0-9][a-z0-9_./-]{0,255}"))
+                throw new IllegalArgumentException("Invalid camera subject");
         }
     }
 
@@ -220,7 +223,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
             buffer.writeBoolean(line.voice() != null);
             if (line.voice() != null) buffer.writeUtf(line.voice().toString(), 256);
             buffer.writeVarInt(line.subjects().size());
-            for (var subject : line.subjects()) { buffer.writeUUID(subject.id()); buffer.writeVarInt(subject.entityId()); }
+            for (var subject : line.subjects()) { buffer.writeUUID(subject.id()); buffer.writeVarInt(subject.entityId()); buffer.writeUtf(subject.role(), 256); }
         }
         buffer.writeBoolean(value.canControl()); buffer.writeBoolean(value.canTakeControl()); buffer.writeUtf(value.controller(), MAX_LABEL_LENGTH);
         buffer.writeVarInt(value.handover().size());
@@ -310,7 +313,7 @@ public record CampaignConversationViewPayload(UUID viewId, int entityId, UUID ch
         var camera = com.jvn.villagerretaliation.dialogue.DialogueCamera.read(buffer);
         var voice = buffer.readBoolean() ? ResourceLocation.parse(buffer.readUtf(256)) : null;
         var subjects = new ArrayList<CameraSubject>();
-        for (int size = count(buffer, 64); size > 0; size--) subjects.add(new CameraSubject(buffer.readUUID(), buffer.readVarInt()));
+        for (int size = count(buffer, 64); size > 0; size--) subjects.add(new CameraSubject(buffer.readUUID(), buffer.readVarInt(), buffer.readUtf(256)));
         return new Line(key, speaker, entity, name, text, part, parts, camera, voice, subjects);
     }
 

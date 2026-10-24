@@ -41,7 +41,7 @@ public final class DialogueCueClientSmoke {
             + "<look=left> Over there...<pause=700><look=right> or there?<pause=650>"
             + "<look=player><disagree> No. Stay here.<pause=600><look=up> Above us?<pause=650>"
             + "<look=down> Nothing below.<pause=600><reset><disagree>Wait.<pause=100>"
-            + "<agree> Maybe.<pause=100><reset><pause=300><speed=0.5> Let's think.<particle:minecraft:heart amount:3>";
+            + "<agree> Maybe.<pause=100><reset><pause=300><speed=0.5> Let's think.<particle:minecraft:heart amount:3><nervous> I don't like this.</nervous>";
     private static CompletableFuture<Integer> preparing;
     private static int phase;
     private static int entityId;
@@ -122,6 +122,11 @@ public final class DialogueCueClientSmoke {
                     "the render hook applies held gaze to the actual speaker model");
             invoke(screen, "trySkipDialogueTextAnimation");
             require(playback(screen).complete(now), "native skip bypasses the pending pause");
+            require(com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current().containsKey("nervous"),
+                    "server style catalog reaches the client before dialogue");
+            var nervous = DialogueTextSegment.parse("<nervous>Listen.</nervous> Fine.", DialogueTextEffects.NONE);
+            require(nervous.getFirst().effects().shake() && !nervous.getLast().effects().shake(), "client renders scoped custom styles");
+            verifyParticipantTargets();
             verifyHeadPoseAcrossSlowFrame();
             verifyParticleEmission();
             verifySoundEmission();
@@ -203,6 +208,28 @@ public final class DialogueCueClientSmoke {
             phase = 99;
             minecraft.stop();
         }
+    }
+
+    private static void verifyParticipantTargets() {
+        var minecraft = Minecraft.getInstance();
+        var speaker = minecraft.level.getEntity(entityId);
+        var near = EntityType.VILLAGER.create(minecraft.level);
+        var guard = EntityType.VILLAGER.create(minecraft.level);
+        var bystander = EntityType.VILLAGER.create(minecraft.level);
+        near.setPos(speaker.position().add(2, 0, 0));
+        guard.setPos(speaker.position().add(-4, 0, 0));
+        bystander.setPos(speaker.position().add(0.1, 0, 0));
+        var participants = List.of(speaker, near, guard);
+        var roles = java.util.Map.<String, net.minecraft.world.entity.Entity>of("guard", guard);
+        require(VillagerDialoguePerformance.selectTarget(speaker, "nearest_participant", participants, roles) == near,
+                "nearest gaze excludes the speaker and nearby bystanders");
+        require(VillagerDialoguePerformance.selectTarget(speaker, "role:guard", participants, roles) == guard,
+                "named gaze uses the bound role even when another participant is closer");
+        require(VillagerDialoguePerformance.selectTarget(speaker, "role:missing", participants, roles) == null,
+                "missing role has no gaze target");
+        guard.discard();
+        require(VillagerDialoguePerformance.selectTarget(speaker, "role:guard", participants, roles) == null,
+                "removed participants cannot be targeted");
     }
 
     private static void verifyHeadPoseAcrossSlowFrame() {

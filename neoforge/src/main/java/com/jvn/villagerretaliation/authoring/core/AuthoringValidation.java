@@ -44,6 +44,7 @@ public final class AuthoringValidation {
     private static List<AuthoringDiagnostic> validateScope(List<AuthoringDocument> documents, net.minecraft.core.HolderLookup.Provider registries) {
         List<AuthoringDiagnostic> result = new ArrayList<>();
         Set<String> paths = new HashSet<>();
+        Set<String> styleTags = new HashSet<>();
         Map<String, AuthoringDocument> ids = new LinkedHashMap<>();
         List<QuestBundleTransactions.RawResource> bundleResources = new ArrayList<>();
         Map<ResourceLocation, String> bundlePaths = new LinkedHashMap<>();
@@ -157,7 +158,16 @@ public final class AuthoringValidation {
                             com.jvn.villagerretaliation.campaign.selection.WorldCampaign.read(root);
                         else com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.read(root);
                     }
-                    case RESOURCE -> { }
+                    case RESOURCE -> {
+                        if (resource.getPath().startsWith("dialogue_styles/")) {
+                            if (!document.resourcePath().matches("data/[^/]+/dialogue_styles/.+\\.json"))
+                                error(result, document, "", "Dialogue styles belong at data/<namespace>/dialogue_styles/<file>.json");
+                            com.jvn.villagerretaliation.dialogue.DialogueStyle.read(root);
+                            if (!styleTags.add(root.get("tag").getAsString())) error(result, document, "/tag", "Duplicate dialogue style tag");
+                            if (styleTags.size() > com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.MAX_STYLES)
+                                error(result, document, "", "Too many dialogue styles");
+                        }
+                    }
                 }
                 if (document.kind() != DefinitionKind.RESOURCE && !document.kind().campaignManifest()) validateGraph(result, document);
             } catch (IllegalArgumentException | IllegalStateException ex) {

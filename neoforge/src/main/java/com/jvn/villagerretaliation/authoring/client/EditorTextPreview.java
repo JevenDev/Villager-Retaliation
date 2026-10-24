@@ -26,6 +26,7 @@ final class EditorTextPreview {
     private boolean clipped;
     private boolean renderedSingleLine;
     private String text = "";
+    private java.util.Map<String, com.jvn.villagerretaliation.dialogue.DialogueStyle> styles = java.util.Map.of();
     private boolean animated;
     private int renderedWidth, renderedHeight, renderedBackground;
     private float renderedScale, renderedScroll;
@@ -37,8 +38,8 @@ final class EditorTextPreview {
         if (ImGui.beginChild("##preview", fieldWidth, fieldHeight, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.NavFlattened)) {
             if (!source.equals(text)) {
                 ImGui.setScrollY(0);
-                source(source);
             }
+            source(source);
             int width = Math.max(1, (int) ImGui.getContentRegionAvailX());
             int height = Math.max(1, (int) ImGui.getContentRegionAvailY());
             var origin = ImGui.getCursorScreenPos();
@@ -71,7 +72,9 @@ final class EditorTextPreview {
     }
 
     private void source(String source) {
-        if (source.equals(text)) return;
+        var definitions = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
+        if (source.equals(text) && styles.equals(definitions)) return;
+        styles = definitions;
         text = source;
         renderedTick = -1;
         animated = com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse(text,

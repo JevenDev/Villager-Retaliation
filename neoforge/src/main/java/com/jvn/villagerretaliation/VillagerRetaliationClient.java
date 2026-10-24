@@ -29,6 +29,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.settlement.SettlementManagementClient::register);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.settlement.SettlementManagementClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.settlement.SettlementViewClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.DialogueStylesClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.settlement.SettlementViewClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.settlement.SettlementViewClient::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.settlement.SettlementViewClient::onRenderGui);

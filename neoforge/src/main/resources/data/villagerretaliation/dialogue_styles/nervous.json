@@ -1,0 +1,7 @@
+{
+  "tag": "nervous",
+  "text_effects": {
+    "shake": true
+  },
+  "speed": 0.8
+}

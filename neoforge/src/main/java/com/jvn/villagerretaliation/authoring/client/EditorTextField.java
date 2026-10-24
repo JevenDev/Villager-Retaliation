@@ -287,6 +287,18 @@ final class EditorTextField {
             }
             ImGui.endMenu();
         }
+        var presets = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
+        if (!presets.isEmpty() && ImGui.beginMenu("Custom styles")) {
+            for (String tag : new java.util.TreeSet<>(presets.keySet()))
+                if (ImGui.menuItem(tag)) selection.command = new Command(tag, true);
+            ImGui.endMenu();
+        }
+        if (ImGui.beginMenu("Gaze")) {
+            for (String target : java.util.List.of("player", "nearest_participant", "role:provider"))
+                if (ImGui.menuItem(target.replace('_', ' '))) selection.command = new Command("<look=" + target + ">", false);
+            ImGui.textDisabled("Use <look=role:name> for a bound character.");
+            ImGui.endMenu();
+        }
         ImGui.endPopup();
     }
 

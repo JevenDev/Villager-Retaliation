@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "115";
+    private static final String PROTOCOL_VERSION = "116";
 
     private VillagerReputationNetworking() {
     }
@@ -31,6 +31,8 @@ public final class VillagerReputationNetworking {
         ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
         network.safePlayToClientThreaded(ConversationHistoryWorldPayload.TYPE, ConversationHistoryWorldPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.interaction.ConversationHistoryClient", "accept");
+        network.safePlayToClientThreaded(DialogueStylesPayload.TYPE, DialogueStylesPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.DialogueStylesClient", "accept");
         network.safePlayToClientThreaded(OreNodeCatalogPayload.TYPE, OreNodeCatalogPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.settlement.OreNodeCatalogClient", "accept");
         network.playToServer(
@@ -956,6 +958,8 @@ public final class VillagerReputationNetworking {
                 BuilderStructureCatalog.entries(player.server)
         ));
     }
+
+    public static void sendDialogueStyles(ServerPlayer player, DialogueStylesPayload payload) { trySendToPlayer(player, payload); }
 
     public static void sendOreNodeCatalog(ServerPlayer player, OreNodeCatalogPayload payload) {
         trySendToPlayer(player, payload);

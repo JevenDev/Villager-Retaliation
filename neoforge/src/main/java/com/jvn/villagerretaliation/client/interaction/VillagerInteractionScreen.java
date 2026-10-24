@@ -510,6 +510,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         void tick(VillagerInteractionScreen screen);
         List<LocalOption> options();
         default List<Entity> cameraSubjects() { return List.of(); }
+        default java.util.Map<String, Entity> dialogueRoles() { return java.util.Map.of(); }
         void close();
         void removed();
     }
@@ -4735,8 +4736,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     void updateDialoguePerformance() {
+        var roles = new java.util.LinkedHashMap<String, Entity>();
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.level != null) {
+            var provider = minecraft.level.getEntity(this.villagerEntityId);
+            if (provider != null) roles.put("provider", provider);
+        }
+        if (minecraft.player != null) roles.put("player", minecraft.player);
+        if (localPresentation != null) roles.putAll(localPresentation.dialogueRoles());
+        var line = campaignPresentationLine();
+        if (line != null) for (var subject : line.subjects()) {
+            var entity = resolveCameraSubject(subject.id(), subject.entityId());
+            if (entity != null && !subject.role().isEmpty()) roles.put(subject.role(), entity);
+        }
+        var frame = dialogueCameraFrame();
         VillagerDialoguePerformance.update(shouldRenderInteractionContainer() && !this.closingWithAnimation ? dialogueSpeakerEntity() : null,
-                dialoguePlaybackState());
+                dialoguePlaybackState(), frame == null ? List.of() : frame.subjects(), roles);
     }
 
     private boolean isDialogueMouthAnimationActive() {

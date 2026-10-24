@@ -55,6 +55,7 @@ final class EditorDialogueTimeline {
             case PARTICLE -> "Particle " + cue.particle() + " x" + (int) cue.value();
             case SOUND -> "Sound " + cue.sound().id() + " | volume " + cue.sound().volume() + " | pitch " + cue.sound().pitch();
             case PAUSE -> "Pause " + (int) cue.value() + " ms";
+            case LOOK_TARGET -> "Look at " + cue.target();
             case SPEED -> "Text speed x" + cue.value();
             default -> cue.kind().name().toLowerCase(Locale.ROOT).replace('_', ' ');
         };

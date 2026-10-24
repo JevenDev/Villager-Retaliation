@@ -53,6 +53,7 @@ public final class EditorClientChecks {
         behaviorBlocksRejectUnsupportedOwners();
         progressConditionsKeepListsModesAndPreviewOverrides();
         expandedProgressConditionsRoundTripThroughTheEditor();
+        customDialogueStylesFollowDraftsAndUndo();
         textToolsPreserveUnicodeSelectionAndToggleStyles();
         timeVariablesFollowWorldClockAndPreviewConditions();
         graphSummariesKeepFormattingOutOfTheFlow();
@@ -66,7 +67,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 52 + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
+        return 53 + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {
@@ -115,6 +116,31 @@ public final class EditorClientChecks {
         check(localized.occurrences() == 2, "locale files preview their translated wording");
         localized.apply();
         check(locale.json().has("find.key") && locale.json().get("find.key").getAsString().equals("translated translated"), "locale replacements preserve localization keys");
+    }
+
+    private static void customDialogueStylesFollowDraftsAndUndo() throws java.io.IOException {
+        var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-dialogue-styles"));
+        var root = JsonParser.parseString("{\"tag\":\"uneasy\",\"text_effects\":{\"shake\":true},\"speed\":0.75}").getAsJsonObject();
+        var document = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue_styles/uneasy.json", root);
+        workspace.add(document);
+        var catalog = new EditorDialogueStyles();
+        var styles = catalog.catalog(workspace);
+        check(styles.containsKey("uneasy"), "draft styles are available before exporting or reloading");
+        try (var ignored = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.preview(styles)) {
+            var text = com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment.parse("<uneasy>Hello</uneasy>", null);
+            check(text.getFirst().effects().shake(), "draft styles render using the shared parser");
+        }
+        check(com.jvn.villagerretaliation.authoring.core.AuthoringValidation.validate(workspace.documents()).isEmpty(), "valid style drafts pass export validation");
+        check(EditorSchema.forDocument(document).at(document.json(), "/speed").get("minimum").getAsDouble() == 0.1,
+                "style speed receives a bounded schema form");
+        document.edit("Change speed", value -> value.addProperty("speed", 0.5));
+        check(catalog.catalog(workspace).get("uneasy").speed() == 0.5, "draft edits invalidate the style catalog");
+        document.undo();
+        check(catalog.catalog(workspace).get("uneasy").speed() == 0.75, "undo restores the prior style definition");
+        document.edit("Invalid speed", value -> value.addProperty("speed", 0));
+        check(!com.jvn.villagerretaliation.authoring.core.AuthoringValidation.validate(workspace.documents()).isEmpty(), "invalid styles cannot be exported");
+        var formatted = EditorTextEdit.format("Hello", 0, 5, "uneasy");
+        check(formatted.text().equals("<uneasy>Hello</uneasy>"), "custom style formatting uses ordinary paired tags");
     }
 
     private static void resourcePickersFilterWithoutChangingIdentifiers() {

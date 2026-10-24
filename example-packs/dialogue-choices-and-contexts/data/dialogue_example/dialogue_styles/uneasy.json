@@ -1,0 +1,8 @@
+{
+  "tag": "uneasy",
+  "text_effects": {
+    "shake": true,
+    "color": "gold"
+  },
+  "speed": 0.75
+}

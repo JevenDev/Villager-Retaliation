@@ -6,12 +6,12 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
-public record DialogueCue(Kind kind, double value, ResourceLocation particle, Sound sound) {
+public record DialogueCue(Kind kind, double value, ResourceLocation particle, Sound sound, String target) {
     public static final int MAX_CUES = 64;
     public static final int MAX_PARTICLE_AMOUNT = 64;
     private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed", "particle", "sound");
 
-    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE, SOUND }
+    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE, SOUND, LOOK_TARGET }
 
     public DialogueCue {
         java.util.Objects.requireNonNull(kind);
@@ -21,10 +21,21 @@ public record DialogueCue(Kind kind, double value, ResourceLocation particle, So
             case PARTICLE -> value < 1 || value > MAX_PARTICLE_AMOUNT || value != Math.rint(value);
             default -> value != 0;
         }) throw new IllegalArgumentException("Invalid dialogue cue value");
+        if (kind == Kind.LOOK_TARGET ? !validTarget(target) : target != null)
+            throw new IllegalArgumentException("Invalid dialogue gaze target");
         if ((kind == Kind.PARTICLE) != (particle != null))
             throw new IllegalArgumentException("Particle resource must match dialogue cue kind");
         if ((kind == Kind.SOUND) != (sound != null))
             throw new IllegalArgumentException("Sound parameters must match dialogue cue kind");
+    }
+
+    public DialogueCue(Kind kind, double value, ResourceLocation particle, Sound sound) {
+        this(kind, value, particle, sound, null);
+    }
+
+    public static boolean validTarget(String target) {
+        return target != null && (target.equals("nearest_participant")
+                || target.matches("role:[a-z0-9][a-z0-9_./-]{0,255}"));
     }
 
     public DialogueCue(Kind kind, double value, ResourceLocation particle) {
@@ -99,6 +110,8 @@ public record DialogueCue(Kind kind, double value, ResourceLocation particle, So
         String normalized = raw.trim().toLowerCase(Locale.ROOT);
         if (normalized.split("[=:]", 2)[0].trim().equals("particle")) return parseParticle(normalized);
         if (normalized.split("[=:]", 2)[0].trim().equals("sound")) return parseSound(normalized);
+        if (normalized.matches("look[=:].*") && validTarget(normalized.substring(5).trim()))
+            return new DialogueCue(Kind.LOOK_TARGET, 0, null, null, normalized.substring(5).trim());
         String[] parts = normalized.split("[=:]", -1);
         String name = parts[0].trim();
         if (!TAGS.contains(name)) return null;

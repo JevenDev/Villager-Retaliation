@@ -107,6 +107,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
+                .listener(com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources::sync)
                 .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodes::syncCatalog)
                 .listener(com.jvn.villagerretaliation.interaction.work.mining.OreNodeDefinitions::onTagsUpdated)
                 .listener(com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets::onTagsUpdated)

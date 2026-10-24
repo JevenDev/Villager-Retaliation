@@ -42,10 +42,12 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool> wordPools;
     private final java.util.Map<String, String> resolvedWords = new java.util.HashMap<>();
     private final RandomSource wordRandom = RandomSource.create();
+    private java.util.Map<String, com.jvn.villagerretaliation.dialogue.DialogueStyle> styles;
 
     private AuthoringDialoguePreview(DialoguePreviewSession session, Entity target, String start,
             PreviewConditions conditions, Runnable returnToEditor, java.util.function.Consumer<PreviewCoverage> coverage) {
         this.session = session;
+        this.styles = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
         this.coverage = coverage;
         this.conditions = conditions;
         this.target = target;
@@ -115,6 +117,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     public static void refreshPresentation(JsonObject latest) {
         var preview = active;
         if (preview == null) return;
+        preview.styles = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
         preview.session.refreshPresentation(latest);
         preview.update(preview.screen);
     }
@@ -216,7 +219,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         var presentation = ConversationLinePresentation.read(line);
         var speech = new DialogueSpeech(speaker == null ? null : speaker.getUUID(), speaker == null ? -1 : speaker.getId(),
                 speaker == null ? "" : speaker.getName().getString(),
-                DialogueTextSegment.parse(text, DialogueTextEffects.read(line)), presentation.camera());
+                DialogueTextSegment.parse(text, DialogueTextEffects.read(line), styles), presentation.camera());
         screen.presentLocalLine(speech);
         if (preserve) {
             screen.seekPreviewTimeline(previous.position());
@@ -260,6 +263,15 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         var server = Minecraft.getInstance().getSingleplayerServer();
         if (server != null) return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedPool(server, locale, id);
         return PreviewWordPools.bundled(id, locale);
+    }
+
+    @Override public java.util.Map<String, Entity> dialogueRoles() {
+        var result = new java.util.LinkedHashMap<String, Entity>();
+        for (var entity : cameraSubjects()) conditions.speakers().forEach((role, id) -> {
+            if (entity.getUUID().equals(id)) result.put(role, entity);
+        });
+        result.put("provider", target);
+        return result;
     }
 
     @Override public List<Entity> cameraSubjects() {
