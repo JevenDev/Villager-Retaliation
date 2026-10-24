@@ -114,6 +114,7 @@ final class ImGuiAuthoringEditor {
     private final ImString linkedQuest = new ImString(512);
     private final ImString nextStage = new ImString(256);
     private final EditorQuestFlow questFlow = new EditorQuestFlow();
+    private final EditorQuestObjectives questObjectives = new EditorQuestObjectives();
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
     private final ImString fieldName = new ImString(256);
@@ -2377,7 +2378,9 @@ final class ImGuiAuthoringEditor {
 
     private void guidedObjective() {
         if (document.kind() != DefinitionKind.QUEST || selectedNode.isEmpty() || !EditorWidgets.section("Add quest objective")) return;
+        EditorQuestObjectives.summaries(document, selectedNode, this::setPointer);
         if (ImGui.beginCombo(EditorWidgets.field("Objective"), objectiveType.replace('_', ' '))) {
+            if (ImGui.selectable("Rescue captive", objectiveType.equals("rescue"))) objectiveType = "rescue";
             for (String type : com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry.descriptors().stream().map(value -> value.id()).sorted().toList())
                 if (ImGui.selectable(type.replace('_', ' '), objectiveType.equals(type))) objectiveType = type;
             ImGui.endCombo();
@@ -2392,16 +2395,30 @@ final class ImGuiAuthoringEditor {
                         registry.keySet().stream().map(Object::toString).sorted().toList(), objectiveResource::set, library, this::attempt);
             }
             ImGui.inputInt(EditorWidgets.field("Required count"), objectiveCount);
-        } else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
+        } else if (EditorQuestObjectives.guided(objectiveType)) questObjectives.fields(objectiveType);
+        else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
+        questObjectives.common();
         if (ImGui.button("Track a player death")) operation(() -> {
             String added = EditorContentTools.appendObjective(document, selectedNode, EditorProgressConditions.deathObjective());
             refresh(); setPointer(added);
         });
-        ImGui.textWrapped("The objective is added to this stage's completion requirements.");
+        ImGui.textWrapped("Required objectives are added to this stage's completion requirements.");
         if (ImGui.button("Add objective")) operation(() -> {
             String added;
             if (List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade").contains(objectiveType)) {
-                added = EditorContentTools.appendObjective(document, selectedNode, objectiveType, objectiveResource.get(), objectiveCount.get());
+                if (objectiveCount.get() < 1) throw new IllegalArgumentException("Required count must be positive");
+                var template = new JsonObject();
+                template.addProperty("type", objectiveType);
+                template.addProperty("count", objectiveCount.get());
+                String field = objectiveType.equals("item_check") ? "item" : objectiveType.equals("mob_kill") ? "entity"
+                        : objectiveType.equals("trade") ? "" : "block";
+                if (!field.isEmpty()) {
+                    if (net.minecraft.resources.ResourceLocation.tryParse(objectiveResource.get()) == null) throw new IllegalArgumentException("Choose a valid resource ID");
+                    template.addProperty(field, objectiveResource.get());
+                }
+                added = questObjectives.append(document, selectedNode, objectiveType, template);
+            } else if (EditorQuestObjectives.guided(objectiveType)) {
+                added = questObjectives.append(document, selectedNode, objectiveType, questObjectives.template(objectiveType, document.id()));
             } else {
                 JsonObject template = new JsonObject();
                 template.addProperty("type", objectiveType);
@@ -2410,7 +2427,7 @@ final class ImGuiAuthoringEditor {
                 JsonObject objectiveSchema = model.effective(schema.getAsJsonObject("$defs").getAsJsonObject("objective"), template);
                 JsonObject seeded = model.seed(objectiveSchema).getAsJsonObject();
                 seeded.addProperty("type", objectiveType);
-                added = EditorContentTools.appendObjective(document, selectedNode, seeded);
+                added = questObjectives.append(document, selectedNode, objectiveType, seeded);
             }
             refresh(); setPointer(added);
         });

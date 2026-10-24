@@ -202,7 +202,7 @@ final class EditorContentTools {
                 if (previous.isJsonObject() && (!previous.getAsJsonObject().has("optional") || !previous.getAsJsonObject().get("optional").getAsBoolean()))
                     completion.add(DialogueGraph.string(previous.getAsJsonObject(), "id"));
             }
-            completion.add(id);
+            if (!objective.has("optional") || !objective.get("optional").getAsBoolean()) completion.add(id);
             owner.add("complete_when", completion);
         });
         return node.pointer() + "/objectives/" + ids.size();

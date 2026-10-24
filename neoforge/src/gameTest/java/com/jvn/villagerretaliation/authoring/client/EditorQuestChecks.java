@@ -19,7 +19,10 @@ final class EditorQuestChecks {
         progressionPreservesChoicesAndSupportsUndo();
         conditionalRoutesAppearInTheGraph();
         invalidRoutesDoNotChangeDrafts();
-        return 3;
+        advancedObjectivesCreateCompleteSetups();
+        optionalObjectivesStayOutOfCompletionRequirements();
+        conflictingFollowersRejectTheWholeEdit();
+        return 6;
     }
 
     static AuthoringDocument quest() {
@@ -61,6 +64,56 @@ final class EditorQuestChecks {
         reject(() -> EditorQuestFlow.add(document, "start", EditorQuestFlow.Route.CHOICE, "complete", "", "", "", new JsonArray()));
         reject(() -> EditorQuestFlow.add(document, "start", EditorQuestFlow.Route.CONDITIONAL, "complete", "", "", "progress", new JsonArray()));
         check(document.json().equals(before), "invalid progression never partially changes content");
+    }
+
+    private static void advancedObjectivesCreateCompleteSetups() {
+        for (String type : List.of("location_visit", "structure_visit", "follower_arrival", "rescue", "criterion", "fact")) {
+            var document = quest();
+            var original = document.json();
+            var setup = new EditorQuestObjectives.Setup(new EditorQuestObjectives.Location("minecraft:overworld", 0, 64, 0, 4),
+                    "minecraft:pillager_outpost", "companion", "quest_destination", "villagerretaliation:captive_rescued", "done");
+            var objective = EditorQuestObjectives.template(type, document.id(), setup);
+            var target = type.equals("rescue") ? json("""
+                    {"dimension":"minecraft:overworld","site":{"selection":"prefer_existing","structures":["minecraft:pillager_outpost"],
+                     "templates":["villagerretaliation:quest/holding_camp"],"rescue":"escort_home","min_distance":256,"max_distance":2048}}
+                    """) : null;
+            String path = EditorQuestObjectives.append(document, "start", objective,
+                    type.equals("follower_arrival") ? EditorQuestObjectives.follower("companion", "quest_companion") : null, target);
+            check(JsonPointers.get(document.json(), path) != null, "advanced objective is created");
+            var issues = com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(document.json(),
+                    com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export());
+            check(issues.isEmpty(), type + " setup follows the runtime schema: " + issues);
+            if (type.equals("follower_arrival")) check(document.json().getAsJsonArray("stages").get(0).getAsJsonObject().getAsJsonArray("followers").size() == 1,
+                    "escort setup includes its actor binding");
+            if (type.equals("rescue")) check(document.json().getAsJsonObject("target").getAsJsonObject("site").get("rescue").getAsString().equals("escort_home"),
+                    "rescue setup includes its site");
+            document.undo();
+            check(document.json().equals(original), "objective and related setup undo together");
+        }
+    }
+
+    private static void optionalObjectivesStayOutOfCompletionRequirements() {
+        var document = quest();
+        EditorContentTools.appendObjective(document, "start", json("""
+                {"type":"trade","count":1}
+                """));
+        EditorContentTools.appendObjective(document, "start", json("""
+                {"type":"trade","count":2,"optional":true}
+                """));
+        var stage = document.json().getAsJsonArray("stages").get(0).getAsJsonObject();
+        check(stage.getAsJsonArray("complete_when").size() == 1 && stage.getAsJsonArray("objectives").size() == 2,
+                "optional objectives do not become required");
+    }
+
+    private static void conflictingFollowersRejectTheWholeEdit() {
+        var document = quest();
+        var objective = json("""
+                {"type":"follower_arrival","match":{"actor":"companion","destination_tag":"home"}}
+                """);
+        EditorQuestObjectives.append(document, "start", objective, EditorQuestObjectives.follower("companion", "first"), null);
+        var original = document.json();
+        reject(() -> EditorQuestObjectives.append(document, "start", objective, EditorQuestObjectives.follower("companion", "other"), null));
+        check(document.json().equals(original), "conflicting follower settings do not partially append an objective");
     }
 
     static JsonObject json(String text) { return JsonParser.parseString(text).getAsJsonObject(); }
