@@ -93,6 +93,7 @@ public final class QuestPlaytestSession {
     }
 
     public static synchronized void close(MinecraftServer server, UUID player) {
+        QuestPlaytestScenarios.close(server, player);
         var sessions = SESSIONS.get(server);
         if (sessions != null) {
             sessions.keySet().removeIf(key -> key.player().equals(player));

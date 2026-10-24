@@ -22,6 +22,12 @@ final class EditorQuestLinks {
     record Link(AuthoringDocument document, String source) { }
     private Kind kind = Kind.CONVERSATION;
     private final ImString name = new ImString("briefing", 128);
+    private AuthoringWorkspace cachedWorkspace;
+    private AuthoringDocument cachedQuest;
+    private String cachedStage = "";
+    private List<AuthoringDocument> cachedDocuments = List.of();
+    private long[] cachedRevisions = new long[0];
+    private List<Link> cachedLinks = List.of();
 
     static List<Link> linked(AuthoringWorkspace workspace, AuthoringDocument quest, String stage) {
         var node = EditorQuestFlow.stage(quest, stage);
@@ -226,10 +232,23 @@ final class EditorQuestLinks {
         });
     }
 
+    private List<Link> cachedLinks(AuthoringWorkspace workspace, AuthoringDocument quest, String stage) {
+        var documents = workspace.documents();
+        boolean current = cachedWorkspace == workspace && cachedQuest == quest && cachedStage.equals(stage) && cachedDocuments.equals(documents);
+        if (current) for (int i = 0; i < documents.size(); i++) if (documents.get(i).revision() != cachedRevisions[i]) { current = false; break; }
+        if (!current) {
+            cachedLinks = linked(workspace, quest, stage);
+            cachedWorkspace = workspace; cachedQuest = quest; cachedStage = stage;
+            cachedDocuments = List.copyOf(documents);
+            cachedRevisions = documents.stream().mapToLong(AuthoringDocument::revision).toArray();
+        }
+        return cachedLinks;
+    }
+
     void render(AuthoringWorkspace workspace, AuthoringDocument quest, String stage, Consumer<ImGuiAuthoringEditor.EditorOperation> run,
                 Consumer<AuthoringDocument> open) {
         if (quest.kind() != DefinitionKind.QUEST || stage.isEmpty() || !EditorWidgets.section("Related quest content")) return;
-        for (var link : linked(workspace, quest, stage)) {
+        for (var link : cachedLinks(workspace, quest, stage)) {
             if (ImGui.button("Open " + link.document().id() + "##" + link.document().resourcePath())) run.accept(() -> open.accept(link.document()));
             if (ImGui.isItemHovered()) ImGui.setTooltip(link.source());
         }

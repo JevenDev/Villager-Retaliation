@@ -34,6 +34,7 @@ final class EditorQuestSettings {
     private final ImInt experience = new ImInt(25), reputation = new ImInt(0), deadline = new ImInt(12000);
     private String metric = "elapsed_ticks", stage = "";
     private boolean maximum = true;
+    private final ImString journalTitle = new ImString("Village task", 512), journalDescription = new ImString("Help the village.", 2048);
     private final ImString routeId = new ImString("discovered", 128), match = new ImString("minecraft:paper", 256);
     private String discoveryEvent = "item_acquired", discoveryMode = "offer";
 
@@ -106,7 +107,7 @@ final class EditorQuestSettings {
         document.edit("Add quest discovery route", root -> root.add("discovery", routes));
     }
 
-    void render(AuthoringDocument document, Fields fields, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable refresh) {
+    void render(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document, Fields fields, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable refresh) {
         var root = document.json();
         for (var section : SECTIONS) {
             if (!EditorWidgets.section(section.title())) continue;
@@ -117,6 +118,17 @@ final class EditorQuestSettings {
                 defaults(document, section.field(), JsonParser.parseString(section.defaults())); refresh.run();
             });
             if (root.has(section.field())) fields.render(root.get(section.field()), "/" + section.field(), section.title());
+            if (section.field().equals("display")) {
+                var display = EditorSchema.object(root.get("display"));
+                if (!display.has("title")) {
+                    ImGui.inputText(EditorWidgets.field("Quest title"), journalTitle);
+                    if (ImGui.button("Add journal title")) run.accept(() -> { journalText(workspace, document, "title", journalTitle.get()); refresh.run(); });
+                }
+                if (!display.has("description")) {
+                    ImGui.inputTextMultiline(EditorWidgets.field("Quest description"), journalDescription, -1, 80);
+                    if (ImGui.button("Add journal description")) run.accept(() -> { journalText(workspace, document, "description", journalDescription.get()); refresh.run(); });
+                }
+            }
             if (section.field().equals("provider") && root.has("provider") && ImGui.button("Add profession filters")) run.accept(() -> {
                 defaults(document, "provider", JsonParser.parseString("{\"filters\":{\"professions\":[]}}")); refresh.run();
             });
@@ -130,6 +142,15 @@ final class EditorQuestSettings {
                     || List.of("world_campaign", "story_arc").contains(entry.getKey())) continue;
             fields.render(entry.getValue(), "/" + JsonPointers.escape(entry.getKey()), entry.getKey().replace('_', ' '));
         }
+    }
+
+    static void journalText(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document, String field, String text) {
+        if (!List.of("title", "description").contains(field)) throw new IllegalArgumentException("Choose journal title or description");
+        var root = document.json();
+        var display = EditorSchema.object(root.get("display"));
+        if (display.has(field)) throw new IllegalArgumentException("Edit the existing journal wording above");
+        display.addProperty(field, text); root.add("display", display);
+        workspace.editQuestWithMessages(document, root, java.util.Map.of("/display/" + field, text));
     }
 
     private void availability(AuthoringDocument document, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable refresh) {

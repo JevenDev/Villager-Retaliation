@@ -58,6 +58,7 @@ public final class AuthoringEditorClientSmoke {
     private static int frames;
     private static int keyRelease = -1;
     private static boolean workflowControls, workflowLists;
+    private static boolean questLiveControls;
     private static boolean deletionTyping, deletionFocus;
     private static final imgui.type.ImString deletionText = new imgui.type.ImString("Keep typing", 128);
     private static final float[][] workflowHandles = new float[3][], workflowTargets = new float[3][];
@@ -172,6 +173,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::checkShortcutPopup);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderVariableControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::preparePanelSections);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQuestLiveControls);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
@@ -1006,6 +1008,12 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if ("quests".equals(System.getProperty("villagerretaliation.authoringEditorPlaytestSmokeOnly"))) {
+            buildQuestAuthoringSteps();
+            buildLiveWorldSteps();
+            finishSteps("Guided quest authoring forms, linked content and current-world playtesting passed.");
+            return;
+        }
         if ("improvements".equals(System.getProperty("villagerretaliation.authoringEditorPlaytestSmokeOnly"))) {
             STEPS.add(() -> {
                 try { workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-playtest-improvements")); }
@@ -1619,6 +1627,78 @@ public final class AuthoringEditorClientSmoke {
             finished = true;
             Minecraft.getInstance().stop();
         });
+    }
+
+    private static void buildQuestAuthoringSteps() {
+        var previous = new AuthoringDocument[1];
+        STEPS.add(() -> {
+            previous[0] = document;
+            document = workspace.createDocument(DefinitionKind.QUEST, "test:quest_authoring");
+            DialogueGraph.addNode(document, "finish");
+            EditorQuestFlow.add(workspace, document, "start", EditorQuestFlow.Route.CHOICE, "stage", "finish", "I'll help the village", "", new com.google.gson.JsonArray());
+            EditorQuestSettings.defaults(document, "availability", JsonParser.parseString("{\"repeatable\":true,\"prerequisites\":[]}"));
+            EditorQuestSettings.performanceTier(document, "swift", "elapsed", "elapsed_ticks", "", "", "", 1200, true, 25, 2);
+            EditorQuestLinks.create(workspace, document, "start", EditorQuestLinks.Kind.CONVERSATION, "briefing");
+            EditorQuestLinks.create(workspace, document, "start", EditorQuestLinks.Kind.SCENE, "arrival");
+            EditorQuestLinks.create(workspace, document, "start", EditorQuestLinks.Kind.ENCOUNTER, "ambush");
+            require(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR),
+                    "Guided quest content validates before opening its forms.");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("guideStep", -1); set("view", 0); set("focusMode", "Details###VR_Details");
+            ((imgui.type.ImString) field(editor, "pointer")).set("/stages/0/transition");
+            panelSections.add(new PanelSection("Details###VR_Focused", "Stage progression", true));
+        });
+        pause(400);
+        STEPS.add(() -> {
+            capture("quest-01-stage-progression");
+            panelSections.add(new PanelSection("Details###VR_Focused", "Stage progression", false));
+            panelSections.add(new PanelSection("Details###VR_Focused", "Related quest content", true));
+        });
+        pause(300);
+        STEPS.add(() -> {
+            capture("quest-02-linked-content");
+            panelSections.add(new PanelSection("Details###VR_Focused", "Related quest content", false));
+            panelSections.add(new PanelSection("Details###VR_Focused", "Add quest objective", true));
+            set("objectiveType", "follower_arrival");
+        });
+        pause(300);
+        STEPS.add(() -> capture("quest-03-escort-objective"));
+        STEPS.add(() -> {
+            set("selectedNode", ""); ((imgui.type.ImString) field(editor, "pointer")).set("");
+            panelSections.add(new PanelSection("Details###VR_Focused", "Add quest objective", false));
+            panelSections.add(new PanelSection("Details###VR_Focused", "Prerequisites, repeatability and turn-in", true));
+        });
+        pause(300);
+        STEPS.add(() -> {
+            capture("quest-04-settings");
+            panelSections.add(new PanelSection("Details###VR_Focused", "Prerequisites, repeatability and turn-in", false));
+            panelSections.add(new PanelSection("Details###VR_Focused", "Performance reward tiers", true));
+        });
+        pause(300);
+        STEPS.add(() -> {
+            capture("quest-05-performance-rewards");
+            questLiveControls = true;
+        });
+        pause(300);
+        STEPS.add(() -> {
+            capture("quest-06-live-test-controls");
+            questLiveControls = false;
+            set("focusMode", "");
+            document = previous[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+        });
+    }
+
+    private static void renderQuestLiveControls() {
+        if (!questLiveControls) return;
+        var viewport = ImGui.getMainViewport();
+        ImGui.setNextWindowPos(viewport.getWorkPosX() + 80, viewport.getWorkPosY() + 60);
+        ImGui.setNextWindowSize(640, viewport.getWorkSizeY() - 100);
+        ImGui.begin("Quest live test controls");
+        ((EditorQuestLiveTests) field(editor, "questLiveTests")).render(workspace, document, operation -> {
+            try { operation.run(); } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        ImGui.end();
     }
 
     private static void buildWorkflowSteps() {
@@ -2701,6 +2781,12 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require(!EditorLiveQuestTest.view().lines().isEmpty(), "The visible Log tab loads runtime diagnostics.");
             capture("31b-playtest-log");
+        });
+        click(() -> poolPoint(1740, 337));
+        pause(300);
+        STEPS.add(() -> {
+            require(field(field(editor, "questLiveTests"), "owner") == document, "The Live tests tab renders the selected quest's saved scenarios.");
+            capture("31c-live-test-tab");
         });
         click(() -> poolPoint(1320, 337));
         pause(300);

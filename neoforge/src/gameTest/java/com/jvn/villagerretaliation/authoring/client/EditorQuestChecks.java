@@ -28,7 +28,9 @@ final class EditorQuestChecks {
         linkedContentUsesItsQuestBundleAndGroupedUndo();
         linkedContentRejectsCollisionsBeforeCreatingFiles();
         authoredWordingExportsAsLocalizedQuestContent();
-        return 12;
+        savedLiveTestsRoundTripAndKeepTheirOwnSteps();
+        invalidLiveTestsRejectUnboundedOrMalformedData();
+        return 14;
     }
 
     static AuthoringDocument quest() {
@@ -45,6 +47,10 @@ final class EditorQuestChecks {
         var before = document.json();
         EditorQuestFlow.add(document, "start", EditorQuestFlow.Route.AUTOMATIC, "fail", "", "", "", new JsonArray());
         check(JsonPointers.get(document.json(), path).getAsJsonObject().get("label").getAsString().equals("Help"), "endings preserve authored choices");
+        EditorQuestFlow.removeAutomatic(document, "start");
+        check(!document.json().getAsJsonArray("stages").get(0).getAsJsonObject().has("transition")
+                && JsonPointers.get(document.json(), path) != null, "automatic progression can be removed while preserving player choices");
+        document.undo();
         document.undo();
         check(document.json().equals(before), "progression edits undo atomically");
         check(DialogueGraph.edges(document).stream().anyMatch(edge -> edge.to().equals("finish")), "player branches have graph edges");
@@ -216,6 +222,8 @@ final class EditorQuestChecks {
         var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-quest-wording"));
         var quest = workspace.createDocument(DefinitionKind.QUEST, "test:wording");
         DialogueGraph.addNode(quest, "finish");
+        EditorQuestSettings.journalText(workspace, quest, "title", "A village promise");
+        EditorQuestSettings.journalText(workspace, quest, "description", "Help your neighbors prepare for winter.");
         String choice = EditorQuestFlow.add(workspace, quest, "start", EditorQuestFlow.Route.CHOICE, "stage", "finish", "I can help", "", new JsonArray());
         check(JsonPointers.get(quest.json(), choice + "/label").isJsonObject(), "quest choices use translation references");
         var draft = new AuthoringDocument(quest.kind(), quest.resourcePath(), quest.json());
@@ -227,6 +235,28 @@ final class EditorQuestChecks {
         EditorQuestSettings.performanceTier(quest, "swift", "time", "elapsed_ticks", "", "", "", 100, true, 20, 1);
         var errors = workspace.validate().stream().filter(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
         check(errors.isEmpty(), "new progression, objectives and reward tiers form a valid canonical bundle: " + errors);
+    }
+
+    private static void savedLiveTestsRoundTripAndKeepTheirOwnSteps() {
+        var steps = new java.util.ArrayList<com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Step>();
+        steps.add(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Step("wait", "", "20"));
+        var checks = List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Expectation("state", "", "expired"));
+        var test = new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest("before", false, steps, checks);
+        steps.clear();
+        check(test.steps().size() == 1 && test.waitingTicks() == 20, "saved live tests own their bounded step list");
+        check(com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.read(test.json()).equals(test), "live tests round trip through editor metadata");
+    }
+
+    private static void invalidLiveTestsRejectUnboundedOrMalformedData() {
+        var checks = List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Expectation("state", "", "active"));
+        reject(() -> new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest("before", true,
+                List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Step("wait", "", "12001")), checks));
+        reject(() -> new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest("before", true,
+                List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Step("force", "", "")), checks));
+        reject(() -> com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.read(json("""
+                {"baseline":"before","manual":"false","steps":[],"expectations":[]}
+                """)));
+        reject(() -> new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest("", true, List.of(), checks));
     }
 
     static JsonObject json(String text) { return JsonParser.parseString(text).getAsJsonObject(); }

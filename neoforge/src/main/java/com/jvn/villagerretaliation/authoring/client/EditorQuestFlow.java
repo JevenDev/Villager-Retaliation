@@ -75,6 +75,11 @@ final class EditorQuestFlow {
         return path;
     }
 
+    static void removeAutomatic(AuthoringDocument document, String stage) {
+        var node = stage(document, stage);
+        document.edit("Remove automatic quest progression", root -> JsonPointers.get(root, node.pointer()).getAsJsonObject().remove("transition"));
+    }
+
     private static boolean containsId(JsonArray values, String id) {
         return values.asList().stream().anyMatch(value -> value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")));
     }
@@ -88,6 +93,11 @@ final class EditorQuestFlow {
             if (!owner.has(field)) continue;
             if (field.equals("transition")) {
                 if (ImGui.button("Edit automatic progression")) inspect.accept(node.pointer() + "/transition");
+                EditorWidgets.sameLineFor("Remove automatic progression");
+                if (ImGui.button("Remove automatic progression")) run.accept(() -> {
+                    removeAutomatic(document, selected);
+                    refresh.run(); inspect.accept(node.pointer());
+                });
                 ImGui.textWrapped(summary(owner.getAsJsonObject(field)));
             } else {
                 var values = DialogueGraph.array(owner, field);
@@ -127,6 +137,8 @@ final class EditorQuestFlow {
         ImGui.textWrapped(route == Route.AUTOMATIC ? "Runs when stage completion requirements are met."
                 : route == Route.CHOICE ? "Players choose this route in quest dialogue. Edit its conditions and presentation in Details."
                 : "Runs when the quest event occurs and its conditions match. Edit the condition before playtesting.");
+        if (route == Route.CHOICE && owner.has("transition"))
+            ImGui.textWrapped("An automatic result is also configured. Remove it if players must choose a route.");
         boolean replacing = route == Route.AUTOMATIC && owner.has("transition");
         if (replacing) ImGui.textWrapped("Adding automatic progression replaces the current automatic result.");
         ImGui.beginDisabled(outcome.equals("stage") && destination.isBlank());

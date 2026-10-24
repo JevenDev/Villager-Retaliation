@@ -117,6 +117,7 @@ final class ImGuiAuthoringEditor {
     private final EditorQuestObjectives questObjectives = new EditorQuestObjectives();
     private final EditorQuestSettings questSettings = new EditorQuestSettings();
     private final EditorQuestLinks questLinks = new EditorQuestLinks();
+    private final EditorQuestLiveTests questLiveTests = new EditorQuestLiveTests();
     private AuthoringDocument returnQuest;
     private String returnStage = "";
     private final ImString jsonText = new ImString(1_048_576);
@@ -2527,7 +2528,7 @@ final class ImGuiAuthoringEditor {
         }
         JsonObject object = selected.getAsJsonObject();
         if (document.kind() == DefinitionKind.QUEST && pointer.get().isEmpty()) {
-            questSettings.render(document, (value, path, label) -> inspectValue(value, path, label, 0), this::operation, this::refresh);
+            questSettings.render(workspace, document, (value, path, label) -> inspectValue(value, path, label, 0), this::operation, this::refresh);
             return;
         }
         boolean matchMode = EditorProgressConditions.hasMatchMode(object);
@@ -3072,6 +3073,12 @@ final class ImGuiAuthoringEditor {
                         ImGui.endChild();
                         ImGui.endTabItem();
                     }
+                    if (document.kind() == DefinitionKind.QUEST && ImGui.beginTabItem("Live tests")) {
+                        ImGui.beginChild("playtest_live_tests", 0, -ImGui.getTextLineHeightWithSpacing() * 3, false);
+                        questLiveTests.render(workspace, document, this::operation);
+                        ImGui.endChild();
+                        ImGui.endTabItem();
+                    }
                     ImGui.endTabBar();
                 }
             }
@@ -3186,6 +3193,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void applyPlaytestDraft() throws IOException {
+        if (EditorLiveQuestTest.scenarioView().running()) throw new IllegalStateException("Stop saved live tests before applying quest changes");
         if (document.kind() != DefinitionKind.QUEST) {
             var errors = workspace.validate().stream().filter(issue -> issue.severity() == AuthoringDiagnostic.Severity.ERROR).toList();
             if (!errors.isEmpty()) throw new IllegalArgumentException(errors.getFirst().resourcePath() + errors.getFirst().pointer() + ": " + errors.getFirst().message());

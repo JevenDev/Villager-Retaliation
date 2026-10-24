@@ -47,6 +47,17 @@ public final class QuestPlaytestBaseline {
         String name = name(value);
         var saved = snapshots(player, quest);
         if (!saved.containsKey(name) && saved.size() >= 8) throw new IllegalStateException("Delete a baseline before saving another. Each quest supports eight baselines.");
+        saved.put(name, snapshot(player, quest));
+    }
+
+    public static Runnable checkpoint(ServerPlayer player, ResourceLocation quest) {
+        var baseline = snapshot(player, quest);
+        boolean hold = QuestPlaytestSession.require(player, quest).hold();
+        return () -> { restore(player, quest, baseline); QuestPlaytestSession.require(player, quest).hold(hold); };
+    }
+
+    private static Snapshot snapshot(ServerPlayer player, ResourceLocation quest) {
+        snapshots(player, quest);
         var selection = QuestPlaytestSession.selection(player);
         if (selection == null || !selection.quest().equals(quest)) throw new IllegalStateException("Prepare a quest offer before saving a baseline");
         var progress = VillagerQuestSavedData.get(player.serverLevel()).debugSnapshotQuest(player.getUUID(), quest);
@@ -56,15 +67,20 @@ public final class QuestPlaytestBaseline {
         var reputation = selection.provider() == null ? null : VillagerReputationSavedData.get(player.serverLevel()).get(selection.provider(), player.getUUID());
         var inventory = new java.util.ArrayList<ItemStack>();
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) inventory.add(player.getInventory().getItem(i).copy());
-        saved.put(name, new Snapshot(player.level().dimension(), player.position(), player.getYRot(), player.getXRot(),
+        return new Snapshot(player.level().dimension(), player.position(), player.getYRot(), player.getXRot(),
                 inventory, player.getInventory().selected, player.experienceLevel, player.totalExperience, player.experienceProgress,
                 progress, scopes, selection, reputation == null ? null : reputation.reputation(),
-                com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(player.serverLevel()).offers(player.getUUID()).get(quest)));
+                com.jvn.villagerretaliation.quest.discovery.QuestDiscoverySavedData.get(player.serverLevel()).offers(player.getUUID()).get(quest));
     }
 
     public static void restore(ServerPlayer player, ResourceLocation quest, String value) {
         var baseline = snapshots(player, quest).get(name(value));
         if (baseline == null) throw new IllegalArgumentException("Choose a saved baseline");
+        restore(player, quest, baseline);
+    }
+
+    private static void restore(ServerPlayer player, ResourceLocation quest, Snapshot baseline) {
+        snapshots(player, quest);
         var level = player.server.getLevel(baseline.dimension());
         var providerLevel = player.server.getLevel(baseline.provider().dimension());
         if (level == null || providerLevel == null) throw new IllegalStateException("A baseline dimension is unavailable");

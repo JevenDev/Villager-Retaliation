@@ -30,6 +30,9 @@ public final class EditorLiveQuestTest {
     private static volatile boolean inspecting;
     static boolean focusMenu() { return focusMenu; }
     static void diagnostics(boolean value) { diagnostics = value; }
+    private static volatile com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.View scenarioView =
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.View.empty();
+    static com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.View scenarioView() { return scenarioView; }
     private static volatile List<String> baselineNames = List.of();
     static List<String> baselineNames() { return baselineNames; }
     private static UUID testPlayer;
@@ -52,6 +55,7 @@ public final class EditorLiveQuestTest {
         diagnostics = false;
         inspecting = false;
         baselineNames = List.of();
+        scenarioView = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.View.empty();
         requests.incrementAndGet();
         var server = testServer;
         var player = testPlayer;
@@ -346,6 +350,20 @@ public final class EditorLiveQuestTest {
         });
     }
 
+    static void runScenarios(AuthoringWorkspace workspace, AuthoringDocument document, com.google.gson.JsonObject tests) {
+        var saved = tests.deepCopy();
+        submit(workspace, document, (player, quest) -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.start(player, quest, saved);
+            return "Running saved live quest tests";
+        });
+    }
+
+    static void cancelScenarios() {
+        var server = testServer; var player = testPlayer;
+        if (server != null && player != null && !server.isStopped())
+            server.execute(() -> com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.cancel(server, player));
+    }
+
     private static void submit(AuthoringWorkspace workspace, AuthoringDocument document, Action action) {
         submit(workspace, document, action, true);
     }
@@ -362,6 +380,7 @@ public final class EditorLiveQuestTest {
             throw new IllegalArgumentException("Set up quest testing in the current world first");
         if (EditorTestWorld.applying()) throw new IllegalStateException("Wait for the draft to finish applying");
         if (view.busy()) throw new IllegalStateException("Wait for the current quest operation to finish");
+        if (!inspection && scenarioView.running()) throw new IllegalStateException("Stop saved live tests before using manual quest controls");
         if (requireCurrent && !EditorTestWorld.currentLogic(workspace)) throw new IllegalArgumentException("Quest logic changed. Use Apply changes in Playtest to load this draft.");
         boolean trackCoverage = EditorTestWorld.currentLogic(workspace);
         var source = document.json();
@@ -393,6 +412,7 @@ public final class EditorLiveQuestTest {
                 boolean nextBringRescue = controls != null && controls.bringRescue();
                 var nextRescue = com.jvn.villagerretaliation.quest.site.QuestSiteService.rescue(player, quest);
                 var nextSnapshot = VillagerQuestService.debugPlaytestView(player, quest);
+                var nextScenarios = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestScenarios.view(player, quest);
                 var nextBaselines = controls == null ? List.<String>of() : com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, quest);
                 List<String> lines = new ArrayList<>();
                 var progress = com.jvn.villagerretaliation.quest.VillagerQuestSavedData.get(player.serverLevel()).get(playerId, quest);
@@ -416,6 +436,7 @@ public final class EditorLiveQuestTest {
                     bringRescue = nextBringRescue;
                     rescue = nextRescue;
                     baselineNames = nextBaselines;
+                    scenarioView = nextScenarios;
                     snapshot = nextSnapshot;
                     view = new View(quest.toString(), message.isBlank() ? previous.message() : message, summary, List.copyOf(lines), false);
                 });
