@@ -22,7 +22,10 @@ final class EditorQuestChecks {
         advancedObjectivesCreateCompleteSetups();
         optionalObjectivesStayOutOfCompletionRequirements();
         conflictingFollowersRejectTheWholeEdit();
-        return 6;
+        questSettingsPreserveAuthoredValues();
+        performanceTiersValidateReferencesAndPriority();
+        discoveryRoutesValidateBeforeChangingTheDraft();
+        return 9;
     }
 
     static AuthoringDocument quest() {
@@ -114,6 +117,50 @@ final class EditorQuestChecks {
         var original = document.json();
         reject(() -> EditorQuestObjectives.append(document, "start", objective, EditorQuestObjectives.follower("companion", "other"), null));
         check(document.json().equals(original), "conflicting follower settings do not partially append an objective");
+    }
+
+    private static void questSettingsPreserveAuthoredValues() {
+        var document = quest();
+        document.edit("Existing settings", root -> root.add("availability", json("""
+                {"repeatable":true,"max_completions":5,"expiration":{"after_ticks":40,"notify":false}}
+                """)));
+        var before = document.json();
+        EditorQuestSettings.defaults(document, "availability", json("""
+                {"repeatable":false,"max_completions":0,"prerequisites":[],"expiration":{"after_ticks":100,"consume":true}}
+                """));
+        var availability = document.json().getAsJsonObject("availability");
+        check(availability.get("repeatable").getAsBoolean() && availability.get("max_completions").getAsInt() == 5, "setup shortcuts preserve authored limits");
+        check(availability.getAsJsonObject("expiration").get("after_ticks").getAsInt() == 40
+                && availability.getAsJsonObject("expiration").get("consume").getAsBoolean(), "nested settings only fill missing values");
+        document.undo();
+        check(document.json().equals(before), "settings shortcuts undo atomically");
+    }
+
+    private static void performanceTiersValidateReferencesAndPriority() {
+        var document = quest();
+        EditorQuestSettings.performanceTier(document, "swift", "time", "elapsed_ticks", "", "", "", 100, true, 50, 2);
+        EditorQuestSettings.performanceTier(document, "steady", "time", "elapsed_ticks", "", "", "", 200, true, 20, 1);
+        var performance = com.jvn.villagerretaliation.quest.QuestPerformance.read(document.json().get("performance"));
+        check(performance.select(java.util.Map.of("time", 90.0)).id().equals("swift"), "tier insertion preserves first-match priority");
+        check(performance.select(java.util.Map.of("time", 150.0)).id().equals("steady"), "later tiers match their own bounds");
+        var before = document.json();
+        reject(() -> EditorQuestSettings.performanceTier(document, "bad", "health", "final_health_percent", "missing", "", "", 90, false, 20, 1));
+        reject(() -> EditorQuestSettings.performanceTier(document, "swift", "time", "elapsed_ticks", "", "", "", 100, true, 10, 0));
+        reject(() -> EditorQuestSettings.performanceTier(document, "bad", "time", "deaths", "", "", "", 0, true, 10, 0));
+        check(document.json().equals(before), "invalid tier references and duplicate IDs never change rewards");
+    }
+
+    private static void discoveryRoutesValidateBeforeChangingTheDraft() {
+        var document = quest();
+        EditorQuestSettings.discoveryRoute(document, "letter", "item_acquired", "offer", json("""
+                {"item":"minecraft:paper"}
+                """));
+        var before = document.json();
+        reject(() -> EditorQuestSettings.discoveryRoute(document, "letter", "item_used", "automatic", new JsonObject()));
+        reject(() -> EditorQuestSettings.discoveryRoute(document, "place", "location", "offer", new JsonObject()));
+        check(document.json().equals(before), "duplicate or incomplete discoveries leave the draft intact");
+        document.undo();
+        check(!document.json().has("discovery"), "discovery routes support undo");
     }
 
     static JsonObject json(String text) { return JsonParser.parseString(text).getAsJsonObject(); }

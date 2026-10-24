@@ -115,6 +115,7 @@ final class ImGuiAuthoringEditor {
     private final ImString nextStage = new ImString(256);
     private final EditorQuestFlow questFlow = new EditorQuestFlow();
     private final EditorQuestObjectives questObjectives = new EditorQuestObjectives();
+    private final EditorQuestSettings questSettings = new EditorQuestSettings();
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
     private final ImString fieldName = new ImString(256);
@@ -2508,6 +2509,10 @@ final class ImGuiAuthoringEditor {
             return;
         }
         JsonObject object = selected.getAsJsonObject();
+        if (document.kind() == DefinitionKind.QUEST && pointer.get().isEmpty()) {
+            questSettings.render(document, (value, path, label) -> inspectValue(value, path, label, 0), this::operation, this::refresh);
+            return;
+        }
         boolean matchMode = EditorProgressConditions.hasMatchMode(object);
         if (matchMode) matchMode(object, pointer.get());
         if (object.has("type") && object.get("type").isJsonPrimitive() && object.get("type").getAsString().equals("player_last_death"))
