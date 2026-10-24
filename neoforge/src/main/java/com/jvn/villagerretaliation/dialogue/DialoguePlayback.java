@@ -10,7 +10,7 @@ public final class DialoguePlayback {
     private final long startedAt;
     private final List<Double> revealTimes;
     private final List<TimedCue> cues;
-    private final List<TimedCue> gestureCues;
+    private final List<GestureChange> gestureCues;
     private final List<Pause> pauses;
     private final double duration;
     private final boolean instant;
@@ -25,6 +25,7 @@ public final class DialoguePlayback {
 
     public record TimedCue(double time, DialogueCue cue) { }
     private record Pause(double start, double end) { }
+    private record GestureChange(double time, TimedCue gesture) { }
     public record Pose(float yaw, float pitch) { }
 
     public DialoguePlayback(List<DialogueTextSegment> segments, long startedAt, long millisPerCharacter) {
@@ -38,6 +39,7 @@ public final class DialoguePlayback {
         double end = 0;
         double gazeEnd = 0;
         boolean customGaze = false;
+        var savedGazes = new ArrayList<Boolean>();
         for (var segment : segments) {
             int cueIndex = 0;
             int offset = 0;
@@ -57,6 +59,14 @@ public final class DialoguePlayback {
                             gazeEnd = time + LOOK_TRANSITION_MILLIS;
                             customGaze = true;
                         }
+                        case PUSH_POSE -> savedGazes.add(customGaze);
+                        case POP_POSE -> {
+                            if (!savedGazes.isEmpty()) {
+                                boolean restored = savedGazes.removeLast();
+                                if (customGaze || restored) gazeEnd = time + LOOK_TRANSITION_MILLIS;
+                                customGaze = restored;
+                            }
+                        }
                         case RESET -> {
                             if (customGaze) gazeEnd = time + LOOK_TRANSITION_MILLIS;
                             customGaze = false;
@@ -71,18 +81,30 @@ public final class DialoguePlayback {
                 time += instant ? 0 : millisPerCharacter / speed;
             }
         }
-        var gestures = new ArrayList<TimedCue>();
+        var gestures = new ArrayList<GestureChange>();
+        var savedGestures = new ArrayList<TimedCue>();
+        TimedCue activeGesture = null;
         for (var event : events) {
-            if (event.cue().kind() != DialogueCue.Kind.AGREE && event.cue().kind() != DialogueCue.Kind.DISAGREE
-                    && event.cue().kind() != DialogueCue.Kind.RESET) continue;
+            switch (event.cue().kind()) {
+                case PUSH_POSE -> { savedGestures.add(activeGesture); continue; }
+                case POP_POSE -> {
+                    if (savedGestures.isEmpty()) continue;
+                    var restored = savedGestures.removeLast();
+                    if (java.util.Objects.equals(activeGesture, restored)) continue;
+                    activeGesture = restored;
+                }
+                case AGREE, DISAGREE -> activeGesture = event;
+                case RESET -> activeGesture = null;
+                default -> { continue; }
+            }
             if (!gestures.isEmpty() && gestures.getLast().time() == event.time()) gestures.removeLast();
-            gestures.add(event);
+            gestures.add(new GestureChange(event.time(), activeGesture));
         }
         double gestureEnd = 0;
         for (int index = 0; index < gestures.size(); index++) {
-            var event = gestures.get(index);
-            if (event.cue().kind() == DialogueCue.Kind.RESET) continue;
-            double until = event.time() + gestureDuration(event.cue().kind());
+            var change = gestures.get(index);
+            if (change.gesture() == null) continue;
+            double until = change.gesture().time() + gestureDuration(change.gesture().cue().kind());
             if (index + 1 < gestures.size()) until = Math.min(until, gestures.get(index + 1).time() + LOOK_TRANSITION_MILLIS);
             gestureEnd = Math.max(gestureEnd, until);
         }
@@ -179,18 +201,25 @@ public final class DialoguePlayback {
         Pose from = new Pose(neutralYaw, neutralPitch);
         Pose target = from;
         double turnStarted = -LOOK_TRANSITION_MILLIS;
+        DialogueCue gaze = null;
+        var savedGazes = new ArrayList<DialogueCue>();
         for (var event : cues) {
             if (event.time() > elapsed) break;
-            Pose next = switch (event.cue().kind()) {
-                case LOOK_LEFT -> new Pose(35, 0);
-                case LOOK_RIGHT -> new Pose(-35, 0);
-                case LOOK_UP -> new Pose(0, -22);
-                case LOOK_DOWN -> new Pose(0, 22);
-                case LOOK_PLAYER -> new Pose(playerYaw, playerPitch);
-                case LOOK_TARGET -> targets.apply(event.cue().target());
-                case RESET -> new Pose(neutralYaw, neutralPitch);
-                default -> null;
-            };
+            var cue = event.cue();
+            if (cue.kind() == DialogueCue.Kind.PUSH_POSE) {
+                savedGazes.add(gaze);
+                continue;
+            }
+            Pose next;
+            if (cue.kind() == DialogueCue.Kind.POP_POSE) {
+                if (savedGazes.isEmpty()) continue;
+                gaze = savedGazes.removeLast();
+                next = gazePose(gaze, neutralYaw, neutralPitch, playerYaw, playerPitch, targets);
+                if (next == null) next = new Pose(neutralYaw, neutralPitch);
+            } else {
+                next = gazePose(cue, neutralYaw, neutralPitch, playerYaw, playerPitch, targets);
+                if (next != null) gaze = cue.kind() == DialogueCue.Kind.RESET ? null : cue;
+            }
             if (next != null) {
                 from = interpolate(from, target, (event.time() - turnStarted) / LOOK_TRANSITION_MILLIS);
                 target = next;
@@ -201,20 +230,37 @@ public final class DialoguePlayback {
         if (skipped) return pose;
         float yaw = 0;
         float pitch = 0;
-        for (var gesture : gestureCues) {
-            if (gesture.time() > elapsed) break;
-            float retained = 1 - smoothstep((elapsed - gesture.time()) / LOOK_TRANSITION_MILLIS);
+        for (var change : gestureCues) {
+            if (change.time() > elapsed) break;
+            float retained = 1 - smoothstep((elapsed - change.time()) / LOOK_TRANSITION_MILLIS);
             yaw *= retained;
             pitch *= retained;
-            if (gesture.cue().kind() == DialogueCue.Kind.RESET) continue;
+            var gesture = change.gesture();
+            if (gesture == null) continue;
             double progress = (elapsed - gesture.time()) / gestureDuration(gesture.cue().kind());
             if (progress >= 1) continue;
             double envelope = Math.sin(progress * Math.PI);
             float movement = (float) (Math.sin(progress * Math.PI * 4) * envelope * envelope);
+            if (gesture.time() < change.time()) movement *= 1 - retained;
             if (gesture.cue().kind() == DialogueCue.Kind.AGREE) pitch += movement * 12;
             else yaw += movement * 18;
         }
         return new Pose(pose.yaw() + yaw, pose.pitch() + pitch);
+    }
+
+    private static Pose gazePose(DialogueCue cue, float neutralYaw, float neutralPitch, float playerYaw, float playerPitch,
+            java.util.function.Function<String, Pose> targets) {
+        if (cue == null) return new Pose(neutralYaw, neutralPitch);
+        return switch (cue.kind()) {
+            case LOOK_LEFT -> new Pose(35, 0);
+            case LOOK_RIGHT -> new Pose(-35, 0);
+            case LOOK_UP -> new Pose(0, -22);
+            case LOOK_DOWN -> new Pose(0, 22);
+            case LOOK_PLAYER -> new Pose(playerYaw, playerPitch);
+            case LOOK_TARGET -> targets.apply(cue.target());
+            case RESET -> new Pose(neutralYaw, neutralPitch);
+            default -> null;
+        };
     }
 
     public long durationMillis() { return (long) Math.ceil(duration); }

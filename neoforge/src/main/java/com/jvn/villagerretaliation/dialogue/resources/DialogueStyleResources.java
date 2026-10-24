@@ -12,6 +12,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class DialogueStyleResources {
     public static final int MAX_STYLES = 256;
+    public static final int MAX_CATALOG_CUES = 1024;
     private static volatile Map<String, DialogueStyle> serverStyles = Map.of();
     private static volatile Map<String, DialogueStyle> clientStyles = Map.of();
     private static final ThreadLocal<Map<String, DialogueStyle>> PREVIEW = new ThreadLocal<>();
@@ -28,9 +29,14 @@ public final class DialogueStyleResources {
     public static Map<String, DialogueStyle> server() { return serverStyles; }
 
     public static void replaceClient(Map<String, DialogueStyle> definitions) {
-        if (definitions.size() > MAX_STYLES || definitions.keySet().stream().anyMatch(tag -> !DialogueStyle.validTag(tag)))
-            throw new IllegalArgumentException("Invalid dialogue style catalog");
+        validateCatalog(definitions);
         clientStyles = Map.copyOf(definitions);
+    }
+
+    public static void validateCatalog(Map<String, DialogueStyle> definitions) {
+        if (definitions.size() > MAX_STYLES || definitions.keySet().stream().anyMatch(tag -> !DialogueStyle.validTag(tag))
+                || definitions.values().stream().mapToInt(style -> style.onEnter().size() + style.onExit().size()).sum() > MAX_CATALOG_CUES)
+            throw new IllegalArgumentException("Invalid dialogue style catalog");
     }
 
     public static Scope preview(Map<String, DialogueStyle> definitions) {
@@ -69,7 +75,7 @@ public final class DialogueStyleResources {
             String tag = entry.getValue().get("tag").getAsString();
             if (result.putIfAbsent(tag, style) != null) throw new IllegalArgumentException(entry.getKey() + ": duplicate style tag " + tag);
         }
-        if (result.size() > MAX_STYLES) throw new IllegalArgumentException("Too many dialogue styles");
+        validateCatalog(result);
         return Map.copyOf(result);
     }
 

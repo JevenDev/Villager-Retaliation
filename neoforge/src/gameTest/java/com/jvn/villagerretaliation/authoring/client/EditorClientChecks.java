@@ -137,6 +137,21 @@ public final class EditorClientChecks {
         check(catalog.catalog(workspace).get("uneasy").effects().shakeAnimation().strength() == 0.35F, "draft catalogs retain tuned animation settings");
         check(EditorSchema.forDocument(document).at(document.json(), "/text_effects/shake/strength").get("maximum").getAsInt() == 4,
                 "animated effect objects receive bounded schema forms");
+        document.edit("Add entry and exit cues", value -> {
+            value.add("on_enter", JsonParser.parseString("[\"look=nearest_participant\",\"disagree\"]"));
+            value.add("on_exit", JsonParser.parseString("[\"look=player\"]"));
+        });
+        var performed = catalog.catalog(workspace).get("uneasy");
+        check(performed.restorePose() && performed.onEnter().size() == 2 && performed.onExit().size() == 1,
+                "draft catalogs compile style lifecycle cues");
+        check(EditorSchema.forDocument(document).at(document.json(), "/on_enter/0").get("type").getAsString().equals("string"),
+                "style cue arrays receive string forms rather than quest action forms");
+        check(com.jvn.villagerretaliation.authoring.core.AuthoringValidation.validate(workspace.documents()).isEmpty(),
+                "style lifecycle drafts pass export validation");
+        document.undo();
+        check(catalog.catalog(workspace).get("uneasy").onEnter().isEmpty(), "undo removes draft lifecycle cues");
+        document.redo();
+        check(catalog.catalog(workspace).get("uneasy").onExit().size() == 1, "redo restores draft lifecycle cues");
         document.edit("Change speed", value -> value.addProperty("speed", 0.5));
         check(catalog.catalog(workspace).get("uneasy").speed() == 0.5, "draft edits invalidate the style catalog");
         document.undo();

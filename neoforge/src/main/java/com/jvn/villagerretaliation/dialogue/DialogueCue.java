@@ -5,13 +5,14 @@ import java.util.Set;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public record DialogueCue(Kind kind, double value, ResourceLocation particle, Sound sound, String target) {
     public static final int MAX_CUES = 64;
     public static final int MAX_PARTICLE_AMOUNT = 64;
     private static final Set<String> TAGS = Set.of("pause", "agree", "disagree", "look", "reset", "speed", "particle", "sound");
 
-    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE, SOUND, LOOK_TARGET }
+    public enum Kind { PAUSE, AGREE, DISAGREE, LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, RESET, SPEED, PARTICLE, SOUND, LOOK_TARGET, PUSH_POSE, POP_POSE }
 
     public DialogueCue {
         java.util.Objects.requireNonNull(kind);
@@ -60,6 +61,27 @@ public record DialogueCue(Kind kind, double value, ResourceLocation particle, So
             if (offset < 0) throw new IllegalArgumentException("Negative dialogue cue offset");
             java.util.Objects.requireNonNull(cue);
         }
+    }
+
+    public void write(RegistryFriendlyByteBuf buffer) {
+        buffer.writeEnum(kind);
+        buffer.writeDouble(value);
+        if (kind == Kind.LOOK_TARGET) buffer.writeUtf(target, 261);
+        if (kind == Kind.PARTICLE) buffer.writeResourceLocation(particle);
+        if (kind == Kind.SOUND) {
+            buffer.writeResourceLocation(sound.id());
+            buffer.writeFloat(sound.volume());
+            buffer.writeFloat(sound.pitch());
+        }
+    }
+
+    public static DialogueCue read(RegistryFriendlyByteBuf buffer) {
+        var kind = buffer.readEnum(Kind.class);
+        double value = buffer.readDouble();
+        String target = kind == Kind.LOOK_TARGET ? buffer.readUtf(261) : null;
+        var particle = kind == Kind.PARTICLE ? buffer.readResourceLocation() : null;
+        var sound = kind == Kind.SOUND ? new Sound(buffer.readResourceLocation(), buffer.readFloat(), buffer.readFloat()) : null;
+        return new DialogueCue(kind, value, particle, sound, target);
     }
 
     public static boolean isTag(String raw) {

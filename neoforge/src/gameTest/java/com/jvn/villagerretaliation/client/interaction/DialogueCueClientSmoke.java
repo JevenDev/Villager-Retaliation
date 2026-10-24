@@ -132,6 +132,7 @@ public final class DialogueCueClientSmoke {
             verifyParticleEmission();
             verifySoundEmission();
             verifyPreviewParticles();
+            verifyStyleLifecycleCues();
             screen.acceptDialogueExchanges(List.of(speech(PERFORMANCE)));
             shownAt = now;
             phase = 4;
@@ -343,6 +344,35 @@ public final class DialogueCueClientSmoke {
         preview.update(entity, clock, 0);
         require(((java.util.List<?>) field(preview, "particles")).isEmpty(), "seeking past a burst respects particle lifetime");
         preview.clear();
+    }
+
+    private static void verifyStyleLifecycleCues() {
+        var minecraft = Minecraft.getInstance();
+        var entity = minecraft.level.getEntity(entityId);
+        var style = com.jvn.villagerretaliation.dialogue.DialogueStyle.read(JsonParser.parseString("""
+                {"tag":"uneasy","text_effects":{"shake":{"strength":0.35,"speed":0.8}},
+                 "on_enter":["look=left","particle:smoke amount:2","sound:entity.villager.no volume=0.4"],
+                 "on_exit":["look=right","particle:heart","sound:entity.villager.yes"]}
+                """).getAsJsonObject());
+        List<DialogueTextSegment> segments;
+        try (var ignored = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.preview(java.util.Map.of("uneasy", style))) {
+            segments = DialogueTextSegment.parse("<uneasy>AB</uneasy>C", null);
+        }
+        var clock = new DialoguePlayback(segments, 0, 100);
+        require(segments.getFirst().effects().shakeAnimation().strength() == 0.35F, "native style combines tuned text effects and lifecycle cues");
+        var pending = (java.util.Queue<?>) field(minecraft.particleEngine, "particlesToAdd");
+        int before = pending.size();
+        VillagerDialoguePerformance.emitParticles(entity, clock, 0);
+        require(pending.size() == before + 2, "style entry emits real client particles");
+        var entered = VillagerDialoguePerformance.emitSounds(entity, clock, 0);
+        require(entered.size() == 1 && entered.getFirst().getVolume() == 0.4F, "style entry plays its configured client sound");
+        VillagerDialoguePerformance.emitParticles(entity, clock, 200);
+        require(pending.size() == before + 3, "style exit emits real client particles");
+        var exited = VillagerDialoguePerformance.emitSounds(entity, clock, 200);
+        require(exited.size() == 1, "style exit plays its configured client sound");
+        require(clock.pose(400, 0, 0, 0, 0).yaw() == -35, "style exit gaze overrides the restored pose");
+        entered.forEach(minecraft.getSoundManager()::stop);
+        exited.forEach(minecraft.getSoundManager()::stop);
     }
 
     private static void verifySoundEmission() {

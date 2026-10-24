@@ -35,6 +35,20 @@ const exampleStyles = await loadDialogueStyles(fileURLToPath(new URL("../example
 assert.deepEqual(exampleStyles.errors, []);
 assert(exampleStyles.styles.has("uneasy"));
 assert.deepEqual(markupWarnings("<uneasy>Did you hear that?</uneasy>", exampleStyles.styles), []);
+const performed = { tag: "performed", on_enter: ["look=nearest_participant", "agree", "particle:smoke amount:2",
+  "sound:entity.villager.no volume=0.4 pitch=1.2", "pause=50"], on_exit: ["look=player"], text_effects: { shake: { strength: 0.35, speed: 0.8 } } };
+assert.deepEqual(styleIssues(performed), []);
+for (const fields of [{ on_enter: null }, { on_exit: {} }, { on_enter: [1] }, { restore_pose: 1 },
+  { on_enter: ["speed=2"] }, { on_exit: ["<agree>"] }, { on_enter: ["invented=1"] }, { on_enter: ["look=door"] },
+  { on_exit: ["sound:entity.villager.yes volume=2"] }, { on_enter: Array(17).fill("agree") }, { on_exit: ["a".repeat(513)] }])
+  assert(styleIssues({ tag: "invalid", ...fields }).length, JSON.stringify(fields));
+const performedStyles = new Map([["performed", performed]]);
+assert.deepEqual(markupWarnings("<performed>A</performed>B", performedStyles), []);
+assert(markupWarnings("<performed>" + "<agree>".repeat(58) + "A</performed>", performedStyles).includes("too many dialogue cues"));
+assert.deepEqual(markupWarnings("<performed>" + "<agree>".repeat(56) + "A</performed>", performedStyles), []);
+assert.deepEqual(styleIssues({ tag: "sticky", on_enter: ["look=player"], restore_pose: false }), []);
+assert(compileStyleDocuments(Array.from({ length: 33 }, (_, i) => ["file" + i, { tag: "style_" + i,
+  on_enter: Array(16).fill("agree"), on_exit: Array(16).fill("reset") }])).errors.includes("too many dialogue style cues"));
 const schema = JSON.parse(await readFile(new URL("./schemas/conversation-v1.schema.json", import.meta.url), "utf8"));
 const response = { id: "reply", label: { key: "#reply" }, next: "end", unavailable_behavior: "hide" };
 assert.deepEqual(validateConversationSchema(response, { $defs: schema.$defs, $ref: "#/$defs/response" }), []);

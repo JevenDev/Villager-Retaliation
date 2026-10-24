@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { reservedDialogueTag } from "./dialogue-markup-validation.mjs";
+import { reservedDialogueTag, validCue } from "./dialogue-markup-validation.mjs";
 
 export const builtInStyleData = fileURLToPath(new URL("../neoforge/src/main/resources/data", import.meta.url));
 const flags = new Set(["italic", "bold", "underlined", "strikethrough", "obfuscated", "wavy", "shake", "pulse", "jump", "rainbow"]);
@@ -25,11 +25,19 @@ const validColor = value => value === null || Number.isInteger(value) && value >
 export function styleIssues(value) {
   if (!object(value)) return ["expected a dialogue style object"];
   const errors = [];
-  if (Object.keys(value).some(key => !["tag", "text_effects", "speed"].includes(key))) errors.push("unknown dialogue style field");
+  if (Object.keys(value).some(key => !["tag", "text_effects", "speed", "on_enter", "on_exit", "restore_pose"].includes(key))) errors.push("unknown dialogue style field");
   if (typeof value.tag !== "string" || !/^[a-z][a-z0-9_]{0,63}$/.test(value.tag) || reservedDialogueTag(value.tag))
     errors.push("style tag is reserved or invalid");
   if ("speed" in value && (typeof value.speed !== "number" || !Number.isFinite(value.speed) || value.speed < 0.1 || value.speed > 10))
     errors.push("speed must be a number from 0.1 to 10");
+  if ("restore_pose" in value && typeof value.restore_pose !== "boolean") errors.push("restore_pose must be a boolean");
+  for (const field of ["on_enter", "on_exit"]) {
+    if (!(field in value)) continue;
+    if (!Array.isArray(value[field]) || value[field].length > 16) errors.push(field + " must contain at most 16 cues");
+    else for (const cue of value[field])
+      if (typeof cue !== "string" || cue.length < 1 || cue.length > 512 || !validCue(cue)
+          || cue.trim().toLowerCase().split(/[=:]/)[0].trim() === "speed") errors.push("invalid style cue in " + field);
+  }
   if ("text_effects" in value) {
     if (!object(value.text_effects)) errors.push("text_effects must be an object");
     else {
@@ -58,6 +66,8 @@ export function compileStyleDocuments(documents) {
     else styles.set(value.tag, value);
   }
   if (styles.size > 256) errors.push("too many dialogue styles");
+  if ([...styles.values()].reduce((sum, style) => sum + (style.on_enter?.length ?? 0) + (style.on_exit?.length ?? 0), 0) > 1024)
+    errors.push("too many dialogue style cues");
   return { styles, errors };
 }
 

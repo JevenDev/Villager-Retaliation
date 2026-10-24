@@ -6,15 +6,44 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import java.util.List;
 
-public record DialogueStyle(DialogueTextEffects effects, int overrides, Double speed) {
+public record DialogueStyle(DialogueTextEffects effects, int overrides, Double speed,
+        List<DialogueCue> onEnter, List<DialogueCue> onExit, boolean restorePose) {
+    public static final int MAX_STYLE_CUES = 16;
     private static final List<String> FLAGS = List.of("italic", "bold", "underlined", "strikethrough", "obfuscated",
             "wavy", "shake", "pulse", "jump", "rainbow", "color", "gradient_start", "gradient_end");
 
     public DialogueStyle {
         java.util.Objects.requireNonNull(effects);
+        onEnter = validateCues(onEnter);
+        onExit = validateCues(onExit);
         if (overrides < 0 || overrides >= 1 << FLAGS.size()
                 || speed != null && (!Double.isFinite(speed) || speed < 0.1 || speed > 10))
             throw new IllegalArgumentException("Invalid dialogue style");
+    }
+
+    public DialogueStyle(DialogueTextEffects effects, int overrides, Double speed) {
+        this(effects, overrides, speed, List.of(), List.of(), false);
+    }
+
+    private static List<DialogueCue> validateCues(List<DialogueCue> cues) {
+        cues = List.copyOf(cues);
+        if (cues.size() > MAX_STYLE_CUES || cues.stream().anyMatch(cue -> cue.kind() == DialogueCue.Kind.SPEED
+                || cue.kind() == DialogueCue.Kind.PUSH_POSE || cue.kind() == DialogueCue.Kind.POP_POSE
+                || cue.particle() != null && cue.particle().toString().length() > 512
+                || cue.sound() != null && cue.sound().id().toString().length() > 512))
+            throw new IllegalArgumentException("Invalid dialogue style cues");
+        return cues;
+    }
+
+    private static List<DialogueCue> readCues(JsonObject root, String field) {
+        if (!root.has(field)) return List.of();
+        var cues = new java.util.ArrayList<DialogueCue>();
+        for (var value : root.getAsJsonArray(field)) {
+            var cue = DialogueCue.parse(value.getAsString());
+            if (cue == null) throw new IllegalArgumentException("Invalid dialogue style cue in " + field + ": " + value);
+            cues.add(cue);
+        }
+        return cues;
     }
 
     public DialogueTextEffects apply(DialogueTextEffects base) {
@@ -52,7 +81,9 @@ public record DialogueStyle(DialogueTextEffects effects, int overrides, Double s
         if (effects.has("gradient_start") != effects.has("gradient_end")
                 || effects.has("gradient_start") && effects.get("gradient_start").isJsonNull() != effects.get("gradient_end").isJsonNull())
             throw new IllegalArgumentException("Set or clear both gradient colors together");
-        return new DialogueStyle(DialogueTextEffects.read(root), overrides, root.has("speed") ? root.get("speed").getAsDouble() : null);
+        return new DialogueStyle(DialogueTextEffects.read(root), overrides, root.has("speed") ? root.get("speed").getAsDouble() : null,
+                readCues(root, "on_enter"), readCues(root, "on_exit"), root.has("restore_pose") ? root.get("restore_pose").getAsBoolean()
+                        : root.has("on_enter") || root.has("on_exit"));
     }
 
     public static JsonObject schema() {
@@ -60,6 +91,9 @@ public record DialogueStyle(DialogueTextEffects effects, int overrides, Double s
                 {"type":"object","additionalProperties":false,"required":["tag"],"properties":{
                   "tag":{"type":"string","pattern":"^[a-z][a-z0-9_]{0,63}$"},
                   "speed":{"type":"number","minimum":0.1,"maximum":10},
+                  "restore_pose":{"type":"boolean"},
+                  "on_enter":{"type":"array","maxItems":16,"items":{"type":"string","minLength":1,"maxLength":512}},
+                  "on_exit":{"type":"array","maxItems":16,"items":{"type":"string","minLength":1,"maxLength":512}},
                   "text_effects":{"type":"object","additionalProperties":false,"properties":{}}
                 }}
                 """).getAsJsonObject();

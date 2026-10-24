@@ -57,6 +57,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
         var warnings = new ArrayList<String>();
         var stack = new ArrayList<String>();
         var priorSpeeds = new ArrayList<Double>();
+        var priorStyles = new ArrayList<com.jvn.villagerretaliation.dialogue.DialogueStyle>();
         double speed = 1;
         int cueCount = 0;
         var matcher = java.util.regex.Pattern.compile("<(/?)([a-zA-Z_][^<>]*)>").matcher(text);
@@ -82,6 +83,11 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
                 if (effectsForTag(normalizeTag(raw)) == null && !styles.containsKey(normalizeTag(raw))) warnings.add("invalid text tag: " + matcher.group());
                 var style = styles.get(normalizeTag(raw));
                 priorSpeeds.add(style == null ? null : speed);
+                priorStyles.add(style);
+                if (style != null) {
+                    cueCount += style.onEnter().size() + (style.restorePose() ? 1 : 0);
+                    if (cueCount > DialogueCue.MAX_CUES) warnings.add("too many dialogue cues");
+                }
                 if (style != null && style.speed() != null && speed != style.speed()) {
                     speed = style.speed();
                     if (++cueCount > DialogueCue.MAX_CUES) warnings.add("too many dialogue cues");
@@ -92,6 +98,11 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
             } else {
                 stack.removeLast();
                 Double previous = priorSpeeds.removeLast();
+                var style = priorStyles.removeLast();
+                if (style != null) {
+                    cueCount += style.onExit().size() + (style.restorePose() ? 1 : 0);
+                    if (cueCount > DialogueCue.MAX_CUES) warnings.add("too many dialogue cues");
+                }
                 if (previous != null && speed != previous) {
                     speed = previous;
                     if (++cueCount > DialogueCue.MAX_CUES) warnings.add("too many dialogue cues");
@@ -130,7 +141,8 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
         return parse(text, baseEffects, com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current());
     }
 
-    private record StyleFrame(String tag, DialogueTextEffects effects, double speed, boolean custom, boolean reserved) { }
+    private record StyleFrame(String tag, DialogueTextEffects effects, double speed,
+            com.jvn.villagerretaliation.dialogue.DialogueStyle style, int reserved) { }
 
     public static List<DialogueTextSegment> parse(String text, DialogueTextEffects baseEffects,
             java.util.Map<String, com.jvn.villagerretaliation.dialogue.DialogueStyle> styles) {
@@ -140,7 +152,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
         String lowerText = text.toLowerCase(Locale.ROOT);
         var segments = new ArrayList<DialogueTextSegment>();
         var stack = new ArrayList<StyleFrame>();
-        stack.add(new StyleFrame("", safeBase, 1, false, false));
+        stack.add(new StyleFrame("", safeBase, 1, null, 0));
         var current = new StringBuilder();
         var currentCues = new ArrayList<DialogueCue.At>();
         int cueCount = 0, reservedRestores = 0;
@@ -170,8 +182,12 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
             var effects = closing ? null : effectsForTag(normalizeTag(rawTag));
             boolean valid = closing ? stack.size() > 1 && stack.getLast().tag().equals(canonical)
                     : (effects != null || preset != null) && hasClosingTag(lowerText, close + 1, tag);
-            int speedSlots = preset != null && preset.speed() != null && speed != preset.speed() ? 2 : 0;
-            if (preset != null && (stack.size() >= 64 || cueCount + reservedRestores + speedSlots > DialogueCue.MAX_CUES)) valid = false;
+            int speedEntry = preset != null && preset.speed() != null && speed != preset.speed() ? 1 : 0;
+            int entrySlots = preset == null ? 0 : preset.onEnter().size() + (preset.restorePose() ? 1 : 0) + speedEntry;
+            int exitSlots = preset == null ? 0 : preset.onExit().size() + (preset.restorePose() ? 1 : 0);
+            int speedRestore = preset != null && (speedEntry > 0 || cueCount + reservedRestores + entrySlots + exitSlots < DialogueCue.MAX_CUES) ? 1 : 0;
+            int reserve = exitSlots + speedRestore;
+            if (preset != null && (stack.size() >= 64 || cueCount + reservedRestores + entrySlots + reserve > DialogueCue.MAX_CUES)) valid = false;
             if (!valid) {
                 current.append(text, open, close + 1);
                 index = close + 1;
@@ -180,25 +196,36 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
             flush(segments, current, currentCues, stack.getLast().effects());
             if (closing) {
                 var frame = stack.removeLast();
-                if (frame.custom()) {
-                    if (frame.reserved()) reservedRestores--;
+                if (frame.style() != null) {
+                    reservedRestores -= frame.reserved();
+                    if (frame.style().restorePose()) {
+                        currentCues.add(new DialogueCue.At(0, new DialogueCue(DialogueCue.Kind.POP_POSE, 0)));
+                        cueCount++;
+                    }
                     if (speed != frame.speed()) {
                         speed = frame.speed();
                         currentCues.add(new DialogueCue.At(0, new DialogueCue(DialogueCue.Kind.SPEED, speed)));
                         cueCount++;
                     }
+                    for (var exitCue : frame.style().onExit()) currentCues.add(new DialogueCue.At(0, exitCue));
+                    cueCount += frame.style().onExit().size();
                 }
             } else {
                 var inherited = stack.getLast().effects();
-                boolean reserve = preset != null && cueCount + reservedRestores < DialogueCue.MAX_CUES;
-                stack.add(new StyleFrame(canonical, preset == null ? inherited.merge(effects) : preset.apply(inherited), speed, preset != null, reserve));
+                stack.add(new StyleFrame(canonical, preset == null ? inherited.merge(effects) : preset.apply(inherited), speed, preset, reserve));
                 if (preset != null) {
-                    if (reserve) reservedRestores++;
+                    reservedRestores += reserve;
+                    if (preset.restorePose()) {
+                        currentCues.add(new DialogueCue.At(0, new DialogueCue(DialogueCue.Kind.PUSH_POSE, 0)));
+                        cueCount++;
+                    }
                     if (preset.speed() != null && speed != preset.speed()) {
                         speed = preset.speed();
                         currentCues.add(new DialogueCue.At(0, new DialogueCue(DialogueCue.Kind.SPEED, speed)));
                         cueCount++;
                     }
+                    for (var entryCue : preset.onEnter()) currentCues.add(new DialogueCue.At(0, entryCue));
+                    cueCount += preset.onEnter().size();
                 }
             }
             index = close + 1;
@@ -253,15 +280,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
             buffer.writeVarInt(segment.cues().size());
             for (var cue : segment.cues()) {
                 buffer.writeVarInt(cue.offset());
-                buffer.writeEnum(cue.cue().kind());
-                buffer.writeDouble(cue.cue().value());
-                if (cue.cue().kind() == DialogueCue.Kind.LOOK_TARGET) buffer.writeUtf(cue.cue().target(), 261);
-                if (cue.cue().kind() == DialogueCue.Kind.PARTICLE) buffer.writeResourceLocation(cue.cue().particle());
-                if (cue.cue().kind() == DialogueCue.Kind.SOUND) {
-                    buffer.writeResourceLocation(cue.cue().sound().id());
-                    buffer.writeFloat(cue.cue().sound().volume());
-                    buffer.writeFloat(cue.cue().sound().pitch());
-                }
+                cue.cue().write(buffer);
             }
         }
     }
@@ -284,13 +303,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
             var cues = new ArrayList<DialogueCue.At>();
             for (int cue = 0; cue < count; cue++) {
                 int offset = buffer.readVarInt();
-                var kind = buffer.readEnum(DialogueCue.Kind.class);
-                double value = buffer.readDouble();
-                String target = kind == DialogueCue.Kind.LOOK_TARGET ? buffer.readUtf(261) : null;
-                var particle = kind == DialogueCue.Kind.PARTICLE ? buffer.readResourceLocation() : null;
-                var sound = kind == DialogueCue.Kind.SOUND
-                        ? new DialogueCue.Sound(buffer.readResourceLocation(), buffer.readFloat(), buffer.readFloat()) : null;
-                cues.add(new DialogueCue.At(offset, new DialogueCue(kind, value, particle, sound, target)));
+                cues.add(new DialogueCue.At(offset, DialogueCue.read(buffer)));
             }
             segments.add(new DialogueTextSegment(text, effects, cues));
         }

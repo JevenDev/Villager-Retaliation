@@ -1,5 +1,8 @@
 {
   "tag": "uneasy",
+  "on_enter": ["look=nearest_participant", "disagree"],
+  "on_exit": ["look=player"],
+  "restore_pose": true,
   "text_effects": {
     "shake": { "strength": 0.35, "speed": 0.8 },
     "color": "gold"

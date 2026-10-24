@@ -10,8 +10,9 @@ const tags = new Map(groups.flatMap(group => group.map(tag => [tag, group[0]])))
 
 const cueTags = new Set(["pause", "speed", "look", "agree", "disagree", "reset", "particle", "sound"]);
 
-function validCue(raw) {
+export function validCue(raw) {
   const normalized = raw.trim().toLowerCase();
+  if (!cueTags.has(normalized.split(/[=:]/)[0].trim())) return false;
   if (normalized.split(/[=:]/)[0].trim() === "sound") {
     const [resource, ...arguments_] = normalized.split(/\s+/);
     if (!/^sound[=:](?:[a-z0-9_.-]+:)?[a-z0-9/._-]+$/.test(resource)) return false;
@@ -46,10 +47,13 @@ export function reservedDialogueTag(tag) {
   return tags.has(tag) || cueTags.has(tag) || /^[a-f0-9]{6}$/.test(tag);
 }
 
+const restoresPose = style => style.restore_pose ?? ("on_enter" in style || "on_exit" in style);
+
 export function markupWarnings(text, styles = new Map()) {
   const warnings = [];
   const stack = [];
   const priorSpeeds = [];
+  const priorStyles = [];
   let speed = 1;
   let cueCount = 0;
   for (const match of text.matchAll(/<(\/?)([a-zA-Z_][^<>]*)>/g)) {
@@ -70,6 +74,11 @@ export function markupWarnings(text, styles = new Map()) {
     } else if (!match[1]) {
       const style = styles.get(tag);
       priorSpeeds.push(style ? speed : null);
+      priorStyles.push(style);
+      if (style) {
+        cueCount += (style.on_enter?.length ?? 0) + (restoresPose(style) ? 1 : 0);
+        if (cueCount > 64) warnings.push("too many dialogue cues");
+      }
       if (style?.speed !== undefined && speed !== style.speed) {
         speed = style.speed;
         if (++cueCount > 64) warnings.push("too many dialogue cues");
@@ -80,6 +89,11 @@ export function markupWarnings(text, styles = new Map()) {
     } else {
       stack.pop();
       const previous = priorSpeeds.pop();
+      const style = priorStyles.pop();
+      if (style) {
+        cueCount += (style.on_exit?.length ?? 0) + (restoresPose(style) ? 1 : 0);
+        if (cueCount > 64) warnings.push("too many dialogue cues");
+      }
       if (previous !== null && speed !== previous) {
         speed = previous;
         if (++cueCount > 64) warnings.push("too many dialogue cues");
