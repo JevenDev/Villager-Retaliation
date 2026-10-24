@@ -163,6 +163,15 @@ final class EditorGraph {
                 if (edge.from().equals(node.id()) && (edge.pointer().startsWith(node.pointer() + "/next") || edge.pointer().startsWith(node.pointer() + "/transition")))
                     blocks.add(new Block(node.pointer(), "Then", edge.to().isEmpty() ? terminalLabel(value) : edge.to(), edge));
             }
+            if (document.kind() == DefinitionKind.QUEST) {
+                var events = DialogueGraph.array(value, "events");
+                for (int i = 0; i < events.size(); i++) {
+                    String path = node.pointer() + "/events/" + i;
+                    var output = nodeOutputs.stream().filter(edge -> edge.pointer().startsWith(path + "/")).findFirst().orElse(null);
+                    if (events.get(i).isJsonObject()) blocks.add(new Block(path, "When " + DialogueGraph.string(events.get(i).getAsJsonObject(), "event"),
+                            EditorQuestFlow.summary(EditorSchema.object(events.get(i).getAsJsonObject().get("transition"))), output));
+                }
+            }
             if (blocks.stream().noneMatch(block -> block.output() != null))
                 blocks.add(new Block(node.pointer(), "End", terminalLabel(value), null));
             cards.add(EditorGraphSizing.restore(new Card(node, blocks.stream().map(block -> new Block(block.pointer(), block.title(), block.text(), block.output(),

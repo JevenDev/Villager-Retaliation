@@ -113,6 +113,7 @@ final class ImGuiAuthoringEditor {
     private final ImString responseLabel = new ImString("Continue", 1024);
     private final ImString linkedQuest = new ImString(512);
     private final ImString nextStage = new ImString(256);
+    private final EditorQuestFlow questFlow = new EditorQuestFlow();
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
     private final ImString fieldName = new ImString(256);
@@ -2123,6 +2124,7 @@ final class ImGuiAuthoringEditor {
             }
             if (pendingFields.pending()) try { pendingFields.validate(document); }
             catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
+            questFlow.render(document, selectedNode, this::operation, this::setPointer, this::refresh);
             guidedObjective();
             nodeActions();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException

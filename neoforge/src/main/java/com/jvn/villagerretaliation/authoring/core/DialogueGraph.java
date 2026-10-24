@@ -108,6 +108,14 @@ public final class DialogueGraph {
             }
             if (document.kind() == DefinitionKind.QUEST && value.has("transition"))
                 addNext(result, node.id(), value.get("transition"), node.pointer() + "/transition", "Next");
+            if (document.kind() == DefinitionKind.QUEST) {
+                var events = array(value, "events");
+                for (int i = 0; i < events.size(); i++) if (events.get(i).isJsonObject()) {
+                    var event = events.get(i).getAsJsonObject();
+                    if (event.has("transition")) addNext(result, node.id(), event.get("transition"),
+                            node.pointer() + "/events/" + i + "/transition", string(event, "event"));
+                }
+            }
             if (value.has("next")) addNext(result, node.id(), value.get("next"), node.pointer() + "/next", "Next");
             JsonArray responses = array(value, "responses");
             for (int i = 0; i < responses.size(); i++) {
