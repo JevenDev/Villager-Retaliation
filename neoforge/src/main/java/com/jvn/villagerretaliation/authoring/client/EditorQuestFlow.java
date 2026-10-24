@@ -67,11 +67,19 @@ final class EditorQuestFlow {
         return path;
     }
 
+    static String add(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document,
+                      String stage, Route route, String outcome, String destination, String label, String event, JsonArray conditions) {
+        var draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+        String path = add(draft, stage, route, outcome, destination, label, event, conditions);
+        workspace.editQuestWithMessages(document, draft.json(), route == Route.CHOICE ? java.util.Map.of(path + "/label", label) : java.util.Map.of());
+        return path;
+    }
+
     private static boolean containsId(JsonArray values, String id) {
         return values.asList().stream().anyMatch(value -> value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id")));
     }
 
-    void render(AuthoringDocument document, String selected, Consumer<ImGuiAuthoringEditor.EditorOperation> run,
+    void render(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document, String selected, Consumer<ImGuiAuthoringEditor.EditorOperation> run,
                 Consumer<String> inspect, Runnable refresh) {
         if (document.kind() != DefinitionKind.QUEST || selected.isEmpty() || !EditorWidgets.section("Stage progression")) return;
         var node = stage(document, selected);
@@ -125,7 +133,7 @@ final class EditorQuestFlow {
         if (ImGui.button(replacing ? "Replace automatic progression" : "Add progression")) run.accept(() -> {
             var conditions = new JsonArray();
             if (route != Route.AUTOMATIC && condition != null) conditions.add(JsonParser.parseString(condition.json));
-            String path = add(document, selected, route, outcome, destination, label.get(), event.get(), conditions);
+            String path = add(workspace, document, selected, route, outcome, destination, label.get(), event.get(), conditions);
             refresh.run();
             inspect.accept(path);
         });

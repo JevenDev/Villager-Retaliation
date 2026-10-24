@@ -1199,11 +1199,57 @@ public final class AuthoringWorkspace {
     }
 
     public void editDocuments(String label, Map<AuthoringDocument, JsonObject> replacements) {
-        for (var document : replacements.keySet())
+        editDocuments(label, replacements, Map.of());
+    }
+
+    public void editDocuments(String label, Map<AuthoringDocument, JsonObject> replacements, Map<AuthoringDocument, JsonObject> metadata) {
+        var selected = new java.util.LinkedHashSet<>(replacements.keySet());
+        selected.addAll(metadata.keySet());
+        for (var document : selected)
             if (!documents.contains(document)) throw new IllegalArgumentException("A selected file is no longer in this workspace");
-        var changed = replacements.entrySet().stream().filter(entry -> !entry.getKey().json().equals(entry.getValue())).toList();
-        changed.forEach(entry -> entry.getKey().edit(label, root -> replaceObject(root, entry.getValue())));
-        if (changed.size() > 1) AuthoringDocument.groupLatestChanges(changed.stream().map(Map.Entry::getKey).toList(), () -> { }, () -> { });
+        var changed = selected.stream().filter(document -> replacements.containsKey(document) && !document.json().equals(replacements.get(document))
+                || metadata.containsKey(document) && !document.metadata().equals(metadata.get(document))).toList();
+        changed.forEach(document -> document.edit(label,
+                root -> { if (replacements.containsKey(document)) replaceObject(root, replacements.get(document)); },
+                editor -> { if (metadata.containsKey(document)) replaceObject(editor, metadata.get(document)); }));
+        if (changed.size() > 1) AuthoringDocument.groupLatestChanges(changed, () -> { }, () -> { });
+    }
+
+    public List<AuthoringDocument> addQuestContent(AuthoringDocument quest, JsonObject definition, JsonObject metadata,
+                                                   Map<String, JsonObject> resources) {
+        if (!documents.contains(quest) || quest.kind() != DefinitionKind.QUEST)
+            throw new IllegalArgumentException("Choose a quest in this workspace");
+        String bundle = quest.resourcePath().substring(0, quest.resourcePath().lastIndexOf('/') + 1);
+        Map<AuthoringDocument, JsonObject> updates = new LinkedHashMap<>();
+        List<AuthoringDocument> created = new ArrayList<>();
+        for (var entry : resources.entrySet()) {
+            String path = safeRelativePath(entry.getKey());
+            if (!path.startsWith(bundle) || !path.endsWith(".json") || path.equals(quest.resourcePath()))
+                throw new IllegalArgumentException("Keep linked content inside its quest bundle");
+            var existing = documents.stream().filter(document -> document.resourcePath().equalsIgnoreCase(path)).findFirst().orElse(null);
+            if (existing != null && !path.equals(bundle + "locales/en_us.json"))
+                throw new IllegalArgumentException("Resource already exists: " + path);
+            if (existing == null) {
+                if (containsPath(path) || created.stream().anyMatch(document -> document.resourcePath().equalsIgnoreCase(path)))
+                    throw new IllegalArgumentException("Resource already exists: " + path);
+                existing = new AuthoringDocument(DefinitionKind.fromPath(path), path, new JsonObject());
+                created.add(existing);
+            }
+            if (!existing.json().equals(entry.getValue())) updates.put(existing, entry.getValue().deepCopy());
+        }
+        if (definition.equals(quest.json()) && metadata.equals(quest.metadata()))
+            throw new IllegalArgumentException("Link the content to a quest stage");
+        created.forEach(this::add);
+        quest.edit("Link quest content", root -> replaceObject(root, definition), editor -> replaceObject(editor, metadata));
+        updates.forEach((document, value) -> document.edit("Create quest content", root -> replaceObject(root, value)));
+        var changed = new ArrayList<AuthoringDocument>();
+        changed.add(quest); changed.addAll(updates.keySet());
+        AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
+            for (var document : created) if (containsPath(document.resourcePath()))
+                throw new IllegalStateException("Another resource now occupies " + document.resourcePath());
+            documents.addAll(created);
+        });
+        return List.copyOf(created);
     }
 
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
@@ -1282,6 +1328,26 @@ public final class AuthoringWorkspace {
         for (String field : List.of("variants", "lines", "line", "text"))
             if (message.has(field)) return new TextLocation(document, pointer + "/" + field);
         return new TextLocation(document, pointer + "/key");
+    }
+
+    public void editQuestWithMessages(AuthoringDocument quest, JsonObject definition, Map<String, String> wording) {
+        if (!documents.contains(quest) || quest.kind() != DefinitionKind.QUEST) throw new IllegalArgumentException("Choose a quest in this workspace");
+        if (wording.isEmpty()) { editDocuments("Edit quest", Map.of(quest, definition)); return; }
+        String prefix = DialogueGraph.string(definition, "localization_prefix");
+        if (prefix.isBlank()) throw new IllegalArgumentException("Set the quest localization prefix first");
+        String path = bundleDirectory(quest.resourcePath()) + "locales/en_us.json";
+        var locale = documents.stream().filter(document -> document.resourcePath().equals(path)).findFirst()
+                .map(AuthoringDocument::json).orElseGet(JsonObject::new);
+        var messages = locale.has("messages") ? locale.getAsJsonObject("messages") : locale;
+        var changed = definition.deepCopy();
+        for (var entry : wording.entrySet()) {
+            if (entry.getValue().isBlank()) throw new IllegalArgumentException("Enter some quest wording");
+            String key = prefix + ".authored" + entry.getKey().replace('/', '.');
+            while (messages.has(key)) key += "_new";
+            JsonPointers.set(changed, entry.getKey(), localized(key));
+            messages.addProperty(key, entry.getValue());
+        }
+        applyGraphPaste(quest, changed, quest.metadata(), Map.of(path, locale));
     }
 
     public void addDialogueResponse(AuthoringDocument document, String nodeId, String responseId, String text, String targetId) {

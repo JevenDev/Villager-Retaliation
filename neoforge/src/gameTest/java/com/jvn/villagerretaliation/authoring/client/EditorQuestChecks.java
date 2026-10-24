@@ -25,7 +25,10 @@ final class EditorQuestChecks {
         questSettingsPreserveAuthoredValues();
         performanceTiersValidateReferencesAndPriority();
         discoveryRoutesValidateBeforeChangingTheDraft();
-        return 9;
+        linkedContentUsesItsQuestBundleAndGroupedUndo();
+        linkedContentRejectsCollisionsBeforeCreatingFiles();
+        authoredWordingExportsAsLocalizedQuestContent();
+        return 12;
     }
 
     static AuthoringDocument quest() {
@@ -161,6 +164,69 @@ final class EditorQuestChecks {
         check(document.json().equals(before), "duplicate or incomplete discoveries leave the draft intact");
         document.undo();
         check(!document.json().has("discovery"), "discovery routes support undo");
+    }
+
+    private static void linkedContentUsesItsQuestBundleAndGroupedUndo() throws IOException {
+        for (var kind : EditorQuestLinks.Kind.values()) {
+            var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-linked-quest"));
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:linked");
+            var original = quest.json();
+            var originalPaths = workspace.filePaths();
+            var content = EditorQuestLinks.create(workspace, quest, "start", kind, "briefing");
+            check(content.resourcePath().startsWith("data/test/quests/authored/linked/"), "new content stays inside the owning quest bundle");
+            check(EditorQuestLinks.linked(workspace, quest, "start").stream().anyMatch(link -> link.document() == content),
+                    "created content opens from its owning stage");
+            if (kind == EditorQuestLinks.Kind.CONVERSATION)
+                check(com.jvn.villagerretaliation.dialogue.conversation.ConversationSchema.validate(content.json()).isEmpty(), "conversation uses localized references");
+            else {
+                var schema = kind == EditorQuestLinks.Kind.SCENE ? com.jvn.villagerretaliation.scene.schema.SceneSchema.sceneV1()
+                        : com.jvn.villagerretaliation.scene.schema.SceneSchema.encounterV1();
+                check(com.jvn.villagerretaliation.quest.schema.QuestJsonSchema.validate(content.json(), schema).isEmpty(), "scene content follows its runtime schema");
+            }
+            var errors = workspace.validate().stream().filter(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+            check(errors.isEmpty(), "linked content validates as a complete quest bundle: " + errors);
+            quest.undo();
+            check(quest.json().equals(original) && workspace.filePaths().equals(originalPaths), "undo removes new files and restores the quest and translations");
+            quest.redo();
+            check(EditorQuestLinks.linked(workspace, quest, "start").stream().anyMatch(link -> link.document().resourcePath().equals(content.resourcePath())), "redo restores stage links");
+            EditorQuestLinks.renameStage(workspace, quest, "start", "opening");
+            check(EditorQuestLinks.linked(workspace, quest, "opening").stream().anyMatch(link -> link.document() == content), "stage links follow stage renaming");
+            if (kind == EditorQuestLinks.Kind.CONVERSATION) check(content.json().getAsJsonArray("topics").get(0).getAsJsonObject()
+                    .getAsJsonArray("conditions").get(1).getAsJsonObject().get("stage").getAsString().equals("opening"), "conversation stage gates follow the rename");
+            quest.undo();
+            check(EditorQuestLinks.linked(workspace, quest, "start").stream().anyMatch(link -> link.document() == content), "linked stage renames undo across files");
+        }
+    }
+
+    private static void linkedContentRejectsCollisionsBeforeCreatingFiles() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-linked-collision"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:linked");
+        EditorQuestLinks.create(workspace, quest, "start", EditorQuestLinks.Kind.CONVERSATION, "briefing");
+        var before = quest.json();
+        var paths = workspace.filePaths();
+        reject(() -> EditorQuestLinks.create(workspace, quest, "start", EditorQuestLinks.Kind.CONVERSATION, "briefing"));
+        check(quest.json().equals(before) && workspace.filePaths().equals(paths), "duplicate content does not leave orphan files or links");
+        quest.undo();
+        workspace.add(new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/quests/authored/linked/conversations/briefing.json", new JsonObject()));
+        try { quest.redo(); throw new AssertionError("Redo must preserve occupied paths"); }
+        catch (IllegalStateException expected) { check(workspace.filePaths().size() == paths.size(), "redo rejects collisions before recreating content"); }
+    }
+
+    private static void authoredWordingExportsAsLocalizedQuestContent() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("vr-quest-wording"));
+        var quest = workspace.createDocument(DefinitionKind.QUEST, "test:wording");
+        DialogueGraph.addNode(quest, "finish");
+        String choice = EditorQuestFlow.add(workspace, quest, "start", EditorQuestFlow.Route.CHOICE, "stage", "finish", "I can help", "", new JsonArray());
+        check(JsonPointers.get(quest.json(), choice + "/label").isJsonObject(), "quest choices use translation references");
+        var draft = new AuthoringDocument(quest.kind(), quest.resourcePath(), quest.json());
+        String path = EditorContentTools.appendObjective(draft, "start", json("""
+                {"type":"trade","count":1,"tracker":{"text":"Trade with the village"}}
+                """));
+        workspace.editQuestWithMessages(quest, draft.json(), java.util.Map.of(path + "/tracker/text", "Trade with the village"));
+        check(workspace.resolveText(quest, JsonPointers.get(quest.json(), path + "/tracker/text"), "en_us").equals("Trade with the village"), "objective tracker wording resolves from its bundle");
+        EditorQuestSettings.performanceTier(quest, "swift", "time", "elapsed_ticks", "", "", "", 100, true, 20, 1);
+        var errors = workspace.validate().stream().filter(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR).toList();
+        check(errors.isEmpty(), "new progression, objectives and reward tiers form a valid canonical bundle: " + errors);
     }
 
     static JsonObject json(String text) { return JsonParser.parseString(text).getAsJsonObject(); }

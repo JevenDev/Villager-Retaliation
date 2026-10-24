@@ -116,6 +116,9 @@ final class ImGuiAuthoringEditor {
     private final EditorQuestFlow questFlow = new EditorQuestFlow();
     private final EditorQuestObjectives questObjectives = new EditorQuestObjectives();
     private final EditorQuestSettings questSettings = new EditorQuestSettings();
+    private final EditorQuestLinks questLinks = new EditorQuestLinks();
+    private AuthoringDocument returnQuest;
+    private String returnStage = "";
     private final ImString jsonText = new ImString(1_048_576);
     private final ImString pointer = new ImString(4096);
     private final ImString fieldName = new ImString(256);
@@ -2042,7 +2045,8 @@ final class ImGuiAuthoringEditor {
             ImGui.textUnformatted("Selected: " + selectedNode);
             input("Node ID", nodeName);
             if (document.kind() != DefinitionKind.FORCED && ImGui.button("Rename node and references")) operation(() -> {
-                EditorContentTools.renameNode(document, selectedNode, nodeName.get());
+                if (document.kind() == DefinitionKind.QUEST) EditorQuestLinks.renameStage(workspace, document, selectedNode, nodeName.get());
+                else EditorContentTools.renameNode(document, selectedNode, nodeName.get());
                 selectedNode = nodeName.get();
                 nodeSelection.clear(); nodeSelection.add(selectedNode);
                 refresh();
@@ -2093,6 +2097,15 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
+        if (returnQuest != null && returnQuest != document && workspace.documents().contains(returnQuest)
+                && DialogueGraph.nodes(returnQuest).stream().anyMatch(node -> node.id().equals(returnStage))
+                && ImGui.button("Return to " + returnQuest.id() + " / " + returnStage, -1, 0)) operation(() -> {
+            select(returnQuest);
+            selectedNode = returnStage;
+            nodeSelection.clear(); nodeSelection.add(returnStage);
+            setPointer(EditorQuestFlow.stage(document, returnStage).pointer());
+            graphFocus = returnStage;
+        });
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
         if (ImGui.button("File settings", -1, 0)) operation(() -> {
             selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer("");
@@ -2126,7 +2139,11 @@ final class ImGuiAuthoringEditor {
             }
             if (pendingFields.pending()) try { pendingFields.validate(document); }
             catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
-            questFlow.render(document, selectedNode, this::operation, this::setPointer, this::refresh);
+            questFlow.render(workspace, document, selectedNode, this::operation, this::setPointer, this::refresh);
+            questLinks.render(workspace, document, selectedNode, this::operation, linked -> {
+                returnQuest = document; returnStage = selectedNode;
+                select(linked); view = 0;
+            });
             guidedObjective();
             nodeActions();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
@@ -2417,9 +2434,9 @@ final class ImGuiAuthoringEditor {
                     if (net.minecraft.resources.ResourceLocation.tryParse(objectiveResource.get()) == null) throw new IllegalArgumentException("Choose a valid resource ID");
                     template.addProperty(field, objectiveResource.get());
                 }
-                added = questObjectives.append(document, selectedNode, objectiveType, template);
+                added = questObjectives.append(workspace, document, selectedNode, objectiveType, template);
             } else if (EditorQuestObjectives.guided(objectiveType)) {
-                added = questObjectives.append(document, selectedNode, objectiveType, questObjectives.template(objectiveType, document.id()));
+                added = questObjectives.append(workspace, document, selectedNode, objectiveType, questObjectives.template(objectiveType, document.id()));
             } else {
                 JsonObject template = new JsonObject();
                 template.addProperty("type", objectiveType);
@@ -2428,7 +2445,7 @@ final class ImGuiAuthoringEditor {
                 JsonObject objectiveSchema = model.effective(schema.getAsJsonObject("$defs").getAsJsonObject("objective"), template);
                 JsonObject seeded = model.seed(objectiveSchema).getAsJsonObject();
                 seeded.addProperty("type", objectiveType);
-                added = questObjectives.append(document, selectedNode, objectiveType, seeded);
+                added = questObjectives.append(workspace, document, selectedNode, objectiveType, seeded);
             }
             refresh(); setPointer(added);
         });

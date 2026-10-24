@@ -33,8 +33,14 @@ final class EditorReferences {
             case "world_campaign" -> DefinitionKind.WORLD_CAMPAIGN;
             default -> null;
         };
+        String resourceSchema = switch (field) {
+            case "scene", "scene_ref", "scene_id" -> "villagerretaliation:scene/v1";
+            case "template" -> "villagerretaliation:encounter/v1";
+            default -> "";
+        };
         var matches = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(value)
-                || kind != null && candidate.kind() == kind && candidate.id().equals(value)).toList();
+                || candidate.id().equals(value) && (kind != null && candidate.kind() == kind
+                || !resourceSchema.isEmpty() && resourceSchema.equals(com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(candidate.json(), "schema")))).toList();
         String root = DefinitionKind.contentRoot(owner.resourcePath());
         var scoped = matches.stream().filter(candidate -> DefinitionKind.contentRoot(candidate.resourcePath()).equals(root)).toList();
         return (scoped.isEmpty() ? matches : scoped).stream().map(candidate -> new Location(candidate, "")).toList();

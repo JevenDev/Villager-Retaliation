@@ -84,7 +84,7 @@ final class EditorQuestSettings {
         var tiers = DialogueGraph.array(performance, "tiers");
         if (tiers.asList().stream().anyMatch(value -> value.isJsonObject() && id.equals(DialogueGraph.string(value.getAsJsonObject(), "id"))))
             throw new IllegalArgumentException("That performance tier already exists");
-        var tier = new JsonObject(); tier.addProperty("id", id); tier.addProperty("title", id);
+        var tier = new JsonObject(); tier.addProperty("id", id);
         var bounds = new JsonObject(); bounds.addProperty(maximum ? "max" : "min", threshold);
         var requirements = new JsonObject(); requirements.add(measurementId, bounds); tier.add("requirements", requirements);
         var rewards = new JsonObject(); rewards.addProperty("experience", experience); rewards.addProperty("reputation", reputation);

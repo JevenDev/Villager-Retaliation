@@ -106,6 +106,8 @@ final class EditorContentTools {
                 var positions = metadata.getAsJsonObject("node_positions");
                 if (positions.has(id)) positions.add(replacement, positions.remove(id));
             }
+            var linked = EditorSchema.object(metadata.get("quest_links"));
+            if (linked.has(id)) linked.add(replacement, linked.remove(id));
             for (var entry : EditorSchema.object(metadata.get("preview_scenario_tests")).entrySet()) {
                 var test = entry.getValue().getAsJsonObject();
                 if (id.equals(DialogueGraph.string(test, "start"))) test.addProperty("start", replacement);

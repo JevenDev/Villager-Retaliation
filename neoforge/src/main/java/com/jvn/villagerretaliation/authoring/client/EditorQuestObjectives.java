@@ -118,14 +118,18 @@ final class EditorQuestObjectives {
         return value;
     }
 
-    String append(AuthoringDocument document, String stage, String type, JsonObject objective) {
+    String append(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document, String stage, String type, JsonObject objective) {
         var value = objective.deepCopy();
         value.addProperty("optional", optional);
         if (!tracker.get().isBlank()) {
             var text = new JsonObject(); text.addProperty("text", tracker.get()); value.add("tracker", text);
         }
-        if (!guided(type) && !List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade").contains(type))
-            return EditorContentTools.appendObjective(document, stage, value);
+        var draft = new AuthoringDocument(document.kind(), document.resourcePath(), document.json());
+        if (!guided(type) && !List.of("item_check", "mob_kill", "block_break", "block_place", "block_interact", "trade").contains(type)) {
+            String path = EditorContentTools.appendObjective(draft, stage, value);
+            workspace.editQuestWithMessages(document, draft.json(), tracker.get().isBlank() ? java.util.Map.of() : java.util.Map.of(path + "/tracker/text", tracker.get()));
+            return path;
+        }
         var follower = type.equals("follower_arrival") ? follower(actor.get(), actorTag.get()) : null;
         JsonObject target = null;
         if (type.equals("rescue") && !EditorSchema.object(document.json().get("target")).has("site")) {
@@ -142,7 +146,9 @@ final class EditorQuestObjectives {
         } else if (type.equals("rescue") && !List.of("escort_home", "free_at_site").contains(
                 DialogueGraph.string(EditorSchema.object(EditorSchema.object(document.json().get("target")).get("site")), "rescue")))
             throw new IllegalArgumentException("Set the existing site's rescue mode to escort_home or free_at_site first");
-        return append(document, stage, value, follower, target);
+        String path = append(draft, stage, value, follower, target);
+        workspace.editQuestWithMessages(document, draft.json(), tracker.get().isBlank() ? java.util.Map.of() : java.util.Map.of(path + "/tracker/text", tracker.get()));
+        return path;
     }
 
     static String append(AuthoringDocument document, String stage, JsonObject objective, JsonObject follower, JsonObject target) {
