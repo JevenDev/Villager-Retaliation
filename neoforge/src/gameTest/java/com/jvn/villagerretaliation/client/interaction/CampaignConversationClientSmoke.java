@@ -38,6 +38,7 @@ public final class CampaignConversationClientSmoke {
     private static int die;
     private static java.util.UUID confirmation;
     private static net.minecraft.client.resources.sounds.SoundInstance heardVoice;
+    private static boolean optionTransitionsVerified;
 
     private CampaignConversationClientSmoke() { }
 
@@ -257,6 +258,10 @@ public final class CampaignConversationClientSmoke {
     }
 
     private static void verifyMentorMedia(VillagerInteractionScreen screen) {
+        if (!optionTransitionsVerified) {
+            verifyOptionTransitions(screen);
+            optionTransitionsVerified = true;
+        }
         require(screen.campaignCameraTarget() != null && screen.campaignCameraTarget().getUUID().equals(fixture.character()),
                 "camera focus uses the acknowledged speaker identity");
         var currentVoice = voice(screen);
@@ -273,6 +278,45 @@ public final class CampaignConversationClientSmoke {
         VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.set(false);
         require(cameraFov() == 70.0D, "ordinary camera preference also applies to campaign speech");
         VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.set(true);
+    }
+
+    private static void verifyOptionTransitions(VillagerInteractionScreen screen) {
+        try {
+            var type = VillagerInteractionScreen.class;
+            var shown = type.getDeclaredField("showAllConversationControls"); shown.setAccessible(true);
+            var started = type.getDeclaredField("dialogueOptionsTransitionStartMillis"); started.setAccessible(true);
+            var from = type.getDeclaredField("dialogueOptionsTransitionFromY"); from.setAccessible(true);
+            var outgoing = type.getDeclaredField("outgoingDialogueOptions"); outgoing.setAccessible(true);
+            var context = type.getDeclaredField("optionListContext"); context.setAccessible(true);
+            var scales = type.getDeclaredField("interactionOptionDockScales"); scales.setAccessible(true);
+            var rebuild = type.getDeclaredMethod("rebuildOptionsKeepingListPosition"); rebuild.setAccessible(true);
+            var top = type.getDeclaredMethod("dialogueOptionsAnimatedTop", context.getType()); top.setAccessible(true);
+            shown.setBoolean(screen, false);
+            rebuild.invoke(screen);
+            started.setLong(screen, Util.getMillis() - 1000);
+            screen.mouseClicked(12, screen.height - 20, 0);
+            require(shown.getBoolean(screen) && from.getFloat(screen) >= screen.height, "Show all animates in from offscreen");
+            started.setLong(screen, Util.getMillis() - 100);
+            float beforeHide = (float) top.invoke(screen, context.get(screen));
+            @SuppressWarnings("unchecked")
+            var dock = (java.util.Map<Integer, Float>) scales.get(screen);
+            dock.put(0, 1.08F);
+            screen.mouseClicked(12, screen.height - 20, 0);
+            require(!shown.getBoolean(screen) && outgoing.get(screen) != null, "Show less retains the departing entries");
+            require(Math.abs(from.getFloat(screen) - beforeHide) < 4, "hiding during entrance preserves menu position");
+            var dockScale = context.getType().getDeclaredMethod("pixelOptionDockScale", int.class); dockScale.setAccessible(true);
+            require((float) dockScale.invoke(outgoing.get(screen), 0) == 1.08F, "departing entries retain their hover scale");
+            started.setLong(screen, Util.getMillis() - 80);
+            float beforeShow = (float) top.invoke(screen, outgoing.get(screen));
+            screen.mouseClicked(12, screen.height - 20, 0);
+            require(shown.getBoolean(screen) && Math.abs(from.getFloat(screen) - beforeShow) < 4,
+                    "reopening during exit preserves menu position");
+            long transition = started.getLong(screen);
+            dock.put(0, 1.08F);
+            rebuild.invoke(screen);
+            require(started.getLong(screen) == transition && dock.get(0) == 1.08F,
+                    "unchanged presentation polls retain transition timing and hover scale");
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Option transition checks failed", exception); }
     }
 
     private static double cameraFov() {

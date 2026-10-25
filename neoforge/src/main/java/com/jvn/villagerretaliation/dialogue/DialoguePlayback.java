@@ -273,6 +273,7 @@ public final class DialoguePlayback {
 
     public long positionMillis(long now) { return (long) Math.min(previewDurationMillis(), skipped ? duration : elapsed(now)); }
     public boolean playbackPaused() { return playbackPaused; }
+    public boolean skipped() { return skipped; }
     public List<TimedCue> timelineCues() { return cues; }
 
     public void pause(long now) {

@@ -21,6 +21,8 @@ public final class VillagerDialoguePerformance {
     private static java.util.List<Entity> participants = java.util.List.of();
     private static java.util.Map<String, Entity> roles = java.util.Map.of();
     private static final java.util.Map<String, Entity> gazeTargets = new java.util.HashMap<>();
+    private static final java.util.Map<LivingEntity, PoseTransition> worldPoses = new java.util.WeakHashMap<>();
+    private static final java.util.Map<LivingEntity, PoseTransition> portraitPoses = new java.util.WeakHashMap<>();
 
     private VillagerDialoguePerformance() { }
 
@@ -113,7 +115,16 @@ public final class VillagerDialoguePerformance {
         var minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof VillagerInteractionScreen screen) screen.updateDialoguePerformance();
         else clear();
-        if (entity != speaker || playback == null || VillagerModelPreviewRenderContext.isRenderingInventoryPreview(entity)) return;
+        if (VillagerModelPreviewRenderContext.isRenderingInventoryPreview(entity)) return;
+        var poses = VillagerModelPreviewRenderContext.isRendering(entity) ? portraitPoses : worldPoses;
+        var clock = entity == speaker ? playback : null;
+        var transition = poses.get(entity);
+        if (clock == null && transition == null) return;
+        var neutral = new DialoguePlayback.Pose(head.yRot * Mth.RAD_TO_DEG, head.xRot * Mth.RAD_TO_DEG);
+        if (transition == null) {
+            transition = new PoseTransition(neutral);
+            poses.put(entity, transition);
+        }
         float playerYaw = 0;
         float playerPitch = 0;
         var player = minecraft.player;
@@ -123,9 +134,48 @@ public final class VillagerDialoguePerformance {
             playerYaw = Mth.clamp(Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90 - bodyYaw), -70, 70);
             playerPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(delta.y, Math.sqrt(delta.x * delta.x + delta.z * delta.z))), -45, 45);
         }
-        var pose = playback.pose(now, head.yRot * Mth.RAD_TO_DEG, head.xRot * Mth.RAD_TO_DEG, playerYaw, playerPitch,
+        var target = clock == null ? neutral : clock.pose(now, neutral.yaw(), neutral.pitch(), playerYaw, playerPitch,
                 name -> targetPose(entity, name, partialTick));
+        var pose = transition.sample(clock, target, now);
+        if (clock == null && transition.settled(now)) poses.remove(entity);
         head.yRot = pose.yaw() * Mth.DEG_TO_RAD;
         head.xRot = pose.pitch() * Mth.DEG_TO_RAD;
+    }
+
+    static final class PoseTransition {
+        private static final float DURATION_MILLIS = 180;
+        private DialoguePlayback clock;
+        private boolean skipped;
+        private DialoguePlayback.Pose pose;
+        private DialoguePlayback.Pose from;
+        private long started;
+
+        PoseTransition(DialoguePlayback.Pose neutral) {
+            pose = neutral;
+            from = neutral;
+        }
+
+        DialoguePlayback.Pose sample(DialoguePlayback next, DialoguePlayback.Pose target, long now) {
+            boolean nextSkipped = next != null && next.skipped();
+            if (clock != next || skipped != nextSkipped) {
+                from = pose;
+                started = now;
+                clock = next;
+                skipped = nextSkipped;
+            }
+            if (next != null && next.playbackPaused()) {
+                from = target;
+                started = now - (long) DURATION_MILLIS;
+            }
+            float progress = Mth.clamp((now - started) / DURATION_MILLIS, 0, 1);
+            float blend = progress * progress * (3 - 2 * progress);
+            pose = new DialoguePlayback.Pose(Mth.rotLerp(blend, from.yaw(), target.yaw()),
+                    Mth.lerp(blend, from.pitch(), target.pitch()));
+            return pose;
+        }
+
+        boolean settled(long now) {
+            return now - started >= DURATION_MILLIS;
+        }
     }
 }

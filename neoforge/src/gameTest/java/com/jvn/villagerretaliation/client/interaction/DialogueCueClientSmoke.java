@@ -129,6 +129,7 @@ public final class DialogueCueClientSmoke {
             verifyAnimatedTextSettings();
             verifyParticipantTargets();
             verifyHeadPoseAcrossSlowFrame();
+            verifyHeadPoseTransitions();
             verifyParticleEmission();
             verifySoundEmission();
             verifyPreviewParticles();
@@ -272,6 +273,34 @@ public final class DialogueCueClientSmoke {
         VillagerDialoguePerformance.apply(entity, head);
         require(Math.abs(head.yRot - Math.toRadians(35)) < 0.04,
                 "active dialogue restores its pose before rendering after screen replacement");
+    }
+
+    private static void verifyHeadPoseTransitions() {
+        var neutral = new DialoguePlayback.Pose(0, 0);
+        var held = new DialoguePlayback.Pose(35, 12);
+        var clock = new DialoguePlayback(DialogueTextSegment.parse("<look=left><agree>Hello.", DialogueTextEffects.NONE), 0, 100);
+        var transition = new VillagerDialoguePerformance.PoseTransition(neutral);
+        require(transition.sample(clock, held, 0).equals(neutral), "new speaker starts from its rendered pose");
+        require(transition.sample(clock, held, 90).equals(new DialoguePlayback.Pose(17.5F, 6)), "speaker eases into its pose");
+        require(transition.sample(clock, held, 180).equals(held), "speaker settles at the authored pose");
+        clock.skip();
+        require(transition.sample(clock, neutral, 180).equals(held), "skipping preserves the current nod and gaze");
+        require(transition.sample(clock, neutral, 270).equals(new DialoguePlayback.Pose(17.5F, 6)), "skipped nod eases back");
+        require(transition.sample(clock, neutral, 360).equals(neutral), "skipped pose finishes returning");
+        var next = new DialoguePlayback(List.of(), 360, 100);
+        var right = new DialoguePlayback.Pose(-35, -12);
+        require(transition.sample(next, right, 360).equals(neutral), "next line starts without a head snap");
+        var halfway = transition.sample(next, right, 450);
+        var interrupted = new DialoguePlayback(List.of(), 450, 100);
+        require(transition.sample(interrupted, held, 450).equals(halfway), "rapid line changes retain the in-flight pose");
+        require(transition.sample(interrupted, held, 630).equals(held), "interrupted transition reaches the latest pose");
+        require(transition.sample(null, neutral, 630).equals(held), "departing speaker keeps its last rendered pose");
+        require(!transition.settled(720) && transition.sample(null, neutral, 720).equals(new DialoguePlayback.Pose(17.5F, 6)),
+                "departing speaker returns gradually");
+        require(transition.sample(null, neutral, 810).equals(neutral) && transition.settled(810),
+                "departing speaker releases its pose after settling");
+        clock.seek(100, 900);
+        require(transition.sample(clock, held, 900).equals(held), "paused editor scrubbing remains exact");
     }
 
     private static void captureTimeline(String name) {

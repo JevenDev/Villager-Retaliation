@@ -360,6 +360,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private OptionListContext outgoingDialogueOptions;
     private boolean dialogueOptionsHidden;
     private long dialogueOptionsTransitionStartMillis = -1L;
+    private float dialogueOptionsTransitionFromY;
+    private boolean dialogueOptionsReplacing;
     private int renderOptionOffsetY;
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<GiftPreferenceView> giftPreferences = new ArrayList<>();
@@ -1550,13 +1552,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void rebuildOptions() {
-        boolean hideForDialogue = this.automaticDialogue.active();
-        if (hideForDialogue != this.dialogueOptionsHidden) {
-            this.outgoingDialogueOptions = hideForDialogue && !this.options.isEmpty() && usesInteractionOptionStack()
-                    ? new OptionListContext(true) : null;
-            this.dialogueOptionsHidden = hideForDialogue;
-            this.dialogueOptionsTransitionStartMillis = Util.getMillis();
-        }
+        List<DialogueOption> previousOptions = List.copyOf(this.options);
+        OptionListContext previousContext = renderingOutgoingDialogueOptions() ? this.outgoingDialogueOptions
+                : !this.options.isEmpty() && usesInteractionOptionStack() && this.font != null ? new OptionListContext(true) : null;
+        float previousTop = previousContext == null ? this.height + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING
+                : dialogueOptionsAnimatedTop(previousContext);
         this.options.clear();
         this.optionLayoutVersion++;
         if (localPresentation != null) {
@@ -1676,10 +1676,39 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addDialogueOptions();
             }
         }
+        boolean changed = !sameDialogueOptions(previousOptions, this.options);
+        if (changed) {
+            boolean hidden = this.options.isEmpty();
+            if (usesInteractionOptionStack()) {
+                this.outgoingDialogueOptions = previousContext != null
+                        && (hidden || !sameDialogueOptions(previousContext.displayedOptions(), this.options)) ? previousContext : null;
+                this.dialogueOptionsReplacing = !hidden && this.outgoingDialogueOptions != null;
+                this.dialogueOptionsTransitionFromY = previousTop;
+                this.dialogueOptionsHidden = hidden;
+                this.dialogueOptionsTransitionStartMillis = Util.getMillis();
+            } else {
+                this.outgoingDialogueOptions = null;
+                this.dialogueOptionsReplacing = false;
+                this.dialogueOptionsHidden = false;
+                this.dialogueOptionsTransitionStartMillis = -1L;
+            }
+            resetInteractionOptionDockAnimation();
+            this.keyboardOptionFocusVisible = false;
+        }
         this.state.resetOptions(!this.options.isEmpty());
-        resetInteractionOptionDockAnimation();
-        this.keyboardOptionFocusVisible = false;
         ensureSelectedVisible();
+    }
+
+    private static boolean sameDialogueOptions(List<DialogueOption> first, List<DialogueOption> second) {
+        if (first.size() != second.size()) return false;
+        for (int index = 0; index < first.size(); index++) {
+            var before = first.get(index);
+            var after = second.get(index);
+            if (!before.label().equals(after.label()) || before.locked() != after.locked()
+                    || before.checkbox() != after.checkbox() || before.checked() != after.checked()
+                    || !before.reason().equals(after.reason())) return false;
+        }
+        return true;
     }
 
     private void rebuildOptionsKeepingListPosition() {
@@ -2947,6 +2976,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void activateSelected() {
         if (this.greetingRequest.pending()) return;
+        if (!usesRootIconMenu() && dialogueOptionsTransitionProgress() < 1.0F) return;
         if (usesRootIconMenu()) {
             List<InteractionMenuButton> buttons = interactionMenuButtons();
             int selectedIndex = selectedInteractionMenuButtonIndex(buttons);
@@ -3280,10 +3310,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
         float progress = dialogueOptionsTransitionProgress();
         if (progress >= 1.0F) this.outgoingDialogueOptions = null;
-        OptionListContext context = this.outgoingDialogueOptions != null ? this.outgoingDialogueOptions : this.optionListContext;
-        int distance = this.height - context.optionsTop() + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING;
-        this.renderOptionOffsetY = Math.round(distance * (this.dialogueOptionsHidden
-                ? easeInCubic(progress) : 1.0F - easeOutCubic(progress)));
+        OptionListContext context = renderingOutgoingDialogueOptions() ? this.outgoingDialogueOptions : this.optionListContext;
+        this.renderOptionOffsetY = Math.round(dialogueOptionsAnimatedTop(context) - context.optionsTop());
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, this.renderOptionOffsetY, 0.0F);
         VillagerInteractionOptionList.render(context, graphics,
@@ -3294,6 +3322,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0 && hovered < this.options.size() && !this.options.get(hovered).reason().isBlank())
             renderInteractionTooltip(graphics, List.of(Component.literal(this.options.get(hovered).reason())), mouseX, mouseY);
+    }
+
+    private boolean renderingOutgoingDialogueOptions() {
+        float progress = dialogueOptionsTransitionProgress();
+        return this.outgoingDialogueOptions != null && progress < 1.0F
+                && (this.dialogueOptionsHidden || this.dialogueOptionsReplacing && progress < 0.5F);
+    }
+
+    private float dialogueOptionsAnimatedTop(OptionListContext context) {
+        float progress = dialogueOptionsTransitionProgress();
+        float offscreen = this.height + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING;
+        if (this.dialogueOptionsReplacing) {
+            return progress < 0.5F
+                    ? Mth.lerp(VillagerClientUiUtil.smoothstep(progress * 2), this.dialogueOptionsTransitionFromY, offscreen)
+                    : Mth.lerp(VillagerClientUiUtil.smoothstep((progress - 0.5F) * 2), offscreen, context.optionsTop());
+        }
+        return Mth.lerp(VillagerClientUiUtil.smoothstep(progress), this.dialogueOptionsTransitionFromY,
+                this.dialogueOptionsHidden ? offscreen : context.optionsTop());
     }
 
     private float dialogueOptionsTransitionProgress() {
@@ -6793,6 +6839,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         private final VillagerInteractionOptionList.LayoutCache snapshotLayout = new VillagerInteractionOptionList.LayoutCache();
         private final int snapshotLeft, snapshotTop, snapshotWidth, snapshotViewportHeight;
         private final float snapshotScroll;
+        private final Map<Integer, Float> snapshotDockScales;
 
         private OptionListContext() {
             this(false);
@@ -6805,6 +6852,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.snapshotWidth = capture ? VillagerInteractionScreen.this.optionWidth() : 0;
             this.snapshotViewportHeight = capture ? VillagerInteractionScreen.this.optionViewportHeight() : 0;
             this.snapshotScroll = capture ? state.optionScroll() : 0.0F;
+            this.snapshotDockScales = capture ? Map.copyOf(interactionOptionDockScales) : Map.of();
         }
 
         private List<DialogueOption> displayedOptions() {
@@ -7058,7 +7106,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float pixelOptionDockScale(int index) {
-            return this.snapshot != null ? 1.0F : VillagerInteractionScreen.this.interactionOptionDockScale(index);
+            return this.snapshot != null ? this.snapshotDockScales.getOrDefault(index, 1.0F)
+                    : VillagerInteractionScreen.this.interactionOptionDockScale(index);
         }
 
         @Override
