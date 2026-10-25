@@ -37,6 +37,10 @@ final class EditorPackFiles implements AutoCloseable {
                 workspace.filePaths().stream().filter(path -> EditorNavigation.parent(path).equals(folder)).map(path -> new Entry(path, false))).toList();
     }
 
+    private record Draft(byte[] baseline, String original, String text) { }
+    private final Map<String, Draft> drafts = new java.util.LinkedHashMap<>();
+    private Consumer<ImGuiAuthoringEditor.EditorOperation> navigate;
+    private java.util.function.Predicate<String> pendingFile = path -> false;
     private String selected = "";
     private String loaded = "";
     private String originalText = "";
@@ -83,10 +87,18 @@ final class EditorPackFiles implements AutoCloseable {
 
     String selected() { return selected; }
     boolean pending() { return editable && !originalText.equals(text.get()); }
+    boolean pending(String path) { return selected.equals(path) && editable ? pending() : drafts.containsKey(path); }
+    boolean anyPending() { stash(); return !drafts.isEmpty(); }
+
+    private void stash() {
+        if (selected.isEmpty()) return;
+        if (pending()) drafts.put(selected, new Draft(baseline.clone(), originalText, text.get()));
+        else if (editable) drafts.remove(selected);
+    }
 
     void select(String path) {
+        stash();
         if (selected.equals(path)) { if (!pending()) close(); reveal = true; return; }
-        if (pending()) throw new IllegalStateException("Apply or discard the file edits before opening another file");
         close();
         selected = path;
         loaded = "";
@@ -105,34 +117,82 @@ final class EditorPackFiles implements AutoCloseable {
     }
 
     void reset() {
-        close(); selected = ""; loaded = ""; editable = false; text.set(""); originalText = ""; preview = null;
+        close(); drafts.clear(); selected = ""; loaded = ""; editable = false; text.set(""); originalText = ""; preview = null;
         closeFolderPopup = true; requestFolderPopup = false; focusMove = 0; pressedFolder = ""; dragging = null; revealMove = false;
         cachedTree = null; cachedPaths = List.of(); cachedFolders = List.of(); treeDocuments = Map.of(); baseline = new byte[0];
     }
 
     void apply(AuthoringWorkspace workspace) throws IOException {
-        if (!pending()) return;
-        if (!java.util.Arrays.equals(workspace.readFile(selected), baseline)) throw new IllegalStateException("This file changed after it was opened. Discard the file edits and reopen it before editing");
-        workspace.writeTextFile(selected, text.get());
-        baseline = workspace.readFile(selected);
-        originalText = text.get();
+        if (!pending() && !drafts.containsKey(selected)) return;
+        load(workspace); stash(); apply(workspace, selected);
+    }
+
+    private void apply(AuthoringWorkspace workspace, String path) throws IOException {
+        Draft draft = drafts.get(path);
+        if (draft == null) return;
+        if (!java.util.Arrays.equals(workspace.readFile(path), draft.baseline())) throw new IllegalStateException("This file changed after it was opened. Review the current file before applying the draft");
+        if (path.endsWith(".json")) {
+            if (draft.text().isBlank()) throw new IllegalArgumentException("Enter a JSON value before saving");
+            com.google.gson.JsonParser.parseString(draft.text());
+        }
+        workspace.writeTextFile(path, draft.text());
+        drafts.remove(path);
+        if (path.equals(selected)) {
+            baseline = workspace.readFile(path);
+            originalText = draft.text(); text.set(draft.text());
+        }
+    }
+
+    Map<String, String> applyValid(AuthoringWorkspace workspace) {
+        stash();
+        var issues = new java.util.LinkedHashMap<String, String>();
+        for (String path : List.copyOf(drafts.keySet())) {
+            try { apply(workspace, path); }
+            catch (IOException | IllegalArgumentException | IllegalStateException | com.google.gson.JsonParseException exception) {
+                issues.put(path, exception.getMessage());
+            }
+        }
+        return issues;
     }
 
     JsonObject recovery() {
-        JsonObject result = new JsonObject();
-        if (pending()) { result.addProperty("path", selected); result.addProperty("text", text.get()); }
+        stash();
+        JsonObject result = new JsonObject(), files = new JsonObject();
+        result.addProperty("selected", selected);
+        drafts.forEach((path, draft) -> {
+            JsonObject value = new JsonObject();
+            value.addProperty("baseline", java.util.Base64.getEncoder().encodeToString(draft.baseline()));
+            value.addProperty("original", draft.original()); value.addProperty("text", draft.text());
+            files.add(path, value);
+        });
+        result.add("files", files);
         return result;
     }
 
     void recover(AuthoringWorkspace workspace, JsonObject state) throws IOException {
-        if (!state.has("path") || !state.has("text")) return;
-        reset(); select(state.get("path").getAsString()); load(workspace);
-        if (!editable) throw new IOException("Recovered file is not editable text: " + selected);
-        text.set(state.get("text").getAsString());
+        reset();
+        if (state.has("files")) {
+            for (var entry : state.getAsJsonObject("files").entrySet()) {
+                AuthoringWorkspace.safeRelativePath(entry.getKey());
+                JsonObject value = entry.getValue().getAsJsonObject();
+                if (!workspace.filePaths().contains(entry.getKey()) || !textFile(entry.getKey()))
+                    throw new IOException("Recovered text file is missing: " + entry.getKey());
+                drafts.put(entry.getKey(), new Draft(java.util.Base64.getDecoder().decode(value.get("baseline").getAsString()),
+                        value.get("original").getAsString(), value.get("text").getAsString()));
+            }
+            select(state.has("selected") ? state.get("selected").getAsString() : drafts.keySet().stream().findFirst().orElse(""));
+            load(workspace);
+        } else if (state.has("path") && state.has("text")) {
+            select(state.get("path").getAsString()); load(workspace);
+            if (!editable) throw new IOException("Recovered file is not editable text: " + selected);
+            text.set(state.get("text").getAsString()); stash();
+        }
     }
 
     void renderTree(AuthoringWorkspace workspace, String search, Consumer<String> open, Consumer<String> manage,
-                    Consumer<ImGuiAuthoringEditor.EditorOperation> schedule, Runnable changed) {
+                    Consumer<ImGuiAuthoringEditor.EditorOperation> schedule, Consumer<ImGuiAuthoringEditor.EditorOperation> navigate,
+                    java.util.function.Predicate<String> pendingFile, Runnable changed) {
+        this.navigate = navigate; this.pendingFile = pendingFile;
         var paths = workspace.filePaths();
         var folders = workspace.folderPaths();
         if (cachedTree == null || !cachedPaths.equals(paths) || !cachedFolders.equals(folders) || !cachedSearch.equals(search)) {
@@ -143,7 +203,7 @@ final class EditorPackFiles implements AutoCloseable {
             cachedTree = tree(matching, folders.stream().filter(path -> path.toLowerCase(Locale.ROOT).contains(term)).toList(), "");
             cachedPaths = paths; cachedFolders = folders; cachedSearch = search;
         }
-        if (EditorExplorer.root("Pack root", selected.isEmpty())) schedule.accept(() -> manage.accept(""));
+        if (EditorExplorer.root("Pack root", selected.isEmpty())) navigate.accept(() -> manage.accept(""));
         contextMenu("", false, workspace, open, manage, schedule);
         ImGui.textDisabled("Drag to move.\nRight-click for actions.");
         if (cachedTree.children.isEmpty()) ImGui.textWrapped("No files match this search.");
@@ -157,7 +217,7 @@ final class EditorPackFiles implements AutoCloseable {
                             Consumer<String> open, Consumer<String> manage, Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
         if (node.file) {
             AuthoringDocument document = treeDocuments.get(node.path);
-            if (EditorExplorer.file("file:" + node.path, label, node.path.equals(selected), document != null && document.dirty(), document == null ? null : document.kind())) schedule.accept(() -> open.accept(node.path));
+            if (EditorExplorer.file("file:" + node.path, label, node.path.equals(selected), document != null && document.dirty() || pendingFile.test(node.path), document == null ? null : document.kind())) navigate.accept(() -> open.accept(node.path));
             if (ImGui.isItemHovered()) ImGui.setTooltip(node.path + (document == null ? "" : "\n" + document.id()));
             treeActions(node, workspace, open, manage, schedule);
             return;
@@ -170,7 +230,7 @@ final class EditorPackFiles implements AutoCloseable {
         if (ImGui.isItemClicked()) pressedFolder = ImGui.isItemToggledOpen() ? "" : node.path;
         if (node.path.equals(pressedFolder) && ImGui.isItemHovered() && ImGui.isMouseReleased(0)) {
             var delta = ImGui.getMouseDragDelta(0);
-            if (delta.x == 0 && delta.y == 0) schedule.accept(() -> open.accept(node.path));
+            if (delta.x == 0 && delta.y == 0) navigate.accept(() -> open.accept(node.path));
         }
         if (ImGui.isItemHovered()) ImGui.setTooltip(node.path + "/");
         treeActions(node, workspace, open, manage, schedule);
@@ -221,11 +281,11 @@ final class EditorPackFiles implements AutoCloseable {
                              Consumer<ImGuiAuthoringEditor.EditorOperation> schedule) {
         if (!ImGui.beginPopupContextItem("file_actions:" + path)) return;
         ImGui.textDisabled(path.isEmpty() ? "Pack root" : path);
-        if (ImGui.menuItem("Open")) schedule.accept(() -> open.accept(path));
+        if (ImGui.menuItem("Open")) navigate.accept(() -> open.accept(path));
         String source = moveSource(workspace, path);
         ImGui.beginDisabled(source.split("/").length < 3);
-        if (ImGui.menuItem("Rename...")) schedule.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 1; });
-        if (ImGui.menuItem("Move...")) schedule.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 2; });
+        if (ImGui.menuItem("Rename...")) navigate.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 1; });
+        if (ImGui.menuItem("Move...")) navigate.accept(() -> { manage.accept(source); setMoveSource(source); preview = null; focusMove = 2; });
         ImGui.endDisabled();
         if (ImGui.menuItem("New folder...")) schedule.accept(() -> {
             folderParent = file ? path.substring(0, Math.max(0, path.lastIndexOf('/'))) : path;
@@ -263,6 +323,12 @@ final class EditorPackFiles implements AutoCloseable {
         if (loaded.equals(key)) return;
         loaded = key;
         if (!workspace.filePaths().contains(selected)) return;
+        Draft draft = drafts.get(selected);
+        if (draft != null) {
+            baseline = draft.baseline().clone(); originalText = draft.original(); text.set(draft.text());
+            size = baseline.length; editable = true;
+            return;
+        }
         byte[] bytes = workspace.readFile(selected);
         baseline = bytes.clone();
         size = bytes.length;
@@ -285,18 +351,19 @@ final class EditorPackFiles implements AutoCloseable {
     void render(AuthoringWorkspace workspace, String output, Consumer<String> open,
                 Consumer<ImGuiAuthoringEditor.EditorOperation> schedule, Consumer<ImGuiAuthoringEditor.EditorOperation> attempt, Runnable changed) {
         ImGui.textUnformatted(selected.isEmpty() ? "Pack files" : selected);
-        ImGui.textWrapped("These paths match the built datapack. Drafts are stored in workspace.json. Build the pack to write this file tree to disk.");
+        ImGui.textWrapped(workspace.editsPackFolder() ? "Save writes changes to this pack folder. Unfinished text stays in its file draft."
+                : "Save keeps drafts in the workspace. Build the pack to write this file tree to disk.");
         if (!selected.isEmpty() && ImGui.button("Copy pack path")) Minecraft.getInstance().keyboardHandler.setClipboard(selected);
         if (workspace.filePaths().contains(selected)) {
             try {
                 load(workspace);
                 ImGui.textDisabled(size + " bytes");
                 if (editable) {
-                    ImGui.inputTextMultiline("##pack_file_text", text, -1, Math.max(160, Math.min(360, ImGui.getContentRegionAvailY() * .5f)), ImGuiInputTextFlags.AllowTabInput);
+                    ImGui.inputTextMultiline("##pack_file_text:" + selected, text, -1, Math.max(160, Math.min(360, ImGui.getContentRegionAvailY() * .5f)), ImGuiInputTextFlags.AllowTabInput);
                     ImGui.beginDisabled(!pending());
                     if (ImGui.button("Apply file edits")) schedule.accept(() -> { apply(workspace); changed.run(); });
                     EditorWidgets.sameLineFor("Discard file edits");
-                    if (ImGui.button("Discard file edits")) attempt.accept(() -> { text.set(originalText); close(); });
+                    if (ImGui.button("Discard file edits")) attempt.accept(() -> { drafts.remove(selected); text.set(originalText); close(); });
                     ImGui.endDisabled();
                 } else if (image != null && image.getPixels() != null) {
                     var pixels = image.getPixels();
@@ -350,12 +417,16 @@ final class EditorPackFiles implements AutoCloseable {
             for (String change : preview.changes()) ImGui.textWrapped(change);
             if (EditorWidgets.section("Affected files")) preview.paths().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> ImGui.textWrapped(entry.getKey() + " -> " + entry.getValue()));
             if (ImGui.button("Apply move")) schedule.accept(() -> {
+                if (anyPending()) throw new IllegalStateException("Save or discard unfinished file text before moving files");
                 var plan = preview; workspace.applyFileMove(plan); select(plan.destination()); changed.run();
             });
             if (revealMove) { ImGui.setScrollHereY(1); revealMove = false; }
         }
         ImGui.beginDisabled(!workspace.hasFileMove());
-        if (ImGui.button("Undo last file move")) schedule.accept(() -> { workspace.undoFileMove(); reset(); changed.run(); });
+        if (ImGui.button("Undo last file move")) schedule.accept(() -> {
+            if (anyPending()) throw new IllegalStateException("Save or discard unfinished file text before undoing a move");
+            workspace.undoFileMove(); reset(); changed.run();
+        });
         ImGui.endDisabled();
     }
 

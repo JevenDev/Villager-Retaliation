@@ -34,7 +34,7 @@ final class EditorPackFolder {
 
     void refresh() { scan = null; nextCheck = 0; nextDeepCheck = 0; stamp = ""; reviewedVersions = null; }
 
-    void render(AuthoringWorkspace workspace, boolean pending, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable changed) {
+    void render(AuthoringWorkspace workspace, java.util.function.Predicate<String> pending, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable changed) {
         if (owner != workspace) {
             owner = workspace; scan = null; changes = List.of(); review.set(false);
             selected = ""; error = ""; refresh();
@@ -85,7 +85,7 @@ final class EditorPackFolder {
         }
     }
 
-    private void review(AuthoringWorkspace workspace, boolean pending, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable changed) {
+    private void review(AuthoringWorkspace workspace, java.util.function.Predicate<String> pending, Consumer<ImGuiAuthoringEditor.EditorOperation> run, Runnable changed) {
         var chosen = changes.stream().filter(change -> change.path().equals(selected)).findFirst().orElse(null);
         var versions = workspace.documents().stream().map(document -> new Version(document, document.revision())).toList();
         var supporting = workspace.supportingFileHashes();
@@ -122,8 +122,9 @@ final class EditorPackFolder {
                     ImGui.textWrapped(chosen.path());
                     if (conflicts.contains(chosen.path())) ImGui.textWrapped("Both versions changed. Choose which version to keep.");
                     if (!problem.isEmpty()) ImGui.textWrapped(problem);
-                    if (pending) ImGui.textWrapped("Apply the active text edits before choosing a version.");
-                    ImGui.beginDisabled(pending || !problem.isEmpty());
+                    boolean unfinished = pending.test(chosen.path());
+                    if (unfinished) ImGui.textWrapped("Apply or discard this file's unfinished text before choosing a version.");
+                    ImGui.beginDisabled(unfinished || !problem.isEmpty());
                     if (ImGui.button("Use disk version")) run.accept(() -> {
                         workspace.resolveSourceChange(chosen, true); changed.run(); refresh();
                     });

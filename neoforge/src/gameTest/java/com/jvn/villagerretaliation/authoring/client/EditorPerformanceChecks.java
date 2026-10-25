@@ -145,6 +145,9 @@ final class EditorPerformanceChecks {
         check(document.value("/nested/value").getAsInt() == 1, "unchanged subtree candidates remain defensive");
         document.edit("External edit", root -> root.addProperty("count", 4));
         check(!edits.issue(document, "/count").isEmpty() && edits.issues(document).containsKey("/count"), "targeted reads still reject stale field edits");
+        edits.update("/count", document.value("/count"), "5");
+        check(edits.issue(document, "/count").contains("changed since editing began"), "redrawing or typing cannot replace a stale draft baseline");
+        edits.clear();
         edits.update("/count", document.value("/count"), "\"wrong type\"");
         check(edits.issue(document, "/count").contains("Expected a number"), "targeted reads retain type validation");
     }

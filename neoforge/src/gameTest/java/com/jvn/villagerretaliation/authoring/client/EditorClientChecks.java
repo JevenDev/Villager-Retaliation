@@ -67,7 +67,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 53 + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
+        return 53 + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorBufferChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {
@@ -299,9 +299,9 @@ public final class EditorClientChecks {
         state.addProperty("text", changed.toString());
         files.recover(workspace, state);
         check(files.pending(), "file editor recovery retains pending text");
-        boolean rejected = false;
-        try { files.select("data/test"); } catch (IllegalStateException expected) { rejected = true; }
-        check(rejected && files.pending(), "changing file selection cannot drop pending edits");
+        files.select("data/test");
+        check(files.anyPending() && files.pending("pack.mcmeta"), "changing file selection retains the previous file's draft");
+        files.select("pack.mcmeta");
         var recovery = files.recovery();
         files.apply(workspace);
         check(workspace.packMetadata().equals(changed) && !files.pending(), "applying file edits updates pack metadata");
@@ -312,7 +312,7 @@ public final class EditorClientChecks {
         files.recover(workspace, state);
         var newest = changed.deepCopy(); newest.getAsJsonObject("pack").addProperty("description", "Newest change");
         workspace.setPackMetadata(newest);
-        rejected = false;
+        boolean rejected = false;
         try { files.apply(workspace); } catch (IllegalStateException expected) { rejected = true; }
         check(rejected && workspace.packMetadata().equals(newest), "stale file buffers cannot overwrite newer metadata");
         files.close();
@@ -324,7 +324,8 @@ public final class EditorClientChecks {
         var build = new EditorPackBuild(); build.load(workspace);
         var edits = json("{\"description\":\"Release pack\",\"format\":48}");
         build.recover(edits);
-        check(build.pending() && build.recovery().equals(edits), "pack settings participate in recovery");
+        check(build.pending() && build.recovery().get("description").equals(edits.get("description"))
+                && build.recovery().getAsJsonObject("baseline").equals(metadata), "pack settings and their original metadata participate in recovery");
         build.apply();
         check(workspace.packMetadata().has("filter") && workspace.packMetadata().getAsJsonObject("pack").get("description").getAsString().equals("Release pack"), "finalization keeps advanced metadata fields");
         build.recover(json("{\"description\":\"Pending settings\",\"format\":48}"));
@@ -332,6 +333,10 @@ public final class EditorClientChecks {
         boolean rejected = false;
         try { build.apply(); } catch (IllegalStateException expected) { rejected = true; }
         check(rejected && build.pending(), "pack settings reject stale edits without losing the buffer");
+        var restored = new EditorPackBuild(); restored.load(workspace); restored.recover(build.recovery());
+        rejected = false;
+        try { restored.apply(); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && restored.pending(), "recovery does not authorize overwriting newer pack metadata");
         build.reload();
         check(!build.pending(), "discard reloads current metadata");
     }

@@ -249,7 +249,7 @@ final class EditorQuestLinks {
                 Consumer<AuthoringDocument> open) {
         if (quest.kind() != DefinitionKind.QUEST || stage.isEmpty() || !EditorWidgets.section("Related quest content")) return;
         for (var link : cachedLinks(workspace, quest, stage)) {
-            if (ImGui.button("Open " + link.document().id() + "##" + link.document().resourcePath())) run.accept(() -> open.accept(link.document()));
+            if (ImGui.button("Open " + link.document().id() + "##" + link.document().resourcePath())) open.accept(link.document());
             if (ImGui.isItemHovered()) ImGui.setTooltip(link.source());
         }
         if (ImGui.beginCombo(EditorWidgets.field("Create content"), kind.name().toLowerCase(java.util.Locale.ROOT))) {

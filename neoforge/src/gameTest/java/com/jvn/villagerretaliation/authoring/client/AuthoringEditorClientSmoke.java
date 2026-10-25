@@ -761,41 +761,41 @@ public final class AuthoringEditorClientSmoke {
             require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
                     "Dialogue pool cards stay responsive with the default campaign loaded: " + profile);
         });
-        replaceText(() -> poolPoint(600, 675), () -> "<b>Edited on a pool card</b>, {player}.");
-        click(() -> poolPoint(530, 350));
+        replaceText(() -> poolCardPoint(600, 675), () -> "<b>Edited on a pool card</b>, {player}.");
+        click(() -> poolCardPoint(530, 350));
         STEPS.add(() -> {
             require(pool[0].value("/lines/0/lines/0").getAsString().contains("Edited on a pool card"), "Card text edits apply through the normal draft buffers.");
             require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/lines/0"), "Details selects the pool entry's conditions.");
         });
-        replaceText(() -> poolPoint(600, 548), () -> "121");
-        click(() -> poolPoint(530, 350));
+        replaceText(() -> poolCardPoint(600, 548), () -> "121");
+        click(() -> poolCardPoint(530, 350));
         STEPS.add(() -> require(pool[0].value("/lines/0/weight").getAsInt() == 121, "Pool selection weights are editable on cards."));
         click(() -> toolbar("Undo"));
         STEPS.add(() -> require(pool[0].value("/lines/0/weight").getAsInt() == 120, "Card field edits support undo."));
         click(() -> toolbar("Redo"));
         STEPS.add(() -> { require(pool[0].value("/lines/0/weight").getAsInt() == 121, "Card field edits support redo."); capture("00-dialogue-pool-edited"); });
-        click(() -> poolPoint(462, 758));
+        click(() -> poolCardPoint(462, 758));
         STEPS.add(() -> {
             require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 21, "Add line creates a new editable variation.");
             require(pool[0].value("/lines/0/lines/20").getAsString().equals("New dialogue."), "Add line selects a fresh variation.");
             capture("00-dialogue-pool-added-line");
         });
-        click(() -> poolPoint(590, 758));
+        click(() -> poolCardPoint(590, 758));
         STEPS.add(() -> require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 22, "Duplicate line preserves the variation: " + pool[0].value("/lines/0/lines").getAsJsonArray().size()));
-        click(() -> poolPoint(725, 758));
+        click(() -> poolCardPoint(725, 758));
         STEPS.add(() -> require(pool[0].value("/lines/0/lines").getAsJsonArray().size() == 21, "Remove line deletes only the chosen variation."));
-        click(() -> poolPoint(498, 796));
+        click(() -> poolCardPoint(498, 796));
         STEPS.add(() -> {
             require(pool[0].value("/lines").getAsJsonArray().size() == 8, "Duplicate entry copies the complete card.");
             require(pool[0].value("/lines/7/story_biome").getAsString().equals("minecraft:badlands"), "Card duplication preserves selection rules.");
         });
         STEPS.add(() -> invoke("setPointer", new Class<?>[] {String.class}, "/lines/0"));
         pause(250);
-        click(() -> poolPoint(650, 796));
+        click(() -> poolCardPoint(650, 796));
         STEPS.add(() -> require(pool[0].value("/lines").getAsJsonArray().size() == 7, "Remove entry deletes one card."));
         click(() -> toolbar("Undo"));
         STEPS.add(() -> require(pool[0].value("/lines/0/id").getAsString().equals("fisherman_share_story_badlands"), "Undo restores a deleted pool card."));
-        click(() -> poolPoint(460, 274));
+        click(() -> poolCardPoint(460, 274));
         STEPS.add(() -> require(pool[0].value("/lines").getAsJsonArray().size() == 9, "Add entry works in the pool toolbar."));
         click(() -> toolbar("Undo"));
         STEPS.add(() -> {
@@ -898,6 +898,10 @@ public final class AuthoringEditorClientSmoke {
             var profile = EditorCampaignProfile.stop(output());
             require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Large translation resources render only visible entries: " + profile);
         });
+    }
+
+    private static float[] poolCardPoint(float x, float y) {
+        return poolPoint(x, y + 40);
     }
 
     private static float[] poolPoint(float x, float y) {
@@ -1009,6 +1013,28 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if ("workflow".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
+            STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
+            buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps();
+            finishSteps("Editor workflow, navigation, recovery and productivity controls passed.");
+            return;
+        }
+        if ("setup".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
+            STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
+            buildSetupSteps();
+            return;
+        }
+        if ("files".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
+            STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
+            buildCampaignSteps();
+            finishSteps("File-tree actions, navigation with unfinished metadata and pack finalization passed.");
+            return;
+        }
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorBufferSmokeOnly")) {
+            buildBufferSteps();
+            finishSteps("Per-file drafts, keyboard navigation, partial saves and multi-file recovery passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorPackFolderSmokeOnly")) {
             buildPackFolderSteps();
             finishSteps("Direct pack-folder saving and external-change review passed.");
@@ -1050,6 +1076,7 @@ public final class AuthoringEditorClientSmoke {
         buildVariableSteps();
         buildCompletionSteps();
         buildPackFolderSteps();
+        buildBufferSteps();
         buildPanelSteps();
         buildPerformanceSteps();
         buildDropdownSteps();
@@ -1170,9 +1197,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSetupSteps() {
+        var reopenedFrom = new AuthoringWorkspace[1];
         click(() -> toolbar("Workspace"));
-        replaceText(() -> screenPoint(120, 257), () -> output().resolve("setup-drafts").toString());
-        click(() -> screenPoint(200, 297));
+        click(() -> screenPoint(120, 153));
+        replaceText(() -> screenPoint(120, 297), () -> output().resolve("setup-drafts").toString());
+        click(() -> screenPoint(200, 337));
         STEPS.add(() -> {
             workspace = (AuthoringWorkspace) field(editor, "workspace");
             require(workspace.directory().equals(output().resolve("setup-drafts")), "Create new opens the typed workspace folder.");
@@ -1200,12 +1229,12 @@ public final class AuthoringEditorClientSmoke {
         click(() -> screenPoint(430, 181));
         STEPS.add(() -> capture("10g-response-editor"));
         replaceText(() -> screenPoint(450, 285), () -> RESPONSE);
-        click(() -> screenPoint(450, 365));
+        click(() -> screenPoint(450, 425));
         key(ImGuiKey.Home);
         key(ImGuiKey.DownArrow);
         key(ImGuiKey.DownArrow);
         key(ImGuiKey.Enter);
-        click(() -> screenPoint(350, 405));
+        click(() -> screenPoint(350, 465));
         STEPS.add(() -> {
             require(DialogueGraph.edges(document).size() == 1, "Add connection creates a response.");
             require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "The response leads to the chosen node.");
@@ -1286,10 +1315,11 @@ public final class AuthoringEditorClientSmoke {
             capture("14-exported-pack");
         });
         click(() -> toolbar("Workspace"));
-        click(() -> screenPoint(85, 297));
+        STEPS.add(() -> reopenedFrom[0] = workspace);
+        click(() -> screenPoint(85, 337));
         STEPS.add(() -> {
             workspace = (AuthoringWorkspace) field(editor, "workspace");
-            require(workspace.documents().size() == 1, "Open folder reloads the saved workspace.");
+            require(workspace != reopenedFrom[0] && workspace.documents().size() == 1, "Open folder reloads the saved workspace.");
         });
         click(() -> screenPoint(140, 267));
         click(() -> toolbar("Edit"));
@@ -1431,6 +1461,154 @@ public final class AuthoringEditorClientSmoke {
         }
     }
 
+    private static void buildBufferSteps() {
+        var original = new AuthoringWorkspace[1];
+        var priorDocument = new AuthoringDocument[1];
+        var guide = new int[1];
+        String firstPath = "data/test/dialogue_trees/en_us/first.json", secondPath = "data/test/dialogue_trees/en_us/second.json";
+        STEPS.add(() -> {
+            original[0] = workspace; priorDocument[0] = document; guide[0] = (int) field(editor, "guideStep");
+            set("resetLayout", true);
+            try {
+                EditorBufferChecks.supportingFilesKeepIndependentDraftsAndBaselines();
+                EditorClientChecks.packFileEditorsPreservePendingEdits();
+                EditorClientChecks.packFinalizationPreservesAdvancedMetadataAndRecovery();
+                workspace = AuthoringWorkspace.create(output().resolve("buffer-workspace"));
+                String json = "{\"nodes\":{\"start\":{\"lines\":[\"Original\"],\"responses\":[]}},\"entries\":[{\"id\":\"default\",\"label\":\"Talk\",\"start\":\"start\"}]}";
+                workspace.importResources(Map.of(firstPath, json.getBytes(java.nio.charset.StandardCharsets.UTF_8), secondPath, json.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                workspace.save();
+                invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, workspace, false);
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            set("guideStep", -1);
+            invoke("openPackFile", new Class<?>[] {String.class}, firstPath);
+            invoke("openPackFile", new Class<?>[] {String.class}, secondPath);
+            invoke("openPackFile", new Class<?>[] {String.class}, firstPath);
+            document = (AuthoringDocument) field(editor, "document");
+        });
+        pause(300);
+        STEPS.add(() -> {
+            var command = ((List<EditorCommands.Command>) invoke("commands", new Class<?>[0])).stream()
+                    .filter(value -> value.id().equals("Duplicate selected node")).findFirst().orElseThrow();
+            invoke("openPackFile", new Class<?>[] {String.class}, secondPath);
+            var next = (AuthoringDocument) field(editor, "document");
+            var before = next.json();
+            invoke("attempt", new Class<?>[] {ImGuiAuthoringEditor.EditorOperation.class}, command.action());
+            require(next.json().equals(before) && field(editor, "status").toString().contains("Selection changed"),
+                    "A queued edit command cannot mutate a different file after navigation.");
+            invoke("openPackFile", new Class<?>[] {String.class}, firstPath);
+        });
+        pause(250);
+        replaceText(() -> new float[] {1700, 380}, () -> "Typed first file");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        pause(250);
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document.resourcePath().equals(secondPath), "Typing in Properties does not block file navigation.");
+            require(!((EditorFieldEdits) field(editor, "pendingFields")).pending(), "The active text widget does not copy one file's input into another file.");
+            var first = workspace.documents().stream().filter(value -> value.resourcePath().equals(firstPath)).findFirst().orElseThrow();
+            require(((EditorDocumentBuffers) field(editor, "documentBuffers")).fields(first).text("/nodes/start/lines/0", "").equals("Typed first file"),
+                    "Property text stays pending in the file it belongs to.");
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.S);
+        STEPS.add(() -> require(document.value("/nodes/start/lines/0").getAsString().equals("Original"), "Saving all drafts leaves the second file's wording unchanged."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            ((imgui.type.ImString) field(editor, "jsonText")).set("");
+            set("rawModified", true);
+            invoke("captureRawDraft", new Class<?>[0]);
+        });
+        pause(300);
+        click(() -> new float[] {650, 500});
+        type("{first");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document.resourcePath().equals(secondPath), "Ctrl+Tab leaves an unfinished JSON draft without applying it.");
+            var first = workspace.documents().stream().filter(value -> value.resourcePath().equals(firstPath)).findFirst().orElseThrow();
+            require(((EditorDocumentBuffers) field(editor, "documentBuffers")).raw(first).equals("{first"), "The first file retains its exact typed JSON.");
+            ((EditorFieldEdits) field(editor, "pendingFields")).update("/nodes/start/lines/0", document.value("/nodes/start/lines/0"), "Saved in second file");
+            invoke("refresh", new Class<?>[0]);
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.S);
+        STEPS.add(() -> {
+            try {
+                var saved = AuthoringWorkspace.open(workspace.directory());
+                require(saved.documents().stream().filter(value -> value.resourcePath().equals(secondPath)).findFirst().orElseThrow()
+                        .value("/nodes/start/lines/0").getAsString().equals("Saved in second file"), "Ctrl+S saves valid edits while another file has invalid JSON.");
+                require(workspace.recoveryAvailable(), "Partial saves retain recovery for unfinished files.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document.resourcePath().equals(firstPath) && ((imgui.type.ImString) field(editor, "jsonText")).get().equals("{first"),
+                    "Returning to a file restores its unfinished JSON editor.");
+            capture("buffers-01-retained-draft");
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Tab);
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            ((imgui.type.ImString) field(editor, "jsonText")).set("");
+            set("rawModified", true); invoke("captureRawDraft", new Class<?>[0]);
+        });
+        pause(250);
+        click(() -> new float[] {650, 500});
+        type("{second");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.S);
+        STEPS.add(() -> {
+            require(((Map<?, ?>) field(editor, "bufferIssues")).size() == 2, "Each invalid file is reported separately.");
+            capture("buffers-02-two-drafts");
+        });
+        click(() -> new float[] {490, 154});
+        STEPS.add(() -> require(((AuthoringDocument) field(editor, "document")).resourcePath().equals(firstPath)
+                && ((imgui.type.ImString) field(editor, "jsonText")).get().equals("{first"), "Clicking an inactive tab restores that file's draft."));
+        click(() -> new float[] {620, 154});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).resourcePath().equals(secondPath), "Tab clicks follow the active file.");
+            try {
+                var saved = AuthoringWorkspace.open(workspace.directory());
+                invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, saved, false);
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            require((boolean) field(editor, "showRecovery"), "Reopening offers recovery after a partial save.");
+            invoke("recoverDrafts", new Class<?>[0]);
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            var buffers = (EditorDocumentBuffers) field(editor, "documentBuffers");
+            require(buffers.raw(workspace.documents().stream().filter(value -> value.resourcePath().equals(firstPath)).findFirst().orElseThrow()).equals("{first")
+                    && buffers.raw(workspace.documents().stream().filter(value -> value.resourcePath().equals(secondPath)).findFirst().orElseThrow()).equals("{second"),
+                    "Recovery restores all unfinished files, including inactive tabs.");
+            invoke("openPackFile", new Class<?>[] {String.class}, firstPath);
+            document = (AuthoringDocument) field(editor, "document");
+        });
+        pause(300);
+        STEPS.add(() -> capture("buffers-03-recovered"));
+        replaceText(() -> new float[] {650, 500}, () -> {
+            var repaired = document.json();
+            repaired.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Repaired first file"));
+            return repaired.toString();
+        });
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.S);
+        STEPS.add(() -> {
+            require(document.value("/nodes/start/lines/0").getAsString().equals("Repaired first file"), "Ctrl+S applies a repaired full JSON draft.");
+        });
+        click(() -> new float[] {690, 154});
+        STEPS.add(() -> require(((EditorOpenFiles) field(editor, "openFiles")).entries(workspace).stream().noneMatch(entry -> entry.currentPath().equals(secondPath)),
+                "Closing a tab hides it without discarding its draft."));
+        click(() -> new float[] {225, 469});
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document.resourcePath().equals(secondPath), "The file browser reopens a closed draft.");
+            require(((imgui.type.ImString) field(editor, "jsonText")).get().equals("{second"), "Closing and reopening a tab keeps its unfinished input.");
+            ((EditorDocumentBuffers) field(editor, "documentBuffers")).discardRaw(document);
+            set("rawModified", false); invoke("refresh", new Class<?>[0]); invoke("save", new Class<?>[0]);
+            require(!workspace.recoveryAvailable(), "Resolving the last draft clears recovery.");
+            workspace = original[0]; document = priorDocument[0];
+            invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, workspace, false);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("guideStep", guide[0]);
+        });
+    }
+
     private static void buildPackFolderSteps() {
         var original = new AuthoringWorkspace[1];
         var priorDocument = new AuthoringDocument[1];
@@ -1439,6 +1617,7 @@ public final class AuthoringEditorClientSmoke {
         String path = "data/test/dialogue_trees/en_us/folder_edit.json";
         STEPS.add(() -> {
             original[0] = workspace; priorDocument[0] = document; guide[0] = (int) field(editor, "guideStep");
+            set("resetLayout", true);
             try {
                 Files.createDirectories(pack.resolve(path).getParent());
                 Files.writeString(pack.resolve("pack.mcmeta"), AuthoringDocument.JSON.toJson(workspace.packMetadata()));
@@ -1468,6 +1647,9 @@ public final class AuthoringEditorClientSmoke {
                 Files.writeString(pack.resolve(path), AuthoringDocument.JSON.toJson(disk));
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             document.edit("Conflicting wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Keep in game")));
+            var unfinished = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/custom/unfinished.json", new com.google.gson.JsonObject());
+            workspace.add(unfinished);
+            ((EditorDocumentBuffers) field(editor, "documentBuffers")).raw(unfinished, "{unfinished");
             invoke("refresh", new Class<?>[0]);
             ((EditorPackFolder) field(editor, "packFolder")).refresh();
         });
@@ -1500,6 +1682,10 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             try { require(Files.readString(pack.resolve(path)).contains("Keep in game"), "Keeping the editor version saves the chosen content to disk."); }
             catch (IOException exception) { throw new UncheckedIOException(exception); }
+            var unfinished = workspace.documents().stream().filter(value -> value.resourcePath().equals("data/test/custom/unfinished.json")).findFirst().orElseThrow();
+            var buffers = (EditorDocumentBuffers) field(editor, "documentBuffers");
+            require("{unfinished".equals(buffers.raw(unfinished)), "Resolving another file's external conflict preserves an unrelated invalid draft.");
+            buffers.discardRaw(unfinished); invoke("save", new Class<?>[0]);
             capture("pack-folder-03-resolved");
             workspace = original[0]; document = priorDocument[0];
             invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, workspace, false);
@@ -2475,6 +2661,10 @@ public final class AuthoringEditorClientSmoke {
             try (var zip = new java.util.zip.ZipFile(output().resolve("village-stories.zip").toFile())) {
                 require(zip.getEntry("pack.mcmeta") != null && zip.getEntry("data/test/campaign_addons/renamed_addon/addon.json") != null,
                         "Finalization builds a shareable ZIP containing the renamed addon.");
+                try (var stream = zip.getInputStream(zip.getEntry("pack.mcmeta"))) {
+                    require(new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).contains("Village Stories release"),
+                            "Finalization includes the description typed into its settings.");
+                }
             } catch (IOException exception) { throw new UncheckedIOException(exception); }
             capture("02g-built-package");
             setField(field(editor, "packBuild"), "zip", false);
@@ -2552,7 +2742,7 @@ public final class AuthoringEditorClientSmoke {
             require(plan != null && plan.source().equals(source) && plan.destination().startsWith(addon + "/quests/"), "Dragging a file prepares a move into the target folder.");
             capture("02c4-file-drop-preview");
         });
-        click(() -> screenPoint(350, 984));
+        click(() -> screenPoint(350, 944));
         STEPS.add(() -> {
             require(document.json().get("description_file").getAsString().contains("/quests/"), "Applying file drops updates campaign asset references.");
             invoke("openPackFile", new Class<?>[] {String.class}, addon);
@@ -2586,11 +2776,14 @@ public final class AuthoringEditorClientSmoke {
         replaceText(() -> screenPoint(600, 330), () -> "{");
         click(() -> toolbar("Back"));
         STEPS.add(() -> {
-            require((int) field(editor, "view") == 4 && field(field(editor, "packFiles"), "selected").equals("pack.mcmeta"), "Invalid metadata keeps navigation on the edited file.");
-            require(((imgui.type.ImString) field(field(editor, "packFiles"), "text")).get().equals("{"), "Failed navigation preserves the invalid buffer.");
+            require((int) field(editor, "view") == 2, "Invalid metadata does not block returning to pack finalization.");
+            var files = (EditorPackFiles) field(editor, "packFiles");
+            require(files.pending("pack.mcmeta") && files.recovery().getAsJsonObject("files").getAsJsonObject("pack.mcmeta").get("text").getAsString().equals("{"),
+                    "Navigation retains invalid metadata in its own file draft.");
         });
-        click(() -> toolbar("Edit"));
-        STEPS.add(() -> require((int) field(editor, "view") == 4, "View buttons cannot hide an invalid pending metadata buffer."));
+        click(() -> toolbar("Forward"));
+        pause(250);
+        STEPS.add(() -> require(((imgui.type.ImString) field(field(editor, "packFiles"), "text")).get().equals("{"), "Returning to metadata restores the unfinished text."));
         replaceText(() -> screenPoint(600, 330), () -> {
             var metadata = workspace.packMetadata(); metadata.getAsJsonObject("pack").addProperty("description", "Navigation keeps edits");
             return metadata.toString();
@@ -2599,7 +2792,11 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             require((int) field(editor, "view") == 2, "Back returns from pack.mcmeta to pack finalization.");
             require(((String) field(editor, "status")).startsWith("Back to"), "Successful navigation clears the previous error message.");
-            require(workspace.packMetadata().getAsJsonObject("pack").get("description").getAsString().equals("Navigation keeps edits"), "Valid pending edits apply before navigation.");
+            require(((EditorPackFiles) field(editor, "packFiles")).pending("pack.mcmeta"), "Valid edits remain in their file until saved.");
+        });
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(workspace.packMetadata().getAsJsonObject("pack").get("description").getAsString().equals("Navigation keeps edits"), "Save applies valid metadata from an inactive file.");
             capture("02h-navigation-back");
         });
         click(() -> toolbar("Back"));
@@ -2740,7 +2937,11 @@ public final class AuthoringEditorClientSmoke {
             capture("26-test-world-setup");
             Minecraft.getInstance().screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(Minecraft.getInstance().screen == field(editor, "screen"), "Cancelling test world setup returns to the editor.");
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            GLFW.glfwSetWindowSize(Minecraft.getInstance().getWindow().getWindow(), 1920, 1080);
         });
+        pause(400);
+        STEPS.add(() -> { Minecraft.getInstance().resizeDisplay(); set("resetLayout", true); });
         buildLiveWorldSteps();
     }
 
@@ -3257,8 +3458,8 @@ public final class AuthoringEditorClientSmoke {
         });
         click(() -> screenPoint(140, 310));
         click(() -> toolbar("Workspace"));
-        replaceText(() -> screenPoint(120, 257), () -> output().resolve("import-drafts").toString());
-        click(() -> screenPoint(200, 297));
+        replaceText(() -> screenPoint(120, 297), () -> output().resolve("import-drafts").toString());
+        click(() -> screenPoint(200, 337));
         click(() -> screenPoint(140, 153));
         STEPS.add(() -> capture("17-empty-import-workspace"));
         click(() -> screenPoint(140, 330));
@@ -3568,6 +3769,8 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> require(inlineText().contains("<color:#"), "The custom color control applies a hex color: " + inlineText()));
         click(() -> inlineTool("Style"));
         key(ImGuiKey.End);
+        key(ImGuiKey.UpArrow);
+        key(ImGuiKey.UpArrow);
         key(ImGuiKey.RightArrow);
         STEPS.add(() -> capture("02-inline-gradient-menu"));
         key(ImGuiKey.End);
@@ -3717,7 +3920,10 @@ public final class AuthoringEditorClientSmoke {
 
     private static float[] screenPoint(float x, float y) {
         float referenceContentWidth = 250;
-        if (x >= referenceContentWidth + 14 && x < 1525) x += contentColumnWidth() - referenceContentWidth;
+        if (x >= referenceContentWidth + 14 && x < 1525) {
+            x += contentColumnWidth() - referenceContentWidth;
+            y += 40;
+        }
         return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
     }
 

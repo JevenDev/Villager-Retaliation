@@ -131,7 +131,10 @@ final class ImGuiAuthoringEditor {
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
-    private final EditorFieldEdits pendingFields = new EditorFieldEdits();
+    private final EditorDocumentBuffers documentBuffers = new EditorDocumentBuffers();
+    private EditorFieldEdits pendingFields = new EditorFieldEdits();
+    private Map<String, String> bufferIssues = Map.of();
+    private String selectedFileTab = "";
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
     private final java.util.ArrayDeque<EditorOperation> operations = new java.util.ArrayDeque<>();
@@ -336,9 +339,9 @@ final class ImGuiAuthoringEditor {
             if (worldContent != null) { loadingWorldContent(); return; }
             if (MC.screen == screen && !showRecovery && !confirmClose && !popupWasOpen && !EditorTestWorld.applying()) {
                 if (shortcuts.pressed()) shortcuts.dispatch(view == 3 ? commands().stream().filter(command -> List.of("Save drafts", "Focus work area").contains(command.id())).toList() : commands(),
-                        library, this::operation, ImGui.getIO().getWantTextInput() || ImGui.isAnyItemActive());
-                if (ImGui.isMouseClicked(3)) operation(() -> navigateHistory(-1));
-                if (ImGui.isMouseClicked(4)) operation(() -> navigateHistory(1));
+                        library, this::attempt, ImGui.getIO().getWantTextInput() || ImGui.isAnyItemActive());
+                if (ImGui.isMouseClicked(3)) attempt(() -> navigateHistory(-1));
+                if (ImGui.isMouseClicked(4)) attempt(() -> navigateHistory(1));
             }
             if (view == 3) { playtest(); return; }
             shell();
@@ -352,7 +355,7 @@ final class ImGuiAuthoringEditor {
             }
             if (focusMode.isEmpty() || focusMode.equals(DETAIL_PANEL)) inspector();
             quickOpen();
-            if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::operation, preferences.textScale());
+            if (commandPalette.active()) commandPalette.render(shortcuts.effective(commands(), library), this::attempt, preferences.textScale());
             referencePopup();
             nodeDeletePopup();
             shortcuts.popup(() -> EditorTextStyles.shortcutCommands(commands()), library, this::operation, preferences.textScale());
@@ -451,7 +454,7 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(workspace == null);
         if (ImGui.button("New")) operation(() -> { chooseCreateScope(); showCreate = !showCreate; view = 0; });
         sameLineFor("Save");
-        if (ImGui.button("Save")) operation(this::save);
+        if (ImGui.button("Save")) attempt(this::save);
         ImGui.endDisabled();
         sameLineFor("Edit");
         if (viewButton("Edit", 0)) operation(() -> { view = 0; focusPanel = WORK_PANEL; });
@@ -470,7 +473,7 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.setItemDefaultFocus();
             if (ImGui.menuItem("Keyboard shortcuts")) shortcuts.open();
-            if (ImGui.menuItem("Pack files")) operation(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
+            if (ImGui.menuItem("Pack files")) attempt(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Find an action", keyHint("Open commands"))) commandPalette.open();
             ImGui.separator();
             if (ImGui.menuItem("Restore all panes", "", focusMode.isEmpty())) focusMode = "";
@@ -554,6 +557,51 @@ final class ImGuiAuthoringEditor {
             detailsScroll = ImGui.getScrollY();
         }
         ImGui.setWindowFontScale(1);
+        if (title.equals(WORK_PANEL)) fileTabs();
+    }
+
+    private void fileTabs() {
+        if (workspace == null) return;
+        String active = activePath();
+        if (ImGui.beginTabBar("##open_files", imgui.flag.ImGuiTabBarFlags.FittingPolicyScroll | imgui.flag.ImGuiTabBarFlags.TabListPopupButton)) {
+            for (var entry : openFiles.entries(workspace)) {
+                String path = entry.currentPath();
+                int flags = path.equals(active) && !active.equals(selectedFileTab) ? imgui.flag.ImGuiTabItemFlags.SetSelected : 0;
+                if (filePending(path) || entry.document() != null && entry.document().dirty()) flags |= imgui.flag.ImGuiTabItemFlags.UnsavedDocument;
+                var open = new imgui.type.ImBoolean(true);
+                boolean visible = ImGui.beginTabItem(path.substring(path.lastIndexOf('/') + 1) + "###file:" + path, open, flags);
+                if (ImGui.isItemClicked() && !path.equals(active)) attempt(() -> openPackFile(path));
+                if (ImGui.isItemHovered()) ImGui.setTooltip(path + (filePending(path) ? "\nUnfinished input is retained in this file." : ""));
+                if (!open.get()) attempt(() -> closeOpenFile(path));
+                if (visible) ImGui.endTabItem();
+            }
+            ImGui.endTabBar();
+        }
+        selectedFileTab = active;
+        if (!bufferIssues.isEmpty()) {
+            ImGui.textWrapped("Some drafts need attention. Their text is kept for recovery.");
+            if (EditorWidgets.section("Unfinished drafts (" + bufferIssues.size() + ")")) {
+                ImGui.beginChild("##buffer_issues", 0, Math.min(130, bufferIssues.size() * ImGui.getTextLineHeightWithSpacing() * 3), true);
+                for (var issue : bufferIssues.entrySet()) {
+                    if (ImGui.selectable(issue.getKey())) attempt(() -> openPackFile(issue.getKey()));
+                    ImGui.textWrapped(issue.getValue());
+                }
+                ImGui.endChild();
+            }
+        }
+    }
+
+    private void rawDraftEditor() {
+        ImGui.textUnformatted("JSON draft");
+        ImGui.textWrapped("Switch files freely. Save applies valid JSON and keeps unfinished drafts for recovery.");
+        if (ImGui.button("Apply JSON##draft")) attempt(() -> {
+            captureRawDraft(); documentBuffers.applyRaw(document); rawModified = false; refresh();
+        });
+        EditorWidgets.sameLineFor("Discard JSON draft");
+        if (ImGui.button("Discard JSON draft")) attempt(() -> { documentBuffers.discardRaw(document); rawModified = false; refresh(); });
+        if (ImGui.inputTextMultiline("##file_json_draft:" + document.resourcePath(), jsonText, -1, Math.max(180, ImGui.getContentRegionAvailY()), ImGuiInputTextFlags.AllowTabInput)) {
+            rawModified = true; captureRawDraft();
+        }
     }
 
     private static void input(String label, ImString value) {
@@ -570,7 +618,7 @@ final class ImGuiAuthoringEditor {
     private static String kindLabel(DefinitionKind kind) { return EditorContentBrowser.kindLabel(kind); }
 
     private void openWorkspace(boolean create) throws IOException {
-        if (workspace != null) { saveSession(); workspace.save(); }
+        if (workspace != null) save();
         Path folder = Path.of(workspacePath.get()), cache = MC.gameDirectory.toPath().resolve("authoring/pack-workspaces");
         AuthoringWorkspace next = create ? AuthoringWorkspace.create(folder)
                 : java.nio.file.Files.isRegularFile(folder.resolve("pack.mcmeta")) || AuthoringWorkspace.hasPackWorkspace(folder, cache)
@@ -580,6 +628,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void installWorkspace(AuthoringWorkspace next, boolean create) throws IOException {
+        rawModified = false; pendingFields.clear(); translatedFields.clear(); documentBuffers.clear(); bufferIssues = Map.of(); selectedFileTab = "";
         workspace = next;
         updateValidationContext();
         documentCache.clear();
@@ -701,12 +750,12 @@ final class ImGuiAuthoringEditor {
             ImGui.textUnformatted("Workspace");
             ImGui.textWrapped("Open a pack folder to edit its files, or keep a separate draft workspace.");
             input("Workspace folder", workspacePath);
-            if (ImGui.button("Open folder")) operation(() -> openWorkspace(false));
+            if (ImGui.button("Open folder")) attempt(() -> openWorkspace(false));
             EditorWidgets.sameLineFor("Create new");
-            if (ImGui.button("Create new")) operation(() -> openWorkspace(true));
+            if (ImGui.button("Create new")) attempt(() -> openWorkspace(true));
             ImGui.textWrapped("Create needs an empty folder. Open accepts a draft workspace or a pack containing pack.mcmeta.");
             if (!preferences.recentWorkspaces().isEmpty() && ImGui.beginCombo(EditorWidgets.field("Recent workspaces"), "Choose a workspace")) {
-                for (String recent : preferences.recentWorkspaces()) if (ImGui.selectable(recent)) operation(() -> { workspacePath.set(recent); openWorkspace(false); });
+                for (String recent : preferences.recentWorkspaces()) if (ImGui.selectable(recent)) attempt(() -> { workspacePath.set(recent); openWorkspace(false); });
                 ImGui.endCombo();
             }
             ImGui.separator();
@@ -716,7 +765,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        packFolder.render(workspace, hasPendingFields() || rawModified, this::operation, this::reloadSourceSelection);
+        packFolder.render(workspace, path -> filePending(path) || path.equals("pack.mcmeta") && packBuild.pending(), this::attempt, this::reloadSourceSelection);
         float modeWidth = ImGui.calcTextSize("Pack files").x + ImGui.getFrameHeight() + 2 * ImGui.getStyle().getFramePaddingX();
         float newWidth = Math.max(ImGui.calcTextSize("New content").x + 16, ImGui.getContentRegionAvailX() - modeWidth - 8);
         if (ImGui.button("New content", newWidth, 0)) operation(() -> {
@@ -820,7 +869,7 @@ final class ImGuiAuthoringEditor {
             ImGui.textDisabled("Paths in the built pack");
             ImGui.beginChild("##pack_explorer", 0, Math.max(180, ImGui.getContentRegionAvailY() - 150));
             EditorExplorer.begin(false);
-            packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::refresh);
+            packFiles.renderTree(workspace, filter.get(), this::openPackFile, path -> { openPackFile(path); view = 4; }, this::operation, this::attempt, this::filePending, this::refresh);
             EditorExplorer.end();
             ImGui.endChild();
         } else {
@@ -854,7 +903,10 @@ final class ImGuiAuthoringEditor {
             if (ImGui.button("Delete...")) confirmDelete = true;
             if (confirmDelete) {
                 ImGui.textWrapped("Move this draft to Deleted files? You can restore it later.");
-                if (ImGui.button("Confirm delete")) operation(() -> { workspace.remove(document); select(null); });
+                if (ImGui.button("Confirm delete")) operation(() -> {
+                    if (hasPendingDrafts()) throw new IllegalStateException("Save or discard unfinished drafts before deleting content and its companion files");
+                    workspace.remove(document); select(null);
+                });
                 EditorWidgets.sameLineFor("Cancel");
                 if (ImGui.button("Cancel")) confirmDelete = false;
             }
@@ -970,8 +1022,8 @@ final class ImGuiAuthoringEditor {
                 } else {
                     var entry = row.entry();
                     var candidate = entry.document();
-                    if (EditorExplorer.file("content:" + entry.path(), entry.title(), document == candidate, candidate.dirty(), candidate.kind()))
-                        operation(() -> { select(candidate); view = 0; });
+                    if (EditorExplorer.file("content:" + entry.path(), entry.title(), document == candidate, candidate.dirty() || filePending(candidate.resourcePath()), candidate.kind()))
+                        attempt(() -> { select(candidate); view = 0; });
                     if (ImGui.isItemHovered()) ImGui.setTooltip(entry.title() + "\n" + kindLabel(candidate.kind()) + "\n" + entry.id() + "\n" + entry.path());
                 }
             }
@@ -1027,7 +1079,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.button("Commands (" + keyHint("Open commands") + ")")) commandPalette.open();
         openFileTools();
         historyTools();
-        try { changes.render(workspace, this::operation, this::openPackFile, changed -> { if (changed != null) historyDocument = changed; refresh(); }); }
+        try { changes.render(workspace, this::operation, path -> attempt(() -> openPackFile(path)), changed -> { if (changed != null) historyDocument = changed; refresh(); }); }
         catch (IOException exception) { ImGui.textWrapped("Could not read saved changes: " + exception.getMessage()); }
         if (document != null && ImGui.button("Find usages across workspace")) findUsages();
         replacementTools();
@@ -1085,7 +1137,7 @@ final class ImGuiAuthoringEditor {
         for (int i = 0; i < searchHits.size(); i++) {
             var hit = searchHits.get(i);
             ImGui.pushID(i);
-            if (ImGui.selectable(shortText(hit.document().id(), 48) + "##hit")) operation(() -> openSearchHit(hit));
+            if (ImGui.selectable(shortText(hit.document().id(), 48) + "##hit")) attempt(() -> openSearchHit(hit));
             ImGui.textDisabled(hit.pointer().isEmpty() ? "File settings" : hit.pointer());
             ImGui.textWrapped(EditorSearch.snippet(hit.text(), searchQuery));
             if (ImGui.isItemHovered()) ImGui.setTooltip(hit.document().resourcePath() + hit.pointer() + "\n" + hit.text());
@@ -1129,14 +1181,14 @@ final class ImGuiAuthoringEditor {
         quickIndex = Math.clamp(quickIndex, 0, Math.max(0, matches.size() - 1));
         if (enter && !matches.isEmpty()) {
             String path = matches.get(quickIndex);
-            operation(() -> openPackFile(path)); ImGui.closeCurrentPopup();
+            attempt(() -> openPackFile(path)); ImGui.closeCurrentPopup();
         }
         ImGui.textWrapped(quickQuery.get().isBlank() ? "Recent files first. Enter to open, Escape to close." : matches.size() + " matching files");
         ImGui.beginChild("##quick_files", 0, 0, false);
         for (int i = 0; i < matches.size(); i++) {
             String path = matches.get(i);
             ImGui.pushID(i);
-            if (ImGui.selectable(path, i == quickIndex)) { operation(() -> openPackFile(path)); ImGui.closeCurrentPopup(); }
+            if (ImGui.selectable(path, i == quickIndex)) { attempt(() -> openPackFile(path)); ImGui.closeCurrentPopup(); }
             if (moved && i == quickIndex) ImGui.setScrollHereY();
             ImGui.popID();
         }
@@ -1190,8 +1242,20 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Preview content", "", graph, () -> { view = 1; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Playtest content", "", graph, this::enterPlaytest));
         result.add(new EditorCommands.Command("Reset editor layout", "", true, () -> resetLayout = true));
-        if (rendering) frameCommands = result;
-        return result;
+        var direct = java.util.Set.of("Save drafts", "Customize keyboard shortcuts", "Open commands", "Find content", "Navigate back", "Navigate forward",
+                "Parent folder", "Next node", "Previous node", "Focus work area", "Focus properties", "Quick open file", "Next open file",
+                "Previous open file", "Pin or unpin current file", "Close current file", "Fit graph", "Frame selected nodes", "Validate workspace",
+                "Go to definition", "Find usages", "Reset editor layout");
+        AuthoringDocument commandOwner = document;
+        var routed = result.stream().map(command -> new EditorCommands.Command(command.name(), command.shortcut(), command.enabled(), () -> {
+            if (direct.contains(command.id())) attempt(command.action());
+            else {
+                if (commandOwner != document) throw new IllegalStateException("Selection changed before the operation could run.");
+                operation(command.action());
+            }
+        })).toList();
+        if (rendering) frameCommands = routed;
+        return routed;
     }
 
     private String keyHint(String id) {
@@ -1204,16 +1268,16 @@ final class ImGuiAuthoringEditor {
     private void openFileTools() {
         if (!EditorWidgets.section("Open and pinned files")) return;
         ImGui.textWrapped("Next file: " + keyHint("Next open file") + ". Previous file: " + keyHint("Previous open file") + ".");
-        if (workspace.filePaths().contains(activePath()) && ImGui.button("Pin or unpin current file")) operation(() -> openFiles.pin(workspace, activePath()));
+        if (workspace.filePaths().contains(activePath()) && ImGui.button("Pin or unpin current file")) attempt(() -> openFiles.pin(workspace, activePath()));
         var listed = openFiles.entries(workspace).stream().sorted(java.util.Comparator.comparing(entry -> !entry.pinned())).toList();
         for (int i = 0; i < listed.size(); i++) {
             var entry = listed.get(i);
             String path = entry.currentPath();
             ImGui.pushID(i);
-            if (ImGui.smallButton(entry.pinned() ? "Unpin" : "Pin")) operation(() -> openFiles.pin(workspace, path));
+            if (ImGui.smallButton(entry.pinned() ? "Unpin" : "Pin")) attempt(() -> openFiles.pin(workspace, path));
             EditorWidgets.sameLineFor("Close");
-            if (ImGui.smallButton("Close")) operation(() -> closeOpenFile(path));
-            if (ImGui.selectable(shortText(path, 45), path.equals(activePath()))) operation(() -> openPackFile(path));
+            if (ImGui.smallButton("Close")) attempt(() -> closeOpenFile(path));
+            if (ImGui.selectable(shortText(path, 45) + (filePending(path) ? " *" : "") + "##" + path, path.equals(activePath()))) attempt(() -> openPackFile(path));
             if (ImGui.isItemHovered()) ImGui.setTooltip(path);
             ImGui.popID();
         }
@@ -1289,7 +1353,7 @@ final class ImGuiAuthoringEditor {
         for (int i = 0; i < targets.size(); i++) {
             var target = targets.get(i);
             ImGui.pushID("reference_" + i);
-            if (ImGui.smallButton("Go to definition")) operation(() -> navigateReference(target));
+            if (ImGui.smallButton("Go to definition")) attempt(() -> navigateReference(target));
             EditorWidgets.sameLineFor("Find usages");
             if (ImGui.smallButton("Find usages")) operation(() -> showReferences("Usages of " + target.label(), EditorReferences.usages(workspace, target, locale.get())));
             ImGui.popID();
@@ -1305,7 +1369,7 @@ final class ImGuiAuthoringEditor {
         for (int i = 0; i < referenceResults.size(); i++) {
             var location = referenceResults.get(i);
             ImGui.pushID(i);
-            if (ImGui.selectable(location.label())) { operation(() -> navigateReference(location)); ImGui.closeCurrentPopup(); }
+            if (ImGui.selectable(location.label())) { attempt(() -> navigateReference(location)); ImGui.closeCurrentPopup(); }
             ImGui.textDisabled(location.document().resourcePath());
             ImGui.popID();
         }
@@ -1336,6 +1400,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
+        if (rawModified) { rawDraftEditor(); ImGui.end(); return; }
         if (document.kind().campaignManifest()) {
             campaignCard();
             ImGui.end();
@@ -1805,8 +1870,9 @@ final class ImGuiAuthoringEditor {
             ImGui.setCursorScreenPos(x + 12 * zoom, fieldY + 20 * zoom);
             float width = (card.width() - 24) * zoom;
             ImString buffer = fields.computeIfAbsent(field.bufferId(document), ignored -> new ImString(
-                    field.value().getAsJsonPrimitive().isString() ? field.value().getAsString() : field.value().toString(), 65536));
-            ImGui.beginDisabled(rawModified || !field.editable() || nodeResize != null);
+                    documentBuffers.fields(field.document()).text(field.pointer(),
+                            field.value().getAsJsonPrimitive().isString() ? field.value().getAsString() : field.value().toString()), 65536));
+            ImGui.beginDisabled(rawModified || documentBuffers.raw(field.document()) != null || !field.editable() || nodeResize != null);
             boolean changed = false, activated = false, apply = false;
             if (field.value().getAsJsonPrimitive().isBoolean()) {
                 if (ImGui.checkbox("##value", Boolean.parseBoolean(buffer.get()))) {
@@ -1835,7 +1901,7 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.endDisabled();
             if (field.editable()) {
-                var edits = field.document() == document ? pendingFields : translatedFields.computeIfAbsent(field.document(), ignored -> new EditorFieldEdits());
+                var edits = field.document() == document ? pendingFields : translatedEdits(field.document());
                 edits.update(field.pointer(), field.value(), buffer.get());
                 String issue = edits.issue(field.document(), field.pointer());
                 if (!issue.isEmpty() && ImGui.isItemHovered()) ImGui.setTooltip(issue);
@@ -2107,7 +2173,7 @@ final class ImGuiAuthoringEditor {
         }
         if (returnQuest != null && returnQuest != document && workspace.documents().contains(returnQuest)
                 && DialogueGraph.nodes(returnQuest).stream().anyMatch(node -> node.id().equals(returnStage))
-                && ImGui.button("Return to " + returnQuest.id() + " / " + returnStage, -1, 0)) operation(() -> {
+                && ImGui.button("Return to " + returnQuest.id() + " / " + returnStage, -1, 0)) attempt(() -> {
             select(returnQuest);
             selectedNode = returnStage;
             nodeSelection.clear(); nodeSelection.add(returnStage);
@@ -2148,10 +2214,10 @@ final class ImGuiAuthoringEditor {
             if (pendingFields.pending()) try { pendingFields.validate(document); }
             catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { ImGui.textWrapped(exception.getMessage()); }
             questFlow.render(workspace, document, selectedNode, this::operation, this::setPointer, this::refresh);
-            questLinks.render(workspace, document, selectedNode, this::operation, linked -> {
+            questLinks.render(workspace, document, selectedNode, this::operation, linked -> attempt(() -> {
                 returnQuest = document; returnStage = selectedNode;
                 select(linked); view = 0;
-            });
+            }));
             guidedObjective();
             nodeActions();
         } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException
@@ -2161,7 +2227,7 @@ final class ImGuiAuthoringEditor {
         if (hasPendingFields()) {
             if (ImGui.button("Apply field edits")) operation(this::focusFirstError);
             EditorWidgets.sameLineFor("Discard field edits");
-            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.clear(); fields.clear(); textFields.clear(); });
+            if (ImGui.button("Discard field edits")) attempt(() -> { pendingFields.clear(); translatedFields.values().forEach(EditorFieldEdits::clear); refresh(); });
         }
         ImGui.separator();
         if (EditorWidgets.section("Advanced editing")) {
@@ -2195,21 +2261,21 @@ final class ImGuiAuthoringEditor {
             });
             if (EditorWidgets.section("Advanced full JSON")) {
                 ImGui.beginDisabled(hasPendingFields());
-                if (ImGui.inputTextMultiline("##raw", jsonText, -1, 260)) rawModified = true;
+                if (ImGui.inputTextMultiline("##raw:" + document.resourcePath(), jsonText, -1, 260)) { rawModified = true; captureRawDraft(); }
                 ImGui.endDisabled();
                 if (hasPendingFields()) ImGui.textWrapped("Apply or discard field edits before editing full JSON.");
                 if (ImGui.button("Apply JSON")) attempt(() -> {
                     if (hasPendingFields()) throw new IllegalStateException("Apply or discard field edits before applying full JSON.");
-                    document.replaceJson(jsonText.get());
+                    captureRawDraft(); documentBuffers.applyRaw(document); rawModified = false;
                     historyDocument = document;
                     refresh();
                 });
                 EditorWidgets.sameLineFor("Discard JSON buffer");
                 if (ImGui.button("Discard JSON buffer")) attempt(() -> {
                     if (hasPendingFields()) throw new IllegalStateException("Apply or discard field edits first.");
-                    refresh();
+                    documentBuffers.discardRaw(document); rawModified = false; refresh();
                 });
-                if (rawModified) ImGui.textWrapped("Unapplied JSON buffer. Apply before saving, previewing or switching definitions.");
+                if (rawModified) ImGui.textWrapped("Unfinished JSON stays with this file. Ctrl+S applies valid drafts and keeps invalid text for recovery.");
             }
         }
         snippets.render(library, workspace, document, selectedNodes(), pointer.get(), this::operation, this::selectInsertedNodes);
@@ -2306,6 +2372,22 @@ final class ImGuiAuthoringEditor {
         campaignPreviewKey = "";
     }
 
+    private void captureRawDraft() {
+        if (rawModified && document != null) documentBuffers.raw(document, jsonText.get());
+    }
+
+    private EditorFieldEdits translatedEdits(AuthoringDocument owner) {
+        return translatedFields.computeIfAbsent(owner, documentBuffers::fields);
+    }
+
+    private boolean filePending(String path) {
+        return packFiles.pending(path) || documentBuffers.pending(path) || document != null && document.resourcePath().equals(path) && rawModified;
+    }
+
+    private boolean hasPendingDrafts() {
+        return rawModified || documentBuffers.pending() || packFiles.anyPending() || packBuild.pending();
+    }
+
     private boolean hasPendingFields() {
         return pendingFields.pending() || translatedFields.values().stream().anyMatch(EditorFieldEdits::pending) || packFiles.pending() || packBuild.pending();
     }
@@ -2317,18 +2399,17 @@ final class ImGuiAuthoringEditor {
             packBuild.load(workspace);
             packBuild.apply();
         }
-        if (document != null) {
-            var issues = pendingFields.issues(document);
-            if (!issues.isEmpty()) focusField(document, issues.keySet().iterator().next());
-            pendingFields.validate(document);
-        }
-        for (var entry : translatedFields.entrySet()) {
+        var edits = new java.util.LinkedHashMap<>(translatedFields);
+        if (document != null) edits.put(document, pendingFields);
+        for (var entry : edits.entrySet()) {
             var issues = entry.getValue().issues(entry.getKey());
-            if (!issues.isEmpty()) focusField(entry.getKey(), issues.keySet().iterator().next());
+            if (!issues.isEmpty()) {
+                focusField(entry.getKey(), issues.keySet().iterator().next());
+                throw new IllegalArgumentException(issues.values().iterator().next());
+            }
             entry.getValue().validate(entry.getKey());
         }
-        if (pendingFields.apply(document)) { historyDocument = document; changed = true; }
-        for (var entry : translatedFields.entrySet()) {
+        for (var entry : edits.entrySet()) {
             if (entry.getValue().apply(entry.getKey())) { historyDocument = entry.getKey(); changed = true; }
         }
         if (changed) refresh();
@@ -2676,12 +2757,12 @@ final class ImGuiAuthoringEditor {
             JsonElement text = JsonPointers.get(documentCache.json(location.document()), location.pointer());
             if (text.isJsonPrimitive() && text.getAsJsonPrimitive().isString()) {
                 String bufferId = location.document().resourcePath() + location.pointer();
-                ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
-                ImGui.beginDisabled(rawModified);
+                ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(documentBuffers.fields(location.document()).text(location.pointer(), text.getAsString()), 65536));
+                ImGui.beginDisabled(rawModified || documentBuffers.raw(location.document()) != null);
                 textContext(path);
                 textFields.render(bufferId, buffer, document.kind(), !path.endsWith("/label") && !path.endsWith("/title"), preferences.textScale());
                 ImGui.endDisabled();
-                translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
+                translatedEdits(location.document())
                         .update(location.pointer(), text, buffer.get());
                 if (fieldFocus.equals(bufferId)) { fieldFocus = ""; ImGui.setScrollHereY(.25f); textFields.focus(bufferId); }
                 if (ImGui.isItemHovered()) ImGui.setTooltip(locale.get() + " wording. The localization reference is preserved.");
@@ -2689,7 +2770,7 @@ final class ImGuiAuthoringEditor {
                 return;
             }
             ImGui.textWrapped(workspace.resolveText(document, reference, locale.get()));
-            if (ImGui.smallButton("Edit text variations")) operation(() -> {
+            if (ImGui.smallButton("Edit text variations")) attempt(() -> {
                 select(location.document());
                 setPointer(location.pointer());
                 showResources = true;
@@ -3044,7 +3125,7 @@ final class ImGuiAuthoringEditor {
         if (focusPanel.equals("Playtest###VR_Playtest")) { ImGui.setWindowFocus(); focusPanel = ""; }
         if (ImGui.button("Edit")) operation(() -> leavePlaytest(0));
         EditorWidgets.sameLineFor("Save");
-        if (ImGui.button("Save")) operation(this::save);
+        if (ImGui.button("Save")) attempt(this::save);
         EditorWidgets.sameLineFor("Stop playtest");
         if (ImGui.button("Stop playtest")) operation(() -> leavePlaytest(0));
         EditorWidgets.sameLineFor(focusMode.equals(WORK_PANEL) ? "Restore game view" : "Focus test controls");
@@ -3068,7 +3149,7 @@ final class ImGuiAuthoringEditor {
             if (ImGui.beginCombo("##playtest_content", title, imgui.flag.ImGuiComboFlags.HeightLarge)) {
                 for (var entry : matches) {
                     var candidate = entry.document();
-                    if (ImGui.selectable(entry.title() + "##" + entry.path(), document == candidate)) operation(() -> select(candidate));
+                    if (ImGui.selectable(entry.title() + "##" + entry.path(), document == candidate)) attempt(() -> select(candidate));
                     if (ImGui.isItemHovered()) ImGui.setTooltip(kindLabel(candidate.kind()) + "\n" + entry.id() + "\n" + entry.path());
                 }
                 if (matches.isEmpty()) ImGui.textWrapped("No matching quests or dialogue.");
@@ -3168,7 +3249,7 @@ final class ImGuiAuthoringEditor {
         else if (issues == null) ImGui.textWrapped("Checking draft. Presentation refresh is waiting for validation.");
         else if (error != null) {
             ImGui.textWrapped("Draft invalid. Presentation refresh paused: " + error.message());
-            if (ImGui.button("Open validation error")) operation(() -> { leavePlaytest(0); openDiagnostic(error); });
+            if (ImGui.button("Open validation error")) attempt(() -> { leavePlaytest(0); openDiagnostic(error); });
         } else if (document.kind() == DefinitionKind.QUEST) {
             ImGui.textWrapped(!EditorTestWorld.active(workspace) ? "Draft has not been loaded into this world."
                     : !EditorTestWorld.currentLogic(workspace) ? "Logic changes pending. Apply changes to load this draft."
@@ -3820,13 +3901,13 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(showRecovery || confirmClose || EditorTestWorld.applying());
         var back = navigation.target(-1);
         ImGui.beginDisabled(back == null);
-        if (ImGui.button("Back##navigation_back")) operation(() -> navigateHistory(-1));
+        if (ImGui.button("Back##navigation_back")) attempt(() -> navigateHistory(-1));
         ImGui.endDisabled();
         if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Back (" + keyHint("Navigate back") + ")" + (back == null ? "" : "\n" + back.label()));
         ImGui.sameLine();
         var forward = navigation.target(1);
         ImGui.beginDisabled(forward == null);
-        if (ImGui.button("Forward##navigation_forward")) operation(() -> navigateHistory(1));
+        if (ImGui.button("Forward##navigation_forward")) attempt(() -> navigateHistory(1));
         ImGui.endDisabled();
         if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Forward (" + keyHint("Navigate forward") + ")" + (forward == null ? "" : "\n" + forward.label()));
         ImGui.sameLine();
@@ -3845,10 +3926,10 @@ final class ImGuiAuthoringEditor {
 
     private void breadcrumbs() {
         if (workspace == null) { ImGui.textDisabled("No workspace open"); return; }
-        boolean dirty = workspace.dirty() || hasPendingFields() || rawModified;
+        boolean dirty = workspace.dirty() || hasPendingDrafts();
         String path = activePath();
         String root = java.util.Objects.toString(workspace.location().getFileName(), workspace.location().toString());
-        if (ImGui.smallButton(shortText(root, 24) + "##pack_root_path")) operation(() -> openFolder(""));
+        if (ImGui.smallButton(shortText(root, 24) + "##pack_root_path")) attempt(() -> openFolder(""));
         if (ImGui.isItemHovered()) ImGui.setTooltip("Open pack root\n" + workspace.location());
         var ancestors = EditorNavigation.ancestors(path);
         float width = ImGui.calcTextSize(path).x + ancestors.size() * 32 + 25 + (dirty ? 120 : 0);
@@ -3857,12 +3938,12 @@ final class ImGuiAuthoringEditor {
             ImGui.sameLine(); ImGui.textDisabled("/"); ImGui.sameLine();
             if (ImGui.smallButton("...##path_parents")) ImGui.openPopup("Containing folders##path_parents");
             if (ImGui.beginPopup("Containing folders##path_parents")) {
-                for (String folder : ancestors) if (ImGui.menuItem(folder)) operation(() -> openFolder(folder));
+                for (String folder : ancestors) if (ImGui.menuItem(folder)) attempt(() -> openFolder(folder));
                 ImGui.endPopup();
             }
         } else for (String folder : ancestors) {
             ImGui.sameLine(); ImGui.textDisabled("/"); ImGui.sameLine();
-            if (ImGui.smallButton(folder.substring(folder.lastIndexOf('/') + 1) + "##path:" + folder)) operation(() -> openFolder(folder));
+            if (ImGui.smallButton(folder.substring(folder.lastIndexOf('/') + 1) + "##path:" + folder)) attempt(() -> openFolder(folder));
             if (ImGui.isItemHovered()) ImGui.setTooltip(folder);
         }
         if (!path.isEmpty()) {
@@ -3877,7 +3958,7 @@ final class ImGuiAuthoringEditor {
     private void files() {
         panel(WORK_PANEL);
         if (workspace == null) ImGui.textWrapped("Open a workspace first.");
-        else packFiles.render(workspace, exportPath.get(), path -> operation(() -> openPackFile(path)), this::operation, this::attempt, this::refresh);
+        else packFiles.render(workspace, exportPath.get(), path -> attempt(() -> openPackFile(path)), this::operation, this::attempt, this::refresh);
         ImGui.end();
     }
 
@@ -3887,6 +3968,7 @@ final class ImGuiAuthoringEditor {
         packBuild.apply();
         validate();
         save();
+        if (hasPendingDrafts()) throw new IllegalStateException("Resolve unfinished drafts before building the pack");
         Path backup = com.jvn.villagerretaliation.authoring.core.AuthoringPackBuild.build(workspace, Path.of(exportPath.get()), packBuild.zip());
         preferences = preferences.withExport(exportPath.get()); savePreferences();
         status = "Built pack at " + exportPath.get() + (backup == null ? "" : ". Previous version: " + backup);
@@ -3900,7 +3982,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
-        try { packBuild.render(workspace, diagnostics, exportPath, path -> operation(() -> openPackFile(path)), this::operation, this::validate, this::buildPackage); }
+        try { packBuild.render(workspace, diagnostics, exportPath, path -> attempt(() -> openPackFile(path)), this::operation, this::validate, this::buildPackage); }
         catch (IOException exception) { ImGui.textWrapped("Could not read pack contents: " + exception.getMessage()); }
         if (ImGui.button("Open output folder")) attempt(() -> {
             Path output = Path.of(exportPath.get());
@@ -3932,7 +4014,7 @@ final class ImGuiAuthoringEditor {
             if (!expanded) continue;
             ImGui.pushID(i);
             if (ImGui.selectable(diagnostic.severity() + ": " + diagnostic.message() + "##issue", diagnostic.equals(activeDiagnostic)))
-                operation(() -> openDiagnostic(diagnostic));
+                attempt(() -> openDiagnostic(diagnostic));
             var owner = workspace.documents().stream().filter(value -> value.resourcePath().equals(diagnostic.resourcePath())).findFirst().orElse(null);
             EditorQuickFixes.render(workspace, owner, diagnostic, this::operation, () -> { historyDocument = owner; refresh(); });
             ImGui.textDisabled(diagnostic.pointer().isEmpty() ? "File settings" : diagnostic.pointer());
@@ -3950,9 +4032,9 @@ final class ImGuiAuthoringEditor {
     private void diagnosticNavigation() {
         var visible = visibleDiagnostics();
         ImGui.beginDisabled(visible.isEmpty());
-        if (ImGui.button("Previous issue")) operation(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, -1)));
+        if (ImGui.button("Previous issue")) attempt(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, -1)));
         sameLineFor("Next issue");
-        if (ImGui.button("Next issue")) operation(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, 1)));
+        if (ImGui.button("Next issue")) attempt(() -> openDiagnostic(EditorDiagnostics.next(visibleDiagnostics(), activeDiagnostic, 1)));
         ImGui.endDisabled();
         int index = visible.indexOf(activeDiagnostic);
         ImGui.textDisabled(index < 0 ? visible.size() + " matching issues" : "Issue " + (index + 1) + " of " + visible.size());
@@ -3985,60 +4067,61 @@ final class ImGuiAuthoringEditor {
         if (document != null) buffers.addProperty("document", document.resourcePath());
         buffers.addProperty("pointer", pointer.get());
         buffers.addProperty("node", selectedNode);
-        buffers.add("fields", pendingFields.snapshot());
+        captureRawDraft();
+        buffers.add("documents", documentBuffers.snapshot());
         buffers.add("pack_file", packFiles.recovery());
         buffers.add("pack_settings", packBuild.recovery());
-        JsonObject translated = new JsonObject();
-        translatedFields.forEach((owner, edits) -> translated.add(owner.resourcePath(), edits.snapshot()));
-        buffers.add("translated", translated);
-        if (rawModified) buffers.addProperty("raw", jsonText.get());
-        EditorRecovery.write(workspace, buffers, hasPendingFields() || rawModified);
+        EditorRecovery.write(workspace, buffers, hasPendingDrafts());
+    }
+
+    private void recoverDrafts() throws IOException {
+        AuthoringWorkspace recovered = workspace.recover();
+        JsonObject buffers = recovered.recoveryBuffers();
+        String path = buffers.has("document") ? buffers.get("document").getAsString() : "";
+        JsonObject drafts = buffers.has("documents") ? buffers.getAsJsonObject("documents") : new JsonObject();
+        if (!buffers.has("documents")) {
+            if (!path.isEmpty()) {
+                JsonObject active = new JsonObject();
+                if (buffers.has("fields")) active.add("fields", buffers.get("fields").deepCopy());
+                if (buffers.has("raw")) active.add("raw", buffers.get("raw").deepCopy());
+                drafts.add(path, active);
+            }
+            if (buffers.has("translated")) for (var entry : buffers.getAsJsonObject("translated").entrySet()) {
+                JsonObject translated = drafts.has(entry.getKey()) ? drafts.getAsJsonObject(entry.getKey()) : new JsonObject();
+                translated.add("fields", entry.getValue().deepCopy()); drafts.add(entry.getKey(), translated);
+            }
+        }
+        documentBuffers.restore(recovered, drafts);
+        rawModified = false; translatedFields.clear(); pendingFields = new EditorFieldEdits();
+        workspace = recovered; document = null; bufferIssues = Map.of();
+        updateValidationContext(); documentCache.clear(); graphModel.clear();
+        restoreSession(false);
+        packFiles.reset(); packBuild.load(workspace);
+        select(workspace.documents().stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElse(null));
+        if (document != null) {
+            if (buffers.has("pointer")) pointer.set(buffers.get("pointer").getAsString());
+            if (buffers.has("node")) selectedNode = buffers.get("node").getAsString();
+        }
+        if (buffers.has("pack_file")) {
+            packFiles.recover(workspace, buffers.getAsJsonObject("pack_file"));
+            if (packFiles.pending()) view = 4;
+        }
+        if (buffers.has("pack_settings")) packBuild.recover(buffers.getAsJsonObject("pack_settings"));
+        for (String draft : drafts.keySet()) openFiles.open(workspace, draft);
+        showRecovery = false;
+        status = "Drafts recovered. Save when ready.";
     }
 
     private void recoveryControls() {
         if (showRecovery) {
             ImGui.textWrapped("Recovered drafts are available. Choose a version before continuing.");
-            if (ImGui.button("Recover drafts")) attempt(() -> {
-                workspace = workspace.recover();
-                restoreSession(false);
-                packFiles.reset();
-                packBuild.load(workspace);
-                JsonObject buffers = workspace.recoveryBuffers();
-                String path = buffers.has("document") ? buffers.get("document").getAsString() : "";
-                select(workspace.documents().stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElse(null));
-                if (document != null) {
-                    if (buffers.has("pointer")) pointer.set(buffers.get("pointer").getAsString());
-                    if (buffers.has("node")) selectedNode = buffers.get("node").getAsString();
-                    if (buffers.has("fields")) {
-                        pendingFields.restore(buffers.getAsJsonObject("fields"));
-                        buffers.getAsJsonObject("fields").entrySet().forEach(entry -> fields.put(entry.getKey(),
-                                new ImString(entry.getValue().getAsJsonObject().get("text").getAsString(), 65536)));
-                    }
-                    if (buffers.has("translated")) for (var entry : buffers.getAsJsonObject("translated").entrySet()) {
-                        var owner = workspace.documents().stream().filter(value -> value.resourcePath().equals(entry.getKey())).findFirst().orElse(null);
-                        if (owner == null) continue;
-                        EditorFieldEdits edits = new EditorFieldEdits();
-                        edits.restore(entry.getValue().getAsJsonObject());
-                        translatedFields.put(owner, edits);
-                        entry.getValue().getAsJsonObject().entrySet().forEach(field -> fields.put(owner.resourcePath() + field.getKey(),
-                                new ImString(field.getValue().getAsJsonObject().get("text").getAsString(), 65536)));
-                    }
-                    if (buffers.has("raw")) { jsonText.set(buffers.get("raw").getAsString()); rawModified = true; }
-                }
-                if (buffers.has("pack_file")) {
-                    packFiles.recover(workspace, buffers.getAsJsonObject("pack_file"));
-                    if (packFiles.pending()) view = 4;
-                }
-                if (buffers.has("pack_settings")) packBuild.recover(buffers.getAsJsonObject("pack_settings"));
-                showRecovery = false;
-                status = "Drafts recovered. Save when ready.";
-            });
+            if (ImGui.button("Recover drafts")) attempt(this::recoverDrafts);
             EditorWidgets.sameLineFor("Keep saved version");
             if (ImGui.button("Keep saved version")) attempt(() -> { workspace.discardRecovery(); showRecovery = false; restoreSession(true); });
         }
         if (confirmClose) {
             ImGui.textWrapped("You have unsaved drafts. Save them or keep a recovery copy before closing.");
-            if (ImGui.button("Save and close")) operation(() -> { save(); closeEditor(); });
+            if (ImGui.button("Save and close")) attempt(() -> { save(); if (!hasPendingDrafts()) closeEditor(); });
             EditorWidgets.sameLineFor("Keep recovery and close");
             if (ImGui.button("Keep recovery and close")) attempt(() -> { writeRecovery(); closeEditor(); });
             EditorWidgets.sameLineFor("Continue editing");
@@ -4059,15 +4142,25 @@ final class ImGuiAuthoringEditor {
     }
 
     private void save() throws IOException {
-        if (rawModified) throw new IllegalArgumentException("Apply or discard the JSON buffer before saving.");
         if (workspace == null) throw new IllegalArgumentException("Open a workspace first.");
-        packFiles.apply(workspace);
-        packBuild.load(workspace);
-        packBuild.apply();
+        captureRawDraft();
+        var issues = new java.util.LinkedHashMap<>(documentBuffers.applyValid(workspace));
+        issues.putAll(packFiles.applyValid(workspace));
+        try { packBuild.load(workspace); packBuild.apply(); }
+        catch (IllegalArgumentException | IllegalStateException | JsonParseException exception) { issues.put("pack.mcmeta", exception.getMessage()); }
+        rawModified = documentBuffers.raw(document) != null;
         workspace.save();
-        validate(); focusFirstError();
+        bufferIssues = Map.copyOf(issues);
+        refresh();
+        if (issues.isEmpty()) focusFirstError();
+        else if (document != null) {
+            var fieldIssues = pendingFields.issues(document);
+            if (!fieldIssues.isEmpty()) focusField(document, fieldIssues.keySet().iterator().next());
+        }
+        writeRecovery();
         packFolder.refresh();
-        status = workspace.editsPackFolder() ? "Pack files saved." : "Drafts saved.";
+        status = issues.isEmpty() ? workspace.editsPackFolder() ? "Pack files saved." : "Drafts saved."
+                : "Saved valid edits. " + issues.size() + " unfinished file draft(s) kept for recovery.";
     }
 
     private void validate() {
@@ -4076,11 +4169,8 @@ final class ImGuiAuthoringEditor {
     }
 
     private void select(AuthoringDocument next) {
-        if (rawModified) {
-            status = "Apply or discard the JSON buffer before changing selection.";
-            return;
-        }
         if (document == next && next != null) return;
+        captureRawDraft();
         boolean changed = document != next;
         if (changed) {
             recordLocation();
@@ -4093,6 +4183,7 @@ final class ImGuiAuthoringEditor {
         playtestVisuals = Map.of();
         playtestStepRemoved = false;
         document = next;
+        pendingFields = documentBuffers.fields(next); translatedFields.clear(); rawModified = false;
         questPreview = null;
         fitGraph = true; fitSelection = false; boxSelecting = false;
         historyDocument = next;
@@ -4151,14 +4242,18 @@ final class ImGuiAuthoringEditor {
     }
 
     private void refresh() {
+        captureRawDraft();
         searchQuery = "";
         packFiles.invalidate();
         packBuild.invalidate();
         propertySchema = document == null ? null : EditorSchema.forDocument(document);
-        rawModified = false;
-        pendingFields.clear();
-        translatedFields.clear();
+        rawModified = documentBuffers.raw(document) != null;
+        bufferIssues = bufferIssues.entrySet().stream().filter(entry -> filePending(entry.getKey())
+                || entry.getKey().equals("pack.mcmeta") && packBuild.pending()).collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        pendingFields = documentBuffers.fields(document);
         fields.clear();
+        restoreFieldBuffers(pendingFields, "");
+        translatedFields.forEach((owner, edits) -> restoreFieldBuffers(edits, owner.resourcePath()));
         textFields.clear();
         graphText.clear();
         positions.clear();
@@ -4180,7 +4275,7 @@ final class ImGuiAuthoringEditor {
             }
         }
         if (document != null) {
-            jsonText.set(JSON.toJson(documentCache.json(document)));
+            jsonText.set(rawModified ? documentBuffers.raw(document) : JSON.toJson(documentCache.json(document)));
             if (document.kind() == DefinitionKind.RESOURCE && dialoguePool.supports(document, documentCache.json(document))) {
                 try { JsonPointers.get(documentCache.json(document), pointer.get()); }
                 catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException exception) { pointer.set(""); }
@@ -4200,6 +4295,11 @@ final class ImGuiAuthoringEditor {
             }
         }
         validate();
+    }
+
+    private void restoreFieldBuffers(EditorFieldEdits edits, String prefix) {
+        edits.snapshot().entrySet().forEach(entry -> fields.put(prefix + entry.getKey(),
+                new ImString(entry.getValue().getAsJsonObject().get("text").getAsString(), 65536)));
     }
 
     private void setPointer(String path) {
@@ -4274,7 +4374,7 @@ final class ImGuiAuthoringEditor {
         @Override public void onClose() {
             if (worldContent != null) return;
             if (showRecovery) { closeEditor(); return; }
-            if (workspace != null && (workspace.dirty() || hasPendingFields() || rawModified)) confirmClose = true;
+            if (workspace != null && (workspace.dirty() || hasPendingDrafts())) confirmClose = true;
             else closeEditor();
         }
     }

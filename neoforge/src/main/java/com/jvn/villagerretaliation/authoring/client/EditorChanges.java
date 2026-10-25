@@ -69,7 +69,7 @@ final class EditorChanges {
             ImGui.pushID(path);
             String kind = before == null ? "Added" : after == null ? "Deleted" : "Modified";
             if (ImGui.treeNode(kind + ": " + path)) {
-                if (after != null && ImGui.smallButton("Open file")) run.accept(() -> open.accept(path));
+                if (after != null && ImGui.smallButton("Open file")) open.accept(path);
                 boolean text = EditorPackFiles.textFile(path);
                 if (text && (path.endsWith(".json") || path.equals("pack.mcmeta")) && after != null) {
                     JsonElement previous = before == null ? null : parse(before);

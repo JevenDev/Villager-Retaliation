@@ -59,11 +59,12 @@ final class EditorPackBuild {
 
     JsonObject recovery() {
         JsonObject state = new JsonObject();
-        if (pending()) { state.addProperty("description", description.get()); state.addProperty("format", format.get()); }
+        if (pending()) { state.addProperty("description", description.get()); state.addProperty("format", format.get()); state.add("baseline", baseline.deepCopy()); }
         return state;
     }
 
     void recover(JsonObject state) {
+        if (state.has("baseline")) baseline = state.getAsJsonObject("baseline").deepCopy();
         if (state.has("description")) description.set(state.get("description").getAsString());
         if (state.has("format")) format.set(state.get("format").getAsInt());
     }

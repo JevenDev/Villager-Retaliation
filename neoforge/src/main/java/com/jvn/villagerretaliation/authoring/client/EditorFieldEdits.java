@@ -34,6 +34,7 @@ public final class EditorFieldEdits {
     }
 
     public void update(String path, JsonElement original, String text) {
+        if (edits.containsKey(path)) original = edits.get(path).original();
         boolean string = original.isJsonPrimitive() && original.getAsJsonPrimitive().isString();
         String unchanged = string ? original.getAsString() : original.toString();
         if (unchanged.equals(text)) edits.remove(path);
@@ -62,6 +63,7 @@ public final class EditorFieldEdits {
     }
 
     public boolean contains(String path) { return edits.containsKey(path); }
+    public String text(String path, String fallback) { return edits.containsKey(path) ? edits.get(path).text() : fallback; }
 
     public String issue(AuthoringDocument document, String path) {
         if (!edits.containsKey(path)) return "";
