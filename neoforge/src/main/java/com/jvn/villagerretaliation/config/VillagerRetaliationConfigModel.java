@@ -67,11 +67,20 @@ public final class VillagerRetaliationConfigModel {
     public Settlements settlements = new Settlements();
 
     @Nest
+    @ExcludeFromScreen
+    public Diplomacy diplomacy = new Diplomacy();
+
+    @Nest
     public Wanderer wanderer = new Wanderer();
 
     @Nest
     @SectionHeader("advanced")
     public DebugOverlay debugOverlay = new DebugOverlay();
+
+    public static final class Diplomacy {
+        @RangeConstraint(min = 0, max = Integer.MAX_VALUE)
+        public int defaultTruceDurationTicks = 0;
+    }
 
     public static final class Settlements {
         public boolean stateNotifications = true;

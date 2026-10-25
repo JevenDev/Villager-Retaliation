@@ -25,6 +25,8 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigValue<NewWorldMode> NEW_WORLD_MODE = bind("campaign.newWorldMode", NewWorldMode.class);
 
+    public static final ConfigValue<Integer> DEFAULT_TRUCE_DURATION_TICKS = bind("diplomacy.defaultTruceDurationTicks", Integer.class);
+
     public static final ConfigValue<Boolean> SETTLEMENT_STATE_NOTIFICATIONS = bind("settlements.stateNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SETTLEMENT_PROBLEM_NOTIFICATIONS = bind("settlements.problemNotifications", Boolean.class);
     public static final ConfigValue<Integer> SETTLEMENT_VIEW_CHUNKS = bind("settlements.remoteViewChunks", Integer.class);

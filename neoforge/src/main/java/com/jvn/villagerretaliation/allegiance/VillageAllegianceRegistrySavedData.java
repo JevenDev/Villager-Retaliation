@@ -38,6 +38,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     public static final long ARCHIVE_GRACE_TICKS = 72_000L;
     public static final long RESIDENT_ACTIVE_GRACE_TICKS = 72_000L;
 
+    private com.jvn.villagerretaliation.diplomacy.VillageDiplomacySavedData diplomacy;
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Set<VillageAllegianceId> autonomousIdentities = new LinkedHashSet<>();
     private final Set<VillageAllegianceId> managedIdentities = new LinkedHashSet<>();
@@ -51,9 +52,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private final Map<ResourceLocation, Map<Long, List<VillageAllegianceId>>> managedColumnIndex = new HashMap<>();
 
     public static VillageAllegianceRegistrySavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+        var data = level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(VillageAllegianceRegistrySavedData::new, VillageAllegianceRegistrySavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME);
+        if (data.diplomacy == null) {
+            data.diplomacy = com.jvn.villagerretaliation.diplomacy.VillageDiplomacySavedData.get(level);
+            data.reconcileDiplomacy();
+        }
+        return data;
     }
 
     public static VillageAllegianceRegistrySavedData load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -434,6 +440,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         this.records.put(current.id(), current.withLifecycle(VillageLifecycleState.ARCHIVED, current.emptyObservedTicks()));
         this.removedIdentities.add(current.id());
+        reconcileDiplomacy();
         this.mergeObservations.keySet().removeIf(key -> key.contains(current.id()));
         markFootprintChanged();
         return true;
@@ -449,6 +456,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return false;
         }
         this.records.put(current.id(), current.withLifecycle(VillageLifecycleState.ARCHIVED, current.emptyObservedTicks()));
+        reconcileDiplomacy();
         markFootprintChanged();
         return true;
     }
@@ -465,6 +473,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord updated = current.withLifecycle(state, total);
         this.records.put(current.id(), updated);
         if (current.archived() != updated.archived()) {
+            reconcileDiplomacy();
             markFootprintChanged();
         } else {
             setDirty();
@@ -641,13 +650,21 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (sourceRecord == null || targetRecord == null) {
             return false;
         }
+        reconcileDiplomacy();
         this.aliases.remove(source);
         this.records.put(target, targetRecord.withoutAbsorbed(sourceRecord));
         this.canonicalCache.clear();
         this.mergeObservations.clear();
+        reconcileDiplomacy();
         rebuildResidentIndex();
         markFootprintChanged();
         return true;
+    }
+
+    private void reconcileDiplomacy() {
+        if (this.diplomacy != null) {
+            this.diplomacy.reconcile(this);
+        }
     }
 
     public int aliasCount() {
@@ -754,6 +771,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.aliases.put(source, target);
         this.mergeObservations.keySet().removeIf(key -> key.contains(source) || key.contains(target));
         this.canonicalCache.clear();
+        reconcileDiplomacy();
         markFootprintChanged();
         for (AllegianceRecord sourceLineageRecord : sourceLineage) {
             VillageScopeMigrationService.merge(level, sourceLineageRecord, merged);
