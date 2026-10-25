@@ -96,6 +96,37 @@ public final class VillageDiplomacyGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void reloadedAliasesAndBrokenReferencesCannotCreateHostility(GameTestHelper helper) {
+        var provider = helper.getLevel().registryAccess();
+        var registry = new VillageAllegianceRegistrySavedData();
+        var a = registry.create(0, helper.getLevel().dimension().location(), BlockPos.ZERO, "");
+        var b = registry.create(0, helper.getLevel().dimension().location(), BlockPos.ZERO, "");
+        var c = registry.create(0, helper.getLevel().dimension().location(), BlockPos.ZERO, "");
+        var data = new VillageDiplomacySavedData();
+        data.set(VillageDiplomacySavedData.Pair.of(a, c), VillageRelation.HOSTILE, 0, 0);
+        registry.merge(a, b);
+        var registryTag = registry.save(new CompoundTag(), provider);
+        var restored = VillageDiplomacySavedData.load(data.save(new CompoundTag(), provider), provider);
+        var loadedRegistry = VillageAllegianceRegistrySavedData.load(registryTag, provider);
+        restored.reconcile(loadedRegistry);
+        helper.assertValueEqual(restored.query(VillageDiplomacySavedData.Pair.of(b, c), 0).relation(),
+                VillageRelation.HOSTILE, "reloaded alias follows the existing identity graph");
+        var cycle = new CompoundTag();
+        cycle.putUUID("Source", b.value());
+        cycle.putUUID("Target", a.value());
+        registryTag.getList("Aliases", Tag.TAG_COMPOUND).add(cycle);
+        restored.reconcile(VillageAllegianceRegistrySavedData.load(registryTag, provider));
+        helper.assertValueEqual(restored.query(VillageDiplomacySavedData.Pair.of(b, c), 0).relation(),
+                VillageRelation.NEUTRAL, "cyclic references are removed safely");
+        var missingPair = VillageDiplomacySavedData.Pair.of(VillageAllegianceId.random(), c);
+        restored.set(missingPair, VillageRelation.HOSTILE, 0, 0);
+        restored.reconcile(loadedRegistry);
+        helper.assertValueEqual(restored.query(missingPair, 0).relation(), VillageRelation.NEUTRAL,
+                "dangling references cannot retain hostility");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void savedDataSurvivesDiskReloadAndDeadline(GameTestHelper helper) throws Exception {
         var directory = Files.createTempDirectory("village-diplomacy-");
         var provider = helper.getLevel().registryAccess();

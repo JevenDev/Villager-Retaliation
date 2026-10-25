@@ -944,7 +944,7 @@ public final class VillagerRetaliationHandler {
         if (decision.denied()) {
             return false;
         }
-        return decision.action() != AllegianceCombatDecision.Action.ALLOW
+        return !decision.requiresPartyAuthorization()
                 || VillageCombatAuthorizationService.isAuthorized(villager, target)
                 || VillageCombatAuthorizationService.authorize(level, villager, target);
     }
@@ -1152,7 +1152,7 @@ public final class VillagerRetaliationHandler {
                 }
                 continue;
             }
-            if (decision.action() == AllegianceCombatDecision.Action.ALLOW
+            if (decision.requiresPartyAuthorization()
                     && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
                 continue;
             }

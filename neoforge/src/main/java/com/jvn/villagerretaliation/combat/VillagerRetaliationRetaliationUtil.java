@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
@@ -72,7 +75,16 @@ public final class VillagerRetaliationRetaliationUtil {
             Map<UUID, AngerTarget> angerTargets,
             String persistentTagRoot
     ) {
+        var decision = villager.level() instanceof ServerLevel level
+                ? VillageAllegianceCombatPolicy.evaluate(level, villager, attacker,
+                        AllegianceCombatContext.ORDINARY_RETALIATION,
+                        VillageCombatAuthorizationService.isAuthorized(villager, attacker))
+                : AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.ORDINARY_BEHAVIOR);
+        if (decision.reason() == AllegianceCombatDecision.Reason.VILLAGE_TRUCE) {
+            return false;
+        }
         if ((VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(attacker)
+                && decision.reason() != AllegianceCombatDecision.Reason.HOSTILE_VILLAGES
                 && !VillageCombatAuthorizationService.isAuthorized(villager, attacker)
                 && !PlayerRaidService.areOpposingParticipants(villager, attacker))
                 || !villager.isAlive()
@@ -373,7 +385,14 @@ public final class VillagerRetaliationRetaliationUtil {
             return null;
         }
 
+        var decision = VillageAllegianceCombatPolicy.evaluate(level, villager, target,
+                AllegianceCombatContext.TARGET_CONTINUATION, VillageCombatAuthorizationService.isAuthorized(villager, target));
+        if (decision.reason() == AllegianceCombatDecision.Reason.VILLAGE_TRUCE) {
+            clearAnger.run();
+            return null;
+        }
         boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(target)
+                || decision.reason() == AllegianceCombatDecision.Reason.HOSTILE_VILLAGES
                 || VillageCombatAuthorizationService.isAuthorized(villager, target)
                 || PlayerRaidService.areOpposingParticipants(villager, target);
         if (!targetCurrentlyHostile) {

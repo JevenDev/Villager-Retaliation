@@ -17,6 +17,10 @@ public record AllegianceCombatDecision(Action action, Reason reason) {
         return this.action == Action.DENY;
     }
 
+    public boolean requiresPartyAuthorization() {
+        return this.action == Action.ALLOW && this.reason == Reason.AUTHORIZED_PARTY_CONFLICT;
+    }
+
     public enum Action {
         ALLOW,
         DENY,
@@ -33,6 +37,8 @@ public record AllegianceCombatDecision(Action action, Reason reason) {
         GOLEM_RESTRICTED,
         NO_PARTY_AUTHORIZATION,
         AUTHORIZED_PARTY_CONFLICT,
+        HOSTILE_VILLAGES,
+        VILLAGE_TRUCE,
         PLAYER_RAID_OPPONENT,
         WANDERER_NEUTRALITY,
         NON_CIVILIAN_TARGET,

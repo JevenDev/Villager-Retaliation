@@ -48,6 +48,7 @@ final class VrAdminCommands {
                 })
                 .then(villager())
                 .then(village())
+                .then(VillageDiplomacyCommands.root())
                 .then(SettlementCommands.admin())
                 .then(literal("settlement").then(literal("recovery").executes(context -> {
                     var data = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(context.getSource().getLevel());

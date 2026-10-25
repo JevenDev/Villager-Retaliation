@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.diplomacy.VillageDiplomacyApi;
+import com.jvn.villagerretaliation.diplomacy.VillageRelation;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
@@ -82,6 +84,13 @@ public final class VillageAllegianceCombatPolicy {
         }
         if (actorCanonical.get().equals(targetCanonical.get())) {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE);
+        }
+        VillageRelation relation = VillageDiplomacyApi.query(level, actorCanonical.get(), targetCanonical.get()).relation();
+        if (relation == VillageRelation.TRUCE) {
+            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.VILLAGE_TRUCE);
+        }
+        if (relation == VillageRelation.HOSTILE) {
+            return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.HOSTILE_VILLAGES);
         }
         if (isInitialPartyOrder(context)) {
             if (PartyService.getPartyForEntity(actor).isPresent()) {

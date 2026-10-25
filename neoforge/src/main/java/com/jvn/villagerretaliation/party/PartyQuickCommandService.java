@@ -346,13 +346,11 @@ public final class PartyQuickCommandService {
             MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
             return;
         }
-        if (VillageCombatAuthorizationService.isAuthorized(villager, target)) {
-            return;
-        }
         var decision = VillageAllegianceCombatPolicy.evaluate(
                 level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
         if (decision.denied()
-                || decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+                || decision.requiresPartyAuthorization()
+                && !VillageCombatAuthorizationService.isAuthorized(villager, target)
                 && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
             MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
             VillagerRetaliationHandler.clearCustomTarget(villager);
@@ -452,7 +450,7 @@ public final class PartyQuickCommandService {
             if (decision.denied()) {
                 continue;
             }
-            if (decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+            if (decision.requiresPartyAuthorization()
                     && !VillageCombatAuthorizationService.authorize(player.serverLevel(), villager, target)) {
                 continue;
             }
