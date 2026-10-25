@@ -128,6 +128,7 @@ final class ImGuiAuthoringEditor {
     private final EditorTextField textFields = new EditorTextField();
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorResourceView resourceView = new EditorResourceView();
+    private final EditorLocalizationView localization = new EditorLocalizationView();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
@@ -316,6 +317,7 @@ final class ImGuiAuthoringEditor {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         resourcePicker.beginFrame(MC.screen == screen || playtesting);
+        localization.beginFrame(MC.screen == screen && view == 5, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) {
             if (AuthoringDialoguePreview.active()) EditorDialogueTimeline.window();
@@ -353,6 +355,7 @@ final class ImGuiAuthoringEditor {
                 if (view == 0) graph();
                 else if (view == 1) preview();
                 else if (view == 4) files();
+                else if (view == 5) translations();
                 else diagnostics();
             }
             if (focusMode.isEmpty() || focusMode.equals(DETAIL_PANEL)) inspector();
@@ -475,6 +478,7 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.setItemDefaultFocus();
             if (ImGui.menuItem("Keyboard shortcuts")) shortcuts.open();
+            if (ImGui.menuItem("Translations")) attempt(() -> { view = 5; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Pack files")) attempt(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Find an action", keyHint("Open commands"))) commandPalette.open();
             ImGui.separator();
@@ -1238,6 +1242,7 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Frame selected nodes", "", selected, () -> { view = 0; fitSelection = true; fitGraph = true; }));
         for (String action : List.of("Align left", "Align top", "Space horizontally", "Space vertically", "Arrange selection"))
             result.add(new EditorCommands.Command(action, "", graph && selectedNodes().size() > 1, () -> alignNodes(action)));
+        result.add(new EditorCommands.Command("Translations", "", workspace != null, () -> { view = 5; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Validate workspace", "", workspace != null, () -> { validate(); view = 2; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Go to definition", "", document != null && !selectedDefinitions().isEmpty(), this::goToDefinition));
         result.add(new EditorCommands.Command("Find usages", "", document != null, this::findUsages));
@@ -1394,6 +1399,18 @@ final class ImGuiAuthoringEditor {
         refresh();
     }
 
+    private void translations() {
+        panel(WORK_PANEL);
+        localization.render(workspace, documentBuffers, preferences.textScale(), this::attempt);
+        var active = localization.selectedDocument();
+        if (active != null && active != document) attempt(() -> {
+            var history = historyDocument;
+            select(active); view = 5;
+            if (history != null && !workspace.documents().contains(history) && history.canRedo() && localization.ownsHistory(history)) historyDocument = history;
+        });
+        ImGui.end();
+    }
+
     private void graph() {
         panel(WORK_PANEL);
         if (document == null) {
@@ -1409,6 +1426,8 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (document.kind() == DefinitionKind.RESOURCE) {
+            if (!EditorLocalization.language(document.resourcePath()).isEmpty() && ImGui.button("Open translation workspace"))
+                attempt(() -> { view = 5; focusPanel = WORK_PANEL; });
             if (dialoguePool.supports(document, documentCache.json(document))) {
                 ImGui.beginDisabled(rawModified);
                 dialoguePool.render(document, pointer.get(), preferences.textScale(), this::poolField,
@@ -2155,6 +2174,11 @@ final class ImGuiAuthoringEditor {
     private void inspector() {
         panel(DETAIL_PANEL);
         if (activeDiagnostic != null) diagnosticNavigation();
+        if (view == 5) {
+            localization.details(workspace, documentBuffers, preferences.textScale(), this::navigateReference, this::attempt);
+            ImGui.end();
+            return;
+        }
         if (view == 4) {
             ImGui.textUnformatted("File details");
             ImGui.textWrapped(packFiles.selected().isEmpty() ? "Select a folder or file in the tree." : packFiles.selected());

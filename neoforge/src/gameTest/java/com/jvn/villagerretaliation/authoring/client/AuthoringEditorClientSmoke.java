@@ -1019,6 +1019,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorLocalizationSmokeOnly")) {
+            buildLocalizationSteps();
+            finishSteps("Native translation table and review controls passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorResourceSmokeOnly")) {
             buildResourcePickerSteps();
             finishSteps("Visual resource search, icons, mod filters, entity previews, shortcuts and sound controls passed.");
@@ -2533,6 +2538,110 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> capture("43-qol-issue-navigation"));
+    }
+
+    private static void buildLocalizationSteps() {
+        STEPS.add(() -> {
+            set("guideStep", -1); set("resetLayout", true);
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:localization");
+            quest.edit("Localized title", root -> {
+                var reference = new com.google.gson.JsonObject(); reference.addProperty("key", "test.greeting");
+                if (!root.has("display")) root.add("display", new com.google.gson.JsonObject());
+                root.getAsJsonObject("display").add("title", reference);
+            });
+            workspace.documents().stream().filter(value -> value.resourcePath().equals("data/test/quests/authored/localization/locales/en_us.json")).findFirst().orElseThrow().replaceJson("""
+                    {"schema":"villagerretaliation:quest_locale/v1","messages":{"test.greeting":"Hello, {player}!","test.lines":["First line","Second {count}"]}}
+                    """);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, quest);
+            set("view", 5);
+        });
+        pause(300);
+        STEPS.add(() -> {
+            var view = field(editor, "localization");
+            require(((List<?>) field(view, "rows")).size() == 2, "The translation table lists localized messages.");
+            require(!((List<?>) field(view, "usages")).isEmpty(), "Selected translation links to its owning content.");
+            capture("localization-table");
+        });
+        click(() -> new float[] {1618, 402});
+        pause(200);
+        STEPS.add(() -> {
+            var view = field(editor, "localization");
+            require(((AuthoringDocument) field(editor, "document")).resourcePath().endsWith("/fr_fr.json"), "Adding a translation selects its own file for saving and undo.");
+            ((EditorTextField) field(view, "textFields")).focus("data/test/quests/authored/localization/locales/fr_fr.json/messages/test.greeting");
+        });
+        type("Bonjour, {player}!");
+        pause(200);
+        STEPS.add(() -> {
+            var target = (AuthoringDocument) field(editor, "document");
+            require(((EditorDocumentBuffers) field(editor, "documentBuffers")).fields(target).text("/messages/test.greeting", "").equals("Bonjour, {player}!"),
+                    "Native translation text is retained in the per-file draft.");
+            capture("localization-editing");
+        });
+        click(() -> new float[] {1650, 654});
+        pause(150);
+        STEPS.add(() -> require(localizationGreeting().state().equals("Reviewed"), "The native review button applies wording and source tracking."));
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(localizationGreeting().state().equals("Missing"), "Toolbar undo reverses the selected translation."));
+        click(() -> toolbar("Undo"));
+        pause(150);
+        STEPS.add(() -> require(localizationGreeting().target() == null, "Undo removes a newly added locale."));
+        click(() -> toolbar("Redo"));
+        click(() -> toolbar("Redo"));
+        pause(150);
+        STEPS.add(() -> {
+            require(localizationGreeting().state().equals("Reviewed"), "Redo remains available after the locale was removed.");
+            localizationGreeting().source().edit("Change greeting", root -> root.getAsJsonObject("messages").addProperty("test.greeting", "Welcome, {player}!"));
+        });
+        pause(150);
+        click(() -> new float[] {1400, 301});
+        key(ImGuiKey.Home); key(ImGuiKey.DownArrow); key(ImGuiKey.DownArrow); key(ImGuiKey.DownArrow); key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(localizationGreeting().state().equals("Source changed"), "A new source version makes the reviewed translation stale.");
+            require(field(field(editor, "localization"), "filter").equals("Source changed"), "The native filter selects changed source messages.");
+            capture("localization-stale");
+        });
+        click(() -> new float[] {560, 369});
+        STEPS.add(() -> ((imgui.type.ImString) field(field(editor, "localization"), "csvPath")).set(output().resolve("translation-roundtrip.csv").toString()));
+        click(() -> new float[] {530, 449});
+        STEPS.add(() -> {
+            try {
+                Path csv = output().resolve("translation-roundtrip.csv");
+                require(Files.isRegularFile(csv), "The export button writes a CSV.");
+                var table = new java.util.ArrayList<>(EditorCsv.read(Files.readString(csv)).stream().map(java.util.ArrayList::new).toList());
+                require(table.size() == 2, "Export respects the changed-source filter.");
+                table.get(1).set(4, "Salut, {player}!");
+                Files.writeString(csv, EditorCsv.write(new java.util.ArrayList<>(table)));
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        click(() -> new float[] {740, 449});
+        pause(150);
+        STEPS.add(() -> {
+            require(field(field(editor, "localization"), "preview") != null, "The import button builds a reviewable preview.");
+            capture("localization-csv-preview");
+        });
+        click(() -> new float[] {490, 647});
+        pause(150);
+        STEPS.add(() -> {
+            require(localizationGreeting().translated().getAsString().equals("Salut, {player}!"), "The import button applies the reviewed CSV.");
+            require(localizationGreeting().state().equals("Reviewed"), "Imported wording records the current source version.");
+        });
+        click(() -> toolbar("Undo"));
+        STEPS.add(() -> require(localizationGreeting().state().equals("Source changed"), "CSV import undo restores earlier wording and review metadata."));
+        click(() -> toolbar("Redo"));
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> require(!localizationGreeting().target().dirty(), "Save writes the translated file."));
+        click(() -> new float[] {1680, 297});
+        click(() -> new float[] {1670, 329});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).kind() == DefinitionKind.QUEST && (int) field(editor, "view") == 0,
+                    "The owner link returns to the content using this translation.");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0);
+        });
+    }
+
+    private static EditorLocalization.Row localizationGreeting() {
+        return EditorLocalization.rows(workspace, "en_us", "fr_fr").stream().filter(row -> row.key().equals("test.greeting")).findFirst().orElseThrow();
     }
 
     private static void buildResourcePickerSteps() {

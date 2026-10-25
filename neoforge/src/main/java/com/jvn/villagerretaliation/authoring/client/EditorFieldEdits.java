@@ -49,6 +49,12 @@ public final class EditorFieldEdits {
         return true;
     }
 
+    public JsonObject candidate(AuthoringDocument document) {
+        JsonObject result = document.json();
+        applyTo(result);
+        return result;
+    }
+
     public void validate(AuthoringDocument document) {
         if (!edits.isEmpty()) applyTo(document.json());
     }

@@ -79,7 +79,7 @@ final class EditorSession {
         String path = saved.get("path").getAsString();
         var document = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(path)).findFirst().orElse(null);
         int view = saved.has("view") ? saved.get("view").getAsInt() : 0;
-        if (!List.of(0, 1, 2, 4).contains(view)) view = 0;
+        if (!List.of(0, 1, 2, 4, 5).contains(view)) view = 0;
         var value = new EditorNavigation.Location(document, path, view, !saved.has("files_mode") || saved.get("files_mode").getAsBoolean(), saved.has("pointer") ? saved.get("pointer").getAsString() : "",
                 number(saved, "pan_x", 25), number(saved, "pan_y", 25), Math.clamp(number(saved, "zoom", 1), .35f, 2),
                 Math.max(0, number(saved, "scroll", 0)), Math.max(0, number(saved, "details_scroll", 0)));

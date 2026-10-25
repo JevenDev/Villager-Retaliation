@@ -1388,6 +1388,38 @@ public final class AuthoringWorkspace {
         return List.copyOf(created);
     }
 
+    public void editLocaleFiles(String label, Map<String, JsonObject> replacements, Map<String, JsonObject> metadata) {
+        var definitions = new LinkedHashMap<AuthoringDocument, JsonObject>();
+        var notes = new LinkedHashMap<AuthoringDocument, JsonObject>();
+        var created = new ArrayList<AuthoringDocument>();
+        for (var entry : replacements.entrySet()) {
+            String path = safeRelativePath(entry.getKey());
+            if (!path.matches("(?:data|assets)/.+/(?:locales|lang)/[a-z0-9_-]+\\.json"))
+                throw new IllegalArgumentException("Expected a locale file: " + path);
+            var document = documents.stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElse(null);
+            if (document == null) {
+                if (containsPath(path)) throw new IllegalStateException("The locale is not an editable JSON file: " + path);
+                if (entry.getValue().isEmpty()) throw new IllegalArgumentException("A new locale needs at least one entry");
+                document = new AuthoringDocument(DefinitionKind.RESOURCE, path, new JsonObject());
+                created.add(document);
+            }
+            definitions.put(document, entry.getValue().deepCopy());
+            if (metadata.containsKey(path)) notes.put(document, metadata.get(path).deepCopy());
+        }
+        var changed = definitions.keySet().stream().filter(document -> created.contains(document)
+                || !document.json().equals(definitions.get(document))
+                || notes.containsKey(document) && !document.metadata().equals(notes.get(document))).toList();
+        created.forEach(this::add);
+        for (var document : changed) document.edit(label,
+                root -> replaceObject(root, definitions.get(document)),
+                editor -> { if (notes.containsKey(document)) replaceObject(editor, notes.get(document)); });
+        if (!changed.isEmpty()) AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
+            for (var document : created) if (containsPath(document.resourcePath()))
+                throw new IllegalStateException("Another resource now occupies " + document.resourcePath());
+            documents.addAll(created);
+        });
+    }
+
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
         if (!documents.contains(document)) throw new IllegalArgumentException("Choose a document in this workspace");
         Map<AuthoringDocument, JsonObject> updates = new LinkedHashMap<>();
