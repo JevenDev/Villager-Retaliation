@@ -372,6 +372,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             new EnumMap<>(DialoguePage.class);
     private final CampaignConversationScreenController campaignConversation = new CampaignConversationScreenController(new CampaignConversationHost());
     private final CampaignConversationMedia campaignMedia = new CampaignConversationMedia();
+    private boolean showAllConversationControls;
     private DialoguePage page = DialoguePage.ROOT;
     private VillagerHealingStatePayload healingState;
     private boolean awaitingHealingState;
@@ -1116,6 +1117,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         graphics.pose().popPose();
         renderInteractionStatTooltips(graphics, mouseX, interactionMouseY);
         graphics.pose().popPose();
+        renderConversationControlsToggle(graphics, mouseX, mouseY);
         VillagerClientUiUtil.popGuiLayer(graphics);
         VillagerReputationNotificationOverlay.renderAboveInteractionMenu(graphics, partialTick);
         if (this.page == DialoguePage.GIFT && !this.closingWithAnimation) {
@@ -1182,6 +1184,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
         if (isConfirmKey(keyCode)) {
+            if (hasConversationControlsToggle() && this.options.isEmpty()) {
+                tryAdvanceDialogueText();
+                return true;
+            }
             if (this.automaticDialogue.active()) {
                 trySkipDialogueTextAnimation();
                 return true;
@@ -1215,6 +1221,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
+        if (isConversationControlsToggleHovered(mouseX, mouseY)) {
+            this.showAllConversationControls = !this.showAllConversationControls;
+            rebuildOptionsKeepingListPosition();
+            return true;
+        }
         double interactionMouseY = interactionMouseY(mouseY);
         double interactionContentMouseX = interactionContentMouseX(mouseX);
         if (isPointInsideInteractionDialogueScrollArea(mouseX, interactionMouseY)
@@ -1565,7 +1576,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 closeFromServer();
             });
         } else if (this.page == DialoguePage.CAMPAIGN_CONVERSATION) {
-            this.campaignConversation.addSessionOptions();
+            this.campaignConversation.addSessionOptions(this.showAllConversationControls);
         } else if (this.page == DialoguePage.CAMPAIGN_CONFIRMATION) {
             if (this.awaitingCampaignConfirmation) {
                 addPassiveOption("campaign.waiting");
@@ -3242,6 +3253,30 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
+    private boolean hasConversationControlsToggle() {
+        return this.page == DialoguePage.CAMPAIGN_CONVERSATION && this.campaignConversation.session() != null;
+    }
+
+    private int conversationControlsToggleWidth() {
+        return Math.max(this.font.width(translate("conversation.show_all")), this.font.width(translate("conversation.show_less")))
+                + INTERACTION_OPTION_TEXT_INSET * 2;
+    }
+
+    private boolean isConversationControlsToggleHovered(double mouseX, double mouseY) {
+        return hasConversationControlsToggle() && mouseX >= 8 && mouseX < 8 + conversationControlsToggleWidth()
+                && mouseY >= this.height - 31 && mouseY < this.height - 8;
+    }
+
+    private void renderConversationControlsToggle(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!hasConversationControlsToggle()) return;
+        graphics.setColor(1.0F, 1.0F, 1.0F, VillagerInteractionUiAnimation.uiAlpha());
+        VillagerInteractionOptionList.renderControlButton(this.optionListContext, graphics,
+                translate(this.showAllConversationControls ? "conversation.show_less" : "conversation.show_all"),
+                8, this.height - 31, conversationControlsToggleWidth(), 23,
+                !this.closingWithAnimation && isConversationControlsToggleHovered(mouseX, mouseY));
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
         float progress = dialogueOptionsTransitionProgress();
         if (progress >= 1.0F) this.outgoingDialogueOptions = null;
@@ -4682,6 +4717,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean tryAdvanceDialogueText() {
         if (trySkipDialogueTextAnimation()) return true;
+        if (hasConversationControlsToggle()) return this.campaignConversation.advanceDialogue();
         if (!this.dialogueExchanges.isEmpty()) {
             showNextDialogueExchange();
             return true;

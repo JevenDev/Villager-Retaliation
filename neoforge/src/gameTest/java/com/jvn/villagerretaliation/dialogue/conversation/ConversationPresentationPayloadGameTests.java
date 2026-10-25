@@ -474,6 +474,87 @@ public final class ConversationPresentationPayloadGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void collapsedControlsKeepRepliesAndConfirmationsVisible(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        var payload = message(request, UUID.randomUUID(), 1, "1/mentor", "Welcome.", true);
+        controller.accept(payload);
+        controller.addSessionOptions(false);
+        helper.assertTrue(host.options.isEmpty(), "routine controls are hidden while speaking");
+        controller.addSessionOptions(true);
+        helper.assertTrue(host.options.stream().anyMatch(option -> option.label().equals("conversation.history")),
+                "expanded controls include history");
+        helper.assertTrue(host.options.stream().anyMatch(option -> option.label().equals("conversation.continue")),
+                "expanded controls include Continue");
+        var prior = payload.session();
+        var responses = new Session(prior.id(), 2, prior.title(), ConversationSession.Phase.RESPONSES, prior.line(),
+                true, false, "Player", List.of(), List.of(new Response("yes", "Yes.", true),
+                new Response("item", "Use lapis.", false, "You need lapis.")), null, "");
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), responses, ""));
+        host.options.clear();
+        controller.addSessionOptions(false);
+        helper.assertValueEqual(host.options.size(), 2, "authored replies remain visible");
+        helper.assertFalse(host.options.getFirst().locked(), "available reply remains enabled");
+        helper.assertTrue(host.options.getLast().locked(), "gated reply remains locked");
+        helper.assertFalse(controller.advanceDialogue(), "clicking dialogue cannot choose a response");
+
+        var confirmation = new Session(prior.id(), 3, prior.title(), ConversationSession.Phase.CONFIRMATION, prior.line(),
+                true, false, "Player", List.of(), List.of(), null, "", UUID.randomUUID(), List.of());
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), confirmation, ""));
+        host.options.clear();
+        host.read = false;
+        controller.addSessionOptions(false);
+        helper.assertTrue(host.options.stream().anyMatch(option -> option.label().equals("conversation.more_consequences")),
+                "unread consequences remain available");
+        helper.assertFalse(controller.advanceDialogue(), "clicking dialogue cannot approve a confirmation");
+        host.options.clear();
+        host.read = true;
+        controller.addSessionOptions(false);
+        helper.assertTrue(host.options.stream().anyMatch(option -> option.label().equals("conversation.confirm")),
+                "read confirmations remain available");
+        helper.assertTrue(host.options.stream().anyMatch(option -> option.label().equals("conversation.decline")),
+                "declining remains available");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "conversation_payloads")
+    public static void directAdvancementReadsPagesAndRespectsControl(GameTestHelper helper) {
+        var host = new Host();
+        var controller = new CampaignConversationScreenController(host);
+        controller.tick();
+        var request = host.sent.getFirst();
+        UUID id = UUID.randomUUID();
+        for (int part = 0; part < 2; part++) {
+            var line = new Line("1/mentor", host.character, 4, "Mira", "Welcome.", part, 2);
+            var session = new Session(id, 1, "Guidance", ConversationSession.Phase.EXCHANGES, line,
+                    true, false, "Player", List.of(), List.of(), null, "");
+            controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(), session, ""));
+            if (part == 0) {
+                host.read = false;
+                int requests = host.sent.size();
+                helper.assertTrue(controller.advanceDialogue(), "unread text is handled first");
+                helper.assertValueEqual(host.sent.size(), requests, "reading cannot advance the server");
+                helper.assertTrue(controller.advanceDialogue(), "next text page is handled");
+                helper.assertValueEqual(host.sent.getLast().action(), Action.VIEW, "text paging does not advance the exchange");
+                helper.assertValueEqual(host.sent.getLast().textPage(), 1, "next text page is requested");
+            } else {
+                helper.assertTrue(controller.advanceDialogue(), "last page advances the exchange");
+                helper.assertValueEqual(host.sent.getLast().action(), Action.ADVANCE, "advance is sent");
+                helper.assertFalse(controller.advanceDialogue(), "pending request prevents duplicate advancement");
+            }
+        }
+        controller.accept(message(request, id, 2, "1/mentor", "Welcome.", false));
+        helper.assertFalse(controller.advanceDialogue(), "listeners cannot advance");
+        var unavailable = message(request, id, 3, "1/mentor", "Welcome.", true);
+        controller.accept(new CampaignConversationViewPayload(request.viewId(), 4, host.character, 0, 1, List.of(),
+                unavailable.session(), "Unavailable"));
+        helper.assertFalse(controller.advanceDialogue(), "diagnostics prevent advancement");
+        helper.succeed();
+    }
+
     private static final class Host implements CampaignConversationScreenController.Host {
         final UUID character = UUID.randomUUID();
         final List<CampaignConversationRequestPayload> sent = new ArrayList<>();

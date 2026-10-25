@@ -3712,6 +3712,8 @@
   "villagerretaliation.gui.conversation.waiting": "Waiting for the conversation...",
   "villagerretaliation.gui.dialogue.narrator": "Narrator",
   "villagerretaliation.gui.conversation.continue": "Continue",
+  "villagerretaliation.gui.conversation.show_all": "Show all",
+  "villagerretaliation.gui.conversation.show_less": "Show less",
   "villagerretaliation.gui.conversation.saved_roll": "Show saved roll",
   "villagerretaliation.gui.conversation.check": "D20 check",
   "villagerretaliation.gui.conversation.skip_roll": "Skip roll animation",

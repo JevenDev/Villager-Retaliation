@@ -545,6 +545,14 @@ final class VillagerInteractionOptionList {
         }
     }
 
+    static void renderControlButton(Context context, GuiGraphics graphics, String label,
+            int left, int top, int width, int height, boolean hovered) {
+        blitPixelOptionButton(graphics, context.pixelOptionTexture(false, hovered), left, top, width, height);
+        drawPixelOutlinedString(graphics, context.font(), label, left + context.optionTextInset(),
+                top + context.pixelOptionTextTop(), context.pixelOptionTextColor(false, hovered), 1.0F);
+        if (hovered) renderPixelOptionHighlight(graphics, left, top, width, height, true, 1.0F);
+    }
+
     private static void blitPixelOptionButton(GuiGraphics graphics, ResourceLocation texture, int left, int top, int width, int height) {
         int centerSourceWidth = PIXEL_OPTION_TEXTURE_WIDTH - PIXEL_OPTION_SLICE_LEFT - PIXEL_OPTION_SLICE_RIGHT;
         int centerSourceHeight = PIXEL_OPTION_TEXTURE_HEIGHT - PIXEL_OPTION_SLICE_TOP - PIXEL_OPTION_SLICE_BOTTOM;

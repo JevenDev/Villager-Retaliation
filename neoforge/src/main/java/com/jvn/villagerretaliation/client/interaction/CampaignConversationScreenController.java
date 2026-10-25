@@ -110,7 +110,34 @@ public final class CampaignConversationScreenController {
         addPages(Action.TOPICS);
     }
 
+    public boolean advanceDialogue() {
+        var session = session();
+        if (session == null || pending || session.history() != null || !state.diagnostic().isBlank()) return false;
+        if (session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.COMPLETE
+                || session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.CANCELLED) {
+            host.close();
+            return true;
+        }
+        if (session.phase() != com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.EXCHANGES
+                && session.phase() != com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.ROLLED) return false;
+        if (!host.textRead()) {
+            host.readConfirmationText();
+            return true;
+        }
+        if (session.line() != null && session.line().part() + 1 < session.line().parts()) {
+            textPage(session.line().part() + 1);
+            return true;
+        }
+        if (!session.canControl() || dieAnimation.playing()) return false;
+        request(Action.ADVANCE, "", "", 0, true);
+        return true;
+    }
+
     public void addSessionOptions() {
+        addSessionOptions(true);
+    }
+
+    public void addSessionOptions(boolean showControls) {
         var session = session();
         if (session == null) return;
         if (session.history() != null) {
@@ -122,10 +149,11 @@ public final class CampaignConversationScreenController {
             host.option(host.translate("conversation.back"), () -> request(finished ? Action.TOPICS : Action.VIEW, "", "", 0, false), pending);
             return;
         }
-        if (pending) host.option(host.translate("conversation.waiting"), () -> { }, true);
-        else {
+        if (pending) {
+            if (showControls) host.option(host.translate("conversation.waiting"), () -> { }, true);
+        } else {
             switch (session.phase()) {
-                case EXCHANGES, ROLLED -> { if (session.canControl() && !dieAnimation.playing()) intent("conversation.continue", Action.ADVANCE, ""); }
+                case EXCHANGES, ROLLED -> { if (showControls && session.canControl() && !dieAnimation.playing()) intent("conversation.continue", Action.ADVANCE, ""); }
                 case CHECK -> {
                     if (session.canControl() && session.check() != null) host.option(host.translate(session.check().resolved() ? "conversation.saved_roll" : "conversation.roll",
                             session.check().difficulty()), () -> request(Action.ROLL, "", "", 0, true), false);
@@ -149,16 +177,18 @@ public final class CampaignConversationScreenController {
                 case COMPLETE, CANCELLED -> { }
             }
             if (dieAnimation.playing()) host.option(host.translate("conversation.skip_roll"), this::skipDieAnimation, false);
-            if (session.canTakeControl()) intent("conversation.take_control", Action.TAKE_CONTROL, "");
-            if (!session.canControl() && !session.controller().isBlank()) host.option(host.translate("conversation.listening", session.controller()), () -> { }, true);
-            for (var member : session.handover()) host.option(host.translate("conversation.handover", member.name()),
+            if (showControls && session.canTakeControl()) intent("conversation.take_control", Action.TAKE_CONTROL, "");
+            if (showControls && !session.canControl() && !session.controller().isBlank()) host.option(host.translate("conversation.listening", session.controller()), () -> { }, true);
+            if (showControls) for (var member : session.handover()) host.option(host.translate("conversation.handover", member.name()),
                     () -> request(Action.HAND_OVER, "", member.id().toString(), 0, true), false);
         }
-        if (session.line() != null) {
+        if (session.line() != null && (showControls
+                || session.phase() == com.jvn.villagerretaliation.dialogue.conversation.ConversationSession.Phase.CONFIRMATION)) {
             var line = session.line();
             if (line.part() > 0) host.option(host.translate("conversation.previous_text"), () -> textPage(line.part() - 1), pending);
             if (line.part() + 1 < line.parts()) host.option(host.translate("conversation.more_text"), () -> textPage(line.part() + 1), pending);
         }
+        if (!showControls) return;
         host.option(host.translate("conversation.history"), () -> request(Action.HISTORY, "", "", 0, false), pending);
         if (session.canMigrate()) intent("conversation.migrate", Action.MIGRATE, "");
         if (session.canCancel()) {

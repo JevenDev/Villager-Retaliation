@@ -348,6 +348,11 @@ public final class CampaignConversationClientSmoke {
                 ((Runnable) action.invoke(option)).run();
                 return true;
             }
+            var controls = VillagerInteractionScreen.class.getDeclaredField("showAllConversationControls"); controls.setAccessible(true);
+            if (!(Boolean) controls.get(screen) && controller(screen).session() != null) {
+                screen.mouseClicked(12, screen.height - 20, 0);
+                if ((Boolean) controls.get(screen)) return chooseIfPresent(screen, label);
+            }
             return false;
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Conversation option could not be invoked", exception); }
     }
