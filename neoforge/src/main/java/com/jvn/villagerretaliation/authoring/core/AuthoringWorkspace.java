@@ -41,6 +41,8 @@ public final class AuthoringWorkspace {
     private static final long MAX_PACK_BYTES = 256L * 1024 * 1024;
     private net.minecraft.core.HolderLookup.Provider validationRegistries;
     private final Path directory;
+    private AuthoringPackFolder sourceFolder;
+    private JsonObject sourceState;
     private final List<AuthoringDocument> documents = new ArrayList<>();
     private List<AuthoringDocument> indexedDocuments = List.of();
     private List<String> indexedDocumentPaths = List.of();
@@ -71,7 +73,55 @@ public final class AuthoringWorkspace {
     }
 
     public static AuthoringWorkspace open(Path directory) throws IOException {
-        return open(directory, FILE);
+        AuthoringWorkspace result = open(directory, FILE);
+        if (result.sourceState != null) throw new IOException("This is an internal pack workspace. Open the original pack folder instead");
+        return result;
+    }
+
+    private static Path packWorkspacePath(Path folder, Path metadataRoot) {
+        String key = com.google.common.hash.Hashing.sha256().hashString(folder.toAbsolutePath().normalize().toString(), StandardCharsets.UTF_8).toString();
+        return metadataRoot.toAbsolutePath().normalize().resolve(key);
+    }
+
+    public static boolean hasPackWorkspace(Path folder, Path metadataRoot) {
+        return Files.isRegularFile(packWorkspacePath(folder, metadataRoot).resolve(FILE), LinkOption.NOFOLLOW_LINKS);
+    }
+
+    public static AuthoringWorkspace openPack(Path folder, Path metadataRoot) throws IOException {
+        Path source = folder.toAbsolutePath().normalize();
+        rejectSymlinks(source);
+        if (!Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) throw new IOException("The pack folder is unavailable: " + source);
+        Path cacheRoot = metadataRoot.toAbsolutePath().normalize();
+        if (cacheRoot.startsWith(source)) throw new IOException("Pack workspace metadata must be stored outside the pack folder");
+        Path cache = packWorkspacePath(source, cacheRoot);
+        rejectSymlinks(cache);
+        if (Files.exists(cache.resolve(FILE), LinkOption.NOFOLLOW_LINKS)) {
+            AuthoringWorkspace result = open(cache, FILE);
+            if (result.sourceState == null) throw new IOException("The cached workspace has no pack-folder identity");
+            result.sourceFolder = new AuthoringPackFolder(source, result.sourceState);
+            return result;
+        }
+        if (Files.exists(cache)) try (var entries = Files.list(cache)) {
+            if (entries.findAny().isPresent()) throw new IOException("The pack workspace cache is not empty: " + cache);
+        }
+        if (!Files.isRegularFile(source.resolve("pack.mcmeta"), LinkOption.NOFOLLOW_LINKS))
+            throw new IOException("Choose a pack folder containing pack.mcmeta");
+        var incoming = readPack(source);
+        AuthoringWorkspace result = new AuthoringWorkspace(cache);
+        result.importResources(incoming);
+        result.markSaved();
+        result.sourceFolder = new AuthoringPackFolder(source, incoming);
+        result.save();
+        return result;
+    }
+
+    public AuthoringWorkspace recover() throws IOException {
+        AuthoringWorkspace result = recover(directory);
+        if (sourceFolder != null) {
+            if (result.sourceState == null) throw new IOException("Recovery is missing the pack-folder baseline");
+            result.sourceFolder = new AuthoringPackFolder(sourceFolder.root(), result.sourceState);
+        }
+        return result;
     }
 
     public static AuthoringWorkspace recover(Path directory) throws IOException {
@@ -140,6 +190,7 @@ public final class AuthoringWorkspace {
             if (state.has("deleted")) for (JsonElement entry : state.getAsJsonArray("deleted"))
                 result.deleted.add(entry.getAsJsonObject().deepCopy());
             if (state.has("recovery_buffers")) result.recoveryBuffers = state.getAsJsonObject("recovery_buffers").deepCopy();
+            if (state.has("source_folder")) result.sourceState = state.getAsJsonObject("source_folder").deepCopy();
             result.markSaved();
             return result;
         } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException ex) {
@@ -148,6 +199,68 @@ public final class AuthoringWorkspace {
     }
 
     public Path directory() { return directory; }
+    public Path location() { return sourceFolder == null ? directory : sourceFolder.root(); }
+    public boolean editsPackFolder() { return sourceFolder != null; }
+
+    public record SourceChange(String path, String fingerprint, String kind, byte[] disk) {
+        public SourceChange {
+            safeRelativePath(path);
+            if (!importable(path)) throw new IllegalArgumentException("Unsupported pack path " + path);
+            disk = disk == null ? null : disk.clone();
+        }
+        @Override public byte[] disk() { return disk == null ? null : disk.clone(); }
+    }
+
+    public Map<String, byte[]> scanSource() throws IOException {
+        if (sourceFolder == null) return Map.of();
+        Path root = sourceFolder.root();
+        rejectSymlinks(root);
+        if (!Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) throw new IOException("The pack folder is unavailable: " + root);
+        return readPack(root);
+    }
+
+    public String sourceStamp() throws IOException {
+        if (sourceFolder == null) return "";
+        var stamp = com.google.common.hash.Hashing.sha256().newHasher();
+        Path root = sourceFolder.root();
+        for (Path file : packEntries(root)) {
+            var attributes = Files.readAttributes(file, java.nio.file.attribute.BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            stamp.putString(root.relativize(file).toString(), StandardCharsets.UTF_8).putByte((byte) 0);
+            stamp.putLong(attributes.size()).putString(attributes.lastModifiedTime().toString(), StandardCharsets.UTF_8).putByte((byte) 0);
+            stamp.putString(String.valueOf(attributes.fileKey()), StandardCharsets.UTF_8).putByte((byte) 0);
+        }
+        return stamp.hash().toString();
+    }
+
+    public List<SourceChange> sourceChanges(Map<String, byte[]> disk) {
+        return sourceFolder == null ? List.of() : sourceFolder.changes(disk);
+    }
+
+    public boolean sourceConflict(String path) throws IOException {
+        byte[] current = filePaths().contains(path) ? readFile(path) : null;
+        return !java.util.Arrays.equals(savedFile(path), current);
+    }
+
+    public void resolveSourceChange(SourceChange change, boolean useDisk) throws IOException {
+        if (sourceFolder == null) throw new IOException("This workspace does not edit a pack folder");
+        byte[] bytes = sourceFolder.verify(change);
+        if (useDisk) {
+            if (change.path().equals("pack.mcmeta") && bytes == null) throw new IOException("A pack requires pack.mcmeta. Keep the editor version to restore it");
+            var candidate = new AuthoringWorkspace(directory);
+            if (bytes != null) candidate.importResources(Map.of(change.path(), bytes));
+            AuthoringDocument existing = documents.stream().filter(value -> value.resourcePath().equals(change.path())).findFirst().orElse(null);
+            AuthoringDocument incoming = candidate.documents.isEmpty() ? null : candidate.documents.getFirst();
+            if (change.path().equals("pack.mcmeta")) packMetadata = candidate.packMetadata;
+            else if (existing != null && incoming != null) existing.replaceJson(AuthoringDocument.JSON.toJson(incoming.json()));
+            else {
+                if (existing != null) documents.remove(existing);
+                attachments.remove(change.path());
+                if (incoming != null) documents.add(incoming);
+                else if (bytes != null) attachments.put(change.path(), bytes.clone());
+            }
+        }
+        sourceFolder.accept(change, useDisk, filePaths().contains(change.path()) ? readFile(change.path()) : null);
+    }
     public List<AuthoringDocument> documents() { return List.copyOf(documents); }
 
     public List<String> filePaths() {
@@ -1087,19 +1200,42 @@ public final class AuthoringWorkspace {
     }
 
     public int importPack(Path pack) throws IOException {
+        return importResources(readPack(pack));
+    }
+
+    private static List<Path> packEntries(Path source) throws IOException {
+        rejectSymlinks(source);
+        if (!Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) throw new IOException("The pack folder is unavailable: " + source);
+        var entries = new ArrayList<Path>();
+        for (String name : List.of("assets", "data", "pack.mcmeta", "pack.png")) {
+            Path root = source.resolve(name);
+            rejectSymlinks(root);
+            if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) continue;
+            try (var files = Files.walk(root)) {
+                for (Path file : files.filter(path -> !Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)).toList()) {
+                    rejectSymlinks(file);
+                    String path = safeRelativePath(source.relativize(file).toString().replace('\\', '/'));
+                    if (importable(path)) {
+                        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Not a regular pack file: " + path);
+                        entries.add(file);
+                    }
+                }
+            }
+        }
+        entries.sort(Comparator.naturalOrder());
+        return entries;
+    }
+
+    private static Map<String, byte[]> readPack(Path pack) throws IOException {
         Map<String, byte[]> incoming = new LinkedHashMap<>();
         Path source = pack.toAbsolutePath().normalize();
         rejectSymlinks(source);
         if (Files.isDirectory(source)) {
-            try (var files = Files.walk(source)) {
-                for (Path file : files.filter(path -> !Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)).sorted().toList()) {
-                    rejectSymlinks(file);
-                    String path = safeRelativePath(source.relativize(file).toString().replace('\\', '/'));
-                    if (!importable(path)) continue;
-                    if (Files.size(file) > MAX_FILE_BYTES) throw new IOException("Pack file is too large: " + path);
-                    incoming.put(path, Files.readAllBytes(file));
-                    checkPackSize(incoming);
-                }
+            for (Path file : packEntries(source)) {
+                String path = safeRelativePath(source.relativize(file).toString().replace('\\', '/'));
+                if (Files.size(file) > MAX_FILE_BYTES) throw new IOException("Pack file is too large: " + path);
+                incoming.put(path, Files.readAllBytes(file));
+                checkPackSize(incoming);
             }
         } else {
             try (ZipFile zip = new ZipFile(source.toFile())) {
@@ -1119,7 +1255,7 @@ public final class AuthoringWorkspace {
                 }
             }
         }
-        return importResources(incoming);
+        return incoming;
     }
 
     public int importResources(Map<String, byte[]> incoming) throws IOException {
@@ -1158,7 +1294,7 @@ public final class AuthoringWorkspace {
         return imported.size();
     }
 
-    private static boolean importable(String path) {
+    static boolean importable(String path) {
         return path.equals("pack.mcmeta") || path.equals("pack.png") || path.startsWith("data/") || path.startsWith("assets/");
     }
 
@@ -1522,6 +1658,8 @@ public final class AuthoringWorkspace {
         JsonArray trash = new JsonArray();
         deleted.forEach(value -> trash.add(value.deepCopy()));
         root.add("deleted", trash);
+        if (sourceFolder != null) root.add("source_folder", sourceFolder.snapshot());
+        else if (sourceState != null) root.add("source_folder", sourceState.deepCopy());
         return root;
     }
 
@@ -1546,7 +1684,7 @@ public final class AuthoringWorkspace {
     }
 
     public boolean dirty() {
-        return recovered || !documents.equals(savedDocuments) || documents.stream().anyMatch(AuthoringDocument::dirty)
+        return recovered || sourceFolder != null && sourceFolder.dirty() || !documents.equals(savedDocuments) || documents.stream().anyMatch(AuthoringDocument::dirty)
                 || !attachments.equals(savedAttachments) || !folders.equals(savedFolders) || !packMetadata.equals(savedPack) || deleted.size() != savedDeleted;
     }
 
@@ -1565,7 +1703,17 @@ public final class AuthoringWorkspace {
     }
 
     public void save() throws IOException {
-        atomicWrite(directory.resolve(FILE), AuthoringDocument.JSON.toJson(snapshot()).getBytes(StandardCharsets.UTF_8));
+        if (sourceState != null && sourceFolder == null) throw new IOException("Open the original pack folder to save its linked workspace");
+        var savedSource = sourceFolder == null ? null : sourceFolder.save(this);
+        try {
+            JsonObject state = snapshot();
+            if (savedSource != null) state.add("source_folder", savedSource.state());
+            atomicWrite(directory.resolve(FILE), AuthoringDocument.JSON.toJson(state).getBytes(StandardCharsets.UTF_8));
+        } catch (IOException failure) {
+            if (savedSource != null) savedSource.rollback(failure);
+            throw failure;
+        }
+        if (savedSource != null) savedSource.commit();
         markSaved();
         discardRecovery();
     }
@@ -1629,13 +1777,13 @@ public final class AuthoringWorkspace {
         return value;
     }
 
-    private static void rejectSymlinks(Path path) throws IOException {
+    static void rejectSymlinks(Path path) throws IOException {
         for (Path current = path; current != null; current = current.getParent()) {
             if (Files.isSymbolicLink(current)) throw new IOException("Authoring paths cannot traverse symbolic links: " + current);
         }
     }
 
-    private static void atomicWrite(Path destination, byte[] content) throws IOException {
+    static void atomicWrite(Path destination, byte[] content) throws IOException {
         rejectSymlinks(destination);
         Files.createDirectories(destination.getParent());
         Path temporary = Files.createTempFile(destination.getParent(), ".vr-draft-", ".tmp");

@@ -204,6 +204,7 @@ final class ImGuiAuthoringEditor {
     private final ImString replaceFind = new ImString(1024);
     private EditorWordingReplacement.Preview replacementPreview;
     private final EditorWorkspaceReplacement workspaceReplacement = new EditorWorkspaceReplacement();
+    private final EditorPackFolder packFolder = new EditorPackFolder();
     private boolean showRecovery;
     private boolean confirmClose;
     private long nextRecovery;
@@ -570,8 +571,11 @@ final class ImGuiAuthoringEditor {
 
     private void openWorkspace(boolean create) throws IOException {
         if (workspace != null) { saveSession(); workspace.save(); }
-        AuthoringWorkspace next = create ? AuthoringWorkspace.create(Path.of(workspacePath.get()))
-                : AuthoringWorkspace.open(Path.of(workspacePath.get()));
+        Path folder = Path.of(workspacePath.get()), cache = MC.gameDirectory.toPath().resolve("authoring/pack-workspaces");
+        AuthoringWorkspace next = create ? AuthoringWorkspace.create(folder)
+                : java.nio.file.Files.isRegularFile(folder.resolve("pack.mcmeta")) || AuthoringWorkspace.hasPackWorkspace(folder, cache)
+                        ? AuthoringWorkspace.openPack(folder, cache)
+                        : AuthoringWorkspace.open(folder);
         installWorkspace(next, create);
     }
 
@@ -590,12 +594,12 @@ final class ImGuiAuthoringEditor {
         view = 0;
         filter.set("");
         showCreate = workspace.documents().isEmpty();
-        preferences = preferences.withWorkspace(workspace.directory().toString());
+        preferences = preferences.withWorkspace(workspace.location().toString());
         savePreferences();
         showRecovery = !create && workspace.recoveryAvailable();
         restoreSession(!showRecovery);
         if (guideStep == 0) guideStep = 1;
-        status = create ? "Workspace created." : "Workspace opened.";
+        status = create ? "Workspace created." : workspace.editsPackFolder() ? "Pack folder opened. Save updates its files." : "Workspace opened.";
     }
 
     private void refreshWorldSelection() {
@@ -695,12 +699,12 @@ final class ImGuiAuthoringEditor {
         if (workspace == null || showWorkspace) {
             currentWorld();
             ImGui.textUnformatted("Workspace");
-            ImGui.textWrapped("Keep drafts in a folder, separate from your active game.");
+            ImGui.textWrapped("Open a pack folder to edit its files, or keep a separate draft workspace.");
             input("Workspace folder", workspacePath);
             if (ImGui.button("Open folder")) operation(() -> openWorkspace(false));
             EditorWidgets.sameLineFor("Create new");
             if (ImGui.button("Create new")) operation(() -> openWorkspace(true));
-            ImGui.textWrapped("Create needs an empty folder. Open loads an existing workspace.");
+            ImGui.textWrapped("Create needs an empty folder. Open accepts a draft workspace or a pack containing pack.mcmeta.");
             if (!preferences.recentWorkspaces().isEmpty() && ImGui.beginCombo(EditorWidgets.field("Recent workspaces"), "Choose a workspace")) {
                 for (String recent : preferences.recentWorkspaces()) if (ImGui.selectable(recent)) operation(() -> { workspacePath.set(recent); openWorkspace(false); });
                 ImGui.endCombo();
@@ -712,6 +716,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
+        packFolder.render(workspace, hasPendingFields() || rawModified, this::operation, this::reloadSourceSelection);
         float modeWidth = ImGui.calcTextSize("Pack files").x + ImGui.getFrameHeight() + 2 * ImGui.getStyle().getFramePaddingX();
         float newWidth = Math.max(ImGui.calcTextSize("New content").x + 16, ImGui.getContentRegionAvailX() - modeWidth - 8);
         if (ImGui.button("New content", newWidth, 0)) operation(() -> {
@@ -1007,7 +1012,7 @@ final class ImGuiAuthoringEditor {
             for (var kind : DefinitionKind.values()) if (ImGui.selectable(kindLabel(kind), contentKind.equals(kindLabel(kind)))) { contentKind = kindLabel(kind); saveViewPreferences(); }
             ImGui.endCombo();
         }
-        if (ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.directory().toFile());
+        if (ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.location().toFile());
         ImGui.textWrapped("Starter recipes use the name above and create editable content.");
         for (String recipe : List.of("Branching dialogue", "Fetch quest", "Triggered encounter", "Reputation choice")) {
             if (ImGui.button(recipe)) operation(() -> {
@@ -2087,10 +2092,10 @@ final class ImGuiAuthoringEditor {
             ImGui.textWrapped(packFiles.selected().isEmpty() ? "Select a folder or file in the tree." : packFiles.selected());
             ImGui.textWrapped("Content files open in their editor. Supporting text and images open in Pack files.");
             if (workspace != null) {
-                ImGui.textDisabled("Draft folder: " + workspace.directory().getFileName());
-                if (ImGui.isItemHovered()) ImGui.setTooltip(workspace.directory().toString());
+                ImGui.textDisabled((workspace.editsPackFolder() ? "Pack folder: " : "Draft folder: ") + workspace.location().getFileName());
+                if (ImGui.isItemHovered()) ImGui.setTooltip(workspace.location().toString());
             }
-            if (workspace != null && ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.directory().toFile());
+            if (workspace != null && ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.location().toFile());
             if (ImGui.button("Build pack")) operation(() -> { validate(); view = 2; });
             ImGui.end();
             return;
@@ -3714,6 +3719,15 @@ final class ImGuiAuthoringEditor {
         return "Select this issue to open the affected field.";
     }
 
+    private void reloadSourceSelection() {
+        String path = document == null ? packFiles.selected() : document.resourcePath();
+        var next = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(path)).findFirst().orElse(null);
+        if (document == next) refresh();
+        else select(next);
+        if (!path.isEmpty() && !workspace.filePaths().contains(path)) packFiles.select("");
+        validate();
+    }
+
     private void openPackFile(String path) {
         var content = workspace.documents().stream().filter(candidate -> candidate.resourcePath().equals(path)).findFirst().orElse(null);
         recordLocation();
@@ -3833,9 +3847,9 @@ final class ImGuiAuthoringEditor {
         if (workspace == null) { ImGui.textDisabled("No workspace open"); return; }
         boolean dirty = workspace.dirty() || hasPendingFields() || rawModified;
         String path = activePath();
-        String root = java.util.Objects.toString(workspace.directory().getFileName(), workspace.directory().toString());
+        String root = java.util.Objects.toString(workspace.location().getFileName(), workspace.location().toString());
         if (ImGui.smallButton(shortText(root, 24) + "##pack_root_path")) operation(() -> openFolder(""));
-        if (ImGui.isItemHovered()) ImGui.setTooltip("Open pack root\nDraft workspace: " + workspace.directory());
+        if (ImGui.isItemHovered()) ImGui.setTooltip("Open pack root\n" + workspace.location());
         var ancestors = EditorNavigation.ancestors(path);
         float width = ImGui.calcTextSize(path).x + ancestors.size() * 32 + 25 + (dirty ? 120 : 0);
         float available = ImGui.getCursorScreenPosX() + ImGui.getContentRegionAvailX() - ImGui.getItemRectMaxX() - 8;
@@ -3985,7 +3999,7 @@ final class ImGuiAuthoringEditor {
         if (showRecovery) {
             ImGui.textWrapped("Recovered drafts are available. Choose a version before continuing.");
             if (ImGui.button("Recover drafts")) attempt(() -> {
-                workspace = AuthoringWorkspace.recover(workspace.directory());
+                workspace = workspace.recover();
                 restoreSession(false);
                 packFiles.reset();
                 packBuild.load(workspace);
@@ -4052,7 +4066,8 @@ final class ImGuiAuthoringEditor {
         packBuild.apply();
         workspace.save();
         validate(); focusFirstError();
-        status = "Drafts saved.";
+        packFolder.refresh();
+        status = workspace.editsPackFolder() ? "Pack files saved." : "Drafts saved.";
     }
 
     private void validate() {

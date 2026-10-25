@@ -1009,6 +1009,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorPackFolderSmokeOnly")) {
+            buildPackFolderSteps();
+            finishSteps("Direct pack-folder saving and external-change review passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorCompletionSmokeOnly")) {
             buildCompletionSteps();
             finishSteps("Inline text completion keyboard, formatting, plain labels and diagnostics passed.");
@@ -1044,6 +1049,7 @@ public final class AuthoringEditorClientSmoke {
         buildLayoutSteps();
         buildVariableSteps();
         buildCompletionSteps();
+        buildPackFolderSteps();
         buildPanelSteps();
         buildPerformanceSteps();
         buildDropdownSteps();
@@ -1423,6 +1429,83 @@ public final class AuthoringEditorClientSmoke {
             ImGui.endPopup();
             ImGui.getStyle().setFontScaleMain(fontScale);
         }
+    }
+
+    private static void buildPackFolderSteps() {
+        var original = new AuthoringWorkspace[1];
+        var priorDocument = new AuthoringDocument[1];
+        var guide = new int[1];
+        Path pack = output().resolve("editable-pack");
+        String path = "data/test/dialogue_trees/en_us/folder_edit.json";
+        STEPS.add(() -> {
+            original[0] = workspace; priorDocument[0] = document; guide[0] = (int) field(editor, "guideStep");
+            try {
+                Files.createDirectories(pack.resolve(path).getParent());
+                Files.writeString(pack.resolve("pack.mcmeta"), AuthoringDocument.JSON.toJson(workspace.packMetadata()));
+                Files.writeString(pack.resolve(path), "{\"id\":\"test:folder_edit\",\"nodes\":{\"start\":{\"lines\":[\"Original\"],\"responses\":[]}},\"entries\":[{\"id\":\"default\",\"label\":\"Talk\",\"start\":\"start\"}]}");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            ((imgui.type.ImString) field(editor, "workspacePath")).set(pack.toString());
+            invoke("openWorkspace", new Class<?>[] {boolean.class}, false);
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            require(workspace.editsPackFolder() && workspace.location().equals(pack), "Open folder recognizes ordinary datapacks.");
+            document = workspace.documents().getFirst();
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("guideStep", -1); set("filesMode", false);
+        });
+        pause(300);
+        STEPS.add(() -> {
+            capture("pack-folder-01-open");
+            document.edit("Edit source wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Edited in game")));
+            invoke("refresh", new Class<?>[0]);
+        });
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            try {
+                require(Files.readString(pack.resolve(path)).contains("Edited in game"), "The Save button writes the original pack file.");
+                require(!Files.exists(pack.resolve("workspace.json")), "Pack-folder editing keeps workspace metadata outside the source.");
+                var disk = document.json();
+                disk.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Edited elsewhere"));
+                Files.writeString(pack.resolve(path), AuthoringDocument.JSON.toJson(disk));
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            document.edit("Conflicting wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Keep in game")));
+            invoke("refresh", new Class<?>[0]);
+            ((EditorPackFolder) field(editor, "packFolder")).refresh();
+        });
+        pause(2400);
+        STEPS.add(() -> {
+            var panel = field(editor, "packFolder");
+            require(!((List<?>) field(panel, "changes")).isEmpty(), "External edits are detected without reopening the pack.");
+        });
+        click(() -> new float[] {160, 210});
+        pause(250);
+        STEPS.add(() -> capture("pack-folder-02-conflict"));
+        click(() -> new float[] {500, 260});
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(document.value("/nodes/start/lines/0").getAsString().equals("Edited elsewhere"), "The disk version can replace the conflicting editor version.");
+            try {
+                var disk = document.json();
+                disk.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Changed again elsewhere"));
+                Files.writeString(pack.resolve(path), AuthoringDocument.JSON.toJson(disk));
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            document.edit("Keep local wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("start").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Keep in game")));
+            invoke("refresh", new Class<?>[0]);
+            ((EditorPackFolder) field(editor, "packFolder")).refresh();
+        });
+        pause(2400);
+        click(() -> new float[] {160, 210});
+        pause(250);
+        click(() -> new float[] {680, 260});
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            try { require(Files.readString(pack.resolve(path)).contains("Keep in game"), "Keeping the editor version saves the chosen content to disk."); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            capture("pack-folder-03-resolved");
+            workspace = original[0]; document = priorDocument[0];
+            invoke("installWorkspace", new Class<?>[] {AuthoringWorkspace.class, boolean.class}, workspace, false);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("guideStep", guide[0]);
+        });
     }
 
     private static void buildCompletionSteps() {
