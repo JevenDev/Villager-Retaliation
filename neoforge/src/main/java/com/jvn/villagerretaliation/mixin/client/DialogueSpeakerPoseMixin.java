@@ -16,6 +16,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntityRenderer.class)
 public abstract class DialogueSpeakerPoseMixin<T extends LivingEntity> {
     @Shadow protected EntityModel<T> model;
+    @org.spongepowered.asm.mixin.Unique private org.joml.Matrix4f villagerretaliation$cameraEntry;
+
+    @Inject(method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"))
+    private void villagerretaliation$captureCameraEntry(T entity, float yaw, float partialTick,
+            PoseStack poses, MultiBufferSource buffers, int light, CallbackInfo callback) {
+        villagerretaliation$cameraEntry = com.jvn.villagerretaliation.client.interaction.DialogueCameraController.capturesFocus(entity)
+                ? new org.joml.Matrix4f(poses.last().pose()) : null;
+    }
 
     @Inject(method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/EntityModel;setupAnim(Lnet/minecraft/world/entity/Entity;FFFFF)V",
@@ -23,5 +31,6 @@ public abstract class DialogueSpeakerPoseMixin<T extends LivingEntity> {
     private void villagerretaliation$animateDialogueSpeaker(T entity, float yaw, float partialTick,
             PoseStack poses, MultiBufferSource buffers, int light, CallbackInfo callback) {
         if (model instanceof HeadedModel headed) VillagerDialoguePerformance.apply(entity, headed.getHead(), partialTick);
+        com.jvn.villagerretaliation.client.interaction.DialogueCameraFocusPoints.capture(entity, model, poses, villagerretaliation$cameraEntry, partialTick);
     }
 }

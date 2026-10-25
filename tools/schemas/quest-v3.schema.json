@@ -1582,6 +1582,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -1647,6 +1752,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -1766,6 +1924,111 @@
                                 "player"
                               ]
                             },
+                            "focus": {
+                              "description": "Track a body slot, including an empty hand or armor slot.",
+                              "enum": [
+                                "eyes",
+                                "main_hand",
+                                "off_hand",
+                                "head",
+                                "chest",
+                                "legs",
+                                "feet"
+                              ]
+                            },
+                            "reference": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "id",
+                                "kind",
+                                "match"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "kind": {
+                                  "enum": [
+                                    "item",
+                                    "block"
+                                  ]
+                                },
+                                "match": {
+                                  "description": "Exact item or block registry ID.",
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                                  "maxLength": 256
+                                },
+                                "origin": {
+                                  "enum": [
+                                    "speaker",
+                                    "player"
+                                  ]
+                                },
+                                "marker": {
+                                  "description": "Unique marker entity tag within 32 blocks of the origin.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "location": {
+                                  "description": "Saved campaign location alias.",
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "offset": {
+                                  "description": "Block offset in world axes from the resolved origin.",
+                                  "type": "array",
+                                  "minItems": 3,
+                                  "maxItems": 3,
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": -16,
+                                    "maximum": 16
+                                  }
+                                },
+                                "radius": {
+                                  "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 16
+                                },
+                                "entity_tag": {
+                                  "description": "Additional tag required on a dropped item.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "not": {
+                                    "required": [
+                                      "marker",
+                                      "location"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "kind": {
+                                        "const": "block"
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "not": {
+                                      "required": [
+                                        "entity_tag"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            },
                             "fov": {
                               "type": "number",
                               "minimum": 10,
@@ -1831,6 +2094,59 @@
                                 "properties": {
                                   "placement": {
                                     "const": "fixed"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "anyOf": [
+                                  {
+                                    "required": [
+                                      "reference"
+                                    ]
+                                  },
+                                  {
+                                    "required": [
+                                      "focus"
+                                    ],
+                                    "properties": {
+                                      "focus": {
+                                        "not": {
+                                          "const": "eyes"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "then": {
+                                "not": {
+                                  "required": [
+                                    "orientation"
+                                  ]
+                                },
+                                "properties": {
+                                  "target": {
+                                    "enum": [
+                                      "speaker",
+                                      "character",
+                                      "player"
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "required": [
+                                  "reference"
+                                ]
+                              },
+                              "then": {
+                                "properties": {
+                                  "focus": {
+                                    "const": "eyes"
                                   }
                                 }
                               }
@@ -1984,6 +2300,111 @@
                     "player"
                   ]
                 },
+                "focus": {
+                  "description": "Track a body slot, including an empty hand or armor slot.",
+                  "enum": [
+                    "eyes",
+                    "main_hand",
+                    "off_hand",
+                    "head",
+                    "chest",
+                    "legs",
+                    "feet"
+                  ]
+                },
+                "reference": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "kind",
+                    "match"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "kind": {
+                      "enum": [
+                        "item",
+                        "block"
+                      ]
+                    },
+                    "match": {
+                      "description": "Exact item or block registry ID.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                      "maxLength": 256
+                    },
+                    "origin": {
+                      "enum": [
+                        "speaker",
+                        "player"
+                      ]
+                    },
+                    "marker": {
+                      "description": "Unique marker entity tag within 32 blocks of the origin.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "location": {
+                      "description": "Saved campaign location alias.",
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "offset": {
+                      "description": "Block offset in world axes from the resolved origin.",
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      }
+                    },
+                    "radius": {
+                      "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16
+                    },
+                    "entity_tag": {
+                      "description": "Additional tag required on a dropped item.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "marker",
+                          "location"
+                        ]
+                      }
+                    },
+                    {
+                      "if": {
+                        "properties": {
+                          "kind": {
+                            "const": "block"
+                          }
+                        }
+                      },
+                      "then": {
+                        "not": {
+                          "required": [
+                            "entity_tag"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
                 "fov": {
                   "type": "number",
                   "minimum": 10,
@@ -2049,6 +2470,59 @@
                     "properties": {
                       "placement": {
                         "const": "fixed"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "reference"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "focus"
+                        ],
+                        "properties": {
+                          "focus": {
+                            "not": {
+                              "const": "eyes"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "not": {
+                      "required": [
+                        "orientation"
+                      ]
+                    },
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "player"
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "reference"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "focus": {
+                        "const": "eyes"
                       }
                     }
                   }
@@ -2168,6 +2642,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -2233,6 +2812,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -3719,6 +4351,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -3784,6 +4521,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -3903,6 +4693,111 @@
                                 "player"
                               ]
                             },
+                            "focus": {
+                              "description": "Track a body slot, including an empty hand or armor slot.",
+                              "enum": [
+                                "eyes",
+                                "main_hand",
+                                "off_hand",
+                                "head",
+                                "chest",
+                                "legs",
+                                "feet"
+                              ]
+                            },
+                            "reference": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "id",
+                                "kind",
+                                "match"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "kind": {
+                                  "enum": [
+                                    "item",
+                                    "block"
+                                  ]
+                                },
+                                "match": {
+                                  "description": "Exact item or block registry ID.",
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                                  "maxLength": 256
+                                },
+                                "origin": {
+                                  "enum": [
+                                    "speaker",
+                                    "player"
+                                  ]
+                                },
+                                "marker": {
+                                  "description": "Unique marker entity tag within 32 blocks of the origin.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "location": {
+                                  "description": "Saved campaign location alias.",
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "offset": {
+                                  "description": "Block offset in world axes from the resolved origin.",
+                                  "type": "array",
+                                  "minItems": 3,
+                                  "maxItems": 3,
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": -16,
+                                    "maximum": 16
+                                  }
+                                },
+                                "radius": {
+                                  "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 16
+                                },
+                                "entity_tag": {
+                                  "description": "Additional tag required on a dropped item.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "not": {
+                                    "required": [
+                                      "marker",
+                                      "location"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "kind": {
+                                        "const": "block"
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "not": {
+                                      "required": [
+                                        "entity_tag"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            },
                             "fov": {
                               "type": "number",
                               "minimum": 10,
@@ -3968,6 +4863,59 @@
                                 "properties": {
                                   "placement": {
                                     "const": "fixed"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "anyOf": [
+                                  {
+                                    "required": [
+                                      "reference"
+                                    ]
+                                  },
+                                  {
+                                    "required": [
+                                      "focus"
+                                    ],
+                                    "properties": {
+                                      "focus": {
+                                        "not": {
+                                          "const": "eyes"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "then": {
+                                "not": {
+                                  "required": [
+                                    "orientation"
+                                  ]
+                                },
+                                "properties": {
+                                  "target": {
+                                    "enum": [
+                                      "speaker",
+                                      "character",
+                                      "player"
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "required": [
+                                  "reference"
+                                ]
+                              },
+                              "then": {
+                                "properties": {
+                                  "focus": {
+                                    "const": "eyes"
                                   }
                                 }
                               }
@@ -4121,6 +5069,111 @@
                     "player"
                   ]
                 },
+                "focus": {
+                  "description": "Track a body slot, including an empty hand or armor slot.",
+                  "enum": [
+                    "eyes",
+                    "main_hand",
+                    "off_hand",
+                    "head",
+                    "chest",
+                    "legs",
+                    "feet"
+                  ]
+                },
+                "reference": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "kind",
+                    "match"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "kind": {
+                      "enum": [
+                        "item",
+                        "block"
+                      ]
+                    },
+                    "match": {
+                      "description": "Exact item or block registry ID.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                      "maxLength": 256
+                    },
+                    "origin": {
+                      "enum": [
+                        "speaker",
+                        "player"
+                      ]
+                    },
+                    "marker": {
+                      "description": "Unique marker entity tag within 32 blocks of the origin.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "location": {
+                      "description": "Saved campaign location alias.",
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "offset": {
+                      "description": "Block offset in world axes from the resolved origin.",
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      }
+                    },
+                    "radius": {
+                      "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16
+                    },
+                    "entity_tag": {
+                      "description": "Additional tag required on a dropped item.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "marker",
+                          "location"
+                        ]
+                      }
+                    },
+                    {
+                      "if": {
+                        "properties": {
+                          "kind": {
+                            "const": "block"
+                          }
+                        }
+                      },
+                      "then": {
+                        "not": {
+                          "required": [
+                            "entity_tag"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
                 "fov": {
                   "type": "number",
                   "minimum": 10,
@@ -4186,6 +5239,59 @@
                     "properties": {
                       "placement": {
                         "const": "fixed"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "reference"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "focus"
+                        ],
+                        "properties": {
+                          "focus": {
+                            "not": {
+                              "const": "eyes"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "not": {
+                      "required": [
+                        "orientation"
+                      ]
+                    },
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "player"
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "reference"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "focus": {
+                        "const": "eyes"
                       }
                     }
                   }
@@ -4305,6 +5411,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -4370,6 +5581,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -4732,6 +5996,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -4797,6 +6166,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -4916,6 +6338,111 @@
                                 "player"
                               ]
                             },
+                            "focus": {
+                              "description": "Track a body slot, including an empty hand or armor slot.",
+                              "enum": [
+                                "eyes",
+                                "main_hand",
+                                "off_hand",
+                                "head",
+                                "chest",
+                                "legs",
+                                "feet"
+                              ]
+                            },
+                            "reference": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "id",
+                                "kind",
+                                "match"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "kind": {
+                                  "enum": [
+                                    "item",
+                                    "block"
+                                  ]
+                                },
+                                "match": {
+                                  "description": "Exact item or block registry ID.",
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                                  "maxLength": 256
+                                },
+                                "origin": {
+                                  "enum": [
+                                    "speaker",
+                                    "player"
+                                  ]
+                                },
+                                "marker": {
+                                  "description": "Unique marker entity tag within 32 blocks of the origin.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "location": {
+                                  "description": "Saved campaign location alias.",
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "offset": {
+                                  "description": "Block offset in world axes from the resolved origin.",
+                                  "type": "array",
+                                  "minItems": 3,
+                                  "maxItems": 3,
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": -16,
+                                    "maximum": 16
+                                  }
+                                },
+                                "radius": {
+                                  "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 16
+                                },
+                                "entity_tag": {
+                                  "description": "Additional tag required on a dropped item.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "not": {
+                                    "required": [
+                                      "marker",
+                                      "location"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "kind": {
+                                        "const": "block"
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "not": {
+                                      "required": [
+                                        "entity_tag"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            },
                             "fov": {
                               "type": "number",
                               "minimum": 10,
@@ -4981,6 +6508,59 @@
                                 "properties": {
                                   "placement": {
                                     "const": "fixed"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "anyOf": [
+                                  {
+                                    "required": [
+                                      "reference"
+                                    ]
+                                  },
+                                  {
+                                    "required": [
+                                      "focus"
+                                    ],
+                                    "properties": {
+                                      "focus": {
+                                        "not": {
+                                          "const": "eyes"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "then": {
+                                "not": {
+                                  "required": [
+                                    "orientation"
+                                  ]
+                                },
+                                "properties": {
+                                  "target": {
+                                    "enum": [
+                                      "speaker",
+                                      "character",
+                                      "player"
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "required": [
+                                  "reference"
+                                ]
+                              },
+                              "then": {
+                                "properties": {
+                                  "focus": {
+                                    "const": "eyes"
                                   }
                                 }
                               }
@@ -5134,6 +6714,111 @@
                     "player"
                   ]
                 },
+                "focus": {
+                  "description": "Track a body slot, including an empty hand or armor slot.",
+                  "enum": [
+                    "eyes",
+                    "main_hand",
+                    "off_hand",
+                    "head",
+                    "chest",
+                    "legs",
+                    "feet"
+                  ]
+                },
+                "reference": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "kind",
+                    "match"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "kind": {
+                      "enum": [
+                        "item",
+                        "block"
+                      ]
+                    },
+                    "match": {
+                      "description": "Exact item or block registry ID.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                      "maxLength": 256
+                    },
+                    "origin": {
+                      "enum": [
+                        "speaker",
+                        "player"
+                      ]
+                    },
+                    "marker": {
+                      "description": "Unique marker entity tag within 32 blocks of the origin.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "location": {
+                      "description": "Saved campaign location alias.",
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "offset": {
+                      "description": "Block offset in world axes from the resolved origin.",
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      }
+                    },
+                    "radius": {
+                      "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16
+                    },
+                    "entity_tag": {
+                      "description": "Additional tag required on a dropped item.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "marker",
+                          "location"
+                        ]
+                      }
+                    },
+                    {
+                      "if": {
+                        "properties": {
+                          "kind": {
+                            "const": "block"
+                          }
+                        }
+                      },
+                      "then": {
+                        "not": {
+                          "required": [
+                            "entity_tag"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
                 "fov": {
                   "type": "number",
                   "minimum": 10,
@@ -5199,6 +6884,59 @@
                     "properties": {
                       "placement": {
                         "const": "fixed"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "reference"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "focus"
+                        ],
+                        "properties": {
+                          "focus": {
+                            "not": {
+                              "const": "eyes"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "not": {
+                      "required": [
+                        "orientation"
+                      ]
+                    },
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "player"
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "reference"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "focus": {
+                        "const": "eyes"
                       }
                     }
                   }
@@ -5318,6 +7056,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -5383,6 +7226,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -5755,6 +7651,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -5820,6 +7821,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }
@@ -5939,6 +7993,111 @@
                                 "player"
                               ]
                             },
+                            "focus": {
+                              "description": "Track a body slot, including an empty hand or armor slot.",
+                              "enum": [
+                                "eyes",
+                                "main_hand",
+                                "off_hand",
+                                "head",
+                                "chest",
+                                "legs",
+                                "feet"
+                              ]
+                            },
+                            "reference": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "id",
+                                "kind",
+                                "match"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "kind": {
+                                  "enum": [
+                                    "item",
+                                    "block"
+                                  ]
+                                },
+                                "match": {
+                                  "description": "Exact item or block registry ID.",
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                                  "maxLength": 256
+                                },
+                                "origin": {
+                                  "enum": [
+                                    "speaker",
+                                    "player"
+                                  ]
+                                },
+                                "marker": {
+                                  "description": "Unique marker entity tag within 32 blocks of the origin.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "location": {
+                                  "description": "Saved campaign location alias.",
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                                },
+                                "offset": {
+                                  "description": "Block offset in world axes from the resolved origin.",
+                                  "type": "array",
+                                  "minItems": 3,
+                                  "maxItems": 3,
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": -16,
+                                    "maximum": 16
+                                  }
+                                },
+                                "radius": {
+                                  "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 16
+                                },
+                                "entity_tag": {
+                                  "description": "Additional tag required on a dropped item.",
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "not": {
+                                    "required": [
+                                      "marker",
+                                      "location"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "kind": {
+                                        "const": "block"
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "not": {
+                                      "required": [
+                                        "entity_tag"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            },
                             "fov": {
                               "type": "number",
                               "minimum": 10,
@@ -6004,6 +8163,59 @@
                                 "properties": {
                                   "placement": {
                                     "const": "fixed"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "anyOf": [
+                                  {
+                                    "required": [
+                                      "reference"
+                                    ]
+                                  },
+                                  {
+                                    "required": [
+                                      "focus"
+                                    ],
+                                    "properties": {
+                                      "focus": {
+                                        "not": {
+                                          "const": "eyes"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "then": {
+                                "not": {
+                                  "required": [
+                                    "orientation"
+                                  ]
+                                },
+                                "properties": {
+                                  "target": {
+                                    "enum": [
+                                      "speaker",
+                                      "character",
+                                      "player"
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "if": {
+                                "required": [
+                                  "reference"
+                                ]
+                              },
+                              "then": {
+                                "properties": {
+                                  "focus": {
+                                    "const": "eyes"
                                   }
                                 }
                               }
@@ -6157,6 +8369,111 @@
                     "player"
                   ]
                 },
+                "focus": {
+                  "description": "Track a body slot, including an empty hand or armor slot.",
+                  "enum": [
+                    "eyes",
+                    "main_hand",
+                    "off_hand",
+                    "head",
+                    "chest",
+                    "legs",
+                    "feet"
+                  ]
+                },
+                "reference": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "kind",
+                    "match"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "kind": {
+                      "enum": [
+                        "item",
+                        "block"
+                      ]
+                    },
+                    "match": {
+                      "description": "Exact item or block registry ID.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                      "maxLength": 256
+                    },
+                    "origin": {
+                      "enum": [
+                        "speaker",
+                        "player"
+                      ]
+                    },
+                    "marker": {
+                      "description": "Unique marker entity tag within 32 blocks of the origin.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "location": {
+                      "description": "Saved campaign location alias.",
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    },
+                    "offset": {
+                      "description": "Block offset in world axes from the resolved origin.",
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "integer",
+                        "minimum": -16,
+                        "maximum": 16
+                      }
+                    },
+                    "radius": {
+                      "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16
+                    },
+                    "entity_tag": {
+                      "description": "Additional tag required on a dropped item.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "marker",
+                          "location"
+                        ]
+                      }
+                    },
+                    {
+                      "if": {
+                        "properties": {
+                          "kind": {
+                            "const": "block"
+                          }
+                        }
+                      },
+                      "then": {
+                        "not": {
+                          "required": [
+                            "entity_tag"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
                 "fov": {
                   "type": "number",
                   "minimum": 10,
@@ -6222,6 +8539,59 @@
                     "properties": {
                       "placement": {
                         "const": "fixed"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "reference"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "focus"
+                        ],
+                        "properties": {
+                          "focus": {
+                            "not": {
+                              "const": "eyes"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "not": {
+                      "required": [
+                        "orientation"
+                      ]
+                    },
+                    "properties": {
+                      "target": {
+                        "enum": [
+                          "speaker",
+                          "character",
+                          "player"
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "reference"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "focus": {
+                        "const": "eyes"
                       }
                     }
                   }
@@ -6341,6 +8711,111 @@
                           "player"
                         ]
                       },
+                      "focus": {
+                        "description": "Track a body slot, including an empty hand or armor slot.",
+                        "enum": [
+                          "eyes",
+                          "main_hand",
+                          "off_hand",
+                          "head",
+                          "chest",
+                          "legs",
+                          "feet"
+                        ]
+                      },
+                      "reference": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "kind",
+                          "match"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "kind": {
+                            "enum": [
+                              "item",
+                              "block"
+                            ]
+                          },
+                          "match": {
+                            "description": "Exact item or block registry ID.",
+                            "type": "string",
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9/._-]+$",
+                            "maxLength": 256
+                          },
+                          "origin": {
+                            "enum": [
+                              "speaker",
+                              "player"
+                            ]
+                          },
+                          "marker": {
+                            "description": "Unique marker entity tag within 32 blocks of the origin.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "location": {
+                            "description": "Saved campaign location alias.",
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                          },
+                          "offset": {
+                            "description": "Block offset in world axes from the resolved origin.",
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer",
+                              "minimum": -16,
+                              "maximum": 16
+                            }
+                          },
+                          "radius": {
+                            "description": "Find exactly one match in this block radius. Zero checks the origin block only.",
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 16
+                          },
+                          "entity_tag": {
+                            "description": "Additional tag required on a dropped item.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "not": {
+                              "required": [
+                                "marker",
+                                "location"
+                              ]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "kind": {
+                                  "const": "block"
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": [
+                                  "entity_tag"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
                       "fov": {
                         "type": "number",
                         "minimum": 10,
@@ -6406,6 +8881,59 @@
                           "properties": {
                             "placement": {
                               "const": "fixed"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "anyOf": [
+                            {
+                              "required": [
+                                "reference"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "focus"
+                              ],
+                              "properties": {
+                                "focus": {
+                                  "not": {
+                                    "const": "eyes"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "not": {
+                            "required": [
+                              "orientation"
+                            ]
+                          },
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "speaker",
+                                "character",
+                                "player"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "required": [
+                            "reference"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "focus": {
+                              "const": "eyes"
                             }
                           }
                         }

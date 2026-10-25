@@ -77,6 +77,16 @@ public final class DialogueCameraClientSmoke {
         }
         var server = minecraft.getSingleplayerServer();
         var playerId = minecraft.player.getUUID();
+        if (phase == 66) {
+            if (CameraFocusClientChecks.tick((Villager) minecraft.level.getEntity(entityId))) {
+                capture("focus-complete");
+                try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed (focus and FOV checks)" + System.lineSeparator()); }
+                catch (IOException exception) { throw new UncheckedIOException(exception); }
+                phase = 9;
+                minecraft.stop();
+            }
+            return;
+        }
         if (phase == 0 && minecraft.screen == null) {
             CameraAuthoringChecks.run();
             minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
@@ -163,6 +173,10 @@ public final class DialogueCameraClientSmoke {
             capture("speaker-facing-" + perspective);
             if (perspective == 0) {
                 verifyFovTransitions(screen);
+                if (Boolean.getBoolean(OUTPUT + ".focusOnly")) {
+                    phase = 66;
+                    return;
+                }
                 if (Boolean.getBoolean(OUTPUT + ".fovOnly")) {
                     try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed (FOV checks only)" + System.lineSeparator()); }
                     catch (IOException exception) { throw new UncheckedIOException(exception); }

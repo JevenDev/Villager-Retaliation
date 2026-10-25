@@ -31,6 +31,8 @@ public final class AuthoringCameraSession implements AutoCloseable {
     private final Object level;
     private Pose requested;
     private int sequence;
+    private long previewRequest;
+    private List<String> referenceDiagnostics = List.of();
     private boolean closed;
     private AuthoringFreeCameraScreen freeScreen;
 
@@ -95,6 +97,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
 
     public void setPose(Pose value) {
         requireActive();
+        previewRequest++;
         preview.pose(value);
         requested = value;
     }
@@ -107,7 +110,22 @@ public final class AuthoringCameraSession implements AutoCloseable {
     public void preview(Camera camera) {
         requireActive();
         if (camera == null || camera.shots().isEmpty()) throw new IllegalArgumentException("Add a camera shot before previewing");
-        preview.frame(frame(camera));
+        long request = ++previewRequest;
+        var minecraft = Minecraft.getInstance();
+        var server = minecraft.getSingleplayerServer();
+        if (server != null && camera.shots().stream().anyMatch(shot -> shot.reference() != null)) {
+            var playerId = minecraft.player.getUUID();
+            var speakerId = speaker.getUUID();
+            server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                if (player == null) return camera;
+                return com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.bind(camera, player.serverLevel(), player,
+                        player.serverLevel().getEntity(speakerId), null, new java.util.LinkedHashMap<>());
+            }).thenAccept(bound -> minecraft.execute(() -> previewBound(bound, request)));
+        } else {
+            previewBound(com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.bind(camera, minecraft.level,
+                    minecraft.player, speaker, null, new java.util.LinkedHashMap<>()), request);
+        }
     }
 
     public void freeCamera() {
@@ -150,6 +168,15 @@ public final class AuthoringCameraSession implements AutoCloseable {
         subjects.add(character);
         return new DialogueCameraController.Frame("authoring-camera-" + ++sequence, camera, speaker, character,
                 List.copyOf(subjects), false);
+    }
+
+    public List<String> referenceDiagnostics() { return referenceDiagnostics; }
+
+    private void previewBound(Camera camera, long request) {
+        if (!active() || request != previewRequest) return;
+        referenceDiagnostics = camera.shots().stream().filter(shot -> shot.binding() != null && !shot.binding().diagnostic().isEmpty())
+                .map(shot -> shot.reference().id() + ": " + shot.binding().diagnostic() + " Using the fallback target.").distinct().toList();
+        preview.frame(frame(camera));
     }
 
     private Shot defaultShot() {

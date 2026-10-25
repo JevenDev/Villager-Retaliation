@@ -170,7 +170,9 @@ public final class ConversationPresentationService {
             var presentation = valid && snapshot.phase() == ConversationSession.Phase.EXCHANGES
                     ? linePresentation(definition, entry) : ConversationLinePresentation.EMPTY;
             line = new Line(entry.visit() + "/" + entry.exchange(), entry.speaker(), speaker == null ? -1 : speaker.getId(),
-                    label(entry.name()), parts.get(part), part, parts.size(), presentation.camera(),
+                    label(entry.name()), parts.get(part), part, parts.size(),
+                    com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.apply(presentation.camera(),
+                            ConversationSavedData.get(player.serverLevel()).session(id).cameraReferences, player.serverLevel().dimension().location()),
                     presentation.voice(com.jvn.villagerretaliation.util.VillagerLocale.locale(player)),
                     java.util.stream.Stream.concat(snapshot.speakers().entrySet().stream().map(value -> {
                                 var entity = player.serverLevel().getEntity(value.getValue().entity());

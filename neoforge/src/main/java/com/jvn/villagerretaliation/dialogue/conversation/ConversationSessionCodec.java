@@ -147,6 +147,7 @@ final class ConversationSessionCodec {
         });
         tag.put("Requests", requests);
         tag.put("Replacements", strings(session.replacements));
+        tag.put("CameraReferences", com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.save(session.cameraReferences));
         return tag;
     }
 
@@ -349,6 +350,8 @@ final class ConversationSessionCodec {
         require(session.phase != ConversationSession.Phase.ROLLED || session.checks.containsKey(session.check), "conversation roll presentation has no saved check");
         require(session.phase != ConversationSession.Phase.COMPLETE || !session.outcome.isBlank(), "completed conversation has no outcome");
         session.replacements.putAll(strings(compound(tag, "Replacements")));
+        if (tag.contains("CameraReferences")) session.cameraReferences.putAll(
+                com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.load(compound(tag, "CameraReferences")));
         return session;
     }
 

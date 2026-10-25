@@ -28,5 +28,18 @@
   {"name":"string FOV","valid":false,"camera":{"preset":"behind","fov":"70"}},
   {"name":"legacy release with zoom","valid":false,"camera":{"target":"none","zoom":0.2}},
   {"name":"mixed legacy and shot","valid":false,"camera":{"preset":"behind","zoom":0.2}},
-  {"name":"null camera","valid":false,"camera":null}
+  {"name":"null camera","valid":false,"camera":null},
+  {"name":"player main hand","valid":true,"camera":{"preset":"first_person","target":"player","focus":"main_hand"}},
+  {"name":"speaker armor","valid":true,"camera":{"preset":"over_shoulder_left","focus":"chest"}},
+  {"name":"tagged item reference","valid":true,"camera":{"preset":"behind","reference":{"id":"dropped_tool","kind":"item","match":"minecraft:iron_pickaxe","entity_tag":"quest_tool","radius":4}}},
+  {"name":"block near marker","valid":true,"camera":{"preset":"behind","reference":{"id":"workbench","kind":"block","match":"minecraft:crafting_table","marker":"quest_workbench","offset":[0,-1,0],"radius":0}}},
+  {"name":"saved location block","valid":true,"camera":{"preset":"behind","reference":{"id":"chest","kind":"block","match":"minecraft:chest","location":"camp","radius":8}}},
+  {"name":"unknown body slot","valid":false,"camera":{"preset":"behind","focus":"elbow"}},
+  {"name":"group hand","valid":false,"camera":{"preset":"behind","target":"group","focus":"main_hand"}},
+  {"name":"captured orientation overrides focus","valid":false,"camera":{"preset":"behind","focus":"feet","orientation":{"yaw":0,"pitch":0}}},
+  {"name":"ambiguous reference origin","valid":false,"camera":{"preset":"behind","reference":{"id":"prop","kind":"block","match":"minecraft:chest","marker":"chest","location":"camp"}}},
+  {"name":"oversized search","valid":false,"camera":{"preset":"behind","reference":{"id":"prop","kind":"item","match":"minecraft:emerald","radius":17}}},
+  {"name":"block entity tag","valid":false,"camera":{"preset":"behind","reference":{"id":"prop","kind":"block","match":"minecraft:chest","entity_tag":"chest"}}},
+  {"name":"body and world focus","valid":false,"camera":{"preset":"behind","focus":"head","reference":{"id":"prop","kind":"item","match":"minecraft:emerald"}}},
+  {"name":"binding is runtime only","valid":false,"camera":{"preset":"behind","reference":{"id":"prop","kind":"item","match":"minecraft:emerald","binding":{}}}}
 ]

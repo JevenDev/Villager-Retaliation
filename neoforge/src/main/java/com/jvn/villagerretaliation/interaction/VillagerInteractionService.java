@@ -2633,7 +2633,8 @@ public final class VillagerInteractionService {
         ));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
         broadcastRoutineVillagerChat(level, villager, goodbye.text());
-        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbye.text(), false, goodbye.camera()));
+        trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbye.text(), false,
+                com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.bind(goodbye.camera(), player, villager)));
         VillagerConversationService.endForPlayer(player, false);
     }
 
@@ -3262,6 +3263,7 @@ public final class VillagerInteractionService {
     private static void sendDialogueExchanges(ServerPlayer player, Villager provider,
             List<com.jvn.villagerretaliation.dialogue.DialogueSpeech> exchanges, double radius, boolean autoAdvance, java.util.UUID greetingRequestId) {
         if (exchanges.isEmpty()) return;
+        exchanges = com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.bind(exchanges, player, provider);
         var first = exchanges.getFirst();
         trySendToPlayer(player, new VillagerInteractionNoticePayload(provider == null ? -1 : provider.getId(), first.text(), first.name(), first.segments(), exchanges, autoAdvance, greetingRequestId));
         if (provider != null && radius > 0) {

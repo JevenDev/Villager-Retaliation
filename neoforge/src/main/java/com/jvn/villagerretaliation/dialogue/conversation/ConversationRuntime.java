@@ -119,6 +119,9 @@ final class ConversationRuntime {
                 ? ConversationActors.context(player, ConversationBinding.speaker(player, session, role)) : null;
         replacements = ConversationText.prepare(player, session, "line/" + exchange.id(), exchange.textKey(), replacements, wordContext);
         String text = ConversationText.render(player, ConversationService.text(player, exchange.textKey()), replacements);
+        com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.bind(exchange.presentation().camera(), player.serverLevel(),
+                player, speaker == null ? context.speaker() : player.serverLevel().getEntity(speaker),
+                session.identity.campaign(), session.cameraReferences);
         session.transcript.add(new ConversationSession.Line(session.node, session.visit, exchange.id(), exchange.speaker().kind(),
                 role, speaker, name, exchange.textKey(), text, replacements, true));
     }

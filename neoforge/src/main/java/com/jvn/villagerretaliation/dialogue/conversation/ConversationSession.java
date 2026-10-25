@@ -52,6 +52,7 @@ public final class ConversationSession {
     final Map<String, Receipt> receipts = new LinkedHashMap<>();
     final Map<UUID, Request> requests = new LinkedHashMap<>();
     final Map<String, String> replacements = new LinkedHashMap<>();
+    final Map<String, com.jvn.villagerretaliation.dialogue.DialogueCameraReferences.Saved> cameraReferences = new LinkedHashMap<>();
 
     ConversationSession(Identity identity, UUID controller, UUID questRun, String node, Speaker character) {
         this.identity = identity;
@@ -107,6 +108,7 @@ public final class ConversationSession {
         receipts.putAll(source.receipts);
         requests.putAll(source.requests);
         replacements.putAll(source.replacements);
+        cameraReferences.putAll(source.cameraReferences);
     }
 
     public Identity identity() { return identity; }

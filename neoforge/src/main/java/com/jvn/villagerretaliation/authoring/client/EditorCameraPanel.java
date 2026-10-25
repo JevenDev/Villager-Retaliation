@@ -134,6 +134,7 @@ final class EditorCameraPanel {
             if (camera == null) throw new IllegalArgumentException("Selected object has no camera.");
             session.preview(camera);
         });
+        for (var diagnostic : session.referenceDiagnostics()) ImGui.textWrapped(diagnostic);
         if (EditorWidgets.section("Shot settings")) {
             ImGui.textWrapped("Use Camera preview and shots to adjust timing, reorder or remove shots.");
             ImGui.textWrapped("Relative shots follow the anchor. Fixed shots use world coordinates. Captured shots keep their rotation. Remove orientation to track the look-at target.");
@@ -175,6 +176,7 @@ final class EditorCameraPanel {
                     if (ImGui.selectable("Shot " + (i + 1), selectedShot == i)) selectedShot = i;
                     if (selectedShot == i) {
                         JsonObject shot = shots.get(i).getAsJsonObject();
+                        EditorCameraFocus.render(document, cameraOwner, index, shot, changed, operation);
                         float[] hold = {shot.has("hold_seconds") ? shot.get("hold_seconds").getAsFloat() : 0};
                         if (ImGui.sliderFloat(EditorWidgets.field("Hold seconds"), hold, 0, 30)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.addProperty("hold_seconds", hold[0])); changed.run(); });
                         JsonObject transition = shot.has("transition") ? shot.getAsJsonObject("transition") : new JsonObject();
@@ -219,7 +221,7 @@ final class EditorCameraPanel {
         return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
-    private static <E extends Enum<E>> E enumeration(String label, E value) {
+    static <E extends Enum<E>> E enumeration(String label, E value) {
         E selected = value;
         if (ImGui.beginCombo(EditorWidgets.field(label), enumLabel(value))) {
             for (E candidate : value.getDeclaringClass().getEnumConstants()) {

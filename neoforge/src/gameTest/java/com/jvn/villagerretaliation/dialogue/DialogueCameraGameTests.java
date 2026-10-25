@@ -33,6 +33,93 @@ public final class DialogueCameraGameTests {
     private DialogueCameraGameTests() { }
 
     @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void focusSlotsAndReferencesRoundTrip(GameTestHelper helper) {
+        for (var focus : DialogueCamera.Focus.values()) {
+            var camera = DialogueCamera.read(json("{\"camera\":{\"preset\":\"behind\",\"target\":\"player\",\"focus\":\""
+                    + focus.name().toLowerCase(java.util.Locale.ROOT) + "\"}}"));
+            var copy = new JsonObject();
+            copy.add("camera", DialogueCamera.json(camera));
+            helper.assertValueEqual(DialogueCamera.read(copy), camera, "focus JSON round trip");
+            var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                DialogueCamera.write(buffer, camera);
+                helper.assertValueEqual(DialogueCamera.read(buffer), camera, "focus wire round trip");
+                helper.assertFalse(buffer.isReadable(), "focus packet is consumed exactly");
+            } finally { buffer.release(); }
+        }
+        for (var invalid : List.of(
+                "{\"preset\":\"behind\",\"focus\":\"main_hand\",\"target\":\"group\"}",
+                "{\"preset\":\"behind\",\"focus\":\"feet\",\"orientation\":{\"yaw\":0,\"pitch\":0}}",
+                "{\"preset\":\"behind\",\"reference\":{\"id\":\"chest\",\"kind\":\"block\",\"match\":\"minecraft:chest\",\"radius\":17}}",
+                "{\"preset\":\"behind\",\"focus\":\"main_hand\",\"reference\":{\"id\":\"item\",\"kind\":\"item\",\"match\":\"minecraft:emerald\"}}")) {
+            var entry = json("{\"camera\":" + invalid + "}");
+            helper.assertFalse(QuestJsonSchema.validate(entry.get("camera"), DialogueCamera.schema()).isEmpty(), "invalid focus fails schema");
+            rejected(helper, () -> DialogueCamera.read(entry));
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "dialogue_camera")
+    public static void worldReferencesBindOnceAndPreserveMissingTargets(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel();
+        var speaker = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 1, 1, 1);
+        var position = speaker.blockPosition().offset(1, 0, 0);
+        level.setBlockAndUpdate(position, net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK.defaultBlockState());
+        var camera = DialogueCamera.read(json("""
+                {"camera":{"preset":"behind","reference":{"id":"prop","kind":"block","match":"minecraft:diamond_block","offset":[1,0,0],"radius":0}}}
+                """));
+        var references = new java.util.LinkedHashMap<String, DialogueCameraReferences.Saved>();
+        var bound = DialogueCameraReferences.bind(camera, level, player, speaker, null, references);
+        helper.assertValueEqual(bound.shots().getFirst().binding().block(), position, "relative block resolves in this world");
+        var restored = DialogueCameraReferences.load(DialogueCameraReferences.save(references));
+        helper.assertValueEqual(restored, references, "bindings survive persistence");
+        speaker.setPos(speaker.getX() + 5, speaker.getY(), speaker.getZ());
+        helper.assertValueEqual(DialogueCameraReferences.bind(camera, level, player, speaker, null, restored), bound, "moving the origin never rebinds the named object");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        try {
+            DialogueCamera.write(buffer, bound);
+            helper.assertValueEqual(DialogueCamera.read(buffer), bound, "bound world target reaches clients unchanged");
+        } finally { buffer.release(); }
+        var itemCamera = DialogueCamera.read(json("""
+                {"camera":{"preset":"behind","reference":{"id":"dropped","kind":"item","match":"minecraft:emerald","entity_tag":"camera_fixture","radius":2}}}
+                """));
+        var first = new net.minecraft.world.entity.item.ItemEntity(level, speaker.getX(), speaker.getY(), speaker.getZ(),
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD));
+        first.addTag("camera_fixture");
+        level.addFreshEntity(first);
+        var selected = DialogueCameraReferences.bind(itemCamera, level, player, speaker, null, references);
+        helper.assertValueEqual(selected.shots().getFirst().binding().entity(), first.getUUID(), "tagged item binds its exact UUID");
+        var second = new net.minecraft.world.entity.item.ItemEntity(level, speaker.getX(), speaker.getY(), speaker.getZ(),
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD));
+        second.addTag("camera_fixture");
+        level.addFreshEntity(second);
+        var ambiguous = new java.util.LinkedHashMap<String, DialogueCameraReferences.Saved>();
+        var missing = DialogueCameraReferences.bind(itemCamera, level, player, speaker, null, ambiguous);
+        helper.assertTrue(missing.shots().getFirst().binding().diagnostic().contains("ambiguous"), "ambiguous items use a fallback");
+        first.discard();
+        helper.assertValueEqual(DialogueCameraReferences.bind(itemCamera, level, player, speaker, null, references), selected, "removed item is not replaced by another match");
+        helper.assertValueEqual(DialogueCameraReferences.bind(itemCamera, level, player, speaker, null, ambiguous), missing, "failed binding does not change on later lines");
+        var marker = new net.minecraft.world.entity.Marker(net.minecraft.world.entity.EntityType.MARKER, level);
+        marker.setPos(Vec3.atCenterOf(position.above()));
+        marker.addTag("camera_fixture_marker");
+        level.addFreshEntity(marker);
+        var markerCamera = DialogueCamera.read(json("""
+                {"camera":{"preset":"behind","reference":{"id":"marked","kind":"block","match":"minecraft:diamond_block",
+                  "marker":"camera_fixture_marker","offset":[0,-1,0],"radius":0}}}
+                """));
+        helper.assertValueEqual(DialogueCameraReferences.bind(markerCamera, level, player, speaker, null, references)
+                .shots().getFirst().binding().block(), position, "marker-relative offsets locate blocks without absolute coordinates");
+        marker.discard();
+        helper.assertTrue(DialogueCameraReferences.bind(markerCamera, level, player, speaker, null, new java.util.LinkedHashMap<>())
+                .shots().getFirst().binding().diagnostic().contains("missing"), "missing markers use a fallback");
+        second.discard();
+        speaker.discard();
+        helper.succeed();
+    }
+
+
+    @GameTest(template = "empty", batch = "dialogue_camera")
     public static void nodeCamerasKeepPrecedingResponseSpeechInOrder(GameTestHelper helper) {
         var player = helper.makeMockServerPlayerInLevel();
         var villager = helper.spawn(net.minecraft.world.entity.EntityType.VILLAGER, 1, 1, 1);

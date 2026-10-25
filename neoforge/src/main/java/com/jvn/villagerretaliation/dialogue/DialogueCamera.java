@@ -31,6 +31,7 @@ public final class DialogueCamera {
     public enum Perspective { FIRST_PERSON, THIRD_PERSON }
     public enum Transition { CUT, LERP }
     public enum Easing { LINEAR, SMOOTHSTEP }
+    public enum Focus { EYES, MAIN_HAND, OFF_HAND, HEAD, CHEST, LEGS, FEET }
 
     public record Orientation(float yaw, float pitch) {
         public Orientation {
@@ -41,7 +42,19 @@ public final class DialogueCamera {
 
     public record Shot(Preset preset, Anchor anchor, Placement placement, Perspective perspective,
             Vec3 offset, Target target, Double fov, Transition transition, double durationSeconds,
-            Easing easing, double holdSeconds, Orientation orientation, Vec3 position) {
+            Easing easing, double holdSeconds, Orientation orientation, Vec3 position,
+            Focus focus, DialogueCameraReference reference, DialogueCameraReference.Binding binding) {
+        public Shot(Preset preset, Anchor anchor, Placement placement, Perspective perspective,
+                Vec3 offset, Target target, Double fov, Transition transition, double durationSeconds,
+                Easing easing, double holdSeconds, Orientation orientation, Vec3 position) {
+            this(preset, anchor, placement, perspective, offset, target, fov, transition, durationSeconds,
+                    easing, holdSeconds, orientation, position, Focus.EYES, null, null);
+        }
+
+        public Shot withBinding(DialogueCameraReference.Binding value) {
+            return new Shot(preset, anchor, placement, perspective, offset, target, fov, transition,
+                    durationSeconds, easing, holdSeconds, orientation, position, focus, reference, value);
+        }
         public Shot(Preset preset, Anchor anchor, Placement placement, Perspective perspective,
                 Vec3 offset, Target target, Double fov, Transition transition, double durationSeconds,
                 Easing easing, double holdSeconds) {
@@ -57,6 +70,10 @@ public final class DialogueCamera {
             Objects.requireNonNull(offset);
             Objects.requireNonNull(transition);
             Objects.requireNonNull(easing);
+            Objects.requireNonNull(focus);
+            if ((focus != Focus.EYES || reference != null) && (target == Target.GROUP || orientation != null)
+                    || reference != null && focus != Focus.EYES || binding != null && reference == null)
+                throw new IllegalArgumentException("Camera focus requires one tracked target without a captured orientation");
             if (target == null || target == Target.NONE || !Double.isFinite(offset.lengthSqr())
                     || Math.abs(offset.x) > MAX_DISTANCE || Math.abs(offset.y) > MAX_DISTANCE || Math.abs(offset.z) > MAX_DISTANCE
                     || position != null && (placement != Placement.FIXED || !Double.isFinite(position.lengthSqr())
@@ -114,7 +131,9 @@ public final class DialogueCamera {
                 value.has("hold_seconds") ? value.get("hold_seconds").getAsDouble() : 0,
                 value.has("orientation") ? new Orientation(value.getAsJsonObject("orientation").get("yaw").getAsFloat(),
                         value.getAsJsonObject("orientation").get("pitch").getAsFloat()) : null,
-                value.has("position") ? vector(value.getAsJsonArray("position")) : null);
+                value.has("position") ? vector(value.getAsJsonArray("position")) : null,
+                enumeration(value, "focus", Focus.class, Focus.EYES),
+                value.has("reference") ? DialogueCameraReference.read(value.getAsJsonObject("reference")) : null, null);
     }
 
     private static Vec3 vector(JsonArray value) {
@@ -131,8 +150,9 @@ public final class DialogueCamera {
         buffer.writeEnum(camera.target());
         buffer.writeBoolean(camera.zoom() != null);
         if (camera.zoom() != null) buffer.writeDouble(camera.zoom());
-        boolean extended = camera.shots().stream().anyMatch(shot -> shot.orientation() != null || shot.position() != null);
-        buffer.writeVarInt(extended ? -camera.shots().size() - 1 : camera.shots().size());
+        boolean focused = camera.shots().stream().anyMatch(shot -> shot.focus() != Focus.EYES || shot.reference() != null);
+        boolean extended = focused || camera.shots().stream().anyMatch(shot -> shot.orientation() != null || shot.position() != null);
+        buffer.writeVarInt(focused ? -64 - camera.shots().size() : extended ? -camera.shots().size() - 1 : camera.shots().size());
         for (var shot : camera.shots()) {
             buffer.writeEnum(shot.preset()); buffer.writeEnum(shot.anchor()); buffer.writeEnum(shot.placement());
             buffer.writeEnum(shot.perspective());
@@ -152,6 +172,13 @@ public final class DialogueCamera {
                     buffer.writeDouble(shot.position().x); buffer.writeDouble(shot.position().y); buffer.writeDouble(shot.position().z);
                 }
             }
+            if (focused) {
+                buffer.writeEnum(shot.focus());
+                buffer.writeBoolean(shot.reference() != null);
+                if (shot.reference() != null) buffer.writeUtf(shot.reference().json().toString(), 4096);
+                buffer.writeBoolean(shot.binding() != null);
+                if (shot.binding() != null) buffer.writeUtf(shot.binding().json().toString(), 1024);
+            }
         }
     }
 
@@ -160,8 +187,10 @@ public final class DialogueCamera {
         var target = buffer.readEnum(Target.class);
         Double zoom = buffer.readBoolean() ? buffer.readDouble() : null;
         int count = buffer.readVarInt();
-        boolean extended = count <= -2 && count >= -MAX_SHOTS - 1;
-        if (extended) count = -count - 1;
+        boolean focused = count <= -65 && count >= -64 - MAX_SHOTS;
+        boolean extended = focused || count <= -2 && count >= -MAX_SHOTS - 1;
+        if (focused) count = -count - 64;
+        else if (extended) count = -count - 1;
         if (count < 0 || count > MAX_SHOTS) throw new IllegalArgumentException("Invalid camera shot count");
         var shots = new ArrayList<Shot>();
         for (int index = 0; index < count; index++) shots.add(new Shot(
@@ -170,7 +199,10 @@ public final class DialogueCamera {
                 buffer.readEnum(Target.class), buffer.readBoolean() ? buffer.readDouble() : null,
                 buffer.readEnum(Transition.class), buffer.readDouble(), buffer.readEnum(Easing.class), buffer.readDouble(),
                 extended && buffer.readBoolean() ? new Orientation(buffer.readFloat(), buffer.readFloat()) : null,
-                extended && buffer.readBoolean() ? new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble()) : null));
+                extended && buffer.readBoolean() ? new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble()) : null,
+                focused ? buffer.readEnum(Focus.class) : Focus.EYES,
+                focused && buffer.readBoolean() ? DialogueCameraReference.read(JsonParser.parseString(buffer.readUtf(4096)).getAsJsonObject()) : null,
+                focused && buffer.readBoolean() ? DialogueCameraReference.Binding.read(JsonParser.parseString(buffer.readUtf(1024)).getAsJsonObject()) : null));
         return new Camera(target, zoom, shots);
     }
 
@@ -189,6 +221,8 @@ public final class DialogueCamera {
             entry.addProperty("placement", shot.placement().name().toLowerCase(Locale.ROOT));
             entry.addProperty("perspective", shot.perspective().name().toLowerCase(Locale.ROOT));
             entry.addProperty("target", shot.target().name().toLowerCase(Locale.ROOT));
+            if (shot.focus() != Focus.EYES) entry.addProperty("focus", shot.focus().name().toLowerCase(Locale.ROOT));
+            if (shot.reference() != null) entry.add("reference", shot.reference().json());
             var offset = new JsonArray();
             offset.add(shot.offset().x);
             offset.add(shot.offset().y);
@@ -249,6 +283,8 @@ public final class DialogueCamera {
                   "position":{"description":"Optional absolute world position for fixed placement. Runtime distance and geometry limits still apply.","type":"array","minItems":3,"maxItems":3,"items":{"type":"number","minimum":-30000000,"maximum":30000000}},
                   "offset":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number","minimum":-8,"maximum":8}},
                   "target":{"enum":["speaker","character","group","player"]},
+                  "focus":{"description":"Track a body slot, including an empty hand or armor slot.","enum":["eyes","main_hand","off_hand","head","chest","legs","feet"]},
+                  "reference":{},
                   "fov":{"type":"number","minimum":10,"maximum":110},
                   "hold_seconds":{"type":"number","minimum":0,"maximum":600},
                   "transition":{"oneOf":[
@@ -259,6 +295,14 @@ public final class DialogueCamera {
                   "allOf":[{"if":{"required":["position"]},"then":{"required":["placement"],"properties":{"placement":{"const":"fixed"}}}}],
                   "if":{"properties":{"preset":{"const":"custom"}}},"then":{"required":["anchor","offset","perspective"]}}
                 """).getAsJsonObject();
+        shot.getAsJsonObject("properties").add("reference", DialogueCameraReference.schema());
+        shot.getAsJsonArray("allOf").add(JsonParser.parseString("""
+                {"if":{"anyOf":[{"required":["reference"]},{"required":["focus"],"properties":{"focus":{"not":{"const":"eyes"}}}}]},
+                 "then":{"not":{"required":["orientation"]},"properties":{"target":{"enum":["speaker","character","player"]}}}}
+                """));
+        shot.getAsJsonArray("allOf").add(JsonParser.parseString("""
+                {"if":{"required":["reference"]},"then":{"properties":{"focus":{"const":"eyes"}}}}
+                """));
         schema.getAsJsonArray("oneOf").set(1, shot);
         schema.getAsJsonArray("oneOf").get(2).getAsJsonObject().getAsJsonObject("properties")
                 .getAsJsonObject("shots").add("items", shot.deepCopy());

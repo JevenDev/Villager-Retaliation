@@ -44,6 +44,8 @@ public final class DialogueCameraController {
     private static double baseFov = 70;
     private static Object level;
     private static Preview preview;
+    private static FocusTracking focusTracking = new FocusTracking();
+    private static ResolvedFocus resolvedFocus;
 
     private DialogueCameraController() { }
 
@@ -72,7 +74,7 @@ public final class DialogueCameraController {
 
     public static final class Preview implements AutoCloseable {
         private final State saved = new State(timeline, tradeMotion, trading, releaseSeconds, lastRendered,
-                renderedLevel, renderedFov, key, failedKey, frame, pose, prepared, forward, fixed, baseFov, level);
+                renderedLevel, renderedFov, key, failedKey, frame, pose, prepared, forward, fixed, baseFov, level, focusTracking, resolvedFocus);
         private final Object previewLevel = Minecraft.getInstance().level;
         private final VillagerDialogueCameraFocus.State savedFocus = VillagerDialogueCameraFocus.suspend();
         private Frame override;
@@ -114,6 +116,7 @@ public final class DialogueCameraController {
             renderedFov = saved.renderedFov(); key = saved.key(); failedKey = saved.failedKey(); frame = saved.frame();
             pose = saved.pose(); prepared = saved.prepared(); forward = saved.forward(); fixed = saved.fixed();
             baseFov = saved.baseFov(); level = saved.level();
+            focusTracking = saved.focusTracking(); resolvedFocus = saved.resolvedFocus();
             lastNanos = System.nanoTime();
             wasPaused = Minecraft.getInstance().isPaused();
         }
@@ -122,7 +125,7 @@ public final class DialogueCameraController {
     private record State(DialogueCameraTimeline timeline, TradeCameraMotion tradeMotion, boolean trading,
             double releaseSeconds, Pose lastRendered, WeakReference<Object> renderedLevel, double renderedFov,
             String key, String failedKey, Frame frame, Pose pose, Shot prepared, Vec3 forward, Vec3 fixed,
-            double baseFov, Object level) { }
+            double baseFov, Object level, FocusTracking focusTracking, ResolvedFocus resolvedFocus) { }
     public static Pose renderedPose() {
         return pose != null ? pose : renderedLevel.get() == Minecraft.getInstance().level ? lastRendered : null;
     }
@@ -252,7 +255,10 @@ public final class DialogueCameraController {
         Vec3 player = minecraft.player.getPosition(partialTick);
         Vec3 position = DialogueCamera.clamp(pose.position(), player);
         var subjects = timeline.shot().target() == Target.GROUP ? validSubjects() : List.of(target(timeline.shot(), speaker));
-        Vec3 adjusted = DialogueCameraOcclusion.resolve(position, minecraft.player.getEyePosition(partialTick), subjects, validSubjects(), partialTick);
+        Vec3 adjusted = focused(timeline.shot()) && resolvedFocus != null
+                ? DialogueCameraOcclusion.resolveFocus(position, minecraft.player.getEyePosition(partialTick), resolvedFocus.point(),
+                        resolvedFocus.subject(), resolvedFocus.block(), validSubjects(), partialTick)
+                : DialogueCameraOcclusion.resolve(position, minecraft.player.getEyePosition(partialTick), subjects, validSubjects(), partialTick);
         if (adjusted == null) {
             String failed = key;
             reset();
@@ -262,7 +268,8 @@ public final class DialogueCameraController {
         }
         adjusted = DialogueCamera.clamp(adjusted, player);
         if (!adjusted.equals(position) && timeline.shot().orientation() == null) {
-            var rotation = ToucanCameraBasis.rotationToTarget(adjusted, focus(target(timeline.shot(), speaker), partialTick), pose.yaw(), pose.pitch());
+            var rotation = ToucanCameraBasis.rotationToTarget(adjusted,
+                    focused(timeline.shot()) && resolvedFocus != null ? resolvedFocus.point() : focus(target(timeline.shot(), speaker), partialTick), pose.yaw(), pose.pitch());
             pose = new Pose(adjusted, rotation.yaw(), rotation.pitch(), pose.fov());
         } else pose = new Pose(adjusted, pose.yaw(), pose.pitch(), pose.fov());
         return pose;
@@ -333,6 +340,7 @@ public final class DialogueCameraController {
             forward = DialogueCameraTransforms.forward(focus(other, partialTick), principal.getEyePosition(partialTick), player.getYRot());
             prepared = shot;
             fixed = null;
+            focusTracking = new FocusTracking();
         }
         Vec3 offset = switch (shot.preset()) {
             case FIRST_PERSON, TELESCOPE, CUSTOM -> Vec3.ZERO;
@@ -352,7 +360,9 @@ public final class DialogueCameraController {
             position = fixed;
         }
         position = DialogueCamera.clamp(position, player.getPosition(partialTick));
-        Vec3 aim = focus(target, partialTick);
+        resolvedFocus = resolveFocus(shot, target, partialTick);
+        Vec3 aim = focused(shot) ? focusTracking.update(resolvedFocus) : resolvedFocus.point();
+        resolvedFocus = new ResolvedFocus(aim, resolvedFocus.subject(), resolvedFocus.block(), resolvedFocus.identity());
         double fov = shot.fov() != null ? shot.fov() : shot.preset() == Preset.TELESCOPE ? 20 : baseFov;
         if (shot.orientation() == null && shot.target() == Target.GROUP && validSubjects().size() > 1) {
             AABB bounds = null;
@@ -392,8 +402,69 @@ public final class DialogueCameraController {
     private static Entity target(Shot shot, Entity speaker) {
         if (shot.target() == Target.PLAYER) return Minecraft.getInstance().player;
         Entity target = shot.target() == Target.CHARACTER && subject(frame.character()) ? frame.character() : speaker;
-        return target == Minecraft.getInstance().player && shot.perspective() == Perspective.FIRST_PERSON
+        return shot.focus() == DialogueCamera.Focus.EYES && target == Minecraft.getInstance().player && shot.perspective() == Perspective.FIRST_PERSON
                 && subject(frame.character()) ? frame.character() : target;
+    }
+
+    private record ResolvedFocus(Vec3 point, Entity subject, net.minecraft.core.BlockPos block, String identity) { }
+
+    public static boolean capturesFocus(Entity entity) {
+        return timeline != null && frame != null && timeline.shot().focus() != DialogueCamera.Focus.EYES
+                && entity == target(timeline.shot(), subject(frame.speaker()) ? frame.speaker() : frame.character());
+    }
+
+    private static boolean focused(Shot shot) { return shot.focus() != DialogueCamera.Focus.EYES || shot.reference() != null; }
+
+    private static ResolvedFocus resolveFocus(Shot shot, Entity target, float partialTick) {
+        var minecraft = Minecraft.getInstance();
+        var binding = shot.binding();
+        if (shot.reference() != null && binding != null && binding.dimension().equals(minecraft.level.dimension().location())) {
+            if (binding.entity() != null) {
+                for (var entity : minecraft.level.entitiesForRendering()) {
+                    if (binding.entity().equals(entity.getUUID()) && subject(entity) && entity.distanceToSqr(minecraft.player) <= 64 * 64
+                            && entity instanceof net.minecraft.world.entity.item.ItemEntity item
+                            && net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem().getItem()).equals(shot.reference().match()))
+                        return new ResolvedFocus(entity.getPosition(partialTick).add(0, entity.getBbHeight() * .5 + .1, 0),
+                                entity, null, entity.getUUID().toString());
+                }
+            } else if (binding.block() != null && minecraft.level.hasChunkAt(binding.block())
+                    && Vec3.atCenterOf(binding.block()).distanceToSqr(minecraft.player.position()) <= 64 * 64) {
+                var state = minecraft.level.getBlockState(binding.block());
+                if (!state.isAir() && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).equals(shot.reference().match()))
+                    return new ResolvedFocus(Vec3.atCenterOf(binding.block()), null, binding.block(), binding.block().toShortString());
+            }
+        }
+        var point = DialogueCameraFocusPoints.point(target, shot.focus(), partialTick);
+        return new ResolvedFocus(point, target, null, target.getUUID() + "/" + shot.focus()
+                + "/" + DialogueCameraFocusPoints.captured(target, shot.focus()));
+    }
+
+    private static final class FocusTracking {
+        private String identity;
+        private Vec3 point;
+        private Vec3 source;
+        private double elapsed;
+        private long lastNanos;
+        private boolean paused;
+
+        Vec3 update(ResolvedFocus next) {
+            long now = System.nanoTime();
+            boolean nextPaused = Minecraft.getInstance().isPaused();
+            double seconds = lastNanos == 0 || paused || nextPaused ? 0 : Math.min(.05, (now - lastNanos) / 1_000_000_000.0);
+            lastNanos = now;
+            paused = nextPaused;
+            if (point == null) { point = next.point(); identity = next.identity(); }
+            if (!next.identity().equals(identity)) {
+                source = point;
+                elapsed = 0;
+                identity = next.identity();
+            }
+            elapsed += seconds;
+            double progress = Math.clamp(elapsed / DialogueCamera.DEFAULT_TRANSITION_SECONDS, 0, 1);
+            point = source == null ? next.point() : source.lerp(next.point(), progress * progress * (3 - 2 * progress));
+            if (progress == 1) source = null;
+            return point;
+        }
     }
 
     private static List<Entity> validSubjects() { return frame.subjects().stream().filter(DialogueCameraController::subject).toList(); }
@@ -403,7 +474,9 @@ public final class DialogueCameraController {
     public static boolean detached() {
         if (preview != null && preview.manualPose != null) return true;
         return tradeMotion != null ? !trading && !Minecraft.getInstance().options.getCameraType().isFirstPerson()
-                : timeline != null && timeline.shot().perspective() == Perspective.THIRD_PERSON;
+                : timeline != null && (timeline.shot().perspective() == Perspective.THIRD_PERSON
+                    || timeline.shot().focus() != DialogueCamera.Focus.EYES
+                        && frame != null && target(timeline.shot(), frame.speaker()) == Minecraft.getInstance().player);
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
@@ -451,6 +524,8 @@ public final class DialogueCameraController {
         prepared = null;
         fixed = null;
         level = null;
+        focusTracking = new FocusTracking();
+        resolvedFocus = null;
         wasPaused = false;
         DialogueCameraOcclusion.clear();
     }
