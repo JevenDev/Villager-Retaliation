@@ -42,7 +42,7 @@ public final class AutonomousVillageService {
         var level=server.getLevel(ResourceKey.create(Registries.DIMENSION,village.originDimension())); if(level==null) return;
         var town=data.get(id).orElse(null);
         if(town==null) {
-            if(!level.hasChunkAt(village.center()) || village.residents().values().stream().noneMatch(member -> level.getEntity(member.id()) instanceof Villager v && v.isAlive())) return;
+            if(AutonomousVillageAdmission.inspect(level,id)!=AutonomousVillageAdmission.Result.ELIGIBLE) return;
             town=data.establishAutonomous(level,village).orElse(null);
         }
         if(town==null || town.autonomous()==null) return;

@@ -128,8 +128,10 @@ public final class SettlementSavedData extends SavedData {
 
     Optional<SettlementRecord> establishAutonomous(ServerLevel level, VillageAllegianceRegistrySavedData.AllegianceRecord village) {
         var registry=VillageAllegianceRegistrySavedData.get(level);
-        if(readOnly() || registry.isManaged(village.id()) || settlements.containsKey(village.id()) || village.footprintSections().isEmpty()
-                || village.footprintSections().size()>65536 || recovery.reserved(village.id())) return Optional.empty();
+        village=village==null ? null : registry.canonicalRecord(village.id()).orElse(null);
+        if(readOnly() || village==null || registry.isManaged(village.id()) || settlements.containsKey(village.id())
+                || recovery.reserved(village.id())
+                || AutonomousVillageAdmission.inspect(level,village.id())!=AutonomousVillageAdmission.Result.ELIGIBLE) return Optional.empty();
         var town=new SettlementRecord(village.id(),village.originDimension(),village.center(),village.id().value(),level.getGameTime(),this::setDirty);
         var state=new AutonomousVillageState(); state.sections.addAll(village.footprintSections()); town.autonomous(state);
         // A natural village already has village services; this grants no money, items or residents.

@@ -637,7 +637,9 @@ public final class VillagerRetaliationCommands {
                         + " sections=" + record.footprintSections().size()
                         + " historicalSections=" + record.historicalFootprintSections().size()
                         + " adults=" + record.adultResidentCount()
-                        + " activeAdults=" + record.activeAdultResidents(level.getGameTime()).size()), false);
+                        + " activeAdults=" + record.activeAdultResidents(level.getGameTime()).size()
+                        + " admission=" + com.jvn.villagerretaliation.settlement.AutonomousVillageAdmission
+                                .inspect(level, record.id()).description()), false);
         return 1;
     }
 

@@ -42,16 +42,17 @@ public final class AutonomousVillageGameTests {
         h.assertFalse(restored.contains(town.center().above(96)),"reload does not convert into player columns");f.builder().discard();h.succeed();
     }
     @GameTest(template="empty") public static void admissionUsesExistingBoundaryWithoutFreeClaims(GameTestHelper h) {
-        var level=h.getLevel();var registry=VillageAllegianceRegistrySavedData.get(level);var pos=h.absolutePos(new BlockPos(2,2,2));
-        var id=registry.create(level.getGameTime(),level.dimension().location(),pos,"");
-        var footprint=Set.of(SectionPos.asLong(pos));
-        var village=new VillageAllegianceRegistrySavedData.AllegianceRecord(id,level.getGameTime(),VillageLifecycleState.ACTIVE,"",false,
-                level.dimension().location(),pos,pos,footprint,footprint,footprint,level.getGameTime(),0,Map.of());
-        var town=SettlementSavedData.get(level).establishAutonomous(level,village).orElseThrow();
-        h.assertValueEqual(town.territory().plots().size(),1,"admission does not invent a 3x3 player settlement");
-        h.assertTrue(town.economy().balance().isZero(),"no starting money is minted");
-        h.assertTrue(town.autonomous().ruler==null,"admission without candidates is vacant");
-        h.assertTrue(SettlementSavedData.get(level).establishAutonomous(level,village).isEmpty(),"admission is idempotent");h.succeed();
+        try(var f=new AutonomousVillageAdmissionGameTests.Fixture(h)) {
+            f.generatedAt(f.position);
+            var village=f.registry.canonicalRecord(f.id).orElseThrow();
+            var town=f.data.establishAutonomous(f.level,village).orElseThrow();
+            var plots=village.footprintSections().stream().map(section->net.minecraft.world.level.ChunkPos.asLong(
+                    SectionPos.x(section),SectionPos.z(section))).collect(java.util.stream.Collectors.toSet());
+            h.assertValueEqual(town.territory().plots(),plots,"admission retains the generated village boundary");
+            h.assertTrue(town.economy().balance().isZero(),"no starting money is minted");
+            h.assertTrue(f.data.establishAutonomous(f.level,village).isEmpty(),"admission is idempotent");
+        }
+        h.succeed();
     }
     @GameTest(template="empty") public static void partnerThenAdultDescendantThenChild(GameTestHelper h) {
         var f=fixture(h);var town=f.town();var graph=VillagerSocialGraphSavedData.get(h.getLevel());
