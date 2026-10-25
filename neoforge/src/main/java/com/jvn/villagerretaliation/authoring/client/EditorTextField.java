@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.authoring.client;
 
 import com.jvn.villagerretaliation.authoring.core.DefinitionKind;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import imgui.ImGui;
 import imgui.ImGuiInputTextCallbackData;
 import imgui.callback.ImGuiInputTextCallback;
@@ -24,6 +23,9 @@ final class EditorTextField {
     private final Map<String, EditorShortcuts.Binding> bindings = new HashMap<>();
     private boolean bindingsReady;
     private String focus = "";
+    private EditorTextCompletion.Context context = EditorTextCompletion.Context.empty(DefinitionKind.TREE);
+
+    void context(EditorTextCompletion.Context context) { this.context = context; }
 
     void focus(String id) { focus = id; }
 
@@ -62,7 +64,9 @@ final class EditorTextField {
             if (prior != null) prior.preview.retire();
             return new Selection(buffer);
         });
+        if (focus.equals(id)) { focus = ""; selection.sourceMode = true; selection.requestFocus = true; }
         ImGui.pushID(id);
+        selection.assist.configure(context, formatting);
         boolean activated = false, apply = false;
         if (!selection.sourceMode) {
             if (selection.preview.render(buffer.get(), width, height)) {
@@ -73,22 +77,26 @@ final class EditorTextField {
             float left = ImGui.getCursorScreenPosX(), top = ImGui.getCursorScreenPosY();
             if (formatting) {
                 formatToolbar(selection);
-                ImGui.sameLine();
-                styleMenu(selection);
+                EditorWidgets.sameLineFor("Insert variable");
             }
+            String variable = variables.render(context.kind(), 1);
+            if (variable != null) selection.command = new Command("{" + variable + "}", false);
+            if (formatting) { EditorWidgets.sameLineFor("Style"); styleMenu(selection); }
             float toolbarHeight = ImGui.getCursorScreenPosY() - top;
             ImGui.setCursorScreenPos(left, top + toolbarHeight);
             focusSource(selection);
-            if (ImGui.inputTextMultiline("##text", buffer, width, Math.max(1, height - toolbarHeight),
-                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection)) selection.dirty = true;
+            source(selection, width, Math.max(1, height - toolbarHeight - ImGui.getTextLineHeightWithSpacing()));
             activated = ImGui.isItemActivated();
             selection.editing = ImGui.isItemActive();
+            selection.assist.hover();
+            if (selection.assist.render(id)) { selection.toolbarBusy = true; selection.requestFocus = true; }
             if (formatting && selection.editing) formattingShortcut(selection);
             if (leftSource(selection)) {
                 selection.sourceMode = false;
                 apply = selection.dirty;
                 selection.dirty = false;
             }
+            selection.assist.help(buffer.get(), true);
         }
         ImGui.popID();
         return new InlineEdit(activated, apply);
@@ -102,6 +110,7 @@ final class EditorTextField {
         });
         if (focus.equals(id)) { focus = ""; selection.sourceMode = true; selection.requestFocus = true; }
         ImGui.pushID(id);
+        selection.assist.configure(context, formatting);
         ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, 4, ImGui.getStyle().getFramePaddingY());
         selection.toolbarBusy = false;
         if (formatting) {
@@ -130,19 +139,31 @@ final class EditorTextField {
         } else {
             focusSource(selection);
             ImGui.pushStyleColor(ImGuiCol.NavCursor, 0);
-            ImGui.inputTextMultiline("##text", buffer, width, height - 12,
-                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.WordWrap, selection);
+            source(selection, width, height - 12);
             ImGui.popStyleColor();
             selection.editing = ImGui.isItemActive();
+            selection.assist.hover();
+            if (selection.assist.render(id)) { selection.toolbarBusy = true; selection.requestFocus = true; }
             if (formatting && selection.editing) formattingShortcut(selection);
             if (leftSource(selection)) selection.sourceMode = false;
         }
         resizeCorner(selection, size, origin.x, origin.y, width, height, available, defaultHeight, editingSource);
-        if (formatting) {
-            var warnings = DialogueTextSegment.markupWarnings(buffer.get());
-            for (String warning : warnings.stream().limit(3).toList()) ImGui.textWrapped(warning);
-        }
+        selection.assist.help(buffer.get(), false);
         ImGui.popID();
+    }
+
+    private static void source(Selection selection, float width, float height) {
+        boolean completing = selection.assist.open();
+        selection.assist.before(selection.editing && imgui.internal.ImGui.getActiveID() == ImGui.getID("##text"),
+                selection.buffer.get(), selection.start, selection.end, width, height);
+        try {
+            if (ImGui.inputTextMultiline("##text", selection.buffer, width, height,
+                    ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.CallbackCharFilter | ImGuiInputTextFlags.WordWrap
+                            | (completing || selection.assist.open() ? ImGuiInputTextFlags.CallbackCompletion : 0), selection))
+                selection.dirty = true;
+        } finally {
+            selection.assist.restoreKeys();
+        }
     }
 
     private void resizeCorner(Selection selection, Size size, float x, float y, float width, float height,
@@ -214,7 +235,7 @@ final class EditorTextField {
     }
 
     private static boolean leftSource(Selection selection) {
-        return !selection.editing && !selection.toolbarBusy && selection.command == null
+        return !selection.editing && !selection.toolbarBusy && !selection.assist.busy() && selection.command == null
                 && ImGui.getFrameCount() > selection.focusFrame + 1;
     }
 
@@ -311,6 +332,7 @@ final class EditorTextField {
     private static final class Selection extends ImGuiInputTextCallback {
         private final ImString buffer;
         private final EditorTextPreview preview = new EditorTextPreview();
+        private final EditorTextAssist assist = new EditorTextAssist();
         private boolean editing, sourceMode, requestFocus, toolbarBusy, dirty;
         private float[] color, gradientStart, gradientEnd;
         private int start, end;
@@ -325,6 +347,10 @@ final class EditorTextField {
         }
 
         @Override public void accept(ImGuiInputTextCallbackData data) {
+            if (data.getEventFlag() == ImGuiInputTextFlags.CallbackCharFilter) {
+                assist.callback(data);
+                return;
+            }
             if (command != null && ImGui.getFrameCount() <= focusFrame) return;
             if (command != null) {
                 EditorTextEdit edit = command.format
@@ -337,6 +363,7 @@ final class EditorTextField {
                 data.setSelectionEnd(edit.end());
                 command = null;
             }
+            dirty |= assist.callback(data);
             focusFrame = -1;
             start = data.hasSelection() ? data.getSelectionStart() : data.getCursorPos();
             end = data.hasSelection() ? data.getSelectionEnd() : data.getCursorPos();

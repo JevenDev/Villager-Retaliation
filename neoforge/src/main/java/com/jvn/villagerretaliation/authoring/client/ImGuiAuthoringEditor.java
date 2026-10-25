@@ -316,7 +316,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (!ImGui.isKeyDown(ImGuiKey.Escape)) escapeReady = true;
-        if (worldContent == null && !playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput()) {
+        if (worldContent == null && !playtesting && escapeReady && !popupWasOpen && ImGui.isKeyPressed(ImGuiKey.Escape) && !ImGui.getIO().getWantTextInput() && !ImGui.isAnyItemActive()) {
             if (nodeResize != null) { nodeResize = null; return; }
             if (!selectedEdge.isEmpty()) {
                 selectedEdge = "";
@@ -1398,6 +1398,7 @@ final class ImGuiAuthoringEditor {
         if (selected && showBranch) {
             if (document.kind() != DefinitionKind.QUEST) {
                 ImGui.textUnformatted("Player response");
+                textContext(pointer.get());
                 textFields.render("new_response", responseLabel, document.kind(), false, preferences.textScale());
             }
             ImGui.textUnformatted("Leads to");
@@ -1807,6 +1808,7 @@ final class ImGuiAuthoringEditor {
                     buffer.set(Boolean.toString(!Boolean.parseBoolean(buffer.get()))); changed = true;
                 }
             } else if (field.multiline()) {
+                textContext(block.pointer());
                 var edit = textFields.inline("graph:" + node.id() + ":" + block.pointer() + ":" + field.pointer(), buffer, width, (76 + card.fieldGrowth()) * zoom,
                         !List.of("Choice", "End choice").contains(block.title()));
                 activated = edit.activated(); apply = edit.apply();
@@ -2489,6 +2491,7 @@ final class ImGuiAuthoringEditor {
         ImGui.setNextItemWidth(-1);
         boolean activated, apply;
         if (text) {
+            textContext(path);
             var edit = textFields.inline("pool:" + path, buffer, Math.max(1, ImGui.getContentRegionAvailX()), 100 * preferences.textScale());
             activated = edit.activated(); apply = edit.apply();
         } else {
@@ -2614,6 +2617,32 @@ final class ImGuiAuthoringEditor {
         };
     }
 
+    private void textContext(String path) {
+        var types = new java.util.LinkedHashSet<String>();
+        JsonElement owner = documentCache.json(document);
+        for (String token : (path.startsWith("/") ? path.substring(1) : path).split("/")) {
+            if (owner != null && owner.isJsonObject()) {
+                var object = owner.getAsJsonObject();
+                for (String key : List.of("trigger", "type")) if (object.has(key) && object.get(key).isJsonPrimitive()) types.add(object.get(key).getAsString());
+                for (var condition : DialogueGraph.array(object, "conditions")) if (condition.isJsonObject())
+                    types.add(DialogueGraph.string(condition.getAsJsonObject(), "type"));
+                owner = object.get(token.replace("~1", "/").replace("~0", "~"));
+            } else if (owner != null && owner.isJsonArray() && token.matches("[0-9]+")) {
+                int index = Integer.parseInt(token);
+                owner = index < owner.getAsJsonArray().size() ? owner.getAsJsonArray().get(index) : null;
+            } else break;
+        }
+        var values = new java.util.LinkedHashMap<>(conditions.placeholders());
+        if (MC.player != null) values.putIfAbsent("player", MC.player.getName().getString());
+        if (target != null) {
+            values.putIfAbsent("villager", target.getName().getString());
+            values.putIfAbsent("villager_name", target.getName().getString());
+        }
+        if (MC.level != null) values.putAll(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(conditions.resolveDayTime(MC.level.getDayTime())));
+        if (view == 3) values.putAll(EditorLiveQuestTest.snapshot().replacements());
+        textFields.context(new EditorTextCompletion.Context(document.kind(), document.resourcePath() + path, types, values));
+    }
+
     private void localizedField(JsonObject reference, String label, String path) {
         String key = reference.get("key").getAsString();
         var location = workspace.textLocation(document, key, locale.get());
@@ -2644,6 +2673,7 @@ final class ImGuiAuthoringEditor {
                 String bufferId = location.document().resourcePath() + location.pointer();
                 ImString buffer = fields.computeIfAbsent(bufferId, ignored -> new ImString(text.getAsString(), 65536));
                 ImGui.beginDisabled(rawModified);
+                textContext(path);
                 textFields.render(bufferId, buffer, document.kind(), !path.endsWith("/label") && !path.endsWith("/title"), preferences.textScale());
                 ImGui.endDisabled();
                 translatedFields.computeIfAbsent(location.document(), ignored -> new EditorFieldEdits())
@@ -2815,6 +2845,7 @@ final class ImGuiAuthoringEditor {
                 if (text) textFields.focus(path);
                 ImGui.setKeyboardFocusHere();
             }
+            if (text) textContext(path);
             if (text && (styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))

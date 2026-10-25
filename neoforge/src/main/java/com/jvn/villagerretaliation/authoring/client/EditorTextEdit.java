@@ -29,7 +29,7 @@ record EditorTextEdit(String text, int start, int end) {
 
     static int bytes(String text) { return text.getBytes(StandardCharsets.UTF_8).length; }
 
-    private static int offset(String text, int bytes) {
+    static int offset(String text, int bytes) {
         byte[] encoded = text.getBytes(StandardCharsets.UTF_8);
         int length = Math.max(0, Math.min(bytes, encoded.length));
         while (length > 0 && length < encoded.length && (encoded[length] & 0xc0) == 0x80) length--;

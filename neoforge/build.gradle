@@ -92,6 +92,7 @@ neoForge {
             sourceSet = sourceSets.gameTest
             gameDirectory.set(authoringEditorClientSmokeDirectory)
             systemProperty 'villagerretaliation.authoringEditorClientSmoke', authoringEditorClientSmokeDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.authoringEditorCompletionSmokeOnly', providers.gradleProperty('authoringEditorCompletionSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorWorkflowSmokeOnly', providers.gradleProperty('authoringEditorWorkflowSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorPlaytestSmokeOnly', providers.gradleProperty('authoringEditorPlaytestSmokeOnly').orElse('false').get()
             programArguments.addAll '--quickPlaySingleplayer', 'AuthoringEditorSmoke', '--width', '1920', '--height', '1080'

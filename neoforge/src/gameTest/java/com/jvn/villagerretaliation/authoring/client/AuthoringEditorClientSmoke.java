@@ -70,6 +70,7 @@ public final class AuthoringEditorClientSmoke {
     private static boolean qualityControls;
     private static boolean layoutChecks;
     private static boolean variableControls;
+    private static boolean completionInline, completionPlain;
     private static final List<PanelSection> panelSections = new ArrayList<>();
     private record PanelSection(String panel, String label, boolean open) { }
     private static final EditorTextField variableFields = new EditorTextField();
@@ -1008,6 +1009,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorCompletionSmokeOnly")) {
+            buildCompletionSteps();
+            finishSteps("Inline text completion keyboard, formatting, plain labels and diagnostics passed.");
+            return;
+        }
         if ("quests".equals(System.getProperty("villagerretaliation.authoringEditorPlaytestSmokeOnly"))) {
             buildQuestAuthoringSteps();
             buildLiveWorldSteps();
@@ -1037,6 +1043,7 @@ public final class AuthoringEditorClientSmoke {
         buildResizeSteps();
         buildLayoutSteps();
         buildVariableSteps();
+        buildCompletionSteps();
         buildPanelSteps();
         buildPerformanceSteps();
         buildDropdownSteps();
@@ -1418,6 +1425,95 @@ public final class AuthoringEditorClientSmoke {
         }
     }
 
+    private static void buildCompletionSteps() {
+        STEPS.add(() -> {
+            variableControls = true; variableTextScale = 1;
+            variableText.set("Hello, "); variableFields.clear(); variableFields.focus("variable_smoke");
+        });
+        pause(250);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        type("{pla");
+        pause(250);
+        STEPS.add(() -> capture("completion-01-variables"));
+        key(ImGuiKey.DownArrow); key(ImGuiKey.UpArrow); key(ImGuiKey.Tab);
+        STEPS.add(() -> require(variableText.get().equals("Hello, {player}"), "Tab inserts the selected variable without tabs or extra braces. Actual: " + variableText.get()));
+        type(" <bo");
+        key(ImGuiKey.Enter);
+        type("friend");
+        STEPS.add(() -> require(variableText.get().equals("Hello, {player} <b>friend</b>"), "Enter inserts paired tags and keeps typing between them. Actual: " + variableText.get()));
+        type(" {que");
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> require(variableText.get().contains("{que") && imgui.internal.ImGui.getActiveID() != 0 && !(boolean) field(editor, "confirmClose"), "Escape dismisses completion while retaining text and focus."));
+        type("st}");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("<b>Hi</");
+        key(ImGuiKey.Tab);
+        STEPS.add(() -> require(variableText.get().equals("<b>Hi</b>"), "Closing suggestions match the innermost open tag."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("Wrap me");
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.Space);
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(variableText.get().equals("<b>Wrap me</b>"), "Ctrl+Space wraps selected text and does not insert a space."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        type(" <color:go");
+        pause(250);
+        STEPS.add(() -> capture("completion-02-colors"));
+        key(ImGuiKey.Enter);
+        type("Gold");
+        STEPS.add(() -> require(variableText.get().endsWith("<color:gold>Gold</color>"), "Color completion pairs its closing tag."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.End);
+        type(" <pau");
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> require(variableText.get().endsWith("<pause=500>"), "Dialogue cues have no closing tag."));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("<color:");
+        STEPS.add(() -> capture("completion-05a-before-color-click"));
+        click(() -> completionPoint(28, 55));
+        STEPS.add(() -> {
+            require(ImGui.isPopupOpen("", imgui.flag.ImGuiPopupFlags.AnyPopupId | imgui.flag.ImGuiPopupFlags.AnyPopupLevel), "The completion color swatch opens its picker.");
+            capture("completion-05-custom-color-picker");
+        });
+        key(ImGuiKey.Escape);
+        click(() -> completionPoint(100, 97));
+        type("Custom");
+        STEPS.add(() -> require(variableText.get().equals("<color:#ffaa00>Custom</color>"), "Custom color insertion restores focus and the caret inside its span. Actual: " + variableText.get()));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        type("{pla");
+        STEPS.add(() -> capture("completion-06-before-mouse-variable"));
+        click(() -> completionPoint(80, 52));
+        type("!");
+        STEPS.add(() -> require(variableText.get().equals("{player}!"), "Mouse selection accepts a variable and restores typing. Actual: " + variableText.get()));
+        for (boolean inline : new boolean[] {false, true}) {
+            STEPS.add(() -> {
+                completionInline = inline; completionPlain = !inline; variableTextScale = inline ? 2 : 1;
+                variableFields.clear(); variableFields.focus("variable_smoke");
+            });
+            pause(250);
+            chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+            type("{pla");
+            key(ImGuiKey.Tab);
+            STEPS.add(() -> require(variableText.get().equals("{player}"), "Variable completion works in " + (inline ? "inline fields" : "plain labels") + "."));
+            type(" {my_pack:score}");
+            pause(250);
+            STEPS.add(() -> capture(inline ? "completion-04-inline-large-text" : "completion-03-plain-label"));
+        }
+        STEPS.add(() -> { completionInline = false; completionPlain = false; variableControls = false; variableFields.clear(); variableTextScale = 1; });
+    }
+
+    private static float[] completionPoint(float offsetX, float offsetY) {
+        var selection = ((Map<?, ?>) field(variableFields, "selections")).get("variable_smoke");
+        var assist = field(selection, "assist");
+        float scale = Math.max(1, (float) field(assist, "fontSize") / 16);
+        var viewport = ImGui.getMainViewport();
+        float width = Math.min(440 * scale, viewport.getWorkSizeX() - 24);
+        float height = Math.min(300 * scale, viewport.getWorkSizeY() - 24);
+        return new float[] {
+                Math.clamp((float) field(assist, "x"), viewport.getWorkPosX() + 8, viewport.getWorkPosX() + viewport.getWorkSizeX() - width - 8) + offsetX,
+                Math.clamp((float) field(assist, "y") + 3, viewport.getWorkPosY() + 8, viewport.getWorkPosY() + viewport.getWorkSizeY() - height - 8) + offsetY
+        };
+    }
+
     private static void buildVariableSteps() {
         STEPS.add(() -> { variableControls = true; variableFields.focus("variable_smoke"); });
         pause(250);
@@ -1479,7 +1575,8 @@ public final class AuthoringEditorClientSmoke {
         for (String label : List.of("B", "I", "U")) x += ImGui.calcTextSize(label).x + 8 + ImGui.getStyle().getItemSpacingX();
         variableMenuPoint = new float[] {x + (ImGui.calcTextSize("Insert variable").x + 8) / 2,
                 ImGui.getCursorScreenPosY() + ImGui.getTextLineHeight() / 2};
-        variableFields.render("variable_smoke", variableText, DefinitionKind.TREE, true, variableTextScale);
+        if (completionInline) variableFields.inline("variable_smoke", variableText, ImGui.getContentRegionAvailX(), 180 * variableTextScale);
+        else variableFields.render("variable_smoke", variableText, DefinitionKind.TREE, !completionPlain, variableTextScale);
         ImGui.dummy(0, 0);
         ImGui.end();
         ImGui.popStyleColor(14); ImGui.popStyleVar(5);
@@ -3431,7 +3528,7 @@ public final class AuthoringEditorClientSmoke {
     private static float[] inlineTool(String target) {
         float[] input = inlinePoint("start", "/nodes/start/lines/0");
         float x = point("start", 12, 0)[0];
-        for (String label : new String[] {"B", "I", "U", "Style"}) {
+        for (String label : new String[] {"B", "I", "U", "Insert variable", "Style"}) {
             float width = ImGui.calcTextSize(label).x + 8;
             if (label.equals(target)) return new float[] {x + width / 2, input[1] - 15 + ImGui.getTextLineHeight() / 2};
             x += width + ImGui.getStyle().getItemSpacingX();
