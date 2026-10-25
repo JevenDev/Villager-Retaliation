@@ -128,6 +128,7 @@ final class ImGuiAuthoringEditor {
     private final EditorTextField textFields = new EditorTextField();
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorResourceView resourceView = new EditorResourceView();
+    private final EditorSceneView sceneView = new EditorSceneView();
     private final EditorLocalizationView localization = new EditorLocalizationView();
     private final EditorCampaignOverview campaignOverview = new EditorCampaignOverview();
     private final EditorGraphText graphText = new EditorGraphText();
@@ -168,6 +169,7 @@ final class ImGuiAuthoringEditor {
     private AuthoringWorkspace workspace;
     private AuthoringDocument document;
     private DefinitionKind createKind = DefinitionKind.TREE;
+    private EditorResourceRecipes.Kind createRecipe = EditorResourceRecipes.Kind.SCENE;
     private List<AuthoringDiagnostic> diagnostics = List.of();
     private boolean diagnosticErrors = true, diagnosticWarnings = true;
     private final ImString diagnosticFilter = new ImString(256);
@@ -275,6 +277,7 @@ final class ImGuiAuthoringEditor {
         EditorPlaytestPresentation.clear();
         INSTANCE.clearCampaignPreview();
         INSTANCE.resourcePicker.close();
+        INSTANCE.sceneView.close();
         EditorTestWorld.disconnect();
         INSTANCE.target = null;
         INSTANCE.nodeResize = null;
@@ -301,7 +304,7 @@ final class ImGuiAuthoringEditor {
             var views = preferences.views();
             showMinimap = views.minimap(); filesMode = views.filesMode(); groupContent = views.groupContent();
             showResources = views.showResources();
-            contentKind = views.contentKind().equals("All") || java.util.Arrays.stream(DefinitionKind.values()).anyMatch(kind -> kindLabel(kind).equals(views.contentKind()))
+            contentKind = List.of("All", "Scene", "Encounter").contains(views.contentKind()) || java.util.Arrays.stream(DefinitionKind.values()).anyMatch(kind -> kindLabel(kind).equals(views.contentKind()))
                     ? views.contentKind() : "All";
         } catch (IOException exception) {
             status = exception.getMessage();
@@ -318,6 +321,7 @@ final class ImGuiAuthoringEditor {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         resourcePicker.beginFrame(MC.screen == screen || playtesting);
+        sceneView.beginFrame(MC.screen == screen && view == 0 && document != null && EditorSceneDraft.supports(documentCache.json(document)));
         localization.beginFrame(MC.screen == screen && view == 5, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) {
@@ -792,10 +796,12 @@ final class ImGuiAuthoringEditor {
         if (showCreate) {
             ImGui.textUnformatted("Format");
             ImGui.setNextItemWidth(-1);
-            if (ImGui.beginCombo("##format", kindLabel(createKind))) {
+            if (ImGui.beginCombo("##format", createKind == DefinitionKind.RESOURCE ? createRecipe.label : kindLabel(createKind))) {
                 for (DefinitionKind kind : DefinitionKind.values()) {
                     if (kind != DefinitionKind.RESOURCE && ImGui.selectable(kindLabel(kind), kind == createKind)) createKind = kind;
                 }
+                for (var recipe : EditorResourceRecipes.Kind.values())
+                    if (ImGui.selectable(recipe.label, createKind == DefinitionKind.RESOURCE && createRecipe == recipe)) { createKind = DefinitionKind.RESOURCE; createRecipe = recipe; }
                 ImGui.endCombo();
             }
             ImGui.textWrapped(switch (createKind) {
@@ -803,6 +809,7 @@ final class ImGuiAuthoringEditor {
                 case CONVERSATION -> "A quest conversation with localized exchanges, speakers and outcomes.";
                 case FORCED -> "Dialogue opened by a game event.";
                 case QUEST -> "Stages, objectives and rewards.";
+                case RESOURCE -> createRecipe.description;
                 case WORLD_CAMPAIGN -> "Campaign card and content settings for world creation.";
                 case CAMPAIGN_ADDON -> "Optional content with campaign compatibility, dependencies and existing-world settings.";
                 default -> "";
@@ -958,6 +965,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private AuthoringDocument createContent(DefinitionKind kind) {
+        if (kind == DefinitionKind.RESOURCE) return EditorResourceRecipes.create(workspace, createRecipe, newContentId(kind), createScope);
         return workspace.createDocument(kind, newContentId(kind), kind.campaignManifest() ? null : createScope);
     }
 
@@ -1071,6 +1079,7 @@ final class ImGuiAuthoringEditor {
         if (ImGui.beginCombo(EditorWidgets.field("Content type"), contentKind)) {
             if (ImGui.selectable("All", contentKind.equals("All"))) { contentKind = "All"; saveViewPreferences(); }
             for (var kind : DefinitionKind.values()) if (ImGui.selectable(kindLabel(kind), contentKind.equals(kindLabel(kind)))) { contentKind = kindLabel(kind); saveViewPreferences(); }
+            for (String kind : List.of("Scene", "Encounter")) if (ImGui.selectable(kind, contentKind.equals(kind))) { contentKind = kind; saveViewPreferences(); }
             ImGui.endCombo();
         }
         if (ImGui.button("Open workspace folder")) net.minecraft.Util.getPlatform().openFile(workspace.location().toFile());
@@ -1443,13 +1452,10 @@ final class ImGuiAuthoringEditor {
                 dialoguePool.render(document, pointer.get(), preferences.textScale(), this::poolField,
                         path -> { setPointer(path); focusPanel = DETAIL_PANEL; }, this::operation, this::refresh);
                 ImGui.endDisabled();
-            } else {
-                ImGui.beginDisabled(rawModified);
-                resourceView.render(document, documentCache.json(document), pointer.get(), preferences.textScale(),
-                        this::resourceFields, this::resourceCollectionTools,
-                        path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
-                ImGui.endDisabled();
-            }
+            } else if (EditorSceneDraft.supports(documentCache.json(document))) {
+                sceneView.render(workspace, document, documentCache.json(document), pointer.get(), locale.get(), preferences.textScale(),
+                        this::resourceFields, this::resourceEditor, path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
+            } else resourceEditor();
             ImGui.end();
             return;
         }
@@ -2224,7 +2230,7 @@ final class ImGuiAuthoringEditor {
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
         if (ImGui.button("File settings", -1, 0)) operation(() -> {
             selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer("");
-            if (document.kind() == DefinitionKind.RESOURCE) resourceView.settings();
+            if (document.kind() == DefinitionKind.RESOURCE) { resourceView.settings(); sceneView.settings(); }
         });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
@@ -2590,11 +2596,19 @@ final class ImGuiAuthoringEditor {
         }
         var object = value.getAsJsonObject();
         for (var entry : object.entrySet()) {
+            if (sceneView.guided(document, documentCache.json(document)) && (path.matches("/steps/[0-9]+") && entry.getKey().equals("id")
+                    || path.matches("/actors/[0-9]+") && entry.getKey().equals("alias"))) continue;
             if (settings && !entry.getKey().equals("metadata") && (entry.getValue().isJsonArray() || entry.getValue().isJsonObject())) continue;
             if (settings && document.resourcePath().contains("/locales/") && !List.of("schema", "metadata", "locale").contains(entry.getKey())) continue;
             inspectValue(entry.getValue(), path + "/" + escape(entry.getKey()), friendlyLabel(entry.getKey()), 0);
         }
         schemaObjectTools(object, path);
+    }
+
+    private void resourceEditor() {
+        resourceView.render(document, documentCache.json(document), pointer.get(), preferences.textScale(),
+                this::resourceFields, this::resourceCollectionTools,
+                path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
     }
 
     private void resourceCollectionTools(EditorResourceView.Section section) {
@@ -3075,6 +3089,16 @@ final class ImGuiAuthoringEditor {
                 if (type.getAsString().equals("player_stat")) choices = EditorProgressConditions.statisticTargets(parent.getAsJsonObject());
                 else if (type.getAsString().equals("event_history")) choices = EditorProgressConditions.historyTargets(parent.getAsJsonObject());
             }
+        }
+        if (EditorSceneDraft.supports(documentCache.json(document))) {
+            if (List.of("actor", "target_actor", "anchor_actor", "speaker_actor", "actors").contains(field))
+                choices = DialogueGraph.array(documentCache.json(document), "actors").asList().stream().filter(JsonElement::isJsonObject)
+                        .map(value -> DialogueGraph.string(value.getAsJsonObject(), "alias")).toList();
+            else if (field.equals("encounter_step")) choices = EditorSceneDraft.steps(documentCache.json(document)).stream()
+                    .filter(step -> step.type().endsWith(":start_encounter")).map(EditorSceneDraft.Step::id).toList();
+            else if (field.equals("template")) choices = workspace.documents().stream()
+                    .filter(value -> DialogueGraph.string(documentCache.json(value), "schema").equals("villagerretaliation:encounter/v1"))
+                    .map(AuthoringDocument::id).distinct().sorted().toList();
         }
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
         resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);
@@ -4180,6 +4204,7 @@ final class ImGuiAuthoringEditor {
         EditorCameraPanel.close();
         packFiles.close();
         resourcePicker.close();
+        sceneView.close();
         MC.setScreen(null);
     }
 

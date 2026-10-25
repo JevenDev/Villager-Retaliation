@@ -1019,6 +1019,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorSceneSmokeOnly")) {
+            buildSceneAuthoringSteps();
+            finishSteps("Native scene and encounter authoring controls passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorCampaignSmokeOnly")) {
             buildCampaignOverviewSteps();
             finishSteps("Native campaign map selection, navigation, zoom and filters passed.");
@@ -2543,6 +2548,58 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> capture("43-qol-issue-navigation"));
+    }
+
+    private static void buildSceneAuthoringSteps() {
+        STEPS.add(() -> {
+            set("guideStep", -1); set("resetLayout", true);
+            var scene = EditorResourceRecipes.create(workspace, EditorResourceRecipes.Kind.SCENE, "test:scene_ui", null);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, scene); set("view", 0);
+        });
+        pause(300);
+        STEPS.add(() -> {
+            require(field(field(editor, "sceneView"), "section").equals("Sequence"), "Scenes open in the dedicated sequence editor.");
+            capture("scene-sequence");
+        });
+        click(() -> new float[] {426, 341});
+        STEPS.add(() -> {
+            require((boolean) field(field(editor, "sceneView"), "rehearsal"), "The rehearsal control opens the sequence preview.");
+            capture("scene-rehearsal");
+        });
+        click(() -> new float[] {490, 477});
+        STEPS.add(() -> require(((EditorSceneDraft.Trace) field(field(editor, "sceneView"), "trace")).current().equals("done"), "Rehearsal follows the authored success route."));
+        click(() -> new float[] {570, 261});
+        click(() -> new float[] {480, 301});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("actors").size() == 2, "The native actor control creates an editable binding.");
+            capture("scene-actors");
+            var encounter = EditorResourceRecipes.create(workspace, EditorResourceRecipes.Kind.ENCOUNTER, "test:encounter_ui", null);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, encounter); set("view", 0);
+        });
+        click(() -> new float[] {480, 301});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("members").size() == 2, "The roster control adds a second member.");
+            require(field(field(editor, "sceneView"), "encounter") != null && ((List<?>) field(field(editor, "sceneView"), "encounterErrors")).isEmpty(),
+                    "The authored roster compiles with the actual Minecraft registries.");
+            capture("encounter-roster");
+        });
+        click(() -> new float[] {545, 261});
+        STEPS.add(() -> capture("encounter-waves"));
+        click(() -> new float[] {500, 329});
+        STEPS.add(() -> require(((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("waves").size() == 1, "The wave control preserves the original roster."));
+        click(() -> new float[] {480, 301});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("waves").size() == 2, "The wave control adds a separate roster.");
+            require(field(field(editor, "sceneView"), "encounter") != null && ((List<?>) field(field(editor, "sceneView"), "encounterErrors")).isEmpty(), "Authored waves compile with runtime registries.");
+            capture("encounter-authored-waves");
+        });
+        click(() -> new float[] {610, 261});
+        click(() -> new float[] {485, 301});
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).json().getAsJsonArray("spawn_points").size() == 1, "World picking adds an authored spawn point.");
+            capture("encounter-spawn-plan");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document); set("view", 0);
+        });
     }
 
     private static void buildCampaignOverviewSteps() {

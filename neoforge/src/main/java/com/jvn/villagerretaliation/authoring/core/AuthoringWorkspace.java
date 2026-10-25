@@ -1421,6 +1421,15 @@ public final class AuthoringWorkspace {
     }
 
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
+        editWithLocales("Paste nodes", "Paste wording", document, definition, metadata, locales);
+    }
+
+    public void editWithLocales(String label, AuthoringDocument document, JsonObject definition, Map<String, JsonObject> locales) {
+        editWithLocales(label, label, document, definition, document.metadata(), locales);
+    }
+
+    private void editWithLocales(String label, String wordingLabel, AuthoringDocument document, JsonObject definition, JsonObject metadata,
+                                 Map<String, JsonObject> locales) {
         if (!documents.contains(document)) throw new IllegalArgumentException("Choose a document in this workspace");
         Map<AuthoringDocument, JsonObject> updates = new LinkedHashMap<>();
         List<AuthoringDocument> created = new ArrayList<>();
@@ -1436,8 +1445,8 @@ public final class AuthoringWorkspace {
             updates.put(locale, entry.getValue().deepCopy());
         }
         created.forEach(this::add);
-        document.edit("Paste nodes", root -> replaceObject(root, definition), editor -> replaceObject(editor, metadata));
-        updates.forEach((locale, value) -> locale.edit("Paste wording", root -> replaceObject(root, value)));
+        document.edit(label, root -> replaceObject(root, definition), editor -> replaceObject(editor, metadata));
+        updates.forEach((locale, value) -> locale.edit(wordingLabel, root -> replaceObject(root, value)));
         List<AuthoringDocument> changed = new ArrayList<>();
         changed.add(document); changed.addAll(updates.keySet());
         AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {

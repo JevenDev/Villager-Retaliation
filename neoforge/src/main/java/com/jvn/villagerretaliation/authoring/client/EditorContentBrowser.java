@@ -92,8 +92,10 @@ final class EditorContentBrowser {
         if (revealed != selected) { revealed = selected; reveal(selected); }
         String term = search.strip().toLowerCase(Locale.ROOT);
         if (view != null && query.equals(term) && supporting == showSupporting && kind.equals(contentKind) && grouped == group) return view;
-        var matching = snapshot.entries().stream().filter(entry -> showSupporting || entry.document().kind() != DefinitionKind.RESOURCE)
-                .filter(entry -> contentKind.equals("All") || kindLabel(entry.document().kind()).equals(contentKind))
+        var matching = snapshot.entries().stream().filter(entry -> showSupporting || entry.document().kind() != DefinitionKind.RESOURCE || entry.groups().stream().anyMatch(grouping -> List.of("Scenes", "Encounters").contains(grouping.label())))
+                .filter(entry -> contentKind.equals("All") || kindLabel(entry.document().kind()).equals(contentKind)
+                        || contentKind.equals("Scene") && entry.groups().stream().anyMatch(grouping -> grouping.label().equals("Scenes"))
+                        || contentKind.equals("Encounter") && entry.groups().stream().anyMatch(grouping -> grouping.label().equals("Encounters")))
                 .filter(entry -> term.isEmpty() || (entry.search().contains(term) || entry.payload().contains(term))).toList();
         var rows = new ArrayList<Row>();
         if (!group) matching.forEach(entry -> rows.add(new Row(entry.path(), entry.title(), 0, entry, 1)));
