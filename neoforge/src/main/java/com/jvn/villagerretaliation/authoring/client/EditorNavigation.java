@@ -24,7 +24,7 @@ final class EditorNavigation {
         }
 
         String label() {
-            return switch (view) { case 1 -> "Preview"; case 2 -> "Build pack"; case 3 -> "Playtest"; case 4 -> "Files"; case 5 -> "Translations"; case 6 -> "Campaign overview"; default -> "Edit"; }
+            return switch (view) { case 1 -> "Preview"; case 2 -> "Build pack"; case 3 -> "Playtest"; case 4 -> "Files"; case 5 -> "Translations"; case 6 -> "Campaign overview"; case 7 -> "Tests"; default -> "Edit"; }
                     + (currentPath().isEmpty() || document == null && view != 4 ? "" : ": " + currentPath());
         }
     }

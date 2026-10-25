@@ -62,6 +62,7 @@ public final class EditorLiveQuestTest {
         testServer = null;
         testPlayer = null;
         if (server != null && player != null && !server.isStopped()) server.execute(() -> {
+            com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSuite.cancel(server, player);
             com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.close(server, player);
             var connected = server.getPlayerList().getPlayer(player);
             if (connected != null) VillagerQuestService.debugTraceSetEnabled(connected, false);
@@ -405,6 +406,8 @@ public final class EditorLiveQuestTest {
                 }
                 String problem = EditorContentTools.playtestProblem(document, com.jvn.villagerretaliation.campaign.selection.WorldCampaignSelection.get(server));
                 if (problem != null) throw new IllegalStateException(problem);
+                if (!inspection && com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSuite.view(player).running())
+                    throw new IllegalStateException("Stop the workspace live suite before using manual quest controls");
                 String message = action.run(player, quest);
                 var controls = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.controls(player, quest);
                 if (controls != null) controls.log(message);

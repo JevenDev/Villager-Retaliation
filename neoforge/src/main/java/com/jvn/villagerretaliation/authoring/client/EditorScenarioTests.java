@@ -257,6 +257,18 @@ final class EditorScenarioTests {
         for (int i = 0; i < steps.size(); i++) {
             ImGui.pushID(i); var step = steps.get(i);
             ImGui.textWrapped((i + 1) + ". " + (step.action().equals("advance") ? "Advance" : step.action().equals("objective") ? "Complete objective: " + step.target() : "Choose: " + step.target()));
+            if (ImGui.treeNode("Edit step")) {
+                String action = step.action();
+                if (ImGui.beginCombo(EditorWidgets.field("Action"), action)) {
+                    for (String option : document.kind() == DefinitionKind.QUEST ? List.of("advance", "choice", "objective") : List.of("advance", "choice"))
+                        if (ImGui.selectable(option, action.equals(option))) steps.set(i, new Step(option, option.equals("advance") ? "" : step.target()));
+                    ImGui.endCombo();
+                }
+                var edited = new ImString(steps.get(i).target(), 512);
+                if (!steps.get(i).action().equals("advance") && ImGui.inputText(EditorWidgets.field("Target ID"), edited))
+                    steps.set(i, new Step(steps.get(i).action(), edited.get()));
+                ImGui.treePop();
+            }
             ImGui.beginDisabled(i == 0);
             if (ImGui.smallButton("Up")) java.util.Collections.swap(steps, i, i - 1);
             ImGui.endDisabled(); EditorWidgets.sameLineFor("Down"); ImGui.beginDisabled(i == steps.size() - 1);

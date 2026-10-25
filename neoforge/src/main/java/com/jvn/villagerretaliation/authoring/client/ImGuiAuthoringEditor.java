@@ -131,6 +131,7 @@ final class ImGuiAuthoringEditor {
     private final EditorSceneView sceneView = new EditorSceneView();
     private final EditorLocalizationView localization = new EditorLocalizationView();
     private final EditorCampaignOverview campaignOverview = new EditorCampaignOverview();
+    private final EditorTestSuite testSuite = new EditorTestSuite();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
@@ -362,6 +363,7 @@ final class ImGuiAuthoringEditor {
                 else if (view == 4) files();
                 else if (view == 5) translations();
                 else if (view == 6) campaignOverview();
+                else if (view == 7) tests();
                 else diagnostics();
             }
             if (focusMode.isEmpty() || focusMode.equals(DETAIL_PANEL)) inspector();
@@ -485,6 +487,7 @@ final class ImGuiAuthoringEditor {
             ImGui.setItemDefaultFocus();
             if (ImGui.menuItem("Keyboard shortcuts")) shortcuts.open();
             if (ImGui.menuItem("Campaign overview")) attempt(() -> { view = 6; focusPanel = WORK_PANEL; });
+            if (ImGui.menuItem("Tests and world checkpoints")) attempt(() -> { view = 7; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Translations")) attempt(() -> { view = 5; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Pack files")) attempt(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Find an action", keyHint("Open commands"))) commandPalette.open();
@@ -1255,6 +1258,7 @@ final class ImGuiAuthoringEditor {
         for (String action : List.of("Align left", "Align top", "Space horizontally", "Space vertically", "Arrange selection"))
             result.add(new EditorCommands.Command(action, "", graph && selectedNodes().size() > 1, () -> alignNodes(action)));
         result.add(new EditorCommands.Command("Campaign overview", "", workspace != null, () -> { view = 6; focusPanel = WORK_PANEL; }));
+        result.add(new EditorCommands.Command("Tests and world checkpoints", "", workspace != null, () -> { view = 7; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Translations", "", workspace != null, () -> { view = 5; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Validate workspace", "", workspace != null, () -> { validate(); view = 2; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Go to definition", "", document != null && !selectedDefinitions().isEmpty(), this::goToDefinition));
@@ -1410,6 +1414,12 @@ final class ImGuiAuthoringEditor {
         var cards = graphModel.get(workspace, document, locale.get()).cards();
         persistPositions(EditorGraphSelection.layout(cards, positions, selectedNodes(), action));
         refresh();
+    }
+
+    private void tests() {
+        panel(WORK_PANEL);
+        testSuite.render(workspace, locale.get(), coverage, screen, this::navigateReference, this::operation);
+        ImGui.end();
     }
 
     private void campaignOverview() {
@@ -2190,6 +2200,12 @@ final class ImGuiAuthoringEditor {
     private void inspector() {
         panel(DETAIL_PANEL);
         if (activeDiagnostic != null) diagnosticNavigation();
+        if (view == 7) {
+            ImGui.textWrapped("Save preview conditions and test steps in Preview. Save live test steps and named baselines in Playtest. Run the combined suite here.");
+            ImGui.textWrapped("Click a result to open its source. World checkpoints restore the complete saved world into a new copy.");
+            ImGui.end();
+            return;
+        }
         if (view == 6) {
             campaignOverview.details(coverage, this::navigateReference);
             ImGui.end();
@@ -3604,7 +3620,7 @@ final class ImGuiAuthoringEditor {
         ImGui.beginDisabled(!EditorTestWorld.active(workspace) || EditorLiveQuestTest.view().busy());
         ImGui.textWrapped("These tools change real test-world state. Save a baseline before trying a branch.");
         if (EditorWidgets.section("Test baselines")) {
-            ImGui.textWrapped("Named baselines last for this world session. Restore inventory, experience, this quest's progress, player and quest facts, provider binding, provider reputation and player position.");
+            ImGui.textWrapped("Named baselines are saved with this world. Restore inventory, experience, this quest's progress, player and quest facts, provider binding, reputation, position, health, food, game mode, time and weather. Use Tests for full world checkpoints.");
             ImGui.textWrapped("Blocks, spawned entities, shared campaign facts and other world effects remain. Use a separate test world for repeatable world changes.");
             ImGui.setNextItemWidth(-1);
             if (ImGui.beginCombo("Saved baselines", playtestBaselineName.get())) {

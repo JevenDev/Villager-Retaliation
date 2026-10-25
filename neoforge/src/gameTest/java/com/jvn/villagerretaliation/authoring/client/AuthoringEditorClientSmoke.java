@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.authoring.client;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.authoring.core.AuthoringDocument;
@@ -1019,6 +1020,13 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorSuiteSmokeOnly")) {
+            buildWorkspaceSuiteSteps();
+            buildLiveWorldSteps();
+            buildPersistentTestSteps();
+            finishSteps("Workspace suite, persistent baselines and full world checkpoint restore passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorSceneSmokeOnly")) {
             buildSceneAuthoringSteps();
             finishSteps("Native scene and encounter authoring controls passed.");
@@ -2550,6 +2558,116 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> capture("43-qol-issue-navigation"));
     }
 
+    private static void buildWorkspaceSuiteSteps() {
+        STEPS.add(() -> {
+            set("guideStep", -1); set("resetLayout", true);
+            EditorTestSuiteChecks.scenario(document, "Entry passes", "start");
+            var failed = workspace.createDocument(DefinitionKind.TREE, "test:suite_failure");
+            EditorTestSuiteChecks.scenario(failed, "Expected failure", "missing");
+            workspace.createDocument(DefinitionKind.QUEST, "test:suite_second");
+            set("view", 7);
+        });
+        pause(300);
+        STEPS.add(() -> capture("suite-before-run"));
+        click(() -> new float[] {540, 341});
+        STEPS.add(() -> {
+            var results = (List<EditorTestSuite.Result>) field(field(editor, "testSuite"), "results");
+            require(results.stream().anyMatch(result -> result.state().equals("PASS")) && results.stream().anyMatch(result -> result.state().equals("FAIL")),
+                    "The native workspace Run button combines passing and failing scenarios.");
+            capture("suite-results");
+            set("view", 0);
+        });
+    }
+
+    private static void buildPersistentTestSteps() {
+        var previousServer = new net.minecraft.server.MinecraftServer[1];
+        var marker = new net.minecraft.core.BlockPos[1];
+        var savedWorld = new java.nio.file.Path[1];
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer(); var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var first = net.minecraft.resources.ResourceLocation.parse(document.id());
+                var second = net.minecraft.resources.ResourceLocation.parse("test:suite_second");
+                var provider = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.provider(player, first, null);
+                var tests = new java.util.LinkedHashMap<net.minecraft.resources.ResourceLocation, JsonObject>();
+                for (var quest : List.of(first, second)) {
+                    com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.bind(player, quest, provider, true);
+                    com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.capture(player, quest, "Persistent suite");
+                    var config = new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest("Persistent suite", true,
+                            List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Step("wait", "", "2")),
+                            List.of(new com.jvn.villagerretaliation.authoring.preview.QuestLiveTest.Expectation("experience_delta", "", "0")));
+                    var saved = new JsonObject(); saved.add("Repeatable", config.json()); tests.put(quest, saved);
+                }
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSuite.start(player, tests);
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> liveCheck.join());
+        pause(1500);
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer(); var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                var result = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSuite.view(player);
+                require(!result.running() && result.results().size() == 2 && result.results().stream().allMatch(com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSuite.Result::passed),
+                        "Live suites run two quests and restore their state: " + result);
+                marker[0] = player.blockPosition().above(12);
+                player.serverLevel().setBlockAndUpdate(marker[0], net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join(); previousServer[0] = Minecraft.getInstance().getSingleplayerServer();
+            savedWorld[0] = previousServer[0].getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();
+            ImGuiAuthoringEditor.open();
+            try { EditorWorldCheckpoints.save(workspace, "Native checkpoint", Minecraft.getInstance().screen); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        STEPS.add(() -> {
+            require(Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.ConfirmScreen, "Full checkpoint creation explains saving and reopening the world.");
+            Minecraft.getInstance().screen.children().stream().filter(net.minecraft.client.gui.components.Button.class::isInstance)
+                    .map(net.minecraft.client.gui.components.Button.class::cast)
+                    .filter(button -> button.getMessage().getString().equals(net.minecraft.network.chat.CommonComponents.GUI_YES.getString()))
+                    .findFirst().orElseThrow().onPress();
+        });
+        waitUntil(() -> !EditorWorldCheckpoints.busy() && Minecraft.getInstance().player != null
+                && Minecraft.getInstance().getSingleplayerServer() != previousServer[0] && Minecraft.getInstance().screen == null);
+        STEPS.add(() -> {
+            previousServer[0] = Minecraft.getInstance().getSingleplayerServer();
+            var server = previousServer[0]; var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                require(com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.names(player, net.minecraft.resources.ResourceLocation.parse("test:suite_second"))
+                        .contains("Persistent suite"), "Named baselines survive a real server shutdown and reload.");
+                player.serverLevel().setBlockAndUpdate(marker[0], net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK.defaultBlockState());
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> {
+            liveCheck.join();
+            try { EditorWorldCheckpoints.open(EditorWorldCheckpoints.list(EditorWorldCheckpoints.directory(), workspace).getFirst()); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> !EditorWorldCheckpoints.busy() && Minecraft.getInstance().player != null
+                && Minecraft.getInstance().getSingleplayerServer() != previousServer[0] && Minecraft.getInstance().screen == null);
+        STEPS.add(() -> {
+            var server = Minecraft.getInstance().getSingleplayerServer(); var playerId = Minecraft.getInstance().player.getUUID();
+            liveCheck = server.submit(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                require(player.serverLevel().getBlockState(marker[0]).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK), "World checkpoint restores terrain from before the test mutation.");
+                require(!server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize().equals(savedWorld[0])
+                        && Files.isRegularFile(savedWorld[0].resolve("level.dat")), "Reset opens a new world and preserves the previous world.");
+                var quest = net.minecraft.resources.ResourceLocation.parse("test:suite_second");
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.prepare(player, quest, "Persistent suite");
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.restore(player, quest, "Persistent suite");
+            });
+            ImGuiAuthoringEditor.open(); set("view", 7);
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> { liveCheck.join(); capture("suite-restored-world"); });
+    }
+
     private static void buildSceneAuthoringSteps() {
         STEPS.add(() -> {
             set("guideStep", -1); set("resetLayout", true);
@@ -3595,6 +3713,10 @@ public final class AuthoringEditorClientSmoke {
                 data.get(playerId, quest).setCurrentStage("finish");
                 player.teleportTo(player.serverLevel(), position.x + 5, position.y, position.z, player.getYRot(), player.getXRot());
                 facts.setVariable(scope, "baseline_check", "after");
+                var stored = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaselineData.get(server);
+                var restored = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaselineData.load(stored.save(new net.minecraft.nbt.CompoundTag(), player.registryAccess()), player.registryAccess());
+                require(restored.read(playerId, quest, "Repeatable run").equals(stored.read(playerId, quest, "Repeatable run")), "Named baselines survive their saved-data round trip.");
+                com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.clear(server, playerId);
                 com.jvn.villagerretaliation.authoring.preview.QuestPlaytestBaseline.restore(player, quest, "Repeatable run");
                 require(player.totalExperience == reloadExperience + 11, "Baseline restores experience after test rewards.");
                 require(net.minecraft.world.item.ItemStack.matches(inventory, player.getInventory().getItem(0)), "Baseline restores inventory without retaining test supplies.");

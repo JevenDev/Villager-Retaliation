@@ -39,8 +39,8 @@ final class EditorQuestLiveTests {
         if (owner != document) { owner = document; load(document, ""); testedContent = null; testedTests = null; }
         var saved = EditorSchema.object(document.metadata().get("live_scenario_tests"));
         var view = EditorLiveQuestTest.scenarioView();
-        ImGui.textWrapped("Run saved steps against the real quest runtime. Choose a baseline saved in Test tools. Baselines belong to the current playtest session.");
-        ImGui.textWrapped("Quest progress, inventory, experience, reputation and position restore after the suite. Other world changes remain in the test world.");
+        ImGui.textWrapped("Run saved steps against the real quest runtime. Choose a baseline saved in Test tools. Baselines are saved with this world and remain available after reopening it.");
+        ImGui.textWrapped("Quest progress, inventory, experience, reputation, position and environment restore after the suite. Use a world checkpoint in Tests to also reset terrain, entities and other world changes.");
         if (!error.isEmpty()) ImGui.textWrapped(error);
         ImGui.beginDisabled(view.running());
         if (ImGui.beginCombo(EditorWidgets.field("Saved live test"), selected.isEmpty() ? "New test" : selected)) {
@@ -79,6 +79,18 @@ final class EditorQuestLiveTests {
             var step = steps.get(i);
             ImGui.textWrapped((i + 1) + ". " + label(step.action()) + (step.target().isEmpty() ? "" : ": " + step.target())
                     + (step.value().isEmpty() ? "" : " (" + step.value() + ")"));
+            if (ImGui.treeNode("Edit step")) {
+                if (ImGui.beginCombo(EditorWidgets.field("Action"), label(step.action()))) {
+                    for (String option : QuestLiveTest.ACTIONS) if (ImGui.selectable(label(option), option.equals(step.action())))
+                        steps.set(i, new QuestLiveTest.Step(option, step.target(), step.value()));
+                    ImGui.endCombo();
+                }
+                var editedTarget = new ImString(steps.get(i).target(), 512);
+                var editedValue = new ImString(steps.get(i).value(), 512);
+                if (ImGui.inputText(EditorWidgets.field("Target"), editedTarget) | ImGui.inputText(EditorWidgets.field("Value"), editedValue))
+                    steps.set(i, new QuestLiveTest.Step(steps.get(i).action(), editedTarget.get(), editedValue.get()));
+                ImGui.treePop();
+            }
             ImGui.beginDisabled(i == 0);
             if (ImGui.smallButton("Up")) java.util.Collections.swap(steps, i, i - 1);
             ImGui.endDisabled(); EditorWidgets.sameLineFor("Down"); ImGui.beginDisabled(i == steps.size() - 1);
@@ -99,6 +111,20 @@ final class EditorQuestLiveTests {
         for (int i = 0; i < checks.size(); i++) {
             var entry = checks.get(i);
             ImGui.textWrapped(label(entry.kind()) + (entry.target().isEmpty() ? "" : ": " + entry.target()) + " = " + entry.expected());
+            ImGui.pushID("expectation" + i);
+            if (ImGui.treeNode("Edit expectation")) {
+                if (ImGui.beginCombo(EditorWidgets.field("Check"), label(entry.kind()))) {
+                    for (String option : QuestLiveTest.CHECKS) if (ImGui.selectable(label(option), option.equals(entry.kind())))
+                        checks.set(i, new QuestLiveTest.Expectation(option, entry.target(), entry.expected()));
+                    ImGui.endCombo();
+                }
+                var editedTarget = new ImString(checks.get(i).target(), 512);
+                var editedExpected = new ImString(checks.get(i).expected(), 512);
+                if (ImGui.inputText(EditorWidgets.field("Target"), editedTarget) | ImGui.inputText(EditorWidgets.field("Expected"), editedExpected))
+                    checks.set(i, new QuestLiveTest.Expectation(checks.get(i).kind(), editedTarget.get(), editedExpected.get()));
+                ImGui.treePop();
+            }
+            ImGui.popID();
             if (ImGui.smallButton("Remove expectation##" + i)) { checks.remove(i); break; }
         }
         if (ImGui.button("Save live test")) run.accept(() -> {
