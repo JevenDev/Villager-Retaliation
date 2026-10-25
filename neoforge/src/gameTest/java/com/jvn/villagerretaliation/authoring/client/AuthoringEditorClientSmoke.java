@@ -68,6 +68,11 @@ public final class AuthoringEditorClientSmoke {
     private static final int[] confirmationViewport = new int[4];
     private static float confirmationPixelScaleX, confirmationPixelScaleY;
     private static boolean qualityControls;
+    private static boolean resourceControls;
+    private static String resourceKind = "item", resourceValue = "minecraft:stone";
+    private static float[] resourcePickerPoint, resourceShortcutPoint, resourceListenPoint;
+    private static net.minecraft.world.item.ItemStack originalHeldItem;
+    private static net.minecraft.world.entity.Entity resourceTarget;
     private static boolean layoutChecks;
     private static boolean variableControls;
     private static boolean completionInline, completionPlain;
@@ -169,6 +174,7 @@ public final class AuthoringEditorClientSmoke {
             ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(AuthoringEditorClientSmoke::frame);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderContentBrowserBenchmark);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderQualityControls);
+            ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderResourceControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderWorkflowControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::renderFeatureControls);
             ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(AuthoringEditorClientSmoke::checkShortcutPopup);
@@ -1013,6 +1019,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorResourceSmokeOnly")) {
+            buildResourcePickerSteps();
+            finishSteps("Visual resource search, icons, mod filters, entity previews, shortcuts and sound controls passed.");
+            return;
+        }
         if ("workflow".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
             STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps();
@@ -1336,6 +1347,7 @@ public final class AuthoringEditorClientSmoke {
         buildCreatorToolsSteps();
         buildProgressConditionSteps();
         buildQualityOfLifeSteps();
+        buildResourcePickerSteps();
         buildWorkflowSteps();
         buildFeatureSteps();
         buildProductivitySteps();
@@ -2521,6 +2533,120 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> capture("43-qol-issue-navigation"));
+    }
+
+    private static void buildResourcePickerSteps() {
+        STEPS.add(() -> {
+            set("guideStep", -1); set("resetLayout", true);
+            resourceControls = true; resourceKind = "item"; resourceValue = "minecraft:stone";
+            originalHeldItem = Minecraft.getInstance().player.getMainHandItem().copy();
+        });
+        pause(250);
+        click(() -> resourcePickerPoint);
+        type("DIAMOND SWORD");
+        pause(250);
+        STEPS.add(() -> {
+            var picker = field(editor, "resourcePicker");
+            require(!((java.util.Map<?, ?>) field(field(picker, "preview"), "icons")).isEmpty(), "Visible item rows render game icons.");
+            capture("resources-item-icons");
+        });
+        key(ImGuiKey.Enter);
+        pause(150);
+        STEPS.add(() -> require(resourceValue.equals("minecraft:diamond_sword"), "Display-name search selects the canonical resource ID."));
+        STEPS.add(() -> Minecraft.getInstance().player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                net.minecraft.world.item.Items.EMERALD.getDefaultInstance()));
+        click(() -> resourceShortcutPoint);
+        STEPS.add(() -> require(resourceValue.equals("minecraft:emerald"), "Held-item shortcut reads the current item."));
+        click(() -> resourcePickerPoint);
+        pause(200);
+        click(() -> new float[] {resourcePickerPoint[0], resourcePickerPoint[1] + 2 * ImGui.getFrameHeight()
+                + ImGui.getStyle().getItemSpacingY() + ImGui.getStyle().getWindowPaddingY()});
+        key(ImGuiKey.End);
+        key(ImGuiKey.Enter);
+        pause(150);
+        STEPS.add(() -> {
+            require(!field(field(editor, "resourcePicker"), "namespace").equals(""), "Native mod filter selects a namespace.");
+            capture("resources-mod-filter");
+        });
+        click(() -> new float[] {1000, 800});
+        STEPS.add(() -> { resourceKind = "entity"; resourceValue = "minecraft:villager"; });
+        pause(150);
+        click(() -> resourcePickerPoint);
+        pause(350);
+        STEPS.add(() -> {
+            var preview = field(field(editor, "resourcePicker"), "preview");
+            var entity = (net.minecraft.world.entity.Entity) field(preview, "entity");
+            require(entity != null && field(preview, "error").equals(""), "The selected entity has a rendered preview.");
+            require(Minecraft.getInstance().level.getEntity(entity.getId()) != entity, "Entity preview never spawns an entity in the world.");
+            capture("resources-entity-preview");
+        });
+        click(() -> new float[] {1000, 800});
+        STEPS.add(() -> {
+            resourceValue = "minecraft:pig";
+            resourceTarget = java.util.stream.StreamSupport.stream(Minecraft.getInstance().level.entitiesForRendering().spliterator(), false)
+                    .filter(net.minecraft.world.entity.npc.Villager.class::isInstance).findFirst().orElseThrow();
+        });
+        pause(100);
+        click(() -> resourceShortcutPoint);
+        STEPS.add(() -> {
+            require(resourceValue.equals("minecraft:villager"), "Target-entity shortcut preserves the entity type.");
+            resourceKind = "block"; resourceValue = "minecraft:diamond_block";
+        });
+        pause(150);
+        click(() -> resourceShortcutPoint);
+        STEPS.add(() -> {
+            var minecraft = Minecraft.getInstance();
+            String expected = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(
+                    minecraft.level.getBlockState(minecraft.player.blockPosition().below()).getBlock()).toString();
+            require(resourceValue.equals(expected), "Target-block shortcut reads the actual block: " + resourceValue + " expected " + expected);
+        });
+        click(() -> resourcePickerPoint);
+        type("Oak Planks");
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(resourceValue.equals("minecraft:oak_planks"), "Block display names select block registry IDs.");
+            resourceKind = "sound"; resourceValue = "minecraft:music.game";
+        });
+        pause(150);
+        click(() -> resourceListenPoint);
+        pause(150);
+        STEPS.add(() -> require(field(field(editor, "resourcePicker"), "sound") != null, "Listen starts a dedicated sound preview."));
+        click(() -> resourceShortcutPoint);
+        STEPS.add(() -> require(field(field(editor, "resourcePicker"), "sound") == null, "Stop releases the dedicated preview."));
+        click(() -> resourceListenPoint);
+        STEPS.add(() -> resourceControls = false);
+        pause(200);
+        STEPS.add(() -> {
+            require(field(field(editor, "resourcePicker"), "sound") == null, "Leaving the owner stops its preview.");
+            var picker = (EditorResourcePicker) field(editor, "resourcePicker");
+            picker.close();
+            Minecraft.getInstance().player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, originalHeldItem);
+            resourceTarget = null;
+        });
+        pause(150);
+        STEPS.add(() -> require(((java.util.Map<?, ?>) field(field(field(editor, "resourcePicker"), "preview"), "icons")).isEmpty(),
+                "Closing the picker releases cached textures before the next frame."));
+    }
+
+    private static void renderResourceControls() {
+        if (!resourceControls) return;
+        var minecraft = Minecraft.getInstance();
+        if (resourceKind.equals("block")) minecraft.hitResult = new net.minecraft.world.phys.BlockHitResult(
+                minecraft.player.position(), net.minecraft.core.Direction.UP, minecraft.player.blockPosition().below(), false);
+        else if (resourceTarget != null) minecraft.hitResult = new net.minecraft.world.phys.EntityHitResult(resourceTarget);
+        ImGui.setNextWindowPos(450, 150);
+        ImGui.setNextWindowSize(700, 700);
+        ImGui.begin("Resource picker acceptance");
+        float x = ImGui.getCursorScreenPosX(), y = ImGui.getCursorScreenPosY();
+        resourcePickerPoint = new float[] {x + 150, y + ImGui.getFrameHeight() / 2};
+        ((EditorResourcePicker) field(editor, "resourcePicker")).renderRegistry("native_resource", resourceKind, resourceValue,
+                value -> resourceValue = value, (EditorLibrary) field(editor, "library"),
+                action -> invoke("attempt", new Class<?>[] {ImGuiAuthoringEditor.EditorOperation.class}, action));
+        resourceShortcutPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2,
+                (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
+        resourceListenPoint = new float[] {x + 20, resourceShortcutPoint[1]};
+        ImGui.textUnformatted(resourceValue);
+        ImGui.end();
     }
 
     private static void renderQualityControls() {

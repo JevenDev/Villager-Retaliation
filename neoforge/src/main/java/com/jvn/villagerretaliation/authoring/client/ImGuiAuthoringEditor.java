@@ -272,6 +272,7 @@ final class ImGuiAuthoringEditor {
         EditorLiveQuestTest.stop();
         EditorPlaytestPresentation.clear();
         INSTANCE.clearCampaignPreview();
+        INSTANCE.resourcePicker.close();
         EditorTestWorld.disconnect();
         INSTANCE.target = null;
         INSTANCE.nodeResize = null;
@@ -314,6 +315,7 @@ final class ImGuiAuthoringEditor {
     private void renderEditor() {
         boolean playtesting = view == 3 && EditorPlaytestViewport.active();
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
+        resourcePicker.beginFrame(MC.screen == screen || playtesting);
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) {
             if (AuthoringDialoguePreview.active()) EditorDialogueTimeline.window();
@@ -2496,10 +2498,9 @@ final class ImGuiAuthoringEditor {
         if (simple) {
             if (!objectiveType.equals("trade")) {
                 input("Resource ID", objectiveResource);
-                var registry = objectiveType.equals("mob_kill") ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                        : objectiveType.startsWith("block_") ? net.minecraft.core.registries.BuiltInRegistries.BLOCK : net.minecraft.core.registries.BuiltInRegistries.ITEM;
-                resourcePicker.render("objective_resource", "Choose " + (objectiveType.equals("mob_kill") ? "entity" : objectiveType.startsWith("block_") ? "block" : "item") + "...", objectiveResource.get(),
-                        registry.keySet().stream().map(Object::toString).sorted().toList(), objectiveResource::set, library, this::attempt);
+                String kind = objectiveType.equals("mob_kill") ? "entity" : objectiveType.startsWith("block_") ? "block" : "item";
+                resourcePicker.renderRegistry(document.resourcePath() + ":objective_resource", kind, objectiveResource.get(),
+                        objectiveResource::set, library, this::attempt);
             }
             ImGui.inputInt(EditorWidgets.field("Required count"), objectiveCount);
         } else if (EditorQuestObjectives.guided(objectiveType)) questObjectives.fields(objectiveType);
@@ -3014,13 +3015,16 @@ final class ImGuiAuthoringEditor {
 
     private void propertyPicker(String path, ImString input) {
         String field = EditorProgressConditions.resourceField(path);
+        JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
+        if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
+        if (!rule.has("enum") && EditorRegistryResources.supports(field)) {
+            resourcePicker.renderRegistry(document.resourcePath() + ":" + path, field, input.get(), input::set, library, this::attempt);
+            return;
+        }
         List<String> choices = switch (field) {
             case "time" -> List.of("morning", "afternoon", "evening", "night");
             case "weather" -> List.of("clear", "rain", "thunder");
             case "state" -> List.of("available", "active", "completed", "failed", "abandoned");
-            case "item" -> net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).sorted().toList();
-            case "entity" -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(Object::toString).sorted().toList();
-            case "block" -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.keySet().stream().map(Object::toString).sorted().toList();
             case "quest", "quest_id" -> workspace.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST).map(AuthoringDocument::id).sorted().toList();
             case "trigger" -> java.util.Arrays.stream(com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger.values()).map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
             default -> EditorProgressConditions.resources(field);
@@ -3033,9 +3037,7 @@ final class ImGuiAuthoringEditor {
                 else if (type.getAsString().equals("event_history")) choices = EditorProgressConditions.historyTargets(parent.getAsJsonObject());
             }
         }
-        JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
         if (rule.has("enum")) choices = rule.getAsJsonArray("enum").asList().stream().map(JsonElement::getAsString).toList();
-        if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         resourcePicker.render(path, "Choose " + field + "...", input.get(), choices, input::set, library, this::attempt);
     }
 
@@ -4138,6 +4140,7 @@ final class ImGuiAuthoringEditor {
         AuthoringDialoguePreview.stop();
         EditorCameraPanel.close();
         packFiles.close();
+        resourcePicker.close();
         MC.setScreen(null);
     }
 
