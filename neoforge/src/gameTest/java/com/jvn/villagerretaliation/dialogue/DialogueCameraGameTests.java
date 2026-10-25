@@ -174,7 +174,7 @@ public final class DialogueCameraGameTests {
     @GameTest(template = "empty", batch = "dialogue_camera")
     public static void timelineUsesElapsedSecondsAndShortestRotation(GameTestHelper helper) {
         var shots = DialogueCamera.read(json("""
-                {"camera":{"shots":[{"preset":"birds_eye","hold_seconds":1},
+                {"camera":{"shots":[{"preset":"birds_eye","hold_seconds":1,"transition":{"type":"cut"}},
                   {"preset":"over_shoulder_right","transition":{"type":"lerp","duration_seconds":3}}]}}
                 """)).shots();
         var bird = new Pose(new Vec3(0, 6, 0), 170, -60, 70);

@@ -139,7 +139,7 @@ public final class AuthoringCameraSession implements AutoCloseable {
         var orientation = new DialogueCamera.Orientation(placement == Placement.RELATIVE
                 ? DialogueCameraTransforms.relativeYaw(pose.yaw(), forward) : Mth.wrapDegrees(pose.yaw()), pose.pitch());
         return new Shot(DialogueCamera.Preset.CUSTOM, anchor, placement, perspective, offset, target,
-                pose.fov(), DialogueCamera.Transition.CUT, 0, DialogueCamera.Easing.LINEAR, 2,
+                pose.fov(), DialogueCamera.Transition.LERP, DialogueCamera.DEFAULT_TRANSITION_SECONDS, DialogueCamera.Easing.SMOOTHSTEP, 2,
                 orientation, placement == Placement.FIXED ? pose.position() : null);
     }
 

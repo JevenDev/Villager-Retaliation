@@ -167,7 +167,8 @@ public final class DialogueCameraController {
         if (trade != null && next != null) {
             if (tradeMotion == null || !trading) {
                 var camera = minecraft.gameRenderer.getMainCamera();
-                var source = pose != null ? pose : renderedLevel.get() == minecraft.level && lastRendered != null
+                var source = pose != null ? new Pose(pose.position(), pose.yaw(), pose.pitch(), renderedFov)
+                        : renderedLevel.get() == minecraft.level && lastRendered != null
                         ? lastRendered : new Pose(camera.getPosition(), camera.getYRot(), camera.getXRot(), renderedFov);
                 tradeMotion = new TradeCameraMotion(source);
                 pose = source;
@@ -204,7 +205,8 @@ public final class DialogueCameraController {
         if (!next.key().equals(key)) {
             key = next.key();
             var camera = minecraft.gameRenderer.getMainCamera();
-            var source = pose == null ? new Pose(camera.getPosition(), camera.getYRot(), camera.getXRot(), baseFov) : pose;
+            var source = pose == null ? new Pose(camera.getPosition(), camera.getYRot(), camera.getXRot(), renderedFov)
+                    : new Pose(pose.position(), pose.yaw(), pose.pitch(), renderedFov);
             timeline = new DialogueCameraTimeline(next.camera().shots(), source);
             prepared = null;
             fixed = null;
@@ -244,7 +246,8 @@ public final class DialogueCameraController {
         }
         // resume a stalled trade transition from its last visible frame
         if (tradeMotion != null) return updateTrade(camera, speaker, partialTick, Math.min(seconds, 0.05));
-        pose = timeline.update(seconds, shot -> destination(shot, speaker, partialTick), pose);
+        var rendered = pose == null ? null : new Pose(pose.position(), pose.yaw(), pose.pitch(), renderedFov);
+        pose = timeline.update(seconds, shot -> destination(shot, speaker, partialTick), rendered);
         var minecraft = Minecraft.getInstance();
         Vec3 player = minecraft.player.getPosition(partialTick);
         Vec3 position = DialogueCamera.clamp(pose.position(), player);

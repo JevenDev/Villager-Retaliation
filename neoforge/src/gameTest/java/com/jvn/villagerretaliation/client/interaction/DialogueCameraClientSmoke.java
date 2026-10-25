@@ -78,6 +78,7 @@ public final class DialogueCameraClientSmoke {
         var server = minecraft.getSingleplayerServer();
         var playerId = minecraft.player.getUUID();
         if (phase == 0 && minecraft.screen == null) {
+            CameraAuthoringChecks.run();
             minecraft.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
             minecraft.options.fov().set(96);
             VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.set(true);
@@ -146,17 +147,30 @@ public final class DialogueCameraClientSmoke {
             }
             if (elapsed >= 4.3) {
                 capture("shoulder-" + perspective);
+                double beforeCut = currentTradeFov();
                 screen.acceptDialogueExchanges(List.of(line(camera("""
                         {"camera":{"preset":"speaker_facing","fov":45}}
                         """))));
                 DialogueCameraController.synchronize();
                 var pose = DialogueCameraController.update(minecraft.gameRenderer.getMainCamera(), 1);
-                require(pose != null && pose.fov() == 45, "following line cuts to its FOV immediately");
+                require(pose != null && Math.abs(pose.fov() - beforeCut) < 1, "a default transition starts at the visible FOV");
+                double afterCut = computeFov(true, 96);
+                require(Math.abs(afterCut - beforeCut) < 1, "following line eases from the visible FOV instead of cutting: " + beforeCut + " -> " + afterCut);
                 shownAt = Util.getMillis();
                 phase = 10;
             }
         } else if (phase == 10 && minecraft.screen instanceof VillagerInteractionScreen screen && Util.getMillis() - shownAt > 600) {
             capture("speaker-facing-" + perspective);
+            if (perspective == 0) {
+                verifyFovTransitions(screen);
+                if (Boolean.getBoolean(OUTPUT + ".fovOnly")) {
+                    try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Dialogue camera client smoke passed (FOV checks only)" + System.lineSeparator()); }
+                    catch (IOException exception) { throw new UncheckedIOException(exception); }
+                    phase = 9;
+                    minecraft.stop();
+                    return;
+                }
+            }
             verifyPlacement(screen);
             if (perspective == 0) verifyCampaignLifecycle(screen);
             if (++perspective < CameraType.values().length) {
@@ -252,7 +266,7 @@ public final class DialogueCameraClientSmoke {
                 com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendDialogueExchanges(player, villager,
                         List.of(DialogueSpeech.npc(villager, DialogueTextSegment.parse("Forced camera.", DialogueTextEffects.NONE),
                                 camera("""
-                                        {"camera":{"preset":"speaker_facing","fov":55}}
+                                        {"camera":{"preset":"speaker_facing","fov":55,"transition":{"type":"cut"}}}
                                         """))));
                 return villager.getId();
             });
@@ -735,7 +749,7 @@ public final class DialogueCameraClientSmoke {
         var renderer = minecraft.gameRenderer;
         var speaker = minecraft.level.getEntity(entityId);
         screen.acceptDialogueExchanges(List.of(line(camera("""
-                {"camera":{"preset":"custom","anchor":"speaker","offset":[0,1,-2],"perspective":"third_person","placement":"fixed"}}
+                {"camera":{"preset":"custom","anchor":"speaker","offset":[0,1,-2],"perspective":"third_person","placement":"fixed","transition":{"type":"cut"}}}
                 """))));
         DialogueCameraController.synchronize();
         var fixed = DialogueCameraController.update(renderer.getMainCamera(), 1);
@@ -745,7 +759,7 @@ public final class DialogueCameraClientSmoke {
         require(moved.position().distanceTo(fixed.position()) < 0.001, "fixed placements do not follow moving anchors");
         speaker.setPos(original);
         screen.acceptDialogueExchanges(List.of(line(camera("""
-                {"camera":{"preset":"custom","anchor":"speaker","offset":[0,1,-2],"perspective":"third_person"}}
+                {"camera":{"preset":"custom","anchor":"speaker","offset":[0,1,-2],"perspective":"third_person","transition":{"type":"cut"}}}
                 """))));
         DialogueCameraController.synchronize();
         var relative = DialogueCameraController.update(renderer.getMainCamera(), 1);
@@ -754,7 +768,7 @@ public final class DialogueCameraClientSmoke {
         require(Math.abs(moved.position().x - relative.position().x - 1) < 0.001, "relative placements follow moving anchors");
         speaker.setPos(original);
         screen.acceptDialogueExchanges(List.of(line(camera("""
-                {"camera":{"preset":"custom","anchor":"player","offset":[0,8,8],"perspective":"third_person","placement":"fixed"}}
+                {"camera":{"preset":"custom","anchor":"player","offset":[0,8,8],"perspective":"third_person","placement":"fixed","transition":{"type":"cut"}}}
                 """))));
         DialogueCameraController.synchronize();
         fixed = DialogueCameraController.update(renderer.getMainCamera(), 1);
@@ -765,7 +779,7 @@ public final class DialogueCameraClientSmoke {
                 "a fixed shot freezes its initial bounded position when the player moves closer");
         minecraft.player.setPos(playerPosition);
         screen.acceptDialogueExchanges(List.of(line(camera("""
-                {"camera":{"preset":"telescope"}}
+                {"camera":{"preset":"telescope","transition":{"type":"cut"}}}
                 """))));
         DialogueCameraController.synchronize();
         var telescope = DialogueCameraController.update(renderer.getMainCamera(), 1);
@@ -780,6 +794,96 @@ public final class DialogueCameraClientSmoke {
         screen.acceptVillagerDialogue("No camera on this line.", List.of());
         DialogueCameraController.synchronize();
         require(!DialogueCameraController.active(), "a new line without a cue releases authored control");
+    }
+
+    private static void verifyFovTransitions(VillagerInteractionScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        screen.acceptDialogueExchanges(List.of(line(camera("""
+                {"camera":{"preset":"speaker_facing","fov":30,"transition":{"type":"cut"}}}
+                """))));
+        DialogueCameraController.update(camera, 1);
+        double zoomed = computeFov(true, 96);
+        require(zoomed == 30, "explicit cuts change the visible FOV immediately");
+        screen.acceptDialogueExchanges(List.of(line(camera("""
+                {"camera":{"preset":"speaker_facing","fov":80}}
+                """))));
+        DialogueCameraController.update(camera, 1);
+        require(Math.abs(computeFov(true, 96) - zoomed) < 1, "skipping preserves the visible zoom");
+        elapseCameraTime(0.125);
+        DialogueCameraController.update(camera, 1);
+        double widening = computeFov(true, 96);
+        require(Math.abs(widening - 55) < 1, "default transitions ease toward the next line's FOV");
+        computeFov(false, 70);
+        require(currentTradeFov() == widening, "held-item FOV events cannot overwrite the visible world FOV");
+
+        screen.acceptDialogueExchanges(List.of(line(camera("""
+                {"camera":{"preset":"speaker_facing","fov":50,"transition":{"type":"lerp","duration_seconds":2}}}
+                """))));
+        DialogueCameraController.synchronize();
+        require(Math.abs(DialogueCameraController.update(camera, 1).fov() - widening) < 1,
+                "an authored lerp begins at the visible zoom when skipping a cut");
+        double beforeLerp = computeFov(true, 96);
+        elapseCameraTime(1);
+        var halfway = DialogueCameraController.update(camera, 1);
+        require(Math.abs(halfway.fov() - (beforeLerp + 50) / 2) < 1, "authored FOV lerps retain their duration");
+        require(Math.abs(computeFov(true, 96) - halfway.fov()) < 0.001, "authored lerps are not smoothed twice");
+
+        screen.acceptDialogueExchanges(List.of(line(camera("""
+                {"camera":{"target":"speaker","zoom":0.1}}
+                """))));
+        DialogueCameraController.synchronize();
+        double beforeOrdinary = currentTradeFov();
+        require(Math.abs(computeFov(true, 96) - beforeOrdinary) < 1, "ordinary focus starts at the visible authored FOV");
+        for (int frame = 0; frame < 30; frame++) {
+            elapseFovTime();
+            computeFov(true, 96);
+        }
+        double ordinary = currentTradeFov();
+        screen.acceptDialogueExchanges(List.of(line(camera("""
+                {"camera":{"target":"speaker","zoom":0}}
+                """))));
+        require(Math.abs(computeFov(true, 96) - ordinary) < 1, "a zero-zoom line eases instead of releasing instantly");
+        elapseFovTime();
+        double releasing = computeFov(true, 96);
+        require(releasing > ordinary && releasing < 96, "ordinary focus eases back toward the player FOV");
+        var state = ClientVillagerConversationState.snapshot();
+        var previousScreen = minecraft.screen;
+        try {
+            ClientVillagerConversationState.clear();
+            minecraft.screen = null;
+            double beforeClose = currentTradeFov();
+            require(Math.abs(computeFov(true, 96) - beforeClose) < 1, "closing preserves the visible FOV");
+            for (int frame = 0; frame < 60; frame++) {
+                ClientVillagerConversationState.tickCameraRelease();
+                elapseFovTime();
+                computeFov(true, 96);
+            }
+            require(Math.abs(currentTradeFov() - 96) < 0.001, "closing restores the player's configured FOV");
+        } finally {
+            minecraft.screen = previousScreen;
+            ClientVillagerConversationState.restore(state);
+        }
+    }
+
+    private static double computeFov(boolean configured, double fov) {
+        var minecraft = Minecraft.getInstance();
+        var event = new net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov(
+                minecraft.gameRenderer, minecraft.gameRenderer.getMainCamera(), 1, fov, configured);
+        VillagerDialogueCameraFocus.onComputeFov(event);
+        return event.getFOV();
+    }
+
+    private static void elapseFovTime() {
+        try {
+            var field = VillagerDialogueCameraFocus.class.getDeclaredField("fovTransition");
+            field.setAccessible(true);
+            var transition = field.get(null);
+            if (transition == null) return;
+            field = transition.getClass().getDeclaredField("lastNanos");
+            field.setAccessible(true);
+            field.setLong(transition, System.nanoTime() - 50_000_000L);
+        } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
     }
 
     private static void verifyCampaignLifecycle(VillagerInteractionScreen screen) {

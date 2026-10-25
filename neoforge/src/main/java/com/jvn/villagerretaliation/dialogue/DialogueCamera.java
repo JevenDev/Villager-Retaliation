@@ -18,6 +18,7 @@ public final class DialogueCamera {
     public static final double MIN_FOV = 10;
     public static final double MAX_FOV = 110;
     public static final double MAX_SECONDS = 600;
+    public static final double DEFAULT_TRANSITION_SECONDS = 0.25;
 
     private DialogueCamera() { }
 
@@ -97,7 +98,8 @@ public final class DialogueCamera {
             var coordinates = value.getAsJsonArray("offset");
             offset = new Vec3(coordinates.get(0).getAsDouble(), coordinates.get(1).getAsDouble(), coordinates.get(2).getAsDouble());
         }
-        var transition = value.has("transition") ? value.getAsJsonObject("transition") : new JsonObject();
+        boolean defaultTransition = !value.has("transition");
+        var transition = defaultTransition ? new JsonObject() : value.getAsJsonObject("transition");
         return new Shot(preset, enumeration(value, "anchor", Anchor.class,
                 preset == Preset.SPEAKER_FACING ? Anchor.SPEAKER : Anchor.PLAYER),
                 enumeration(value, "placement", Placement.class, Placement.RELATIVE),
@@ -105,9 +107,10 @@ public final class DialogueCamera {
                         preset == Preset.FIRST_PERSON || preset == Preset.TELESCOPE ? Perspective.FIRST_PERSON : Perspective.THIRD_PERSON),
                 offset, enumeration(value, "target", Target.class, Target.SPEAKER),
                 value.has("fov") ? value.get("fov").getAsDouble() : null,
-                enumeration(transition, "type", Transition.class, Transition.CUT),
-                transition.has("duration_seconds") ? transition.get("duration_seconds").getAsDouble() : 0,
-                enumeration(transition, "easing", Easing.class, Easing.LINEAR),
+                enumeration(transition, "type", Transition.class, Transition.LERP),
+                transition.has("duration_seconds") ? transition.get("duration_seconds").getAsDouble()
+                        : defaultTransition ? DEFAULT_TRANSITION_SECONDS : 0,
+                enumeration(transition, "easing", Easing.class, defaultTransition ? Easing.SMOOTHSTEP : Easing.LINEAR),
                 value.has("hold_seconds") ? value.get("hold_seconds").getAsDouble() : 0,
                 value.has("orientation") ? new Orientation(value.getAsJsonObject("orientation").get("yaw").getAsFloat(),
                         value.getAsJsonObject("orientation").get("pitch").getAsFloat()) : null,

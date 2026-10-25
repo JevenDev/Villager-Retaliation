@@ -105,7 +105,8 @@ final class EditorCameraPanel {
         }
         if (ImGui.button("Preview preset")) operation.accept(() -> session.preview(new Camera(Target.SPEAKER, null, List.of(
                 new DialogueCamera.Shot(preset, anchor, placement, DialogueCamera.Perspective.THIRD_PERSON,
-                        Vec3.ZERO, target, null, DialogueCamera.Transition.CUT, 0, DialogueCamera.Easing.LINEAR, 0)))));
+                        Vec3.ZERO, target, null, DialogueCamera.Transition.LERP, DialogueCamera.DEFAULT_TRANSITION_SECONDS,
+                        DialogueCamera.Easing.SMOOTHSTEP, 0)))));
         if (ImGui.button("Position free camera")) operation.accept(session::freeCamera);
         EditorWidgets.sameLineFor("Add shot");
         if (ImGui.button("Add shot")) operation.accept(() -> {
@@ -177,15 +178,27 @@ final class EditorCameraPanel {
                         float[] hold = {shot.has("hold_seconds") ? shot.get("hold_seconds").getAsFloat() : 0};
                         if (ImGui.sliderFloat(EditorWidgets.field("Hold seconds"), hold, 0, 30)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.addProperty("hold_seconds", hold[0])); changed.run(); });
                         JsonObject transition = shot.has("transition") ? shot.getAsJsonObject("transition") : new JsonObject();
-                        boolean smooth = "lerp".equals(com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(transition, "type"));
+                        boolean smooth = !shot.has("transition")
+                                || "lerp".equals(com.jvn.villagerretaliation.authoring.core.DialogueGraph.string(transition, "type"));
                         if (ImGui.checkbox("Smooth transition", smooth)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> {
                             JsonObject settings = new JsonObject(); settings.addProperty("type", smooth ? "cut" : "lerp");
-                            if (!smooth) { settings.addProperty("duration_seconds", 1); settings.addProperty("easing", "smoothstep"); }
+                            if (!smooth) { settings.addProperty("duration_seconds", DialogueCamera.DEFAULT_TRANSITION_SECONDS); settings.addProperty("easing", "smoothstep"); }
                             value.add("transition", settings);
                         }); changed.run(); });
+                        if (ImGui.isItemHovered()) ImGui.setTooltip("Turn off for an instant camera and FOV cut.");
                         if (smooth) {
-                            float[] duration = {transition.has("duration_seconds") ? transition.get("duration_seconds").getAsFloat() : 1};
-                            if (ImGui.sliderFloat(EditorWidgets.field("Transition seconds"), duration, .05f, 10)) operation.accept(() -> { EditorCameraShots.edit(document, cameraOwner, index, "update", value -> value.getAsJsonObject("transition").addProperty("duration_seconds", duration[0])); changed.run(); });
+                            float[] duration = {transition.has("duration_seconds") ? transition.get("duration_seconds").getAsFloat()
+                                    : (float) DialogueCamera.DEFAULT_TRANSITION_SECONDS};
+                            if (ImGui.sliderFloat(EditorWidgets.field("Transition seconds"), duration, .05f, 10)) operation.accept(() -> {
+                                EditorCameraShots.edit(document, cameraOwner, index, "update", value -> {
+                                    JsonObject settings = transition.deepCopy();
+                                    settings.addProperty("type", "lerp");
+                                    settings.addProperty("duration_seconds", duration[0]);
+                                    if (!shot.has("transition")) settings.addProperty("easing", "smoothstep");
+                                    value.add("transition", settings);
+                                });
+                                changed.run();
+                            });
                         }
                         for (String action : List.of("up", "down", "duplicate", "delete")) {
                             if (!action.equals("up")) EditorWidgets.sameLineFor(action);

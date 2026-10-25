@@ -5,6 +5,8 @@ import com.jvn.toucanlib.client.camera.ToucanCameraFov;
 import com.jvn.toucanlib.client.camera.ToucanCameraTargetPoints;
 import com.jvn.toucanlib.client.camera.ToucanCameraTurnSmoother;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import java.lang.ref.WeakReference;
+import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -23,49 +25,118 @@ public final class VillagerDialogueCameraFocus {
 
     private static ToucanCameraTurnSmoother turnSmoother = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
     private static double lastAuthoredZoom = Double.NaN;
+    private static FovTransition fovTransition;
+    private static WeakReference<Object> fovLevel = new WeakReference<>(null);
 
     private VillagerDialogueCameraFocus() {
     }
 
-    record State(ToucanCameraTurnSmoother smoother, double authoredZoom) { }
+    record State(ToucanCameraTurnSmoother smoother, double authoredZoom, FovTransition fov,
+            WeakReference<Object> level) { }
 
     static State suspend() {
-        var state = new State(turnSmoother, lastAuthoredZoom);
+        var state = new State(turnSmoother, lastAuthoredZoom, fovTransition, fovLevel);
         turnSmoother = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
         lastAuthoredZoom = Double.NaN;
+        fovTransition = null;
+        fovLevel = new WeakReference<>(null);
         return state;
     }
 
     static void restore(State state) {
         turnSmoother = state.smoother();
         lastAuthoredZoom = state.authoredZoom();
+        fovTransition = state.fov();
+        fovLevel = state.level();
+        if (fovTransition != null) fovTransition.lastNanos = System.nanoTime();
     }
 
     static void clear() {
         turnSmoother.reset();
         lastAuthoredZoom = Double.NaN;
+        fovTransition = null;
+        fovLevel = new WeakReference<>(null);
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        double playerFov = event.getFOV();
         DialogueCameraController.onComputeFov(event);
-        if (DialogueCameraController.active()) return;
-        if (!DialogueCameraController.previewing() && !VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
-                || !ClientVillagerConversationState.cameraActive() || !validCamera()) {
+        if (!event.usedConfiguredFov()) return;
+        var minecraft = Minecraft.getInstance();
+        boolean enabled = DialogueCameraController.previewing()
+                || VillagerRetaliationConfig.ENABLE_DIALOGUE_CAMERA_FOCUS.get()
+                    && (ClientVillagerConversationState.usesForcedCameraZoom()
+                        || VillagerRetaliationConfig.ENABLE_NORMAL_DIALOGUE_CAMERA_FOCUS.get()
+                        || !ClientVillagerConversationState.cameraActive() && fovTransition != null);
+        if (!enabled || !validCamera()) {
+            fovTransition = null;
+            DialogueCameraController.rememberFov(event);
             return;
         }
-
-        double zoomAmount = distanceAdjustedZoomAmount(event);
-        if (zoomAmount <= 0.0D) {
-            return;
+        if (fovLevel.get() != minecraft.level) {
+            fovTransition = null;
+            fovLevel = new WeakReference<>(minecraft.level);
         }
-
         int transitionTicks = Math.max(1, VillagerRetaliationConfig.DIALOGUE_CAMERA_TRANSITION_TICKS.get());
-        float activeProgress = (ClientVillagerConversationState.cameraFocusTicks() + (float) event.getPartialTick()) / transitionTicks;
-        double progress = Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen
-                ? activeProgress
-                : ClientVillagerConversationState.cameraReleaseProgress((float) event.getPartialTick());
-        event.setFOV(ToucanCameraFov.zoomedFov(event.getFOV(), zoomAmount, progress));
+        boolean controlled = DialogueCameraController.active() || ClientVillagerConversationState.cameraActive();
+        if (!DialogueCameraController.active() && ClientVillagerConversationState.cameraActive()) {
+            double zoomAmount = distanceAdjustedZoomAmount(event);
+            float activeProgress = (ClientVillagerConversationState.cameraFocusTicks() + (float) event.getPartialTick()) / transitionTicks;
+            double progress = minecraft.screen instanceof VillagerInteractionSessionScreen
+                    ? activeProgress : ClientVillagerConversationState.cameraReleaseProgress((float) event.getPartialTick());
+            event.setFOV(ToucanCameraFov.zoomedFov(playerFov, zoomAmount, progress));
+        }
+        long now = System.nanoTime();
+        if (DialogueCameraController.active()) {
+            fovTransition = new FovTransition(event.getFOV(), now);
+        } else if (controlled || fovTransition != null) {
+            if (fovTransition == null) fovTransition = new FovTransition(playerFov, now);
+            var screen = DialogueCameraController.screen();
+            fovTransition.retarget(screen == null ? null : screen.dialogueCameraCue(), now);
+            double target = event.getFOV();
+            double visible = fovTransition.update(target, now, minecraft.isPaused(), Math.max(0.25, transitionTicks * 0.05));
+            if (!controlled && Math.abs(visible - target) < 0.001 && Math.abs(fovTransition.velocity) < 0.001) {
+                fovTransition = null;
+                visible = target;
+            }
+            event.setFOV(visible);
+        }
         DialogueCameraController.rememberFov(event);
+    }
+
+    static final class FovTransition {
+        private double value;
+        private double velocity;
+        private long lastNanos;
+        private boolean wasPaused;
+        private Object targetKey;
+
+        FovTransition(double source, long now) {
+            value = source;
+            lastNanos = now;
+        }
+
+        void retarget(Object key, long now) {
+            if (!Objects.equals(targetKey, key)) lastNanos = now;
+            targetKey = key;
+        }
+
+        double update(double target, long now, boolean paused, double duration) {
+            double seconds = paused || wasPaused ? 0 : Math.clamp((now - lastNanos) / 1_000_000_000.0, 0, 0.05);
+            lastNanos = now;
+            wasPaused = paused;
+            double speed = 6 / duration;
+            double decay = Math.exp(-speed * seconds);
+            double change = value - target;
+            double step = (velocity + speed * change) * seconds;
+            value = target + (change + step) * decay;
+            velocity = (velocity - speed * step) * decay;
+            if (Math.abs(value - target) < 0.0001 && Math.abs(velocity) < 0.001) {
+                value = target;
+                velocity = 0;
+            }
+            return value;
+        }
     }
 
     private static double distanceAdjustedZoomAmount(ViewportEvent event) {
