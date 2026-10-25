@@ -67,7 +67,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 53 + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorBufferChecks.run() + EditorResourcePickerChecks.run() + EditorLocalizationChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
+        return 53 + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorBufferChecks.run() + EditorResourcePickerChecks.run() + EditorLocalizationChecks.run() + EditorCampaignGraphChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {

@@ -1019,6 +1019,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorCampaignSmokeOnly")) {
+            buildCampaignOverviewSteps();
+            finishSteps("Native campaign map selection, navigation, zoom and filters passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorLocalizationSmokeOnly")) {
             buildLocalizationSteps();
             finishSteps("Native translation table and review controls passed.");
@@ -2538,6 +2543,108 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> capture("43-qol-issue-navigation"));
+    }
+
+    private static void buildCampaignOverviewSteps() {
+        STEPS.add(() -> {
+            set("guideStep", -1); set("resetLayout", true);
+            var quest = workspace.createDocument(DefinitionKind.QUEST, "test:overview");
+            EditorQuestLinks.create(workspace, quest, DialogueGraph.nodes(quest).getFirst().id(), EditorQuestLinks.Kind.ENCOUNTER, "skirmish");
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, quest);
+            set("view", 6);
+        });
+        pause(300);
+        STEPS.add(() -> {
+            var graph = (EditorCampaignGraph.Snapshot) field(field(editor, "campaignOverview"), "graph");
+            require(graph.links().stream().anyMatch(link -> link.from().document().kind() == DefinitionKind.QUEST && link.to().category().equals("Scenes")),
+                    "The overview connects a quest to its scene.");
+            require(graph.links().stream().anyMatch(link -> link.from().category().equals("Scenes") && link.to().category().equals("Encounters")),
+                    "The overview connects a scene to its encounter.");
+            capture("campaign-overview");
+        });
+        click(() -> campaignNodePoint("Scenes"));
+        STEPS.add(() -> {
+            var selected = (EditorCampaignGraph.Node) field(field(editor, "campaignOverview"), "selected");
+            require(selected.category().equals("Scenes"), "Clicking a map node selects its reference inspector.");
+            capture("campaign-scene-links");
+        });
+        move(() -> campaignNodePoint("Encounters"), false);
+        STEPS.add(() -> { mouseDown = true; mouseDoubleClicked = true; });
+        STEPS.add(() -> { mouseDown = false; mouseDoubleClicked = false; });
+        STEPS.add(() -> {
+            require((int) field(editor, "view") == 0 && ((AuthoringDocument) field(editor, "document")).resourcePath().contains("/encounters/"),
+                    "Double-clicking a map node opens its owning file.");
+            set("view", 6);
+        });
+        move(() -> campaignNodePoint("Scenes"), false);
+        STEPS.add(() -> mouseWheel = 2);
+        STEPS.add(() -> {
+            require((float) field(field(editor, "campaignOverview"), "zoom") > 1, "The campaign map zooms around the pointer.");
+            capture("campaign-zoom");
+        });
+        click(() -> new float[] {620, 261});
+        STEPS.add(() -> {
+            var view = field(editor, "campaignOverview");
+            require((boolean) field(view, "orphaned") && ((List<?>) field(view, "visible")).size() == 2,
+                    "The native incoming-reference filter leaves only the two root files.");
+            capture("campaign-orphans");
+        });
+        click(() -> new float[] {620, 261});
+        click(() -> new float[] {850, 261});
+        STEPS.add(() -> {
+            var view = field(editor, "campaignOverview");
+            require((boolean) field(view, "untested") && ((List<?>) field(view, "visible")).size() == 2,
+                    "The native coverage filter includes untested dialogue and quests.");
+            var quest = workspace.documents().stream().filter(value -> value.id().equals("test:overview")).findFirst().orElseThrow();
+            ((EditorCoverage) field(editor, "coverage")).observe(quest).accept(
+                    new com.jvn.villagerretaliation.authoring.preview.PreviewCoverage(java.util.Set.of("/stages/0"), java.util.Set.of()));
+        });
+        STEPS.add(() -> require(((List<?>) field(field(editor, "campaignOverview"), "visible")).size() == 1,
+                "Recording coverage updates the visible map immediately."));
+        click(() -> new float[] {850, 261});
+        click(() -> new float[] {600, 220});
+        type("skirmish");
+        key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            var view = field(editor, "campaignOverview");
+            require(((List<?>) field(view, "visible")).size() == 2, "Native search finds both the scene and encounter.");
+            capture("campaign-search");
+        });
+        click(() -> new float[] {426, 301});
+        STEPS.add(() -> require((boolean) field(field(editor, "campaignOverview"), "nearby"),
+                "The connections control focuses the selected file and its neighbours."));
+        click(() -> new float[] {780, 301});
+        click(() -> new float[] {426, 301});
+        click(() -> campaignNodePoint("Scenes"));
+        click(() -> new float[] {1620, 410});
+        STEPS.add(() -> {
+            require((int) field(editor, "view") == 0 && ((AuthoringDocument) field(editor, "document")).id().equals("test:overview")
+                            && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/stages/0/on_enter/0/scene"),
+                    "The reference inspector jumps to the exact quest action field.");
+            set("view", 6);
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1.5f));
+        });
+        pause(200);
+        click(() -> campaignNodePoint("Scenes"));
+        STEPS.add(() -> {
+            require(((EditorCampaignGraph.Node) field(field(editor, "campaignOverview"), "selected")).category().equals("Scenes"),
+                    "Map hit testing follows the editor text scale.");
+            capture("campaign-large-text");
+            set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document); set("view", 0);
+        });
+    }
+
+    private static float[] campaignNodePoint(String category) {
+        var view = field(editor, "campaignOverview");
+        var graph = (EditorCampaignGraph.Snapshot) field(view, "graph");
+        var node = graph.nodes().stream().filter(value -> value.category().equals(category)).findFirst().orElseThrow();
+        @SuppressWarnings("unchecked")
+        var positions = (Map<EditorCampaignGraph.Node, EditorCampaignGraph.Position>) field(view, "positions");
+        var position = positions.get(node);
+        float zoom = (float) field(view, "zoom") * ((EditorPreferences) field(editor, "preferences")).textScale();
+        return new float[] {(float) field(view, "canvasX") + (float) field(view, "panX") + (position.x() + 130) * zoom,
+                (float) field(view, "canvasY") + (float) field(view, "panY") + (position.y() + 40) * zoom};
     }
 
     private static void buildLocalizationSteps() {

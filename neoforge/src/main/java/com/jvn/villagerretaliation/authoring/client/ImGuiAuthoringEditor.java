@@ -129,6 +129,7 @@ final class ImGuiAuthoringEditor {
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorResourceView resourceView = new EditorResourceView();
     private final EditorLocalizationView localization = new EditorLocalizationView();
+    private final EditorCampaignOverview campaignOverview = new EditorCampaignOverview();
     private final EditorGraphText graphText = new EditorGraphText();
     private final EditorDocumentCache documentCache = new EditorDocumentCache();
     private EditorGraphModel graphModel = new EditorGraphModel();
@@ -356,6 +357,7 @@ final class ImGuiAuthoringEditor {
                 else if (view == 1) preview();
                 else if (view == 4) files();
                 else if (view == 5) translations();
+                else if (view == 6) campaignOverview();
                 else diagnostics();
             }
             if (focusMode.isEmpty() || focusMode.equals(DETAIL_PANEL)) inspector();
@@ -478,6 +480,7 @@ final class ImGuiAuthoringEditor {
             }
             ImGui.setItemDefaultFocus();
             if (ImGui.menuItem("Keyboard shortcuts")) shortcuts.open();
+            if (ImGui.menuItem("Campaign overview")) attempt(() -> { view = 6; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Translations")) attempt(() -> { view = 5; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Pack files")) attempt(() -> { filesMode = true; saveViewPreferences(); view = 4; focusPanel = WORK_PANEL; });
             if (ImGui.menuItem("Find an action", keyHint("Open commands"))) commandPalette.open();
@@ -1242,6 +1245,7 @@ final class ImGuiAuthoringEditor {
         result.add(new EditorCommands.Command("Frame selected nodes", "", selected, () -> { view = 0; fitSelection = true; fitGraph = true; }));
         for (String action : List.of("Align left", "Align top", "Space horizontally", "Space vertically", "Arrange selection"))
             result.add(new EditorCommands.Command(action, "", graph && selectedNodes().size() > 1, () -> alignNodes(action)));
+        result.add(new EditorCommands.Command("Campaign overview", "", workspace != null, () -> { view = 6; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Translations", "", workspace != null, () -> { view = 5; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Validate workspace", "", workspace != null, () -> { validate(); view = 2; focusPanel = WORK_PANEL; }));
         result.add(new EditorCommands.Command("Go to definition", "", document != null && !selectedDefinitions().isEmpty(), this::goToDefinition));
@@ -1397,6 +1401,12 @@ final class ImGuiAuthoringEditor {
         var cards = graphModel.get(workspace, document, locale.get()).cards();
         persistPositions(EditorGraphSelection.layout(cards, positions, selectedNodes(), action));
         refresh();
+    }
+
+    private void campaignOverview() {
+        panel(WORK_PANEL);
+        campaignOverview.render(workspace, contentBrowser, locale.get(), preferences.textScale(), coverage, document, this::navigateReference);
+        ImGui.end();
     }
 
     private void translations() {
@@ -2174,6 +2184,11 @@ final class ImGuiAuthoringEditor {
     private void inspector() {
         panel(DETAIL_PANEL);
         if (activeDiagnostic != null) diagnosticNavigation();
+        if (view == 6) {
+            campaignOverview.details(coverage, this::navigateReference);
+            ImGui.end();
+            return;
+        }
         if (view == 5) {
             localization.details(workspace, documentBuffers, preferences.textScale(), this::navigateReference, this::attempt);
             ImGui.end();
