@@ -168,7 +168,9 @@ final class EditorContentBrowser {
             default -> path.contains("/locales/") ? "Translations" : path.contains("/scenes/") ? "Scenes"
                     : path.contains("/encounters/") ? "Encounters" : path.contains("/dialogue_words/") ? "Word pools"
                     : path.contains("/dialogue/") ? "Dialogue pools" : path.contains("/campaign_scenarios/") ? "Scenarios"
-                    : path.contains("/campaigns/") ? "Story arcs" : "Supporting files";
+                    : path.contains("/campaigns/") ? "Story arcs" : path.contains("/skill_trades/") ? "Trades"
+                    : path.contains("/sell_prices/") ? "Sell prices" : path.contains("/duel_kits/") ? "Duel kits"
+                    : path.contains("/player_raid_loadouts/") ? "Raid loadouts" : path.contains("/dialogue_styles/") ? "Dialogue styles" : "Supporting files";
         };
         key += "/type/" + category;
         result.add(new Group(key, category, source.document().kind() == DefinitionKind.QUEST ? 0 : source.document().kind() == DefinitionKind.RESOURCE ? 2 : 1));

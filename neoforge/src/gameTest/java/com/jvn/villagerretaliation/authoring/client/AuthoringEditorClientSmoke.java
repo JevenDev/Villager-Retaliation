@@ -1020,6 +1020,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorSupportingSmokeOnly")) {
+            buildSupportingResourceSteps();
+            finishSteps("Guided supporting resources render and load through the game runtime.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorSuiteSmokeOnly")) {
             buildWorkspaceSuiteSteps();
             buildLiveWorldSteps();
@@ -2666,6 +2671,87 @@ public final class AuthoringEditorClientSmoke {
         });
         waitUntil(() -> liveCheck.isDone());
         STEPS.add(() -> { liveCheck.join(); capture("suite-restored-world"); });
+    }
+
+    private static void buildSupportingResourceSteps() {
+        STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); set("showResources", true); });
+        for (var kind : List.of(EditorResourceRecipes.Kind.TRADE, EditorResourceRecipes.Kind.SELL_PRICE,
+                EditorResourceRecipes.Kind.DUEL_KIT, EditorResourceRecipes.Kind.RAID_LOADOUT,
+                EditorResourceRecipes.Kind.WORD_POOL, EditorResourceRecipes.Kind.STYLE)) {
+            STEPS.add(() -> {
+                set("createRecipe", kind); set("createKind", DefinitionKind.RESOURCE);
+                ((imgui.type.ImString) field(editor, "newId")).set((kind == EditorResourceRecipes.Kind.RAID_LOADOUT ? "villagerretaliation:" : "test:") + "recipe_" + kind.name().toLowerCase(java.util.Locale.ROOT));
+                var resource = (AuthoringDocument) invoke("createContent", new Class<?>[] {DefinitionKind.class}, DefinitionKind.RESOURCE);
+                invoke("select", new Class<?>[] {AuthoringDocument.class}, resource); set("view", 0);
+            });
+            pause(300);
+            switch (kind) {
+                case TRADE -> click(() -> new float[] {460, 221});
+                case SELL_PRICE -> { click(() -> new float[] {490, 333}); click(() -> new float[] {665, 361}); }
+                case DUEL_KIT -> {
+                    click(() -> new float[] {500, 309}); click(() -> new float[] {500, 417});
+                    click(() -> new float[] {530, 269});
+                    STEPS.add(() -> require(field(field(editor, "supportingView"), "participant").equals("villager"), "The participant tab switches the kit form."));
+                    click(() -> new float[] {442, 269});
+                }
+                case RAID_LOADOUT -> click(() -> new float[] {500, 241});
+                case WORD_POOL -> { click(() -> new float[] {470, 241}); click(() -> new float[] {640, 241}); }
+                default -> { }
+            }
+            STEPS.add(() -> {
+                require(field(field(editor, "supportingView"), "owner") == field(editor, "document"), "The guided resource form renders.");
+                var root = ((AuthoringDocument) field(editor, "document")).json();
+                switch (kind) {
+                    case TRADE -> require(root.getAsJsonArray("entries").size() == 2, "The Add trade button creates an offer.");
+                    case SELL_PRICE -> require(root.getAsJsonArray("rates").size() == 2 && root.getAsJsonArray("rates").get(0).getAsJsonObject().get("item_count").isJsonObject(),
+                            "The sell-price buttons add and convert rates.");
+                    case DUEL_KIT -> require(root.getAsJsonObject("player").getAsJsonArray("inventory").size() == 2
+                            && root.getAsJsonObject("player").getAsJsonObject("equipment").has("head"), "Kit buttons add inventory and equipment.");
+                    case RAID_LOADOUT -> require(root.getAsJsonArray("loadouts").size() == 2, "The loadout button creates a profile.");
+                    case WORD_POOL -> {
+                        require(root.getAsJsonArray("values").size() == 4 && root.getAsJsonArray("values").get(3).isJsonObject(), "Word pool buttons add literal and conditional wording.");
+                        require(((Map<?, ?>) field(field(editor, "textFields"), "selections")).isEmpty(), "Word pools do not offer unsupported rich-text controls.");
+                    }
+                    default -> { }
+                }
+                capture("supporting-" + kind.name().toLowerCase(java.util.Locale.ROOT));
+            });
+        }
+        STEPS.add(() -> {
+            require(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR),
+                    "The resource recipes validate before export: " + workspace.validate());
+            try { reloadCheck = EditorTestWorld.prepareCurrent(workspace); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+        });
+        waitUntil(() -> reloadCheck.isDone());
+        STEPS.add(() -> {
+            reloadCheck.join();
+            var server = Minecraft.getInstance().getSingleplayerServer();
+            liveCheck = server.submit(() -> {
+                require(com.jvn.villagerretaliation.trade.SkillTradeResources.definition(server, net.minecraft.resources.ResourceLocation.parse("test:recipe_trade")).isPresent(),
+                        "The skill trade recipe loads through the runtime.");
+                require(com.jvn.villagerretaliation.trade.SkillTradeResources.definition(server, net.minecraft.resources.ResourceLocation.parse("test:trade_1")).isPresent(),
+                        "Added trades load with distinct IDs.");
+                var price = com.jvn.villagerretaliation.sell.SellPriceResources.definitions(server).values().stream().flatMap(List::stream)
+                        .filter(value -> value.id().toString().equals("test:recipe_sell_price")).findFirst().orElseThrow();
+                require(price.rates().size() == 2, "Both authored price ranges load.");
+                var kit = com.jvn.villagerretaliation.duel.DuelKitRegistry.find(net.minecraft.resources.ResourceLocation.parse("test:recipe_duel_kit")).orElseThrow();
+                require(kit.player().inventory().size() == 2 && kit.player().equipment().containsKey(net.minecraft.world.entity.EquipmentSlot.HEAD),
+                        "The authored kit retains its inventory and equipment.");
+                try {
+                    var method = com.jvn.villagerretaliation.raid.PlayerRaidLoadoutResources.class.getDeclaredMethod("profiles", net.minecraft.server.MinecraftServer.class);
+                    method.setAccessible(true);
+                    var profiles = (List<?>) method.invoke(null, server);
+                    require(profiles.stream().anyMatch(value -> ((com.jvn.villagerretaliation.raid.PlayerRaidLoadoutResources.LoadoutProfile) value).id().equals("villagerretaliation:recipe_raid_loadout")),
+                            "The raid loadout recipe loads in its supported namespace.");
+                } catch (ReflectiveOperationException exception) { throw new IllegalStateException(exception); }
+                require(com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.values(server, "en_us",
+                        net.minecraft.resources.ResourceLocation.parse("test:recipe_word_pool")).contains("Hello."), "The word pool recipe loads.");
+                require(com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.server().containsKey("recipe_style"), "The custom style loads and is available to text markup.");
+            });
+        });
+        waitUntil(() -> liveCheck.isDone());
+        STEPS.add(() -> liveCheck.join());
     }
 
     private static void buildSceneAuthoringSteps() {

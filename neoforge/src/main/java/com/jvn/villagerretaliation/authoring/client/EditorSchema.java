@@ -42,6 +42,8 @@ final class EditorSchema {
 
     private static JsonObject resourceSchema(AuthoringDocument document) {
         var root = document.json();
+        var supporting = EditorSupportingResources.schema(document);
+        if (!supporting.isEmpty()) return supporting;
         if (document.resourcePath().matches("data/[^/]+/dialogue_styles/.+\\.json"))
             return com.jvn.villagerretaliation.dialogue.DialogueStyle.schema();
         if (!root.has("schema") || !root.get("schema").isJsonPrimitive()) return new JsonObject();

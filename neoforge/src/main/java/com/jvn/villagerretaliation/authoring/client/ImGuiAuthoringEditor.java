@@ -129,6 +129,7 @@ final class ImGuiAuthoringEditor {
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorResourceView resourceView = new EditorResourceView();
     private final EditorSceneView sceneView = new EditorSceneView();
+    private final EditorSupportingView supportingView = new EditorSupportingView();
     private final EditorLocalizationView localization = new EditorLocalizationView();
     private final EditorCampaignOverview campaignOverview = new EditorCampaignOverview();
     private final EditorTestSuite testSuite = new EditorTestSuite();
@@ -279,6 +280,7 @@ final class ImGuiAuthoringEditor {
         INSTANCE.clearCampaignPreview();
         INSTANCE.resourcePicker.close();
         INSTANCE.sceneView.close();
+        INSTANCE.supportingView.close();
         EditorTestWorld.disconnect();
         INSTANCE.target = null;
         INSTANCE.nodeResize = null;
@@ -323,6 +325,7 @@ final class ImGuiAuthoringEditor {
         textFields.beginFrame(MC.screen == screen || playtesting, library.shortcuts());
         resourcePicker.beginFrame(MC.screen == screen || playtesting);
         sceneView.beginFrame(MC.screen == screen && view == 0 && document != null && EditorSceneDraft.supports(documentCache.json(document)));
+        supportingView.beginFrame(MC.screen == screen && view == 0 && document != null && EditorSupportingResources.kind(document) != null);
         localization.beginFrame(MC.screen == screen && view == 5, library.shortcuts());
         graphText.beginFrame(MC.screen == screen && view == 0);
         if (MC.screen != screen && !playtesting) {
@@ -818,7 +821,8 @@ final class ImGuiAuthoringEditor {
                 default -> "";
             });
             input("Name or namespace:id", newId);
-            if (!createKind.campaignManifest() && workspace.documents().stream().anyMatch(value -> value.kind().campaignManifest())) {
+            if (!createKind.campaignManifest() && (createKind != DefinitionKind.RESOURCE || createRecipe.scoped())
+                    && workspace.documents().stream().anyMatch(value -> value.kind().campaignManifest())) {
                 if (createScope != null && !workspace.documents().contains(createScope)) createScope = null;
                 ImGui.textUnformatted("Content folder");
                 ImGui.setNextItemWidth(-1);
@@ -853,6 +857,7 @@ final class ImGuiAuthoringEditor {
                     }
                 });
                 select(created);
+                if (createKind == DefinitionKind.RESOURCE) { showResources = true; saveViewPreferences(); }
                 showCreate = false;
                 view = 0;
                 status = "Content created.";
@@ -862,8 +867,8 @@ final class ImGuiAuthoringEditor {
             if (filesMode) {
                 try {
                     String id = newContentId(createKind);
-                    String target = createKind.path(id);
-                    if (!createKind.campaignManifest() && createScope != null)
+                    String target = createKind == DefinitionKind.RESOURCE ? "data/" + id.split(":", 2)[0] + "/" + createRecipe.relative(id.split(":", 2)[1]) : createKind.path(id);
+                    if (!createKind.campaignManifest() && createScope != null && (createKind != DefinitionKind.RESOURCE || createRecipe.scoped()))
                         target = DefinitionKind.contentRoot(createScope.resourcePath()) + target.substring(("data/" + id.split(":", 2)[0] + "/").length());
                     ImGui.textWrapped("Creates: " + target);
                 } catch (IllegalArgumentException exception) { ImGui.textWrapped(exception.getMessage()); }
@@ -960,15 +965,16 @@ final class ImGuiAuthoringEditor {
 
     private String newContentId(DefinitionKind kind) {
         String id = EditorContentTools.resourceId(newId.get());
-        if (!kind.campaignManifest() && createScope != null && !newId.get().contains(":"))
+        boolean scoped = !kind.campaignManifest() && (kind != DefinitionKind.RESOURCE || createRecipe.scoped());
+        if (scoped && createScope != null && !newId.get().contains(":"))
             id = createScope.id().split(":", 2)[0] + id.substring(id.indexOf(':'));
-        if (!kind.campaignManifest() && createScope != null && !createScope.resourcePath().startsWith("data/" + id.split(":", 2)[0] + "/"))
+        if (scoped && createScope != null && !createScope.resourcePath().startsWith("data/" + id.split(":", 2)[0] + "/"))
             throw new IllegalArgumentException("Content must use its campaign or addon namespace");
         return id;
     }
 
     private AuthoringDocument createContent(DefinitionKind kind) {
-        if (kind == DefinitionKind.RESOURCE) return EditorResourceRecipes.create(workspace, createRecipe, newContentId(kind), createScope);
+        if (kind == DefinitionKind.RESOURCE) return EditorResourceRecipes.create(workspace, createRecipe, newContentId(kind), createRecipe.scoped() ? createScope : null);
         return workspace.createDocument(kind, newContentId(kind), kind.campaignManifest() ? null : createScope);
     }
 
@@ -1465,6 +1471,9 @@ final class ImGuiAuthoringEditor {
             } else if (EditorSceneDraft.supports(documentCache.json(document))) {
                 sceneView.render(workspace, document, documentCache.json(document), pointer.get(), locale.get(), preferences.textScale(),
                         this::resourceFields, this::resourceEditor, path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
+            } else if (EditorSupportingResources.kind(document) != null) {
+                supportingView.render(workspace, document, documentCache.json(document), pointer.get(), preferences.textScale(), this::resourceFields,
+                        this::resourceEditor, path -> { setPointer(path); fields.clear(); textFields.clear(); }, this::operation);
             } else resourceEditor();
             ImGui.end();
             return;
@@ -2246,7 +2255,7 @@ final class ImGuiAuthoringEditor {
         ImGui.textUnformatted(selectedNode.isEmpty() ? kindLabel(document.kind()) : "Selected: " + selectedNode);
         if (ImGui.button("File settings", -1, 0)) operation(() -> {
             selectedNode = ""; nodeSelection.clear(); showBranch = false; setPointer("");
-            if (document.kind() == DefinitionKind.RESOURCE) { resourceView.settings(); sceneView.settings(); }
+            if (document.kind() == DefinitionKind.RESOURCE) { resourceView.settings(); sceneView.settings(); supportingView.settings(); }
         });
         if (!selectedNode.isEmpty() || document.kind() == DefinitionKind.FORCED && pointer.get().isEmpty()) {
             if (document.kind() != DefinitionKind.QUEST && document.kind() != DefinitionKind.RESOURCE
@@ -3002,7 +3011,10 @@ final class ImGuiAuthoringEditor {
                 ImGui.setKeyboardFocusHere();
             }
             if (text) textContext(path);
-            if (text && (styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+            if (text && EditorSupportingResources.literalWording(document, path)) {
+                ImGui.inputText("##value", input);
+                apply = ImGui.isItemDeactivatedAfterEdit();
+            } else if (text && (styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false, preferences.textScale());
@@ -3083,7 +3095,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private void propertyPicker(String path, ImString input) {
-        String field = EditorProgressConditions.resourceField(path);
+        String field = EditorSupportingResources.itemField(document, path) ? "item" : EditorProgressConditions.resourceField(path);
         JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         if (!rule.has("enum") && EditorRegistryResources.supports(field)) {
@@ -4221,6 +4233,7 @@ final class ImGuiAuthoringEditor {
         packFiles.close();
         resourcePicker.close();
         sceneView.close();
+        supportingView.close();
         MC.setScreen(null);
     }
 

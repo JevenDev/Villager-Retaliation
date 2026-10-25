@@ -96,6 +96,7 @@ neoForge {
             systemProperty 'villagerretaliation.authoringEditorPackFolderSmokeOnly', providers.gradleProperty('authoringEditorPackFolderSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorBufferSmokeOnly', providers.gradleProperty('authoringEditorBufferSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorResourceSmokeOnly', providers.gradleProperty('authoringEditorResourceSmokeOnly').orElse('false').get()
+            systemProperty 'villagerretaliation.authoringEditorSupportingSmokeOnly', providers.gradleProperty('authoringEditorSupportingSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorSuiteSmokeOnly', providers.gradleProperty('authoringEditorSuiteSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorSceneSmokeOnly', providers.gradleProperty('authoringEditorSceneSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorCampaignSmokeOnly', providers.gradleProperty('authoringEditorCampaignSmokeOnly').orElse('false').get()

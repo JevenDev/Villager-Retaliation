@@ -49,7 +49,7 @@ final class EditorResourceView {
                     items.add(item(path + "/" + i, "Entry " + (i + 1), value.getAsJsonArray().get(i)));
                 else for (var field : value.getAsJsonObject().entrySet())
                     items.add(item(path + "/" + JsonPointers.escape(field.getKey()), field.getKey(), field.getValue()));
-                result.add(new Section(key, EditorContentBrowser.humanize(key), path, value, List.copyOf(items)));
+                result.add(new Section(key, key.equals("entries") && EditorSupportingResources.kind(document) == EditorResourceRecipes.Kind.TRADE ? "Trades" : EditorContentBrowser.humanize(key), path, value, List.copyOf(items)));
             }
         }
         result.add(new Section("settings", "File settings", "", snapshot, List.of(new Item("", "File settings", "", snapshot))));
@@ -74,7 +74,8 @@ final class EditorResourceView {
         if (path.contains("/dialogue_words/")) return "Word pool";
         if (path.contains("/dialogue/")) return "Dialogue resource";
         if (path.contains("/campaign_scenarios/")) return "Scenario";
-        return "Resource";
+        var kind = EditorSupportingResources.kind(document);
+        return kind == null ? "Resource" : kind.label;
     }
 
     private static Item item(String path, String fallback, JsonElement value) {
