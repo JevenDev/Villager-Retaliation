@@ -17,10 +17,13 @@ public final class MapObservationEvents {
         var level = player.serverLevel(); var pos = player.blockPosition();
         String id = "", name = "";
         // isVillage uses occupied POI distance data. Do not locate structures, generate chunks or send centers/rosters.
-        if (player.isAlive() && !player.isSpectator() && level.hasChunkAt(pos) && level.isVillage(pos)) {
+        if (player.isAlive() && !player.isSpectator() && level.hasChunkAt(pos)) {
             var registry = VillageAllegianceRegistrySavedData.get(level);
-            var village = registry.peekAt(level, pos).or(() -> registry.discoverAt(level, pos)).flatMap(registry::canonicalRecord).orElse(null);
-            if (village != null) { id = village.id().toString(); name = village.displayName(); }
+            var village = registry.peekAt(level, pos).or(() -> level.isVillage(pos) ? registry.discoverAt(level, pos) : java.util.Optional.empty()).flatMap(registry::canonicalRecord).orElse(null);
+            if (village != null && !village.archived()) {
+                id = village.id().toString(); name = village.displayName();
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyService.discover(player, village.id());
+            }
         }
         return new MapObservationPayload(MapWorldIdentity.get(level), level.dimension().location(), pos, id, name);
     }

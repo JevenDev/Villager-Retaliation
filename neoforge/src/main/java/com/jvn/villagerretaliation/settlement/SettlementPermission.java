@@ -6,5 +6,6 @@ public enum SettlementPermission {
     STAFF,
     LOGISTICS,
     TRADE,
-    TREASURY
+    TREASURY,
+    DIPLOMACY
 }

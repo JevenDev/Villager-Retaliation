@@ -170,7 +170,7 @@ public final class VillageDiplomacyGameTests {
         helper.assertFalse(loaded.diagnostics().isEmpty(), "rejection reported");
         helper.assertValueEqual(loaded.save(new CompoundTag(), provider).getList("RejectedEntries", Tag.TAG_COMPOUND).size(),
                 1, "rejected entry preserved");
-        root.putInt("FormatVersion", 2);
+        root.putInt("FormatVersion", 3);
         var future = VillageDiplomacySavedData.load(root, provider);
         helper.assertTrue(future.readOnly(), "future format is read-only");
         helper.assertFalse(future.set(pair, VillageRelation.NEUTRAL, 0, 0), "future mutation rejected");

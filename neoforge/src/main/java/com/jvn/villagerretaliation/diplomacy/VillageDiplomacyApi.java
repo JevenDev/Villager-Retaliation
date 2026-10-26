@@ -68,8 +68,16 @@ public final class VillageDiplomacyApi {
         if (pair.first().equals(pair.second())) {
             return ChangeResult.SAME_VILLAGE;
         }
-        return VillageDiplomacySavedData.get(level).set(pair, relation, duration, now)
-                ? ChangeResult.APPLIED : ChangeResult.READ_ONLY;
+        var data = VillageDiplomacySavedData.get(level);
+        if (!data.set(pair, relation, duration, now)) return ChangeResult.READ_ONLY;
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var a = registry.canonicalRecord(pair.first()).orElseThrow();
+        var b = registry.canonicalRecord(pair.second()).orElseThrow();
+        if (a.originDimension() != null && b.originDimension() != null) {
+            data.learn(a.id(), VillageDiplomacyService.contact(b, VillageContact.Origin.CORRESPONDENCE, now, true));
+            data.learn(b.id(), VillageDiplomacyService.contact(a, VillageContact.Origin.CORRESPONDENCE, now, true));
+        }
+        return ChangeResult.APPLIED;
     }
 
     private static VillageDiplomacySavedData.Pair pair(

@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "cadence_ticks": 1200,
+  "contact_range": 1024,
+  "shipment_range": 2048,
+  "friendly_threshold": 20,
+  "trusted_threshold": 60,
+  "standing_buffer": 5,
+  "aid_cooldown_ticks": 72000,
+  "aid_standing_limit": 3,
+  "letter_minimum_ticks": 200,
+  "letter_ticks_per_block": 2,
+  "shortage_duration_ticks": 24000,
+  "request_lifetime_ticks": 120000,
+  "active_journeys": 32,
+  "physical_couriers": 8,
+  "generation_interval_ticks": 100,
+  "route_chunk_limit": 4096,
+  "generation_limit": 256,
+  "maximum_tick_millis": 40
+}

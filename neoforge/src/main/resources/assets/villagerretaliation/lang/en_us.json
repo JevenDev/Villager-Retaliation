@@ -2746,6 +2746,7 @@
   "villagerretaliation.gui.settlement.permission.logistics": "Logistics",
   "villagerretaliation.gui.settlement.permission.trade": "Trade",
   "villagerretaliation.gui.settlement.permission.treasury": "Treasury",
+  "villagerretaliation.gui.settlement.permission.diplomacy": "Diplomacy",
   "villagerretaliation.gui.settlement.requirement.population": "More residents",
   "villagerretaliation.gui.settlement.requirement.housing": "Enough usable beds",
   "villagerretaliation.gui.settlement.requirement.food_stock": "Food reserve",
