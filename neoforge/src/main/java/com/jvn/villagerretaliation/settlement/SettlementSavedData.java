@@ -24,7 +24,7 @@ public final class SettlementSavedData extends SavedData {
     private net.minecraft.server.MinecraftServer bankServer;
     final Map<UUID,SettlementRecord> bankOwners=new java.util.HashMap<>();
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 75;
+    private static final int FORMAT_VERSION = 76;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     final SettlementAllocationService allocation = new SettlementAllocationService();
     final Map<UUID, UUID> policyRequests = new java.util.HashMap<>();

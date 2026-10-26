@@ -206,6 +206,7 @@ public final class SettlementWorkforceService {
     }
 
     public static boolean blocksPersonalRecruitment(ServerLevel level, Villager villager) {
+        if (SettlementCourierService.owns(villager)) return true;
         if (VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.CIVIC
                 || home(level, villager).map(town -> town.duties().containsKey(villager.getUUID())).orElse(false)) {
             return true;
@@ -299,7 +300,7 @@ public final class SettlementWorkforceService {
     }
 
     static boolean hasPersonalCommitment(Villager villager) {
-        return HiredVillagerContractService.hasActiveOrPendingContract(villager)
+        return SettlementCourierService.owns(villager) || HiredVillagerContractService.hasActiveOrPendingContract(villager)
                 || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED
                 || PartyVillagerContractService.hasPartyEntityReference(villager)
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager);

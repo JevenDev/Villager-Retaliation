@@ -11,23 +11,29 @@ public final class RouteTerrain {
     private final ChunkPos chunk;
     private final int[] heights;
     private final byte[] kinds;
+    private final int[] colors;
     private final long observed;
 
     public RouteTerrain(ChunkPos chunk, int[] heights, byte[] kinds, long observed) {
-        if (heights.length != 256 || kinds.length != 256 || observed < 0) throw new IllegalArgumentException("Invalid route terrain");
+        this(chunk, heights, kinds, new int[256], observed);
+    }
+    public RouteTerrain(ChunkPos chunk, int[] heights, byte[] kinds, int[] colors, long observed) {
+        if (heights.length != 256 || kinds.length != 256 || colors.length != 256 || observed < 0) throw new IllegalArgumentException("Invalid route terrain");
         for (int index = 0; index < 256; index++) {
-            if (heights[index] < -2048 || heights[index] > 2048 || kinds[index] < BLOCKED || kinds[index] > WATER)
+            if (heights[index] < -2048 || heights[index] > 2048 || kinds[index] < BLOCKED || kinds[index] > WATER || colors[index] < 0 || colors[index] > 0xffffff)
                 throw new IllegalArgumentException("Invalid route column");
         }
         this.chunk = chunk;
         this.heights = heights.clone();
         this.kinds = kinds.clone();
+        this.colors = colors.clone();
         this.observed = observed;
     }
 
     public ChunkPos chunk() { return this.chunk; }
     public long observed() { return this.observed; }
     public byte kind(int x, int z) { return this.kinds[index(x, z)]; }
+    public int color(int x, int z) { return this.colors[index(x, z)]; }
     public int height(int x, int z) { return this.heights[index(x, z)]; }
     public BlockPos position(int x, int z) { return new BlockPos(x, height(x, z), z); }
     public boolean passable() { for (byte kind : this.kinds) if (kind != BLOCKED) return true; return false; }
@@ -44,6 +50,7 @@ public final class RouteTerrain {
         tag.putLong("Chunk", this.chunk.toLong());
         tag.putIntArray("Heights", this.heights);
         tag.putByteArray("Kinds", this.kinds);
+        tag.putIntArray("Colors", this.colors);
         tag.putLong("Observed", this.observed);
         return tag;
     }
@@ -52,6 +59,6 @@ public final class RouteTerrain {
         if (!tag.contains("Chunk", Tag.TAG_LONG) || !tag.contains("Heights", Tag.TAG_INT_ARRAY)
                 || !tag.contains("Kinds", Tag.TAG_BYTE_ARRAY) || !tag.contains("Observed", Tag.TAG_LONG))
             throw new IllegalArgumentException("Missing route terrain fields");
-        return new RouteTerrain(new ChunkPos(tag.getLong("Chunk")), tag.getIntArray("Heights"), tag.getByteArray("Kinds"), tag.getLong("Observed"));
+        return new RouteTerrain(new ChunkPos(tag.getLong("Chunk")), tag.getIntArray("Heights"), tag.getByteArray("Kinds"), tag.contains("Colors") ? tag.getIntArray("Colors") : new int[256], tag.getLong("Observed"));
     }
 }

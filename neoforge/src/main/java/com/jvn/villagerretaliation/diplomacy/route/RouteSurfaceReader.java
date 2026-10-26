@@ -26,6 +26,7 @@ final class RouteSurfaceReader implements BlockGetter {
     private final BlockGetter source;
     private final int[] heights = new int[256];
     private final byte[] kinds = new byte[256];
+    private final int[] colors = new int[256];
     private final long observed;
     private int cursor;
 
@@ -45,6 +46,7 @@ final class RouteSurfaceReader implements BlockGetter {
         var state = getBlockState(at);
         int y = at.getY() + 1;
         this.heights[this.cursor] = y;
+        this.colors[this.cursor] = state.getMapColor(this, at).col;
         if (y + 1 < getMaxBuildHeight() && clear(at.above()) && clear(at.above(2)) && !hazard(state)) {
             if (state.getFluidState().is(FluidTags.WATER) && state.getFluidState().isSource()
                     && state.getCollisionShape(this, at).isEmpty()) this.kinds[this.cursor] = RouteTerrain.WATER;
@@ -56,7 +58,7 @@ final class RouteSurfaceReader implements BlockGetter {
 
     RouteTerrain result() {
         if (this.cursor != 256) throw new IllegalStateException("Incomplete terrain observation");
-        return new RouteTerrain(this.position, this.heights, this.kinds, this.observed);
+        return new RouteTerrain(this.position, this.heights, this.kinds, this.colors, this.observed);
     }
     private boolean clear(BlockPos position) {
         var state = getBlockState(position);

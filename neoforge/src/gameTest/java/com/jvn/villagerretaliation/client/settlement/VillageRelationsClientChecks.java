@@ -46,6 +46,7 @@ final class VillageRelationsClientChecks {
                     VillageDiplomacyApi.set(level, oakvale, hidden, VillageRelation.NEUTRAL);
                     VillageDiplomacyService.standingEvent(level, town, oakvale, UUID.randomUUID(), 1, 45, "agreement");
                     VillageDiplomacyService.standingEvent(level, town, stoneford, UUID.randomUUID(), 1, -35, "interference");
+                    com.jvn.villagerretaliation.settlement.SettlementCourierClientFixture.seed(level, town, oakvale);
                 });
                 if (!preparation.isDone()) return false;
                 preparation.join();
@@ -80,7 +81,10 @@ final class VillageRelationsClientChecks {
             }
             case 4 -> {
                 if (!(minecraft.screen instanceof ExploredMapScreen current) || ticks < 25) return false;
-                map = current; capture.accept("village-relations-map");
+                map = current;
+                if (ticks == 25) map.mouseClicked(map.width / 2.0 - 68 * 2.5, map.height / 2.0, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                if (ticks < 50) return false;
+                capture.accept("village-relations-map");
                 require(map.mouseClicked(map.width / 2.0, map.height / 2.0, GLFW.GLFW_MOUSE_BUTTON_RIGHT), "known marker opens context popup");
                 next();
             }

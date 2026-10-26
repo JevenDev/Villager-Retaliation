@@ -97,6 +97,9 @@ final class SettlementAidStock {
     }
 
     static int deliver(ServerLevel level, SettlementRecord recipient, SettlementFoodRequest request) {
+        return deliver(level, recipient, request, null);
+    }
+    static int deliver(ServerLevel level, SettlementRecord recipient, SettlementFoodRequest request, UUID depot) {
         var data = SettlementSavedData.get(level); var aid = data.aid();
         if (!level.getServer().isSameThread() || data.readOnly() || !aid.writable() || aid.request(request.id()) != request
                 || data.get(request.requester()).orElse(null) != recipient || request.terminal()
@@ -105,7 +108,7 @@ final class SettlementAidStock {
         var remaining = new ArrayList<SettlementFoodOffer.Parcel>(); int delivered = 0;
         long nutrition = 0;
         for (var parcel : request.offer.remaining()) {
-            var item = parcel.item(); var rest = deposit(level, recipient, item, null);
+            var item = parcel.item(); var rest = depot == null ? deposit(level, recipient, item, null) : depositAt(level, recipient, item, depot);
             int count = item.getCount() - rest.getCount(); delivered += count;
             nutrition += (long) count * item.get(DataComponents.FOOD).nutrition();
             if (!rest.isEmpty()) remaining.add(new SettlementFoodOffer.Parcel(parcel.depot(), rest));
@@ -136,6 +139,16 @@ final class SettlementAidStock {
         return remaining.isEmpty();
     }
 
+    static ItemStack depositAt(ServerLevel level, SettlementRecord town, ItemStack item, UUID id) {
+        var depot = town.depots().get(id);
+        if (depot == null || !depots(town, true).contains(depot) || !depot.rulesObserved()
+                || SettlementSupplyStock.contents(level, town, depot.position()) == null) return item.copy();
+        int count = Math.min(item.getCount(), SettlementLogisticsService.framedAllowance(level, depot, item,
+                VillagerFilterPolicy.TransferOperation.RECEIVE, true));
+        if (count <= 0) return item.copy();
+        var rest = depot.deposit(item.copyWithCount(count));
+        return item.copyWithCount(item.getCount() - count + rest.getCount());
+    }
     private static ItemStack deposit(ServerLevel level, SettlementRecord town, ItemStack item, UUID preferred) {
         var remaining = item.copy();
         var depots = new ArrayList<>(depots(town, true));

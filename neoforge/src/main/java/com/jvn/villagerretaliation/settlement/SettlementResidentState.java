@@ -44,6 +44,9 @@ public final class SettlementResidentState {
     private boolean downed;
     private boolean personalCommitment;
     private boolean familyUnsafe;
+    private UUID courierJourney;
+    private long courierIncarnation;
+    private boolean courierAway;
     private CompoundTag entityContext = new CompoundTag();
     private SettlementFamilyInventory familyInventory;
     private SettlementWalletState wallet;
@@ -96,12 +99,21 @@ public final class SettlementResidentState {
     }
 
     public boolean canDepart() {
-        return this.present && !this.downed && !this.personalCommitment;
+        return this.present && !this.downed && !this.personalCommitment && !this.courierAway;
     }
 
     boolean safeForFamily() {
-        return this.present && !this.downed && !this.familyUnsafe
+        return this.present && !this.downed && !this.familyUnsafe && !this.courierAway
                 && (!this.personalCommitment || com.jvn.villagerretaliation.social.VillagerBreedingPolicy.naturalFamiliesEnabled());
+    }
+
+    UUID courierJourney() { return this.courierJourney; }
+    long courierIncarnation() { return this.courierIncarnation; }
+    boolean courierAway() { return this.courierAway; }
+    void courier(UUID journey, long incarnation, boolean away) {
+        if (journey == null || incarnation < 1 || incarnation < this.courierIncarnation)
+            throw new IllegalArgumentException("Invalid resident courier ownership");
+        this.courierJourney = journey; this.courierIncarnation = incarnation; this.courierAway = away;
     }
 
     boolean eligibleDiplomaticCourier() {
@@ -386,6 +398,10 @@ public final class SettlementResidentState {
         tag.putBoolean("Downed", this.downed);
         tag.putBoolean("PersonalCommitment", this.personalCommitment);
         tag.putBoolean("FamilyUnsafe", this.familyUnsafe);
+        if (this.courierJourney != null) {
+            tag.putUUID("CourierJourney", this.courierJourney); tag.putLong("CourierIncarnation", this.courierIncarnation);
+            tag.putBoolean("CourierAway", this.courierAway);
+        }
         if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
         if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
         if (this.wallet != null) tag.put("Wallet", this.wallet.save());
@@ -416,6 +432,11 @@ public final class SettlementResidentState {
         state.personalCommitment = tag.getBoolean("PersonalCommitment");
         state.familyUnsafe = tag.getBoolean("FamilyUnsafe");
         state.entityContext = tag.getCompound("EntityContext").copy();
+        if (tag.contains("CourierJourney")) {
+            if (!tag.hasUUID("CourierJourney") || !tag.contains("CourierIncarnation", net.minecraft.nbt.Tag.TAG_LONG)
+                    || !tag.contains("CourierAway", net.minecraft.nbt.Tag.TAG_BYTE)) throw new IllegalArgumentException("Invalid resident courier state");
+            state.courier(tag.getUUID("CourierJourney"), tag.getLong("CourierIncarnation"), tag.getBoolean("CourierAway"));
+        }
         if (tag.contains("FamilyInventory")) state.familyInventory = SettlementFamilyInventory.load(tag.getCompound("FamilyInventory"), state.id);
         if (tag.contains("Wallet")) state.wallet = SettlementWalletState.load(tag.getCompound("Wallet"), state.id, state.entityContext);
         if (tag.contains("MendingEquipment")) state.mendingEquipment = SettlementMendingEquipment.load(tag.getCompound("MendingEquipment"));

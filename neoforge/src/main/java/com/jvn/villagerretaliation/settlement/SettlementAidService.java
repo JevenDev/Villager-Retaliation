@@ -112,9 +112,15 @@ public final class SettlementAidService {
     public static Result retry(ServerPlayer player, UUID id, long expected) {
         var data = SettlementSavedData.get(player.serverLevel()); var request = data.aid().request(id);
         var town = request == null ? null : data.get(request.donor()).orElse(null);
-        if (!VillageDiplomacyService.represents(player, town)) return Result.FORBIDDEN;
+        boolean authority = VillageDiplomacyService.represents(player, town)
+                || request != null && request.journey != null && VillageDiplomacyService.represents(player, data.get(request.requester()).orElse(null));
+        if (!authority) return Result.FORBIDDEN;
         if (!enabled(player.serverLevel())) return Result.SUSPENDED;
         if (request.revision() != expected) return Result.STALE;
+        if (request.journey != null) {
+            var journeyLevel = player.server.getLevel(ResourceKey.create(Registries.DIMENSION, request.journey.dimension));
+            return journeyLevel != null && SettlementCourierService.retry(journeyLevel, request) ? Result.APPLIED : Result.UNAVAILABLE;
+        }
         if (request.state() != SettlementFoodRequest.State.OFFER_PREPARING || request.preparation == null) return Result.UNAVAILABLE;
         var level = dimension(player.server, town); if (level == null) return Result.UNAVAILABLE;
         boolean retried = DiplomaticRouteService.retry(level, request.preparation.crossing);
@@ -198,7 +204,8 @@ public final class SettlementAidService {
                 .min(Comparator.comparingDouble(resident -> resident.position().distSqr(depot))).orElse(null);
     }
     static boolean eligible(ServerLevel level, SettlementRecord town, SettlementResidentState resident, UUID request) {
-        if (resident == null || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
+        if (resident == null || !SettlementSavedData.get(level).aid().courierAvailable(resident.id())
+                || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
                 .map(record -> record.residents().containsKey(resident.id())).orElse(false) || !resident.eligibleDiplomaticCourier() || town.leader().equals(resident.id())
                 || town.autonomous() != null && resident.id().equals(town.autonomous().ruler()) || town.duties().containsKey(resident.id())
                 || town.workerPoolFor(resident.id()) != null || town.workers().containsKey(resident.id()) || town.activeProject(resident.id()) != null
@@ -209,8 +216,8 @@ public final class SettlementAidService {
             if (other.preparation != null && (other.preparation.delivery != null && other.preparation.delivery.resident.equals(resident.id())
                     || other.preparation.collection != null && other.preparation.collection.resident.equals(resident.id()))) return false;
         }
-        var live = level.getEntity(resident.id());
-        return live == null || live instanceof Villager villager
+        var live = SettlementCourierService.existing(level.getServer(), resident.id());
+        return live == null || live instanceof Villager villager && villager.level() == level
                 && com.jvn.villagerretaliation.allegiance.VillageAllegianceApi.canonicalPrimary(level, villager).filter(town.id()::equals).isPresent()
                 && villager.isAlive() && !villager.isBaby() && !villager.isPassenger()
                 && villager.getTradingPlayer() == null && villager.getTarget() == null && villager.getLastHurtByMob() == null
@@ -324,6 +331,7 @@ public final class SettlementAidService {
                     transition(data, request, SettlementFoodRequest.State.OFFER_PREPARING, "");
                 }
                 case OFFER_PREPARING -> prepare(level, donor, recipient, request);
+                case PREPARING -> SettlementCourierService.begin(level, request, now);
                 case OFFER_SENT -> {
                     if (now >= request.arrives() && SettlementAidCheckpoint.durable(level, request.revision())
                             && VillageDiplomacyService.receiveCorrespondence(level, donor.id(), recipient.id()))
@@ -459,10 +467,17 @@ public final class SettlementAidService {
     }
     static void receipt(ServerLevel level) {
         var data = SettlementSavedData.get(level); var aid = data.aid();
-        if (aid.receipts.isEmpty() || !SettlementAidCheckpoint.durable(level, aid.revision())) return;
-        var receipt = aid.receipts.firstEntry().getValue(); var registry = VillageAllegianceRegistrySavedData.get(level);
-        var donor = registry.canonicalRecord(receipt.donor()).orElse(null); var recipient = registry.canonicalRecord(receipt.recipient()).orElse(null);
-        if (donor == null || recipient == null || donor.archived() || recipient.archived() || donor.id().equals(recipient.id())) return;
+        if (aid.receipts.isEmpty()) return;
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        SettlementAidLedger.Receipt receipt = null;
+        for (var candidate : aid.receipts.values()) {
+            var donorRecord = registry.canonicalRecord(candidate.donor()).orElse(null);
+            var recipientRecord = registry.canonicalRecord(candidate.recipient()).orElse(null);
+            if (donorRecord != null && recipientRecord != null && !donorRecord.archived() && !recipientRecord.archived()
+                    && !donorRecord.id().equals(recipientRecord.id())) { receipt = candidate; break; }
+        }
+        if (receipt == null || !SettlementAidCheckpoint.durable(level, receipt.revision())) return;
+        var donor = registry.canonicalRecord(receipt.donor()).orElseThrow(); var recipient = registry.canonicalRecord(receipt.recipient()).orElseThrow();
         var diplomacy = VillageDiplomacySavedData.get(level);
         if (!diplomacy.received(donor.id(), recipient.id(), aid.stream(), receipt.sequence())
                 && !VillageDiplomacyService.standingEvent(level, donor.id(), recipient.id(), aid.stream(), receipt.sequence(), receipt.standing(), "food_aid")) return;

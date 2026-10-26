@@ -26,6 +26,7 @@ public final class SettlementFoodRequest {
     boolean automaticApproval;
     int maximumItems;
     SettlementAidPreparation preparation;
+    SettlementCourierJourney journey;
 
     SettlementFoodRequest(UUID id, VillageAllegianceId requester, VillageAllegianceId donor, long nutrition,
                           long created, long arrives, long expires, UUID authority) {
@@ -48,12 +49,13 @@ public final class SettlementFoodRequest {
     public State state() { return this.state; }
     public String blocker() { return this.blocker; }
     public SettlementFoodOffer offer() { return this.offer; }
+    public SettlementCourierJourney journey() { return this.journey; }
     public long deliveredNutrition() { return this.deliveredNutrition; }
     public boolean terminal() {
         return this.state == State.COMPLETED || this.state == State.DECLINED || this.state == State.CANCELLED || this.state == State.EXPIRED;
     }
     public long incomingNutrition() {
-        if (terminal()) return 0;
+        if (terminal() || this.journey != null && this.journey.presence == SettlementCourierJourney.Presence.DEAD || this.offer != null && this.offer.custody() == SettlementFoodOffer.Custody.RECOVERABLE) return 0;
         return this.offer == null ? this.nutrition : Math.max(0, this.offer.nutrition() - this.deliveredNutrition);
     }
     CompoundTag save(HolderLookup.Provider provider) {
@@ -68,6 +70,7 @@ public final class SettlementFoodRequest {
         tag.putInt("MaximumItems", this.maximumItems); tag.putBoolean("AutomaticApproval", this.automaticApproval);
         if (this.preparation != null) tag.put("Preparation", this.preparation.save());
         if (this.offer != null) tag.put("Offer", this.offer.save(provider));
+        if (this.journey != null) tag.put("Journey", this.journey.save(provider));
         return tag;
     }
     static SettlementFoodRequest load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -96,6 +99,14 @@ public final class SettlementFoodRequest {
         }
         if (tag.contains("Preparation")) result.preparation = SettlementAidPreparation.load(tag.getCompound("Preparation"));
         if (tag.contains("Offer")) result.offer = SettlementFoodOffer.load(tag.getCompound("Offer"), provider);
+        if (tag.contains("Journey")) {
+            result.journey = SettlementCourierJourney.load(tag.getCompound("Journey"), provider);
+            var journey = result.journey;
+            if (result.offer == null || result.preparation == null || !result.id.equals(journey.id())
+                    || !result.offer.courier().equals(journey.resident()) || journey.revision > result.revision
+                    || !journey.home().equals(result.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY ? result.donor : result.requester))
+                throw new IllegalArgumentException("Courier journey does not match its food request");
+        }
         if (result.revision < 0 || result.blocker.length() > 80 || result.deliveredNutrition < 0 || result.deliveredNutrition > result.nutrition
                 || result.creditedStanding < 0 || result.creditedStanding > 3
                 || result.offer != null && result.offer.nutrition() > result.nutrition
@@ -106,6 +117,7 @@ public final class SettlementFoodRequest {
                 .mapToLong(parcel -> SettlementAidStock.nutrition(parcel.item())).sum() > result.offer.nutrition()
                 || result.creditedStanding > (result.deliveredNutrition * 3 + result.nutrition - 1) / result.nutrition))
             throw new IllegalArgumentException("Aid credit exceeds delivered food");
+        if (result.journey != null) SettlementCourierRecovery.validate(result);
         if (result.terminal() && result.offer != null && !result.offer.empty()
                 || result.state == State.COMPLETED && result.deliveredNutrition != result.offer.nutrition())
             throw new IllegalArgumentException("Finished aid request has unresolved cargo");

@@ -40,7 +40,7 @@ public final class SettlementCareService {
     private static void updateResident(ServerLevel level, SettlementRecord town, java.util.UUID id, long now, boolean housingShortage) {
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var member = registry.canonicalRecord(town.id()).map(record -> record.residents().get(id)).orElse(null);
-        if (member == null) return;
+        if (member == null || town.residents().get(id) != null && town.residents().get(id).courierAway()) return;
         Villager resident = findResident(level.getServer(), id);
         SettlementResidentState state = town.residents().get(id);
         if (resident != null && resident.isAlive() && resident.level() instanceof ServerLevel residentLevel
@@ -66,6 +66,7 @@ public final class SettlementCareService {
     }
 
     public static void onActive(Villager villager) {
+        if (SettlementCourierService.owns(villager)) return;
         if (!(villager.level() instanceof ServerLevel level) || !villager.isAlive()) {
             return;
         }
@@ -82,6 +83,7 @@ public final class SettlementCareService {
     }
 
     public static void onUnloaded(Villager villager) {
+        if (SettlementCourierService.owns(villager) && villager.getRemovalReason() != Entity.RemovalReason.KILLED) return;
         if (!(villager.level() instanceof ServerLevel level)) {
             return;
         }

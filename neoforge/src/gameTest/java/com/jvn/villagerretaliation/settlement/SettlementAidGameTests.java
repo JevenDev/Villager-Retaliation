@@ -350,8 +350,8 @@ public final class SettlementAidGameTests {
         helper.succeed();
     }
 
-    private record Fixture(SettlementRecord town, SettlementDepot depot) { }
-    private static Fixture fixture(GameTestHelper helper, int offset) {
+    record Fixture(SettlementRecord town, SettlementDepot depot) { }
+    static Fixture fixture(GameTestHelper helper, int offset) {
         var level = helper.getLevel(); var origin = helper.absolutePos(BlockPos.ZERO);
         var center = new BlockPos(22000000 + origin.getX() * 8 + offset, 64, 22000000 + origin.getZ() * 8);
         var registry = VillageAllegianceRegistrySavedData.get(level);

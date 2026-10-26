@@ -130,7 +130,8 @@ public final class SettlementAidScreen extends VillagerWindowScreen {
         actions[1].active = enabled && !donor && state == SettlementFoodRequest.State.AWAITING_ACCEPTANCE;
         actions[2].active = enabled && (donor && (state == SettlementFoodRequest.State.AWAITING_OFFER || state == SettlementFoodRequest.State.OFFER_PREPARING)
                 || !donor && state == SettlementFoodRequest.State.AWAITING_ACCEPTANCE);
-        actions[3].active = enabled && donor && state == SettlementFoodRequest.State.OFFER_PREPARING && !selected.blocker().isEmpty();
+        actions[3].active = enabled && selected != null && !selected.blocker().isEmpty()
+                && (donor && state == SettlementFoodRequest.State.OFFER_PREPARING || state == SettlementFoodRequest.State.TRAVELLING || state == SettlementFoodRequest.State.RETURNING);
         actions[4].active = enabled && selected != null && switch (selected.state()) {
             case REQUEST_SENT, AWAITING_OFFER, OFFER_PREPARING, OFFER_SENT, AWAITING_ACCEPTANCE, ACCEPTANCE_SENT, PREPARING -> true;
             default -> false;

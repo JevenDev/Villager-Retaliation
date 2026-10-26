@@ -75,6 +75,7 @@ public final class VillagerBehaviorSuppressionPolicy {
      * ordinary schedules, and rest for non-guards remain available to the arbiter.
      */
     public static boolean shouldSuppressVanillaBrainTick(ServerLevel level, Villager villager) {
+        if (com.jvn.villagerretaliation.settlement.SettlementCourierService.controls(villager)) return true;
         ControlState state = state(villager);
         if (state == ControlState.DOWNED || state == ControlState.PARTIED) {
             return true;

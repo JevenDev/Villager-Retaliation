@@ -19,6 +19,7 @@ public final class VillageScopeMigrationService {
         if (level == null || source == null || target == null) {
             return;
         }
+        com.jvn.villagerretaliation.diplomacy.route.DiplomaticTravelMapData.get(level).merge(source.id(), target.id());
         String sourceKey = VillageScopeKeys.forPosition(
                 source.originDimension(), source.originPosition());
         String targetKey = VillageScopeKeys.forPosition(

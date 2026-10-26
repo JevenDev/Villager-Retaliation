@@ -13,7 +13,7 @@ final class SettlementAidPreparation {
 
     static final class Candidate {
         final UUID resident;
-        final BlockPos origin;
+        BlockPos origin;
         UUID approach;
         BlockPos access;
         String blocker = "";

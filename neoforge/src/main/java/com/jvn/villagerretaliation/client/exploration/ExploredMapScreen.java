@@ -22,6 +22,7 @@ public final class ExploredMapScreen extends Screen {
         relations.focus(perspective, village);
     }
     public void acceptRelations(com.jvn.villagerretaliation.network.VillageRelationsPayload payload) { relations.accept(payload); }
+    public void acceptCouriers(com.jvn.villagerretaliation.network.SettlementCourierMapPayload payload) { relations.acceptCouriers(payload); }
     @Override public void tick() { relations.tick(); }
     @Override public void onClose() { minecraft.setScreen(parent); }
     static void resetTiles() { TILES.close(); }
@@ -49,6 +50,7 @@ public final class ExploredMapScreen extends Screen {
             var view = view();
             TILES.render(graphics, view, lighting);
             graphics.enableScissor(0, 0, width, height);
+            relations.renderTerrain(graphics, view);
             for (var marker : TILES.markers()) {
                 if (relations.contains(marker.id())) continue;
                 int x = (int)view.screenX(marker.x()), y = (int)view.screenY(marker.z());

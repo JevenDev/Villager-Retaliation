@@ -12,6 +12,10 @@ public final class SettlementSimulationHandoff {
     }
 
     public static void stopTicking(Entity entity) {
+        if (entity instanceof Villager courier && SettlementCourierService.owns(courier)) {
+            SettlementCourierService.unloading(courier);
+            return;
+        }
         if (entity instanceof net.minecraft.world.entity.projectile.Projectile projectile) {
             SettlementProjectileService.onUnloaded(projectile);
         }

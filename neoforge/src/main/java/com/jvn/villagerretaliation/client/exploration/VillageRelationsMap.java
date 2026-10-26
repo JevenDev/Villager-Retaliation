@@ -21,6 +21,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 final class VillageRelationsMap {
     private final ExploredMapScreen screen;
+    private final SettlementCourierMap couriers = new SettlementCourierMap();
     private final Map<UUID, Entry> entries = new LinkedHashMap<>();
     private UUID perspective, selected;
     private Entry origin;
@@ -36,7 +37,11 @@ final class VillageRelationsMap {
     void refresh() { page = 0; nextRequest = 0; requestId = 0; entries.clear(); origin = null; }
     boolean contains(String id) { return enabled && entries.keySet().stream().anyMatch(key -> key.toString().equals(id)); }
 
+    void acceptCouriers(com.jvn.villagerretaliation.network.SettlementCourierMapPayload payload) { couriers.accept(payload); }
+    void renderTerrain(GuiGraphics graphics, MapView view) { couriers.renderTerrain(graphics, view); }
     void tick() {
+        couriers.configure(enabled, perspective, origin != null ? origin.id() : selected != null ? selected : perspective);
+        couriers.tick();
         if (!enabled || Minecraft.getInstance().player == null || Util.getMillis() < nextRequest) return;
         requestId = VillageRelationsClient.nextRequest();
         PacketDistributor.sendToServer(new VillageRelationsRequestPayload(perspective, selected, null, null,
@@ -75,6 +80,7 @@ final class VillageRelationsMap {
             if (entry.relationKnown()) graphics.drawString(font, (entry.standing() > 0 ? "+" : entry.standing() < 0 ? "-" : "=")
                     + " " + Math.abs(entry.standing()), x + 10, y - 4, color(entry.standing()));
         }
+        couriers.render(graphics, view, font);
         if (origin != null) graphics.drawCenteredString(font, VillageRelationsScreen.text("map_origin", origin.name()), view.width() / 2, 28, 0xffffff);
     }
 
@@ -88,6 +94,7 @@ final class VillageRelationsMap {
 
     boolean click(Font font, MapView view, List<MapSnapshot.Marker> terrain, double x, double y, int button) {
         if (popup != null) { if (popup.click(x, y, button)) return true; popup = null; }
+        if (couriers.click(view, x, y, button)) return true;
         var level = Minecraft.getInstance().level;
         if (level == null || button != 1 && (button != 0 || !enabled)) return false;
         UUID id = null; String name = "";
@@ -118,7 +125,7 @@ final class VillageRelationsMap {
 
     private static int color(int score) { return score < 0 ? 0xffd28473 : score > 0 ? 0xff8dbe95 : 0xffc9c5b8; }
 
-    private static void line(GuiGraphics graphics, MapView view, double x, double y, double endX, double endY, int color) {
+    static void line(GuiGraphics graphics, MapView view, double x, double y, double endX, double endY, int color) {
         double dx = endX - x, dy = endY - y, lower = 0, upper = 1;
         double[] p = {-dx, dx, -dy, dy}, q = {x, view.width() - x, y, view.height() - y};
         for (int i = 0; i < 4; i++) {

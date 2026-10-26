@@ -26,6 +26,9 @@ public final class RouteSavedData extends SavedData {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(RouteSavedData::new, RouteSavedData::load, DataFixTypes.LEVEL), "villagerretaliation_diplomatic_routes");
     }
+    public RouteTerrain observation(ResourceLocation dimension, int x, int z) {
+        return this.terrain.get(new Key(dimension, net.minecraft.world.level.ChunkPos.asLong(x >> 4, z >> 4)));
+    }
     public boolean readOnly() { return this.preserved != null || this.revision == Long.MAX_VALUE; }
     public RoutePreparation get(UUID id) { return this.jobs.get(id); }
     public List<RoutePreparation> preparations() { return List.copyOf(this.jobs.values()); }

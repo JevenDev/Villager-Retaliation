@@ -52,7 +52,7 @@ public record DiplomaticRoute(List<Step> steps) {
         }
         return new DiplomaticRoute(reversed);
     }
-    CompoundTag save() {
+    public CompoundTag save() {
         var tag = new CompoundTag();
         var list = new ListTag();
         this.steps.forEach(step -> {
@@ -64,7 +64,7 @@ public record DiplomaticRoute(List<Step> steps) {
         tag.put("Steps", list);
         return tag;
     }
-    static DiplomaticRoute load(CompoundTag tag) {
+    public static DiplomaticRoute load(CompoundTag tag) {
         var raw = tag.getList("Steps", Tag.TAG_COMPOUND);
         if (!raw.equals(tag.get("Steps")) || raw.size() > 65536) throw new IllegalArgumentException("Invalid route steps");
         var steps = new ArrayList<Step>();
