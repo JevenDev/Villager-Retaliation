@@ -14,7 +14,7 @@ public final class VillageDiplomacyRules {
     private static Rules cached;
     private static String problem = "";
     public static final Rules DEFAULT = new Rules(true, 1200, 1024, 2048, 20, 60, 5, 72000, 3, 200, 2,
-            24000, 120000, 32, 8, 100, 4096, 256, 40);
+            24000, 120000, 32, 8, 100, 4096, 1024, 40, 16, 4, 262144, 3);
 
     private VillageDiplomacyRules() { }
 
@@ -22,7 +22,8 @@ public final class VillageDiplomacyRules {
                         int friendlyThreshold, int trustedThreshold, int standingBuffer,
                         int aidCooldown, int aidStandingLimit, int letterMinimum, int letterTicksPerBlock,
                         int shortageDuration, int requestLifetime, int activeJourneys, int physicalCouriers,
-                        int generationInterval, int routeChunkLimit, int generationLimit, int maximumTickMillis) { }
+                        int generationInterval, int routeChunkLimit, int generationLimit, int maximumTickMillis,
+                        int routeDetourChunks, int routeDetourMultiplier, int routeNodeLimit, int routeRetries) { }
 
     public static Rules get(MinecraftServer server) {
         if (resources == server.getResourceManager() && cached != null) return cached;
@@ -51,12 +52,18 @@ public final class VillageDiplomacyRules {
                 value(json, "letter_ticks_per_block", 1, 100), value(json, "shortage_duration_ticks", 1200, 240000),
                 value(json, "request_lifetime_ticks", 24000, 2400000), value(json, "active_journeys", 1, 128),
                 value(json, "physical_couriers", 1, 32), value(json, "generation_interval_ticks", 100, 24000),
-                value(json, "route_chunk_limit", 64, 16384), value(json, "generation_limit", 0, 1024),
-                value(json, "maximum_tick_millis", 10, 45));
+                value(json, "route_chunk_limit", 64, 16384), value(json, "generation_limit", 0, 16384),
+                value(json, "maximum_tick_millis", 10, 45), optional(json, "route_detour_chunks", 1, 64, 16),
+                optional(json, "route_detour_multiplier", 1, 16, 4), optional(json, "route_node_limit", 1024, 1048576, 262144),
+                optional(json, "route_retries", 0, 32, 3));
         if (rules.trustedThreshold() <= rules.friendlyThreshold() + rules.standingBuffer()
                 || rules.standingBuffer() >= rules.friendlyThreshold()
                 || rules.physicalCouriers() > rules.activeJourneys()) throw new IllegalArgumentException("Conflicting diplomacy limits");
         return rules;
+    }
+
+    private static int optional(JsonObject json, String name, int minimum, int maximum, int fallback) {
+        return json.has(name) ? value(json, name, minimum, maximum) : fallback;
     }
 
     private static int value(JsonObject json, String name, int minimum, int maximum) {

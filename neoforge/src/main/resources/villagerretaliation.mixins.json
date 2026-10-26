@@ -30,6 +30,8 @@
     "IOWorkerAccessor",
     "SettlementTrackedEntityMixin",
     "ChunkGenerationCompletionMixin",
+    "DiplomaticRouteTerrainMixin",
+    "DiplomaticRouteGenerationMixin",
     "ChunkGenerationSaveMixin",
     "AttributeMapMixin",
     "BannerHelmetContainerMenuMixin",

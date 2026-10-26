@@ -16,6 +16,10 @@
   "physical_couriers": 8,
   "generation_interval_ticks": 100,
   "route_chunk_limit": 4096,
-  "generation_limit": 256,
-  "maximum_tick_millis": 40
+  "generation_limit": 1024,
+  "maximum_tick_millis": 40,
+  "route_detour_chunks": 16,
+  "route_detour_multiplier": 4,
+  "route_node_limit": 262144,
+  "route_retries": 3
 }
