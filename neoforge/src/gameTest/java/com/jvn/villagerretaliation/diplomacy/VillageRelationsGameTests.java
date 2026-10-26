@@ -66,6 +66,10 @@ public final class VillageRelationsGameTests {
         data.adjust(pair, source, 3, -10, "test", 3, VillageDiplomacyRules.DEFAULT);
         helper.assertValueEqual(data.band(pair.first(), pair.second()), VillageStanding.Band.NEUTRAL, "meaningful reversal changes label");
         helper.assertValueEqual(data.query(pair, 3).relation(), VillageRelation.NEUTRAL, "no implicit combat change");
+        data.adjust(pair, source, 4, -29, "test", 4, VillageDiplomacyRules.DEFAULT);
+        helper.assertValueEqual(data.band(pair.first(), pair.second()), VillageStanding.Band.UNFRIENDLY, "negative threshold is inclusive");
+        data.adjust(pair, source, 5, 1, "test", 5, VillageDiplomacyRules.DEFAULT);
+        helper.assertValueEqual(data.band(pair.first(), pair.second()), VillageStanding.Band.UNFRIENDLY, "negative label has a buffer too");
         helper.succeed();
     }
 
@@ -218,6 +222,51 @@ public final class VillageRelationsGameTests {
         helper.assertFalse(restored.adjust(VillageDiplomacySavedData.Pair.of(b, c), first, 1, 3, "food_aid", 72000,
                 VillageDiplomacyRules.DEFAULT), "merged-away village receipt still rejects replay");
         helper.assertValueEqual(restored.history(b, c).size(), 2, "both histories retained");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void wirePagesContainOnlyVisibleRelationsAndBoundedEntries(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var player = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "RelationsWire"));
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var data = VillageDiplomacySavedData.get(level);
+        var origin = registry.create(0, level.dimension().location(), BlockPos.ZERO, "");
+        var hidden = registry.create(0, level.dimension().location(), BlockPos.ZERO, "");
+        data.learn(player.getUUID(), contact(helper, origin, 0));
+        data.learn(origin, contact(helper, hidden, 0));
+        var ids = new java.util.ArrayList<VillageAllegianceId>();
+        for (int index = 0; index < 31; index++) {
+            var id = registry.create(0, level.dimension().location(), new BlockPos(index * 64, 64, 0), "");
+            registry.rename(id, String.format(java.util.Locale.ROOT, "Village %02d", index));
+            data.learn(player.getUUID(), contact(helper, id, 0));
+            data.learn(origin, contact(helper, id, 0));
+            ids.add(id);
+        }
+        var request = new com.jvn.villagerretaliation.network.VillageRelationsRequestPayload(null, origin.value(), null, null,
+                com.jvn.villagerretaliation.network.VillageRelationsRequestPayload.Action.VIEW,
+                com.jvn.villagerretaliation.network.VillageRelationsRequestPayload.View.CONTACTS, 0, "", 0, 71);
+        var page = VillageRelationsService.snapshot(player, request, VillageDiplomacyService.Result.APPLIED);
+        helper.assertValueEqual(page.total(), 31, "hidden contact never contributes to pagination");
+        helper.assertValueEqual(page.entries().size(), 24, "wire page is bounded");
+        helper.assertTrue(page.entries().stream().noneMatch(entry -> entry.id().equals(hidden.value())), "hidden identity excluded");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.VillageRelationsPayload.STREAM_CODEC.encode(buffer, page);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.VillageRelationsPayload.STREAM_CODEC.decode(buffer), page,
+                    "filtered response survives wire encoding");
+            buffer.clear();
+            com.jvn.villagerretaliation.network.VillageRelationsRequestPayload.STREAM_CODEC.encode(buffer, request);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.VillageRelationsRequestPayload.STREAM_CODEC.decode(buffer), request,
+                    "request survives wire encoding");
+        } finally { buffer.release(); }
+        var unknown = new com.jvn.villagerretaliation.network.VillageRelationsRequestPayload(null, hidden.value(), null, null,
+                request.action(), request.view(), 0, "", 0, 72);
+        var refused = VillageRelationsService.snapshot(player, unknown, VillageDiplomacyService.Result.APPLIED);
+        helper.assertTrue(refused.origin() == null && refused.total() == 0 && refused.entries().isEmpty(),
+                "forged unknown selection reveals neither name nor counts");
+        registry.removeVillage(origin); registry.removeVillage(hidden);
+        ids.forEach(registry::removeVillage);
         helper.succeed();
     }
 

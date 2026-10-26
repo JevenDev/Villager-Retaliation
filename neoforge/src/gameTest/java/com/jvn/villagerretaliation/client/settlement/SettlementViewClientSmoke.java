@@ -66,6 +66,7 @@ public final class SettlementViewClientSmoke {
     private static CompletableFuture<Void> appearanceReload;
     private static CompletableFuture<Void> navigationCheck;
     private static Fixture fixture;
+    private static VillageRelationsClientChecks relationsChecks;
     private static SettlementPolicyClientChecks policyChecks;
     private static SettlementPurchaseClientChecks purchaseChecks;
     private static SettlementEquipmentClientChecks equipmentChecks;
@@ -158,7 +159,13 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 1 && preparation.isDone()) {
             fixture = preparation.join();
             phase = 2;
-        } else if (phase == 2 && minecraft.screen instanceof SettlementManagementScreen screen) {
+        } else if (phase == 2) {
+            if (relationsChecks == null) {
+                if (!(minecraft.screen instanceof SettlementManagementScreen screen)) return;
+                relationsChecks = new VillageRelationsClientChecks(fixture.town(), screen, SettlementViewClientSmoke::capture);
+            }
+            if (!relationsChecks.tick(minecraft)) return;
+            var screen = (SettlementManagementScreen) minecraft.screen;
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             ticks = 0;
             phase = 60;

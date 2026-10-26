@@ -8,6 +8,7 @@ public record VillageAllegianceView(
         HomeStatus homeStatus,
         boolean inVillage,
         boolean atHome,
+        boolean ruler,
         String prompt,
         String askHomeLabel,
         String askCurrentVillageLabel,
@@ -20,6 +21,7 @@ public record VillageAllegianceView(
             "Unknown",
             "Outside a tracked village",
             HomeStatus.UNKNOWN,
+            false,
             false,
             false,
             "",
@@ -36,6 +38,7 @@ public record VillageAllegianceView(
         buffer.writeEnum(safe.homeStatus());
         buffer.writeBoolean(safe.inVillage());
         buffer.writeBoolean(safe.atHome());
+        buffer.writeBoolean(safe.ruler());
         buffer.writeUtf(safe.prompt(), DIALOGUE_TEXT_LIMIT);
         buffer.writeUtf(safe.askHomeLabel(), DIALOGUE_TEXT_LIMIT);
         buffer.writeUtf(safe.askCurrentVillageLabel(), DIALOGUE_TEXT_LIMIT);
@@ -49,6 +52,7 @@ public record VillageAllegianceView(
                 buffer.readUtf(TEXT_LIMIT),
                 buffer.readUtf(TEXT_LIMIT),
                 buffer.readEnum(HomeStatus.class),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readUtf(DIALOGUE_TEXT_LIMIT),

@@ -128,6 +128,14 @@ public final class VillageDiplomacySavedData extends SavedData {
         return Map.copyOf(this.ledger.players.getOrDefault(player, Map.of()));
     }
 
+    public boolean personallyKnows(java.util.UUID player, VillageAllegianceId village) {
+        return this.ledger.players.getOrDefault(player, Map.of()).containsKey(village);
+    }
+
+    public VillageContact contact(VillageAllegianceId village, VillageAllegianceId target) {
+        return this.ledger.villages.getOrDefault(village.value(), Map.of()).get(target);
+    }
+
     public Map<VillageAllegianceId, VillageContact> contacts(VillageAllegianceId village) {
         return Map.copyOf(this.ledger.villages.getOrDefault(village.value(), Map.of()));
     }

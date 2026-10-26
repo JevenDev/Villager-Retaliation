@@ -382,6 +382,11 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
     }
 
     void navigate(Page page, int index, String query) {
+        if (page == Page.RELATIONS && this.snapshot.header() != null) {
+            var id = this.snapshot.header().id();
+            this.minecraft.setScreen(new VillageRelationsScreen(this, id, id, null));
+            return;
+        }
         this.pendingResident = null;
         this.pendingStorageArea = null;
         this.desiredPage = page;

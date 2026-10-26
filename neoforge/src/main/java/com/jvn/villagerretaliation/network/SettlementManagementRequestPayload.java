@@ -59,6 +59,7 @@ public record SettlementManagementRequestPayload(UUID town, Page page, int index
         STORAGE,
         SUPPLIES,
         SUPPLY_LINKS,
-        DEMAND
+        DEMAND,
+        RELATIONS
     }
 }

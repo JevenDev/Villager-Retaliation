@@ -2447,6 +2447,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addAllegianceOptions() {
+        if (this.allegiance.ruler()) {
+            this.options.add(DialogueOption.enabled(
+                    com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("introduce_dialogue").getString(),
+                    () -> {
+                        var ruler = this.minecraft.level.getEntity(this.villagerEntityId);
+                        if (ruler != null) this.minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen(
+                                this, null, null, ruler.getUUID()));
+                    }));
+        }
         this.options.add(DialogueOption.enabled(
                 allegianceText(this.allegiance.askHomeLabel(), "allegiance.ask_home"),
                 this::showHomeVillageDialogue));

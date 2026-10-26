@@ -56,7 +56,7 @@ public final class VillageStanding {
         int index = band.ordinal();
         int[] boundaries = {-trusted, -friendly, friendly, trusted};
         while (index < 4 && score >= boundaries[index] + (index < 2 ? buffer : 0)) index++;
-        while (index > 0 && score < boundaries[index - 1] - (index > 2 ? buffer : 0)) index--;
+        while (index > 0 && (index <= 2 ? score <= boundaries[index - 1] : score < boundaries[index - 1] - buffer)) index--;
         band = Band.values()[index];
     }
 

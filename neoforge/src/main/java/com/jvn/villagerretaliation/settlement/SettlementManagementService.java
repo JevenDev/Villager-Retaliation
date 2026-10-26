@@ -204,7 +204,7 @@ public final class SettlementManagementService {
                 case TRADE -> orders(town, entries);
                 case DELEGATES -> town.delegates().forEach((id, delegated) -> entries.add(
                         new SettlementManagementPayload.Delegate(id, playerName(player, id), delegated)));
-                case SUMMARY, TOWNS -> {
+                case SUMMARY, TOWNS, RELATIONS -> {
                 }
             }
         }

@@ -397,6 +397,8 @@ public final class VillagerInteractionScreenOpener {
                 homeStatus,
                 inVillage,
                 atHome,
+                home.flatMap(record -> com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level).get(record.id()))
+                        .map(town -> town.autonomous() != null && villager.getUUID().equals(town.autonomous().ruler())).orElse(false),
                 dialogueMessage(context, "allegiance.prompt", replacements,
                         "Is there something you would like to ask about where I belong?"),
                 dialogueMessage(context, "allegiance.option.ask_home", replacements,

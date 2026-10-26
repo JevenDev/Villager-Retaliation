@@ -58,7 +58,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 case SUPPLIES -> entry instanceof Supply;
                 case DEMAND -> entry instanceof Demand;
                 case SUPPLY_LINKS -> entry instanceof SupplyLink;
-                case SUMMARY -> false;
+                case SUMMARY, RELATIONS -> false;
             };
             if (!valid) {
                 throw new IllegalArgumentException("Settlement entry does not belong to its page");
@@ -416,7 +416,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
                     buffer.readBoolean());
-            case SUMMARY -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
+            case SUMMARY, RELATIONS -> throw new IllegalArgumentException("Settlement summary cannot contain rows");
         };
     }
 
