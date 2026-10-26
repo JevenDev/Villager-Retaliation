@@ -50,7 +50,7 @@ public final class RouteSavedData extends SavedData {
     }
     @Override public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         if (this.preserved != null) return this.preserved.copy();
-        tag.putInt("Version", 1);
+        tag.putInt("Version", 2);
         tag.putLong("Revision", this.revision);
         var tiles = new ListTag();
         this.terrain.forEach((key, tile) -> {
@@ -67,7 +67,7 @@ public final class RouteSavedData extends SavedData {
     public static RouteSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
         var result = new RouteSavedData();
         try {
-            if (!tag.contains("Version", Tag.TAG_INT) || tag.getInt("Version") != 1
+            if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 2)
                     || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0)
                 throw new IllegalArgumentException("Unsupported route save");
             result.revision = tag.getLong("Revision");
@@ -82,7 +82,7 @@ public final class RouteSavedData extends SavedData {
                 if (result.terrain.put(key, tile) != null) throw new IllegalArgumentException("Duplicate terrain tile");
             }
             for (var raw : jobs) {
-                var job = RoutePreparation.load((CompoundTag) raw);
+                var job = RoutePreparation.load((CompoundTag) raw, tag.getInt("Version") == 1);
                 if (result.jobs.put(job.id(), job) != null) throw new IllegalArgumentException("Duplicate route preparation");
             }
         } catch (IllegalArgumentException | net.minecraft.ResourceLocationException failure) {

@@ -59,13 +59,23 @@ public final class SettlementDemandService {
         private final Map<UUID, Long> gathered = new LinkedHashMap<>();
         private final Map<UUID, java.util.function.BooleanSupplier> consumersCurrent = new LinkedHashMap<>();
         private final net.minecraft.server.level.ServerPlayer viewer;
+        private final boolean registered;
 
         private Snapshot(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer) {
+            this(level, town, viewer, false);
+        }
+
+        private Snapshot(ServerLevel level, SettlementRecord town, net.minecraft.server.level.ServerPlayer viewer, boolean registered) {
+            this.registered = registered;
             this.level = level;
             this.viewer = viewer;
             this.town = town;
             this.stock = new SettlementSupplyStock.Snapshot(level, town);
             for (var policy : town.supplyPolicies().values()) for (var binding : policy.bindings()) this.gathered.put(binding.id(), binding.gathered());
+        }
+
+        private List<BlockPos> sources(UUID area) {
+            return SettlementSupplyStock.storages(this.level, this.town, area, false, this.registered);
         }
 
         public boolean visible(BlockPos position) {
@@ -110,7 +120,7 @@ public final class SettlementDemandService {
         }
 
         Snapshot policyDraft(UUID policy, SettlementSupplyPolicy.Configuration configuration) {
-            var draft = new Snapshot(this.level, this.town, this.viewer);
+            var draft = new Snapshot(this.level, this.town, this.viewer, this.registered);
             draft.equipmentRequirements.putAll(this.equipmentRequirements);
             draft.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) draft.evaluate(definition);
@@ -137,7 +147,7 @@ public final class SettlementDemandService {
         }
 
         Snapshot refresh(BlockPos source) {
-            var refreshed = new Snapshot(this.level, this.town, this.viewer);
+            var refreshed = new Snapshot(this.level, this.town, this.viewer, this.registered);
             refreshed.equipmentRequirements.putAll(this.equipmentRequirements);
             refreshed.productionInputs.putAll(this.productionInputs);
             for (var definition : this.definitions) if (definition.request().kind() == Kind.FOOD) refreshed.evaluate(definition);
@@ -424,7 +434,7 @@ public final class SettlementDemandService {
             var settings = this.town.worksitePlans().get(areaId);
             if (plan == null || !plan.authorized(this.town) || area == null || !area.enabled()
                     || settings == null || !settings.settings().enabled()) return;
-            var sources = SettlementSupplyStock.storages(this.level, this.town, areaId, false);
+            var sources = sources(areaId);
             var workers = workers(areaId).stream().filter(this.equipmentWorkers::contains).toList();
             for (var selection : plan.configuration().selections()) {
                 if (selection.spares() == 0 || selection.kind() == com.jvn.villagerretaliation.interaction.work.HiredEquipmentNeed.Kind.AMMUNITION) continue;
@@ -442,7 +452,7 @@ public final class SettlementDemandService {
             long target = SettlementFoodService.reserveNutrition(this.level, this.town);
             this.consumersCurrent.put(this.town.id().value(), () -> target == SettlementFoodService.reserveNutrition(this.level, this.town));
             if (target == 0) return;
-            var sources = SettlementStock.supplies(this.town).stream()
+            var sources = (this.registered ? SettlementStock.registered(this.town, null).stream().filter(depot -> depot.purpose().providesSupplies()) : SettlementStock.supplies(this.town).stream())
                     .map(depot -> SettlementSupplyStock.positions(this.level, depot.position()).getFirst()).distinct().toList();
             var requirement = SettlementFoodService.requirement(target);
             add(this.town.id().value(), this.town.id().value(), Kind.FOOD,
@@ -452,7 +462,7 @@ public final class SettlementDemandService {
 
         private void plantingReserves() {
             for (var area : this.town.areas().values()) if (area.type() == SettlementAreaType.FARM) {
-                var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
+                var sources = sources(area.id());
                 for (var target : SettlementPlantingReserve.targets(this.town, area).entrySet()) {
                     var alternatives = java.util.Arrays.stream(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.values())
                             .filter(crop -> crop != com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.ANY
@@ -474,7 +484,7 @@ public final class SettlementDemandService {
         private void animalFeed() {
             if (this.town.areas().values().stream().noneMatch(area -> area.enabled() && area.crops().demand())) return;
             for (var area : this.town.areas().values()) if (area.type() == SettlementAreaType.ANIMAL_PEN) {
-                var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
+                var sources = sources(area.id());
                 for (var need : SettlementBreedingDemand.describe(this.level, this.town, area))
                     add(area.id(), area.id(), Kind.PRODUCTION, area.name(), need.requirement(), sources,
                             need.workers(), new ArrayList<>(), 0, need.requirement().quantity(), "");
@@ -482,7 +492,8 @@ public final class SettlementDemandService {
         }
 
         private void stockReserves() {
-            for (var depot : SettlementStock.depots(this.town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER)) for (var target : depot.stockTargets()) {
+            for (var depot : this.registered ? SettlementStock.registered(this.town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER)
+                    : SettlementStock.depots(this.town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.COURIER)) for (var target : depot.stockTargets()) {
                 var position = SettlementSupplyStock.positions(this.level, depot.position()).getFirst();
                 add(depot.id(), depot.area(), Kind.STOCK_RESERVE, target.sample().getHoverName().getString(),
                         WorkSupplyRequirement.exact("stock_reserve", target.sample(), target.count()),
@@ -535,7 +546,7 @@ public final class SettlementDemandService {
 
         private void production(SettlementArea area, HiredProductionQueue queue, HiredProductionOrder order) {
             acceptProduction(queue, order);
-            var sources = SettlementSupplyStock.storages(this.level, this.town, area.id(), false);
+            var sources = sources(area.id());
             var workers = workers(area.id());
             var plan = this.town.worksitePlans().get(area.id());
             boolean enabled = area.enabled() && (plan == null || plan.settings().enabled());
@@ -655,7 +666,7 @@ public final class SettlementDemandService {
             if (!project.active()) return;
             var area = this.town.areas().get(project.area());
             if (area == null || !area.enabled()) return;
-            var sources = SettlementSupplyStock.storages(this.level, this.town, project.area(), false);
+            var sources = sources(project.area());
             var plan = SettlementConstructionService.scan(this.level, project.structure(), project.rotation());
             if (plan == null) { unknown(project.id(), project.area(), Kind.PROJECT, project.label(), sources, "prefab_unavailable"); return; }
             sources = sources.stream().filter(BuilderWorker.builderMaterialStorageFilter(plan, project.origin())).toList();
@@ -682,6 +693,14 @@ public final class SettlementDemandService {
                                 stack -> BuilderStructureScanner.sameMaterial(stack, sample), null), sources, workers, new ArrayList<>(), 0, 1, project.blocker());
             }
         }
+    }
+
+    static Runnable planAid(ServerLevel level, SettlementRecord town, java.util.function.Consumer<Snapshot> complete) {
+        var snapshot = new Snapshot(level, town, null, true);
+        snapshot.asynchronous = true;
+        var work = new ArrayList<>(planning(snapshot, town));
+        work.add(() -> complete.accept(snapshot));
+        return new SettlementWork(work);
     }
 
     public static Snapshot inspect(ServerLevel level, SettlementRecord town) {

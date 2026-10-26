@@ -39,7 +39,7 @@ public final class VillageRelationsScreen extends VillagerWindowScreen {
     private Rows rows;
     private EditBox search;
     private final Button[] actions = new Button[6];
-    private Button previous, next;
+    private Button previous, next, foodRequest;
 
     public VillageRelationsScreen(Screen parent, UUID perspective, UUID village, UUID ruler) {
         super(text("title"));
@@ -68,6 +68,11 @@ public final class VillageRelationsScreen extends VillagerWindowScreen {
                     && (tab != View.REPORTS && tab != View.OUTBOX || snapshot != null && snapshot.inspects());
             y += 24;
         }
+        var food = addRenderableWidget(VillagerUi.buttonBuilder(SettlementAidScreen.text("title"), ignored ->
+                minecraft.setScreen(new SettlementAidScreen(this, village, null, ""))).bounds(left, y, 96, 20).build());
+        food.active = snapshot != null && snapshot.inspects() && village != null;
+        foodRequest = addRenderableWidget(VillagerUi.buttonBuilder(SettlementAidScreen.text("request"), ignored ->
+                minecraft.setScreen(new SettlementAidScreen(this, perspective, selected.id(), selected.name()))).bounds(left, y + 24, 96, 20).build());
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(left, top + panelHeight - 20, 96, 20).build());
         search = addRenderableWidget(new EditBox(font, left + 106, top + 30, panelWidth - 106, 20, text("search")));
@@ -123,6 +128,8 @@ public final class VillageRelationsScreen extends VillagerWindowScreen {
         if (actions[0] == null) return;
         boolean contact = selected != null && (view == View.CONTACTS || view == View.KNOWLEDGE || view == View.PERSPECTIVES);
         boolean editable = !submitting && snapshot != null && snapshot.represents() && snapshot.blocker().isEmpty();
+        foodRequest.active = editable && contact && view == View.CONTACTS && perspective != null && perspective.equals(village)
+                && !selected.id().equals(village);
         action(0, view == View.PERSPECTIVES ? "choose_perspective" : "view_relations", contact && choosing == null);
         action(1, "show_map", contact && choosing == null && minecraft.level != null
                 && selected.dimension().equals(minecraft.level.dimension().location()));

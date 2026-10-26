@@ -134,6 +134,18 @@ public final class VillageDiplomacyService {
                 && VillageDiplomacySavedData.get(level).adjust(VillageDiplomacySavedData.Pair.of(a, b), source, sequence, delta, reason, now(level), rules);
     }
 
+    public static boolean receiveCorrespondence(ServerLevel level, VillageAllegianceId sender, VillageAllegianceId recipient) {
+        if (level == null || !level.getServer().isSameThread()) return false;
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var from = registry.canonicalRecord(sender).filter(record -> !record.archived()).orElse(null);
+        var to = registry.canonicalRecord(recipient).filter(record -> !record.archived()).orElse(null);
+        var data = VillageDiplomacySavedData.get(level);
+        if (data.readOnly() || from == null || to == null || from.id().equals(to.id()) || from.originDimension() == null
+                || !data.canLearn(to.id(), from.id())) return false;
+        data.learn(to.id(), contact(from, VillageContact.Origin.CORRESPONDENCE, now(level), true));
+        return true;
+    }
+
     @SubscribeEvent
     public static void tick(ServerTickEvent.Post event) {
         var server = event.getServer();

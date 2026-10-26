@@ -37,6 +37,13 @@ public final class SettlementStock {
         return SettlementDepotPurpose.BUILDER_ONLY.permitsRole(role) ? catalog.depots : catalog.sharedDepots;
     }
 
+    static List<SettlementDepot> registered(SettlementRecord town, HiredVillagerRole role) {
+        return town.depots().values().stream().filter(depot -> {
+            var area = town.areas().get(depot.area());
+            return town.territory().active() && town.owns(area) && area.enabled() && depot.purpose().permitsRole(role);
+        }).sorted(Comparator.comparingInt(SettlementDepot::priority).reversed().thenComparing(SettlementDepot::id)).toList();
+    }
+
     private static Catalog catalog(SettlementRecord town) {
         if (town.stockCatalog == null || !town.stockCatalog.matches(town)) town.stockCatalog = new Catalog(town);
         return town.stockCatalog;

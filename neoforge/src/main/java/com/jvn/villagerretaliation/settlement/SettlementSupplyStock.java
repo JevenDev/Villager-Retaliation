@@ -184,6 +184,10 @@ public final class SettlementSupplyStock {
     }
 
     public static List<BlockPos> storages(ServerLevel level, SettlementRecord town, UUID area, boolean output) {
+        return storages(level, town, area, output, false);
+    }
+
+    static List<BlockPos> storages(ServerLevel level, SettlementRecord town, UUID area, boolean output, boolean registered) {
         var workplace = town.workplace(area);
         var role = workplace == null ? null : workplace.type().role();
         var plan = town.worksitePlans().get(area);
@@ -192,14 +196,16 @@ public final class SettlementSupplyStock {
             for (var link : plan.settings().storage().entries()) {
                 if (!(output ? link.purpose().outputs() : link.purpose().supplies())) continue;
                 var depot = town.depots().values().stream().filter(value -> value.position().equals(link.position())).findFirst().orElse(null);
-                if (depot != null && !depot.purpose().permitsRole(role)) continue;
+                if (registered && depot == null || depot != null && !depot.purpose().permitsRole(role)) continue;
                 result.add(positions(level, link.position()).getFirst());
             }
             return List.copyOf(result);
         }
         var links = SettlementWorksiteService.links(town, area);
-        return (output ? SettlementStock.outputs(town, role) : SettlementStock.supplies(town, role)).stream()
-                .filter(depot -> output ? links.permitsOutput(depot.id()) : links.permitsSupply(depot.id()))
+        var depots = registered ? SettlementStock.registered(town, role).stream()
+                .filter(depot -> output ? depot.purpose().acceptsOutputs() : depot.purpose().providesSupplies()).toList()
+                : output ? SettlementStock.outputs(town, role) : SettlementStock.supplies(town, role);
+        return depots.stream().filter(depot -> output ? links.permitsOutput(depot.id()) : links.permitsSupply(depot.id()))
                 .map(SettlementDepot::position).toList();
     }
 

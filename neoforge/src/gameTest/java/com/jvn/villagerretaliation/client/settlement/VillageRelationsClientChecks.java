@@ -96,6 +96,35 @@ final class VillageRelationsClientChecks {
                 require(screen.snapshot().entries().stream().noneMatch(entry -> entry.name().contains("Hidden")), "popup view keeps hidden contact private");
                 screen.onClose(); require(minecraft.screen == map, "return keeps the same map and selection");
                 map.onClose(); require(minecraft.screen == relations, "map returns to original relations screen");
+                next();
+            }
+            case 7 -> {
+                aidButton(relations, "title").onPress(); next();
+            }
+            case 8 -> {
+                if (!(minecraft.screen instanceof SettlementAidScreen screen) || screen.snapshot() == null) return false;
+                require(screen.snapshot().authorized(), "settlement leader can manage food aid");
+                require(!screen.snapshot().policy().automatic(), "player settlement starts with manual outgoing aid");
+                bounds(screen); capture.accept("settlement-food-aid"); aidButton(screen, "policy").onPress(); next();
+            }
+            case 9 -> {
+                if (ticks < 5) return false;
+                var screen = (SettlementAidScreen) minecraft.screen; bounds(screen); capture.accept("settlement-aid-policy");
+                screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                        .map(net.minecraft.client.gui.components.EditBox.class::cast)
+                        .filter(box -> box.getMessage().equals(SettlementAidScreen.text("maximum_items"))).findFirst().orElseThrow().setValue("64");
+                aidButton(screen, "save").onPress(); next();
+            }
+            case 10 -> {
+                var screen = (SettlementAidScreen) minecraft.screen;
+                if (screen.snapshot().policy().maximumItems() != 64) return false;
+                minecraft.options.guiScale().set(3); minecraft.resizeDisplay(); next();
+            }
+            case 11 -> {
+                if (ticks < 5) return false;
+                bounds(minecraft.screen); capture.accept("settlement-aid-policy-small");
+                minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
+                minecraft.screen.onClose(); require(minecraft.screen == relations, "aid returns to relations");
                 relations.onClose(); require(minecraft.screen == management, "relations returns to settlement management");
                 return true;
             }
@@ -108,6 +137,11 @@ final class VillageRelationsClientChecks {
     private static Button button(Screen screen, String key) {
         return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.getMessage().equals(VillageRelationsScreen.text(key))).findFirst().orElseThrow();
+    }
+
+    private static Button aidButton(Screen screen, String key) {
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getMessage().equals(SettlementAidScreen.text(key))).findFirst().orElseThrow();
     }
 
     private static void bounds(Screen screen) {

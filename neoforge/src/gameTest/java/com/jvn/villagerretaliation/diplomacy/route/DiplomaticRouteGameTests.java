@@ -77,6 +77,34 @@ public final class DiplomaticRouteGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void depotAccessKeepsResidentOriginAndSurvivesMigration(GameTestHelper helper) {
+        var terrain = fixture(0, 2, (x, z) -> x == 40 && z == 8 ? RouteTerrain.BLOCKED : RouteTerrain.WALK, (x, z) -> 0);
+        var start = new BlockPos(8, 0, 8);
+        var depot = new BlockPos(40, 0, 8);
+        var bounds = new RouteSearch.Bounds(0, 0, 2, 2);
+        var result = RouteSearch.search(start, depot, terrain, bounds, 1, 9, 10000, 100, false, 0, 2);
+        helper.assertTrue(result.route() != null, "depot route reaches adjacent walkable ground");
+        helper.assertValueEqual(result.route().steps().getFirst().position(), start, "resident origin stays exact");
+        helper.assertTrue(RoutePreparation.accepts(depot, result.route().steps().getLast().position(), 2), "access remains near the depot");
+        helper.assertTrue(RouteSearch.search(start.above(), depot, terrain, bounds, 1, 9, 10000, 100, false, 0, 2).route() == null,
+                "depot tolerance cannot relocate the resident");
+        var data = new RouteSavedData();
+        var job = new RoutePreparation(UUID.randomUUID(), helper.getLevel().dimension().location(), start, depot, false, 0, 2);
+        job.route = result.route(); job.state = RoutePreparation.State.READY; data.jobs.put(job.id(), job);
+        var saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(RouteSavedData.load(saved, helper.getLevel().registryAccess()).save(new CompoundTag(), helper.getLevel().registryAccess()), saved,
+                "access endpoints persist without moving the requested depot");
+        var legacy = new RoutePreparation(UUID.randomUUID(), helper.getLevel().dimension().location(), start, start.east(), false);
+        data.jobs.clear(); data.jobs.put(legacy.id(), legacy);
+        saved = data.save(new CompoundTag(), helper.getLevel().registryAccess()); saved.putInt("Version", 1);
+        var entry = saved.getList("Preparations", 10).getCompound(0); entry.remove("StartTolerance"); entry.remove("EndTolerance");
+        var migrated = RouteSavedData.load(saved, helper.getLevel().registryAccess());
+        helper.assertFalse(migrated.readOnly(), "old exact-endpoint routes migrate");
+        helper.assertValueEqual(migrated.get(legacy.id()).endTolerance(), 0, "migration keeps exact endpoints");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void immutableTerrainAndPreservedMalformedSaves(GameTestHelper helper) {
         var heights = new int[256]; var kinds = new byte[256]; Arrays.fill(kinds, RouteTerrain.WALK);
         var tile = new RouteTerrain(new ChunkPos(0, 0), heights, kinds, 5);

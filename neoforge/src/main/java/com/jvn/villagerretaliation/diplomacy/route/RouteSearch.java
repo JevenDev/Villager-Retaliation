@@ -25,6 +25,11 @@ final class RouteSearch {
 
     static Result search(BlockPos start, BlockPos end, Map<Long, RouteTerrain> terrain, Bounds bounds,
                          int width, int tileLimit, int nodeLimit, int maximumLength, boolean boat) {
+        return search(start, end, terrain, bounds, width, tileLimit, nodeLimit, maximumLength, boat, 0, 0);
+    }
+    static Result search(BlockPos start, BlockPos end, Map<Long, RouteTerrain> terrain, Bounds bounds,
+                         int width, int tileLimit, int nodeLimit, int maximumLength, boolean boat, int startTolerance, int endTolerance) {
+        if (startTolerance < 0 || startTolerance > 2 || endTolerance < 0 || endTolerance > 2) return Result.blocked("unsafe_endpoint");
         var corridor = coarse(new ChunkPos(start), new ChunkPos(end), terrain, bounds, tileLimit);
         if (corridor.isEmpty()) return Result.blocked("unreachable");
         var region = new LinkedHashSet<Long>();
@@ -39,28 +44,30 @@ final class RouteSearch {
         }
         var missing = region.stream().filter(key -> !terrain.containsKey(key)).toList();
         if (!missing.isEmpty()) return new Result(null, missing, "");
-        if (!walk(terrain, start.getX(), start.getZ()) || !walk(terrain, end.getX(), end.getZ())
-                || height(terrain, start.getX(), start.getZ()) != start.getY()
-                || height(terrain, end.getX(), end.getZ()) != end.getY()) return Result.blocked("unsafe_endpoint");
+        var starts = endpoints(terrain, region, start, startTolerance);
+        var ends = endpoints(terrain, region, end, endTolerance);
+        if (starts.isEmpty() || ends.isEmpty()) return Result.blocked("unsafe_endpoint");
         var open = new PriorityQueue<Node>(Comparator.comparingInt(Node::estimate).thenComparingInt(Node::cost).thenComparingLong(Node::key));
         var costs = new HashMap<Long, Integer>();
         var links = new HashMap<Long, Link>();
-        long first = key(start.getX(), start.getZ()), last = key(end.getX(), end.getZ());
-        costs.put(first, 0);
-        open.add(new Node(first, 0, distance(first, last)));
+        for (long first : starts) {
+            costs.put(first, 0);
+            open.add(new Node(first, 0, distance(first, ends)));
+        }
         int visited = 0;
         while (!open.isEmpty()) {
             if (Thread.currentThread().isInterrupted()) return Result.blocked("cancelled");
             var node = open.remove();
             if (node.cost != costs.getOrDefault(node.key, Integer.MAX_VALUE)) continue;
             if (++visited > nodeLimit) return Result.blocked("search_work_limit");
-            if (node.key == last) {
+            if (ends.contains(node.key)) {
                 var steps = new ArrayList<DiplomaticRoute.Step>();
-                for (long at = last; at != first; at = links.get(at).previous) {
+                long at = node.key;
+                for (; links.containsKey(at); at = links.get(at).previous) {
                     steps.add(new DiplomaticRoute.Step(position(terrain, at), links.get(at).mode));
                     if (steps.size() > maximumLength) return Result.blocked("detour_limit");
                 }
-                steps.add(new DiplomaticRoute.Step(start, DiplomaticRoute.Mode.WALK));
+                steps.add(new DiplomaticRoute.Step(position(terrain, at), DiplomaticRoute.Mode.WALK));
                 Collections.reverse(steps);
                 return new Result(new DiplomaticRoute(steps), List.of(), "");
             }
@@ -85,7 +92,7 @@ final class RouteSearch {
                     if (cost >= costs.getOrDefault(next, Integer.MAX_VALUE)) continue;
                     costs.put(next, cost);
                     links.put(next, new Link(node.key, mode));
-                    open.add(new Node(next, cost, cost + distance(next, last)));
+                    open.add(new Node(next, cost, cost + distance(next, ends)));
                 }
             }
         }
@@ -125,6 +132,24 @@ final class RouteSearch {
             }
         }
         return List.of();
+    }
+
+    private static Set<Long> endpoints(Map<Long, RouteTerrain> terrain, Set<Long> region, BlockPos requested, int tolerance) {
+        var result = new LinkedHashSet<Long>();
+        for (int x = requested.getX() - tolerance; x <= requested.getX() + tolerance; x++) {
+            for (int z = requested.getZ() - tolerance; z <= requested.getZ() + tolerance; z++) {
+                if (!region.contains(ChunkPos.asLong(x >> 4, z >> 4)) || !walk(terrain, x, z)) continue;
+                var candidate = new BlockPos(x, height(terrain, x, z), z);
+                if (RoutePreparation.accepts(requested, candidate, tolerance)) result.add(key(x, z));
+            }
+        }
+        return result;
+    }
+
+    private static int distance(long from, Set<Long> targets) {
+        int best = Integer.MAX_VALUE;
+        for (long target : targets) best = Math.min(best, distance(from, target));
+        return best;
     }
 
     static boolean valid(DiplomaticRoute route, Map<Long, RouteTerrain> terrain) {

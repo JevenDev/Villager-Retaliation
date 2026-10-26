@@ -39,19 +39,24 @@ public final class DiplomaticRouteService {
                           long generationSubmissions, long searchSubmissions, long observedTiles, long generatedDependencies) { }
 
     public static RoutePreparation prepare(ServerLevel level, UUID id, BlockPos start, BlockPos end, boolean boatAllowed) {
+        return prepareAccess(level, id, start, end, boatAllowed, 0, 0);
+    }
+    public static RoutePreparation prepareAccess(ServerLevel level, UUID id, BlockPos start, BlockPos end, boolean boatAllowed,
+                                                 int startTolerance, int endTolerance) {
         requireServerThread(level);
         var data = RouteSavedData.get(level);
         var existing = data.get(id);
         if (existing != null) {
             if (!existing.dimension().equals(level.dimension().location()) || !existing.start().equals(start)
-                    || !existing.end().equals(end) || existing.boatAllowed() != boatAllowed)
+                    || !existing.end().equals(end) || existing.boatAllowed() != boatAllowed
+                    || existing.startTolerance() != startTolerance || existing.endTolerance() != endTolerance)
                 throw new IllegalArgumentException("Route identity already assigned to different endpoints");
             return existing;
         }
         if (data.readOnly()) throw new IllegalStateException("route_data_read_only");
         if (data.jobs.size() >= RouteSavedData.JOB_LIMIT) throw new IllegalStateException("route_queue_full");
         var rules = VillageDiplomacyRules.get(level.getServer());
-        var result = new RoutePreparation(id, level.dimension().location(), start, end, boatAllowed);
+        var result = new RoutePreparation(id, level.dimension().location(), start, end, boatAllowed, startTolerance, endTolerance);
         if (!level.getWorldBorder().isWithinBounds(start) || !level.getWorldBorder().isWithinBounds(end)) result.block("world_border");
         else if (start.distSqr(end) > (long) rules.shipmentRange() * rules.shipmentRange()) result.block("shipment_range");
         else {
@@ -59,8 +64,8 @@ public final class DiplomaticRouteService {
             for (var cached : data.jobs.values()) {
                 if (cached.state != RoutePreparation.State.READY || !cached.dimension().equals(result.dimension())) continue;
                 DiplomaticRoute route = null;
-                if (cached.start().equals(start) && cached.end().equals(end)) route = cached.route;
-                else if (cached.start().equals(end) && cached.end().equals(start)) route = cached.route.reversed();
+                if (cached.start().equals(start) && cached.end().equals(end) && cached.startTolerance() == startTolerance && cached.endTolerance() == endTolerance) route = cached.route;
+                else if (cached.start().equals(end) && cached.end().equals(start) && cached.startTolerance() == endTolerance && cached.endTolerance() == startTolerance) route = cached.route.reversed();
                 if (route != null && (boatAllowed || !route.needsBoat()) && RouteSearch.valid(route, terrain)) {
                     result.route = route;
                     result.state = RoutePreparation.State.READY;
@@ -283,7 +288,8 @@ public final class DiplomaticRouteService {
             int width = work.job.width;
             this.searching = work;
             this.search = CompletableFuture.supplyAsync(() -> RouteSearch.search(work.job.start(), work.job.end(), snapshot, bounds,
-                    width, rules.routeChunkLimit(), rules.routeNodeLimit(), rules.shipmentRange() * rules.routeDetourMultiplier(), work.job.boatAllowed()), this.worker);
+                    width, rules.routeChunkLimit(), rules.routeNodeLimit(), rules.shipmentRange() * rules.routeDetourMultiplier(), work.job.boatAllowed(),
+                    work.job.startTolerance(), work.job.endTolerance()), this.worker);
             this.searchSubmissions++;
         }
         void finishSearch(VillageDiplomacyRules.Rules rules) {

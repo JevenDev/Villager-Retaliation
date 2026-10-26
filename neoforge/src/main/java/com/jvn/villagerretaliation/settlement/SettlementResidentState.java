@@ -104,6 +104,12 @@ public final class SettlementResidentState {
                 && (!this.personalCommitment || com.jvn.villagerretaliation.social.VillagerBreedingPolicy.naturalFamiliesEnabled());
     }
 
+    boolean eligibleDiplomaticCourier() {
+        if (!availableForWork() || needsRecovery() || this.familyUnsafe || this.entityContext.isEmpty() || this.food < 6) return false;
+        var profession = this.entityContext.getCompound("VillagerData").getString("profession");
+        return profession.equals("minecraft:none") || profession.equals("minecraft:nitwit");
+    }
+
     public double workMultiplier() {
         return this.food <= 0 ? 0.4D : this.food < 6 ? 0.7D : 1.0D;
     }

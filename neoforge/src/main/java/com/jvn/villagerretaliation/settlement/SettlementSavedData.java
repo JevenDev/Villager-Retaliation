@@ -24,13 +24,14 @@ public final class SettlementSavedData extends SavedData {
     private net.minecraft.server.MinecraftServer bankServer;
     final Map<UUID,SettlementRecord> bankOwners=new java.util.HashMap<>();
     private static final String DATA_NAME = "villagerretaliation_settlements";
-    private static final int FORMAT_VERSION = 74;
+    private static final int FORMAT_VERSION = 75;
     final SettlementSimulationService simulation = new SettlementSimulationService();
     final SettlementAllocationService allocation = new SettlementAllocationService();
     final Map<UUID, UUID> policyRequests = new java.util.HashMap<>();
     final Map<UUID, UUID> workerPoolRequests = new java.util.HashMap<>();
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
     private final SettlementRecovery recovery = new SettlementRecovery();
+    private SettlementAidLedger aid = new SettlementAidLedger();
     private final Map<VillageAllegianceId, CompoundTag> retired = new LinkedHashMap<>();
 
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
@@ -68,6 +69,8 @@ public final class SettlementSavedData extends SavedData {
         }
         return Optional.ofNullable(this.settlements.get(id));
     }
+
+    public SettlementAidLedger aid() { return this.aid; }
 
     public List<SettlementRecord> settlements() {
         return List.copyOf(this.settlements.values());
@@ -272,6 +275,7 @@ public final class SettlementSavedData extends SavedData {
         this.settlements.values().forEach(town -> entries.add(town.save(provider)));
         this.recovery.appendQuarantine(entries);
         tag.put("Settlements", entries);
+        tag.put("FoodAid", this.aid.save(provider));
         var retiredTags = new ListTag();
         this.retired.values().forEach(entry -> retiredTags.add(entry.copy()));
         tag.put("RetiredSettlements", retiredTags);
@@ -284,6 +288,10 @@ public final class SettlementSavedData extends SavedData {
         data.recovery.load(tag, provider, FORMAT_VERSION, data::setDirty, data.settlements, data.ownership);
         if (!data.readOnly()) {
             try {
+                if (tag.getInt("FormatVersion") >= 75) {
+                    if (!tag.contains("FoodAid", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Missing food aid ledger");
+                    data.aid = SettlementAidLedger.load(tag.getCompound("FoodAid"), provider);
+                }
                 if (tag.contains("RetiredSettlements") && (!(tag.get("RetiredSettlements") instanceof ListTag retiredTags)
                         || !retiredTags.isEmpty() && retiredTags.getElementType() != Tag.TAG_COMPOUND)) {
                     throw new IllegalArgumentException("Invalid settlement lifecycle journal");
@@ -311,7 +319,7 @@ public final class SettlementSavedData extends SavedData {
                         throw new IllegalArgumentException("Missing settlement merger target");
                     }
                 }
-            } catch (IllegalArgumentException exception) {
+            } catch (IllegalArgumentException | IllegalStateException | net.minecraft.ResourceLocationException exception) {
                 data.recovery.protect(tag, exception.toString());
                 data.settlements.clear();
                 data.ownership.clear();

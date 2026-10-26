@@ -160,6 +160,11 @@ public final class VillageDiplomacySavedData extends SavedData {
         return true;
     }
 
+    public boolean received(VillageAllegianceId first, VillageAllegianceId second, java.util.UUID source, long sequence) {
+        var standing = this.ledger.standings.get(Pair.of(first, second));
+        return standing != null && standing.received(source, sequence);
+    }
+
     public int standing(VillageAllegianceId first, VillageAllegianceId second) {
         var standing = this.ledger.standings.get(Pair.of(first, second));
         return standing == null ? 0 : standing.score();

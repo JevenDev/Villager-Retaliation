@@ -22,13 +22,18 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "120";
+    private static final String PROTOCOL_VERSION = "121";
 
     private VillagerReputationNetworking() {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
+        network.safePlayToClientThreaded(SettlementAidPayload.TYPE, SettlementAidPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.settlement.SettlementAidScreen", "receive");
+        network.playToServer(SettlementAidRequestPayload.TYPE, SettlementAidRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
+                        player -> com.jvn.villagerretaliation.settlement.SettlementAidNetworking.handle(player, payload))));
         network.safePlayToClientThreaded(VillageRelationsPayload.TYPE, VillageRelationsPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.settlement.VillageRelationsClient", "accept");
         network.playToServer(VillageRelationsRequestPayload.TYPE, VillageRelationsRequestPayload.STREAM_CODEC,

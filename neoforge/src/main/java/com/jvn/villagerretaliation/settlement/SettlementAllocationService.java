@@ -235,6 +235,25 @@ public final class SettlementAllocationService {
         SettlementSavedData.get(level).allocation.entries.keySet().retainAll(towns);
     }
 
+    static java.util.function.BooleanSupplier aidGuard(ServerLevel level, SettlementRecord town) {
+        var configuration = Configuration.capture(town); var execution = Execution.capture(level, town);
+        var inventories = new java.util.LinkedHashMap<UUID, List<ItemStack>>();
+        for (var depot : town.depots().values()) {
+            var items = new java.util.ArrayList<ItemStack>(depot.getContainerSize());
+            for (int slot = 0; slot < depot.getContainerSize(); slot++) items.add(depot.getItem(slot).copy());
+            inventories.put(depot.id(), items);
+        }
+        return () -> {
+            if (!configuration.equals(Configuration.capture(town)) || !execution.equals(Execution.capture(level, town))) return false;
+            for (var entry : inventories.entrySet()) {
+                var depot = town.depots().get(entry.getKey());
+                if (depot == null || depot.getContainerSize() != entry.getValue().size()) return false;
+                for (int slot = 0; slot < depot.getContainerSize(); slot++) if (!ItemStack.matches(depot.getItem(slot), entry.getValue().get(slot))) return false;
+            }
+            return true;
+        };
+    }
+
     private record Key(VillageAllegianceId town, Entry entry) { }
 
     private static final class Entry {

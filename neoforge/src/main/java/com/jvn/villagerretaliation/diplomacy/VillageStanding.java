@@ -20,6 +20,8 @@ public final class VillageStanding {
     private int aidGain;
     private long revision;
 
+    boolean received(UUID source, long sequence) { return sequence > 0 && receipts.getOrDefault(source, 0L) >= sequence; }
+
     public int score() { return score; }
     public Band band() { return band; }
     public long revision() { return revision; }
