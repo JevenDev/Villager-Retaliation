@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Rotation;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
@@ -235,12 +236,23 @@ public final class SettlementConstructionService {
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
         var border = level.getWorldBorder();
-        var lower = new BlockPos(Math.max(min.getX() - 4, (int) Math.ceil(Math.max(town.center().getX() - town.radius(), border.getMinX()))),
-                Math.max(min.getY() - 2, level.getMinBuildHeight()),
-                Math.max(min.getZ() - 4, (int) Math.ceil(Math.max(town.center().getZ() - town.radius(), border.getMinZ()))));
-        var upper = new BlockPos(Math.min(max.getX() + 4, (int) Math.floor(Math.min(town.center().getX() + town.radius(), border.getMaxX() - 1))),
-                Math.min(max.getY() + 2, level.getMaxBuildHeight() - 1),
-                Math.min(max.getZ() + 4, (int) Math.floor(Math.min(town.center().getZ() + town.radius(), border.getMaxZ() - 1))));
+        if (!town.contains(min, max) || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
+                || !border.isWithinBounds(min) || !border.isWithinBounds(max)) return null;
+        var lower = min;
+        var upper = max;
+        for (var direction : Direction.values()) {
+            int margin = direction.getAxis() == Direction.Axis.Y ? 2 : 4;
+            for (int step = 0; step < margin; step++) {
+                boolean negative = direction.getAxisDirection() == Direction.AxisDirection.NEGATIVE;
+                var expandedMin = negative ? lower.relative(direction) : lower;
+                var expandedMax = negative ? upper : upper.relative(direction);
+                if (!town.contains(expandedMin, expandedMax)
+                        || level.isOutsideBuildHeight(expandedMin) || level.isOutsideBuildHeight(expandedMax)
+                        || !border.isWithinBounds(expandedMin) || !border.isWithinBounds(expandedMax)) break;
+                lower = expandedMin;
+                upper = expandedMax;
+            }
+        }
         try {
             var name = plan.entry().menuLabel();
             return new SettlementArea(id, SettlementAreaType.CONSTRUCTION, name.substring(0, Math.min(name.length(), SettlementArea.MAX_NAME_LENGTH)), lower, upper, 5, true);
