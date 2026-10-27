@@ -41,6 +41,31 @@ final class EditorResourcePreview {
         }
     }
 
+    void tooltip(net.minecraft.world.item.ItemStack stack, float scale) {
+        var minecraft = Minecraft.getInstance();
+        var lines = net.minecraft.client.gui.screens.Screen.getTooltipFromItem(minecraft, stack);
+        float displayScale = 2 * scale;
+        int availableWidth = Math.max(64, Math.min(600, (int) (ImGui.getContentRegionAvailX() / displayScale)));
+        var components = net.neoforged.neoforge.client.ClientHooks.gatherTooltipComponents(
+                stack, lines, stack.getTooltipImage(), 0, availableWidth, 8192, minecraft.font);
+        int width = Math.max(24, components.stream().mapToInt(component -> component.getWidth(minecraft.font)).max().orElse(0) + 24);
+        int height = components.stream().mapToInt(net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent::getHeight).sum() + 18;
+        String key = "tooltip:" + availableWidth + ":" + stack.save(minecraft.level.registryAccess());
+        var target = icons.get(key);
+        if (target == null) {
+            target = new TextureTarget(width, height, true, Minecraft.ON_OSX);
+            try {
+                draw(target, graphics -> graphics.renderTooltip(
+                        minecraft.font, lines, stack.getTooltipImage(), stack, 0, 20));
+                icons.put(key, target);
+            } catch (net.minecraft.ReportedException | IllegalArgumentException | IllegalStateException exception) {
+                target.destroyBuffers();
+                throw exception;
+            }
+        }
+        ImGui.image(target.getColorTextureId(), width * displayScale, height * displayScale, 0, 1, 1, 0);
+    }
+
     void retire() { retired = true; }
 
     void icon(String kind, String id, float x, float y, float size) {
@@ -141,7 +166,10 @@ final class EditorResourcePreview {
             RenderSystem.setShaderColor(1, 1, 1, 1);
             RenderSystem.enableDepthTest();
             var minecraft = Minecraft.getInstance();
-            var graphics = new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
+            var graphics = new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource()) {
+                @Override public int guiWidth() { return target.width; }
+                @Override public int guiHeight() { return target.height; }
+            };
             try { render.accept(graphics); }
             finally { graphics.flush(); }
         } finally {

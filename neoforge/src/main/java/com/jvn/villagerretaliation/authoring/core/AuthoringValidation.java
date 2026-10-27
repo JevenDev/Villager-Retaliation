@@ -37,7 +37,13 @@ public final class AuthoringValidation {
             scopes.computeIfAbsent(scope, ignored -> new ArrayList<>()).add(document);
         }
         List<AuthoringDiagnostic> result = new ArrayList<>();
-        scopes.values().forEach(scope -> result.addAll(validateScope(scope, registries)));
+        result.addAll(AuthoringFeatureValidation.validate(documents, registries));
+        var items = new LinkedHashMap<ResourceLocation, JsonObject>();
+        for (var document : documents) if (document.resourcePath().matches("data/[^/]+/quest_items/.+\\.json"))
+            items.put(AuthoringFeatureValidation.id(document), document.json());
+        try (var ignored = com.jvn.villagerretaliation.quest.item.QuestItems.preview(items)) {
+            scopes.values().forEach(scope -> result.addAll(validateScope(scope, registries)));
+        }
         return List.copyOf(result);
     }
 

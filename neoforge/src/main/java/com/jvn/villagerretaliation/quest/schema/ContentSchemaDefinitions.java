@@ -385,6 +385,10 @@ public final class ContentSchemaDefinitions {
         properties.add("type", stringEnum(objectiveTypes()));
         properties.add("optional", booleanSchema());
         properties.add("timer", com.jvn.villagerretaliation.quest.QuestTimer.schema());
+        properties.add("distinct_villagers", booleanSchema());
+        properties.add("maintain_ticks", nonNegativeInteger());
+        properties.add("requirements", arrayOf(idString()));
+        properties.add("required_count", nonNegativeInteger());
         properties.add("count", positiveInteger());
         properties.add("consume", booleanSchema());
         properties.add("tracker", ref("#/$defs/tracker"));
@@ -410,6 +414,7 @@ public final class ContentSchemaDefinitions {
             properties.add(key, oneOrArray(string()));
         }
         properties.add("selection", stringEnum(List.of("random")));
+        properties.add("quest_item", resourceLocation());
         properties.add("components", itemComponents());
         properties.add("durability", durability());
         properties.add("min_durability", nonNegativeInteger());

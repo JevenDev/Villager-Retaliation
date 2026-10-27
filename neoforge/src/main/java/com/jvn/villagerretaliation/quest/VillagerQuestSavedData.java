@@ -736,6 +736,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             progress.lastRevisionPolicy = tag.getString(TAG_LAST_REVISION_POLICY);
             progress.lastRevisionGameTime = tag.contains(TAG_LAST_REVISION_TIME, Tag.TAG_LONG)
                     ? tag.getLong(TAG_LAST_REVISION_TIME) : -1L;
+            progress.loadObjectiveTracking(tag.getCompound("ObjectiveTracking"));
             if (tag.contains(TAG_OBJECTIVE_COUNTERS, Tag.TAG_LIST)) {
                 ListTag countersTag = tag.getList(TAG_OBJECTIVE_COUNTERS, Tag.TAG_COMPOUND);
                 for (Tag rawCounter : countersTag) {
@@ -892,6 +893,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
             if (!this.completedObjectives.isEmpty()) {
                 tag.put(TAG_COMPLETED_OBJECTIVES, NbtDataUtil.stringList(this.completedObjectives));
             }
+            tag.put("ObjectiveTracking", saveObjectiveTracking());
             if (!this.objectiveCounters.isEmpty()) {
                 ListTag countersTag = new ListTag();
                 for (Map.Entry<String, Integer> entry : this.objectiveCounters.entrySet()) {

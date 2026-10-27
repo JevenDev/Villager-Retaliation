@@ -2575,6 +2575,7 @@ final class ImGuiAuthoringEditor {
             ImGui.inputInt(EditorWidgets.field("Required count"), objectiveCount);
         } else if (EditorQuestObjectives.guided(objectiveType)) questObjectives.fields(objectiveType);
         else ImGui.textWrapped("Add this objective, then fill its guided fields in Details.");
+        questObjectives.rules(objectiveType);
         questObjectives.common();
         if (ImGui.button("Track a player death")) operation(() -> {
             String added = EditorContentTools.appendObjective(document, selectedNode, EditorProgressConditions.deathObjective());
@@ -3014,7 +3015,7 @@ final class ImGuiAuthoringEditor {
             if (text && EditorSupportingResources.literalWording(document, path)) {
                 ImGui.inputText("##value", input);
                 apply = ImGui.isItemDeactivatedAfterEdit();
-            } else if (text && (styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
+            } else if (text && (EditorSupportingResources.kind(document) == EditorResourceRecipes.Kind.QUEST_ITEM && (path.equals("/name") || path.matches("/lore/[0-9]+")) || styledText || path.matches(".*/(?:lines|variants)/[0-9]+") || path.endsWith("/text") || path.endsWith("/line") || path.endsWith("/response")))
                 textFields.render(path, input, document.kind(), true, preferences.textScale());
             else if (text && path.endsWith("/label"))
                 textFields.render(path, input, document.kind(), false, preferences.textScale());
@@ -3095,7 +3096,9 @@ final class ImGuiAuthoringEditor {
     }
 
     private void propertyPicker(String path, ImString input) {
-        String field = EditorSupportingResources.itemField(document, path) ? "item" : EditorProgressConditions.resourceField(path);
+        String field = EditorSupportingResources.itemField(document, path) ? "item"
+                : EditorSupportingResources.kind(document) == EditorResourceRecipes.Kind.ADVANCEMENT && path.equals("/parent")
+                ? "advancement" : EditorProgressConditions.resourceField(path);
         JsonObject rule = propertySchema.at(document, documentCache.json(document), path);
         if (rule.has("description")) ImGui.textWrapped(rule.get("description").getAsString());
         if (!rule.has("enum") && EditorRegistryResources.supports(field)) {
@@ -3103,6 +3106,11 @@ final class ImGuiAuthoringEditor {
             return;
         }
         List<String> choices = switch (field) {
+            case "quest_item" -> workspace.documents().stream().filter(value -> EditorSupportingResources.kind(value) == EditorResourceRecipes.Kind.QUEST_ITEM)
+                    .map(value -> value.resourcePath().replaceFirst("data/([^/]+)/quest_items/(.+)[.]json", "$1:$2")).sorted().toList();
+            case "advancement" -> java.util.stream.Stream.concat(EditorProgressConditions.resources("advancement").stream(),
+                    workspace.documents().stream().filter(value -> EditorSupportingResources.kind(value) == EditorResourceRecipes.Kind.ADVANCEMENT)
+                    .map(value -> value.resourcePath().replaceFirst("data/([^/]+)/advancement/(.+)[.]json", "$1:$2"))).distinct().sorted().toList();
             case "time" -> List.of("morning", "afternoon", "evening", "night");
             case "weather" -> List.of("clear", "rain", "thunder");
             case "state" -> List.of("available", "active", "completed", "failed", "abandoned");

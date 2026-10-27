@@ -49,6 +49,8 @@ public final class VillagerActionExecutor {
         }
 
         return switch (action.kind()) {
+            case ADVANCEMENT -> AdvancementGrant.execute(context, action).legacyResult();
+            case ITEM_TRANSFER -> DialogueItemTransfer.execute(context, action).legacyResult();
             case KNOWLEDGE -> com.jvn.villagerretaliation.dialogue.Knowledge.execute(context, action).legacyResult();
             case TUTORIAL -> com.jvn.villagerretaliation.quest.tutorial.TutorialService.execute(context, action).legacyResult();
             case COMPANION_UNLOCK, COMPANION_BOND -> com.jvn.villagerretaliation.party.CompanionRelationshipService.execute(context, action).legacyResult();

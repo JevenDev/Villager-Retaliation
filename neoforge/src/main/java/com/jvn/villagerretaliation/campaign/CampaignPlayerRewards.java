@@ -40,11 +40,17 @@ public final class CampaignPlayerRewards {
     }
 
     public record Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items,
-            boolean delivered, List<CompoundTag> costs) {
+            boolean delivered, List<CompoundTag> costs, List<Integer> costSlots) {
+        public Delivery(UUID operation, UUID token, UUID player, int experience, List<CompoundTag> items, boolean delivered, List<CompoundTag> costs) {
+            this(operation, token, player, experience, items, delivered, costs, List.of());
+        }
         public Delivery {
             if (operation == null || token == null || player == null || experience < 0 || items == null || items.size() > 256
                     || costs == null || costs.size() > 256)
                 throw new IllegalArgumentException("Invalid persistent player transaction.");
+            costSlots = List.copyOf(costSlots);
+            if (!costSlots.isEmpty() && (costSlots.size() != costs.size() || costSlots.stream().anyMatch(slot -> slot < 0 || slot >= 36)))
+                throw new IllegalArgumentException("Invalid payment inventory slots");
             items = items.stream().map(CompoundTag::copy).toList();
             costs = costs.stream().map(CompoundTag::copy).toList();
         }
@@ -57,7 +63,7 @@ public final class CampaignPlayerRewards {
         @Override public List<CompoundTag> costs() { return costs.stream().map(CompoundTag::copy).toList(); }
     }
 
-    private static boolean delivered(ServerPlayer player, Delivery receipt) {
+    public static boolean delivered(ServerPlayer player, Delivery receipt) {
         var receipts = read(persistentLedger(player.getPersistentData()));
         UUID token = receipts.get(receipt.operation());
         if (token != null && !token.equals(receipt.token())) throw new IllegalArgumentException("The player's reward receipt belongs to a different grant. Restore consistent campaign and player saves.");
@@ -82,14 +88,22 @@ public final class CampaignPlayerRewards {
         var originalOffhand = player.getInventory().offhand.stream().map(ItemStack::copy).toList();
         var candidate = new ArrayList<>(originalItems.stream().map(ItemStack::copy).toList());
         var offhand = new ArrayList<>(originalOffhand.stream().map(ItemStack::copy).toList());
+        int costIndex = 0;
         for (var saved : receipt.costs()) {
             if (!saved.contains("count", Tag.TAG_INT) || saved.getInt("count") < 1 || saved.getInt("count") > net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE)
                 throw new IllegalArgumentException("A saved campaign payment has an invalid item count.");
             var cost = ItemStack.STRICT_CODEC.parse(player.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), saved)
                     .result().orElseThrow(() -> new IllegalArgumentException("A saved campaign payment item is unavailable or invalid. Restore its item content before paying."));
             if (cost.isEmpty()) throw new IllegalArgumentException("A saved campaign payment is empty.");
-            int remaining = remove(candidate, cost, cost.getCount());
-            if (remove(offhand, cost, remaining) != 0) throw new IllegalArgumentException("You do not have the items required for this campaign payment.");
+            if (!receipt.costSlots().isEmpty()) {
+                var source = candidate.get(receipt.costSlots().get(costIndex++));
+                if (!ItemStack.isSameItemSameComponents(source, cost) || source.getCount() < cost.getCount())
+                    throw new IllegalArgumentException("The selected dialogue payment item has moved or changed. Restore it to its original inventory slot.");
+                source.shrink(cost.getCount());
+            } else {
+                int remaining = remove(candidate, cost, cost.getCount());
+                if (remove(offhand, cost, remaining) != 0) throw new IllegalArgumentException("You do not have the items required for this campaign payment.");
+            }
         }
         for (var saved : receipt.items()) {
             var item = ItemStack.parse(player.registryAccess(), saved).orElseThrow(() -> new IllegalArgumentException("A saved campaign reward item is unavailable. Restore its item content before claiming it."));

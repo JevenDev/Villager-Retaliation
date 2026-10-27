@@ -109,6 +109,60 @@ public class QuestProgressModel {
     protected String pendingStageEntry = "";
     protected final java.util.Set<String> completedObjectives = new java.util.HashSet<>();
     protected final Map<String, Integer> objectiveCounters = new HashMap<>();
+    protected final Map<String, Set<UUID>> objectiveVillagers = new LinkedHashMap<>();
+    protected final Map<String, Long> maintainedTicks = new LinkedHashMap<>();
+    private final Map<String, Long> lastConditionSamples = new HashMap<>();
+    private final Set<String> maintainedConditions = new LinkedHashSet<>();
+    protected final Set<String> publishedObjectiveCompletions = new LinkedHashSet<>();
+    public boolean publishObjectiveCompletion(String objective) { return publishedObjectiveCompletions.add(objective); }
+
+    public boolean recordObjectiveVillager(String objective, UUID villager) {
+        return villager != null && objectiveVillagers.computeIfAbsent(objective, ignored -> new LinkedHashSet<>()).add(villager);
+    }
+
+    public boolean sampleCondition(String objective, boolean met, long now, int required) {
+        long previous = lastConditionSamples.getOrDefault(objective, now);
+        long elapsed = maintainedTicks.getOrDefault(objective, 0L);
+        boolean consecutive = met && maintainedConditions.contains(objective) && lastConditionSamples.containsKey(objective)
+                && now >= previous && now - previous <= 1;
+        long next = consecutive ? Math.min(required, elapsed + now - previous) : 0;
+        if (met) maintainedConditions.add(objective); else maintainedConditions.remove(objective);
+        lastConditionSamples.put(objective, now);
+        maintainedTicks.put(objective, next);
+        return next != elapsed;
+    }
+
+    public long maintainedTicks(String objective) { return maintainedTicks.getOrDefault(objective, 0L); }
+    public boolean unmarkObjectiveComplete(String objective) { return completedObjectives.remove(objective); }
+
+    public net.minecraft.nbt.CompoundTag saveObjectiveTracking() {
+        var tag = new net.minecraft.nbt.CompoundTag();
+        var villagers = new net.minecraft.nbt.CompoundTag();
+        objectiveVillagers.forEach((id, values) -> {
+            var list = new net.minecraft.nbt.ListTag();
+            values.forEach(value -> list.add(net.minecraft.nbt.StringTag.valueOf(value.toString())));
+            villagers.put(id, list);
+        });
+        tag.put("Villagers", villagers);
+        var maintained = new net.minecraft.nbt.CompoundTag();
+        maintainedTicks.forEach(maintained::putLong);
+        tag.put("Maintained", maintained);
+        var published = new net.minecraft.nbt.ListTag();
+        publishedObjectiveCompletions.forEach(id -> published.add(net.minecraft.nbt.StringTag.valueOf(id)));
+        tag.put("Published", published);
+        return tag;
+    }
+
+    public void loadObjectiveTracking(net.minecraft.nbt.CompoundTag tag) {
+        tag.getList("Published", net.minecraft.nbt.Tag.TAG_STRING).forEach(value -> publishedObjectiveCompletions.add(value.getAsString()));
+        var villagers = tag.getCompound("Villagers");
+        for (String id : villagers.getAllKeys())
+            for (var value : villagers.getList(id, net.minecraft.nbt.Tag.TAG_STRING))
+                recordObjectiveVillager(id, UUID.fromString(value.getAsString()));
+        var maintained = tag.getCompound("Maintained");
+        maintained.getAllKeys().forEach(id -> maintainedTicks.put(id, Math.max(0L, maintained.getLong(id))));
+    }
+
     protected final Map<String, ResourceLocation> resolvedObjectiveItems = new HashMap<>();
     protected final Set<String> claimedBonuses = new LinkedHashSet<>();
     protected int definitionRevision;
@@ -451,6 +505,11 @@ public class QuestProgressModel {
         this.triggerTimes.clear();
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.resolvedObjectiveItems.clear();
         this.claimedBonuses.clear();
         this.lastRevisionPolicy = "";
@@ -512,6 +571,12 @@ public class QuestProgressModel {
 
     public boolean replaceVillagerIdentity(UUID sourceVillagerId, UUID targetVillagerId) {
         boolean changed = false;
+        if (targetVillagerId != null) for (var villagers : objectiveVillagers.values()) {
+            if (villagers.remove(sourceVillagerId)) {
+                villagers.add(targetVillagerId);
+                changed = true;
+            }
+        }
         if (this.startedVillagerId != null && this.startedVillagerId.equals(sourceVillagerId)) {
             this.startedVillagerId = targetVillagerId;
             changed = true;
@@ -566,6 +631,11 @@ public class QuestProgressModel {
         this.targetObjectiveId = "";
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.consumedReason = consume ? "abandonment" : "";
         this.timers.clear();
         this.parallelPaths.clear();
@@ -583,6 +653,11 @@ public class QuestProgressModel {
         this.targetObjectiveId = "";
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.consumedReason = "";
         this.timers.clear();
         this.parallelPaths.clear();
@@ -599,6 +674,11 @@ public class QuestProgressModel {
         this.targetObjectiveId = "";
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.consumedReason = consume ? "expiration" : "";
         this.timers.clear();
         this.parallelPaths.clear();
@@ -614,6 +694,11 @@ public class QuestProgressModel {
         this.targetObjectiveId = "";
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.consumedReason = reason == null ? "" : reason;
         this.timers.clear();
         this.parallelPaths.clear();
@@ -666,6 +751,8 @@ public class QuestProgressModel {
             }
         });
         this.parallelPaths.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.currentStage = normalized;
         if (!this.campaignId.isBlank()) this.campaignStageRevision++;
         clearStageActions();
@@ -750,6 +837,11 @@ public class QuestProgressModel {
         this.pendingTriggerEvents.clear();
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.resolvedObjectiveItems.clear();
         this.targetDimension = null;
         this.targetPos = null;
@@ -804,6 +896,13 @@ public class QuestProgressModel {
         if (this.completedObjectives.remove(previousId)) {
             this.completedObjectives.add(nextId);
         }
+        if (publishedObjectiveCompletions.remove(previousId)) publishedObjectiveCompletions.add(nextId);
+        maintainedConditions.remove(previousId);
+        var villagers = objectiveVillagers.remove(previousId);
+        if (villagers != null) objectiveVillagers.computeIfAbsent(nextId, ignored -> new LinkedHashSet<>()).addAll(villagers);
+        var maintained = maintainedTicks.remove(previousId);
+        if (maintained != null) maintainedTicks.merge(nextId, maintained, Math::max);
+        lastConditionSamples.remove(previousId);
         Integer counter = this.objectiveCounters.remove(previousId);
         if (counter != null) {
             this.objectiveCounters.merge(nextId, counter, Math::max);
@@ -839,6 +938,11 @@ public class QuestProgressModel {
         }
         this.completedObjectives.removeAll(objectiveIds);
         objectiveIds.forEach(this.objectiveCounters::remove);
+        objectiveIds.forEach(this.objectiveVillagers::remove);
+        objectiveIds.forEach(this.maintainedTicks::remove);
+        objectiveIds.forEach(this.lastConditionSamples::remove);
+        maintainedConditions.removeAll(objectiveIds);
+        publishedObjectiveCompletions.removeAll(objectiveIds);
     }
 
     public void resetBonusesForStage(String stageId) {
@@ -856,6 +960,11 @@ public class QuestProgressModel {
         clearStageActions();
         this.completedObjectives.clear();
         this.objectiveCounters.clear();
+        this.publishedObjectiveCompletions.clear();
+        this.objectiveVillagers.clear();
+        this.maintainedTicks.clear();
+        this.lastConditionSamples.clear();
+        this.maintainedConditions.clear();
         this.claimedBonuses.clear();
         this.visitedTarget = false;
         this.hasProof = false;

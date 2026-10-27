@@ -21,11 +21,16 @@ public final class QuestObjectiveDispatchService {
     public static boolean poll(QuestObjectiveEvaluationContext context, boolean executionAllowed,
             Consumer<QuestDefinition.Objective> completed) {
         if (!executionAllowed) return false;
+        boolean sampled = false;
+        for (var objective : QuestObjectiveQuery.activeObjectives(context.definition(), context.model())) {
+            if (objective.rules().maintainTicks() > 0) sampled |= context.model().sampleCondition(objective.id(),
+                    QuestObjectiveRegistry.maintainedConditionMet(context, objective), context.level().getGameTime(), objective.rules().maintainTicks());
+        }
         boolean changed = QuestObjectiveDispatcher.poll(context.model(),
                 QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), executionAllowed,
                 objective -> isComplete(context, objective), completed);
         if (changed) updatePerformance(context);
-        return changed;
+        return changed || sampled;
     }
 
     public static boolean dispatch(QuestObjectiveEvaluationContext context, QuestObjectiveEvent event,
@@ -44,7 +49,9 @@ public final class QuestObjectiveDispatchService {
                                 + " complete_delta=" + update.completed()) : null;
         boolean changed = QuestObjectiveDispatcher.dispatch(context.model(),
                 QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), true, event.kind(),
-                objective -> QuestObjectiveRegistry.matchesEvent(context, objective, event),
+                objective -> QuestObjectiveRegistry.matchesEvent(context, objective, event)
+                        && (!objective.rules().distinctVillagers() || event.villager() != null
+                        && context.model().recordObjectiveVillager(objective.id(), event.villager().getUUID())),
                 objective -> isComplete(context, objective), completed, observer);
         if (changed) updatePerformance(context);
         return changed;

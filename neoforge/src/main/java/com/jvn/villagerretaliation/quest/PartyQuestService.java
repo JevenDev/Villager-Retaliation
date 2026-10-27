@@ -113,6 +113,7 @@ public final class PartyQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.rules().distinctVillagers() || objective.rules().live()) continue;
             shared.mergeObjectiveCounter(objective.id(), progress.objectiveCounter(objective.id()));
             if (progress.objectiveComplete(objective.id())) {
                 shared.markObjectiveComplete(objective.id());
@@ -129,6 +130,7 @@ public final class PartyQuestService {
             progress.performance(shared.performance());
         }
         for (QuestDefinition.Objective objective : definition.objectives()) {
+            if (objective.rules().distinctVillagers() || objective.rules().live()) continue;
             int delta = shared.objectiveCounter(objective.id()) - progress.objectiveCounter(objective.id());
             if (delta > 0) {
                 progress.addObjectiveCounter(objective.id(), delta);

@@ -24,5 +24,11 @@ final class EditorTextStyles {
                 Math.round(Math.clamp(color[1], 0, 1) * 255), Math.round(Math.clamp(color[2], 0, 1) * 255));
     }
 
+    static boolean itemTag(String value) {
+        String tag = value.startsWith("/") ? value.substring(1) : value;
+        return List.of("b", "i", "u", "s", "bold", "italic", "underline", "strikethrough", "obfuscated").contains(tag)
+                || COLORS.contains(tag) || tag.startsWith("color:") || tag.startsWith("#");
+    }
+
     private EditorTextStyles() { }
 }

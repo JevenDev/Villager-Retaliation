@@ -19,6 +19,11 @@ final class EditorSupportingResources {
 
     static JsonObject seed(EditorResourceRecipes.Kind kind, String id) {
         return switch (kind) {
+            case QUEST_ITEM -> json("{\"stack\":{\"id\":\"minecraft:paper\",\"count\":1},\"name\":\"Quest item\",\"lore\":[\"A special item.\"]}");
+            case ADVANCEMENT -> json("""
+                    {"display":{"title":"New advancement","description":"Complete a story goal.","icon":{"id":"minecraft:emerald"},"frame":"task","show_toast":true,"announce_to_chat":true,"hidden":false},
+                     "criteria":{"granted":{"trigger":"minecraft:impossible"}},"requirements":[["granted"]]}
+                    """);
             case TRADE -> {
                 var root = json("{\"replace\":false,\"entries\":[]}"); var trade = trade(id);
                 root.getAsJsonArray("entries").add(trade); yield root;
@@ -195,6 +200,8 @@ final class EditorSupportingResources {
 
     static boolean itemField(AuthoringDocument document, String path) {
         var kind = kind(document);
+        if (kind == EditorResourceRecipes.Kind.QUEST_ITEM && path.equals("/stack/id")
+                || kind == EditorResourceRecipes.Kind.ADVANCEMENT && path.equals("/display/icon/id")) return true;
         if (kind == EditorResourceRecipes.Kind.DUEL_KIT) return path.matches("/(player|villager)/(inventory/[0-9]+/stack|equipment/[^/]+)/id");
         return kind == EditorResourceRecipes.Kind.RAID_LOADOUT && (path.matches(".*/weapons/[0-9]+") || path.matches(".*/armor_sets/[0-9]+/(head|chest|legs|feet)"));
     }
@@ -203,6 +210,8 @@ final class EditorSupportingResources {
         var kind = kind(document);
         if (kind == null) return new JsonObject();
         if (kind == EditorResourceRecipes.Kind.TRADE) return json(com.jvn.villagerretaliation.trade.SkillTradeSchemaTool.schema());
+        if (kind == EditorResourceRecipes.Kind.QUEST_ITEM) return com.jvn.villagerretaliation.quest.item.QuestItems.schema();
+        if (kind == EditorResourceRecipes.Kind.ADVANCEMENT) return com.jvn.villagerretaliation.action.AdvancementGrant.resourceSchema();
         if (kind == EditorResourceRecipes.Kind.STYLE) return com.jvn.villagerretaliation.dialogue.DialogueStyle.schema();
         var resource = json("{\"type\":\"string\",\"minLength\":1}");
         var count = json("{\"type\":\"integer\",\"minimum\":1}");

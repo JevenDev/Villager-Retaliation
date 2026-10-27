@@ -630,6 +630,12 @@ public final class VillagerQuestResources {
         ResourceKey<Level> dimension = readDimension(entry);
         BlockPos objectiveLocation = readLocation(entry);
         ResourceLocation item = entry.resource("item").orElse(null);
+        if (entry.has("quest_item")) {
+            var authoredItem = com.jvn.villagerretaliation.quest.item.QuestItems.definition(ResourceLocation.parse(entry.string("quest_item")));
+            var baseItem = ResourceLocation.parse(authoredItem.getAsJsonObject("stack").get("id").getAsString());
+            if (item != null && !item.equals(baseItem)) throw new IllegalArgumentException("Quest item reference uses a different base item");
+            item = baseItem;
+        }
         ItemSelection itemSelection = readItemSelection(location, context, entry, type, item);
         if (!itemSelection.valid()) {
             return Optional.empty();
@@ -683,7 +689,8 @@ public final class VillagerQuestResources {
                 itemSelection.mode(),
                 entry.string("campaign_location"),
                 com.jvn.villagerretaliation.campaign.CampaignStoryObjective.read(type, schemaInput),
-                QuestTimer.read(entry.get("timer")));
+                QuestTimer.read(entry.get("timer")),
+                com.jvn.villagerretaliation.quest.objectives.ObjectiveRules.read(schemaInput, type));
         Optional<String> registryValidation = QuestObjectiveRegistry.validationError(objective);
         if (registryValidation.isPresent()) {
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, registryValidation.get());
@@ -1114,6 +1121,8 @@ public final class VillagerQuestResources {
             predicateEntry.add("durability", durability);
         }
         ResourceLocation itemId = entry.resource("item").orElse(null);
+        if (entry.has("quest_item")) itemId = ResourceLocation.parse(com.jvn.villagerretaliation.quest.item.QuestItems
+                .definition(ResourceLocation.parse(entry.string("quest_item"))).getAsJsonObject("stack").get("id").getAsString());
         List<Item> predicateItems = new ArrayList<>(itemId == null
                 ? List.of()
                 : BuiltInRegistries.ITEM.getOptional(itemId).stream().toList());

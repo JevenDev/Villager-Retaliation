@@ -428,6 +428,26 @@ public final class QuestV2Parser {
                     readBoolean(object, "optional"),
                     object));
         }
+        for (int index = 0; index < objectives.size(); index++) {
+            var objective = objectives.get(index);
+            try {
+                var rules = com.jvn.villagerretaliation.quest.objectives.ObjectiveRules.read(objective.data(),
+                        QuestObjectiveRegistry.objectiveTypeBySerializedName(objective.type()));
+                for (String required : rules.requirements()) {
+                    var child = objectives.stream().filter(value -> value.id().equals(required)).findFirst().orElse(null);
+                    if (child == null || child.id().equals(objective.id())
+                            || com.jvn.villagerretaliation.quest.objectives.ObjectiveRules.read(child.data(),
+                            QuestObjectiveRegistry.objectiveTypeBySerializedName(child.type())).live())
+                        validator.error(pointer + "/" + index + "/requirements", "Select existing leaf objectives in this stage.",
+                                "Task groups cannot contain themselves or other task groups.", Set.of(required));
+                    else if (!child.optional())
+                        validator.error(pointer + "/" + index + "/requirements", "Grouped tasks must be optional individually.",
+                                "The group controls how many tasks are required.", Set.of(required));
+                }
+            } catch (IllegalArgumentException exception) {
+                validator.error(pointer + "/" + index, exception.getMessage(), "Check objective counting and completion rules.", Set.of(objective.id()));
+            }
+        }
         return List.copyOf(objectives);
     }
 

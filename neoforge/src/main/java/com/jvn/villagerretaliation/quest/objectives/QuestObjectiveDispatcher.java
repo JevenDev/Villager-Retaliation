@@ -31,10 +31,14 @@ public final class QuestObjectiveDispatcher {
         if (!executionAllowed) return false;
         boolean changed = false;
         for (QuestDefinition.Objective objective : objectives) {
+            if (objective.rules().live() && !complete.test(objective)) {
+                changed |= progress.unmarkObjectiveComplete(objective.id());
+                continue;
+            }
             if (progress.objectiveComplete(objective.id()) || !complete.test(objective)) continue;
             boolean newlyComplete = progress.markObjectiveComplete(objective.id());
             changed |= newlyComplete;
-            if (newlyComplete) completed.accept(objective);
+            if (newlyComplete && (!objective.rules().live() || progress.publishObjectiveCompletion(objective.id()))) completed.accept(objective);
             clearCompletedTarget(progress, objective);
         }
         return changed;

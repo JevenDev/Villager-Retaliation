@@ -2443,6 +2443,170 @@
         ]
       },
       {
+        "id": "advancement",
+        "aliases": [],
+        "kind": "advancement",
+        "schema": {
+          "type": "object",
+          "required": [
+            "advancement"
+          ],
+          "properties": {
+            "advancement": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "criterion": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "questline": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ]
+      },
+      {
+        "id": "item_transfer",
+        "aliases": [],
+        "kind": "item_transfer",
+        "schema": {
+          "type": "object",
+          "required": [
+            "operation_id",
+            "direction",
+            "selection",
+            "quantity"
+          ],
+          "properties": {
+            "operation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "description": "A stable ID. Ordinary dialogue executes once per player. Quest actions execute once per quest run. Keep this ID when editing or moving the action."
+            },
+            "direction": {
+              "enum": [
+                "give_player",
+                "take_player"
+              ],
+              "description": "Give player: the player receives newly supplied items. Take player: the player gives items. Armor and offhand slots are never removed by random selection."
+            },
+            "selection": {
+              "enum": [
+                "specific",
+                "pool",
+                "random_inventory"
+              ],
+              "description": "Specific: choose one item. Pool: choose an eligible configured entry. Random inventory: choose an eligible item from the player's main inventory."
+            },
+            "quantity": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2304,
+              "description": "Total items to give or take. This overrides the authored stack's default count."
+            },
+            "item": {
+              "type": "string"
+            },
+            "quest_item": {
+              "type": "string"
+            },
+            "stack": {
+              "type": "object"
+            },
+            "pool": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 256,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "string"
+                  },
+                  "quest_item": {
+                    "type": "string"
+                  },
+                  "stack": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "matching": {
+              "enum": [
+                "item",
+                "components"
+              ],
+              "description": "Item compares the base type. Components compares all item components. Quest-item references always require their separate quest identity."
+            },
+            "destination": {
+              "enum": [
+                "consume",
+                "villager"
+              ],
+              "description": "Consume removes taken items. Villager places them in the receiving villager's inventory."
+            },
+            "on_missing": {
+              "enum": [
+                "fail",
+                "skip"
+              ],
+              "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+            },
+            "on_full": {
+              "enum": [
+                "fail",
+                "skip"
+              ],
+              "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+            },
+            "exclude_damageable": {
+              "type": "boolean"
+            },
+            "exclude_enchanted": {
+              "type": "boolean"
+            },
+            "exclude_named": {
+              "type": "boolean"
+            },
+            "exclude_quest_items": {
+              "type": "boolean"
+            },
+            "excluded_items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "excluded_slots": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 35
+              }
+            }
+          }
+        },
+        "recovery": "naturally_idempotent",
+        "reconciles_prepared_operation": false,
+        "capabilities": [
+          "player_live",
+          "world_known"
+        ]
+      },
+      {
         "id": "follower",
         "aliases": [],
         "kind": "follower",
@@ -4790,6 +4954,42 @@
     ],
     "public_quest_actions": [
       {
+        "id": "villagerretaliation:advancement",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Advancement",
+        "description": "Built-in Advancement type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "advancement": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "criterion": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "questline": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "advancement"
+          ],
+          "type": "object"
+        }
+      },
+      {
         "id": "villagerretaliation:campaign_fact",
         "aliases": [],
         "live_capabilities": [
@@ -5414,6 +5614,142 @@
         "description": "Built-in Gossip type.",
         "browser_available": true,
         "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:item_transfer",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/player_live",
+          "villagerretaliation:capability/world_known"
+        ],
+        "snapshot_capabilities": [],
+        "runtime_binding": "descriptor_only",
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Item transfer",
+        "description": "Built-in Item transfer type.",
+        "browser_available": true,
+        "schema": {
+          "properties": {
+            "operation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "description": "A stable ID. Ordinary dialogue executes once per player. Quest actions execute once per quest run. Keep this ID when editing or moving the action."
+            },
+            "direction": {
+              "enum": [
+                "give_player",
+                "take_player"
+              ],
+              "description": "Give player: the player receives newly supplied items. Take player: the player gives items. Armor and offhand slots are never removed by random selection."
+            },
+            "selection": {
+              "enum": [
+                "specific",
+                "pool",
+                "random_inventory"
+              ],
+              "description": "Specific: choose one item. Pool: choose an eligible configured entry. Random inventory: choose an eligible item from the player's main inventory."
+            },
+            "quantity": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2304,
+              "description": "Total items to give or take. This overrides the authored stack's default count."
+            },
+            "item": {
+              "type": "string"
+            },
+            "quest_item": {
+              "type": "string"
+            },
+            "stack": {
+              "type": "object"
+            },
+            "pool": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 256,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "string"
+                  },
+                  "quest_item": {
+                    "type": "string"
+                  },
+                  "stack": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "matching": {
+              "enum": [
+                "item",
+                "components"
+              ],
+              "description": "Item compares the base type. Components compares all item components. Quest-item references always require their separate quest identity."
+            },
+            "destination": {
+              "enum": [
+                "consume",
+                "villager"
+              ],
+              "description": "Consume removes taken items. Villager places them in the receiving villager's inventory."
+            },
+            "on_missing": {
+              "enum": [
+                "fail",
+                "skip"
+              ],
+              "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+            },
+            "on_full": {
+              "enum": [
+                "fail",
+                "skip"
+              ],
+              "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+            },
+            "exclude_damageable": {
+              "type": "boolean"
+            },
+            "exclude_enchanted": {
+              "type": "boolean"
+            },
+            "exclude_named": {
+              "type": "boolean"
+            },
+            "exclude_quest_items": {
+              "type": "boolean"
+            },
+            "excluded_items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "excluded_slots": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 35
+              }
+            }
+          },
+          "required": [
+            "operation_id",
+            "direction",
+            "selection",
+            "quantity"
+          ],
           "type": "object"
         }
       },
@@ -8984,6 +9320,7 @@
       "enum": [
         "add_counter",
         "add_tag",
+        "advancement",
         "arm",
         "attribute_reward",
         "branch_transition",
@@ -9009,6 +9346,7 @@
         "gossip_reputation",
         "hud",
         "increment_counter",
+        "item_transfer",
         "knowledge",
         "loot",
         "loot_table",

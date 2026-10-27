@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.authoring.core.DialogueGraph;
 
 final class EditorResourceRecipes {
     enum Kind {
+        QUEST_ITEM("Quest item", "quest_items", "Reusable component-based items with a stable identity independent of their name."),
+        ADVANCEMENT("Advancement", "advancement", "A normal Minecraft advancement with display settings and criteria."),
         SCENE("Scene", "scenes", "Actors, steps and outcome links for a scripted scene."),
         ENCOUNTER("Encounter", "encounters", "Entity rosters, waves and authored spawn points."),
         TRADE("Skill trades", "skill_trades", "Offers with costs, results, professions and skill requirements. Loaded globally."),

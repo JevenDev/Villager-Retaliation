@@ -163,6 +163,10 @@ public final class NarrativeActions {
 
     private static NarrativeActions commonActions() {
         var actions = adapt((context, action, replacements) -> unavailable("This action requires a registered narrative handler."));
+        actions = actions.with(VillagerActionDefinition.Kind.ADVANCEMENT, (context, action, replacements) ->
+                AdvancementGrant.execute(context, action));
+        actions = actions.with(VillagerActionDefinition.Kind.ITEM_TRANSFER, (context, action, replacements) ->
+                DialogueItemTransfer.execute(context, action));
         actions = actions.with(VillagerActionDefinition.Kind.KNOWLEDGE, (context, action, replacements) ->
                 com.jvn.villagerretaliation.dialogue.Knowledge.execute(context, action));
         actions = actions.with(VillagerActionDefinition.Kind.EXPERIENCE, (context, action, replacements) ->

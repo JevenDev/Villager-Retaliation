@@ -39,6 +39,9 @@ final class EditorBlocks {
         TIME_GATE("Require time of day", true, "{\"type\":\"time\",\"time\":\"morning\"}"),
         QUEST_GATE("Require quest state", true, "{\"type\":\"quest\",\"quest\":\"example:quest\",\"state\":\"completed\"}"),
         WEATHER_GATE("Require weather", true, "{\"type\":\"weather\",\"weather\":\"clear\"}"),
+        ADVANCEMENT("Grant advancement", false, "{\"type\":\"advancement\",\"advancement\":\"minecraft:story/mine_stone\"}"),
+        GIVE_ITEM("Villager gives item to player", false, "{\"type\":\"item_transfer\",\"operation_id\":\"replace_with_unique_id\",\"direction\":\"give_player\",\"selection\":\"specific\",\"item\":\"minecraft:bread\",\"quantity\":1,\"matching\":\"item\",\"on_missing\":\"fail\",\"on_full\":\"fail\"}"),
+        TAKE_ITEM("Player gives item to villager", false, "{\"type\":\"item_transfer\",\"operation_id\":\"replace_with_unique_id\",\"direction\":\"take_player\",\"selection\":\"specific\",\"item\":\"minecraft:emerald\",\"quantity\":1,\"matching\":\"item\",\"destination\":\"villager\",\"on_missing\":\"fail\",\"on_full\":\"fail\"}"),
         MESSAGE("Show a message", false, "{\"type\":\"notification\",\"text\":\"Hello.\"}"),
         EXPERIENCE("Give experience", false, "{\"type\":\"experience\",\"amount\":1}"),
         REPUTATION("Change reputation", false, "{\"type\":\"reputation\",\"amount\":1}");
@@ -82,9 +85,9 @@ final class EditorBlocks {
         List<Kind> result = new ArrayList<>();
         if (document.kind() == DefinitionKind.CONVERSATION) {
             if (responseOwner || exchangeOwner) result.addAll(java.util.Arrays.stream(Kind.values()).filter(value -> value.condition).toList());
-            if (nodeOwner || responseOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION));
+            if (nodeOwner || responseOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION, Kind.ADVANCEMENT, Kind.GIVE_ITEM, Kind.TAKE_ITEM));
         } else if (document.kind() == DefinitionKind.QUEST) {
-            if (nodeOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION));
+            if (nodeOwner) result.addAll(List.of(Kind.EXPERIENCE, Kind.REPUTATION, Kind.ADVANCEMENT, Kind.GIVE_ITEM, Kind.TAKE_ITEM));
         } else if (nodeOwner || responseOwner) result.addAll(List.of(Kind.values()));
         return List.copyOf(result);
     }
@@ -101,6 +104,7 @@ final class EditorBlocks {
             JsonObject owner = JsonPointers.get(root, pointer).getAsJsonObject();
             JsonArray values = owner.has(targetField) ? owner.getAsJsonArray(targetField) : new JsonArray();
             JsonObject block = JsonParser.parseString(kind.json).getAsJsonObject();
+            if (block.has("operation_id")) block.addProperty("operation_id", java.util.UUID.randomUUID().toString());
             if (targetField.equals("effects")) {
                 JsonObject effect = new JsonObject();
                 String id = "effect_" + (index + 1);

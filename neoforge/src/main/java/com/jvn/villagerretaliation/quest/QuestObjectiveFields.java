@@ -119,6 +119,12 @@ final class QuestObjectiveFields {
         if (overridden("id") == null) fields.addProperty("id", this.id);
         if (overridden("type") == null) fields.addProperty("type", this.type);
         if (overridden("optional") == null && this.optional) fields.addProperty("optional", true);
+        if (fields.has("requirements") && !this.authoredId.isBlank()) {
+            var mapped = new com.google.gson.JsonArray();
+            String prefix = this.id.substring(0, this.id.length() - this.authoredId.length());
+            fields.getAsJsonArray("requirements").forEach(value -> mapped.add(prefix + value.getAsString()));
+            fields.add("requirements", mapped);
+        }
         return fields;
     }
 
@@ -127,6 +133,11 @@ final class QuestObjectiveFields {
         for (String key : List.of("components", "durability", "custom_data", "nbt", "min_durability", "max_durability")) {
             JsonElement value = get(key);
             if (value != null) fields.add(key, value);
+        }
+        if (has("quest_item")) {
+            var custom = fields.has("custom_data") ? fields.getAsJsonObject("custom_data").deepCopy() : new JsonObject();
+            custom.addProperty(com.jvn.villagerretaliation.quest.item.QuestItems.IDENTITY, string("quest_item"));
+            fields.add("custom_data", custom);
         }
         return fields;
     }

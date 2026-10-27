@@ -261,6 +261,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> {
+            com.jvn.villagerretaliation.quest.item.QuestItems.reload(manager);
             com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.reload(manager);
             try (var ignored = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.preview(
                     com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.server())) {

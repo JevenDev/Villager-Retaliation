@@ -2675,7 +2675,7 @@ public final class AuthoringEditorClientSmoke {
 
     private static void buildSupportingResourceSteps() {
         STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); set("showResources", true); });
-        for (var kind : List.of(EditorResourceRecipes.Kind.TRADE, EditorResourceRecipes.Kind.SELL_PRICE,
+        for (var kind : List.of(EditorResourceRecipes.Kind.QUEST_ITEM, EditorResourceRecipes.Kind.ADVANCEMENT, EditorResourceRecipes.Kind.TRADE, EditorResourceRecipes.Kind.SELL_PRICE,
                 EditorResourceRecipes.Kind.DUEL_KIT, EditorResourceRecipes.Kind.RAID_LOADOUT,
                 EditorResourceRecipes.Kind.WORD_POOL, EditorResourceRecipes.Kind.STYLE)) {
             STEPS.add(() -> {
@@ -2728,6 +2728,10 @@ public final class AuthoringEditorClientSmoke {
             reloadCheck.join();
             var server = Minecraft.getInstance().getSingleplayerServer();
             liveCheck = server.submit(() -> {
+                require(!com.jvn.villagerretaliation.quest.item.QuestItems.resolve(server.registryAccess(), net.minecraft.resources.ResourceLocation.parse("test:recipe_quest_item")).isEmpty(),
+                        "Authored item components load after applying the editor pack.");
+                require(server.getAdvancements().get(net.minecraft.resources.ResourceLocation.parse("test:recipe_advancement")) != null,
+                        "Authored advancements load through Minecraft's normal resource loader.");
                 require(com.jvn.villagerretaliation.trade.SkillTradeResources.definition(server, net.minecraft.resources.ResourceLocation.parse("test:recipe_trade")).isPresent(),
                         "The skill trade recipe loads through the runtime.");
                 require(com.jvn.villagerretaliation.trade.SkillTradeResources.definition(server, net.minecraft.resources.ResourceLocation.parse("test:trade_1")).isPresent(),

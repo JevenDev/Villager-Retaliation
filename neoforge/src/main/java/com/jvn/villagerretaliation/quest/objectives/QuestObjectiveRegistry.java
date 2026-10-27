@@ -248,7 +248,34 @@ public final class QuestObjectiveRegistry {
         if (objective != null && objective.timer() != null && (context == null || context.model() == null
                 || !com.jvn.villagerretaliation.quest.runtime.QuestTimers.allowsObjective(objective, context.model(), context.level().getGameTime())))
             return Optional.of(QuestObjectiveResult.incomplete(0.0F, "Objective timer is not ready."));
+        if (objective != null && context != null && context.model() != null && objective.rules().live()) {
+            var rules = objective.rules();
+            long count = completedRequirements(context, objective);
+            boolean met = (objective.conditions().isEmpty() || context.matchesConditions(objective))
+                    && (rules.requirements().isEmpty() || count >= rules.threshold());
+            if (rules.maintainTicks() > 0) {
+                long ticks = context.model().maintainedTicks(objective.id());
+                return Optional.of(new QuestObjectiveResult(met && ticks >= rules.maintainTicks(),
+                        met ? (float) ticks / rules.maintainTicks() : 0, String.format(Locale.ROOT, "%.2f / %.2f seconds maintained", ticks / 20.0, rules.maintainTicks() / 20.0)));
+            }
+            return Optional.of(new QuestObjectiveResult(met, (float) count / Math.max(1, rules.threshold()),
+                    count + " / " + rules.threshold() + " requirements"));
+        }
         return implementation(objective).map(type -> type.evaluate(context, objective));
+    }
+
+    private static long completedRequirements(QuestObjectiveEvaluationContext context, QuestDefinition.Objective objective) {
+        return objective.rules().requirements().stream().filter(id -> context.definition().objectives().stream()
+                .filter(child -> child.id().equals(id) && !child.rules().live())
+                .anyMatch(child -> child.type() != QuestDefinition.ObjectiveType.ITEM_CHECK
+                        && (objective.rules().maintainTicks() == 0 || !requirements(child).contains(QuestObjectiveRequirement.POLLING))
+                        && context.model().objectiveComplete(id)
+                        || evaluate(context, child).map(QuestObjectiveResult::complete).orElse(false))).count();
+    }
+
+    public static boolean maintainedConditionMet(QuestObjectiveEvaluationContext context, QuestDefinition.Objective objective) {
+        return (objective.conditions().isEmpty() || context.matchesConditions(objective))
+                && (objective.rules().requirements().isEmpty() || completedRequirements(context, objective) >= objective.rules().threshold());
     }
 
     public static String trackerStepKey(QuestDefinition.Objective objective) {
@@ -607,7 +634,7 @@ public final class QuestObjectiveRegistry {
                 QuestDefinition.Objective objective,
                 QuestObjectiveEvent event) {
             if (event.villager() == null
-                    || !matchesQuestProvider(context, event.villager())
+                    || !objective.rules().distinctVillagers() && !matchesQuestProvider(context, event.villager())
                     || event.offer() == null
                     || !matchesDimensionAndLocation(context, event.villager().blockPosition(), objective)) {
                 return false;
@@ -635,7 +662,7 @@ public final class QuestObjectiveRegistry {
             ItemStack stack = event.itemStack();
             if (stack.isEmpty()
                     || event.giftReaction() == null
-                    || !matchesQuestProvider(context, event.villager())) {
+                    || !objective.rules().distinctVillagers() && !matchesQuestProvider(context, event.villager())) {
                 return false;
             }
             if (!objective.giftReactions().isEmpty()
@@ -842,7 +869,7 @@ public final class QuestObjectiveRegistry {
     private static final class ConditionObjectiveType extends LogicalObjectiveType {
         @Override
         public Optional<String> validationError(QuestDefinition.Objective objective) {
-            return objective.conditions().isEmpty() && (objective.timer() == null
+            return objective.conditions().isEmpty() && objective.rules().requirements().isEmpty() && (objective.timer() == null
                     || objective.timer().mode() != com.jvn.villagerretaliation.quest.QuestTimer.Mode.DURATION)
                     ? Optional.of("condition objective must define conditions or a duration timer.")
                     : Optional.empty();

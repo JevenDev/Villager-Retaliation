@@ -105,6 +105,8 @@ final class EditorTextAssist {
         if (token == null || token.start() != next.start() || !token.query().equals(next.query())) { selected = 0; moved = true; }
         token = next;
         choices = EditorTextCompletion.suggestions(text, token, context, styles.keySet());
+        if (context.path().contains("/quest_items/")) choices = choices.stream()
+                .filter(value -> !value.category().equals("Variable") && EditorTextStyles.itemTag(value.value())).toList();
         selected = Math.clamp(selected, 0, Math.max(0, choices.size() - 1));
         open = true;
     }
@@ -242,7 +244,8 @@ final class EditorTextAssist {
             inspections = EditorTextCompletion.inspect(source, context, styles, formatting);
             warnings = EditorTextCompletion.warnings(source, context, styles, formatting);
         }
-        String hint = formatting ? "Type { for variables or < for styles. Ctrl+Space suggests." : "Type { for variables. Ctrl+Space suggests.";
+        String hint = context.path().contains("/quest_items/") ? "Type < for static item styles. Ordinary tooltips do not support dialogue animation."
+                : formatting ? "Type { for variables or < for styles. Ctrl+Space suggests." : "Type { for variables. Ctrl+Space suggests.";
         if (compact) {
             if (!warnings.isEmpty()) ImGui.pushStyleColor(ImGuiCol.Text, 1, .72f, .3f, 1);
             ImGui.textUnformatted(warnings.isEmpty() ? (formatting ? "{ / <  Text help" : "{  Text help") : warnings.size() + " text message(s)");

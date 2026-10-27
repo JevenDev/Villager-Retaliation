@@ -33,6 +33,8 @@ public final class VillagerActionRegistry {
             register("companion_unlock", VillagerActionDefinition.Kind.COMPANION_UNLOCK, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("companion_service", VillagerActionDefinition.Kind.COMPANION_SERVICE, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
             register("companion_bond", VillagerActionDefinition.Kind.COMPANION_BOND, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.PROVIDER_LIVE)),
+            register("advancement", VillagerActionDefinition.Kind.ADVANCEMENT, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
+            register("item_transfer", VillagerActionDefinition.Kind.ITEM_TRANSFER, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register("follower", VillagerActionDefinition.Kind.FOLLOWER, aliases(), capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN)),
             register(
                     "notification",
@@ -396,6 +398,12 @@ public final class VillagerActionRegistry {
             Set<String> aliases, Set<ActionCapability> capabilities) {
         ActionTypeDescriptor descriptor = new ActionTypeDescriptor(id, kind, aliases, capabilities);
         return switch (kind) {
+            case ADVANCEMENT -> registration(descriptor, action -> !action.parameters().isEmpty(),
+                    (context, action, replacements, actor) -> AdvancementGrant.execute(context, action),
+                    AdvancementGrant::schema, RecoveryMode.NATURALLY_IDEMPOTENT);
+            case ITEM_TRANSFER -> registration(descriptor, action -> !action.parameters().isEmpty(),
+                    (context, action, replacements, actor) -> DialogueItemTransfer.execute(context, action),
+                    DialogueItemTransfer::schema, RecoveryMode.NATURALLY_IDEMPOTENT);
             case TUTORIAL -> registration(descriptor, action -> action.questId() != null
                             && com.jvn.villagerretaliation.interaction.HiredVillagerRole.bySerializedName(action.factKey()) != null
                             && java.util.Set.of("start", "activate", "quote", "continue", "stop", "replace",

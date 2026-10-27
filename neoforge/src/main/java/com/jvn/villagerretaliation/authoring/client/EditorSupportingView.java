@@ -30,6 +30,24 @@ final class EditorSupportingView {
         var kind = EditorSupportingResources.kind(document);
         if (kind == null) { resource.run(); return; }
         switch (kind) {
+            case QUEST_ITEM -> {
+                ImGui.textWrapped("The stack uses Minecraft 1.21.1 item components. Name and lore support static styling tags such as <b>bold</b> and <gold>gold</gold>. Animated dialogue styles cannot appear in ordinary item tooltips.");
+                ImGui.textWrapped("Quest identity: " + document.resourcePath().replaceFirst("data/([^/]+)/quest_items/(.+)\\.json", "$1:$2") + ". Renaming an ordinary item cannot match this identity.");
+                if (net.minecraft.client.Minecraft.getInstance().level != null) {
+                    try {
+                        String[] parts = document.resourcePath().split("/", 4);
+                        var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(parts[1], parts[3].substring(0, parts[3].length() - 5));
+                        var stack = com.jvn.villagerretaliation.quest.item.QuestItems.create(net.minecraft.client.Minecraft.getInstance().level.registryAccess(), id, root);
+                        ImGui.textUnformatted("Tooltip preview");
+                        preview.tooltip(stack, scale);
+                    } catch (IllegalArgumentException | IllegalStateException exception) { ImGui.textWrapped(exception.getMessage()); }
+                }
+                fields.render(root, "", false);
+            }
+            case ADVANCEMENT -> {
+                ImGui.textWrapped("Creates a normal Minecraft advancement. Use an advancement action in dialogue, a stage's on-enter actions, or the quest's on-complete actions. Leave criterion empty to grant the whole advancement. Set questline on a quest completion action to grant it after every quest in that line has completed, in any order.");
+                fields.render(root, "", false);
+            }
             case TRADE -> {
                 ImGui.textWrapped("The player pays the cost and receives the result. Rank, chance and profession determine which villagers offer this trade.");
                 if (ImGui.button("Add trade")) run.accept(() -> select.accept(EditorSupportingResources.addTrade(workspace, document)));

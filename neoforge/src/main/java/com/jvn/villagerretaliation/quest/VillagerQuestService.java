@@ -1078,6 +1078,7 @@ public final class VillagerQuestService {
 
 
     public static void onPlayerTick(ServerPlayer player) {
+        sampleMaintainedObjectives(player);
         boolean progressScanTick = player.tickCount % QUEST_PROGRESS_SCAN_INTERVAL_TICKS == 0;
         boolean itemTrackerSyncTick = player.tickCount % QUEST_ITEM_TRACKER_SYNC_INTERVAL_TICKS == 0;
         if (!(player.level() instanceof ServerLevel level)
@@ -2279,6 +2280,7 @@ public final class VillagerQuestService {
         if (!progress.campaignAlternateEntry() && dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED)) {
             data.setDirty();
         }
+        com.jvn.villagerretaliation.action.AdvancementGrant.onQuestCompleted(context);
         sendTrackerSync(context.player(), true);
 
         return result(
@@ -3507,6 +3509,26 @@ public final class VillagerQuestService {
         return List.copyOf(carried.values());
     }
 
+    private static void sampleMaintainedObjectives(ServerPlayer player) {
+        if (!player.isAlive() || player.isSpectator()) return;
+        var level = player.serverLevel();
+        var data = VillagerQuestSavedData.get(level);
+        for (var entry : data.progress(player.getUUID())) {
+            var progress = entry.getValue();
+            if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                    || com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(player, entry.getKey())) continue;
+            var definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition == null || !CampaignQuestAccess.executionIssue(level, player.getUUID(), definition, progress).isBlank()) continue;
+            for (var objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
+                if (objective.rules().maintainTicks() == 0) continue;
+                var context = contextForStartedVillager(level, player, progress).orElse(null);
+                var evaluation = objectiveEvaluationContext(player, context, level, definition, progress);
+                if (progress.sampleCondition(objective.id(), QuestObjectiveRegistry.maintainedConditionMet(evaluation, objective), level.getGameTime(), objective.rules().maintainTicks()))
+                    data.setDirty();
+            }
+        }
+    }
+
     private static boolean objectiveComplete(
             ServerPlayer player,
             DialogueContext context,
@@ -3515,7 +3537,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestDefinition.Objective objective) {
         if (com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.forced(player, definition.id(), progress.currentStage(), objective.id())) return true;
-        if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK
+        if (objective.type() != QuestDefinition.ObjectiveType.ITEM_CHECK && !objective.rules().live()
                 && progress.objectiveComplete(objective.id())) {
             return true;
         }
@@ -5162,6 +5184,11 @@ public final class VillagerQuestService {
                 player,
                 new QuestDefinition.SelectedText(step.text(), step.textKey()),
                 activeObjectiveStepReplacements(player, context, definition, progress, presentationProgress, objective));
+        if (objective.rules().live()) {
+            var result = QuestObjectiveRegistry.evaluate(objectiveEvaluationContext(player, context, player.serverLevel(), definition, progress), objective);
+            return label + result.map(value -> " (" + value.message() + ")").orElse("");
+        }
+        if (objective.rules().distinctVillagers()) return label + " (" + progress.objectiveCounter(objective.id()) + "/" + objective.count() + " different villagers)";
         return complete ? label : progressAwareObjectiveText(player, progress, objective, label);
     }
 

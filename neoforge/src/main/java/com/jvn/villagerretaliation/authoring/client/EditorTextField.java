@@ -117,7 +117,7 @@ final class EditorTextField {
             formatToolbar(selection);
             EditorWidgets.sameLineFor("Insert variable");
         }
-        String variable = variables.render(kind, textScale);
+        String variable = itemText() ? null : variables.render(kind, textScale);
         if (variable != null) selection.command = new Command("{" + variable + "}", false);
         if (formatting) {
             EditorWidgets.sameLineFor("Style");
@@ -239,6 +239,8 @@ final class EditorTextField {
                 && ImGui.getFrameCount() > selection.focusFrame + 1;
     }
 
+    private boolean itemText() { return context.path().contains("/quest_items/"); }
+
     private void formattingShortcut(Selection selection) {
         if (selection.toolbarBusy || selection.command != null) return;
         for (var style : EditorTextStyles.STYLES) {
@@ -288,11 +290,11 @@ final class EditorTextField {
             ImGui.endMenu();
         }
         for (var style : EditorTextStyles.STYLES.subList(3, EditorTextStyles.STYLES.size())) {
-            if (ImGui.menuItem(style.name(), EditorShortcuts.binding(style.command(), overrides)))
+            if ((!itemText() || EditorTextStyles.itemTag(style.tag())) && ImGui.menuItem(style.name(), EditorShortcuts.binding(style.command(), overrides)))
                 selection.command = new Command(style.tag(), true);
         }
         ImGui.separator();
-        if (ImGui.beginMenu("Gradient")) {
+        if (!itemText() && ImGui.beginMenu("Gradient")) {
             ImGui.setWindowFontScale(1);
             if (selection.gradientStart == null) {
                 selection.gradientStart = new float[] {1, .67f, 0};
@@ -309,12 +311,12 @@ final class EditorTextField {
             ImGui.endMenu();
         }
         var presets = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
-        if (!presets.isEmpty() && ImGui.beginMenu("Custom styles")) {
+        if (!itemText() && !presets.isEmpty() && ImGui.beginMenu("Custom styles")) {
             for (String tag : new java.util.TreeSet<>(presets.keySet()))
                 if (ImGui.menuItem(tag)) selection.command = new Command(tag, true);
             ImGui.endMenu();
         }
-        if (ImGui.beginMenu("Gaze")) {
+        if (!itemText() && ImGui.beginMenu("Gaze")) {
             for (String target : java.util.List.of("player", "nearest_participant", "role:provider"))
                 if (ImGui.menuItem(target.replace('_', ' '))) selection.command = new Command("<look=" + target + ">", false);
             ImGui.textDisabled("Use <look=role:name> for a bound character.");

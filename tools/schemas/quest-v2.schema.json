@@ -3738,6 +3738,25 @@
             }
           }
         },
+        "distinct_villagers": {
+          "type": "boolean"
+        },
+        "maintain_ticks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!__generated)(?!vr\\$)[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "required_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "count": {
           "type": "integer",
           "minimum": 1
@@ -4034,6 +4053,10 @@
           "enum": [
             "random"
           ]
+        },
+        "quest_item": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
         },
         "components": {
           "type": "object",
@@ -12125,6 +12148,176 @@
             "properties": {
               "type": {
                 "enum": [
+                  "advancement"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "advancement"
+            ],
+            "properties": {
+              "advancement": {
+                "type": "string",
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "criterion": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "questline": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "item_transfer"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "operation_id",
+              "direction",
+              "selection",
+              "quantity"
+            ],
+            "properties": {
+              "operation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[a-z0-9_.:/-]+$",
+                "description": "A stable ID. Ordinary dialogue executes once per player. Quest actions execute once per quest run. Keep this ID when editing or moving the action."
+              },
+              "direction": {
+                "enum": [
+                  "give_player",
+                  "take_player"
+                ],
+                "description": "Give player: the player receives newly supplied items. Take player: the player gives items. Armor and offhand slots are never removed by random selection."
+              },
+              "selection": {
+                "enum": [
+                  "specific",
+                  "pool",
+                  "random_inventory"
+                ],
+                "description": "Specific: choose one item. Pool: choose an eligible configured entry. Random inventory: choose an eligible item from the player's main inventory."
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2304,
+                "description": "Total items to give or take. This overrides the authored stack's default count."
+              },
+              "item": {
+                "type": "string"
+              },
+              "quest_item": {
+                "type": "string"
+              },
+              "stack": {
+                "type": "object"
+              },
+              "pool": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 256,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "item": {
+                      "type": "string"
+                    },
+                    "quest_item": {
+                      "type": "string"
+                    },
+                    "stack": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "matching": {
+                "enum": [
+                  "item",
+                  "components"
+                ],
+                "description": "Item compares the base type. Components compares all item components. Quest-item references always require their separate quest identity."
+              },
+              "destination": {
+                "enum": [
+                  "consume",
+                  "villager"
+                ],
+                "description": "Consume removes taken items. Villager places them in the receiving villager's inventory."
+              },
+              "on_missing": {
+                "enum": [
+                  "fail",
+                  "skip"
+                ],
+                "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+              },
+              "on_full": {
+                "enum": [
+                  "fail",
+                  "skip"
+                ],
+                "description": "Fail blocks the action and preserves the chosen item for retry. Skip permanently completes this operation without transferring items."
+              },
+              "exclude_damageable": {
+                "type": "boolean"
+              },
+              "exclude_enchanted": {
+                "type": "boolean"
+              },
+              "exclude_named": {
+                "type": "boolean"
+              },
+              "exclude_quest_items": {
+                "type": "boolean"
+              },
+              "excluded_items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excluded_slots": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 35
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
                   "follower"
                 ]
               }
@@ -12564,6 +12757,7 @@
           "enum": [
             "add_counter",
             "add_tag",
+            "advancement",
             "arm",
             "attribute_reward",
             "branch_transition",
@@ -12589,6 +12783,7 @@
             "gossip_reputation",
             "hud",
             "increment_counter",
+            "item_transfer",
             "knowledge",
             "loot",
             "loot_table",
@@ -12634,6 +12829,7 @@
             "accept",
             "add_counter",
             "add_tag",
+            "advancement",
             "arm",
             "attribute_reward",
             "begin",
@@ -12672,6 +12868,7 @@
             "gossip_reputation",
             "hud",
             "increment_counter",
+            "item_transfer",
             "knowledge",
             "lock",
             "loot",

@@ -21,7 +21,9 @@ final class EditorQuestObjectives {
     private final ImString fact = new ImString("objective_done", 128);
     private final ImString tracker = new ImString(1024);
     private final ImInt x = new ImInt(0), y = new ImInt(64), z = new ImInt(0), radius = new ImInt(4);
-    private boolean optional, taggedDestination = true;
+    private boolean optional, taggedDestination = true, distinct;
+    private final ImInt maintain = new ImInt(0), threshold = new ImInt(0);
+    private final ImString requirements = new ImString(1024);
 
     static boolean guided(String type) {
         return List.of("location_visit", "structure_visit", "follower_arrival", "rescue", "criterion", "fact").contains(type);
@@ -53,6 +55,21 @@ final class EditorQuestObjectives {
         }
         if (type.equals("criterion")) ImGui.inputText(EditorWidgets.field("Criterion ID"), criterion);
         if (type.equals("fact")) ImGui.inputText(EditorWidgets.field("Quest tag"), fact);
+    }
+
+    void rules(String type) {
+        ImGui.textWrapped("Event counters start when this stage becomes active. Conditions and inventory checks read current state. Completed counters stop counting. Distinct villagers and maintained conditions are tracked per player, including party quests.");
+        if (type.equals("trade") || type.equals("gift")) {
+            ImGui.textWrapped(type.equals("trade") ? "Each completed merchant trade counts once, regardless of quantity." : "Each accepted gift counts once.");
+            if (ImGui.checkbox("Count each villager only once", distinct)) distinct = !distinct;
+            ImGui.textWrapped(distinct ? "Repeated actions with the same villager do not count." : "Every matching action counts, including repeated villagers.");
+        }
+        if (type.equals("condition")) {
+            ImGui.inputText(EditorWidgets.field("Task IDs in this stage (comma separated)"), requirements);
+            ImGui.inputInt(EditorWidgets.field("Tasks required (0 = all)"), threshold);
+            ImGui.inputInt(EditorWidgets.field("Maintain conditions for ticks (0 = immediate)"), maintain);
+            ImGui.textWrapped("Add tasks as optional first, then list their IDs here. Conditions must all hold. Maintained time resets when false or interrupted, including leaving the game.");
+        }
     }
 
     void common() {
@@ -120,6 +137,14 @@ final class EditorQuestObjectives {
 
     String append(com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace workspace, AuthoringDocument document, String stage, String type, JsonObject objective) {
         var value = objective.deepCopy();
+        if (type.equals("trade") || type.equals("gift")) value.addProperty("distinct_villagers", distinct);
+        if (type.equals("condition")) {
+            var tasks = new JsonArray();
+            for (String task : requirements.get().split(",")) if (!task.isBlank()) tasks.add(task.trim());
+            if (!tasks.isEmpty()) value.add("requirements", tasks);
+            if (threshold.get() > 0) value.addProperty("required_count", threshold.get());
+            if (maintain.get() > 0) value.addProperty("maintain_ticks", maintain.get());
+        }
         value.addProperty("optional", optional);
         if (!tracker.get().isBlank()) {
             var text = new JsonObject(); text.addProperty("text", tracker.get()); value.add("tracker", text);
