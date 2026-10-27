@@ -39,7 +39,10 @@ public final class SettlementCourierMapNetworking {
                     && (journey != null || request.state() == SettlementFoodRequest.State.PREPARING
                     || town == donor && request.state() == SettlementFoodRequest.State.OFFER_PREPARING);
             var entity = journey == null ? null : level.getEntity(journey.resident);
-            boolean observed = entity instanceof net.minecraft.world.entity.npc.Villager villager && villager.isAlive()
+            boolean observed = !request.terminal() && journey != null && !journey.released()
+                    && entity instanceof net.minecraft.world.entity.npc.Villager villager && villager.isAlive()
+                    && villager.getPersistentData().hasUUID(SettlementCourierService.JOURNEY)
+                    && request.id().equals(villager.getPersistentData().getUUID(SettlementCourierService.JOURNEY))
                     && !villager.isRemoved() && player.distanceToSqr(villager) <= 64 * 64 && player.hasLineOfSight(villager);
             if (permitted) {
                 var name = registry.canonicalRecord(other.id()).map(value -> value.displayName()).orElse("");

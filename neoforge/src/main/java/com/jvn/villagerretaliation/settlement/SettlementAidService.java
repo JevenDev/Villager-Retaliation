@@ -248,8 +248,14 @@ public final class SettlementAidService {
     }
 
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
-        var level = event.getServer().overworld(); if (!enabled(level)) return;
-        SCHEDULES.computeIfAbsent(event.getServer(), ignored -> new Schedule()).tick(event.getServer());
+        long started = com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.start();
+        try { tickServer(event.getServer()); }
+        finally { com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.finish(event.getServer(),
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.Part.AID, started); }
+    }
+    private static void tickServer(MinecraftServer server) {
+        var level = server.overworld(); if (!enabled(level)) return;
+        SCHEDULES.computeIfAbsent(server, ignored -> new Schedule()).tick(server);
     }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { SCHEDULES.remove(event.getServer()); }
 
@@ -473,11 +479,13 @@ public final class SettlementAidService {
         for (var candidate : aid.receipts.values()) {
             var donorRecord = registry.canonicalRecord(candidate.donor()).orElse(null);
             var recipientRecord = registry.canonicalRecord(candidate.recipient()).orElse(null);
-            if (donorRecord != null && recipientRecord != null && !donorRecord.archived() && !recipientRecord.archived()
-                    && !donorRecord.id().equals(recipientRecord.id())) { receipt = candidate; break; }
+            if (donorRecord != null && recipientRecord != null && !donorRecord.archived() && !recipientRecord.archived()) { receipt = candidate; break; }
         }
         if (receipt == null || !SettlementAidCheckpoint.durable(level, receipt.revision())) return;
         var donor = registry.canonicalRecord(receipt.donor()).orElseThrow(); var recipient = registry.canonicalRecord(receipt.recipient()).orElseThrow();
+        if (donor.id().equals(recipient.id())) {
+            aid.receipts.remove(receipt.sequence()); aid.changed(); data.setDirty(); return;
+        }
         var diplomacy = VillageDiplomacySavedData.get(level);
         if (!diplomacy.received(donor.id(), recipient.id(), aid.stream(), receipt.sequence())
                 && !VillageDiplomacyService.standingEvent(level, donor.id(), recipient.id(), aid.stream(), receipt.sequence(), receipt.standing(), "food_aid")) return;

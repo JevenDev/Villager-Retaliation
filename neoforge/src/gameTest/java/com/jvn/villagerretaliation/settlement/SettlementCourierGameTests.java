@@ -57,6 +57,9 @@ public final class SettlementCourierGameTests {
             helper.assertValueEqual(request.deliveredNutrition(), 100L, "only delivered food is credited");
             helper.assertFalse(fixture.home.residents().get(journey.resident).courierAway(), "same resident returns to its home commitments");
             helper.assertTrue(SettlementCourierService.existing(helper.getLevel().getServer(), journey.resident) == null, "background journey creates no entity or chunk ticket");
+            long homeRevision = fixture.home.revision();
+            for (int tick = 0; tick < 20; tick++) SettlementCourierService.step(helper.getLevel(), request, journey.lastTick + 16 + tick, runtime);
+            helper.assertValueEqual(fixture.home.revision(), homeRevision, "completed background returns do not repeatedly restore the resident");
             var replay = SettlementFoodRequest.load(request.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess());
             helper.assertValueEqual(replay.journey.position(), journey.approach.steps().getFirst().position(), "returned resident position persists");
         }
@@ -214,6 +217,21 @@ public final class SettlementCourierGameTests {
         fixture.home.setPermissions(fixture.home.leader(), player.getUUID(), java.util.Set.of());
         var revoked = SettlementCourierMapNetworking.snapshot(player, query);
         helper.assertTrue(revoked.couriers().isEmpty() && revoked.route().isEmpty() && revoked.cells().isEmpty() && !revoked.terrainAllowed(), "revocation removes private overlays");
+        var encountered = EntityType.VILLAGER.create(level); encountered.load(fixture.request.journey.residentContext.copy());
+        var location = helper.absolutePos(new BlockPos(1, 2, 1)); encountered.setPos(location.getBottomCenter()); player.setPos(location.east().getBottomCenter());
+        var journey = fixture.request.journey; journey.presence = SettlementCourierJourney.Presence.PHYSICAL;
+        encountered.getPersistentData().putUUID(SettlementCourierService.JOURNEY, journey.id);
+        encountered.getPersistentData().putLong(SettlementCourierService.INCARNATION, journey.incarnation);
+        helper.assertTrue(level.addFreshEntity(encountered), "unrelated courier can be encountered physically");
+        var encounter = SettlementCourierMapNetworking.snapshot(player, query);
+        helper.assertTrue(encounter.couriers().size() == 1 && encounter.couriers().getFirst().observed() && !encounter.couriers().getFirst().selectedVillage()
+                && encounter.couriers().getFirst().name().isEmpty() && encounter.route().isEmpty() && encounter.cells().isEmpty(),
+                "nearby encounter reveals no distant name, route or terrain");
+        fixture.request.state = SettlementFoodRequest.State.COMPLETED; fixture.request.offer.replaceRemaining(List.of());
+        fixture.request.offer.custody = SettlementFoodOffer.Custody.DELIVERED; fixture.request.deliveredNutrition = 100;
+        journey.leg = SettlementCourierJourney.Leg.FINISHED; journey.step = journey.route().steps().size() - 1;
+        journey.position = journey.route().steps().getLast().position(); journey.presence = SettlementCourierJourney.Presence.RELEASED;
+        helper.assertTrue(SettlementCourierMapNetworking.snapshot(player, query).couriers().isEmpty(), "returned residents stop appearing as diplomatic couriers");
         var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
         com.jvn.villagerretaliation.network.SettlementCourierMapPayload.STREAM_CODEC.encode(buffer, shown);
         helper.assertValueEqual(com.jvn.villagerretaliation.network.SettlementCourierMapPayload.STREAM_CODEC.decode(buffer), shown, "bounded courier map packet round trips");

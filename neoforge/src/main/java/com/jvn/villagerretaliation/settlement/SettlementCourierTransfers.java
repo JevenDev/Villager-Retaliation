@@ -50,6 +50,7 @@ final class SettlementCourierTransfers {
             var resident = home.residents().get(journey.resident);
             if (resident == null) { SettlementCourierService.block(level, request, "resident_context_unavailable"); return; }
             if (courier == null) {
+                if (request.state() == SettlementFoodRequest.State.COMPLETED) return;
                 var context = resident.context(level); if (context == null) return;
                 context.load(journey.residentContext.copy());
                 context.moveTo(journey.position.getX() + 0.5, journey.position.getY(), journey.position.getZ() + 0.5, context.getYRot(), context.getXRot());

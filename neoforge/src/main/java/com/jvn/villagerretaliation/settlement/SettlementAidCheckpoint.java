@@ -34,7 +34,7 @@ final class SettlementAidCheckpoint {
             if (aid.durableRevision >= revision) return true;
         }
         if (now < pending.retryAt) return false;
-        var snapshot = new CompoundTag(); snapshot.put("data", data.save(new CompoundTag(), level.registryAccess()).copy());
+        var snapshot = new CompoundTag(); snapshot.put("data", pending.snapshots.capture(data, level.registryAccess()));
         NbtUtils.addCurrentDataVersion(snapshot);
         var file = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data").resolve("villagerretaliation_settlements.dat");
         pending.revision = aid.revision();
@@ -45,7 +45,21 @@ final class SettlementAidCheckpoint {
         });
         return false;
     }
+    static final class Snapshots {
+        private final Map<SettlementNavigationSection, CompoundTag> navigation = new WeakHashMap<>();
+        CompoundTag capture(SettlementSavedData data, net.minecraft.core.HolderLookup.Provider provider) {
+            return data.save(new CompoundTag(), provider, town -> snapshot(town, provider));
+        }
+        private CompoundTag snapshot(SettlementRecord town, net.minecraft.core.HolderLookup.Provider provider) {
+            var snapshot = town.save(provider, new net.minecraft.nbt.ListTag()).copy();
+            var navigationTags = new net.minecraft.nbt.ListTag();
+            town.navigation().values().forEach(section -> navigationTags.add(this.navigation.computeIfAbsent(section, SettlementNavigationSection::save)));
+            snapshot.put("Navigation", navigationTags);
+            return snapshot;
+        }
+    }
     private static final class Pending {
+        final Snapshots snapshots = new Snapshots();
         CompletableFuture<Void> future;
         long revision, retryAt;
     }

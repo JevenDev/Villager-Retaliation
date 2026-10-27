@@ -40,12 +40,18 @@ public final class SettlementManyVillageProfileScenario {
     private final ServerLevel level;
     private final List<Village> villages = new ArrayList<>();
     private boolean observationsComplete;
+    private boolean diplomaticCouriers;
+    public List<SettlementRecord> towns() { return this.villages.stream().map(Village::town).toList(); }
 
     private SettlementManyVillageProfileScenario(ServerLevel level) {
         this.level = level;
     }
 
     public static SettlementManyVillageProfileScenario prepare(ServerPlayer player) {
+        return prepare(player, TOWNS, false);
+    }
+    public static SettlementManyVillageProfileScenario prepare(ServerPlayer player, int towns, boolean diplomaticCouriers) {
+        if (towns < LOADED_TOWNS || towns > 200) throw new IllegalArgumentException("Invalid profile town count");
         var level = player.serverLevel();
         VillagerRetaliationConfig.SETTLEMENT_MAX_BACKGROUND_VILLAGES.set(0);
         player.setGameMode(GameType.CREATIVE);
@@ -55,12 +61,19 @@ public final class SettlementManyVillageProfileScenario {
         level.setDayTime(6_000L);
         level.setWeatherParameters(100_000, 0, false, false);
         var scenario = new SettlementManyVillageProfileScenario(level);
-        for (int index = 0; index < TOWNS; index++) {
+        scenario.diplomaticCouriers = diplomaticCouriers;
+        for (int index = 0; index < towns; index++) {
             var origin = index < LOADED_TOWNS
                     ? new BlockPos(1_024 + index % 3 * 64, -60, 1_024 + index / 3 * 64)
                     : new BlockPos(16_384 + index % 10 * 64, -60, 16_384 + index / 10 * 64);
             level.setChunkForced(origin.getX() >> 4, origin.getZ() >> 4, true);
             scenario.villages.add(scenario.prepareVillage(player, origin, index));
+        }
+        if (diplomaticCouriers) {
+            for (var position : BlockPos.betweenClosed(new BlockPos(1023, -60, 1023), new BlockPos(1183, -56, 1119))) {
+                if (position.getX() == 1023 || position.getX() == 1183 || position.getZ() == 1023 || position.getZ() == 1119)
+                    level.setBlock(position, Blocks.GLASS.defaultBlockState(), 2);
+            }
         }
         player.connection.teleport(1_096.5D, -59.0D, 1_064.5D, 0.0F, 0.0F);
         return scenario;
@@ -73,6 +86,15 @@ public final class SettlementManyVillageProfileScenario {
             var block = position.getY() < origin.getY() ? Blocks.GRASS_BLOCK
                     : x == 0 || x == 15 || z == 0 || z == 15 ? Blocks.GLASS : Blocks.AIR;
             this.level.setBlock(position, block.defaultBlockState(), 2);
+        }
+        if (this.diplomaticCouriers) {
+            for (int height = 0; height < 3; height++) {
+                for (int side : new int[]{0, 15}) {
+                    this.level.setBlock(origin.offset(side, height, 11), Blocks.AIR.defaultBlockState(), 2);
+                    this.level.setBlock(origin.offset(12, height, side), Blocks.AIR.defaultBlockState(), 2);
+                    this.level.setBlock(origin.offset(13, height, side), Blocks.AIR.defaultBlockState(), 2);
+                }
+            }
         }
         var center = origin.offset(8, 0, 8);
         var registry = VillageAllegianceRegistrySavedData.get(this.level);
@@ -103,7 +125,7 @@ public final class SettlementManyVillageProfileScenario {
             villager.setUUID(new UUID(0xB014L + index, 2L * (resident + 1)));
             villager.setPos(origin.offset(2 + resident % 5 * 2, 0, 9 + resident / 5).getBottomCenter());
             villager.setOnGround(true);
-            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+            villager.setVillagerData(villager.getVillagerData().setProfession(this.diplomaticCouriers && resident >= 2 ? VillagerProfession.NONE : VillagerProfession.FARMER));
             villager.setVillagerXp(1);
             VillagerPresetNameRegistry.setStoredGender(villager, VillagerGender.MALE);
             VillageAllegianceApi.assignKnown(this.level, villager, id, AllegianceAssignmentSource.EXPLICIT_API);
@@ -117,9 +139,9 @@ public final class SettlementManyVillageProfileScenario {
             residents.add(villager.getUUID());
         }
         require(town.configureWorkerPool(player.getUUID(), UUID.randomUUID(), -1,
-                new SettlementWorkerPool.Configuration("Courier crew", residents,
+                new SettlementWorkerPool.Configuration("Courier crew", this.diplomaticCouriers ? residents.subList(0, 2) : residents,
                         List.of(new SettlementWorkerPool.Staffing(workplace.id(), 0, 2))), true), "each village has an explicitly enrolled active pool");
-        for (var resident : residents) require(town.returnToAutomaticStaffing(player.getUUID(), resident), "enrolled residents accept pool control");
+        for (var resident : this.diplomaticCouriers ? residents.subList(0, 2) : residents) require(town.returnToAutomaticStaffing(player.getUUID(), resident), "enrolled residents accept pool control");
         return new Village(town, origin, List.copyOf(residents), destination);
     }
 
@@ -137,13 +159,20 @@ public final class SettlementManyVillageProfileScenario {
             village.town.areas().values().forEach(area -> SettlementBuildingService.refresh(this.level, village.town, area));
             this.level.setChunkForced(village.origin.getX() >> 4, village.origin.getZ() >> 4, false);
         }
+        if (this.diplomaticCouriers) for (int x = 63; x <= 73; x++) for (int z = 63; z <= 69; z++) this.level.setChunkForced(x, z, true);
         this.observationsComplete = true;
         return true;
     }
 
+    public void releaseProfileChunks() {
+        if (this.diplomaticCouriers) for (int x = 63; x <= 73; x++) for (int z = 63; z <= 69; z++) this.level.setChunkForced(x, z, false);
+    }
     public boolean ready() {
-        return this.observationsComplete && this.level.getForcedChunks().isEmpty()
-                && tickingResidents() == LOADED_TOWNS * RESIDENTS_PER_TOWN && unloadedVillages() == TOWNS - LOADED_TOWNS;
+        boolean released = this.diplomaticCouriers
+                ? this.villages.subList(LOADED_TOWNS, this.villages.size()).stream().noneMatch(village -> this.level.getForcedChunks().contains(new net.minecraft.world.level.ChunkPos(village.origin).toLong()))
+                : this.level.getForcedChunks().isEmpty();
+        return this.observationsComplete && released
+                && tickingResidents() == LOADED_TOWNS * RESIDENTS_PER_TOWN && unloadedVillages() == this.villages.size() - LOADED_TOWNS;
     }
 
     public int tickingResidents() {
@@ -155,9 +184,22 @@ public final class SettlementManyVillageProfileScenario {
         return count;
     }
 
+    public String missingResidents() {
+        var missing = new ArrayList<String>();
+        for (var village : this.villages.subList(0, LOADED_TOWNS)) for (var id : village.residents) {
+            var entity = this.level.getEntity(id);
+            if (entity == null) missing.add(id + " absent");
+            else if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isNoAi()
+                    || !this.level.isPositionEntityTicking(villager.blockPosition()))
+                missing.add(id + " " + entity.blockPosition() + " alive=" + entity.isAlive()
+                        + " ticking=" + this.level.isPositionEntityTicking(entity.blockPosition()));
+        }
+        return missing.toString();
+    }
+
     public int unloadedVillages() {
         int count = 0;
-        for (var village : this.villages.subList(LOADED_TOWNS, TOWNS)) {
+        for (var village : this.villages.subList(LOADED_TOWNS, this.villages.size())) {
             if (this.level.getChunkSource().getChunkNow(village.origin.getX() >> 4, village.origin.getZ() >> 4) == null
                     && village.residents.stream().allMatch(id -> this.level.getEntity(id) == null)) count++;
         }
@@ -174,7 +216,8 @@ public final class SettlementManyVillageProfileScenario {
             var town = village.town;
             require(town.workerPools().size() == 1 && town.workerPools().values().stream().allMatch(pool -> pool.authorized(town)),
                     "each village keeps its active worker pool");
-            require(village.residents.stream().allMatch(resident -> town.workerPoolFor(resident) != null), "the full benchmark roster stays enrolled");
+            var enrolled = this.diplomaticCouriers ? village.residents.subList(0, 2) : village.residents;
+            require(enrolled.stream().allMatch(resident -> town.workerPoolFor(resident) != null), "the benchmark worker roster stays enrolled");
             roster += VillageAllegianceRegistrySavedData.get(this.level).residentRoster(town.id(), this.level.getGameTime()).size();
             iron += town.depots().values().stream().mapToInt(depot -> depot.count(stack -> stack.is(Items.IRON_INGOT))).sum();
             for (var id : village.residents) {
@@ -191,8 +234,8 @@ public final class SettlementManyVillageProfileScenario {
             }
             if (index >= LOADED_TOWNS) deliveries.add(village.destination.count(stack -> stack.is(Items.IRON_INGOT)));
         }
-        require(iron == TOWNS * IRON_PER_TOWN, "all depot and carried iron is conserved: " + iron);
-        require(roster == TOWNS * RESIDENTS_PER_TOWN, "the census remains 1,000: " + roster);
+        require(iron == this.villages.size() * IRON_PER_TOWN, "all depot and carried iron is conserved: " + iron);
+        require(roster == this.villages.size() * RESIDENTS_PER_TOWN, "the census remains complete: " + roster);
         return new Snapshot(tickingResidents(), unloadedVillages(), roster, iron, SettlementSimulationService.completedCycles(this.level),
                 List.copyOf(deliveries), List.copyOf(careTimes), SettlementSimulationService.metrics(this.level), this.villages.size());
     }

@@ -1439,6 +1439,12 @@ public final class SettlementRecord {
     }
 
     CompoundTag save(HolderLookup.Provider provider) {
+        var navigationTags = new ListTag();
+        this.navigation.values().forEach(section -> navigationTags.add(section.save()));
+        return save(provider, navigationTags);
+    }
+
+    CompoundTag save(HolderLookup.Provider provider, ListTag navigationTags) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id.value());
         tag.putString("Dimension", this.dimension.toString());
@@ -1590,8 +1596,6 @@ public final class SettlementRecord {
         var courtshipTags = new ListTag();
         this.courtships.values().forEach(attempt -> courtshipTags.add(attempt.save()));
         tag.put("Courtships", courtshipTags);
-        var navigationTags = new ListTag();
-        this.navigation.values().forEach(section -> navigationTags.add(section.save()));
         tag.put("Navigation", navigationTags);
         var homeReleaseTags = new ListTag();
         this.homeReleases.values().forEach(release -> homeReleaseTags.add(release.save()));

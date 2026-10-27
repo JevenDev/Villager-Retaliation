@@ -25,6 +25,7 @@ public final class SettlementCourierJourney {
     BoatCustody boatCustody;
     int step;
     long incarnation, boatIncarnation, revision, lastTick, lastProgress;
+    long nextNavigation;
     CompoundTag residentContext, boatContext = new CompoundTag();
     BlockPos position;
     String blocker = "";

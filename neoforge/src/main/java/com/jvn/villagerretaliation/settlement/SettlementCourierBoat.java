@@ -98,7 +98,7 @@ public final class SettlementCourierBoat {
             if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
             if (courier.isPassenger()) courier.stopRiding();
             if (courier.position().distanceToSqr(Vec3.atBottomCenterOf(target.position())) > 0.64) {
-                if (now % 10 == 0 && !courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5)) {
+                if (SettlementCourierService.navigationDue(level, journey, now) && !courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5)) {
                     journey.obstructed = true; SettlementCourierService.block(level, request, "courier_landing_obstructed");
                 }
                 return;
@@ -145,9 +145,16 @@ public final class SettlementCourierBoat {
     @SubscribeEvent public static void leave(EntityLeaveLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getEntity() instanceof Boat boat)
                 || !boat.getPersistentData().hasUUID(SettlementCourierService.JOURNEY)) return;
-        if (boat.getRemovalReason() != Entity.RemovalReason.KILLED && boat.getRemovalReason() != Entity.RemovalReason.DISCARDED) return;
         var request = SettlementSavedData.get(level).aid().request(boat.getPersistentData().getUUID(SettlementCourierService.JOURNEY));
         if (request == null || request.journey == null || !request.journey.boatId.equals(boat.getUUID())) return;
+        if (boat.getRemovalReason() == Entity.RemovalReason.UNLOADED_TO_CHUNK) {
+            if (request.journey.boatCustody == SettlementCourierJourney.BoatCustody.LAUNCHED
+                    && boat.getPersistentData().getLong(SettlementCourierService.INCARNATION) == request.journey.boatIncarnation) {
+                request.journey.boatContext = boat.saveWithoutId(new CompoundTag()); SettlementCourierService.changed(level, request);
+            }
+            return;
+        }
+        if (boat.getRemovalReason() != Entity.RemovalReason.KILLED && boat.getRemovalReason() != Entity.RemovalReason.DISCARDED) return;
         request.journey.boatCustody = SettlementCourierJourney.BoatCustody.LOST; request.journey.obstructed = true;
         SettlementCourierService.block(level, request, "boat_lost"); SettlementCourierService.changed(level, request);
     }

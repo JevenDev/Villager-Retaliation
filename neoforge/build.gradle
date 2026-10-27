@@ -54,6 +54,8 @@ def constructionClientSmokeDirectory = layout.buildDirectory.dir("construction-c
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 def settlementManyVillageProfileDirectory = layout.buildDirectory.dir("settlement-many-village-profile/${System.currentTimeMillis()}")
 def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
+def diplomacyRestartDirectory = layout.buildDirectory.dir("diplomacy-restart/${System.currentTimeMillis()}")
+
 def settlementMultiplayerDirectory = layout.buildDirectory.dir("settlement-multiplayer/${System.currentTimeMillis()}")
 
 neoForge {
@@ -250,6 +252,17 @@ neoForge {
             systemProperty 'villagerretaliation.campaignScenarioReports', campaignScenarioReports.get().asFile.absolutePath
         }
 
+        (1..4).each { phase ->
+            register("diplomacyRestart${phase}") {
+                client()
+                sourceSet = sourceSets.gameTest
+                gameDirectory.set(diplomacyRestartDirectory)
+                systemProperty 'villagerretaliation.diplomacyRestart', diplomacyRestartDirectory.get().asFile.absolutePath
+                systemProperty 'villagerretaliation.diplomacyRestartPhase', phase.toString()
+                programArguments.addAll '--quickPlaySingleplayer', 'DiplomacyRestart', '--username', 'RestartHost', '--width', '960', '--height', '640'
+            }
+        }
+
         gameTestServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.gameTest
@@ -265,6 +278,8 @@ neoForge {
             systemProperty 'villagerretaliation.settlementLoadProfileRequire20Tps', providers.gradleProperty('settlementLoadProfileRequire20Tps').orElse('false').get()
             systemProperty 'villagerretaliation.settlementLoadProfileOutput', providers.gradleProperty('settlementLoadProfileOutput').orElse('settlement-load-profile').get()
             systemProperty 'villagerretaliation.villageLifeProfile', providers.gradleProperty('villageLifeProfile').orElse('false').get()
+            systemProperty 'villagerretaliation.diplomacyProfile', providers.gradleProperty('diplomacyProfile').orElse('0').get()
+            systemProperty 'villagerretaliation.diplomacyProfileOutput', providers.gradleProperty('diplomacyProfileOutput').orElse('diplomacy-profile').get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }
 
@@ -521,6 +536,12 @@ tasks.named('runSettlementMultiplayerHost') {
         ['host', 'peer'].each { role ->
             def directory = new File(output, role)
             directory.mkdirs()
+            def modsDirectory = providers.gradleProperty('settlementClientSmokeModsDirectory').orNull
+            if (modsDirectory != null) copy {
+                from rootProject.file(modsDirectory)
+                include '*.jar'
+                into new File(directory, 'mods')
+            }
             new File(directory, 'options.txt').text =
                     'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\n'
         }
@@ -529,6 +550,33 @@ tasks.named('runSettlementMultiplayerHost') {
         def result = new File(settlementMultiplayerDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Settlement multiplayer acceptance passed')) {
             throw new GradleException("Multiplayer acceptance did not finish. Inspect ${settlementMultiplayerDirectory.get().asFile}")
+        }
+    }
+}
+
+(1..4).each { phase ->
+    tasks.named("runDiplomacyRestart${phase}") {
+        dependsOn tasks.named(phase == 1 ? 'runGameTestServer' : "runDiplomacyRestart${phase - 1}")
+        doFirst {
+            def output = diplomacyRestartDirectory.get().asFile
+            if (phase == 1) {
+                def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+                if (!metadata.isFile()) throw new GradleException('Restart checks require generated GameTest world metadata.')
+                copy { from metadata; into new File(output, 'saves/DiplomacyRestart') }
+                def modsDirectory = providers.gradleProperty('settlementClientSmokeModsDirectory').orNull
+                if (modsDirectory != null) copy {
+                    from rootProject.file(modsDirectory)
+                    include '*.jar'
+                    into new File(output, 'mods')
+                }
+                new File(output, 'options.txt').text =
+                        'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\ntutorialStep:none\nrenderDistance:3\nsimulationDistance:5\n'
+            }
+        }
+        doLast {
+            def result = new File(diplomacyRestartDirectory.get().asFile, "phase-${phase}.txt")
+            if (!result.isFile() || !result.text.contains("Diplomacy restart phase ${phase} passed"))
+                throw new GradleException("Restart phase ${phase} did not finish. Inspect ${diplomacyRestartDirectory.get().asFile}")
         }
     }
 }

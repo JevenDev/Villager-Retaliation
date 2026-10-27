@@ -148,7 +148,12 @@ public final class VillageDiplomacyService {
 
     @SubscribeEvent
     public static void tick(ServerTickEvent.Post event) {
-        var server = event.getServer();
+        long started = com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.start();
+        try { tickServer(event.getServer()); }
+        finally { com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.finish(event.getServer(),
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.Part.CONTACTS, started); }
+    }
+    private static void tickServer(MinecraftServer server) {
         long now = server.overworld().getGameTime();
         if (now % 20 != 0) return;
         var data = VillageDiplomacySavedData.get(server.overworld());

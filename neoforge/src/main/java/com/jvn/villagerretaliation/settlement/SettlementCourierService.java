@@ -38,6 +38,14 @@ public final class SettlementCourierService {
         final Map<UUID, CompletableFuture<Void>> checkpoints = new java.util.HashMap<>();
         final Map<UUID, Long> retryAt = new java.util.HashMap<>();
         boolean stopping;
+        long navigationTick = Long.MIN_VALUE;
+        int courierCursor;
+        int nextCourierStart(int count) {
+            if (count == 0) return 0;
+            int start = Math.floorMod(this.courierCursor, count);
+            this.courierCursor = (start + 1) % count;
+            return start;
+        }
     }
     static Entity existing(MinecraftServer server, UUID id) {
         for (var level : server.getAllLevels()) { var entity = level.getEntity(id); if (entity != null) return entity; }
@@ -128,10 +136,19 @@ public final class SettlementCourierService {
         }
     }
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
-        var server = event.getServer(); var root = server.overworld(); if (!SettlementAidService.enabled(root)) return;
+        long started = com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.start();
+        try { tickServer(event.getServer()); }
+        finally { com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.finish(event.getServer(),
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.Part.COURIERS, started); }
+    }
+    private static void tickServer(MinecraftServer server) {
+        var root = server.overworld(); if (!SettlementAidService.enabled(root)) return;
         var runtime = RUNTIMES.computeIfAbsent(server, ignored -> new Runtime()); if (runtime.stopping) return;
         var data = SettlementSavedData.get(root); long now = root.getGameTime();
-        for (var id : List.copyOf(data.aid().couriers.values())) {
+        var couriers = List.copyOf(data.aid().couriers.values());
+        int start = runtime.nextCourierStart(couriers.size());
+        for (int offset = 0; offset < couriers.size(); offset++) {
+            var id = couriers.get((start + offset) % couriers.size());
             var request = data.aid().request(id); if (request == null || request.journey == null) continue;
             var level = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, request.journey.dimension));
             if (level == null) { block(root, request, "settlement_unavailable"); continue; }
@@ -298,6 +315,12 @@ public final class SettlementCourierService {
         if (!level.addFreshEntity(courier)) { courier.stopRiding(); block(level, request, "courier_spawn_rejected"); return; }
         journey.lastTick = now; block(level, request, "");
     }
+    static boolean navigationDue(ServerLevel level, SettlementCourierJourney journey, long now) {
+        var runtime = runtime(level.getServer());
+        if (now < journey.nextNavigation || runtime.navigationTick == now) return false;
+        runtime.navigationTick = now; journey.nextNavigation = now + (journey.obstructed ? 40 : 10);
+        return true;
+    }
     static void physical(ServerLevel level, SettlementFoodRequest request, Villager courier, long now) {
         var journey = request.journey;
         if (!courier.isAlive()) return;
@@ -318,7 +341,7 @@ public final class SettlementCourierService {
         if (distance <= 0.64) {
             journey.step++; journey.position = target.position(); journey.lastProgress = now; journey.obstructed = false;
             block(level, request, ""); capture(journey, courier); travelled(level, request); changed(level, request);
-        } else if (now % 10 == 0) {
+        } else if (navigationDue(level, journey, now)) {
             if (!courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5)
                     || now - journey.lastProgress > 200) {
                 journey.obstructed = true; block(level, request, "courier_path_obstructed");

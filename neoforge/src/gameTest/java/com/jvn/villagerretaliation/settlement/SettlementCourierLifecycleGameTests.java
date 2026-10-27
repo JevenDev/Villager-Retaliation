@@ -18,6 +18,128 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_couriers")
 @PrefixGameTestTemplate(false)
 public final class SettlementCourierLifecycleGameTests {
+    @GameTest(template = "empty", timeoutTicks = 1000)
+    public static void unloadingAfloatPreservesBoatAndResidentIncarnations(GameTestHelper helper) {
+        var fixture = SettlementCourierGameTests.fixture(helper, false); var request = fixture.request(); var level = helper.getLevel();
+        var origin = helper.absolutePos(new BlockPos(2, 2, 2));
+        for (int x = -2; x <= 8; x++) for (int z = -2; z <= 3; z++) {
+            level.setBlockAndUpdate(origin.offset(x, -2, z), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+            level.setBlockAndUpdate(origin.offset(x, -1, z), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+            level.setBlockAndUpdate(origin.offset(x, 0, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(origin.offset(x, 1, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        }
+        var courier = EntityType.VILLAGER.create(level); courier.load(request.journey.residentContext.copy());
+        courier.moveTo(origin.getX() + .5, origin.getY(), origin.getZ() + .5);
+        var crossing = new DiplomaticRoute(List.of(new DiplomaticRoute.Step(origin.west(2), DiplomaticRoute.Mode.WALK),
+                new DiplomaticRoute.Step(origin, DiplomaticRoute.Mode.LAUNCH), new DiplomaticRoute.Step(origin.east(), DiplomaticRoute.Mode.SAIL),
+                new DiplomaticRoute.Step(origin.east(2), DiplomaticRoute.Mode.SAIL), new DiplomaticRoute.Step(origin.east(3), DiplomaticRoute.Mode.SAIL),
+                new DiplomaticRoute.Step(origin.east(4), DiplomaticRoute.Mode.SAIL), new DiplomaticRoute.Step(origin.east(5), DiplomaticRoute.Mode.SAIL),
+                new DiplomaticRoute.Step(origin.east(6), DiplomaticRoute.Mode.SAIL),
+                new DiplomaticRoute.Step(origin.east(8), DiplomaticRoute.Mode.LAND)));
+        var journey = new SettlementCourierJourney(request.id(), courier.getUUID(), fixture.home().id(), level.dimension().location(),
+                SettlementCourierGameTests.route(origin.west(2), origin.west(2)), crossing, courier.saveWithoutId(new CompoundTag()), 2, new ItemStack(Items.BIRCH_BOAT), level.getGameTime());
+        request.journey = journey; journey.leg = SettlementCourierJourney.Leg.OUTBOUND; journey.step = 1; journey.position = origin;
+        journey.presence = SettlementCourierJourney.Presence.PHYSICAL; journey.boatCustody = SettlementCourierJourney.BoatCustody.LAUNCHED; journey.boatIncarnation = 1;
+        courier.getPersistentData().putUUID(SettlementCourierService.JOURNEY, journey.id); courier.getPersistentData().putLong(SettlementCourierService.INCARNATION, 2);
+        helper.assertTrue(level.addFreshEntity(courier), "existing resident enters its real boat");
+        var boat = SettlementCourierBoat.create(level, journey, net.minecraft.world.phys.Vec3.atBottomCenterOf(origin));
+        helper.assertTrue(level.addFreshEntity(boat) && courier.startRiding(boat, true), "reserved boat holds the courier");
+        var player = helper.makeMockServerPlayerInLevel(); player.moveTo(origin.getX(), origin.getY() + 2, origin.getZ() + 4);
+        SettlementCourierService.capture(journey, courier); SettlementCourierService.changed(level, request);
+        var sequence = helper.startSequence();
+        for (int cycle = 1; cycle <= 3; cycle++) {
+            final int seal = cycle;
+            sequence.thenExecute(() -> {
+                var resident = (net.minecraft.world.entity.npc.Villager) level.getEntity(journey.resident);
+                var vessel = (net.minecraft.world.entity.vehicle.Boat) resident.getVehicle();
+                vessel.getPersistentData().putInt("TransitSeal", seal);
+                vessel.setRemoved(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
+                resident.setRemoved(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
+            }).thenWaitUntil(() -> helper.assertTrue(level.getEntity(journey.resident) instanceof net.minecraft.world.entity.npc.Villager resident
+                    && resident.getVehicle() instanceof net.minecraft.world.entity.vehicle.Boat && journey.presence == SettlementCourierJourney.Presence.PHYSICAL,
+                    "resident and boat rematerialize together: " + journey.presence + "/" + journey.blocker))
+                    .thenExecute(() -> {
+                        var resident = (net.minecraft.world.entity.npc.Villager) level.getEntity(journey.resident);
+                        var vessel = (net.minecraft.world.entity.vehicle.Boat) resident.getVehicle();
+                        helper.assertValueEqual(vessel.getUUID(), journey.boatId, "boat identity is conserved across unloading");
+                        helper.assertValueEqual(vessel.getPersistentData().getInt("TransitSeal"), seal, "boat state at unloading survives rematerialization");
+                        helper.assertValueEqual(vessel.getPersistentData().getLong(SettlementCourierService.INCARNATION), journey.boatIncarnation, "native boat matches current incarnation");
+                        helper.assertValueEqual(resident.getPersistentData().getLong(SettlementCourierService.INCARNATION), journey.incarnation, "native resident matches current incarnation");
+                    });
+        }
+        sequence.thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void checkpointSnapshotsKeepAssetsAndCustodyConsistentAfterMutation(GameTestHelper helper) {
+        var fixture = SettlementCourierGameTests.fixture(helper, false); var level = helper.getLevel(); var data = SettlementSavedData.get(level);
+        var snapshots = new SettlementAidCheckpoint.Snapshots();
+        var origin = SettlementTerrainSection.sectionOrigin(helper.absolutePos(new BlockPos(1, 2, 1)));
+        fixture.home().recordNavigation(SettlementNavigationSection.capture(origin, level.getChunkAt(origin)));
+        fixture.home().changed();
+        fixture.donor().depot().setItem(0, new ItemStack(Items.BREAD, 20));
+        var first = snapshots.capture(data, level.registryAccess()); var frozen = first.copy();
+        level.setBlockAndUpdate(origin, net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK.defaultBlockState());
+        fixture.home().recordNavigation(SettlementNavigationSection.capture(origin, level.getChunkAt(origin)));
+        fixture.donor().depot().removeItem(0, 5); fixture.recipient().depot().setItem(0, new ItemStack(Items.BREAD, 5));
+        fixture.home().residents().get(fixture.request().journey.resident).courier(fixture.request().id(), 2, true); fixture.home().changed();
+        fixture.request().journey.incarnation = 2; SettlementCourierService.changed(level, fixture.request());
+        var second = snapshots.capture(data, level.registryAccess());
+        helper.assertValueEqual(first, frozen, "queued checkpoint remains immutable after live asset and resident changes");
+        helper.assertValueEqual(second, data.save(new CompoundTag(), level.registryAccess()), "checkpoint includes current depots, resident ownership and aid custody together");
+        var secondFrozen = second.copy();
+        long revision = fixture.home().revision();
+        fixture.home().residents().get(fixture.request().journey.resident).observeShortage(1200, true);
+        helper.assertValueEqual(fixture.home().revision(), revision, "care fields can change between town revision updates");
+        var third = snapshots.capture(data, level.registryAccess());
+        helper.assertValueEqual(third, data.save(new CompoundTag(), level.registryAccess()), "every mutable care field is refreshed without a town revision change");
+        fixture.donor().depot().removeItem(0, 5);
+        snapshots.capture(data, level.registryAccess());
+        helper.assertValueEqual(second, secondFrozen, "a later checkpoint cannot mutate an earlier queued save");
+        fixture.request().journey.obstructed = true; helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void navigationBudgetServesEveryCourierWhenThePhysicalCapIsRaised(GameTestHelper helper) {
+        var fixture = SettlementCourierGameTests.fixture(helper, false); var level = helper.getLevel();
+        var saved = fixture.request().journey.save(level.registryAccess());
+        var journeys = new java.util.ArrayList<SettlementCourierJourney>();
+        for (int index = 0; index < 32; index++) journeys.add(SettlementCourierJourney.load(saved, level.registryAccess()));
+        var runtime = SettlementCourierService.runtime(level.getServer()); runtime.navigationTick = Long.MIN_VALUE;
+        int[] served = new int[journeys.size()];
+        for (long tick = 0; tick < 64; tick++) {
+            int start = runtime.nextCourierStart(journeys.size()), submissions = 0;
+            for (int offset = 0; offset < journeys.size(); offset++) {
+                int index = (start + offset) % journeys.size();
+                if (SettlementCourierService.navigationDue(level, journeys.get(index), tick)) { served[index]++; submissions++; }
+            }
+            helper.assertValueEqual(submissions, 1, "global navigation budget permits one submission each tick");
+        }
+        for (int count : served) helper.assertValueEqual(count, 2, "every courier receives a fair navigation turn");
+        runtime.navigationTick = Long.MIN_VALUE;
+        fixture.request().journey.obstructed = true; helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 400)
+    public static void dissolutionKeepsAidAssetsAndMergedReceiptsGrantNoSelfGoodwill(GameTestHelper helper) {
+        var fixture = SettlementCourierGameTests.fixture(helper, false); var request = fixture.request(); var level = helper.getLevel();
+        var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level, new com.mojang.authlib.GameProfile(fixture.home().leader(), "AidLifecycle"));
+        var preview = SettlementLifecycleService.preview(player.createCommandSourceStack().withPermission(0), fixture.home().id(),
+                SettlementLifecycleService.Operation.DISSOLVE, null, null);
+        helper.assertTrue(preview.token() == null && preview.blockers().stream().anyMatch(message -> message.contains("food aid")),
+                "outstanding shipment custody explicitly blocks dissolution");
+        var data = SettlementSavedData.get(level); request.journey.obstructed = true;
+        request.offer.replaceRemaining(List.of()); request.offer.custody = SettlementFoodOffer.Custody.DELIVERED;
+        request.deliveredNutrition = 100; data.aid().receipt(request, 3, level.getGameTime()); data.setDirty();
+        helper.assertTrue(com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level)
+                .mergeSettlements(level, request.donor(), request.requester()), "registry reconciles the merged pair before goodwill acknowledgement");
+        helper.startSequence().thenWaitUntil(() -> {
+            SettlementAidService.receipt(level);
+            helper.assertTrue(data.aid().receipts.values().stream().noneMatch(receipt -> receipt.request().equals(request.id())), "merged self receipt is durably acknowledged");
+        }).thenExecute(() -> helper.assertValueEqual(com.jvn.villagerretaliation.diplomacy.VillageDiplomacySavedData.get(level)
+                .standing(request.requester(), request.requester()), 0, "internal delivery cannot earn diplomatic standing with itself")).thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 400)
     public static void cachedRouteRepairKeepsCustodyAndRejectsInvalidDetours(GameTestHelper helper) {
         var fixture = SettlementCourierGameTests.fixture(helper, false); var request = fixture.request();

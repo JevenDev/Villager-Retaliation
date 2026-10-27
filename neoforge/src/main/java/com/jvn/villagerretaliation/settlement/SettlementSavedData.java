@@ -269,10 +269,14 @@ public final class SettlementSavedData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        return save(tag, provider, town -> town.save(provider));
+    }
+
+    CompoundTag save(CompoundTag tag, HolderLookup.Provider provider, java.util.function.Function<SettlementRecord, CompoundTag> snapshot) {
         if (this.recovery.preservedRoot() != null) return this.recovery.preservedRoot().copy();
         tag.putInt("FormatVersion", FORMAT_VERSION);
         ListTag entries = new ListTag();
-        this.settlements.values().forEach(town -> entries.add(town.save(provider)));
+        this.settlements.values().forEach(town -> entries.add(snapshot.apply(town)));
         this.recovery.appendQuarantine(entries);
         tag.put("Settlements", entries);
         tag.put("FoodAid", this.aid.save(provider));

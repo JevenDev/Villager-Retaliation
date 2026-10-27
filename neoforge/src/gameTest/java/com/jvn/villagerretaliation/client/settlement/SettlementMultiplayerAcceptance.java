@@ -146,7 +146,8 @@ public final class SettlementMultiplayerAcceptance {
                 write("acceptance.json", new Gson().toJson(Map.of(
                         "transport", "Two native clients using a TCP listener bound only to loopback",
                         "fixture", "Disposable integrated server, one stationary civic guard, separate remote workplace and survival player bodies",
-                        "checks", List.of("outsider access denied", "delegated view cannot grant itself authority or order guards",
+                        "checks", List.of("relations contact filtering over TCP", "revoked relations reveal no names or counts",
+                                "stale and revoked aid policies rejected over TCP", "authorized aid policy applied over TCP", "outsider access denied", "delegated view cannot grant itself authority or order guards",
                                 "authorized guard selection and movement order", "stale camera request rejected",
                                 "remote body remains vulnerable and unmoved", "damage closes view and releases chunks",
                                 "normal close releases chunks", "disconnect releases server tickets",
@@ -174,7 +175,9 @@ public final class SettlementMultiplayerAcceptance {
             LogUtils.getLogger().info("Settlement multiplayer peer phase: {}", phase);
         }
         ticks++;
-        if (phase.equals("outsider")) {
+        if (VillageRelationsMultiplayerChecks.handles(phase)) {
+            if (VillageRelationsMultiplayerChecks.client(minecraft, phase, ticks)) write("peer-state.txt", phase + "_done");
+        } else if (phase.equals("outsider")) {
             if (ticks == 10) action(new SettlementManagementActionPayload.View());
             if (ticks == 20) action(new SettlementManagementActionPayload.RemoveArea(fixture.area()));
             if (ticks == 30) action(new SettlementManagementActionPayload.Permissions(minecraft.player.getUUID(), Set.of(SettlementPermission.VIEW, SettlementPermission.STAFF)));
@@ -272,10 +275,16 @@ public final class SettlementMultiplayerAcceptance {
         var town = SettlementSavedData.get(server.overworld()).get(new VillageAllegianceId(fixture.town())).orElseThrow();
         String ack = read("peer-state.txt");
         long now = server.overworld().getGameTime();
+        if (VillageRelationsMultiplayerChecks.handles(hostPhase)) {
+            var following = VillageRelationsMultiplayerChecks.server(server.getPlayerList().getPlayer(leader), peer, town, hostPhase, ack);
+            if (following != null) next(following, now);
+            return;
+        }
         if (hostPhase.isEmpty() && peer != null) {
             peer.setGameMode(GameType.SURVIVAL);
             peer.connection.teleport(BODY.x, BODY.y, BODY.z, 0, 0);
-            next("outsider", now);
+            VillageRelationsMultiplayerChecks.prepare(server.getPlayerList().getPlayer(leader), peer, town);
+            next("relations_read", now);
         } else if (hostPhase.equals("outsider") && ack.equals("outsider_done")) {
             require(!town.permits(peer.getUUID(), SettlementPermission.VIEW), "an outsider cannot grant itself settlement permissions");
             require(town.areas().containsKey(fixture.area()) && town.duties().containsKey(fixture.resident()), "forged outsider edits preserve the workplace and duty");

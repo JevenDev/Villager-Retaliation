@@ -149,6 +149,11 @@ public final class SettlementLifecycleService {
     }
 
     private static void dissolutionBlockers(ServerLevel level, SettlementRecord town, List<String> blockers) {
+        var data = SettlementSavedData.get(level);
+        if (data.aid().requests.values().stream()
+                .filter(request -> data.get(request.donor()).orElse(null) == town || data.get(request.requester()).orElse(null) == town)
+                .anyMatch(request -> request.offer != null && !request.offer.empty() || request.journey != null && request.journey.ownsResident()))
+            blockers.add("Complete or recover outstanding food aid and return its couriers before dissolution.");
         if (!town.economy().bank.stocks.isEmpty()) blockers.add("Unregister or mine every bank treasury before dissolution; its noncurrency items must also be retained.");
         if (!town.economy().pendingDeposit().isZero()) blockers.add("Deposit pending income before dissolution; pending funds must be retained.");
         if (!town.economy().balance().equals(CurrencyAmount.ZERO)) blockers.add("Withdraw the treasury before dissolution.");
