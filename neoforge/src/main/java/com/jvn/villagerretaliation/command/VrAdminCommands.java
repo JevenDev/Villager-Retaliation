@@ -28,10 +28,8 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
-import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 
 final class VrAdminCommands {
@@ -88,14 +86,14 @@ final class VrAdminCommands {
                                                 .executes(VillagerRetaliationCommands::setProfileGender)))))
                 .then(literal("reputation")
                         .then(literal("set")
-                                .then(argument("targets", EntityArgument.entities())
+                                .then(VillagerRetaliationCommands.namedVillagerArgument("targets")
                                         .then(argument("player", GameProfileArgument.gameProfile())
                                                 .then(argument("value", IntegerArgumentType.integer())
                                                         .executes(VillagerRetaliationCommands::setReputation))))))
                 .then(literal("relationship")
                         .then(literal("set")
-                                .then(argument("first", EntityArgument.entity())
-                                        .then(argument("second", EntityArgument.entity())
+                                .then(VillagerRetaliationCommands.namedVillagerArgument("first")
+                                        .then(VillagerRetaliationCommands.namedVillagerArgument("second")
                                                 .then(argument("stage", StringArgumentType.word())
                                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                                                 Arrays.stream(VillagerRelationshipStage.values())
@@ -388,7 +386,7 @@ final class VrAdminCommands {
                 .then(literal("rebind")
                         .then(argument("scene_id", StringArgumentType.word())
                                 .then(argument("alias", StringArgumentType.word())
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(VillagerRetaliationCommands.namedVillagerArgument("target")
                                                 .executes(VillagerRetaliationCommands::rebindSceneActorDebug)))))
                 .then(literal("cleanupEncounter")
                         .then(argument("encounter_id", StringArgumentType.word())
@@ -501,8 +499,8 @@ final class VrAdminCommands {
         return VillagerRetaliationCommands.namedVillagerArgument("villager");
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> entityArgument() {
-        return argument("entity", EntityArgument.entity());
+    private static RequiredArgumentBuilder<CommandSourceStack, String> entityArgument() {
+        return VillagerRetaliationCommands.namedVillagerArgument("entity");
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> questIdArgument() {
@@ -512,7 +510,7 @@ final class VrAdminCommands {
                         builder));
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> providerArgument() {
-        return argument("provider", EntityArgument.entity());
+    private static RequiredArgumentBuilder<CommandSourceStack, String> providerArgument() {
+        return VillagerRetaliationCommands.namedVillagerArgument("provider");
     }
 }

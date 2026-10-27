@@ -21,6 +21,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.Villager;
@@ -110,7 +111,12 @@ public final class VillageAllegianceService {
         }
         BlockPos evidencePosition = entity.blockPosition().immutable();
         if (entity instanceof Villager villager && source == AllegianceAssignmentSource.NATURAL_SPAWN) {
-            assignFreshVillager(level, villager, evidencePosition);
+            MobSpawnType spawnType = villager.getSpawnType();
+            // summons with explicit NBT skip finalizeSpawn and have no spawn type
+            AllegianceAssignmentSource spawnSource = spawnType == null || spawnType == MobSpawnType.COMMAND
+                    || spawnType == MobSpawnType.SPAWN_EGG || spawnType == MobSpawnType.DISPENSER
+                    ? AllegianceAssignmentSource.COMMAND : source;
+            assignFreshVillager(level, villager, evidencePosition, spawnSource);
             return;
         }
         if (tryResolve(level, entity, source, false, evidencePosition)) {
@@ -482,14 +488,15 @@ public final class VillageAllegianceService {
         return false;
     }
 
-    private static void assignFreshVillager(ServerLevel level, Villager villager, BlockPos spawnPosition) {
+    private static void assignFreshVillager(ServerLevel level, Villager villager, BlockPos spawnPosition,
+                                             AllegianceAssignmentSource source) {
         if (PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
-            assignUnaffiliated(level, villager, AllegianceAssignmentSource.NATURAL_SPAWN);
+            assignUnaffiliated(level, villager, source);
             return;
         }
         Optional<VillageAllegianceId> village = activeVillageAt(level, spawnPosition);
         if (village.isPresent()) {
-            assignKnown(level, villager, village.get(), AllegianceAssignmentSource.NATURAL_SPAWN, spawnPosition);
+            assignKnown(level, villager, village.get(), source, spawnPosition);
         } else {
             // Structure entities join the level while their chunk is still being generated. At that
             // point the village POIs and indexed footprint may not exist yet, so an immediate negative
@@ -497,7 +504,7 @@ public final class VillageAllegianceService {
             // position and let the bounded assignment queue retry after worldgen has finished exposing
             // the POIs. A genuinely outside spawn is finalized as unaffiliated once the surrounding
             // observation is complete.
-            schedulePending(level, villager, spawnPosition, AllegianceAssignmentSource.NATURAL_SPAWN, 0,
+            schedulePending(level, villager, spawnPosition, source, 0,
                     level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
         }
     }

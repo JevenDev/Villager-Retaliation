@@ -41,12 +41,12 @@ final class VrPlayerCommands {
                     return 1;
                 }))
                 .then(literal("escort")
-                        .then(literal("follow").then(argument("actor", net.minecraft.commands.arguments.UuidArgument.uuid())
+                        .then(literal("follow").then(VillagerRetaliationCommands.namedVillagerArgument("actor")
                                 .executes(context -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(
-                                        context.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(context, "actor"), true) ? 1 : 0)))
-                        .then(literal("wait").then(argument("actor", net.minecraft.commands.arguments.UuidArgument.uuid())
+                                        context.getSource().getPlayerOrException(), VillagerRetaliationCommands.namedEntityId(context, "actor"), true) ? 1 : 0)))
+                        .then(literal("wait").then(VillagerRetaliationCommands.namedVillagerArgument("actor")
                                 .executes(context -> com.jvn.villagerretaliation.quest.follower.QuestFollowerService.command(
-                                        context.getSource().getPlayerOrException(), net.minecraft.commands.arguments.UuidArgument.getUuid(context, "actor"), false) ? 1 : 0))))
+                                        context.getSource().getPlayerOrException(), VillagerRetaliationCommands.namedEntityId(context, "actor"), false) ? 1 : 0))))
                 .then(party())
                 .then(CompanionCommands.root())
                 .then(SettlementCommands.root())

@@ -14,7 +14,6 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.npc.Villager;
 
@@ -33,36 +32,36 @@ final class CompanionCommands {
                     }
                     return 1;
                 })
-                .then(literal("stories").then(argument("villager", UuidArgument.uuid()).executes(context -> {
+                .then(literal("stories").then(VillagerRetaliationCommands.namedVillagerArgument("villager").executes(context -> {
                     var player = context.getSource().getPlayerOrException();
-                    var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                    var villager = VillagerEntityResolver.loaded(player.getServer(), VillagerRetaliationCommands.namedEntityId(context, "villager"));
                     return villager != null && com.jvn.villagerretaliation.party.CompanionGrowthService.describe(player, villager)
                             ? 1 : denied(context.getSource());
                 })))
-                .then(literal("grow").then(argument("villager", UuidArgument.uuid())
+                .then(literal("grow").then(VillagerRetaliationCommands.namedVillagerArgument("villager")
                         .then(argument("story", net.minecraft.commands.arguments.ResourceLocationArgument.id())
                                 .then(argument("choice", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(context -> {
                                     var player = context.getSource().getPlayerOrException();
-                                    var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                                    var villager = VillagerEntityResolver.loaded(player.getServer(), VillagerRetaliationCommands.namedEntityId(context, "villager"));
                                     if (villager != null && com.jvn.villagerretaliation.party.CompanionGrowthService.choose(player, villager,
                                             net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "story"),
                                             com.mojang.brigadier.arguments.StringArgumentType.getString(context, "choice"))) return 1;
                                     context.getSource().sendFailure(Component.literal("This choice needs the owner nearby, a safe moment, the shared experience and bond. A remembered choice cannot be changed."));
                                     return 0;
                                 })))))
-                .then(literal("service").then(argument("villager", UuidArgument.uuid())
+                .then(literal("service").then(VillagerRetaliationCommands.namedVillagerArgument("villager")
                         .then(argument("offer", net.minecraft.commands.arguments.ResourceLocationArgument.id()).executes(context -> {
                             var player = context.getSource().getPlayerOrException();
-                            var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                            var villager = VillagerEntityResolver.loaded(player.getServer(), VillagerRetaliationCommands.namedEntityId(context, "villager"));
                             if (villager != null && com.jvn.villagerretaliation.party.CompanionServiceOffers.accept(player, villager,
                                     net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "offer").toString())) return 1;
                             context.getSource().sendFailure(Component.literal("Service is unavailable: check the offer, reputation, distance and party space."));
                             return 0;
                         }))))
-                .then(literal("entrust").then(argument("villager", UuidArgument.uuid())
+                .then(literal("entrust").then(VillagerRetaliationCommands.namedVillagerArgument("villager")
                         .then(argument("player", EntityArgument.player()).executes(context -> {
                             var player = context.getSource().getPlayerOrException();
-                            var id = UuidArgument.getUuid(context, "villager");
+                            var id = VillagerRetaliationCommands.namedEntityId(context, "villager");
                             var party = PartyService.getPartyForVillager(player.serverLevel(), id).orElse(null);
                             var record = party == null ? null : party.villager(id);
                             var target = EntityArgument.getPlayer(context, "player");
@@ -76,9 +75,9 @@ final class CompanionCommands {
                             player.sendSystemMessage(Component.literal("Assigned commander: " + target.getName().getString()));
                             return 1;
                         }))))
-                .then(literal("safehome").then(argument("villager", UuidArgument.uuid()).executes(context -> {
+                .then(literal("safehome").then(VillagerRetaliationCommands.namedVillagerArgument("villager").executes(context -> {
                     var player = context.getSource().getPlayerOrException();
-                    Villager villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                    Villager villager = VillagerEntityResolver.loaded(player.getServer(), VillagerRetaliationCommands.namedEntityId(context, "villager"));
                     return villager != null && CompanionLifecycleService.setSafeHome(player, villager)
                             ? accepted(context.getSource(), "Agreed this safe location as fallback; registered home preserved") : denied(context.getSource());
                 })))
@@ -89,12 +88,12 @@ final class CompanionCommands {
                                                 net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "quest"),
                                                 com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "slot"),
                                                 com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count")) ? 1 : denied(context.getSource()))))))
-                .then(literal("offersupplies").then(argument("villager", UuidArgument.uuid())
+                .then(literal("offersupplies").then(VillagerRetaliationCommands.namedVillagerArgument("villager")
                         .then(argument("quest", net.minecraft.commands.arguments.ResourceLocationArgument.id())
                                 .then(argument("slot", com.mojang.brigadier.arguments.IntegerArgumentType.integer(6, 41))
                                         .then(argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 99)).executes(context -> {
                                             var player = context.getSource().getPlayerOrException();
-                                            var villager = VillagerEntityResolver.loaded(player.getServer(), UuidArgument.getUuid(context, "villager"));
+                                            var villager = VillagerEntityResolver.loaded(player.getServer(), VillagerRetaliationCommands.namedEntityId(context, "villager"));
                                             return villager != null && com.jvn.villagerretaliation.quest.QuestContributionService.offer(player, villager,
                                                     net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "quest"),
                                                     com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "slot"),
@@ -105,10 +104,10 @@ final class CompanionCommands {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> setting(String command, String field) {
-        return literal(command).then(argument("villager", UuidArgument.uuid())
+        return literal(command).then(VillagerRetaliationCommands.namedVillagerArgument("villager")
                 .then(argument("enabled", BoolArgumentType.bool()).executes(context -> {
                     var player = context.getSource().getPlayerOrException();
-                    var id = UuidArgument.getUuid(context, "villager");
+                    var id = VillagerRetaliationCommands.namedEntityId(context, "villager");
                     if (!player.getUUID().equals(CompanionLifecycleService.owner(player.serverLevel(), id))) return denied(context.getSource());
                     var state = CompanionSavedData.get(player.serverLevel()).find(id);
                     boolean enabled = BoolArgumentType.getBool(context, "enabled");

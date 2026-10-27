@@ -12,6 +12,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
@@ -26,7 +27,7 @@ final class CampaignCharacterBindingCommands {
         return literal("character").requires(source -> source.hasPermission(2)).then(campaign().then(role().executes(context -> inspect(context, 1))
                 .then(argument("page", IntegerArgumentType.integer(1)).executes(context -> inspect(context, IntegerArgumentType.getInteger(context, "page"))))
                 .then(literal("repair").then(argument("expected", UuidArgument.uuid()).then(argument("operation", UuidArgument.uuid())
-                        .then(argument("target", UuidArgument.uuid()).then(argument("reason", StringArgumentType.greedyString())
+                        .then(VillagerRetaliationCommands.namedVillagerArgument("target").then(argument("reason", StringArgumentType.greedyString())
                                 .executes(CampaignCharacterBindingCommands::repair))))))));
     }
 
@@ -51,7 +52,7 @@ final class CampaignCharacterBindingCommands {
         source.sendSuccess(() -> Component.literal("Character " + key.campaign() + " / " + key.role() + ", token " + data.token(key)
                 + (binding == null ? ", unbound" : ", entity " + binding.entityId() + ", " + binding.source() + ", lost: " + binding.lost()
                         + ", bound at " + binding.dimension() + " " + binding.position().toShortString())), false);
-        source.sendSuccess(() -> Component.literal("Repair uses a loaded villager's UUID. Existing-villager roles retain the selected villager's personal state. "
+        source.sendSuccess(() -> Component.literal("Repair accepts a nearby villager name, selector or UUID. Existing-villager roles retain the selected villager's personal state. "
                 + "Campaign-owned roles recover their original spawn identity. Saved outcomes, participation, rewards, and authored successor decisions retain their history."), false);
         var successor = data.replacements().get(key);
         if (successor != null) source.sendSuccess(() -> Component.literal("Authored successor: " + successor.replacementRole() + ". Inspect and repair that role."), false);
@@ -65,11 +66,11 @@ final class CampaignCharacterBindingCommands {
         return 1;
     }
 
-    private static int repair(CommandContext<CommandSourceStack> context) {
+    private static int repair(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var source = context.getSource();
         try {
             var request = new CampaignCharacterRepairs.Request(ResourceLocationArgument.getId(context, "campaign"),
-                    StringArgumentType.getString(context, "role"), UuidArgument.getUuid(context, "target"),
+                    StringArgumentType.getString(context, "role"), VillagerRetaliationCommands.namedEntityId(context, "target"),
                     UuidArgument.getUuid(context, "expected"), UuidArgument.getUuid(context, "operation"),
                     CampaignBindingCommands.operator(source), StringArgumentType.getString(context, "reason"));
             var result = CampaignCharacterRepairs.repair(source.getServer(), request);

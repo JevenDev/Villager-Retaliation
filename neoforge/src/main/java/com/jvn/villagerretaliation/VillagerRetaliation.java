@@ -57,6 +57,7 @@ public class VillagerRetaliation {
     }
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
+        com.jvn.villagerretaliation.command.VillagerTargetArgument.register(modEventBus);
         VillagerMountPassengers.init();
         VillagerRetaliationRegistries.registerBuiltIns();
         VillagerSecondWindCompat.init();

@@ -9,7 +9,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("vr_commands")
 @PrefixGameTestTemplate(false)
 public final class VrCommandGameTests {
     private static final String EMPTY_TEMPLATE = "empty";

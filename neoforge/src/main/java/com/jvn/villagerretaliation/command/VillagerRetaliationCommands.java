@@ -408,16 +408,21 @@ public final class VillagerRetaliationCommands {
     }
 
     static RequiredArgumentBuilder<CommandSourceStack, String> namedVillagerArgument(String argumentName) {
-        return argument(argumentName, StringArgumentType.string())
-                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
-                        context.getSource().getLevel().getEntitiesOfClass(AbstractVillager.class, commandSuggestionArea(context.getSource()))
-                                .stream()
-                                .map(villager -> VillagerPresetNameRegistry.resolveDisplayName(villager).getString())
-                                .filter(name -> !name.isBlank())
-                                .map(StringArgumentType::escapeIfRequired)
-                                .distinct(),
-                        builder
-                ));
+        return argument(argumentName, new VillagerTargetArgument())
+                .suggests((context, builder) -> {
+                    if (builder.getRemaining().startsWith("@")) {
+                        return EntityArgument.entities().listSuggestions(context, builder);
+                    }
+                    return SharedSuggestionProvider.suggest(
+                            context.getSource().getLevel().getEntitiesOfClass(
+                                            AbstractVillager.class, commandSuggestionArea(context.getSource()), AbstractVillager::isAlive)
+                                    .stream()
+                                    .map(villager -> VillagerPresetNameRegistry.resolveDisplayName(villager).getString())
+                                    .filter(name -> !name.isBlank())
+                                    .map(StringArgumentType::escapeIfRequired)
+                                    .distinct(),
+                            builder);
+                });
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> allegianceCommands() {
@@ -729,21 +734,7 @@ public final class VillagerRetaliationCommands {
     }
 
     private static Entity allegianceTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        try {
-            context.getArgument("entity", EntitySelector.class);
-            return EntityArgument.getEntity(context, "entity");
-        } catch (IllegalArgumentException ignored) {
-            // Legacy commands accept selectors and quoted preset names as strings.
-        }
-        String value = StringArgumentType.getString(context, "entity");
-        Entity entity = parseEntityTarget(context.getSource(), value);
-        if (entity == null) {
-            entity = findVillagerByName(context.getSource(), value);
-        }
-        if (entity == null) {
-            context.getSource().sendFailure(Component.literal("No single loaded entity matched " + value));
-        }
-        return entity;
+        return namedEntityTarget(context, "entity");
     }
 
     private static VillageAllegianceId parseAllegianceId(CommandSourceStack source, String value) {
@@ -1624,7 +1615,7 @@ public final class VillagerRetaliationCommands {
                         .executes(context -> mutateScene(context, "resume"))))
                 .then(literal("rebind").then(argument("scene_id", StringArgumentType.word())
                         .then(argument("alias", StringArgumentType.word())
-                                .then(argument("target", EntityArgument.entity())
+                                .then(namedVillagerArgument("target")
                                         .executes(VillagerRetaliationCommands::rebindSceneActorDebug)))))
                 .then(literal("cleanup_encounter").then(argument("encounter_id", StringArgumentType.word())
                         .executes(VillagerRetaliationCommands::cleanupEncounterDebug)));
@@ -1683,11 +1674,15 @@ public final class VillagerRetaliationCommands {
         if (id == null) {
             return 0;
         }
+        Entity target = namedEntityTarget(context, "target");
+        if (target == null) {
+            return 0;
+        }
         var result = SceneOperatorService.rebind(
                 context.getSource().getLevel(),
                 id,
                 StringArgumentType.getString(context, "alias"),
-                EntityArgument.getEntity(context, "target"),
+                target,
                 "operator_rebind",
                 context.getSource().getTextName());
         context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
@@ -2121,36 +2116,47 @@ public final class VillagerRetaliationCommands {
             CommandContext<CommandSourceStack> context,
             ServerPlayer player,
             double radius) {
+        String value;
         try {
-            EntitySelector selector = context.getArgument("provider", EntitySelector.class);
-            Entity entity;
-            try {
-                entity = selector.findSingleEntity(context.getSource());
-            } catch (CommandSyntaxException exception) {
-                return new ProviderResolution(null, List.of(), exception.getRawMessage().getString());
-            }
-            if (!(entity instanceof Villager provider) || !provider.isAlive()) {
-                return new ProviderResolution(null, List.of(),
-                        "Quest provider must be a living villager.");
-            }
-            double clampedRadius = debugProviderRadius(radius);
-            if (provider.level() != player.level()
-                    || provider.distanceToSqr(player) > clampedRadius * clampedRadius) {
-                return new ProviderResolution(null, List.of(provider),
-                        "Quest provider must be within " + formatRadius(clampedRadius) + " blocks.");
-            }
-            return new ProviderResolution(provider, List.of(provider), "");
+            value = StringArgumentType.getString(context, "provider");
         } catch (IllegalArgumentException ignored) {
             return resolveQuestDebugProvider(
-                    player,
-                    StringArgumentType.getString(context, "provider_name"),
-                    radius);
+                    player, StringArgumentType.getString(context, "provider_name"), radius);
         }
+        Entity entity;
+        try {
+            entity = resolveNamedEntity(context.getSource(), value);
+        } catch (CommandSyntaxException exception) {
+            return new ProviderResolution(null, List.of(), exception.getRawMessage().getString());
+        }
+        if (!(entity instanceof Villager provider) || !provider.isAlive()) {
+            return new ProviderResolution(null, List.of(), "Quest provider must be a living villager.");
+        }
+        double clampedRadius = debugProviderRadius(radius);
+        if (provider.level() != player.level()
+                || provider.distanceToSqr(player) > clampedRadius * clampedRadius) {
+            return new ProviderResolution(null, List.of(provider),
+                    "Quest provider must be within " + formatRadius(clampedRadius) + " blocks.");
+        }
+        return new ProviderResolution(provider, List.of(provider), "");
     }
 
     static int setReputation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
-        Collection<? extends Entity> targets = EntityArgument.getEntities(context, "targets");
+        String targetValue = StringArgumentType.getString(context, "targets");
+        Collection<? extends Entity> targets;
+        if (targetValue.startsWith("@")) {
+            targets = EntityArgument.entities().parse(new StringReader(targetValue)).findEntities(source);
+            if (targets.isEmpty()) {
+                throw EntityArgument.NO_ENTITIES_FOUND.create();
+            }
+        } else {
+            Entity target = namedEntityTarget(context, "targets");
+            if (target == null) {
+                return 0;
+            }
+            targets = List.of(target);
+        }
         Collection<GameProfile> profiles = GameProfileArgument.getGameProfiles(context, "player");
         if (profiles.size() != 1) {
             throw EntityArgument.ERROR_NOT_SINGLE_PLAYER.create();
@@ -2229,8 +2235,8 @@ public final class VillagerRetaliationCommands {
 
     static int setRelationship(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
-        Entity firstEntity = EntityArgument.getEntity(context, "first");
-        Entity secondEntity = EntityArgument.getEntity(context, "second");
+        Entity firstEntity = namedEntityTarget(context, "first");
+        Entity secondEntity = namedEntityTarget(context, "second");
         if (!(firstEntity instanceof Villager first) || !(secondEntity instanceof Villager second)
                 || !first.isAlive() || !second.isAlive() || first.isBaby() || second.isBaby()
                 || first == second || first.level() != second.level()
@@ -2600,21 +2606,50 @@ public final class VillagerRetaliationCommands {
         } catch (IllegalArgumentException ignored) {
             targetValue = StringArgumentType.getString(context, "target");
         }
-        Entity target = parseEntityTarget(source, targetValue);
+        Entity target = resolveNamedEntity(source, targetValue);
         if (target instanceof AbstractVillager villager) {
             return villager;
         }
-        if (target != null) {
-            source.sendFailure(Component.literal("Target must be a villager or wandering trader."));
-            return null;
-        }
-
-        AbstractVillager namedVillager = findVillagerByName(source, targetValue);
-        if (namedVillager != null) {
-            return namedVillager;
-        }
-        source.sendFailure(Component.literal("No villager or wandering trader named \"" + targetValue + "\" was found."));
+        source.sendFailure(Component.literal(target == null
+                ? "No villager or wandering trader named \"" + targetValue + "\" was found."
+                : "Target must be a villager or wandering trader."));
         return null;
+    }
+
+    static UUID namedEntityId(CommandContext<CommandSourceStack> context, String argumentName)
+            throws CommandSyntaxException {
+        String value = StringArgumentType.getString(context, argumentName);
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+        }
+        Entity entity = resolveNamedEntity(context.getSource(), value);
+        if (entity == null) {
+            throw new com.mojang.brigadier.exceptions.SimpleCommandExceptionType(
+                    Component.literal("No single loaded entity matched " + value)).create();
+        }
+        return entity.getUUID();
+    }
+
+    private static Entity namedEntityTarget(CommandContext<CommandSourceStack> context, String argumentName)
+            throws CommandSyntaxException {
+        String value = StringArgumentType.getString(context, argumentName);
+        Entity entity = resolveNamedEntity(context.getSource(), value);
+        if (entity == null) {
+            context.getSource().sendFailure(Component.literal("No single loaded entity matched " + value));
+        }
+        return entity;
+    }
+
+    private static Entity resolveNamedEntity(CommandSourceStack source, String value) throws CommandSyntaxException {
+        if (value.startsWith("@")) {
+            return EntityArgument.entity().parse(new StringReader(value)).findSingleEntity(source);
+        }
+        AbstractVillager villager = findVillagerByName(source, value);
+        if (villager != null) {
+            return villager;
+        }
+        return parseEntityTarget(source, value);
     }
 
     private static Entity parseEntityTarget(CommandSourceStack source, String targetValue) throws CommandSyntaxException {
