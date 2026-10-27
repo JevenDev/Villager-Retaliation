@@ -2595,6 +2595,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void openContext(Pick hit, double x, double y) {
         clearControls();
         var ray = ray(x, y);
+        var depot = hit.resident() == null && this.editingArea == null
+                ? this.snapshots.entries(Page.DEPOTS).stream().map(SettlementManagementPayload.Depot.class::cast)
+                        .filter(entry -> entry.position().equals(hit.position())).findFirst().orElse(null)
+                : null;
         boolean handle = this.editingArea != null && this.gizmo != null && this.gizmo.hover(ray);
         if (handle) {
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
@@ -2610,6 +2614,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else if (hit.resident() != null) {
             if (!this.selection.contains(hit.resident())) select(hit, null);
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, hit.resident()), x, y);
+        } else if (depot != null) {
+            inspect(depot);
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DEPOT, depot.id()), x, y);
         } else if (hit.position() != null && this.editingArea == null && permits(SettlementPermission.STAFF)
                 && (!resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE).isEmpty()
                 || !resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST).isEmpty())) {
@@ -2648,6 +2655,21 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                             + (bed.resident() == null ? bed.available() ? "Available" : "Unavailable" : "Assigned to " + bed.residentName())));
                 }
                 actions.add(new SettlementViewPopup.Action(Component.literal("Assign beds"), ready && permits(SettlementPermission.STAFF), this::openHousingAssignments));
+            }
+            case DEPOT -> {
+                var depot = this.snapshots.entries(Page.DEPOTS).stream().map(SettlementManagementPayload.Depot.class::cast)
+                        .filter(entry -> entry.id().equals(target.id())).findFirst().orElse(null);
+                if (depot == null) {
+                    details.add(text("details_unavailable"));
+                } else {
+                    details.add(Component.literal(depot.name()));
+                    details.add(SettlementManagementScreen.text("field.purpose").append(": ")
+                            .append(SettlementManagementScreen.enumText("depot", depot.purpose())));
+                    details.add(Component.literal(depot.position().toShortString()));
+                    actions.add(menuAction(Component.literal("Edit depot"), ready && !this.parent.submitting()
+                            && permits(SettlementPermission.LOGISTICS), () -> this.minecraft.setScreen(
+                                    new SettlementEditScreen(management(), SettlementEditScreen.Mode.DEPOT, depot, this))));
+                }
             }
             case RESOURCE -> {
                 details.add(Component.literal("Resource work"));
