@@ -37,6 +37,7 @@ public final class VrCommandGameTests {
         child(settlementAdmin, "recovery");
         child(settlementAdmin, "recoverOwner");
         child(settlementAdmin, "confirmOwner");
+        child(child(settlementAdmin, "advance"), "town");
         CommandNode<CommandSourceStack> villager = child(admin, "villager");
         CommandNode<CommandSourceStack> skill = child(villager, "skill");
         helper.assertTrue(skill.getChild("export") == null,

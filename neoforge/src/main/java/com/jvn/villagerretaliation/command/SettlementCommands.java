@@ -5,6 +5,7 @@ import static net.minecraft.commands.Commands.literal;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.settlement.SettlementOwnershipService;
+import com.jvn.villagerretaliation.settlement.SettlementProgressionService;
 import com.jvn.villagerretaliation.settlement.SettlementLifecycleService;
 import com.jvn.villagerretaliation.settlement.SettlementLifecycleService.Operation;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -14,6 +15,8 @@ import com.jvn.villagerretaliation.settlement.SettlementRecord;
 import com.jvn.villagerretaliation.settlement.SettlementSavedData;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.UuidArgument;
@@ -105,6 +108,14 @@ final class SettlementCommands {
 
     static LiteralArgumentBuilder<CommandSourceStack> admin() {
         return literal("settlement").requires(source -> source.hasPermission(2))
+                .then(literal("advance").executes(context -> advance(context.getSource(), null))
+                        .then(argument("town", UuidArgument.uuid())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        SettlementSavedData.get(context.getSource().getLevel()).settlements().stream()
+                                                .filter(town -> town.dimension().equals(context.getSource().getLevel().dimension().location()))
+                                                .map(town -> town.id().value().toString()), builder))
+                                .executes(context -> advance(context.getSource(),
+                                        new VillageAllegianceId(UuidArgument.getUuid(context, "town"))))))
                 .then(literal("performance").executes(context -> {
                     var source = context.getSource();
                     source.sendSuccess(() -> Component.literal("Simulation: "
@@ -123,6 +134,35 @@ final class SettlementCommands {
                 .then(literal("confirmOwner").then(argument("confirmation", UuidArgument.uuid()).executes(context ->
                         result(context.getSource(), SettlementOwnershipService.confirmRecovery(context.getSource(),
                                 UuidArgument.getUuid(context, "confirmation")), "Ownership recovery complete."))));
+    }
+
+    private static int advance(CommandSourceStack source, VillageAllegianceId id) {
+        var data = SettlementSavedData.get(source.getLevel());
+        if (data.readOnly()) {
+            source.sendFailure(Component.literal("Settlement data is read-only. Use /vr admin settlement recovery."));
+            return 0;
+        }
+        var town = (id == null
+                ? data.at(source.getLevel().dimension().location(), BlockPos.containing(source.getPosition()))
+                : data.get(id)).orElse(null);
+        if (town == null || !town.dimension().equals(source.getLevel().dimension().location())) {
+            source.sendFailure(Component.literal("No settlement found in this dimension. Stand inside its territory or use /vr admin settlement advance <town UUID>."));
+            return 0;
+        }
+        if (town.stage().next().isEmpty()) {
+            source.sendFailure(Component.literal("Settlement is already at the highest tier."));
+            return 0;
+        }
+        if (!SettlementProgressionService.advanceImmediately(source, town.id())) {
+            String missing = SettlementProgressionService.assess(source.getLevel(), town).missing().stream()
+                    .map(requirement -> requirement.name().toLowerCase(Locale.ROOT).replace('_', ' '))
+                    .collect(Collectors.joining(", "));
+            source.sendFailure(Component.literal("Cannot advance settlement. Missing: " + missing + "."));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Settlement " + town.id().value() + " advanced to "
+                + town.stage().name() + ". Skipped the support waiting period."), true);
+        return 1;
     }
 
     private static int lifecycle(CommandContext<CommandSourceStack> context, Operation operation, VillageAllegianceId target, BlockPos position) {

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -80,17 +81,32 @@ public final class SettlementProgressionService {
                 || !town.dimension().equals(player.level().dimension().location())) {
             return false;
         }
-        town.areas().values().forEach(area -> SettlementBuildingService.refresh(player.serverLevel(), town, area));
-        Status status = assess(player.serverLevel(), town);
-        if (!status.ready()) {
+        return advance(player.serverLevel(), town, false);
+    }
+
+    public static boolean advanceImmediately(CommandSourceStack source, VillageAllegianceId id) {
+        if (!source.hasPermission(2)) return false;
+        var data = SettlementSavedData.get(source.getLevel());
+        var town = data.get(id).orElse(null);
+        if (data.readOnly() || town == null || !town.dimension().equals(source.getLevel().dimension().location())) {
+            return false;
+        }
+        return advance(source.getLevel(), town, true);
+    }
+
+    private static boolean advance(ServerLevel level, SettlementRecord town, boolean skipSupportWait) {
+        if (town.stage().next().isEmpty()) return false;
+        town.areas().values().forEach(area -> SettlementBuildingService.refresh(level, town, area));
+        Status status = assess(level, town);
+        if (!status.missing().isEmpty() || !skipSupportWait && !status.ready()) {
             if (!status.missing().isEmpty()) {
-                town.support().observe(player.serverLevel().getGameTime(), false,
+                town.support().observe(level.getGameTime(), false,
                         status.population() > status.housing() || status.foodDays() < 0.25D);
                 town.changed();
             }
             return false;
         }
-        advance(town, player.serverLevel().getGameTime());
+        advance(town, level.getGameTime());
         return true;
     }
 
