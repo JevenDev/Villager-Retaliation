@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -28,7 +29,8 @@ public final class VillagerGossipHooks {
     }
 
     public static void spreadReputation(ServerLevel level, Villager source, UUID playerId, int originalAmount) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get() || originalAmount == 0) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get() || originalAmount == 0
+                || !source.isAlive() || source.isRemoved() || source.level() != level) {
             return;
         }
 
@@ -51,13 +53,15 @@ public final class VillagerGossipHooks {
         int processed = 0;
         while (processed < PENDING_GOSSIP_PER_TICK && !PENDING_GOSSIP.isEmpty()) {
             PendingGossip gossip = PENDING_GOSSIP.removeFirst();
-            if (gossip.level().getServer() == null) {
+            processed++;
+            if (gossip.level().getServer() == null || !gossip.source().isAlive()
+                    || gossip.source().isRemoved() || gossip.source().level() != gossip.level()) {
                 continue;
             }
             for (Villager receiver : gossipReceivers(gossip.level(), gossip.source(), gossip.receiverLimit(), gossip.radius())) {
+                VillageEventMemory.shareWitnessedEvents(gossip.level(), gossip.source(), receiver, gossip.playerId());
                 VillagerReputationManager.addGossipReputation(gossip.level(), receiver, gossip.playerId(), gossip.amount(), gossip.source().getUUID());
             }
-            processed++;
         }
         pruneCooldowns(gameTime);
     }

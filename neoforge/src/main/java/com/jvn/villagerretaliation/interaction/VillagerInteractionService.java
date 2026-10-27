@@ -2730,7 +2730,7 @@ public final class VillagerInteractionService {
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager),
                 VillageEventMemory.lazyRecentForVillager(level, villager),
-                VillageEventMemory.lazyRecentForVillage(level, villager)
+                VillageEventMemory.lazyKnownForVillage(level, villager)
         );
     }
 

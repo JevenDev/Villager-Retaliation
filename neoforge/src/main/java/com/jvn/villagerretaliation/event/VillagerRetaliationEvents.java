@@ -1214,10 +1214,10 @@ public final class VillagerRetaliationEvents {
         }
 
         Entity attacker = event.getSource().getEntity();
-        VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        VillageEventMemory.rememberWitnessedEvent(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
         recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.VILLAGER_ATTACKED, attacker);
         if (villager.isBaby()) {
-            VillageEventMemory.remember(level, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+            VillageEventMemory.rememberWitnessedEvent(level, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
             recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, attacker);
         }
         if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
@@ -1233,7 +1233,7 @@ public final class VillagerRetaliationEvents {
             recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.RAID, attacker);
         }
         if (attacker instanceof Player) {
-            VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
+            VillageEventMemory.rememberWitnessedEvent(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
             recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, attacker);
         }
     }
@@ -1260,10 +1260,10 @@ public final class VillagerRetaliationEvents {
         Entity deceased = event.getEntity();
         Entity attacker = event.getSource().getEntity();
         if (deceased instanceof AbstractVillager villager) {
-            VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_DEATH, villager.blockPosition(), villager, attacker);
+            VillageEventMemory.rememberWitnessedEvent(level, VillageEventMemory.EventTag.VILLAGER_DEATH, villager.blockPosition(), villager, attacker);
             rememberWitnessedPlayerVillagerKill(level, villager, event);
         } else if (deceased instanceof IronGolem golem) {
-            VillageEventMemory.remember(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
+            VillageEventMemory.rememberWitnessedEvent(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
         } else if (deceased instanceof Enemy) {
             if (isNight(level)) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, deceased.blockPosition(), deceased, attacker);

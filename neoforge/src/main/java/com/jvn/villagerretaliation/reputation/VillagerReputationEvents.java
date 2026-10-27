@@ -174,10 +174,8 @@ public final class VillagerReputationEvents {
                 boolean directDamageSource = event.getSource().getEntity() instanceof Player;
                 VillagerReputationAdvancements.onVillagerDeath(level, villager, serverPlayer, directDamageSource);
             }
-            applyWitnessed(level, villager, player, penalty);
-            if (villager instanceof Villager gossipSource) {
-                VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), penalty);
-            }
+            List<AbstractVillager> witnesses = applyWitnessed(level, villager, player, penalty);
+            spreadWitnessGossip(witnesses, player, penalty);
         } else if (deceased instanceof IronGolem) {
             if (creditedPlayer.isEmpty()) {
                 return;

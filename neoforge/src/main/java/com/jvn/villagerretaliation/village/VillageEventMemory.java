@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 public final class VillageEventMemory {
     private static final long EVENT_TTL_TICKS = 20L * 60L * 10L;
@@ -47,12 +49,69 @@ public final class VillageEventMemory {
     private static final Map<ServerLevel, Long> NEXT_PRUNE_TICKS = new java.util.WeakHashMap<>();
     private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE =
             new LinkedHashMap<>(64, 0.75F, true);
+    private static final Set<EventTag> WITNESSED_EVENT_TAGS = EnumSet.of(
+            EventTag.VILLAGER_DEATH,
+            EventTag.PLAYER_KILLED_VILLAGER,
+            EventTag.VILLAGER_ATTACKED,
+            EventTag.BABY_VILLAGER_ATTACKED,
+            EventTag.PLAYER_ATTACKED_VILLAGER,
+            EventTag.GOLEM_KILLED,
+            EventTag.VILLAGER_RETALIATION_STARTED);
 
     private VillageEventMemory() {
     }
 
     public static boolean remember(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
         return remember(level, tag, pos, source, player, defaultScope(tag)).dispatched();
+    }
+
+    public static void rememberWitnessedEvent(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
+        MemoryEvent event = new MemoryEvent(tag, level.getGameTime(), level.dimension(), pos.immutable(),
+                source == null ? null : source.getUUID(), player == null ? null : player.getUUID(),
+                null, null, null, null, null);
+        remember(level, event, source, defaultScope(tag));
+        if (source == null) return;
+        AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
+        for (Villager witness : level.getEntitiesOfClass(Villager.class, area,
+                villager -> villager != source && villager.isAlive())) {
+            if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get()
+                    && !witness.hasLineOfSight(source)) continue;
+            learnEvents(level, witness, List.of(event));
+        }
+    }
+
+    public static void shareWitnessedEvents(ServerLevel level, Villager source, Villager receiver, UUID playerId) {
+        List<MemoryEvent> events = recentForVillager(level, source).stream()
+                .filter(event -> WITNESSED_EVENT_TAGS.contains(event.tag()))
+                .filter(event -> playerId.equals(event.playerId()))
+                .toList();
+        learnEvents(level, receiver, events);
+    }
+
+    private static void learnEvents(ServerLevel level, Villager villager, List<MemoryEvent> events) {
+        if (events.isEmpty()) return;
+        VillageEventMemorySavedData data = VillageEventMemorySavedData.get(level);
+        ArrayDeque<MemoryEvent> known = data.villagerEventsForWrite(villager.getUUID());
+        boolean changed = false;
+        for (MemoryEvent event : events) {
+            if (!known.contains(event)) {
+                known.addLast(event);
+                changed = true;
+            }
+        }
+        if (changed) {
+            // learning an incident does not dispatch its quest and event callbacks again
+            MEMORY_POLICY.normalize(known);
+            data.markChanged();
+            invalidateRecentCache();
+        }
+    }
+
+    public static List<MemoryEvent> knownForVillage(ServerLevel level, Villager villager) {
+        Set<MemoryEvent> known = Set.copyOf(recentForVillager(level, villager));
+        return recentForVillage(level, villager).stream()
+                .filter(event -> !WITNESSED_EVENT_TAGS.contains(event.tag()) || known.contains(event))
+                .toList();
     }
 
     public static WriteResult remember(
@@ -304,11 +363,17 @@ public final class VillageEventMemory {
     }
 
     public static List<MemoryEvent> lazyRecentForVillager(ServerLevel level, Villager villager) {
-        return villager == null ? List.of() : new LazyRecentEvents(level, villager, false);
+        return villager == null ? List.of() : new LazyRecentEvents(() -> recentForVillager(level, villager));
     }
 
     public static List<MemoryEvent> lazyRecentForVillage(ServerLevel level, Villager villager) {
-        return villager == null || !villager.isAlive() ? List.of() : new LazyRecentEvents(level, villager, true);
+        return villager == null || !villager.isAlive() ? List.of()
+                : new LazyRecentEvents(() -> recentForVillage(level, villager));
+    }
+
+    public static List<MemoryEvent> lazyKnownForVillage(ServerLevel level, Villager villager) {
+        return villager == null || !villager.isAlive() ? List.of()
+                : new LazyRecentEvents(() -> knownForVillage(level, villager));
     }
 
     private static List<MemoryEvent> recentForVillagerUncached(ServerLevel level, UUID villagerId) {
@@ -529,15 +594,11 @@ public final class VillageEventMemory {
     }
 
     private static final class LazyRecentEvents extends AbstractList<MemoryEvent> {
-        private final ServerLevel level;
-        private final Villager villager;
-        private final boolean village;
+        private final Supplier<List<MemoryEvent>> eventsSupplier;
         private List<MemoryEvent> events;
 
-        private LazyRecentEvents(ServerLevel level, Villager villager, boolean village) {
-            this.level = level;
-            this.villager = villager;
-            this.village = village;
+        private LazyRecentEvents(Supplier<List<MemoryEvent>> eventsSupplier) {
+            this.eventsSupplier = eventsSupplier;
         }
 
         @Override
@@ -552,9 +613,7 @@ public final class VillageEventMemory {
 
         private List<MemoryEvent> events() {
             if (this.events == null) {
-                this.events = this.village
-                        ? recentForVillage(this.level, this.villager)
-                        : recentForVillager(this.level, this.villager);
+                this.events = this.eventsSupplier.get();
             }
             return this.events;
         }

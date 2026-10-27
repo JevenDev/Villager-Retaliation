@@ -3873,7 +3873,7 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             double confrontationRadius) {
         long oldestEscalatingEvent = level.getGameTime() - LOW_GUTS_CONFRONTATION_ESCALATION_WINDOW_TICKS;
-        boolean recentPlayerViolence = VillageEventMemory.recentForVillage(level, victim).stream()
+        boolean recentPlayerViolence = VillageEventMemory.recentForVillager(level, victim).stream()
                 .anyMatch(event -> player.getUUID().equals(event.playerId())
                         && event.gameTime() >= oldestEscalatingEvent
                         && (event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
