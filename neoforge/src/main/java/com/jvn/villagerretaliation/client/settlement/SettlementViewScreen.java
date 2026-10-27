@@ -1787,6 +1787,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             if (this.routeDraft.dragging()) return true;
         }
+        if (keyCode == GLFW.GLFW_KEY_DELETE && this.routeDraft == null) {
+            if (inspectorSelection() instanceof SettlementManagementPayload.Area area) confirmRemoveArea(area);
+            return true;
+        }
         if (keyCode == GLFW.GLFW_KEY_F) { focusSelection(); return true; }
         if (keyCode == GLFW.GLFW_KEY_HOME) { focus(this.window.center().getX(), this.window.center().getZ()); return true; }
         if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_9) {
@@ -2416,6 +2420,19 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 this.minecraft.level.getMinBuildHeight(), this.minecraft.level.getMaxBuildHeight() - 1);
     }
 
+    private void confirmRemoveArea(SettlementManagementPayload.Area area) {
+        if (!this.areas.containsKey(area.id()) || !permits(SettlementPermission.BUILD)
+                || this.commands.busy() || this.parent.submitting()) return;
+        clearControls();
+        this.popup = null;
+        SettlementViewClient.openPanels(this);
+        this.minecraft.setScreen(new SettlementConfirmScreen(this, SettlementManagementScreen.text("remove_area"),
+                SettlementManagementScreen.text("remove_area_hint", area.name()), () -> {
+                    if (this.editingArea != null && this.editingArea.id().equals(area.id())) cancelGizmo();
+                    this.parent.submit(new SettlementManagementActionPayload.RemoveArea(area.id()));
+                }));
+    }
+
     private void beginBoundsEdit(SettlementManagementPayload.Area area) {
         if (area == null || !permits(SettlementPermission.BUILD) || this.commands.busy()) return;
         enterMode(Mode.EDIT_BOUNDS);
@@ -2877,6 +2894,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                             confirmDraft();
                         }));
                         actions.add(contextAction("edit_bounds", ready, () -> beginBoundsEdit(area)));
+                        actions.add(menuAction(SettlementManagementScreen.text("remove_area"), ready && !this.parent.submitting(),
+                                () -> confirmRemoveArea(area)));
                     }
                 }
             }

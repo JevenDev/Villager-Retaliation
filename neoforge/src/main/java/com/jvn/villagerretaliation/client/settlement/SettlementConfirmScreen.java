@@ -27,7 +27,7 @@ final class SettlementConfirmScreen extends VillagerWindowScreen implements Sett
         initWindow(width, 70 + this.font.split(this.confirmationMessage, this.panelWidth).size() * this.font.lineHeight);
         int half = (this.panelWidth - 4) / 2;
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.yes"), ignored -> {
-            this.minecraft.setScreen(this.parent);
+            onClose();
             this.accepted.run();
         }).bounds(this.left, this.top + this.panelHeight - 20, half, 20).build());
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.no"), ignored -> onClose())
@@ -42,7 +42,11 @@ final class SettlementConfirmScreen extends VillagerWindowScreen implements Sett
     }
 
     @Override
-    public void onClose() { this.minecraft.setScreen(this.parent); }
+    public void onClose() {
+        if (!(this.parent instanceof SettlementViewScreen view) || !SettlementViewClient.resume(view.parent())) {
+            this.minecraft.setScreen(this.parent);
+        }
+    }
 
     @Override
     public boolean isPauseScreen() { return false; }
