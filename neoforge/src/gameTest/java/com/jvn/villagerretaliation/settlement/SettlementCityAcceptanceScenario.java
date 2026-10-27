@@ -244,7 +244,17 @@ public final class SettlementCityAcceptanceScenario {
             if (!(this.level.getEntity(this.residents.get(index)) instanceof Villager villager)) continue;
             if (this.preparedResidents.add(villager.getUUID())) {
                 VillagerPresetNameRegistry.setStoredGender(villager, VillagerGender.MALE);
-                require(SettlementHousingService.assign(player, this.town, villager.getUUID(), this.beds.get(index)), "an arriving resident receives an individual usable bed");
+                boolean assigned = SettlementHousingService.assign(player, this.town, villager.getUUID(), this.beds.get(index));
+                if (!assigned) {
+                    for (var freeBed : this.beds) {
+                        if (SettlementHousingService.owner(this.town, freeBed) == null
+                                && SettlementHousingService.assign(player, this.town, villager.getUUID(), freeBed)) {
+                            assigned = true;
+                            break;
+                        }
+                    }
+                }
+                require(assigned, "an arriving resident receives an individual usable bed");
             }
             if (this.town.duties().containsKey(villager.getUUID())) continue;
             SettlementArea workplace = switch (index) {

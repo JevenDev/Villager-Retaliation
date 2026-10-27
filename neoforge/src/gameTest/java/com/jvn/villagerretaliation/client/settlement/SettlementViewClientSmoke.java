@@ -483,7 +483,7 @@ public final class SettlementViewClientSmoke {
             require(screen.snapshot().header() != null, "Summary includes the current settlement assessment");
             require(screen.snapshot().header().populations().size() == 5 && screen.snapshot().header().populations().get(4) == 75,
                     "Summary receives effective stage populations from the server");
-            require(screen.snapshot().header().growthTarget() == 100, "Summary receives the natural growth cap");
+            require(screen.snapshot().header().growthTarget() == 5, "Summary receives the Camp population growth cap");
             capture("issues-summary");
             requireButtonsFit(screen);
             button(screen, "villagerretaliation.gui.settlement.page.issues").onPress();

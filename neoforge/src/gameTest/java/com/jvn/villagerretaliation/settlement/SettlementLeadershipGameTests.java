@@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -136,6 +137,7 @@ public final class SettlementLeadershipGameTests {
         Villager outsider = EntityType.VILLAGER.create(level);
         outsider.setPos(center.getCenter());
         outsider.setNoAi(true);
+        outsider.finalizeSpawn(level, level.getCurrentDifficultyAt(center), MobSpawnType.NATURAL, null);
         level.addFreshEntity(outsider);
         helper.assertTrue(VillageAllegianceApi.canonicalPrimary(level, outsider).isEmpty(),
                 "spawning inside a managed town does not bypass approval");
