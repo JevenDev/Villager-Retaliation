@@ -34,23 +34,30 @@ public final class SettlementHousingLivabilityGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_housing_livability")
-    public static void homeRequiresSolidThreeByThreeFloorDoorAndLight(GameTestHelper helper) {
+    public static void tierOneTentCountsSixBedsWithoutDoorsOrEnclosure(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var origin = helper.absolutePos(new BlockPos(1, 2, 1));
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Tent", origin, origin.offset(4, 2, 5), 5, true);
+        for (var pos : BlockPos.betweenClosed(origin.offset(-1, -1, -1), origin.offset(5, -1, 6))) level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+        for (var pos : BlockPos.betweenClosed(origin.offset(-1, 0, -1), origin.offset(5, 3, 6))) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+        for (int x : new int[]{0, 4}) for (int z : new int[]{0, 2, 4}) bed(level, origin.offset(x, 0, z));
+        level.setBlock(origin.offset(2, 0, 5), Blocks.TORCH.defaultBlockState(), 2);
+        helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, home).beds().size(), 6, "one torch supports six accessible beds without a door");
+        level.setBlock(origin.offset(2, 0, 5), Blocks.AIR.defaultBlockState(), 2);
+        helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "daylight alone does not supply a housing fixture");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_housing_livability")
+    public static void tierOneAllowsNarrowHousingWithoutAThreeByThreeFloor(GameTestHelper helper) {
         var home = home(helper);
         var level = helper.getLevel();
-        var door = home.min().south(2);
-        level.setBlock(door.above(), Blocks.AIR.defaultBlockState(), 2);
-        helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "half a door is not an entrance");
-        entrance(level, door);
-        var light = home.min().offset(4, 0, 0);
-        level.setBlock(light, Blocks.AIR.defaultBlockState(), 2);
-        helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "daylight alone does not supply a housing fixture");
-        level.setBlock(light, Blocks.LANTERN.defaultBlockState(), 2);
-        for (int z = 0; z < 5; z++) level.setBlock(home.min().offset(2, -1, z), Blocks.AIR.defaultBlockState(), 2);
-        helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "two separated strips are not a solid three by three floor");
-        for (int z = 0; z < 5; z++) level.setBlock(home.min().offset(2, -1, z), Blocks.STONE.defaultBlockState(), 2);
-        helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, home).beds().size(), 1, "restoring the floor restores housing");
         var narrow = new SettlementArea(home.id(), home.type(), home.name(), home.min().east(3), home.max(), 5, true);
-        helper.assertTrue(SettlementBuildingSurvey.inspect(level, narrow).beds().isEmpty(), "a two-block-wide selection cannot qualify");
+        helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, narrow).beds().size(), 1, "a two-block-wide selection qualifies");
+        for (int z = 0; z < 5; z++) level.setBlock(home.min().offset(1, -1, z), Blocks.AIR.defaultBlockState(), 2);
+        helper.assertValueEqual(SettlementBuildingSurvey.inspect(level, narrow).beds().size(), 1, "a three by three floor is unnecessary");
+        level.setBlock(home.min().offset(3, -1, 2), Blocks.AIR.defaultBlockState(), 2);
+        helper.assertTrue(SettlementBuildingSurvey.inspect(level, narrow).beds().isEmpty(), "the bed itself still needs support");
         helper.succeed();
     }
 
@@ -58,6 +65,7 @@ public final class SettlementHousingLivabilityGameTests {
     public static void bedNeedsAPathFromTheEntranceAndClearance(GameTestHelper helper) {
         var home = home(helper);
         var level = helper.getLevel();
+        encloseApproaches(level, home);
         for (var pos : BlockPos.betweenClosed(home.min().offset(2, 0, 0), home.min().offset(2, 1, 4))) {
             level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
         }
@@ -73,6 +81,7 @@ public final class SettlementHousingLivabilityGameTests {
     public static void blockedEntranceAndUnlitTaggedFixtureDoNotQualify(GameTestHelper helper) {
         var home = home(helper);
         var level = helper.getLevel();
+        encloseApproaches(level, home);
         var approach = home.min().offset(-1, 0, 2);
         level.setBlock(approach, Blocks.STONE.defaultBlockState(), 2);
         helper.assertTrue(SettlementBuildingSurvey.inspect(level, home).beds().isEmpty(), "a blocked outside approach is not a usable entrance");
@@ -89,6 +98,7 @@ public final class SettlementHousingLivabilityGameTests {
     public static void supportedEntranceStepsAndPathsKeepBedsReachable(GameTestHelper helper) {
         var home = home(helper);
         var level = helper.getLevel();
+        encloseApproaches(level, home);
         var approachFloor = home.min().offset(-1, -1, 2);
         for (var block : List.of(Blocks.OAK_STAIRS, Blocks.OAK_SLAB, Blocks.DIRT_PATH)) {
             level.setBlock(approachFloor, block.defaultBlockState(), 2);
@@ -146,13 +156,20 @@ public final class SettlementHousingLivabilityGameTests {
         return home;
     }
 
+    private static void encloseApproaches(ServerLevel level, SettlementArea home) {
+        for (var pos : BlockPos.betweenClosed(home.min().offset(-1, 0, -1), home.max().offset(1, 0, 1).atY(home.min().getY()))) {
+            if (home.contains(pos) || pos.equals(home.min().offset(-1, 0, 2))) continue;
+            for (int y = 0; y <= 2; y++) level.setBlock(pos.above(y), Blocks.STONE.defaultBlockState(), 2);
+        }
+    }
+
     static void entrance(ServerLevel level, BlockPos position) {
         var door = Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING, Direction.EAST);
         level.setBlock(position, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER), 2);
         level.setBlock(position.above(), door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER), 2);
     }
 
-    /** Supplies the newly required fixtures without changing a test's bed layout. */
+    // supply lighting and an entrance without changing the bed layout
     static void furnish(ServerLevel level, SettlementArea home, int bedY) {
         var entrance = new BlockPos(home.min().getX(), bedY, home.min().getZ());
         for (var pos : new BlockPos[]{entrance.west(), entrance, entrance.east()}) {

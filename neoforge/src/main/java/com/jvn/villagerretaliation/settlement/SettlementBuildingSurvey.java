@@ -178,8 +178,6 @@ public final class SettlementBuildingSurvey {
     }
 
     static BedState inspectBed(ObservedBlocks blocks, SettlementArea area, BlockPos head) {
-        if (area != null && (area.max().getX() - area.min().getX() < 2
-                || area.max().getZ() - area.min().getZ() < 2)) return BedState.BLOCKED;
         var structure = inspectBedStructure(blocks, area, head);
         if (structure != BedState.AVAILABLE || area == null) return structure;
         return blocks.housing.computeIfAbsent(area, key -> new SettlementHousingSurvey(blocks, key)).bed(head);

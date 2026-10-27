@@ -2662,7 +2662,7 @@
   "villagerretaliation.gui.settlement.assign_resident": "Assign %s",
   "villagerretaliation.gui.settlement.summary_hint": "Maintain homes, food and staffed services to grow.",
   "villagerretaliation.gui.settlement.population": "Population: %s / %s beds",
-  "villagerretaliation.gui.settlement.housing_hint": "Usable beds in enabled housing areas.",
+  "villagerretaliation.gui.settlement.housing_hint": "Tier 1 housing needs reachable beds and at least one light source inside the area. Doors, walls and roofs are optional.",
   "villagerretaliation.gui.settlement.food": "Food reserve: %s days",
   "villagerretaliation.gui.settlement.food_hint": "Food available in settlement depots.",
   "villagerretaliation.gui.settlement.stage": "Stage: %s",

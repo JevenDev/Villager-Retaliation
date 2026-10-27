@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
-/** A bounded, observation-only walk from usable entrances; walls and roofs are optional. */
+// tier 1 housing uses open boundaries or wooden doors as entrances
 final class SettlementHousingSurvey {
     static final TagKey<Block> LIGHTS = TagKey.create(Registries.BLOCK,
             ResourceLocation.fromNamespaceAndPath("villagerretaliation", "housing_lights"));
@@ -30,7 +30,6 @@ final class SettlementHousingSurvey {
     SettlementHousingSurvey(SettlementBuildingSurvey.ObservedBlocks blocks, SettlementArea area) {
         this.blocks = blocks;
         this.area = area;
-        if (area.max().getX() - area.min().getX() < 2 || area.max().getZ() - area.min().getZ() < 2) return;
         var entrances = new HashSet<BlockPos>();
         boolean lit = false;
         for (var mutable : BlockPos.betweenClosed(area.min(), area.max())) {
@@ -38,6 +37,14 @@ final class SettlementHousingSurvey {
             if (!observed(pos)) continue;
             var state = blocks.getBlockState(pos);
             lit |= state.is(LIGHTS) && state.getLightEmission(blocks, pos) > 0;
+            if (canStand(pos) && clear(pos) && clear(pos.above())) {
+                for (var direction : Direction.Plane.HORIZONTAL) {
+                    if (area.contains(pos.relative(direction))) continue;
+                    for (int step = -1; step <= 1; step++) {
+                        if (canTraverse(pos, pos.relative(direction).above(step), step)) entrances.add(pos);
+                    }
+                }
+            }
             if (state.getBlock() instanceof DoorBlock && state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER
                     && door(pos)) {
                 var facing = state.getValue(DoorBlock.FACING);
@@ -52,25 +59,19 @@ final class SettlementHousingSurvey {
         for (var entrance : entrances) {
             if (!visited.add(entrance)) continue;
             var queue = new ArrayDeque<BlockPos>();
-            var component = new HashSet<BlockPos>();
             queue.add(entrance);
-            boolean solidFloor = false;
             while (!queue.isEmpty()) {
                 var pos = queue.removeFirst();
-                component.add(pos);
-                solidFloor |= !solidFloor && hasFloorPatch(pos.below());
+                this.reachable.add(pos);
                 for (var direction : Direction.Plane.HORIZONTAL) {
                     for (int step = -1; step <= 1; step++) {
                         var next = pos.relative(direction).above(step);
-                        if (!area.contains(next) || visited.contains(next) || !canStand(next)) continue;
-                        // A step up/down also needs headroom over the higher part of the movement.
-                        if (step > 0 && !clear(pos.above(2)) || step < 0 && !clear(next.above(2))) continue;
+                        if (!area.contains(next) || visited.contains(next) || !canTraverse(pos, next, step)) continue;
                         visited.add(next);
                         queue.addLast(next);
                     }
                 }
             }
-            if (solidFloor) this.reachable.addAll(component);
         }
     }
 
@@ -84,20 +85,8 @@ final class SettlementHousingSurvey {
         return this.unobserved ? SettlementBuildingSurvey.BedState.UNOBSERVED : SettlementBuildingSurvey.BedState.BLOCKED;
     }
 
-    private boolean hasFloorPatch(BlockPos near) {
-        for (int x = -2; x <= 0; x++) {
-            for (int z = -2; z <= 0; z++) {
-                var corner = near.offset(x, 0, z);
-                if (corner.getX() < this.area.min().getX() || corner.getX() + 2 > this.area.max().getX()
-                        || corner.getZ() < this.area.min().getZ() || corner.getZ() + 2 > this.area.max().getZ()) continue;
-                boolean solid = true;
-                for (int dx = 0; dx < 3 && solid; dx++) {
-                    for (int dz = 0; dz < 3 && solid; dz++) solid = floor(corner.offset(dx, 0, dz));
-                }
-                if (solid) return true;
-            }
-        }
-        return false;
+    private boolean canTraverse(BlockPos from, BlockPos to, int step) {
+        return canStand(to) && (step <= 0 || clear(from.above(2))) && (step >= 0 || clear(to.above(2)));
     }
 
     private boolean canStand(BlockPos pos) {
