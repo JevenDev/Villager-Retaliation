@@ -39,7 +39,7 @@ final class SettlementWorldViewClientChecks {
 
     boolean tick(Minecraft minecraft) {
         if (this.phase == 0) {
-            SettlementPeekClientChecks.verify(minecraft, this.center);
+            SettlementPeekClientChecks.verify(minecraft, this.view, this.center);
             UUID player = minecraft.player.getUUID();
             this.preparation = minecraft.getSingleplayerServer().submit(() -> {
                 var owner = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);

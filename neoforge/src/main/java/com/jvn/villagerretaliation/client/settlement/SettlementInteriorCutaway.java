@@ -77,10 +77,10 @@ public final class SettlementInteriorCutaway {
                 var column = hit.offset(dx, 0, dz);
                 if (!bounds.box().contains(column.getCenter())) continue;
                 int top = scan.surface(column) - 1;
-                if (top > bounds.max().getY() || top < bounds.min().getY() + 3) continue;
+                if (top > bounds.max().getY() || top < bounds.min().getY() + 2) continue;
                 var roof = new BlockPos(column.getX(), top, column.getZ());
                 if (!shell(scan.state(roof))) continue;
-                for (int y = top - 2; y >= Math.max(bounds.min().getY() + 1, top - 12); y--) {
+                for (int y = top - 2; y >= Math.max(bounds.min().getY(), top - 12); y--) {
                     var feet = new BlockPos(column.getX(), y, column.getZ());
                     if (scan.interior(feet) && scan.supports(feet.below())
                             && !scan.openDoorway(feet, Direction.NORTH) && !scan.openDoorway(feet, Direction.EAST)) {
@@ -113,13 +113,13 @@ public final class SettlementInteriorCutaway {
                 } else if (interior) {
                     pending.add(next);
                 } else {
-                    if (!shell(scan.state(next)) || !shell(scan.state(next.above()))) return null;
+                    if (!shell(scan.state(next)) && !shell(scan.state(next.above()))) return null;
                     // a buried wall must never open a view into terrain
                     if (scan.terrainAboveFloor(next.relative(direction, 2))) return null;
                     for (int y = feet.getY(); y <= ceiling; y++) {
                         var pos = new BlockPos(next.getX(), y, next.getZ());
                         var state = scan.state(pos);
-                        if (state.isAir()) continue;
+                        if (scan.decoration(state, pos)) continue;
                         if (!shell(state)) return null;
                         walls.add(new Wall(pos, direction));
                     }
@@ -133,7 +133,7 @@ public final class SettlementInteriorCutaway {
     private static boolean shell(BlockState state) {
         if (!state.getFluidState().isEmpty()) return false;
         return state.is(BlockTags.PLANKS) || state.is(BlockTags.LOGS) || state.is(BlockTags.STAIRS)
-                || state.is(BlockTags.SLABS) || state.is(BlockTags.WALLS) || state.is(BlockTags.STONE_BRICKS)
+                || state.is(BlockTags.SLABS) || state.is(BlockTags.FENCES) || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.WALLS) || state.is(BlockTags.STONE_BRICKS)
                 || state.is(BlockTags.WOOL) || state.is(BlockTags.TERRACOTTA)
                 || state.is(Blocks.BRICKS) || state.is(Blocks.COBBLESTONE) || state.is(Blocks.MOSSY_COBBLESTONE)
                 || state.is(Blocks.DEEPSLATE_BRICKS) || state.is(Blocks.DEEPSLATE_TILES)
@@ -186,9 +186,13 @@ public final class SettlementInteriorCutaway {
             if (this.invalid || (long) top - pos.getY() > 64) return true;
             for (int y = pos.getY(); y <= top; y++) {
                 var state = state(pos.atY(y));
-                if (!state.isAir() && !shell(state)) return true;
+                if (!shell(state) && !decoration(state, pos.atY(y))) return true;
             }
             return false;
+        }
+
+        private boolean decoration(BlockState state, BlockPos pos) {
+            return state.getFluidState().isEmpty() && state.getCollisionShape(this.level, pos).isEmpty() && !shell(state);
         }
 
         private boolean supports(BlockPos pos) {
@@ -198,7 +202,7 @@ public final class SettlementInteriorCutaway {
         private boolean interior(BlockPos pos) {
             var feet = state(pos);
             var head = state(pos.above());
-            return (!feet.isCollisionShapeFullBlock(this.level, pos) || feet.hasBlockEntity()
+            return !shell(feet) && (!feet.isCollisionShapeFullBlock(this.level, pos) || feet.hasBlockEntity()
                     || feet.is(Blocks.CRAFTING_TABLE) || feet.is(Blocks.SMITHING_TABLE) || feet.is(Blocks.FLETCHING_TABLE)
                     || feet.is(Blocks.CARTOGRAPHY_TABLE) || feet.is(Blocks.LOOM)) && !(feet.getBlock() instanceof DoorBlock)
                     && !(feet.getBlock() instanceof TrapDoorBlock) && feet.getFluidState().isEmpty() && head.getFluidState().isEmpty()
@@ -212,7 +216,7 @@ public final class SettlementInteriorCutaway {
             for (int y = feet.getY() + 2; y <= top; y++) {
                 var pos = new BlockPos(feet.getX(), y, feet.getZ());
                 var state = state(pos);
-                if (state.isAir()) continue;
+                if (decoration(state, pos)) continue;
                 if (!shell(state)) return Integer.MIN_VALUE;
                 if (first == Integer.MIN_VALUE) first = y;
                 if (top - first > 3) return Integer.MIN_VALUE;

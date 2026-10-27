@@ -15,7 +15,7 @@ final class SettlementPeekClientChecks {
     private SettlementPeekClientChecks() {
     }
 
-    static void verify(Minecraft minecraft, BlockPos center) {
+    static void verify(Minecraft minecraft, SettlementViewScreen view, BlockPos center) {
         var level = minecraft.level;
         var bounds = new SettlementViewBounds(center.offset(-9, -1, -4), center.offset(-2, 5, 4));
         var chunks = new ArrayList<ChunkPos>();
@@ -58,6 +58,46 @@ final class SettlementPeekClientChecks {
         DialogueCameraOcclusion.built(net.minecraft.core.SectionPos.of(roof), masked);
         DialogueCameraOcclusion.tick();
         require(!DialogueCameraOcclusion.hides(roof), "stale terrain mesh completions cannot restore a closed cutaway");
+        verifyScreenHover(minecraft, view, center);
+    }
+
+    private static void verifyScreenHover(Minecraft minecraft, SettlementViewScreen view, BlockPos center) {
+        boolean focused = minecraft.isWindowActive();
+        minecraft.setWindowActive(true);
+        try {
+            var hover = SettlementViewScreen.class.getDeclaredMethod("updatePeek", double.class, double.class);
+            var world = SettlementViewScreen.class.getDeclaredMethod("worldContains", double.class, double.class);
+            hover.setAccessible(true);
+            world.setAccessible(true);
+            var camera = minecraft.gameRenderer.getMainCamera();
+            double tangent = Math.tan(Math.toRadians(SettlementViewClient.FOV / 2));
+            for (int x = -7; x <= -4; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    var roof = center.offset(x, 4, z);
+                    var relative = roof.getCenter().subtract(camera.getPosition());
+                    double depth = relative.dot(new Vec3(camera.getLookVector()));
+                    if (depth <= 0) continue;
+                    double sx = view.viewportWidth() / 2.0 - relative.dot(new Vec3(camera.getLeftVector())) * view.height / (2 * depth * tangent);
+                    double sy = view.height / 2.0 - relative.dot(new Vec3(camera.getUpVector())) * view.height / (2 * depth * tangent);
+                    if (!(Boolean) world.invoke(view, sx, sy)) continue;
+                    hover.invoke(view, sx, sy);
+                    require(DialogueCameraOcclusion.hides(roof), "the rendered building under the cursor activates the screen's registered-building cutaway");
+                    hover.invoke(view, 0.0, 0.0);
+                    require(!DialogueCameraOcclusion.hides(roof), "moving the cursor onto the screen chrome restores the roof");
+                    hover.invoke(view, sx, sy);
+                    minecraft.setWindowActive(false);
+                    hover.invoke(view, sx, sy);
+                    require(!DialogueCameraOcclusion.hides(roof), "an unfocused view restores the roof");
+                    return;
+                }
+            }
+            throw new IllegalStateException("the fixture roof must have a visible hover target outside the floating windows");
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        } finally {
+            view.clearPeek();
+            minecraft.setWindowActive(focused);
+        }
     }
 
     private static void require(boolean condition, String message) {

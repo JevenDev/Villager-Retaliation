@@ -90,6 +90,29 @@ public final class SettlementInteriorCutawayGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_peek", skyAccess = true)
+    public static void registeredTentWithSlopedWoolWallsAndFenceSupportsCanBePeeked(GameTestHelper helper)
+            throws java.io.IOException, com.mojang.brigadier.exceptions.CommandSyntaxException {
+        var template = new net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate();
+        template.load(net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(), net.minecraft.nbt.TagParser.parseTag(
+                java.nio.file.Files.readString(java.nio.file.Path.of(System.getProperty("villagerretaliation.gameteststructures"), "settlement_peek_tent.snbt"))));
+        var origin = helper.absolutePos(new BlockPos(16, 4, 16));
+        helper.assertTrue(template.placeInWorld(helper.getLevel(), origin, origin,
+                new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings(), helper.getLevel().random, 2),
+                "the saved tent geometry is placed in the test world");
+        helper.assertBlockPresent(Blocks.GREEN_WOOL, 21, 9, 20);
+        var bounds = new SettlementViewBounds(origin.offset(0, 1, 0), origin.offset(10, 6, 9));
+        var roof = origin.offset(5, 5, 4);
+        var room = SettlementInteriorCutaway.detect(helper.getLevel(), bounds, roof, pos -> true);
+        helper.assertTrue(room != null, "the registered tent from the settlement save has a peekable interior");
+        var mask = room.mask(helper.absolutePos(new BlockPos(15, 12, -5)).getCenter());
+        helper.assertTrue(mask.contains(roof), "the wool canopy above the beds is hidden");
+        helper.assertTrue(mask.stream().allMatch(pos -> bounds.box().contains(pos.getCenter())), "the tent cutaway stays inside registered bounds");
+        helper.assertTrue(mask.stream().noneMatch(pos -> helper.getLevel().getBlockState(pos).is(Blocks.RED_BED)), "beds remain visible");
+        helper.assertTrue(mask.stream().allMatch(pos -> pos.getY() > room.floor()), "the grass and dirt floor remains visible");
+        helper.succeed();
+    }
+
     private static SettlementInteriorCutaway.Room detect(GameTestHelper helper, SettlementViewBounds bounds) {
         return SettlementInteriorCutaway.detect(helper.getLevel(), bounds,
                 new BlockPos(bounds.min().getX() + 3, bounds.max().getY(), bounds.min().getZ() + 3), pos -> true);
