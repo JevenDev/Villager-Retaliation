@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -20,7 +21,11 @@ public final class SettlementSelectionGizmo {
                     .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
                     .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(3.5)))
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    // vanilla's no-depth state does not disable an inherited depth test
+                    .setDepthTestState(new RenderStateShard.DepthTestStateShard("always", 519) {
+                        @Override public void setupRenderState() { RenderSystem.disableDepthTest(); }
+                        @Override public void clearRenderState() { RenderSystem.enableDepthTest(); }
+                    })
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL).createCompositeState(false));
     public enum Mode { TRANSFORM, RESIZE }

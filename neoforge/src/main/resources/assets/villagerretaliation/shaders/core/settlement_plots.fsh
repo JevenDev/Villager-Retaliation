@@ -4,6 +4,7 @@ uniform sampler2D SceneDepth;
 uniform mat4 InverseViewProjection;
 uniform vec3 CameraOffset;
 uniform float PlotStates[121];
+uniform int OutlineOnly;
 
 out vec4 fragColor;
 
@@ -25,5 +26,10 @@ void main() {
     vec2 local = mod(position.xz, 16.0);
     float edge = min(min(local.x, 16.0 - local.x), min(local.y, 16.0 - local.y));
     float border = 1.0 - smoothstep(0.08, 0.08 + max(fwidth(edge), 0.03), edge);
-    fragColor = vec4(color, alpha + stripe * 0.045 + border * 0.28);
+    if (OutlineOnly != 0) {
+        if (border <= 0.01) discard;
+        fragColor = vec4(color, border * 0.85);
+    } else {
+        fragColor = vec4(color, alpha + stripe * 0.045 + border * 0.28);
+    }
 }

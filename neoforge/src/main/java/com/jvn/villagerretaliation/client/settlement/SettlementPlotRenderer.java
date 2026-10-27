@@ -34,6 +34,10 @@ public final class SettlementPlotRenderer {
     }
 
     static void render(RenderLevelStageEvent event, SettlementPlotSnapshot snapshot, ChunkPos selected, ChunkPos hovered) {
+        render(event, snapshot, selected, hovered, false);
+    }
+
+    static void render(RenderLevelStageEvent event, SettlementPlotSnapshot snapshot, ChunkPos selected, ChunkPos hovered, boolean outlineOnly) {
         if (shader == null || snapshot.plots().isEmpty()) return;
         var minecraft = Minecraft.getInstance();
         var target = minecraft.getMainRenderTarget();
@@ -46,6 +50,7 @@ public final class SettlementPlotRenderer {
         int minZ = snapshot.plots().stream().mapToInt(plot -> plot.chunk().z).min().orElseThrow();
         var states = new float[121];
         for (var plot : snapshot.plots()) {
+            if (outlineOnly && !plot.owned()) continue;
             int x = plot.chunk().x - minX, z = plot.chunk().z - minZ;
             if (x < 0 || x >= 11 || z < 0 || z >= 11 || !plot.owned() && !plot.eligible()
                     || minecraft.level.getChunkSource().getChunk(plot.chunk().x, plot.chunk().z, false) == null) continue;
@@ -56,6 +61,7 @@ public final class SettlementPlotRenderer {
         shader.safeGetUniform("InverseViewProjection").set(new Matrix4f(event.getProjectionMatrix()).mul(event.getModelViewMatrix()).invert());
         shader.safeGetUniform("CameraOffset").set((float) (camera.x - minX * 16.0D), (float) camera.y, (float) (camera.z - minZ * 16.0D));
         shader.safeGetUniform("PlotStates").set(states);
+        shader.safeGetUniform("OutlineOnly").set(outlineOnly ? 1 : 0);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();

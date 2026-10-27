@@ -21,10 +21,12 @@ public final class SettlementManagementClient {
 
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(OPEN);
+        SettlementViewKeyMappings.register(event);
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        SettlementBoundsClient.tick();
         while (OPEN.consumeClick()) {
             if (minecraft.screen == null && minecraft.player != null && minecraft.player.isAlive() && !minecraft.player.isSpectator()) {
                 PacketDistributor.sendToServer(new SettlementManagementRequestPayload(null,

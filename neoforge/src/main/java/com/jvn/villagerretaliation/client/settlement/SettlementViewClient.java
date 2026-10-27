@@ -156,6 +156,8 @@ public final class SettlementViewClient {
         if (active != null) {
             end(active);
         }
+        SettlementBoundsClient.clear();
+        SettlementPlotRenderer.clear();
     }
 
     public static boolean contains(Level level, BlockPos position) {
@@ -192,8 +194,9 @@ public final class SettlementViewClient {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (active != null && event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
-            active.renderPlotTint(event);
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
+            if (active != null) active.renderPlotTint(event);
+            else SettlementBoundsClient.render(event);
         }
         if (active != null && event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             active.renderWorldSelection(event);

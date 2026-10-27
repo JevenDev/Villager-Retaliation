@@ -90,6 +90,7 @@ public final class SettlementViewClientSmoke {
     private static Villager issueFarmer;
     private static long started;
     private static int phase;
+    private static SettlementWorldViewClientChecks worldViewChecks;
     private static boolean resourceFormsChecked;
     private static int ticks;
     private static double originalX;
@@ -212,6 +213,11 @@ public final class SettlementViewClientSmoke {
                     "the centered settlement camera has an isometric-style tilt");
             SettlementOverviewMapClientChecks.verify(screen, fixture.center());
             SettlementViewPanelClientChecks.verify(screen);
+            if (Boolean.getBoolean("villagerretaliation.settlementWorldViewClientSmoke")) {
+                worldViewChecks = new SettlementWorldViewClientChecks(screen, fixture.town(), fixture.center(), SettlementViewClientSmoke::capture);
+                phase = 903;
+                return;
+            }
             capture("terrain-overview-map");
             capture("minimum-zoom");
             screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
@@ -219,6 +225,15 @@ public final class SettlementViewClientSmoke {
             originalYaw = screen.cameraYaw();
             screen.keyPressed(GLFW.GLFW_KEY_E, 0, 0);
             phase = 90;
+        } else if (phase == 903 && worldViewChecks.tick(minecraft)) {
+            try {
+                Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement world view client checks passed\n");
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+            LogUtils.getLogger().info("Settlement world view client checks passed");
+            phase = 6;
+            minecraft.stop();
         } else if (phase == 90 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
             screen.keyReleased(GLFW.GLFW_KEY_E, 0, 0);
             require(Math.abs(screen.cameraYaw() - originalYaw) > 0.5F, "E rotates the world camera");
@@ -2374,7 +2389,7 @@ public final class SettlementViewClientSmoke {
         clickWorld(screen, position, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
 
-    private static void clickWorld(SettlementViewScreen screen, Vec3 position, int button) {
+    static void clickWorld(SettlementViewScreen screen, Vec3 position, int button) {
         var point = screenPoint(screen, position);
         screen.mouseClicked(point.x, point.y, button);
         screen.mouseReleased(point.x, point.y, button);

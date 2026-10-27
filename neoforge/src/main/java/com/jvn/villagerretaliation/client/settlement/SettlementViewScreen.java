@@ -422,13 +422,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         updateStatusButtons(statusLayout(this.width));
         int toolTop = SettlementViewLayout.HEADER_HEIGHT + 6;
-        addRenderableWidget(tool(Component.literal("Select"), toolTop, net.minecraft.world.item.Items.ARROW, false,
+        addRenderableWidget(tool(SettlementViewKeyMappings.hint(Component.literal("Select"), SettlementViewKeyMappings.SELECT), toolTop, net.minecraft.world.item.Items.ARROW, false,
                 () -> this.interaction.is(Mode.SELECT) && this.gizmo == null && this.guardMode == null,
                 () -> { enterMode(Mode.SELECT); updateActions(); updatePlotActions(); }));
         addRenderableWidget(tool(Component.literal("Residents"), toolTop + this.layout.railSize + 2,
                 net.minecraft.world.item.Items.EMERALD, true, () -> this.preferences.sidebar && !this.inspector.visible() && this.browser.page == Page.RESIDENTS,
                 this::browseResidents));
-        this.drawArea = addRenderableWidget(tool(text("draw_area"), toolTop + (this.layout.railSize + 2) * 2,
+        this.drawArea = addRenderableWidget(tool(SettlementViewKeyMappings.hint(text("draw_area"), SettlementViewKeyMappings.DRAW), toolTop + (this.layout.railSize + 2) * 2,
                 net.minecraft.world.item.Items.OAK_FENCE, false, () -> this.interaction.is(Mode.DRAW_AREA), () -> {
                     enterMode(this.interaction.is(Mode.DRAW_AREA) ? Mode.SELECT : Mode.DRAW_AREA);
                     updatePlotActions();
@@ -441,11 +441,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     updatePlotActions();
                     management().newBuilding();
                 }));
-        addRenderableWidget(tool(text("plots"), toolTop + (this.layout.railSize + 2) * 4,
+        addRenderableWidget(tool(SettlementViewKeyMappings.hint(text("plots"), SettlementViewKeyMappings.PLOTS), toolTop + (this.layout.railSize + 2) * 4,
                 net.minecraft.world.item.Items.FILLED_MAP, false, () -> this.interaction.is(Mode.SELECT_PLOT), this::togglePlots));
         this.overlayButton = addRenderableWidget(tool(Component.literal("Overlays"),
                 toolTop + (this.layout.railSize + 2) * 5, net.minecraft.world.item.Items.SPYGLASS, false,
-                () -> this.preferences.workOverlay || this.preferences.issueOverlay, () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
+                () -> this.preferences.workOverlay || this.preferences.issueOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
         addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
                 net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
@@ -470,6 +470,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.resize = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_resize"), ignored -> {
             if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.RESIZE);
         }).bounds(this.layout.worldLeft + 96, this.layout.commandTop, 68, 20).build());
+        this.transform.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
+                SettlementViewKeyMappings.hint(text("gizmo_move"), SettlementViewKeyMappings.MOVE)));
+        this.resize.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
+                SettlementViewKeyMappings.hint(text("gizmo_resize"), SettlementViewKeyMappings.RESIZE)));
         this.applyGizmo = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_area_settings"), ignored -> {
             var draft = this.parent.buildingDraft();
             if (draft != null && draft.placed) {
@@ -1787,6 +1791,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             if (this.routeDraft.dragging()) return true;
         }
+        if (this.routeDraft == null && toolShortcut(keyCode, scanCode)) return true;
         if (keyCode == GLFW.GLFW_KEY_DELETE && this.routeDraft == null) {
             if (inspectorSelection() instanceof SettlementManagementPayload.Area area) confirmRemoveArea(area);
             return true;
@@ -1818,6 +1823,32 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private boolean toolShortcut(int key, int scan) {
+        if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.BOUNDS, key, scan)) {
+            SettlementBoundsClient.toggle(this.header.id());
+        } else if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.ACTIONS, key, scan)) {
+            openActionPopup(SettlementViewPopup.Kind.ACTIONS);
+        } else if (this.commands.busy() || this.parent.submitting() || this.gizmo != null && this.gizmo.dragging()) {
+            return false;
+        } else if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.SELECT, key, scan)) {
+            enterMode(Mode.SELECT);
+        } else if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.PLOTS, key, scan)) {
+            togglePlots();
+        } else if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.DRAW, key, scan)) {
+            if (!permits(SettlementPermission.BUILD)) return true;
+            enterMode(this.interaction.is(Mode.DRAW_AREA) ? Mode.SELECT : Mode.DRAW_AREA);
+        } else if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.MOVE, key, scan)
+                || SettlementViewKeyMappings.matches(SettlementViewKeyMappings.RESIZE, key, scan)) {
+            if (this.gizmo == null && inspectorSelection() instanceof SettlementManagementPayload.Area area) beginBoundsEdit(area);
+            if (this.gizmo != null) this.gizmo.mode(SettlementViewKeyMappings.matches(SettlementViewKeyMappings.RESIZE, key, scan)
+                    ? SettlementSelectionGizmo.Mode.RESIZE : SettlementSelectionGizmo.Mode.TRANSFORM);
+        } else return false;
+        clearControls();
+        updateActions();
+        updatePlotActions();
+        return true;
     }
 
     @Override
@@ -2395,7 +2426,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void renderPlotTint(RenderLevelStageEvent event) {
-        if (this.interaction.is(Mode.SELECT_PLOT)) SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
+        if (this.interaction.is(Mode.SELECT_PLOT)) {
+            SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
+        } else if (SettlementBoundsClient.enabled(this.header.id()) || this.interaction.is(Mode.DRAW_AREA)
+                || this.editingArea != null || this.parent.buildingDraft() != null) {
+            SettlementPlotRenderer.render(event, this.plotSnapshot, null, null, true);
+        }
     }
 
     private AABB draftBounds() {
@@ -2791,6 +2827,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case OVERLAYS -> {
                 details.add(Component.literal("World overlays"));
+                actions.add(new SettlementViewPopup.Action(SettlementViewKeyMappings.hint(
+                        SettlementManagementScreen.text(SettlementBoundsClient.enabled(this.header.id()) ? "hide_bounds" : "show_bounds"),
+                        SettlementViewKeyMappings.BOUNDS), true, () -> SettlementBoundsClient.toggle(this.header.id())));
                 actions.add(new SettlementViewPopup.Action(Component.literal("Work state: " + (this.preferences.workOverlay ? "On" : "Off")),
                         true, () -> { this.preferences.workOverlay = !this.preferences.workOverlay; savePreferences(); }));
                 actions.add(new SettlementViewPopup.Action(Component.literal("Issues: " + (this.preferences.issueOverlay ? "On" : "Off")),

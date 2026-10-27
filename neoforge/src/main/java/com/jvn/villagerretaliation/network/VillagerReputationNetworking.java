@@ -160,6 +160,11 @@ public final class VillagerReputationNetworking {
         network.playToServer(SettlementViewBatchPayload.TYPE, SettlementViewBatchPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
                         player -> com.jvn.villagerretaliation.settlement.SettlementViewService.command(player, payload))));
+        network.safePlayToClientThreaded(SettlementBoundsPayload.TYPE, SettlementBoundsPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.settlement.SettlementBoundsClient", "accept");
+        network.playToServer(SettlementBoundsRequestPayload.TYPE, SettlementBoundsRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
+                        player -> com.jvn.villagerretaliation.settlement.SettlementBoundsService.request(player, payload))));
         network.safePlayToClientThreaded(SettlementViewOverviewPayload.TYPE, SettlementViewOverviewPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.settlement.SettlementViewClient", "acceptOverview");
         network.playToServer(SettlementViewOverviewRequestPayload.TYPE, SettlementViewOverviewRequestPayload.STREAM_CODEC,

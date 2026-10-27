@@ -47,6 +47,12 @@
       ]
     },
     {
+      "name": "OutlineOnly",
+      "type": "int",
+      "count": 1,
+      "values": [0]
+    },
+    {
       "name": "PlotStates",
       "type": "float",
       "count": 121,

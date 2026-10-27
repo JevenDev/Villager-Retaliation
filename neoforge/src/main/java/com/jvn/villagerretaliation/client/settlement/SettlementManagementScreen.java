@@ -43,6 +43,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
     private final net.minecraft.client.multiplayer.ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
     private boolean viewRequested;
     private Button worldView;
+    private Button boundsToggle;
     private UUID pendingFocusArea;
     private UUID pendingStorageArea;
     private Component supplyContext = Component.empty();
@@ -231,6 +232,12 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
         }).bounds(this.left + this.panelWidth - 84, this.top - 4, 84, 20).build());
         this.worldView.visible = this.snapshot.header() != null && this.assigning == null && this.choosingBed == null;
         this.worldView.setTooltip(Tooltip.create(text("world_view_hint")));
+        this.boundsToggle = addRenderableWidget(VillagerUi.buttonBuilder(text("show_bounds"), ignored -> {
+            SettlementBoundsClient.toggle(this.snapshot.header().id());
+            updateActions();
+        }).bounds(this.worldView.getX() - 108, this.worldView.getY(), 104, 20)
+                .tooltip(Tooltip.create(text("show_bounds_hint"))).build());
+        this.boundsToggle.visible = this.worldView.visible;
         int y = this.top + 28;
         int navigationHeight = Math.min(20, (this.panelHeight - 56) / (Page.values().length - 3) - 2);
         for (Page page : Page.values()) {
@@ -409,6 +416,12 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
     }
 
     private void updateActions() {
+        if (this.boundsToggle != null) {
+            this.boundsToggle.visible = this.snapshot.header() != null && this.worldView.visible;
+            this.boundsToggle.active = this.boundsToggle.visible && !this.submitting;
+            this.boundsToggle.setMessage(text(this.snapshot.header() != null
+                    && SettlementBoundsClient.enabled(this.snapshot.header().id()) ? "hide_bounds" : "show_bounds"));
+        }
         if (this.actions[0] == null) {
             return;
         }
@@ -823,7 +836,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 : this.assigning != null ? text("assign_resident", name(this.assigning))
                 : this.snapshot.header() == null ? this.title : this.snapshot.header().name().isBlank()
                     ? text("unnamed") : Component.literal(this.snapshot.header().name());
-        fitted(graphics, heading, this.left, this.top, this.panelWidth - (this.worldView.visible ? 92 : 0), 0xFFFFFF);
+        fitted(graphics, heading, this.left, this.top, this.panelWidth - (this.worldView.visible ? 200 : 0), 0xFFFFFF);
         if (this.desiredPage == Page.SUMMARY && this.snapshot.header() != null) {
             fitted(graphics, text("summary_hint"), this.contentLeft, this.top + 34, this.contentWidth, 0xD0D0D0);
         }

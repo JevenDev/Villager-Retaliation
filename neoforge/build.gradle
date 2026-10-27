@@ -172,6 +172,7 @@ neoForge {
             sourceSet = sourceSets.gameTest
             gameDirectory.set(settlementClientSmokeDirectory)
             systemProperty 'villagerretaliation.settlementHousingClientSmoke', providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get()
+            systemProperty 'villagerretaliation.settlementWorldViewClientSmoke', providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
         }
@@ -451,9 +452,10 @@ tasks.named('runSettlementClientSmoke') {
                 into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
             }
         }
-        if (providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()) {
+        if (providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()
+                || providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get().toBoolean()) {
             def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
-            if (imgui == null) throw new GradleException('Housing client checks require the declared ImGuiMC dependency.')
+            if (imgui == null) throw new GradleException('Settlement client checks require the declared ImGuiMC dependency.')
             copy {
                 from imgui
                 into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
@@ -464,8 +466,10 @@ tasks.named('runSettlementClientSmoke') {
     }
     doLast {
         def result = new File(settlementClientSmokeDirectory.get().asFile, 'result.txt')
-        def expected = providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()
-                ? 'Settlement housing client checks passed' : 'Settlement client smoke checks passed'
+        def expected = providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get().toBoolean()
+                ? 'Settlement world view client checks passed'
+                : providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()
+                        ? 'Settlement housing client checks passed' : 'Settlement client smoke checks passed'
         if (!result.isFile() || !result.text.contains(expected)) {
             throw new GradleException("Settlement client checks did not finish. Inspect ${settlementClientSmokeDirectory.get().asFile}")
         }
