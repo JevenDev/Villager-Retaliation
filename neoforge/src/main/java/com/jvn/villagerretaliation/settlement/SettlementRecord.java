@@ -1445,6 +1445,14 @@ public final class SettlementRecord {
     }
 
     CompoundTag save(HolderLookup.Provider provider, ListTag navigationTags) {
+        return save(provider, navigationTags, false);
+    }
+
+    CompoundTag snapshot(HolderLookup.Provider provider, ListTag navigationTags) {
+        return save(provider, navigationTags, true);
+    }
+
+    private CompoundTag save(HolderLookup.Provider provider, ListTag navigationTags, boolean checkpoint) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id.value());
         tag.putString("Dimension", this.dimension.toString());
@@ -1588,7 +1596,7 @@ public final class SettlementRecord {
         tag.put("SupportServices", supportServices);
         tag.put("Economy", this.economy.save());
         ListTag residentTags = new ListTag();
-        this.residents.values().forEach(resident -> residentTags.add(resident.save()));
+        this.residents.values().forEach(resident -> residentTags.add(checkpoint ? resident.snapshot() : resident.save()));
         tag.put("ResidentCare", residentTags);
         var homeTags = new ListTag();
         this.homes.values().forEach(home -> homeTags.add(home.save()));
@@ -1601,7 +1609,7 @@ public final class SettlementRecord {
         this.homeReleases.values().forEach(release -> homeReleaseTags.add(release.save()));
         tag.put("HomeReleases", homeReleaseTags);
         ListTag workerTags = new ListTag();
-        this.workers.values().forEach(worker -> workerTags.add(worker.save()));
+        this.workers.values().forEach(worker -> workerTags.add(checkpoint ? worker.snapshot() : worker.save()));
         tag.put("Workers", workerTags);
         ListTag livestockTags = new ListTag();
         this.livestock.values().forEach(animal -> livestockTags.add(animal.save()));

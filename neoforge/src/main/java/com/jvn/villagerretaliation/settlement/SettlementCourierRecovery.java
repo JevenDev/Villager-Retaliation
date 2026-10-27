@@ -104,7 +104,7 @@ public final class SettlementCourierRecovery {
         }
         var drop = journey.recovery.stream().filter(value -> value.state == State.RESERVED).findFirst().orElse(null);
         if (drop == null) return;
-        if (!SettlementAidCheckpoint.durable(level, journey.revision) || !level.isPositionEntityTicking(journey.position)
+        if (!SettlementAidCheckpoint.urgent(level, journey.revision) || !level.isPositionEntityTicking(journey.position)
                 || !level.areEntitiesLoaded(new net.minecraft.world.level.ChunkPos(journey.position).toLong())) return;
         var found = SettlementCourierService.existing(level.getServer(), drop.id);
         if (found == null) {
@@ -134,7 +134,7 @@ public final class SettlementCourierRecovery {
         SettlementCourierService.changed(level, request);
     }
     static void unlock(ServerLevel level, SettlementFoodRequest request) {
-        if (!SettlementAidCheckpoint.durable(level, request.journey.revision)) return;
+        if (!SettlementAidCheckpoint.urgent(level, request.journey.revision)) return;
         for (var drop : request.journey.recovery) if (drop.state == State.RELEASED) {
             var found = SettlementCourierService.existing(level.getServer(), drop.id);
             if (found instanceof ItemEntity item) release(item);

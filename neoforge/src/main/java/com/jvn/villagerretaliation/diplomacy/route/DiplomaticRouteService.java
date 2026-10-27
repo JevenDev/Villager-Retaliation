@@ -26,6 +26,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -142,6 +143,14 @@ public final class DiplomaticRouteService {
         var scheduler = SCHEDULERS.get(server);
         return scheduler == null ? new Metrics(0, 0, 0, 0, 0, 0, 0, 0, 0) : scheduler.metrics();
     }
+    // vanilla's tick average excludes post-tick work such as courier checkpoints
+    @SubscribeEvent(priority = EventPriority.HIGHEST) public static void beginTick(ServerTickEvent.Pre event) {
+        scheduler(event.getServer()).load.begin(System.nanoTime());
+    }
+    @SubscribeEvent(priority = EventPriority.LOWEST) public static void endTick(ServerTickEvent.Post event) {
+        var server = event.getServer();
+        scheduler(server).load.finish(server.overworld().getGameTime(), System.nanoTime(), VillageDiplomacyRules.get(server).maximumTickMillis());
+    }
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) { scheduler(event.getServer()).tick(); }
     @SubscribeEvent public static void stopping(ServerStoppingEvent event) {
         var scheduler = SCHEDULERS.remove(event.getServer());
@@ -154,6 +163,20 @@ public final class DiplomaticRouteService {
                 Math.max((Math.min(job.start().getZ(), job.end().getZ()) >> 4) - extra, (int) Math.ceil(border.getMinZ() / 16)),
                 Math.min((Math.max(job.start().getX(), job.end().getX()) >> 4) + extra, (int) Math.floor((border.getMaxX() - 16) / 16)),
                 Math.min((Math.max(job.start().getZ(), job.end().getZ()) >> 4) + extra, (int) Math.floor((border.getMaxZ() - 16) / 16)));
+    }
+
+    static final class LoadGuard {
+        private long started;
+        private long resumeAt;
+        void begin(long nanos) { this.started = nanos; }
+        void finish(long tick, long nanos, int maximumMillis) {
+            if (this.started != 0 && nanos - this.started >= maximumMillis * 1_000_000L)
+                this.resumeAt = Math.max(this.resumeAt, tick + 20);
+        }
+        boolean loaded(long tick, long nanos, long averageNanos, int maximumMillis) {
+            long budget = maximumMillis * 1_000_000L;
+            return tick < this.resumeAt || averageNanos >= budget || this.started != 0 && nanos - this.started >= budget;
+        }
     }
 
     private static final class Work {
@@ -178,6 +201,7 @@ public final class DiplomaticRouteService {
     }
     private static final class Scheduler {
         final MinecraftServer server;
+        final LoadGuard load = new LoadGuard();
         final RouteSavedData data;
         final ThreadPoolExecutor worker = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1), task -> {
             var thread = new Thread(task, "villager-diplomatic-routes");
@@ -250,7 +274,7 @@ public final class DiplomaticRouteService {
                     block(this.observation.work, "terrain_unavailable"); cancelObservation();
                 }
             }
-            boolean loaded = this.server.getAverageTickTimeNanos() >= rules.maximumTickMillis() * 1_000_000L;
+            boolean loaded = this.load.loaded(now, System.nanoTime(), this.server.getAverageTickTimeNanos(), rules.maximumTickMillis());
             if (loaded || this.queue.isEmpty()) return;
             int candidates = this.queue.size();
             while (candidates-- > 0) {
@@ -333,7 +357,7 @@ public final class DiplomaticRouteService {
                 return;
             }
             if (observation.generationNeeded) {
-                if (now < this.nextGeneration || this.server.getAverageTickTimeNanos() >= rules.maximumTickMillis() * 1_000_000L) return;
+                if (now < this.nextGeneration || this.load.loaded(now, System.nanoTime(), this.server.getAverageTickTimeNanos(), rules.maximumTickMillis())) return;
                 var dependencies = RouteGeneration.footprint(observation.position);
                 long additions = dependencies.stream().filter(key -> !observation.work.job.dependencies.contains(key)).count();
                 if (observation.work.job.dependencies.size() + additions > rules.generationLimit()) {
@@ -348,7 +372,7 @@ public final class DiplomaticRouteService {
                 if (observation.decoded.isDone()) observation.reader = new RouteSurfaceReader(observation.position, observation.decoded.join(), now);
                 return;
             }
-            if (this.server.getAverageTickTimeNanos() >= rules.maximumTickMillis() * 1_000_000L) return;
+            if (this.load.loaded(now, System.nanoTime(), this.server.getAverageTickTimeNanos(), rules.maximumTickMillis())) return;
             var holder = observation.level.getChunkSource().chunkMap.getVisibleChunkIfPresent(observation.position.toLong());
             if (holder != null && holder.getGenerationRefCount() != 0) return;
             var chunk = holder == null ? null : holder.getChunkIfPresentUnchecked(ChunkStatus.FEATURES);

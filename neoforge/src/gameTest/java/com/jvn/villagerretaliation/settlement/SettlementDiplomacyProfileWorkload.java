@@ -18,15 +18,18 @@ final class SettlementDiplomacyProfileWorkload {
     private final List<SettlementRecord> towns;
     private final List<UUID> routes = new ArrayList<>();
     private final List<UUID> shipments = new ArrayList<>();
+    private final List<Slot> slots = new ArrayList<>();
+    private int generationBatch;
+    private record Slot(int source, int destination, int ordinal, UUID request) { }
     SettlementDiplomacyProfileWorkload(ServerLevel level, List<SettlementRecord> towns) {
         this.level = level; this.towns = towns;
     }
     void start() {
-        for (int index = 0; index < 8; index++) create(index % 2, 4 - index % 2, index / 2 + 2);
+        for (int index = 0; index < 8; index++) slots.add(create(index % 2, 4 - index % 2, index / 2 + 2, true));
         for (int index = 0; index < 24; index++) {
             int source = index + 5;
             int target = source + 20 < towns.size() ? source + 20 : source - 20;
-            create(source, target, 2);
+            slots.add(create(source, target, 2, true));
         }
         for (int index = 0; index < 16; index++) {
             var from = access(towns.get(index + 5)); var to = access(towns.get(index + 25));
@@ -38,13 +41,13 @@ final class SettlementDiplomacyProfileWorkload {
         return town.depots().values().stream().filter(value -> value.purpose() == SettlementDepotPurpose.FOOD).findFirst().orElseThrow();
     }
     private static BlockPos access(SettlementRecord town) { return depot(town).position().north(); }
-    private void create(int source, int destination, int ordinal) {
+    private Slot create(int source, int destination, int ordinal, boolean initial) {
         var donor = towns.get(source); var recipient = towns.get(destination); var data = SettlementSavedData.get(level);
         var id = new UUID(0xB014L + source, 2L * (ordinal + 1)); var resident = donor.residents().get(id);
         if (resident == null || !data.aid().courierAvailable(id)) throw new IllegalStateException("Profile courier is unavailable");
         var entity = level.getEntity(id); var context = entity instanceof Villager villager ? villager : resident.context(level);
         var from = access(donor); var to = access(recipient);
-        if (entity instanceof Villager) context.moveTo(from.getX() - 5 + ordinal + .5, from.getY(), from.getZ() + .5);
+        if (initial && entity instanceof Villager) context.moveTo(from.getX() - 5 + ordinal + .5, from.getY(), from.getZ() + .5);
         var approach = SettlementCourierGameTests.route(context.blockPosition(), from);
         var corner = new BlockPos(to.getX() - 1, from.getY(), from.getZ());
         var steps = new ArrayList<>(SettlementCourierGameTests.route(from, corner).steps());
@@ -76,14 +79,27 @@ final class SettlementDiplomacyProfileWorkload {
         VillageDiplomacyService.receiveCorrespondence(level, donor.id(), recipient.id());
         VillageDiplomacyService.receiveCorrespondence(level, recipient.id(), donor.id());
         shipments.add(request.id());
+        return new Slot(source, destination, ordinal, request.id());
     }
     void generation() {
         routes.forEach(id -> DiplomaticRouteService.forget(level, id)); routes.clear();
-        var start = new BlockPos(26000000, -60, 26000000);
+        var start = new BlockPos(26000000 + 512 * generationBatch++, -60, 26000000);
         for (int index = 0; index < 8; index++) {
             var id = UUID.randomUUID(); routes.add(id);
             DiplomaticRouteService.prepare(level, id, start.offset(index * 8, 0, 0), start.offset(64 + index * 8, 0, 0), false);
         }
+    }
+    void sustain(boolean generating) {
+        var data = SettlementSavedData.get(level);
+        for (int index = 0; index < slots.size(); index++) {
+            var slot = slots.get(index); var request = data.aid().request(slot.request());
+            if (request.state() == SettlementFoodRequest.State.COMPLETED && data.aid().courierAvailable(request.journey.resident))
+                slots.set(index, create(slot.source(), slot.destination(), slot.ordinal(), false));
+        }
+        if (generating && routes.stream().allMatch(id -> {
+            var job = com.jvn.villagerretaliation.diplomacy.route.RouteSavedData.get(level).get(id);
+            return job == null || job.state() != com.jvn.villagerretaliation.diplomacy.route.RoutePreparation.State.PREPARING;
+        })) generation();
     }
     Snapshot snapshot() {
         var data = SettlementSavedData.get(level); int physical = 0, active = 0, blocked = 0; long progress = 0, delivered = 0;

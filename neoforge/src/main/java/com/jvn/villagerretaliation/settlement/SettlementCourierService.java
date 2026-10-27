@@ -179,7 +179,7 @@ public final class SettlementCourierService {
             changed(level, request); return;
         }
         if (journey.presence == SettlementCourierJourney.Presence.RETIRING) {
-            if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
+            if (!SettlementAidCheckpoint.urgent(level, journey.revision)) return;
             if (live != null && (nearby(level, live.blockPosition(), 96) || danger(live) || journey.obstructed)) {
                 live.getPersistentData().putLong(INCARNATION, journey.incarnation);
                 if (live.getVehicle() instanceof net.minecraft.world.entity.vehicle.Boat boat && boat.getUUID().equals(journey.boatId))
@@ -300,7 +300,7 @@ public final class SettlementCourierService {
             }
             journey.presence = SettlementCourierJourney.Presence.MATERIALIZING; changed(level, request); return;
         }
-        if (!SettlementAidCheckpoint.durable(level, journey.revision) || !level.isPositionEntityTicking(journey.position)) return;
+        if (!SettlementAidCheckpoint.urgent(level, journey.revision) || !level.isPositionEntityTicking(journey.position)) return;
         var courier = net.minecraft.world.entity.EntityType.VILLAGER.create(level); if (courier == null) return;
         if (journey.finished()) {
             var home = data.get(journey.home).orElse(null); var resident = home == null ? null : home.residents().get(journey.resident);

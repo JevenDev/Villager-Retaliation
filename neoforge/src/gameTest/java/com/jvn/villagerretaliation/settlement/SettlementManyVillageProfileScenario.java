@@ -116,7 +116,7 @@ public final class SettlementManyVillageProfileScenario {
         var destination = depot(player, town, origin.offset(9, 0, 12), SettlementDepotPurpose.MATERIALS);
         var food = depot(player, town, origin.offset(13, 0, 12), SettlementDepotPurpose.FOOD);
         for (int slot = 0; slot < IRON_PER_TOWN / 64; slot++) source.setItem(slot, new ItemStack(Items.IRON_INGOT, 64));
-        for (int slot = 0; slot < 4; slot++) food.setItem(slot, new ItemStack(Items.BREAD, 64));
+        for (int slot = 0; slot < (this.diplomaticCouriers ? 12 : 4); slot++) food.setItem(slot, new ItemStack(Items.BREAD, 64));
         require(town.setDepotStockTarget(player.getUUID(), source.id(), new ItemStack(Items.IRON_INGOT), 0), "source reserve");
         require(town.setDepotStockTarget(player.getUUID(), destination.id(), new ItemStack(Items.IRON_INGOT), IRON_PER_TOWN), "destination demand");
         var residents = new ArrayList<UUID>();

@@ -126,6 +126,20 @@ public final class SettlementAidGameTests {
                 }).thenSucceed();
     }
 
+    @GameTest(template = "empty")
+    public static void custodySnapshotsBatchRoutineHandoffsWithoutDelayingUrgentTransitions(GameTestHelper helper) {
+        var schedule = new SettlementAidCheckpoint.Schedule();
+        helper.assertTrue(schedule.ready(1000, false), "first custody snapshot is immediately eligible");
+        schedule.captured(1000);
+        helper.assertFalse(schedule.ready(1099, false), "routine handoffs share a bounded five-second checkpoint window");
+        helper.assertTrue(schedule.ready(1100, false), "queued handoffs become eligible at the deadline");
+        helper.assertTrue(schedule.ready(1001, true), "physical ownership and recovery bypass routine batching");
+        schedule.captured(1001);
+        helper.assertFalse(schedule.ready(1100, false), "an urgent snapshot starts the next shared batch window");
+        helper.assertTrue(schedule.ready(1101, false), "routine requests cannot be postponed beyond the next deadline without a newer capture");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 400)
     public static void custodyCheckpointUsesTheOrderedSaveQueue(GameTestHelper helper) {
         var level = helper.getLevel(); var data = SettlementSavedData.get(level);

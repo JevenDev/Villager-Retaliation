@@ -59,7 +59,7 @@ public final class SettlementCourierBoat {
             SettlementCourierService.changed(level, request); return;
         }
         if (journey.boatCustody == SettlementCourierJourney.BoatCustody.LAUNCHING) {
-            if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
+            if (!SettlementAidCheckpoint.urgent(level, journey.revision)) return;
             if (!level.getFluidState(target.position().below()).is(FluidTags.WATER)) {
                 journey.obstructed = true; SettlementCourierService.block(level, request, "courier_launch_obstructed"); return;
             }
@@ -95,7 +95,7 @@ public final class SettlementCourierBoat {
                 journey.boatContext = boat.saveWithoutId(new CompoundTag()); journey.boatCustody = SettlementCourierJourney.BoatCustody.PACKING;
                 SettlementCourierService.changed(level, request); return;
             }
-            if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
+            if (!SettlementAidCheckpoint.urgent(level, journey.revision)) return;
             if (courier.isPassenger()) courier.stopRiding();
             if (courier.position().distanceToSqr(Vec3.atBottomCenterOf(target.position())) > 0.64) {
                 if (SettlementCourierService.navigationDue(level, journey, now) && !courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5)) {

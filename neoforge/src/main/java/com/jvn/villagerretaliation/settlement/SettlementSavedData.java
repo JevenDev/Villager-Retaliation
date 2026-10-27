@@ -32,6 +32,7 @@ public final class SettlementSavedData extends SavedData {
     private final Map<VillageAllegianceId, SettlementRecord> settlements = new LinkedHashMap<>();
     private final SettlementRecovery recovery = new SettlementRecovery();
     private SettlementAidLedger aid = new SettlementAidLedger();
+    private final SettlementSnapshotCache snapshots = new SettlementSnapshotCache();
     private final Map<VillageAllegianceId, CompoundTag> retired = new LinkedHashMap<>();
 
     private final Map<ResourceLocation, Map<Long, VillageAllegianceId>> ownership = new java.util.HashMap<>();
@@ -407,8 +408,19 @@ public final class SettlementSavedData extends SavedData {
         net.neoforged.neoforge.common.IOUtilities.writeNbtCompressed(wrapper, file);
     }
 
+    CompoundTag snapshot(HolderLookup.Provider provider) {
+        return this.snapshots.capture(this, provider);
+    }
+
     @Override
     public void save(java.io.File file, HolderLookup.Provider provider) {
-        if (!readOnly()) super.save(file, provider);
+        if (readOnly() || !isDirty()) return;
+        var snapshot = new CompoundTag(); snapshot.put("data", snapshot(provider));
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(snapshot);
+        net.neoforged.neoforge.common.IOUtilities.withIOWorker(() -> {
+            try { com.jvn.villagerretaliation.util.AtomicDataFiles.writeCompressed(snapshot, file.toPath()); }
+            catch (java.io.IOException failure) { com.mojang.logging.LogUtils.getLogger().error("Could not save settlement data {}", file, failure); }
+        });
+        setDirty(false);
     }
 }

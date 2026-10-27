@@ -38,6 +38,7 @@ public final class SettlementWorkerState {
     private CompoundTag inventory = new CompoundTag();
     private CompoundTag settings = new CompoundTag();
     private CompoundTag entityContext = new CompoundTag();
+    private CompoundTag checkpointSource, checkpointContext;
     private SettlementMiningAccess miningAccess;
     private long checkedAt;
     private long version;
@@ -82,14 +83,14 @@ public final class SettlementWorkerState {
     void huntingNativeDamage(Villager villager, long now, boolean ticking) {
         if (this.huntingBody != null) {
             this.huntingBody.nativeDamage(villager, now, ticking);
-            this.entityContext = villager.saveWithoutId(new CompoundTag());
+            this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
         }
     }
 
     void huntingInjury(Villager villager, CompoundTag before, long now) {
         if (this.huntingBody == null) this.huntingBody = SettlementHuntingTarget.capture(villager, now);
         this.huntingBody.interacted(villager, before, now);
-        this.entityContext = villager.saveWithoutId(new CompoundTag());
+        this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
         changed();
     }
 
@@ -201,7 +202,7 @@ public final class SettlementWorkerState {
         var handoff = SettlementWorkerHandoff.forRole(this.role);
         this.settings = handoff.capture(level, villager);
         if (handoff.capturesEntity()) {
-            this.entityContext = villager.saveWithoutId(new CompoundTag());
+            this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
         }
         this.aptitude = HiredVillagerRoles.roleScore(level, villager, this.role);
         this.version = Math.max(this.version, villager.getPersistentData().getLong(VERSION_TAG));
@@ -313,12 +314,12 @@ public final class SettlementWorkerState {
         long next = this.version + 1L;
         if (this.equipmentChanges.record(before, after, next)) {
             this.version = next;
-            this.entityContext = after;
+            this.entityContext = after.copy();
         }
     }
 
     void rememberPayments(Villager villager) {
-        this.entityContext = villager.saveWithoutId(new CompoundTag());
+        this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
     }
 
     CompoundTag entityContext() {
@@ -404,7 +405,18 @@ public final class SettlementWorkerState {
         return List.copyOf(result);
     }
 
-    CompoundTag save() {
+    CompoundTag save() { return save(this.entityContext.copy()); }
+
+    CompoundTag snapshot() {
+        // captured entity contexts are replaced, never edited in place
+        if (this.checkpointSource != this.entityContext) {
+            this.checkpointSource = this.entityContext;
+            this.checkpointContext = this.entityContext.copy();
+        }
+        return save(this.checkpointContext);
+    }
+
+    private CompoundTag save(CompoundTag context) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
         tag.putUUID("Area", this.area);
@@ -418,7 +430,7 @@ public final class SettlementWorkerState {
         tag.put("Inventory", this.inventory.copy());
         tag.put("EquipmentChanges", this.equipmentChanges.save());
         tag.put("Settings", this.settings.copy());
-        if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
+        if (!context.isEmpty()) tag.put("EntityContext", context);
         if (this.miningAccess != null) tag.put("MiningAccess", this.miningAccess.save());
         tag.putLong("CheckedAt", this.checkedAt);
         tag.putLong("Version", this.version);

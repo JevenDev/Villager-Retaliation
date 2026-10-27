@@ -26,6 +26,24 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class DiplomaticRouteGameTests {
     @GameTest(template = "empty")
+    public static void surveyBackpressureIncludesPostTickSpikesAndRecovers(GameTestHelper helper) {
+        var guard = new DiplomaticRouteService.LoadGuard();
+        guard.begin(1_000_000_000L);
+        helper.assertFalse(guard.loaded(100, 1_010_000_000L, 10_000_000L, 40), "healthy ticks permit bounded surveys");
+        helper.assertTrue(guard.loaded(100, 1_041_000_000L, 10_000_000L, 40), "a slow current tick prevents new work despite a healthy average");
+        guard.finish(100, 1_060_000_000L, 40);
+        guard.begin(2_000_000_000L);
+        helper.assertTrue(guard.loaded(119, 2_010_000_000L, 10_000_000L, 40), "post-tick checkpoint spike pauses submissions through recovery");
+        helper.assertFalse(guard.loaded(120, 2_010_000_000L, 10_000_000L, 40), "healthy recovery resumes queued surveys");
+        helper.assertTrue(guard.loaded(120, 2_010_000_000L, 40_000_000L, 40), "sustained server load still blocks submissions");
+        guard.finish(120, 2_045_000_000L, 40);
+        guard.begin(3_000_000_000L);
+        helper.assertTrue(guard.loaded(139, 3_001_000_000L, 1_000_000L, 40), "another slow tick extends recovery");
+        helper.assertFalse(new DiplomaticRouteService.LoadGuard().loaded(0, 1, 0, 40), "restart starts a fresh load observation");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void landObstaclesSlopesAndReverse(GameTestHelper helper) {
         var terrain = fixture(0, 2, (x, z) -> x == 20 && z != 10 ? RouteTerrain.BLOCKED : RouteTerrain.WALK, (x, z) -> Math.min(x, 12));
         var start = new BlockPos(4, 4, 8);

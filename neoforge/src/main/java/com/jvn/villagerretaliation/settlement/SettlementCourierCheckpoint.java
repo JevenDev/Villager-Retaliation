@@ -15,6 +15,12 @@ import net.minecraft.world.level.chunk.storage.EntityStorage;
 final class SettlementCourierCheckpoint {
     private SettlementCourierCheckpoint() { }
     static CompletableFuture<Void> persist(ServerLevel level, Entity entity) {
+        long started = com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.start();
+        try { return capture(level, entity); }
+        finally { com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.finish(level.getServer(),
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.Part.NATIVE_CHECKPOINT, started); }
+    }
+    private static CompletableFuture<Void> capture(ServerLevel level, Entity entity) {
         if (!level.getServer().isSameThread() || entity.level() != level || entity.isRemoved())
             return failed("Courier checkpoint requires a live entity on the server thread");
         var root = entity.getRootVehicle(); var position = new ChunkPos(root.blockPosition());

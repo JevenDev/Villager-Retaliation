@@ -73,17 +73,26 @@ public final class SettlementCourierLifecycleGameTests {
     @GameTest(template = "empty")
     public static void checkpointSnapshotsKeepAssetsAndCustodyConsistentAfterMutation(GameTestHelper helper) {
         var fixture = SettlementCourierGameTests.fixture(helper, false); var level = helper.getLevel(); var data = SettlementSavedData.get(level);
-        var snapshots = new SettlementAidCheckpoint.Snapshots();
+        var snapshots = new SettlementSnapshotCache();
         var origin = SettlementTerrainSection.sectionOrigin(helper.absolutePos(new BlockPos(1, 2, 1)));
         fixture.home().recordNavigation(SettlementNavigationSection.capture(origin, level.getChunkAt(origin)));
         fixture.home().changed();
         fixture.donor().depot().setItem(0, new ItemStack(Items.BREAD, 20));
+        var component = new CompoundTag(); component.putInt("Seal", 1);
+        fixture.donor().depot().getItem(0).set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                net.minecraft.world.item.component.CustomData.of(component));
+        var workerTag = new CompoundTag(); workerTag.putUUID("Id", fixture.request().journey.resident); workerTag.putUUID("Area", UUID.randomUUID());
+        workerTag.putString("Role", com.jvn.villagerretaliation.interaction.HiredVillagerRole.FARMING.name()); workerTag.put("Settings", component.copy()); workerTag.put("Inventory", component.copy());
+        workerTag.put("EntityContext", fixture.home().residents().get(fixture.request().journey.resident).save().getCompound("EntityContext").copy());
+        var worker = SettlementWorkerState.load(workerTag); fixture.home().recordWorker(worker);
         var first = snapshots.capture(data, level.registryAccess()); var frozen = first.copy();
         level.setBlockAndUpdate(origin, net.minecraft.world.level.block.Blocks.DIAMOND_BLOCK.defaultBlockState());
         fixture.home().recordNavigation(SettlementNavigationSection.capture(origin, level.getChunkAt(origin)));
         fixture.donor().depot().removeItem(0, 5); fixture.recipient().depot().setItem(0, new ItemStack(Items.BREAD, 5));
         fixture.home().residents().get(fixture.request().journey.resident).courier(fixture.request().id(), 2, true); fixture.home().changed();
         fixture.request().journey.incarnation = 2; SettlementCourierService.changed(level, fixture.request());
+        worker.settings().putInt("Seal", 2); worker.inventorySnapshot(worker.settings());
+        fixture.donor().depot().getItem(0).get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).getUnsafe().putInt("Seal", 2);
         var second = snapshots.capture(data, level.registryAccess());
         helper.assertValueEqual(first, frozen, "queued checkpoint remains immutable after live asset and resident changes");
         helper.assertValueEqual(second, data.save(new CompoundTag(), level.registryAccess()), "checkpoint includes current depots, resident ownership and aid custody together");
@@ -96,7 +105,59 @@ public final class SettlementCourierLifecycleGameTests {
         fixture.donor().depot().removeItem(0, 5);
         snapshots.capture(data, level.registryAccess());
         helper.assertValueEqual(second, secondFrozen, "a later checkpoint cannot mutate an earlier queued save");
+        var resident = fixture.home().residents().get(fixture.request().journey.resident);
+        var residentBefore = resident.save(); var workerBefore = worker.save();
+        for (var raw : third.getList("Settlements", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            var town = (CompoundTag) raw;
+            if (!town.getUUID("Id").equals(fixture.home().id().value())) continue;
+            var savedWorker = town.getList("Workers", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            for (var key : List.of("Settings", "Inventory")) savedWorker.getCompound(key).putInt("Seal", 3);
+        }
+        resident.save().getCompound("EntityContext").putInt("Seal", 3);
+        worker.save().getCompound("EntityContext").putInt("Seal", 3);
+        helper.assertValueEqual(resident.save(), residentBefore, "public resident saves cannot mutate live or queued contexts");
+        helper.assertValueEqual(worker.save(), workerBefore, "worker checkpoint tags have no mutable reference into live state");
+        var context = resident.context(level); context.getPersistentData().putInt("Seal", 4);
+        var helmet = new ItemStack(Items.IRON_HELMET);
+        helmet.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(component));
+        context.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, helmet);
+        resident.rememberFamily(context); worker.rememberPayments(context);
+        var fourth = snapshots.capture(data, level.registryAccess()); var fourthFrozen = fourth.copy();
+        helper.assertValueEqual(fourth, data.save(new CompoundTag(), level.registryAccess()), "replaced contexts are refreshed together with current care state");
+        helper.assertValueEqual(second, secondFrozen, "replacing an entity context preserves earlier queued snapshots");
+        helmet.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).getUnsafe().putInt("Seal", 5);
+        context.getPersistentData().putInt("Seal", 5);
+        helper.assertValueEqual(snapshots.capture(data, level.registryAccess()), fourthFrozen, "later native component mutations cannot alter captured contexts");
+        resident.rememberFamily(context); worker.rememberPayments(context);
+        helper.assertFalse(snapshots.capture(data, level.registryAccess()).equals(fourthFrozen), "a new native observation replaces the frozen context");
+        helper.assertValueEqual(fourth, fourthFrozen, "new observations never edit an earlier I/O snapshot");
         fixture.request().journey.obstructed = true; helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 400)
+    public static void periodicSaveFreezesAssetsAndKeepsLaterChangesDirty(GameTestHelper helper) {
+        var fixture = SettlementCourierGameTests.fixture(helper, false); var level = helper.getLevel(); var data = SettlementSavedData.get(level);
+        fixture.request().journey.obstructed = true;
+        var origin = SettlementTerrainSection.sectionOrigin(helper.absolutePos(new BlockPos(1, 2, 1)));
+        fixture.home().recordNavigation(SettlementNavigationSection.capture(origin, level.getChunkAt(origin)));
+        fixture.donor().depot().setItem(0, new ItemStack(Items.BREAD, 20)); data.setDirty();
+        var expected = data.save(new CompoundTag(), level.registryAccess()).copy();
+        var path = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("data").resolve("settlement_snapshot_" + UUID.randomUUID() + ".dat");
+        data.save(path.toFile(), level.registryAccess());
+        helper.assertFalse(data.isDirty(), "queued periodic save acknowledges only the captured state");
+        fixture.donor().depot().removeItem(0, 5); fixture.home().residents().get(fixture.request().journey.resident).observeShortage(1200, true);
+        fixture.home().changed();
+        var saved = new java.util.concurrent.CompletableFuture<CompoundTag>();
+        net.neoforged.neoforge.common.IOUtilities.withIOWorker(() -> {
+            try { saved.complete(net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap())); }
+            catch (java.io.IOException failure) { saved.completeExceptionally(failure); }
+        });
+        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(saved.isDone(), "periodic save finishes on the ordered I/O queue"))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(saved.join().getCompound("data"), expected, "queued periodic save preserves its complete settlement and custody snapshot");
+                    helper.assertTrue(data.isDirty(), "changes after capture still need a later save");
+                }).thenSucceed();
     }
 
     @GameTest(template = "empty")

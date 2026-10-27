@@ -5,7 +5,7 @@ import java.util.WeakHashMap;
 import net.minecraft.server.MinecraftServer;
 
 public final class VillageDiplomacyMetrics {
-    public enum Part { CONTACTS, AID, COURIERS }
+    public enum Part { CONTACTS, AID, COURIERS, ROOT_CHECKPOINT, NATIVE_CHECKPOINT }
     private static final boolean ENABLED = Integer.getInteger("villagerretaliation.diplomacyProfile", 0) > 0;
     private static final Map<MinecraftServer, long[]> TOTALS = new WeakHashMap<>();
     private VillageDiplomacyMetrics() { }

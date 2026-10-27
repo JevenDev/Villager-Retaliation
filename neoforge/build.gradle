@@ -279,6 +279,8 @@ neoForge {
             systemProperty 'villagerretaliation.settlementLoadProfileOutput', providers.gradleProperty('settlementLoadProfileOutput').orElse('settlement-load-profile').get()
             systemProperty 'villagerretaliation.villageLifeProfile', providers.gradleProperty('villageLifeProfile').orElse('false').get()
             systemProperty 'villagerretaliation.diplomacyProfile', providers.gradleProperty('diplomacyProfile').orElse('0').get()
+            systemProperty 'villagerretaliation.diplomacyProfileMinutes', providers.gradleProperty('diplomacyProfileMinutes').orElse('3').get()
+            systemProperty 'villagerretaliation.diplomacyProfileRecording', providers.gradleProperty('diplomacyProfileRecording').orElse('false').get()
             systemProperty 'villagerretaliation.diplomacyProfileOutput', providers.gradleProperty('diplomacyProfileOutput').orElse('diplomacy-profile').get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }

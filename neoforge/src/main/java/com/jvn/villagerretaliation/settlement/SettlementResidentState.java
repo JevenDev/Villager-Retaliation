@@ -48,6 +48,7 @@ public final class SettlementResidentState {
     private long courierIncarnation;
     private boolean courierAway;
     private CompoundTag entityContext = new CompoundTag();
+    private CompoundTag checkpointSource, checkpointContext;
     private SettlementFamilyInventory familyInventory;
     private SettlementWalletState wallet;
     private SettlementMendingEquipment mendingEquipment;
@@ -170,7 +171,7 @@ public final class SettlementResidentState {
         this.familyUnsafe = villager.getLastHurtByMob() != null || villager.isOnFire() || this.downed;
         this.version++;
         villager.getPersistentData().putLong(VERSION_TAG, this.version);
-        this.entityContext = villager.saveWithoutId(new CompoundTag());
+        this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
     }
 
     void mend(Villager villager, java.util.Map<net.minecraft.world.entity.EquipmentSlot, ItemStack> before) {
@@ -200,7 +201,7 @@ public final class SettlementResidentState {
         if (!this.id.equals(villager.getUUID())) throw new IllegalArgumentException("Resident context has a different identity");
         this.familyInventory = SettlementFamilyInventory.capture(villager, this.familyInventory);
         this.wallet = SettlementWalletState.capture(villager, this.wallet);
-        this.entityContext = villager.saveWithoutId(new CompoundTag());
+        this.entityContext = villager.saveWithoutId(new CompoundTag()).copy();
     }
 
     void completeFamilyAttempt(Villager villager) {
@@ -378,7 +379,18 @@ public final class SettlementResidentState {
         }
     }
 
-    CompoundTag save() {
+    CompoundTag save() { return save(this.entityContext.copy()); }
+
+    CompoundTag snapshot() {
+        // captured entity contexts are replaced, never edited in place
+        if (this.checkpointSource != this.entityContext) {
+            this.checkpointSource = this.entityContext;
+            this.checkpointContext = this.entityContext.copy();
+        }
+        return save(this.checkpointContext);
+    }
+
+    private CompoundTag save(CompoundTag context) {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
         tag.putLong("Position", this.position.asLong());
@@ -402,7 +414,7 @@ public final class SettlementResidentState {
             tag.putUUID("CourierJourney", this.courierJourney); tag.putLong("CourierIncarnation", this.courierIncarnation);
             tag.putBoolean("CourierAway", this.courierAway);
         }
-        if (!this.entityContext.isEmpty()) tag.put("EntityContext", this.entityContext.copy());
+        if (!context.isEmpty()) tag.put("EntityContext", context);
         if (this.familyInventory != null) tag.put("FamilyInventory", this.familyInventory.save());
         if (this.wallet != null) tag.put("Wallet", this.wallet.save());
         if (this.mendingEquipment != null) tag.put("MendingEquipment", this.mendingEquipment.save());

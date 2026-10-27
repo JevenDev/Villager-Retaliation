@@ -16,7 +16,9 @@ import net.neoforged.neoforge.common.IOUtilities;
 final class SettlementAidCheckpoint {
     private static final Map<SettlementSavedData, Pending> PENDING = new WeakHashMap<>();
     private SettlementAidCheckpoint() { }
-    static boolean durable(ServerLevel level, long revision) {
+    static boolean durable(ServerLevel level, long revision) { return checkpoint(level, revision, false); }
+    static boolean urgent(ServerLevel level, long revision) { return checkpoint(level, revision, true); }
+    private static boolean checkpoint(ServerLevel level, long revision, boolean urgent) {
         var data = SettlementSavedData.get(level);
         if (data.readOnly() || !level.getServer().isSameThread() || revision > data.aid().revision()) return false;
         var aid = data.aid();
@@ -33,11 +35,15 @@ final class SettlementAidCheckpoint {
             pending.future = null;
             if (aid.durableRevision >= revision) return true;
         }
-        if (now < pending.retryAt) return false;
-        var snapshot = new CompoundTag(); snapshot.put("data", pending.snapshots.capture(data, level.registryAccess()));
+        if (now < pending.retryAt || !pending.schedule.ready(now, urgent)) return false;
+        var snapshot = new CompoundTag();
+        long started = com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.start();
+        try { snapshot.put("data", data.snapshot(level.registryAccess())); }
+        finally { com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.finish(level.getServer(),
+                com.jvn.villagerretaliation.diplomacy.VillageDiplomacyMetrics.Part.ROOT_CHECKPOINT, started); }
         NbtUtils.addCurrentDataVersion(snapshot);
         var file = level.getServer().getWorldPath(LevelResource.ROOT).resolve("data").resolve("villagerretaliation_settlements.dat");
-        pending.revision = aid.revision();
+        pending.revision = aid.revision(); pending.schedule.captured(now);
         var completion = new CompletableFuture<Void>(); pending.future = completion;
         IOUtilities.withIOWorker(() -> {
             try { AtomicDataFiles.writeCompressed(snapshot, file); completion.complete(null); }
@@ -45,21 +51,13 @@ final class SettlementAidCheckpoint {
         });
         return false;
     }
-    static final class Snapshots {
-        private final Map<SettlementNavigationSection, CompoundTag> navigation = new WeakHashMap<>();
-        CompoundTag capture(SettlementSavedData data, net.minecraft.core.HolderLookup.Provider provider) {
-            return data.save(new CompoundTag(), provider, town -> snapshot(town, provider));
-        }
-        private CompoundTag snapshot(SettlementRecord town, net.minecraft.core.HolderLookup.Provider provider) {
-            var snapshot = town.save(provider, new net.minecraft.nbt.ListTag()).copy();
-            var navigationTags = new net.minecraft.nbt.ListTag();
-            town.navigation().values().forEach(section -> navigationTags.add(this.navigation.computeIfAbsent(section, SettlementNavigationSection::save)));
-            snapshot.put("Navigation", navigationTags);
-            return snapshot;
-        }
+    static final class Schedule {
+        private long nextCapture;
+        boolean ready(long now, boolean urgent) { return urgent || now >= this.nextCapture; }
+        void captured(long now) { this.nextCapture = now + 100; }
     }
     private static final class Pending {
-        final Snapshots snapshots = new Snapshots();
+        final Schedule schedule = new Schedule();
         CompletableFuture<Void> future;
         long revision, retryAt;
     }
