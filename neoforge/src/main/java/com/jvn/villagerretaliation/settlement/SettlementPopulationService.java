@@ -68,17 +68,21 @@ public final class SettlementPopulationService {
 
     public static boolean canGrow(ServerLevel level, SettlementRecord town) {
         int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
-        return population < (town.autonomous()==null ? SettlementPopulationRequirements.growthTarget()
-                : Math.min(SettlementPopulationRequirements.growthTarget(),AutonomousVillageRules.get(level.getServer()).population()))
+        return population < growthTarget(level, town)
                 && town.housingCapacity() > population
                 && SettlementFoodService.nutrition(town) >= (long) (population + 1) * SettlementFoodService.dailyNutrition()
                         * Math.clamp(VillagerRetaliationConfig.SETTLEMENT_FOOD_RESERVE_DAYS.get(), 1, 30);
     }
 
+    static int growthTarget(ServerLevel level, SettlementRecord town) {
+        int target = SettlementPopulationRequirements.growthTarget(town.stage());
+        return town.autonomous() == null ? target : Math.min(target, AutonomousVillageRules.get(level.getServer()).population());
+    }
+
     static Optional<SettlementApplicant> propose(ServerLevel level, SettlementRecord town) {
         int population = VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime());
         int vacancies = Math.min(town.housingCapacity(),
-                SettlementPopulationRequirements.growthTarget()) - population;
+                growthTarget(level, town)) - population;
         if (!canGrow(level, town) || town.applicants().size() >= vacancies
                 || town.applicants().size() >= SettlementRecord.MAX_APPLICANTS) {
             return Optional.empty();

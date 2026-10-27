@@ -72,6 +72,10 @@ public final class SettlementPopulationRequirements {
         return VillagerRetaliationConfig.SETTLEMENT_POPULATION_TARGET.get();
     }
 
+    public static int growthTarget(SettlementStage stage) {
+        return Math.min(growthTarget(), stage.next().map(SettlementStage::population).orElse(growthTarget()));
+    }
+
     public static boolean adjusted() {
         return !effective().subList(1, 5).equals(configured());
     }
