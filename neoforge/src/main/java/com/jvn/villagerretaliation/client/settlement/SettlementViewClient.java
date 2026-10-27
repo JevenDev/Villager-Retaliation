@@ -98,7 +98,10 @@ public final class SettlementViewClient {
             }
             end(closing);
         } else if (linked) {
+            active.clearPeek();
             active.keepAlive();
+        } else if (!minecraft.isWindowActive()) {
+            active.clearPeek();
         }
     }
 

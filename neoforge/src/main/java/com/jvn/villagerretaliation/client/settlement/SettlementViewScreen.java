@@ -87,6 +87,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
     private final SettlementViewCamera camera = new SettlementViewCamera();
+    private final SettlementViewPeek peek = new SettlementViewPeek();
     private SettlementViewPopup popup;
     private boolean panning;
     private SettlementManagementPayload.Header header;
@@ -829,6 +830,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.cameraHeight = this.viewHeight;
         }
         positionCamera(frameTime);
+        updatePeek(mouseX, mouseY);
         this.hovered = worldContains(mouseX, mouseY) ? pick(mouseX, mouseY) : new Pick(null, null);
         var currentDraft = this.parent.buildingDraft();
         if (currentDraft != null && !currentDraft.placed && this.hovered.position() != null && terrainLoaded()) {
@@ -2188,13 +2190,36 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return new SettlementSelectionGizmo.Ray(camera.getPosition(), direction);
     }
 
+    void clearPeek() {
+        this.peek.clear();
+    }
+
+    private void updatePeek(double x, double y) {
+        if (!permits(SettlementPermission.BUILD) || !worldContains(x, y) || this.popup != null
+                || this.parent.buildingDraft() != null || this.gizmo != null || !this.minecraft.isWindowActive()) {
+            clearPeek();
+            return;
+        }
+        var candidates = new ArrayList<SettlementViewBounds>();
+        for (var area : this.areas.values()) {
+            if (area.enabled() && switch (area.kind()) {
+                case HOME, KITCHEN, WORKSHOP, SMELTERY, BREWERY, DEPOT, TRADING_POST, GUARD_POST -> true;
+                default -> false;
+            }) candidates.add(new SettlementViewBounds(area.min(), area.max()));
+        }
+        for (var project : this.projects.values()) {
+            if (project.status() == SettlementProject.Status.COMPLETED)
+                candidates.add(new SettlementViewBounds(project.min(), project.max()));
+        }
+        this.peek.update(this.minecraft.level, this.window, candidates, ray(x, y));
+    }
+
     private Pick pick(double x, double y) {
         var camera = this.minecraft.gameRenderer.getMainCamera();
         var ray = ray(x, y);
         Vec3 start = ray.origin();
         Vec3 end = start.add(ray.direction().scale(256.0D));
-        var block = this.minecraft.level.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE, camera.getEntity()));
+        var block = SettlementViewPeek.clip(this.minecraft.level, start, end, ClipContext.Block.OUTLINE, camera.getEntity());
         double distance = block.getType() == HitResult.Type.MISS ? 256.0D * 256.0D : start.distanceToSqr(block.getLocation());
         UUID residentId = null;
         UUID targetId = null;
@@ -2533,6 +2558,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void endSession() {
+        clearPeek();
         savePreferences();
         this.commands.clear();
         this.snapshots.clear();
@@ -2582,8 +2608,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (point[0] < Math.min(this.boxX, this.boxEndX) || point[0] > Math.max(this.boxX, this.boxEndX)
                     || point[1] < Math.min(this.boxY, this.boxEndY) || point[1] > Math.max(this.boxY, this.boxEndY)) continue;
             var camera = this.minecraft.gameRenderer.getMainCamera();
-            var obstruction = this.minecraft.level.clip(new ClipContext(camera.getPosition(), entity.getBoundingBox().getCenter(),
-                    ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, camera.getEntity()));
+            var obstruction = SettlementViewPeek.clip(this.minecraft.level, camera.getPosition(), entity.getBoundingBox().getCenter(),
+                    ClipContext.Block.VISUAL, camera.getEntity());
             if (obstruction.getType() == HitResult.Type.MISS) visible.add(entity.getUUID());
         }
         var visibleBeds = new ArrayList<BlockPos>();
@@ -2595,8 +2621,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     || point[0] < Math.min(this.boxX, this.boxEndX) || point[0] > Math.max(this.boxX, this.boxEndX)
                     || point[1] < Math.min(this.boxY, this.boxEndY) || point[1] > Math.max(this.boxY, this.boxEndY)) continue;
             var camera = this.minecraft.gameRenderer.getMainCamera();
-            var obstruction = this.minecraft.level.clip(new ClipContext(camera.getPosition(), center,
-                    ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, camera.getEntity()));
+            var obstruction = SettlementViewPeek.clip(this.minecraft.level, camera.getPosition(), center,
+                    ClipContext.Block.VISUAL, camera.getEntity());
             if (obstruction.getType() == HitResult.Type.MISS || bed.position().equals(bedPosition(obstruction.getBlockPos()))) visibleBeds.add(bed.position());
         }
         this.selection.apply(this.beforeBox, this.bedsBeforeBox, Operation.REPLACE);
