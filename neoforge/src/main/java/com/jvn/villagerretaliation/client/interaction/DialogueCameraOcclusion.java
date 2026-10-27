@@ -31,6 +31,8 @@ public final class DialogueCameraOcclusion {
     // keep each worker's mask until its mesh has actually reached the renderer
     private static final ThreadLocal<Build> meshBuild = new ThreadLocal<>();
     private static final Map<Object, Build> sodiumOutputs = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private static Set<BlockPos> dialogueBlocks = Set.of();
+    private static Set<BlockPos> settlementBlocks = Set.of();
     private static Set<UUID> hiddenEntities = Set.of();
     private static Vec3 lastPosition;
     private static long nextScan;
@@ -254,7 +256,16 @@ public final class DialogueCameraOcclusion {
         }, blocks -> null);
     }
 
+    public static void settlementMask(Set<BlockPos> hidden) {
+        settlementBlocks = Set.copyOf(hidden);
+        publish(dialogueBlocks);
+    }
+
     private static void publish(Set<BlockPos> hidden) {
+        dialogueBlocks = Set.copyOf(hidden);
+        var combined = new HashSet<>(dialogueBlocks);
+        combined.addAll(settlementBlocks);
+        hidden = combined;
         var minecraft = Minecraft.getInstance();
         var previous = snapshot;
         if (previous.level() == minecraft.level && previous.blocks().equals(hidden)) return;
