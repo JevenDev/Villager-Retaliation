@@ -171,6 +171,7 @@ neoForge {
             client()
             sourceSet = sourceSets.gameTest
             gameDirectory.set(settlementClientSmokeDirectory)
+            systemProperty 'villagerretaliation.settlementHousingClientSmoke', providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
         }
@@ -450,12 +451,22 @@ tasks.named('runSettlementClientSmoke') {
                 into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
             }
         }
+        if (providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()) {
+            def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+            if (imgui == null) throw new GradleException('Housing client checks require the declared ImGuiMC dependency.')
+            copy {
+                from imgui
+                into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
+            }
+        }
         new File(settlementClientSmokeDirectory.get().asFile, 'options.txt').text =
                 'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\n'
     }
     doLast {
         def result = new File(settlementClientSmokeDirectory.get().asFile, 'result.txt')
-        if (!result.isFile() || !result.text.contains('Settlement client smoke checks passed')) {
+        def expected = providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()
+                ? 'Settlement housing client checks passed' : 'Settlement client smoke checks passed'
+        if (!result.isFile() || !result.text.contains(expected)) {
             throw new GradleException("Settlement client checks did not finish. Inspect ${settlementClientSmokeDirectory.get().asFile}")
         }
     }

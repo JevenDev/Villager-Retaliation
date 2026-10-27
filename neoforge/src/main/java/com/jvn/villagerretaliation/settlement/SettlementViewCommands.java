@@ -88,6 +88,15 @@ final class SettlementViewCommands {
         boolean member = VillageAllegianceRegistrySavedData.get(session.level).canonicalRecord(town.id())
                 .map(record -> record.residents().containsKey(id)).orElse(false);
         if (!member || town.departures().containsKey(id)) return new Outcome(id, Status.SKIPPED, "No longer a settlement resident");
+        if (request.action() == SettlementViewAction.ASSIGN_HOME) {
+            var home = town.homes().get(id);
+            if (!java.util.Objects.equals(target.expectedBed(), home == null ? null : home.bed())) {
+                return new Outcome(id, Status.FAILED, "Home changed since review");
+            }
+            boolean applied = SettlementHousingService.assign(player, town, id, target.bed());
+            return new Outcome(id, applied ? Status.APPLIED : Status.FAILED,
+                    applied ? "Bed assigned" : "Bed unavailable or housing requirements changed");
+        }
         if (session.level.getEntity(id) instanceof Villager villager && (!villager.isAlive() || villager.isBaby()
                 || SettlementWorkforceService.hasPersonalCommitment(villager))) {
             return new Outcome(id, Status.SKIPPED, "Unavailable, young, or personally employed");

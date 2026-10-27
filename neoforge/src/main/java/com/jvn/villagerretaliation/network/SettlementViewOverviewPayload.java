@@ -13,7 +13,7 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                                             Page category, int index, int total, List<Entry> entries)
         implements CustomPacketPayload {
     public static final int PAGE_SIZE = 64;
-    public static final List<Page> CATEGORIES = List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.ISSUES, Page.DEPOTS, Page.TRADE);
+    public static final List<Page> CATEGORIES = List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.ISSUES, Page.DEPOTS, Page.TRADE, Page.BEDS);
     public static final Type<SettlementViewOverviewPayload> TYPE = VillagerPayloads.type("settlement_view_overview");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementViewOverviewPayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementViewOverviewPayload::encode, SettlementViewOverviewPayload::decode);
@@ -33,6 +33,7 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                 case ISSUES -> entry instanceof Issue;
                 case DEPOTS -> entry instanceof Depot;
                 case TRADE -> entry instanceof Order;
+                case BEDS -> entry instanceof Bed;
                 default -> false;
             })) throw new IllegalArgumentException("Invalid overview category");
         }

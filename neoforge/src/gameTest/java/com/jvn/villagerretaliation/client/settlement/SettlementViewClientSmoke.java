@@ -250,6 +250,16 @@ public final class SettlementViewClientSmoke {
             require(capture("world-view") > 1_000, "the remote grass terrain is rendered");
             verifySodiumChunk(new ChunkPos(fixture.center()), true);
             verifyViewInteractions(screen);
+            if (Boolean.getBoolean("villagerretaliation.settlementHousingClientSmoke")) {
+                hideOverviewMap(screen);
+                clickWorld(screen, Vec3.atCenterOf(fixture.center().offset(0, 0, -8)).subtract(0, 0.15D, 0));
+                screen.contextPopup().buttons().getFirst().onPress();
+                button(minecraft.screen, "Tamsin / no assigned bed").onPress();
+                button(minecraft.screen, "Review assignments").onPress();
+                ticks = 0;
+                phase = 901;
+                return;
+            }
             Vec3 table = fixture.center().getCenter().add(0.0D, 0.5D, 0.0D);
             clickWorld(screen, table);
             require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.CHOOSER,
@@ -257,6 +267,35 @@ public final class SettlementViewClientSmoke {
             require(screen.contextPopup().buttons().size() == 2, "the menu includes both shared designations");
             ticks = 0;
             phase = 91;
+        } else if (phase == 901 && minecraft.screen instanceof SettlementHousingAssignmentScreen screen && ++ticks >= 5) {
+            capture("housing-assignment-review");
+            button(screen, "Assign 1 bed").onPress();
+            ticks = 0;
+            phase = 902;
+        } else if (phase == 902 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10) {
+            if (serverCheck == null) serverCheck = minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                var town = SettlementSavedData.get(level).get(fixture.town()).orElseThrow();
+                var bed = fixture.center().offset(0, 0, -8);
+                require(town.homes().get(fixture.resident()) != null && town.homes().get(fixture.resident()).bed().equals(bed),
+                        "the assignment button reserves the selected bed on the server");
+                var villager = (Villager) level.getEntity(fixture.resident());
+                require(villager.getBrain().getMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.HOME)
+                        .filter(home -> home.pos().equals(bed)).isPresent(), "world view assignments update the native home memory");
+            });
+            if (!serverCheck.isDone()) return;
+            serverCheck.join();
+            capture("housing-assigned");
+            screen.onClose();
+            require(minecraft.player.position().distanceToSqr(body) < 4.0D, "housing assignments preserve the player's world position");
+            try {
+                Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement housing client checks passed\n");
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+            LogUtils.getLogger().info("Settlement housing client checks passed");
+            phase = 6;
+            minecraft.stop();
         } else if (phase == 900 && minecraft.screen instanceof SettlementResourceOrderScreen screen && ++ticks >= 5) {
             require(SettlementViewClient.connectedPanel(), "resource form retains the camera session");
             require(OreNodeCatalogClient.isOre(Blocks.DIAMOND_ORE.defaultBlockState()), "server ore catalog reaches the client");
@@ -1854,9 +1893,11 @@ public final class SettlementViewClientSmoke {
         screen.mouseDragged(point.x + 9, point.y + 12, 0, 18, 24);
         screen.mouseReleased(point.x + 9, point.y + 12, 0);
         require(screen.selectedResidents().contains(fixture.resident()), "box selection finds a visible confirmed resident");
-        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_SHIFT);
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_CONTROL, 0, GLFW.GLFW_MOD_CONTROL);
         clickWorld(screen, entity.getBoundingBox().getCenter());
-        require(screen.selectedResidents().isEmpty(), "Shift click toggles a selected resident off");
+        require(screen.selectedResidents().isEmpty(), "Control click toggles a selected resident off");
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_CONTROL, 0, 0);
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_SHIFT);
         clickWorld(screen, entity.getBoundingBox().getCenter());
         screen.keyReleased(GLFW.GLFW_KEY_LEFT_SHIFT, 0, 0);
         require(screen.selectedResidents().contains(fixture.resident()), "Shift click adds a resident");
@@ -1911,7 +1952,55 @@ public final class SettlementViewClientSmoke {
         button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();
         screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
         require(minecraft.screen == screen, "Escape cancels area mode before closing the view");
+        verifyHousingSelections(screen);
         verifyPreferenceRecovery();
+    }
+
+    private static void verifyHousingSelections(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        hideOverviewMap(screen);
+        var camera = minecraft.getCameraEntity();
+        var bed = fixture.center().offset(0, 0, -8);
+        var target = Vec3.atCenterOf(bed).subtract(0, 0.15D, 0);
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_SHIFT);
+        clickWorld(screen, target);
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_SHIFT, 0, 0);
+        require(screen.selectedBeds().contains(bed), "shift click adds a bed to the resident selection");
+        require(screen.selectedResidents().contains(fixture.resident()), "bed selection preserves selected residents");
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_CONTROL, 0, GLFW.GLFW_MOD_CONTROL);
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SHIFT);
+        clickWorld(screen, target);
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_CONTROL, 0, 0);
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_SHIFT, 0, 0);
+        require(screen.selectedBeds().isEmpty() && screen.selectedResidents().contains(fixture.resident()), "control shift subtracts only the bed");
+        var point = screenPoint(screen, target);
+        screen.keyPressed(GLFW.GLFW_KEY_LEFT_SHIFT, 0, GLFW.GLFW_MOD_SHIFT);
+        screen.mouseClicked(point.x - 5, point.y - 5, 0);
+        screen.mouseDragged(point.x + 5, point.y + 5, 0, 10, 10);
+        screen.mouseReleased(point.x + 5, point.y + 5, 0);
+        screen.keyReleased(GLFW.GLFW_KEY_LEFT_SHIFT, 0, 0);
+        require(screen.selectedBeds().contains(bed), "box selection includes visible beds");
+        clickWorld(screen, target);
+        require(screen.contextPopup() != null && screen.contextPopup().target().kind() == SettlementViewPopup.Kind.BEDS,
+                "clicking either bed half opens bed actions");
+        screen.contextPopup().buttons().getFirst().onPress();
+        require(minecraft.screen instanceof SettlementHousingAssignmentScreen, "bed actions open the resident picker");
+        require(SettlementViewClient.connectedPanel() && minecraft.getCameraEntity() == camera, "assigning beds retains the remote camera session");
+        var form = minecraft.screen;
+        button(form, "Tamsin / no assigned bed").onPress();
+        button(form, "Review assignments").onPress();
+        require(form.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .anyMatch(button -> button.getMessage().getString().startsWith("Tamsin -> ")), "the review shows the resident and bed pairing");
+        for (int[] size : java.util.List.of(new int[]{320, 240}, new int[]{640, 360})) {
+            form.resize(minecraft, size[0], size[1]);
+            for (var child : form.children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible)
+                require(widget.getX() >= 0 && widget.getRight() <= form.width && widget.getY() >= 0 && widget.getBottom() <= form.height,
+                        "housing controls fit compact windows");
+        }
+        form.onClose();
+        require(minecraft.screen == screen && minecraft.getCameraEntity() == camera, "canceling bed assignments restores the same view");
+        clickWorld(screen, visibleResident(minecraft).getBoundingBox().getCenter());
+        literalButton(screen, "Map").onPress();
     }
 
     private static void verifyViewBounds(SettlementViewScreen screen) {
@@ -2152,6 +2241,16 @@ public final class SettlementViewClientSmoke {
         SettlementSavedData.get(level).establish(registry, id, player.getUUID(), center, level.getGameTime()).orElseThrow();
         require(SettlementBuildingService.register(player, id, new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME,
                 "First house", center.offset(-9, -1, -4), center.offset(-2, 5, 4), 5, true)), "the test house is registered");
+        var camp = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Camp beds",
+                center.offset(-1, 0, -9), center.offset(4, 2, -5), 5, true);
+        for (int x : new int[]{0, 3}) {
+            var head = center.offset(x, 0, -8);
+            var state = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
+            level.setBlock(head, state.setValue(BedBlock.PART, BedPart.HEAD), 2);
+            level.setBlock(head.south(), state.setValue(BedBlock.PART, BedPart.FOOT), 2);
+        }
+        level.setBlock(center.offset(1, 0, -6), Blocks.TORCH.defaultBlockState(), 2);
+        require(SettlementBuildingService.register(player, id, camp), "tier one camp beds are registered");
         Villager resident = EntityType.VILLAGER.create(level);
         resident.setPos(center.offset(2, 0, 1).getCenter().subtract(0, 0.5D, 0));
         resident.setNoAi(true);

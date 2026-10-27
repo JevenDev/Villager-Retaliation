@@ -275,6 +275,9 @@ public final class SettlementManagementService {
         var orders = new ArrayList<Entry>();
         orders(town, orders);
         result.put(Page.TRADE, orders);
+        var beds = new ArrayList<Entry>();
+        beds(player.serverLevel(), town, beds, false);
+        result.put(Page.BEDS, beds);
         return result;
     }
 
@@ -380,7 +383,11 @@ public final class SettlementManagementService {
     }
 
     private static void beds(ServerLevel level, SettlementRecord town, List<Entry> entries) {
-        town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.HOME)
+        beds(level, town, entries, true);
+    }
+
+    private static void beds(ServerLevel level, SettlementRecord town, List<Entry> entries, boolean refresh) {
+        if (refresh) town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.HOME)
                 .forEach(area -> SettlementBuildingService.refresh(level, town, area));
         SettlementHousingService.update(level, town);
         var seen = new java.util.HashSet<BlockPos>();

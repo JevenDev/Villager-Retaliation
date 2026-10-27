@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.settlement;
 import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
 import com.jvn.villagerretaliation.client.settlement.SettlementViewInteraction.Mode;
+import com.jvn.villagerretaliation.client.settlement.SettlementSelectionSet.Operation;
 import com.jvn.villagerretaliation.network.SettlementManagementActionPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementActionResultPayload;
 import com.jvn.villagerretaliation.network.SettlementManagementPayload;
@@ -77,9 +78,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private double boxY;
     private double boxEndX;
     private double boxEndY;
-    private boolean boxAdd;
+    private Operation boxOperation = Operation.REPLACE;
     private boolean boxDragging;
     private List<UUID> beforeBox = List.of();
+    private List<BlockPos> bedsBeforeBox = List.of();
+    private final Map<BlockPos, SettlementManagementPayload.Bed> beds = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
     private final Set<Integer> heldKeys = new HashSet<>();
@@ -301,6 +304,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             var row = (SettlementManagementPayload.Resident) entry;
             this.roster.put(row.id(), row);
         }
+        this.beds.clear();
+        for (var entry : this.snapshots.entries(Page.BEDS)) {
+            var bed = (SettlementManagementPayload.Bed) entry;
+            this.beds.put(bed.position(), bed);
+        }
+        if (!this.commands.busy()) this.selection.retainBeds(this.beds.keySet());
         var groups = this.selection.groups();
         if (this.commands.busy()) this.selection.pruneGroups(this.roster.keySet());
         else this.selection.prune(this.roster.keySet());
@@ -841,8 +850,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 ? "guard_patrol_hint" : "guard_destination_hint", this.guardPoints.size(), SettlementGuardOrder.MAX_POINTS)
                 : this.interaction.is(Mode.SELECT_PLOT) ? text("plot_hint")
                 : !this.guardFeedback.getString().isEmpty() ? this.guardFeedback : this.interaction.is(Mode.DRAW_AREA) ? text("draw_hint")
-                : Component.literal(this.panelLeft < 360 ? "Drag selects. Shift adds. F focus. Home center."
-                        : "Drag selects. Shift adds. Right-click actions. F focus. Home center. Ctrl+1-9 save, 1-9 recall.");
+                : Component.literal(this.panelLeft < 360 ? "Drag selects beds and residents. Shift adds. Ctrl toggles. Ctrl+Shift removes."
+                        : "Drag selects beds and residents. Shift adds. Ctrl toggles. Ctrl+Shift removes. Right-click actions. F focus. Ctrl+1-9 save.");
         if (this.guardMode == SettlementGuardOrder.Mode.PATROL) hint = Component.literal(
                 (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
@@ -1060,6 +1069,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Component selectedName() {
         if (this.inspected != null) return SettlementManagementScreen.name(this.inspected).copy()
                 .append("\n").append(SettlementManagementScreen.detail(this.inspected));
+        if (!this.selection.beds().isEmpty()) return Component.literal(this.selection.size() + " residents / "
+                + this.selection.beds().size() + " beds selected");
         if (this.selection.size() > 1) {
             var rows = this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull).toList();
             long paused = rows.stream().filter(row -> row.status().equals("paused")).count();
@@ -1107,7 +1118,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var draft = this.parent.buildingDraft();
         boolean manipulating = this.gizmo != null;
         if (this.groupActions != null) {
-            this.groupActions.visible = this.selection.size() != 0 && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
+            this.groupActions.visible = this.selection.totalSize() != 0 && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
             this.groupActions.active = !this.commands.busy();
             this.commandResults.visible = !this.commands.outcomes().isEmpty() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
         }
@@ -1128,7 +1139,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.manage.setMessage(this.inspected instanceof SettlementManagementPayload.Depot ? Component.literal("Depot settings")
                     : this.inspected instanceof SettlementManagementPayload.Order ? Component.literal("Edit trade order") : text("manage_selection"));
             this.manage.setTooltip(net.minecraft.client.gui.components.Tooltip.create(selectedName()));
-            this.manage.active = !this.commands.busy() && (this.inspected != null || this.resident != null
+            this.manage.active = !this.commands.busy() && (!this.selection.beds().isEmpty() && permits(SettlementPermission.STAFF) || this.inspected != null || this.resident != null
                     || this.projects.containsKey(this.selectedArea)
                     || this.selectedArea != null && this.areas.containsKey(this.selectedArea) && permits(SettlementPermission.BUILD));
             if (this.inspected instanceof SettlementManagementPayload.Depot) this.manage.active &= permits(SettlementPermission.LOGISTICS) && !this.parent.submitting();
@@ -1313,6 +1324,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void executeAction(SettlementViewAction action) {
+        if (action == SettlementViewAction.ASSIGN_HOME) { openHousingAssignments(); return; }
         if (action == SettlementViewAction.TEMPORARY_TASK) {
             enterMode(Mode.TASK_AREA);
             this.guardFeedback = Component.literal("Drag task bounds. Shift appends. Right-click cancels");
@@ -1325,7 +1337,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private List<SettlementViewPopup.Action> selectionActions() {
         var actions = new ArrayList<SettlementViewPopup.Action>();
+        if (this.selection.totalSize() > 0 && permits(SettlementPermission.STAFF)) {
+            actions.add(new SettlementViewPopup.Action(Component.literal("Assign beds"), !this.commands.busy(), this::openHousingAssignments));
+        }
         for (var action : SettlementViewAction.values()) {
+            if (action == SettlementViewAction.ASSIGN_HOME) continue;
             long eligible = action == SettlementViewAction.ASSIGN
                     ? this.areas.keySet().stream().mapToLong(id -> eligibleCount(action, id)).max().orElse(0)
                     : eligibleCount(action, null);
@@ -1618,6 +1634,42 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     List<UUID> selectedResidents() { return this.selection.residents(); }
 
+    List<BlockPos> selectedBeds() { return this.selection.beds(); }
+
+    private void openHousingAssignments() {
+        if (this.commands.busy() || !permits(SettlementPermission.STAFF)) return;
+        this.popup = null;
+        SettlementViewClient.openPanels(this);
+        this.minecraft.setScreen(new SettlementHousingAssignmentScreen(this, List.copyOf(this.roster.values()),
+                List.copyOf(this.beds.values()), this.selection.residents(), this.selection.beds()));
+    }
+
+    boolean assignHomes(List<SettlementViewBatchPayload.Target> targets) {
+        if (targets.isEmpty() || this.commands.busy() || !permits(SettlementPermission.STAFF)) return false;
+        sendBatch(new SettlementViewBatchPayload(this.session, SettlementViewBatchPayload.operation(this.session, ++this.commandSequence),
+                SettlementViewAction.ASSIGN_HOME, targets, null, null));
+        return true;
+    }
+
+    private Operation selectionOperation() {
+        return Operation.modifiers(shiftDown(), hasControlDown() || held(GLFW.GLFW_KEY_LEFT_CONTROL) || held(GLFW.GLFW_KEY_RIGHT_CONTROL));
+    }
+
+    private BlockPos bedPosition(BlockPos position) {
+        if (position == null || this.minecraft.level == null) return null;
+        var state = this.minecraft.level.getBlockState(position);
+        if (!(state.getBlock() instanceof net.minecraft.world.level.block.BedBlock)) return null;
+        return state.getValue(net.minecraft.world.level.block.BedBlock.PART) == net.minecraft.world.level.block.state.properties.BedPart.HEAD
+                ? position : position.relative(state.getValue(net.minecraft.world.level.block.BedBlock.FACING));
+    }
+
+    private AABB bedBounds(BlockPos head) {
+        var state = this.minecraft.level.getBlockState(head);
+        return state.getBlock() instanceof net.minecraft.world.level.block.BedBlock
+                ? new AABB(head).minmax(new AABB(head.relative(state.getValue(net.minecraft.world.level.block.BedBlock.FACING).getOpposite())))
+                : new AABB(head);
+    }
+
     boolean hasProject(UUID id) { return this.projects.containsKey(id); }
 
     List<SettlementUiWindow> uiWindows() { return List.copyOf(this.windows); }
@@ -1774,7 +1826,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private static boolean navigationKey(int key) {
-        return key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT || key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D
+        return key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT
+                || key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL || key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D
                 || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E
                 || key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_RIGHT;
     }
@@ -1971,13 +2024,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.boxY = y;
             this.boxEndX = x;
             this.boxEndY = y;
-            this.boxAdd = shiftDown();
+            this.boxOperation = selectionOperation();
             this.beforeBox = this.selection.residents();
+            this.bedsBeforeBox = this.selection.beds();
             this.boxDragging = false;
         }
         var matching = matchingAreas(hit, x, y);
         select(hit, matching.isEmpty() ? null : matching.getFirst());
-        if (hit.resident() == null && matching.size() > 1 && !this.interaction.is(Mode.DRAW_AREA)) openChooser(matching, x, y);
+        if (hit.resident() == null && bedPosition(hit.position()) == null && matching.size() > 1 && !this.interaction.is(Mode.DRAW_AREA)) openChooser(matching, x, y);
         if (this.interaction.is(Mode.DRAW_AREA)) {
             this.dragStart = hit.position();
             this.dragEnd = hit.position();
@@ -2055,6 +2109,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.boxX >= 0) {
             if (this.boxDragging) finishBox();
+            else if (this.boxOperation == Operation.REPLACE && !this.selection.beds().isEmpty()) {
+                this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.BEDS, null), x, y);
+                refreshPopup();
+            }
             this.boxX = -1;
             this.boxDragging = false;
             return true;
@@ -2141,6 +2199,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         selected ? 0.25F : 0.65F, selected ? 0.9F : 0.65F,
                         selected ? 1.0F : 0.65F, selected ? 1.0F : 0.45F);
             }
+        }
+        for (var bed : this.selection.beds()) {
+            if (contains(bed)) LevelRenderer.renderLineBox(pose, lines, bedBounds(bed).inflate(0.015D), 0.25F, 0.8F, 1.0F, 1.0F);
         }
         if (this.gizmo == null && this.selectedBlock != null && this.selectedArea == null && this.selectedResident == null) {
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.selectedBlock).inflate(0.015D),
@@ -2393,11 +2454,16 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.inspected = null;
         this.selectedArea = hit.resident() == null ? area : null;
         this.selectedBlock = hit.position();
-        if (hit.resident() != null && shiftDown()) {
-            if (!this.selection.toggle(hit.resident())) this.guardFeedback = Component.literal("Selection limit: 128 residents");
-        } else {
-            this.selection.select(hit.resident() == null ? List.of() : List.of(hit.resident()), false);
+        var bed = hit.resident() == null ? bedPosition(hit.position()) : null;
+        if (bed != null) {
+            this.selectedArea = null;
+            if (!this.beds.containsKey(bed)) {
+                this.guardFeedback = Component.literal("Bed not recorded as usable housing. Check the area and lighting, or wait for refresh.");
+                bed = null;
+            }
         }
+        if (!this.selection.apply(hit.resident() == null ? List.of() : List.of(hit.resident()),
+                bed == null ? List.of() : List.of(bed), selectionOperation())) this.guardFeedback = Component.literal("Selection limit: 128 residents and 128 beds");
         syncSelection();
         updateActions();
     }
@@ -2432,8 +2498,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void focusSelection() {
-        var positions = this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull)
-                .map(SettlementManagementPayload.Resident::position).toList();
+        var positions = new ArrayList<>(this.selection.residents().stream().map(this.roster::get).filter(java.util.Objects::nonNull)
+                .map(SettlementManagementPayload.Resident::position).toList());
+        positions.addAll(this.selection.beds());
         if (!positions.isEmpty()) {
             focus(positions.stream().mapToInt(BlockPos::getX).average().orElse(this.focusX),
                     positions.stream().mapToInt(BlockPos::getZ).average().orElse(this.focusZ));
@@ -2466,8 +2533,21 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, camera.getEntity()));
             if (obstruction.getType() == HitResult.Type.MISS) visible.add(entity.getUUID());
         }
-        if (this.boxAdd) this.selection.select(this.beforeBox, false);
-        if (!this.selection.select(visible, this.boxAdd)) this.guardFeedback = Component.literal("Selection limit: 128 residents");
+        var visibleBeds = new ArrayList<BlockPos>();
+        for (var bed : this.beds.values()) {
+            if (!contains(bed.position())) continue;
+            var center = bedBounds(bed.position()).getCenter().subtract(0, 0.2D, 0);
+            var point = project(center);
+            if (point == null || !worldContains(point[0], point[1])
+                    || point[0] < Math.min(this.boxX, this.boxEndX) || point[0] > Math.max(this.boxX, this.boxEndX)
+                    || point[1] < Math.min(this.boxY, this.boxEndY) || point[1] > Math.max(this.boxY, this.boxEndY)) continue;
+            var camera = this.minecraft.gameRenderer.getMainCamera();
+            var obstruction = this.minecraft.level.clip(new ClipContext(camera.getPosition(), center,
+                    ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, camera.getEntity()));
+            if (obstruction.getType() == HitResult.Type.MISS || bed.position().equals(bedPosition(obstruction.getBlockPos()))) visibleBeds.add(bed.position());
+        }
+        this.selection.apply(this.beforeBox, this.bedsBeforeBox, Operation.REPLACE);
+        if (!this.selection.apply(visible, visibleBeds, this.boxOperation)) this.guardFeedback = Component.literal("Selection limit: 128 residents and 128 beds");
         this.selectedArea = null;
         this.selectedBlock = null;
         syncSelection();
@@ -2518,6 +2598,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         boolean handle = this.editingArea != null && this.gizmo != null && this.gizmo.hover(ray);
         if (handle) {
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DRAFT, this.editingArea.id()), x, y);
+        } else if (hit.resident() == null && this.beds.containsKey(bedPosition(hit.position()))) {
+            var bed = bedPosition(hit.position());
+            if (!this.selection.containsBed(bed)) this.selection.apply(List.of(), List.of(bed), Operation.ADD);
+            this.inspected = null;
+            this.selectedArea = null;
+            this.selectedBlock = bed;
+            syncSelection();
+            updateActions();
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.BEDS, null), x, y);
         } else if (hit.resident() != null) {
             if (!this.selection.contains(hit.resident())) select(hit, null);
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESIDENT, hit.resident()), x, y);
@@ -2551,6 +2640,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         List<SettlementViewPopup.Action> actions = new ArrayList<>();
         boolean ready = !this.commands.busy();
         switch (target.kind()) {
+            case BEDS -> {
+                details.add(selectedName());
+                for (var position : this.selection.beds()) {
+                    var bed = this.beds.get(position);
+                    if (bed != null) details.add(Component.literal(position.toShortString() + " / "
+                            + (bed.resident() == null ? bed.available() ? "Available" : "Unavailable" : "Assigned to " + bed.residentName())));
+                }
+                actions.add(new SettlementViewPopup.Action(Component.literal("Assign beds"), ready && permits(SettlementPermission.STAFF), this::openHousingAssignments));
+            }
             case RESOURCE -> {
                 details.add(Component.literal("Resource work"));
                 if (this.resourceTarget != null) {
@@ -2954,6 +3052,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void manageSelection() {
+        if (!this.selection.beds().isEmpty()) { openHousingAssignments(); return; }
         if (this.inspected instanceof SettlementManagementPayload.Depot depot) {
             this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.DEPOT, depot));
             return;

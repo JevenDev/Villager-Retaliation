@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
@@ -27,6 +28,11 @@ public record SettlementViewBatchPayload(UUID session, UUID operation, Settlemen
         for (var target : p.targets()) {
             b.writeUUID(target.resident());
             SettlementManagementPayload.writeOptionalId(b, target.expectedArea());
+            if (p.action() == SettlementViewAction.ASSIGN_HOME) {
+                b.writeBlockPos(target.bed());
+                b.writeBoolean(target.expectedBed() != null);
+                if (target.expectedBed() != null) b.writeBlockPos(target.expectedBed());
+            }
         }
         SettlementManagementPayload.writeOptionalId(b, p.area());
         SettlementManagementActionPayload.writeGuardOrder(b, p.order());
@@ -39,7 +45,13 @@ public record SettlementViewBatchPayload(UUID session, UUID operation, Settlemen
         var action = b.readEnum(SettlementViewAction.class);
         int count = VillagerPayloads.readCollectionSize(b, MAX_TARGETS, "view command targets");
         List<Target> targets = new ArrayList<>();
-        for (int i = 0; i < count; i++) targets.add(new Target(b.readUUID(), SettlementManagementPayload.readOptionalId(b)));
+        for (int i = 0; i < count; i++) {
+            UUID resident = b.readUUID();
+            UUID expectedArea = SettlementManagementPayload.readOptionalId(b);
+            targets.add(action == SettlementViewAction.ASSIGN_HOME
+                    ? new Target(resident, expectedArea, b.readBlockPos(), b.readBoolean() ? b.readBlockPos() : null)
+                    : new Target(resident, expectedArea));
+        }
         return new SettlementViewBatchPayload(session, operation, action, targets, SettlementManagementPayload.readOptionalId(b),
                 SettlementManagementActionPayload.readGuardOrder(b), b.readBoolean() ? HiredTemporaryTask.read(b) : null, b.readBoolean());
     });
@@ -52,6 +64,10 @@ public record SettlementViewBatchPayload(UUID session, UUID operation, Settlemen
                 || (action.targeting() != null) != (order != null)
                 || order != null && order.mode() != action.targeting()
                 || (action == SettlementViewAction.TEMPORARY_TASK) != (task != null)
+                || targets.stream().anyMatch(target -> action == SettlementViewAction.ASSIGN_HOME
+                        ? target.bed() == null || target.expectedArea() != null
+                        : target.bed() != null || target.expectedBed() != null)
+                || action == SettlementViewAction.ASSIGN_HOME && targets.stream().map(Target::bed).distinct().count() != targets.size()
                 || append && task == null) throw new IllegalArgumentException("Invalid view command");
     }
 
@@ -66,8 +82,14 @@ public record SettlementViewBatchPayload(UUID session, UUID operation, Settlemen
                 ? Math.max(0L, operation.getLeastSignificantBits()) : 0L;
     }
 
-    public record Target(UUID resident, UUID expectedArea) {
-        public Target { java.util.Objects.requireNonNull(resident); }
+    public record Target(UUID resident, UUID expectedArea, BlockPos bed, BlockPos expectedBed) {
+        public Target(UUID resident, UUID expectedArea) { this(resident, expectedArea, null, null); }
+
+        public Target {
+            java.util.Objects.requireNonNull(resident);
+            if (bed != null) bed = bed.immutable();
+            if (expectedBed != null) expectedBed = expectedBed.immutable();
+        }
     }
 
     @Override
