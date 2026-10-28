@@ -93,8 +93,8 @@ public final class SettlementHousingAssignmentGameTests {
         try {
             helper.assertTrue(SettlementViewService.open(fixture.leader(), fixture.town().id()), "the leader opens world view");
             var session = SettlementViewService.session(fixture.leader().getUUID());
-            var overview = session.overview.page(session, new SettlementViewOverviewRequestPayload(session.id, 1, 0, Page.RESIDENTS, 0));
-            var snapshot = session.overview.page(session, new SettlementViewOverviewRequestPayload(session.id, 2, overview.generation(), Page.BEDS, 0));
+            var overview = SettlementViewGameTests.overview(session, new SettlementViewOverviewRequestPayload(session.id, 1, 0, Page.RESIDENTS, 0));
+            var snapshot = SettlementViewGameTests.overview(session, new SettlementViewOverviewRequestPayload(session.id, 2, overview.generation(), Page.BEDS, 0));
             helper.assertValueEqual(snapshot.entries().size(), 2, "world view includes both surveyed beds");
             roundTrip(helper, SettlementViewOverviewPayload.STREAM_CODEC, snapshot);
             var beds = snapshot.entries().stream().map(Bed.class::cast).toList();

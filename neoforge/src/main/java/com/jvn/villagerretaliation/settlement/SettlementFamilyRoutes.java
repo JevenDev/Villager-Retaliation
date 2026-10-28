@@ -43,10 +43,11 @@ final class SettlementFamilyRoutes implements BlockGetter {
 
     List<BlockPos> route(BlockPos start, BlockPos target, java.util.function.Predicate<BlockPos> allowed) {
         if (start == null || target == null || !allowed.test(start) || !allowed.test(target) || !safe(start)) return List.of();
+        int radius = this.town.radius() + 16;
         var key = new Key(start.immutable(), target.immutable());
         var cached = this.town.familyRoutes.get(key);
         if (cached != null) {
-            if (valid(cached, allowed)) return cached;
+            if (valid(cached, allowed, radius)) return cached;
             this.town.familyRoutes.remove(key);
         }
         var costs = new HashMap<BlockPos, Integer>();
@@ -72,8 +73,8 @@ final class SettlementFamilyRoutes implements BlockGetter {
             for (var direction : Direction.Plane.HORIZONTAL) {
                 for (int dy : new int[]{0, 1, -1}) {
                     var next = current.relative(direction).offset(0, dy, 0);
-                    if (Math.abs(next.getX() - this.town.center().getX()) > this.town.radius() + 16
-                            || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.radius() + 16
+                    if (Math.abs(next.getX() - this.town.center().getX()) > radius
+                            || Math.abs(next.getZ() - this.town.center().getZ()) > radius
                             || !allowed.test(next) || !safe(next)) continue;
                     if (dy > 0 && !clear(current.above(2)) || dy < 0 && !clear(next.above(2))) continue;
                     int cost = step.cost + 1;
@@ -89,11 +90,11 @@ final class SettlementFamilyRoutes implements BlockGetter {
         return List.of();
     }
 
-    private boolean valid(List<BlockPos> route, java.util.function.Predicate<BlockPos> allowed) {
+    private boolean valid(List<BlockPos> route, java.util.function.Predicate<BlockPos> allowed, int radius) {
         for (int index = 0; index < route.size(); index++) {
             var next = route.get(index);
-            if (Math.abs(next.getX() - this.town.center().getX()) > this.town.radius() + 16
-                    || Math.abs(next.getZ() - this.town.center().getZ()) > this.town.radius() + 16
+            if (Math.abs(next.getX() - this.town.center().getX()) > radius
+                    || Math.abs(next.getZ() - this.town.center().getZ()) > radius
                     || !allowed.test(next) || !safe(next)) return false;
             if (index == 0) continue;
             var previous = route.get(index - 1);

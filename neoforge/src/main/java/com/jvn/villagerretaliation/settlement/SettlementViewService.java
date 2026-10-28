@@ -108,8 +108,7 @@ public final class SettlementViewService {
         var session = SESSIONS.get(player.getUUID());
         if (session == null || !session.id.equals(request.session()) || !eligible(player, session.town)
                 || !ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 1L)) return;
-        var page = session.overview.page(session, request);
-        if (page != null) PacketDistributor.sendToPlayer(player, page);
+        session.overview.submit(session, request, page -> PacketDistributor.sendToPlayer(player, page));
     }
 
     public static void command(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementViewBatchPayload request) {

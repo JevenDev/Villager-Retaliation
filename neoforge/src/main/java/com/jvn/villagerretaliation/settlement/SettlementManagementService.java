@@ -235,7 +235,7 @@ public final class SettlementManagementService {
         return overviewHeader(player, town, SettlementDemandService.inspect(player.serverLevel(), town, player));
     }
 
-    private static Assessment overviewHeader(ServerPlayer player, SettlementRecord town, SettlementDemandService.Snapshot supply) {
+    static Assessment overviewHeader(ServerPlayer player, SettlementRecord town, SettlementDemandService.Snapshot supply) {
         var level = player.serverLevel();
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var status = SettlementProgressionService.assess(level, town);

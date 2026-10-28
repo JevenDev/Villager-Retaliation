@@ -34,7 +34,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_trade")
 @PrefixGameTestTemplate(false)
 public final class SettlementTradeGameTests {
     private SettlementTradeGameTests() {

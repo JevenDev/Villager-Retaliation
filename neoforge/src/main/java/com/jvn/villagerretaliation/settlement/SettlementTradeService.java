@@ -99,43 +99,20 @@ public final class SettlementTradeService {
     }
 
     static Map<UUID, Result> process(ServerLevel level, SettlementRecord town, long gameTime) {
-        if (!town.dimension().equals(level.dimension().location())
-                || !town.economy().beginTradeCycle(gameTime)) {
-            return Map.of();
-        }
-        List<UUID> workers = activeClerks(level, town, true);
-        Map<UUID, Result> results = new LinkedHashMap<>();
-        List<SettlementTradeOrder> orders = new ArrayList<>(town.economy().orders().values());
-        int capacity = workCapacity(level, town, workers);
-        var protection = SettlementDemandService.inspect(level, town);
-        int start = orders.isEmpty() ? 0 : (int) Math.floorMod(gameTime / 200L, orders.size());
-        for (int offset = 0; offset < orders.size(); offset++) {
-            SettlementTradeOrder order = orders.get((start + offset) % orders.size());
-            Result result;
-            if (!order.enabled()) {
-                result = Result.blocked(Status.DISABLED);
-            } else if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) {
-                result = Result.blocked(Status.STAGE_LOCKED);
-            } else if (!SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT)) {
-                result = Result.blocked(Status.CLOSED);
-            } else if (workers.isEmpty()) {
-                result = Result.blocked(Status.NO_STAFF);
-            } else if (capacity == 0) {
-                result = Result.blocked(Status.BUSY);
-            } else {
-                result = order.direction() == SettlementTradeOrder.Direction.BUY
-                        ? buy(level, town, order, capacity) : sell(level, town, order, capacity, protection);
-                capacity -= result.count();
-            }
-            results.put(order.id(), result);
-        }
-        var purchases = SettlementPurchaseService.work(level, town, gameTime, new int[] {capacity});
-        while (!SettlementWork.complete(purchases)) purchases.run();
-        town.economy().recordResults(results);
+        var results = new LinkedHashMap<UUID, Result>();
+        var jobs = new ArrayList<Runnable>();
+        schedule(level, town, gameTime, jobs, results::putAll);
+        var work = new SettlementWork(jobs);
+        while (!SettlementWork.complete(work)) work.run();
         return Map.copyOf(results);
     }
 
     static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs) {
+        schedule(level, town, now, jobs, results -> {});
+    }
+
+    private static void schedule(ServerLevel level, SettlementRecord town, long now, List<Runnable> jobs,
+                                 java.util.function.Consumer<Map<UUID, Result>> complete) {
         SettlementAllocationService.schedule(level, town, jobs);
         jobs.add(SettlementWork.lazy(() -> {
             var surveys = new ArrayList<Runnable>();
@@ -150,7 +127,7 @@ public final class SettlementTradeService {
             if (!town.dimension().equals(level.dimension().location()) || !town.economy().beginTradeCycle(now)) return () -> {};
             var orders = new ArrayList<>(town.economy().orders().keySet());
             if (!orders.isEmpty()) java.util.Collections.rotate(orders, -(int) Math.floorMod(now / 200L, orders.size()));
-            int[] remaining = {workCapacity(level, town, activeClerks(level, town, false))};
+            int[] remaining = {workCapacity(level, town, activeClerks(level, town))};
             var results = new LinkedHashMap<UUID, Result>();
             var manual = SettlementWork.each(orders, id -> {
                 var order = town.economy().orders().get(id);
@@ -160,7 +137,7 @@ public final class SettlementTradeService {
                 else if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) result = Result.blocked(Status.STAGE_LOCKED);
                 else if (!SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT))
                     result = Result.blocked(Status.CLOSED);
-                else if (activeClerks(level, town, false).isEmpty()) result = Result.blocked(Status.NO_STAFF);
+                else if (activeClerks(level, town).isEmpty()) result = Result.blocked(Status.NO_STAFF);
                 else if (remaining[0] == 0) result = Result.blocked(Status.BUSY);
                 else {
                     var protection = order.direction() == SettlementTradeOrder.Direction.SELL ? SettlementAllocationService.ready(level, town) : null;
@@ -172,11 +149,12 @@ public final class SettlementTradeService {
                 town.economy().recordResults(results);
             });
             return new SettlementWork(List.of(manual,
-                    SettlementWork.lazy(() -> SettlementPurchaseService.work(level, town, now, remaining))));
+                    SettlementWork.lazy(() -> SettlementPurchaseService.work(level, town, now, remaining)),
+                    () -> complete.accept(Map.copyOf(results))));
         }));
     }
 
-    private static List<UUID> activeClerks(ServerLevel level, SettlementRecord town, boolean refresh) {
+    private static List<UUID> activeClerks(ServerLevel level, SettlementRecord town) {
         if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()
                 || !SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT)) {
             return List.of();
@@ -185,7 +163,6 @@ public final class SettlementTradeService {
         var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
         for (SettlementArea area : town.areas().values()) {
             if (area.enabled() && area.type() == SettlementAreaType.TRADING_POST) {
-                if (refresh) SettlementBuildingService.refresh(level, town, area);
                 var survey = town.surveys().get(area.id());
                 if (survey != null && survey.workstations().stream().anyMatch(position -> SettlementBuildingSurvey.fixtureAvailable(
                         blocks, position, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(net.minecraft.world.level.block.Blocks.LECTERN)))) {
@@ -263,7 +240,7 @@ public final class SettlementTradeService {
             return Result.blocked(Status.DISABLED);
         var availability = purchaseAvailability(level, town, policy.id(), policy.configuration().purchases(), approval);
         if (availability != Status.TRADED) return Result.blocked(availability);
-        var clerks = activeClerks(level, town, false);
+        var clerks = activeClerks(level, town);
         if (clerks.isEmpty()) return Result.blocked(Status.NO_STAFF);
         int capacity = Math.min(maximum, workCapacity(level, town, clerks));
         if (capacity <= 0) return Result.blocked(Status.BUSY);
@@ -282,7 +259,7 @@ public final class SettlementTradeService {
         if (!purchases.enabled()) return Status.DISABLED;
         if (town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) return Status.STAGE_LOCKED;
         if (!SettlementWorkforceService.workingHours(level.getDayTime(), town.leader(), HiredVillagerRole.NITWIT)) return Status.CLOSED;
-        if (activeClerks(level, town, false).isEmpty()) return Status.NO_STAFF;
+        if (activeClerks(level, town).isEmpty()) return Status.NO_STAFF;
         var depot = SettlementPurchaseService.depot(level, town, approval);
         if (depot == null) return Status.UNAVAILABLE;
         var sample = approval.sample();

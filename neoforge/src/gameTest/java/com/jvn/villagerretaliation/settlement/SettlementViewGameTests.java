@@ -363,12 +363,12 @@ public final class SettlementViewGameTests {
             var session = SettlementViewService.session(fixture.player().getUUID());
             var category = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
             var request = new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(session.id, 1, 0, category, 0);
-            var page = session.overview.page(session, request);
+            var page = overview(session, request);
             helper.assertTrue(page != null && page.entries().isEmpty(), "empty rosters complete authoritatively");
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload.STREAM_CODEC, request);
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC, page);
-            helper.assertTrue(session.overview.page(session, request) == null, "replayed requests are rejected");
-            helper.assertTrue(session.overview.page(session,
+            helper.assertTrue(overview(session, request) == null, "replayed requests are rejected");
+            helper.assertTrue(overview(session,
                     new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(session.id, 2,
                             page.generation() + 1, category, 0)) == null, "unknown generations are rejected");
             helper.assertTrue(session.held.isEmpty(), "overview generation does not request terrain");
@@ -437,10 +437,10 @@ public final class SettlementViewGameTests {
             SettlementViewService.open(fixture.player(), town.id());
             var session = SettlementViewService.session(fixture.player().getUUID());
             var category = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
-            var first = session.overview.page(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+            var first = overview(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
                     session.id, 1, 0, category, 0));
             helper.assertValueEqual(first.entries().size(), 64, "overview pages stop at 64 entries");
-            var next = session.overview.page(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+            var next = overview(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
                     session.id, 2, first.generation(), category, 1));
             helper.assertValueEqual(next.entries().size(), 1, "the last page contains the remaining resident");
             roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC, first);
@@ -741,6 +741,78 @@ public final class SettlementViewGameTests {
         player.setPos(helper.absolutePos(BlockPos.ZERO).getCenter());
         player.setLastSectionPos(net.minecraft.core.SectionPos.of(player));
         return player;
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void overviewPlanningYieldsCoalescesRetriesAndCancelsOnClose(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            var session = SettlementViewService.session(fixture.player().getUUID());
+            var category = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
+            var replies = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementViewOverviewPayload>();
+            session.overview.submit(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 1, 0, category, 0), replies::add);
+            helper.assertTrue(replies.isEmpty(), "request handling does not drain the planner");
+            SettlementSavedData.get(session.level).simulation.runPending();
+            helper.assertTrue(replies.isEmpty(), "one scheduler unit cannot drain planning");
+            SettlementSavedData.get(session.level).simulation.invalidate();
+            session.overview.submit(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 2, 0, category, 0), replies::add);
+            session.overview.submit(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 3, 0, category, 0), replies::add);
+            drainOverview(session);
+            helper.assertValueEqual(replies.size(), 1, "a retry resumes pending work after scheduler invalidation");
+            helper.assertValueEqual(replies.getFirst().requestId(), 3, "completion answers the latest request");
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            SettlementViewService.open(fixture.player(), fixture.town().id());
+            var replacement = SettlementViewService.session(fixture.player().getUUID());
+            replacement.overview.submit(replacement, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    replacement.id, 1, 0, category, 0), replies::add);
+            SettlementViewService.close(fixture.player().getUUID(), false);
+            drainOverview(replacement);
+            helper.assertValueEqual(replies.size(), 1, "closed sessions cannot publish pending snapshots");
+        } finally {
+            SettlementViewService.close(fixture.player().getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void overviewPlanningRechecksViewPermission(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var delegate = player(helper, "OverviewDelegate");
+        try {
+            fixture.town().setPermissions(fixture.player().getUUID(), delegate.getUUID(), Set.of(SettlementPermission.VIEW));
+            SettlementViewService.open(delegate, fixture.town().id());
+            var session = SettlementViewService.session(delegate.getUUID());
+            var replies = new java.util.ArrayList<com.jvn.villagerretaliation.network.SettlementViewOverviewPayload>();
+            session.overview.submit(session, new com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload(
+                    session.id, 1, 0, com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS, 0), replies::add);
+            SettlementSavedData.get(session.level).simulation.runPending();
+            fixture.town().setPermissions(fixture.player().getUUID(), delegate.getUUID(), Set.of());
+            drainOverview(session);
+            helper.assertTrue(replies.isEmpty(), "revoked viewers cannot receive pending snapshots");
+        } finally {
+            SettlementViewService.close(delegate.getUUID(), false);
+            helper.getLevel().getChunkSource().removeEntity(delegate);
+        }
+        helper.succeed();
+    }
+
+    static com.jvn.villagerretaliation.network.SettlementViewOverviewPayload overview(
+            SettlementViewService.Session session, com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload request) {
+        var result = new java.util.concurrent.atomic.AtomicReference<com.jvn.villagerretaliation.network.SettlementViewOverviewPayload>();
+        session.overview.submit(session, request, result::set);
+        drainOverview(session);
+        return result.get();
+    }
+
+    private static void drainOverview(SettlementViewService.Session session) {
+        var simulation = SettlementSavedData.get(session.level).simulation;
+        for (int step = 0; step < 100_000 && session.overview.planning(); step++) simulation.runPending();
+        if (!session.overview.planning()) return;
+        throw new AssertionError("overview work must finish within the test budget");
     }
 
     private static Fixture fixture(GameTestHelper helper) {
