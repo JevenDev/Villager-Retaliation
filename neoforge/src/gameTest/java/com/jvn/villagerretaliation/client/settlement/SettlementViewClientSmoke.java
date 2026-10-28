@@ -1413,7 +1413,11 @@ public final class SettlementViewClientSmoke {
                 var town = SettlementSavedData.get(minecraft.getSingleplayerServer().getPlayerList().getPlayer(player).serverLevel()).get(fixture.town()).orElseThrow();
                 require(town.projects().isEmpty() && town.economy().balance().equals(com.jvn.villagerretaliation.sell.CurrencyAmount.of(500, 1)), "preview and cancellation consume no funds or project slots");
             }).join();
-            button(screen, "villagerretaliation.gui.settlement.new_building").onPress();
+            literalButton(screen, "Build").onPress();
+            var newBuilding = screen.contextPopup().buttons().stream().filter(action -> action.getMessage().getString().equals(
+                    Component.translatable("villagerretaliation.gui.settlement.new_building").getString())).findFirst().orElseThrow();
+            require(newBuilding.active, "Build menu enables new buildings at Hamlet");
+            newBuilding.onPress();
             phase = 31;
         } else if (phase == 31 && minecraft.screen instanceof SettlementBlueprintScreen screen) {
             screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)

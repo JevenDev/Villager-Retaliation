@@ -32,12 +32,25 @@ final class SettlementPathClientChecks {
             this.cameraX = this.view.focusX();
             this.cameraZ = this.view.focusZ();
             this.view.focus(this.center.getX() + 4, this.center.getZ() + 6);
-            button("Path").onPress();
-            require(editor.active(), "Path toolbar starts a draft");
+            require(this.view.children().stream().filter(SettlementViewUi.IconButton.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
+                    "path tools are grouped inside Build");
+            button("Build").onPress();
+            require(this.view.contextPopup().buttons().size() == 3, "Build offers New Building, Path and Branch");
             this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 1 && this.ticks > 15) {
+            this.capture.accept("build-menu");
+            this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(this.view.contextPopup() == null && !editor.active(), "Escape closes Build without starting placement");
+            var build = button("Build");
+            this.view.mouseClicked(build.getX() + 2, build.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            require(this.view.contextPopup() != null, "Build opens on a toolbar click");
+            this.view.mouseClicked(build.getX() + 2, build.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            require(this.view.contextPopup() == null, "clicking Build again closes the submenu");
+            chooseBuildTool("Path");
+            require(editor.active(), "Build menu starts a path draft");
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "ground click creates the first node");
             var point = project(this.start.add(5, 0, 0));
@@ -97,8 +110,8 @@ final class SettlementPathClientChecks {
             this.phase++;
         } else if (this.phase == 5 && !editor.active() && minecraft.level.getBlockState(BlockPos.containing(this.start)).is(Blocks.DIRT_PATH)) {
             require(editor.centerline().isEmpty(), "confirmed curve geometry is discarded");
-            button("Branch").onPress();
-            require(editor.draft().path().branch(), "Branch toolbar selects the branch tool");
+            chooseBuildTool("Branch");
+            require(editor.draft().path().branch(), "Build menu selects the branch tool");
             require(editor.draft().path().width() == 4, "settings survive confirmation");
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "Branch attaches to actual path terrain");
@@ -111,7 +124,7 @@ final class SettlementPathClientChecks {
             button("Confirm").onPress();
             this.phase++;
         } else if (this.phase == 7 && !editor.active()) {
-            button("Path").onPress();
+            chooseBuildTool("Path");
             require(editor.draft().path().nodes().isEmpty() && !editor.draft().canUndo(), "confirmed nodes and history are discarded");
             button("Cancel").onPress();
             require(!editor.active(), "Cancel closes the draft");
@@ -120,6 +133,18 @@ final class SettlementPathClientChecks {
             this.ticks = 0;
         } else if (this.phase == 8 && this.ticks > 15) return true;
         return false;
+    }
+
+    private void chooseBuildTool(String label) {
+        button("Build").onPress();
+        require(this.view.contextPopup() != null && this.view.contextPopup().target().kind() == SettlementViewPopup.Kind.BUILD,
+                "Build opens the construction submenu");
+        var action = this.view.contextPopup().buttons().stream()
+                .filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+        require(action.active, label + " is available");
+        this.view.mouseClicked(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        this.view.mouseReleased(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(this.view.contextPopup() == null, "choosing a build tool closes the submenu");
     }
 
     private Button button(String label) {

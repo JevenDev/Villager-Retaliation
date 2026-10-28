@@ -121,7 +121,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Button drawArea;
     private final Button[] guardButtons = new Button[3];
     private Button returnToPost;
-    private Button newBuilding;
+    private Button buildMenu;
     private Button transform;
     private Button resize;
     private Button applyGizmo;
@@ -413,25 +413,17 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     updatePlotActions();
                     updateActions();
                 }));
-        this.newBuilding = addRenderableWidget(tool(SettlementManagementScreen.text("new_building"),
+        this.buildMenu = addRenderableWidget(tool(Component.literal("Build"),
                 toolTop + (this.layout.railSize + 2) * 3, net.minecraft.world.item.Items.BRICKS, false,
-                () -> this.parent.buildingDraft() != null, () -> {
-                    enterMode(Mode.PLACE_BUILDING);
-                    updatePlotActions();
-                    management().newBuilding();
-                }));
+                () -> this.parent.buildingDraft() != null || this.paths.active()
+                        || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD,
+                this::openBuildMenu));
         addRenderableWidget(tool(SettlementViewKeyMappings.hint(text("plots"), SettlementViewKeyMappings.PLOTS), toolTop + (this.layout.railSize + 2) * 4,
                 net.minecraft.world.item.Items.FILLED_MAP, false, () -> this.interaction.is(Mode.SELECT_PLOT), this::togglePlots));
-        var pathTool = addRenderableWidget(tool(Component.literal("Path"), toolTop + (this.layout.railSize + 2) * 5,
-                net.minecraft.world.item.Items.DIRT_PATH, false, () -> this.interaction.is(Mode.CREATE_PATH), () -> beginPath(false)));
-        pathTool.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Path: click for corners, click-drag for curves. Alt-drag splits handles. Green converts, blue connects, orange skips.")));
-        var branchTool = addRenderableWidget(tool(Component.literal("Branch"), toolTop + (this.layout.railSize + 2) * 6,
-                net.minecraft.world.item.Items.WOODEN_SHOVEL, false, () -> this.interaction.is(Mode.BRANCH_PATH), () -> beginPath(true)));
-        branchTool.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Branch: select existing dirt path terrain, then draw outward using your chosen width.")));
         this.overlayButton = addRenderableWidget(tool(Component.literal("Overlays"),
-                toolTop + (this.layout.railSize + 2) * 7, net.minecraft.world.item.Items.SPYGLASS, false,
+                toolTop + (this.layout.railSize + 2) * 5, net.minecraft.world.item.Items.SPYGLASS, false,
                 () -> this.preferences.workOverlay || this.preferences.issueOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
-        addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 8,
+        addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
                 net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
         this.claimFree = addRenderableWidget(VillagerUi.buttonBuilder(text("plot_free"), ignored -> claimPlot(true))
@@ -1099,7 +1091,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.groupActions.active = !this.commands.busy();
             this.commandResults.visible = !this.commands.outcomes().isEmpty() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
         }
-        if (this.newBuilding != null) this.newBuilding.active = permits(SettlementPermission.BUILD) && this.header.projectLimit() > 0 && !this.commands.busy();
+        if (this.buildMenu != null) this.buildMenu.active = !this.commands.busy() && !this.parent.submitting() && !this.paths.confirming();
         if (this.transform != null) {
             this.transform.visible = manipulating;
             this.transform.setMessage(text(draft == null ? "gizmo_move" : "gizmo_transform"));
@@ -1150,7 +1142,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.commandResults.visible = false;
             this.manage.active = false;
             this.drawArea.active = false;
-            this.newBuilding.active = false;
         }
         layoutContextActions();
     }
@@ -1279,6 +1270,17 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.snapshots.refresh();
         this.residentRefreshAt = 0;
         updateActions();
+    }
+
+    private void openBuildMenu() {
+        clearControls();
+        if (this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD) {
+            this.popup = null;
+            return;
+        }
+        this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.BUILD, null),
+                this.layout.worldLeft, this.buildMenu.getY());
+        refreshPopup();
     }
 
     private void openHeaderPopup(SettlementViewPopup.Kind kind, int left) {
@@ -2003,6 +2005,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (this.popup != null) {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD
+                    && this.buildMenu.isMouseOver(x, y)) {
+                this.popup = null;
+                return true;
+            }
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
         }
@@ -2990,6 +2997,18 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 actions.add(menuAction(SettlementManagementScreen.enumText("page", Page.SUPPLIES), ready, () -> openManagement(Page.SUPPLIES, "")));
                 actions.add(menuAction(Component.literal("Depots"), true, () -> browse(Page.DEPOTS, "All")));
                 actions.add(menuAction(Component.literal("Settlement issues"), true, () -> browse(Page.ISSUES, "All")));
+            }
+            case BUILD -> {
+                details.add(Component.literal("Build"));
+                boolean available = ready && permits(SettlementPermission.BUILD) && !this.parent.submitting() && !this.paths.confirming();
+                actions.add(menuAction(SettlementManagementScreen.text("new_building"),
+                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null && !this.paths.active(), () -> {
+                            enterMode(Mode.PLACE_BUILDING);
+                            updatePlotActions();
+                            management().newBuilding();
+                        }));
+                actions.add(menuAction(Component.literal("Path"), available, () -> beginPath(false)));
+                actions.add(menuAction(Component.literal("Branch"), available, () -> beginPath(true)));
             }
             case NAVIGATION -> {
                 details.add(Component.literal(this.header.name()));
