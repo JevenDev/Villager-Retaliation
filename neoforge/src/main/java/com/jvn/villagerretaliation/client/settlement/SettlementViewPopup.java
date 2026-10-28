@@ -75,7 +75,7 @@ final class SettlementViewPopup {
         }
         Component hint = Component.translatable("villagerretaliation.gui.settlement_view.action_hint").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC);
         int textWidth = details.stream().mapToInt(font::width).max().orElse(0);
-        for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> "));
+        for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> ") + (action.icon().isEmpty() ? 0 : 20));
         if (!actions.isEmpty()) textWidth = Math.max(textWidth, font.width(hint));
         this.width = Math.min(Math.min(260, viewportWidth - 16), textWidth + PADDING * 2);
         this.lineHeight = font.lineHeight + 1;
@@ -90,8 +90,8 @@ final class SettlementViewPopup {
         this.buttons.clear();
         this.contentHeight = this.textHeight;
         for (var action : actions) {
-            var label = font.split(action.label(), this.width - PADDING * 2 - font.width("-> "));
-            Button button = new ActionButton(font, action, label, this.width - PADDING * 2, label.size() * this.lineHeight);
+            var label = font.split(action.label(), this.width - PADDING * 2 - font.width("-> ") - (action.icon().isEmpty() ? 0 : 20));
+            Button button = new ActionButton(font, action, label, this.width - PADDING * 2, Math.max(label.size() * this.lineHeight, action.icon().isEmpty() ? 0 : 18));
             this.buttons.add(button);
             this.contentHeight += button.getHeight();
         }
@@ -240,11 +240,13 @@ final class SettlementViewPopup {
 
     private static final class ActionButton extends Button {
         private final Font font;
+        private final net.minecraft.world.item.ItemStack icon;
         private final List<FormattedCharSequence> lines;
 
         private ActionButton(Font font, Action action, List<FormattedCharSequence> lines, int width, int height) {
             super(0, 0, width, height, action.label(), ignored -> action.run().run(), DEFAULT_NARRATION);
             this.font = font;
+            this.icon = action.icon();
             this.lines = lines;
             this.active = action.enabled();
         }
@@ -253,9 +255,14 @@ final class SettlementViewPopup {
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             int color = !this.active ? 0x555555 : isFocused() ? 0xFFFFFF : 0xAAAAAA;
             graphics.drawString(this.font, isFocused() ? "->" : ">", getX(), getY(), color);
-            int y = getY();
+            int textX = getX() + this.font.width("-> ");
+            if (!this.icon.isEmpty()) {
+                graphics.renderItem(this.icon, textX, getY());
+                textX += 20;
+            }
+            int y = getY() + (this.icon.isEmpty() ? 0 : 4);
             for (var line : this.lines) {
-                graphics.drawString(this.font, line, getX() + this.font.width("-> "), y, color);
+                graphics.drawString(this.font, line, textX, y, color);
                 y += this.font.lineHeight + 1;
             }
         }
@@ -275,7 +282,10 @@ final class SettlementViewPopup {
         }
     }
 
-    record Action(Component label, boolean enabled, Runnable run, Object key) {
+    record Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon) {
+        Action(Component label, boolean enabled, Runnable run, Object key) {
+            this(label, enabled, run, key, net.minecraft.world.item.ItemStack.EMPTY);
+        }
         Action(Component label, boolean enabled, Runnable run) {
             this(label, enabled, run, null);
         }

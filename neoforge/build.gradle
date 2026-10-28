@@ -49,6 +49,8 @@ def dialogueCueClientSmokeDirectory = layout.buildDirectory.dir("dialogue-cue-cl
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
 
 def settlementClientSmokeDirectory = layout.buildDirectory.dir("settlement-client-smoke/${System.currentTimeMillis()}")
+def mapLocationClientSmokeDirectory = layout.buildDirectory.dir("map-location-client-smoke/${System.currentTimeMillis()}")
+
 def bankStorageClientSmokeDirectory = layout.buildDirectory.dir("bank-storage-client-smoke/${System.currentTimeMillis()}")
 def constructionClientSmokeDirectory = layout.buildDirectory.dir("construction-client-smoke/${System.currentTimeMillis()}")
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
@@ -175,6 +177,14 @@ neoForge {
             systemProperty 'villagerretaliation.settlementWorldViewClientSmoke', providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'
+        }
+
+        mapLocationClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(mapLocationClientSmokeDirectory)
+            systemProperty 'villagerretaliation.mapLocationClientSmoke', mapLocationClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--quickPlaySingleplayer', 'MapLocationSmoke', '--width', '1280', '--height', '720'
         }
 
         bankStorageClientSmoke {
@@ -958,6 +968,20 @@ tasks.named('runDialogueCueClientSmoke') {
 
 configureIsolatedClientSmoke('runDialogueCueClientSmoke', dialogueCueClientSmokeDirectory, 'DialogueCueSmoke',
         isolatedClientSmokeOptions + 'guiScale:2\n', 'Dialogue cue client smoke passed', 'Dialogue cue playback checks did not finish.')
+
+tasks.named('runMapLocationClientSmoke') {
+    doFirst {
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Map location client checks require the declared ImGuiMC dependency.')
+        copy {
+            from imgui
+            into new File(mapLocationClientSmokeDirectory.get().asFile, 'mods')
+        }
+    }
+}
+
+configureIsolatedClientSmoke('runMapLocationClientSmoke', mapLocationClientSmokeDirectory, 'MapLocationSmoke',
+        isolatedClientSmokeOptions + 'guiScale:2\n', 'Map location client smoke passed', 'Map location checks did not finish.')
 
 configureIsolatedClientSmoke('runPairedGreetClientSmoke', pairedGreetClientSmokeDirectory, 'PairedGreetSmoke',
         isolatedClientSmokeOptions, 'Paired Greet client smoke passed', 'Paired dialogue native checks did not finish.')

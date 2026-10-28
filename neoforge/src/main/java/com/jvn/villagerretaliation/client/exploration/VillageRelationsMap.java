@@ -32,6 +32,8 @@ final class VillageRelationsMap {
 
     VillageRelationsMap(ExploredMapScreen screen) { this.screen = screen; }
 
+    boolean hasPopup() { return popup != null; }
+    void closePopup() { popup = null; }
     void toggle() { enabled = !enabled; popup = null; if (enabled) refresh(); }
     void focus(UUID perspective, UUID selected) { this.perspective = perspective; this.selected = selected; enabled = true; refresh(); }
     void refresh() { page = 0; nextRequest = 0; requestId = 0; entries.clear(); origin = null; }
