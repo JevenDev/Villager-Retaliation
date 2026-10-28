@@ -552,7 +552,7 @@ public final class AuthoringWorkspace {
         attachments.clear(); attachments.putAll(planned.assets());
         folders.clear(); folders.addAll(planned.folders());
         if (!beforePaths.isEmpty()) {
-            AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+            groupChanges(List.copyOf(beforePaths.keySet()),
                     () -> restoreFileMove(beforePaths, planned.assets(), beforeAssets, planned.folders(), beforeFolders),
                     () -> restoreFileMove(afterPaths, beforeAssets, planned.assets(), beforeFolders, planned.folders()));
             undoFileMove = () -> beforePaths.keySet().iterator().next().undo();
@@ -832,7 +832,7 @@ public final class AuthoringWorkspace {
         }
         Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
         beforePaths.keySet().forEach(changed -> afterPaths.put(changed, changed.resourcePath()));
-        AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+        groupChanges(List.copyOf(beforePaths.keySet()),
                 () -> restoreBundlePaths(beforePaths, "", "", Map.of()),
                 () -> restoreBundlePaths(afterPaths, "", "", Map.of()));
     }
@@ -1018,7 +1018,7 @@ public final class AuthoringWorkspace {
         if (!copy) {
             Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
             beforePaths.keySet().forEach(value -> afterPaths.put(value, value.resourcePath()));
-            AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+            groupChanges(List.copyOf(beforePaths.keySet()),
                     () -> restoreFolders(afterFolders, beforeFolders, () -> restoreBundlePaths(beforePaths, destination, source, relocatedAssets, assets)),
                     () -> restoreFolders(beforeFolders, afterFolders, () -> restoreBundlePaths(afterPaths, source, destination, assets, relocatedAssets)));
         }
@@ -1120,7 +1120,7 @@ public final class AuthoringWorkspace {
             }
             Map<AuthoringDocument, String> afterPaths = new LinkedHashMap<>();
             beforePaths.keySet().forEach(document -> afterPaths.put(document, document.resourcePath()));
-            AuthoringDocument.groupLatestChanges(List.copyOf(beforePaths.keySet()),
+            groupChanges(List.copyOf(beforePaths.keySet()),
                     () -> restoreFolders(afterFolders, beforeFolders, () -> restoreBundlePaths(beforePaths, destination, source, movedAttachments)),
                     () -> restoreFolders(beforeFolders, afterFolders, () -> restoreBundlePaths(afterPaths, source, destination, movedAttachments)));
         }
@@ -1334,6 +1334,35 @@ public final class AuthoringWorkspace {
         return List.copyOf(result);
     }
 
+    private void groupChanges(List<AuthoringDocument> changed, Runnable beforeUndo, Runnable beforeRedo) {
+        groupChanges(changed, List.of(), beforeUndo, beforeRedo);
+    }
+
+    private void groupChanges(List<AuthoringDocument> changed, List<AuthoringDocument> created) {
+        groupChanges(changed, created, () -> documents.removeAll(created), () -> {
+            for (var document : created) if (containsPath(document.resourcePath()))
+                throw new IllegalStateException("Another resource now occupies " + document.resourcePath());
+            documents.addAll(created);
+        });
+    }
+
+    private void groupChanges(List<AuthoringDocument> changed, List<AuthoringDocument> created, Runnable beforeUndo, Runnable beforeRedo) {
+        var members = List.copyOf(changed);
+        var added = List.copyOf(created);
+        AuthoringDocument.groupLatestChanges(members, () -> {
+            requireHistoryMembers(members, List.of());
+            beforeUndo.run();
+        }, () -> {
+            requireHistoryMembers(members, added);
+            beforeRedo.run();
+        });
+    }
+
+    private void requireHistoryMembers(List<AuthoringDocument> members, List<AuthoringDocument> absent) {
+        for (var document : members) if (!documents.contains(document) && !absent.contains(document))
+            throw new IllegalStateException("This history group is no longer valid because an affected file was removed or replaced: " + document.resourcePath());
+    }
+
     public void editDocuments(String label, Map<AuthoringDocument, JsonObject> replacements) {
         editDocuments(label, replacements, Map.of());
     }
@@ -1348,7 +1377,7 @@ public final class AuthoringWorkspace {
         changed.forEach(document -> document.edit(label,
                 root -> { if (replacements.containsKey(document)) replaceObject(root, replacements.get(document)); },
                 editor -> { if (metadata.containsKey(document)) replaceObject(editor, metadata.get(document)); }));
-        if (changed.size() > 1) AuthoringDocument.groupLatestChanges(changed, () -> { }, () -> { });
+        if (changed.size() > 1) groupChanges(changed, () -> { }, () -> { });
     }
 
     public List<AuthoringDocument> addQuestContent(AuthoringDocument quest, JsonObject definition, JsonObject metadata,
@@ -1380,11 +1409,7 @@ public final class AuthoringWorkspace {
         updates.forEach((document, value) -> document.edit("Create quest content", root -> replaceObject(root, value)));
         var changed = new ArrayList<AuthoringDocument>();
         changed.add(quest); changed.addAll(updates.keySet());
-        AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
-            for (var document : created) if (containsPath(document.resourcePath()))
-                throw new IllegalStateException("Another resource now occupies " + document.resourcePath());
-            documents.addAll(created);
-        });
+        groupChanges(changed, created);
         return List.copyOf(created);
     }
 
@@ -1413,11 +1438,7 @@ public final class AuthoringWorkspace {
         for (var document : changed) document.edit(label,
                 root -> replaceObject(root, definitions.get(document)),
                 editor -> { if (notes.containsKey(document)) replaceObject(editor, notes.get(document)); });
-        if (!changed.isEmpty()) AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
-            for (var document : created) if (containsPath(document.resourcePath()))
-                throw new IllegalStateException("Another resource now occupies " + document.resourcePath());
-            documents.addAll(created);
-        });
+        if (!changed.isEmpty()) groupChanges(changed, created);
     }
 
     public void applyGraphPaste(AuthoringDocument document, JsonObject definition, JsonObject metadata, Map<String, JsonObject> locales) {
@@ -1449,11 +1470,7 @@ public final class AuthoringWorkspace {
         updates.forEach((locale, value) -> locale.edit(wordingLabel, root -> replaceObject(root, value)));
         List<AuthoringDocument> changed = new ArrayList<>();
         changed.add(document); changed.addAll(updates.keySet());
-        AuthoringDocument.groupLatestChanges(changed, () -> documents.removeAll(created), () -> {
-            for (var locale : created) if (containsPath(locale.resourcePath()))
-                throw new IllegalStateException("Another resource now occupies " + locale.resourcePath());
-            documents.addAll(created);
-        });
+        groupChanges(changed, created);
     }
 
     private static void replaceObject(JsonObject target, JsonObject source) {
@@ -1596,7 +1613,7 @@ public final class AuthoringWorkspace {
             JsonObject values = root.has("messages") ? root.getAsJsonObject("messages") : root;
             values.addProperty(key, text);
         });
-        AuthoringDocument.groupLatestChanges(List.of(document, locale), () -> { }, () -> { });
+        groupChanges(List.of(document, locale), () -> { }, () -> { });
     }
 
     public String resolveText(AuthoringDocument owner, JsonElement value, String locale) {

@@ -142,8 +142,10 @@ final class ImGuiAuthoringEditor {
     private String selectedFileTab = "";
     private final Map<AuthoringDocument, EditorFieldEdits> translatedFields = new java.util.LinkedHashMap<>();
     private AuthoringDocument historyDocument;
-    private final java.util.ArrayDeque<EditorOperation> operations = new java.util.ArrayDeque<>();
-    private boolean rendering;
+    private final EditorOperations operations = new EditorOperations(exception -> {
+        com.mojang.logging.LogUtils.getLogger().warn("Authoring operation failed", exception);
+        status = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
+    });
     private final Map<String, float[]> positions = new HashMap<>();
     private final PreviewConditions conditions = new PreviewConditions();
     private com.jvn.villagerretaliation.authoring.preview.QuestPreviewSession questPreview;
@@ -239,7 +241,7 @@ final class ImGuiAuthoringEditor {
         if (MC.player == null || MC.level == null) return;
         if (MC.hitResult instanceof EntityHitResult hit) INSTANCE.target = hit.getEntity();
         if (INSTANCE.workspace == null && !INSTANCE.preferences.workspace().isBlank())
-            INSTANCE.runOperation(() -> INSTANCE.openWorkspace(false));
+            INSTANCE.attempt(() -> INSTANCE.openWorkspace(false));
         INSTANCE.refreshWorldSelection();
         if (INSTANCE.view == 3 && !EditorPlaytestViewport.active()) INSTANCE.enterPlaytest();
         MC.setScreen(INSTANCE.screen);
@@ -343,7 +345,7 @@ final class ImGuiAuthoringEditor {
             return;
         }
         if (worldContent == null) recordLocation();
-        rendering = true;
+        operations.beginFrame();
         frameCommands = null;
         float fontScale = ImGui.getStyle().getFontScaleMain();
         ImGui.getStyle().setFontScaleMain(fontScale * preferences.textScale());
@@ -381,8 +383,7 @@ final class ImGuiAuthoringEditor {
             ImGui.popStyleColor(14);
             ImGui.popStyleVar(5);
             ImGui.getStyle().setFontScaleMain(fontScale);
-            rendering = false;
-            while (!operations.isEmpty()) runOperation(operations.removeFirst());
+            operations.endFrame();
             if (worldContent == null) recordLocation();
         }
     }
@@ -1229,7 +1230,7 @@ final class ImGuiAuthoringEditor {
     }
 
     private List<EditorCommands.Command> commands() {
-        if (rendering && frameCommands != null) return frameCommands;
+        if (operations.deferred() && frameCommands != null) return frameCommands;
         boolean graph = graphDocument() && view != 3, selected = graph && !selectedNode.isEmpty();
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         var result = new java.util.ArrayList<EditorCommands.Command>();
@@ -1275,7 +1276,7 @@ final class ImGuiAuthoringEditor {
         var direct = java.util.Set.of("Save drafts", "Customize keyboard shortcuts", "Open commands", "Find content", "Navigate back", "Navigate forward",
                 "Parent folder", "Next node", "Previous node", "Focus work area", "Focus properties", "Quick open file", "Next open file",
                 "Previous open file", "Pin or unpin current file", "Close current file", "Fit graph", "Frame selected nodes", "Validate workspace",
-                "Go to definition", "Find usages", "Reset editor layout");
+                "Go to definition", "Find usages", "Reset editor layout", "Undo", "Redo");
         AuthoringDocument commandOwner = document;
         var routed = result.stream().map(command -> new EditorCommands.Command(command.name(), command.shortcut(), command.enabled(), () -> {
             if (direct.contains(command.id())) attempt(command.action());
@@ -1284,7 +1285,7 @@ final class ImGuiAuthoringEditor {
                 operation(command.action());
             }
         })).toList();
-        if (rendering) frameCommands = routed;
+        if (operations.deferred()) frameCommands = routed;
         return routed;
     }
 
@@ -1333,9 +1334,9 @@ final class ImGuiAuthoringEditor {
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         if (history == null) { ImGui.textWrapped("Select a content file to view its edit history."); return; }
         ImGui.beginDisabled(!history.canUndo());
-        if (ImGui.button("Undo: " + history.undoLabel())) operation(() -> changeHistory(false));
+        if (ImGui.button("Undo: " + history.undoLabel())) attempt(() -> changeHistory(false));
         ImGui.endDisabled(); ImGui.beginDisabled(!history.canRedo());
-        if (ImGui.button("Redo: " + history.redoLabel())) operation(() -> changeHistory(true));
+        if (ImGui.button("Redo: " + history.redoLabel())) attempt(() -> changeHistory(true));
         ImGui.endDisabled();
         ImGui.textDisabled("Most recent changes first");
         ImGui.beginChild("##edit_history", 0, 140, true);
@@ -4014,12 +4015,12 @@ final class ImGuiAuthoringEditor {
         ImGui.sameLine();
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         ImGui.beginDisabled(history == null || !history.canUndo() || rawModified);
-        if (ImGui.button("Undo")) operation(() -> changeHistory(false));
+        if (ImGui.button("Undo")) attempt(() -> changeHistory(false));
         ImGui.endDisabled();
         if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Undo" + (history == null || history.undoLabel().isEmpty() ? "" : ": " + history.undoLabel()) + " (" + keyHint("Undo") + ")");
         ImGui.sameLine();
         ImGui.beginDisabled(history == null || !history.canRedo() || rawModified);
-        if (ImGui.button("Redo")) operation(() -> changeHistory(true));
+        if (ImGui.button("Redo")) attempt(() -> changeHistory(true));
         ImGui.endDisabled();
         if (ImGui.isItemHovered(imgui.flag.ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.setTooltip("Redo" + (history == null || history.redoLabel().isEmpty() ? "" : ": " + history.redoLabel()) + " (" + keyHint("Redo") + ")");
         ImGui.endDisabled();
@@ -4214,6 +4215,16 @@ final class ImGuiAuthoringEditor {
     }
 
     private void recoveryControls() {
+        for (String path : documentBuffers.orphanedPaths()) {
+            ImGui.pushID("orphan:" + path);
+            ImGui.textWrapped("Recovered input for a missing file: " + path);
+            if (ImGui.button("Copy retained draft")) MC.keyboardHandler.setClipboard(documentBuffers.orphanedInput(path));
+            EditorWidgets.sameLineFor("Reattach to restored file");
+            if (ImGui.button("Reattach to restored file")) attempt(() -> { documentBuffers.reattach(workspace, path); refresh(); });
+            EditorWidgets.sameLineFor("Discard retained draft");
+            if (ImGui.button("Discard retained draft")) attempt(() -> documentBuffers.discardOrphan(path));
+            ImGui.popID();
+        }
         if (showRecovery) {
             ImGui.textWrapped("Recovered drafts are available. Choose a version before continuing.");
             if (ImGui.button("Recover drafts")) attempt(this::recoverDrafts);
@@ -4339,7 +4350,8 @@ final class ImGuiAuthoringEditor {
     private void changeHistory(boolean redo) {
         AuthoringDocument history = historyDocument == null ? document : historyDocument;
         String label = redo ? history.redoLabel() : history.undoLabel();
-        boolean changed = redo ? history.redo() : history.undo();
+        captureRawDraft();
+        boolean changed = EditorOperations.history(history, redo, this::filePending);
         if (!changed) throw new IllegalStateException(redo ? "No change can be redone." : "No change can be undone.");
         refresh();
         status = (redo ? "Redid: " : "Undid: ") + label + ".";
@@ -4442,20 +4454,7 @@ final class ImGuiAuthoringEditor {
         });
     }
 
-    private void attempt(EditorOperation action) {
-        if (rendering) operations.addLast(action);
-        else runOperation(action);
-    }
-
-    private void runOperation(EditorOperation action) {
-        try {
-            action.run();
-        } catch (IOException | IllegalArgumentException | IllegalStateException | JsonParseException
-                | ClassCastException | UnsupportedOperationException | IndexOutOfBoundsException exception) {
-            com.mojang.logging.LogUtils.getLogger().warn("Authoring operation failed", exception);
-            status = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
-        }
-    }
+    private void attempt(EditorOperation action) { operations.submit(action); }
 
     private static String escape(String key) {
         return key.replace("~", "~0").replace("/", "~1");
@@ -4466,9 +4465,7 @@ final class ImGuiAuthoringEditor {
     }
 
     @FunctionalInterface
-    interface EditorOperation {
-        void run() throws IOException;
-    }
+    interface EditorOperation extends EditorOperations.Action { }
 
     private final class EditorScreen extends Screen {
         private EditorScreen() { super(Component.literal("Villager Retaliation authoring")); }

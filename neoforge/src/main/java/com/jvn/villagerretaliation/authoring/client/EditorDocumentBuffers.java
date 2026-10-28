@@ -16,6 +16,22 @@ final class EditorDocumentBuffers {
     }
 
     private final Map<AuthoringDocument, Draft> drafts = new LinkedHashMap<>();
+    private JsonObject orphaned = new JsonObject();
+
+    java.util.List<String> orphanedPaths() { return java.util.List.copyOf(orphaned.keySet()); }
+    String orphanedInput(String path) { return AuthoringDocument.JSON.toJson(orphaned.get(path)); }
+    void discardOrphan(String path) { orphaned.remove(path); }
+
+    void reattach(AuthoringWorkspace workspace, String path) throws IOException {
+        if (drafts.keySet().stream().anyMatch(document -> document.resourcePath().equals(path) && pending(document)))
+            throw new IllegalStateException("Resolve the existing draft before reattaching recovered input");
+        if (workspace.documents().stream().noneMatch(document -> document.resourcePath().equals(path)))
+            throw new IllegalStateException("Restore the file before reattaching its draft");
+        var document = workspace.documents().stream().filter(value -> value.resourcePath().equals(path)).findFirst().orElseThrow();
+        if (!orphaned.has(path)) throw new IllegalStateException("No retained draft exists for this file");
+        drafts.put(document, readDraft(document, orphaned.getAsJsonObject(path)));
+        orphaned.remove(path);
+    }
 
     EditorFieldEdits fields(AuthoringDocument document) {
         return document == null ? new EditorFieldEdits() : drafts.computeIfAbsent(document, ignored -> new Draft()).fields;
@@ -38,10 +54,10 @@ final class EditorDocumentBuffers {
         if (draft != null) { draft.raw = null; draft.baseline = null; }
     }
 
-    boolean pending() { return drafts.values().stream().anyMatch(Draft::pending); }
+    boolean pending() { return !orphaned.isEmpty() || drafts.values().stream().anyMatch(Draft::pending); }
     boolean pending(AuthoringDocument document) { return drafts.containsKey(document) && drafts.get(document).pending(); }
-    boolean pending(String path) { return drafts.entrySet().stream().anyMatch(entry -> entry.getKey().resourcePath().equals(path) && entry.getValue().pending()); }
-    void clear() { drafts.clear(); }
+    boolean pending(String path) { return orphaned.has(path) || drafts.entrySet().stream().anyMatch(entry -> entry.getKey().resourcePath().equals(path) && entry.getValue().pending()); }
+    void clear() { drafts.clear(); orphaned = new JsonObject(); }
 
     void applyRaw(AuthoringDocument document) {
         Draft draft = drafts.get(document);
@@ -54,6 +70,7 @@ final class EditorDocumentBuffers {
 
     Map<String, String> applyValid(AuthoringWorkspace workspace) {
         var issues = new LinkedHashMap<String, String>();
+        orphaned.keySet().forEach(path -> issues.put(path, "Recovered input belongs to a missing file. Restore the file or copy the retained draft"));
         for (var entry : drafts.entrySet()) {
             if (!entry.getValue().pending()) continue;
             AuthoringDocument document = entry.getKey();
@@ -70,6 +87,7 @@ final class EditorDocumentBuffers {
 
     JsonObject snapshot() {
         JsonObject result = new JsonObject();
+        if (!orphaned.isEmpty()) result.add("_orphaned", orphaned.deepCopy());
         drafts.forEach((document, draft) -> {
             if (!draft.pending()) return;
             JsonObject state = new JsonObject();
@@ -85,18 +103,28 @@ final class EditorDocumentBuffers {
 
     void restore(AuthoringWorkspace workspace, JsonObject state) throws IOException {
         var restored = new LinkedHashMap<AuthoringDocument, Draft>();
+        var missing = state.has("_orphaned") ? state.getAsJsonObject("_orphaned").deepCopy() : new JsonObject();
+        for (String path : missing.keySet()) AuthoringWorkspace.safeRelativePath(path);
         for (var entry : state.entrySet()) {
+            if (entry.getKey().equals("_orphaned")) continue;
             var document = workspace.documents().stream().filter(value -> value.resourcePath().equals(entry.getKey())).findFirst().orElse(null);
-            if (document == null) throw new IOException("The file for a recovered draft is missing: " + entry.getKey());
-            Draft draft = new Draft();
-            JsonObject value = entry.getValue().getAsJsonObject();
-            if (value.has("fields")) draft.fields.restore(value.getAsJsonObject("fields"));
-            if (value.has("raw")) {
-                draft.raw = value.get("raw").getAsString();
-                draft.baseline = value.has("baseline") ? value.getAsJsonObject("baseline").deepCopy() : document.json();
+            if (document == null) {
+                AuthoringWorkspace.safeRelativePath(entry.getKey());
+                missing.add(entry.getKey(), entry.getValue().deepCopy());
+                continue;
             }
-            restored.put(document, draft);
+            restored.put(document, readDraft(document, entry.getValue().getAsJsonObject()));
         }
-        drafts.clear(); drafts.putAll(restored);
+        drafts.clear(); drafts.putAll(restored); orphaned = missing;
+    }
+
+    private static Draft readDraft(AuthoringDocument document, JsonObject value) {
+        Draft draft = new Draft();
+        if (value.has("fields")) draft.fields.restore(value.getAsJsonObject("fields"));
+        if (value.has("raw")) {
+            draft.raw = value.get("raw").getAsString();
+            draft.baseline = value.has("baseline") ? value.getAsJsonObject("baseline").deepCopy() : document.json();
+        }
+        return draft;
     }
 }

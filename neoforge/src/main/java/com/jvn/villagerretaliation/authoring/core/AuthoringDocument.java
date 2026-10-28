@@ -48,6 +48,10 @@ public final class AuthoringDocument {
     public boolean canUndo() { return !undo.isEmpty(); }
     public boolean canRedo() { return !redo.isEmpty(); }
     public long revision() { return revision; }
+    public java.util.List<AuthoringDocument> historyDocuments(boolean redoing) {
+        var history = redoing ? redo : undo;
+        return history.isEmpty() || history.peek().group() == null ? java.util.List.of(this) : history.peek().group().documents();
+    }
     public boolean dirty() {
         if (dirtyRevision != revision) {
             dirty = saved == null || !resourcePath.equals(saved.path()) || !json.equals(saved.json()) || !metadata.equals(saved.metadata());
