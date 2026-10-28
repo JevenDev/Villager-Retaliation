@@ -21,6 +21,8 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,6 +43,7 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 
 public final class SettlementCityAcceptanceScenario {
     private static final int INITIAL_BREAD = 128;
+    private static final String STARTER_BREAD_NAME = "Acceptance starter bread";
     private final ServerLevel level;
     private final SettlementRecord town;
     private final List<UUID> residents = new ArrayList<>();
@@ -62,6 +65,7 @@ public final class SettlementCityAcceptanceScenario {
     private long advancedAt;
     private final java.util.Set<UUID> preparedResidents = new java.util.HashSet<>();
     private int nativeProductionBread;
+    private int nativeProductionWheat;
     private int transitions;
     private Phase phase = Phase.GROWING;
 
@@ -123,7 +127,10 @@ public final class SettlementCityAcceptanceScenario {
         var materials = fixture.depot(player, center.offset(0, 0, 6), SettlementDepotPurpose.MATERIALS, 7);
         var source = fixture.depot(player, center.offset(0, 0, 12), SettlementDepotPurpose.OUTPUT, 3);
         fixture.destination = fixture.depot(player, center.offset(0, 0, 18), SettlementDepotPurpose.MATERIALS, 8);
-        put(food, Items.BREAD, INITIAL_BREAD);
+        var starterBread = new ItemStack(Items.BREAD, INITIAL_BREAD / 2);
+        starterBread.set(DataComponents.CUSTOM_NAME, Component.literal(STARTER_BREAD_NAME));
+        food.setItem(0, starterBread.copy());
+        food.setItem(1, starterBread.copy());
         put(materials, Items.WHEAT_SEEDS, 512);
         put(materials, Items.OAK_LOG, 64);
         put(source, Items.IRON_INGOT, 256);
@@ -154,6 +161,11 @@ public final class SettlementCityAcceptanceScenario {
         long now = this.level.getGameTime();
         require(now - this.foundedAt < 600_000L, "founding-to-City completes within 25 actual game days: " + snapshot());
         if (now % 20 != 0) return;
+        for (var entry : this.assignedHomes.entrySet()) {
+            var actual = this.town.homes().get(entry.getKey());
+            require(actual != null && entry.getValue().equals(actual.bed()),
+                    "explicit home remains stable in " + this.phase + " at " + (now - this.foundedAt) + ": " + entry + " -> " + actual);
+        }
         if (this.phase == Phase.GROWING) {
             int target = this.town.stage().next().orElseThrow().population();
             if (population() < target && SettlementPopulationService.canGrow(this.level, this.town)) {
@@ -170,9 +182,9 @@ public final class SettlementCityAcceptanceScenario {
             }
         } else if (this.phase == Phase.ACTIVE) {
             prepareResidents(player);
-            if (now - this.phaseStarted < 2_000L || (this.nativeProductionBread <= INITIAL_BREAD && count(Items.BREAD) <= INITIAL_BREAD)
-                    || count(Items.WHEAT) == 0) return;
-            this.nativeProductionBread = Math.max(this.nativeProductionBread, count(Items.BREAD));
+            this.nativeProductionBread = Math.max(this.nativeProductionBread, count(stack -> stack.is(Items.BREAD) && !starterBread(stack)));
+            this.nativeProductionWheat = Math.max(this.nativeProductionWheat, count(Items.WHEAT));
+            if (now - this.phaseStarted < 2_000L || this.nativeProductionBread == 0 || this.nativeProductionWheat == 0) return;
             this.checkpoints.put(this.town.stage() + "-active", snapshot());
             require(this.destination.count(stack -> stack.is(Items.IRON_INGOT)) > 0, "native hauling delivers finite cargo");
             player.connection.teleport(0.5D, -60.0D, 0.5D, 0, 0);
@@ -200,7 +212,8 @@ public final class SettlementCityAcceptanceScenario {
         } else if (this.phase == Phase.RETURNING) {
             if (now - this.phaseStarted < 400 || this.residents.stream().anyMatch(id -> !(this.level.getEntity(id) instanceof Villager))) return;
             require(this.transitions == 4 && population() == 75 && this.town.homes().size() == 75, "City returns with all 75 approved residents and homes");
-            require(this.nativeProductionBread > INITIAL_BREAD && count(Items.IRON_INGOT) == 256, "production and hauling preserve the real resource balances");
+            require(this.nativeProductionBread > 0 && this.nativeProductionWheat > 0 && count(SettlementCityAcceptanceScenario::starterBread) == 0
+                    && count(Items.IRON_INGOT) == 256, "production replaces starter food and hauling preserves the real resource balances");
             require(this.assignedHomes.entrySet().stream().allMatch(entry -> this.town.homes().get(entry.getKey()) != null
                     && entry.getValue().equals(this.town.homes().get(entry.getKey()).bed())), "explicit homes remain stable through all four unloaded advancement windows");
             require(constructionProjects().stream().anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED
@@ -334,14 +347,22 @@ public final class SettlementCityAcceptanceScenario {
         return VillageAllegianceRegistrySavedData.get(this.level).residentRoster(this.town.id(), this.level.getGameTime()).size();
     }
 
+    private static boolean starterBread(ItemStack stack) {
+        return stack.is(Items.BREAD) && stack.getOrDefault(DataComponents.CUSTOM_NAME, Component.empty()).getString().equals(STARTER_BREAD_NAME);
+    }
+
     private int count(Item item) {
-        int count = this.town.depots().values().stream().mapToInt(depot -> depot.count(stack -> stack.is(item))).sum();
+        return count(stack -> stack.is(item));
+    }
+
+    private int count(java.util.function.Predicate<ItemStack> matches) {
+        int count = this.town.depots().values().stream().mapToInt(depot -> depot.count(matches)).sum();
         for (var id : this.residents) {
             if (this.level.getEntity(id) instanceof Villager villager) {
                 var inventory = HiredJobInventory.getJobInventory(villager);
-                for (int slot = 0; slot < inventory.getContainerSize(); slot++) if (inventory.getItem(slot).is(item)) count += inventory.getItem(slot).getCount();
+                for (int slot = 0; slot < inventory.getContainerSize(); slot++) if (matches.test(inventory.getItem(slot))) count += inventory.getItem(slot).getCount();
             } else if (this.town.workers().containsKey(id)) {
-                for (var stack : this.town.workers().get(id).items(this.level.registryAccess())) if (stack.is(item)) count += stack.getCount();
+                for (var stack : this.town.workers().get(id).items(this.level.registryAccess())) if (matches.test(stack)) count += stack.getCount();
             }
         }
         return count;
