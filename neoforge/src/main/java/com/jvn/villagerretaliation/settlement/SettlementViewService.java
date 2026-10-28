@@ -117,6 +117,17 @@ public final class SettlementViewService {
                 && ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 2L)) session.commands.submit(session, request);
     }
 
+    public static void path(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementPathRequestPayload request) {
+        var session = SESSIONS.get(player.getUUID());
+        if (session == null || !session.id.equals(request.session())
+                || !ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 2L)) return;
+        var result = session.paths.request(session.level, session.id,
+                eligible(player, session.town) && session.town.permits(player.getUUID(), SettlementPermission.BUILD),
+                pos -> session.town.contains(pos) && session.window.contains(pos)
+                        && session.sent.contains(new ChunkPos(pos)) && allowed(session, new ChunkPos(pos)), request);
+        PacketDistributor.sendToPlayer(player, result);
+    }
+
     public static void tick(MinecraftServer server) {
         var budget = budget(server);
         budget.begin(server.overworld().getGameTime());
@@ -433,6 +444,7 @@ public final class SettlementViewService {
         final Set<ChunkPos> remote = new HashSet<>();
         final SettlementViewCommands commands = new SettlementViewCommands();
         final SettlementViewOverview overview = new SettlementViewOverview();
+        final SettlementPathSession paths = new SettlementPathSession();
         SettlementViewWindow window;
         com.jvn.villagerretaliation.network.SettlementPlotSnapshot plots;
         int requestId;

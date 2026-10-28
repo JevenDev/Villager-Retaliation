@@ -93,6 +93,7 @@ public final class SettlementViewClientSmoke {
     private static int productionPhase = -1;
     private static int productionReadyTick;
     private static SettlementWorldViewClientChecks worldViewChecks;
+    private static SettlementPathClientChecks pathChecks;
     private static boolean resourceFormsChecked;
     private static int ticks;
     private static double originalX;
@@ -208,6 +209,8 @@ public final class SettlementViewClientSmoke {
             phase = 62;
         } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
                 && (screen.terrainLoaded() || ticks >= 120)) {
+            if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+            if (!pathChecks.tick(minecraft)) return;
             require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into minimum zoom");
             require(screen.terrainLoaded(), "the minimum zoom capture includes the streamed terrain");

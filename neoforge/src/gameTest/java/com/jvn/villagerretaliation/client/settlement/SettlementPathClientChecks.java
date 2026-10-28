@@ -1,0 +1,153 @@
+package com.jvn.villagerretaliation.client.settlement;
+
+import java.util.function.Consumer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+import org.lwjgl.glfw.GLFW;
+
+final class SettlementPathClientChecks {
+    private final SettlementViewScreen view;
+    private final BlockPos center;
+    private final Consumer<String> capture;
+    private int phase;
+    private int ticks;
+    private boolean refreshed;
+    private Vec3 start;
+    private double cameraX;
+    private double cameraZ;
+
+    SettlementPathClientChecks(SettlementViewScreen view, BlockPos center, Consumer<String> capture) {
+        this.view = view;
+        this.center = center;
+        this.capture = capture;
+    }
+
+    boolean tick(Minecraft minecraft) {
+        if (++this.ticks > 500) throw new IllegalStateException("Path client checks timed out at " + this.phase + ": " + this.view.pathEditor().hint());
+        var editor = this.view.pathEditor();
+        if (this.phase == 0) {
+            this.cameraX = this.view.focusX();
+            this.cameraZ = this.view.focusZ();
+            this.view.focus(this.center.getX() + 4, this.center.getZ() + 6);
+            button("Path").onPress();
+            require(editor.active(), "Path toolbar starts a draft");
+            this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 1 && this.ticks > 15) {
+            click(this.start);
+            require(editor.draft().path().nodes().size() == 1, "ground click creates the first node");
+            var point = project(this.start.add(5, 0, 0));
+            this.view.mouseMoved(point.x, point.y);
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 2 && this.ticks > 3) {
+            require(!editor.cells().isEmpty(), "first node produces a cursor preview");
+            this.capture.accept("path-live-preview");
+            drag(this.start.add(5, 0, 0), this.start.add(5, 0, 2));
+            require(editor.draft().path().nodes().size() == 2, "click-drag creates the second node");
+            require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0.1, "click-drag creates curve handles");
+            button("Width +").onPress();
+            button("Clean").onPress();
+            require(editor.draft().path().width() == 4, "width control updates the draft");
+            button("Undo").onPress();
+            button("Redo").onPress();
+            require(editor.draft().path().style() == com.jvn.villagerretaliation.settlement.SettlementPath.Style.NATURAL, "redo restores the natural style");
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 3 && this.ticks > 3) {
+            var original = editor.draft().path().nodes().getFirst().position();
+            drag(original, original.add(1, 0, -1));
+            require(!editor.draft().path().nodes().getFirst().position().equals(original), "node gizmo moves the draft anchor");
+            button("Undo").onPress();
+            require(editor.draft().path().nodes().getFirst().position().equals(original), "undo restores a moved anchor");
+            var node = editor.draft().path().nodes().getLast();
+            click(node.position());
+            drag(node.position().add(node.outgoing()), node.position().add(1, 0, 2));
+            require(editor.draft().path().nodes().getLast().outgoing().x > 0.5, "curve handle gizmo follows dragging");
+            click(editor.draft().path().nodes().getFirst().position());
+            button("Insert").onPress();
+            click(this.start.add(2, 0, -1));
+            require(editor.draft().path().nodes().size() == 3, "Insert places a node after the selection");
+            button("Remove").onPress();
+            require(editor.draft().path().nodes().size() == 2, "Remove deletes the selected node");
+            button("Undo").onPress();
+            require(editor.draft().path().nodes().size() == 3, "draft undo restores the removed node");
+            button("Redo").onPress();
+            var point = project(this.start);
+            this.view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            this.view.mouseDragged(point.x + 8, point.y + 4, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 8, 4);
+            this.view.mouseReleased(point.x + 8, point.y + 4, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+            require(editor.draft().path().nodes().size() == 2, "panning keeps the path draft intact");
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 4 && editor.canConfirm()) {
+            if (!this.refreshed) {
+                button("Refresh").onPress();
+                require(!editor.canConfirm(), "refresh requires a new server preview");
+                this.refreshed = true;
+                return false;
+            }
+            this.capture.accept("path-curve-confirmation");
+            button("Confirm").onPress();
+            require(editor.confirming(), "Confirm waits for the server");
+            this.phase++;
+        } else if (this.phase == 5 && !editor.active() && minecraft.level.getBlockState(BlockPos.containing(this.start)).is(Blocks.DIRT_PATH)) {
+            require(editor.centerline().isEmpty(), "confirmed curve geometry is discarded");
+            button("Branch").onPress();
+            require(editor.draft().path().branch(), "Branch toolbar selects the branch tool");
+            require(editor.draft().path().width() == 4, "settings survive confirmation");
+            click(this.start);
+            require(editor.draft().path().nodes().size() == 1, "Branch attaches to actual path terrain");
+            click(this.start.add(0, 0, -4));
+            require(editor.draft().path().nodes().size() == 2, "branch can extend away from the existing path");
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 6 && editor.canConfirm()) {
+            this.capture.accept("path-branch-preview");
+            button("Confirm").onPress();
+            this.phase++;
+        } else if (this.phase == 7 && !editor.active()) {
+            button("Path").onPress();
+            require(editor.draft().path().nodes().isEmpty() && !editor.draft().canUndo(), "confirmed nodes and history are discarded");
+            button("Cancel").onPress();
+            require(!editor.active(), "Cancel closes the draft");
+            this.view.focus(this.cameraX, this.cameraZ);
+            this.phase++;
+            this.ticks = 0;
+        } else if (this.phase == 8 && this.ticks > 15) return true;
+        return false;
+    }
+
+    private Button button(String label) {
+        return this.view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst().orElseThrow(
+                        () -> new IllegalStateException("Missing path control: " + label));
+    }
+    private Vec3 project(Vec3 position) {
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        var relative = position.subtract(camera.getPosition());
+        double distance = relative.dot(new Vec3(camera.getLookVector()));
+        double scale = this.view.height / (2 * distance * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2)));
+        return new Vec3(this.view.viewportWidth() / 2.0 - relative.dot(new Vec3(camera.getLeftVector())) * scale,
+                this.view.height / 2.0 - relative.dot(new Vec3(camera.getUpVector())) * scale, 0);
+    }
+    private void click(Vec3 world) {
+        var point = project(world);
+        this.view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        this.view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+    private void drag(Vec3 from, Vec3 to) {
+        var a = project(from);
+        var b = project(to);
+        this.view.mouseClicked(a.x, a.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        this.view.mouseDragged(b.x, b.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, b.x - a.x, b.y - a.y);
+        this.view.mouseReleased(b.x, b.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+    }
+    private static void require(boolean condition, String message) {
+        if (!condition) throw new IllegalStateException(message);
+    }
+}
