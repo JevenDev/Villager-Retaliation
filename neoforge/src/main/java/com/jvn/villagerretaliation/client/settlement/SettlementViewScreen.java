@@ -24,7 +24,6 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +54,6 @@ import org.lwjgl.glfw.GLFW;
 public final class SettlementViewScreen extends Screen implements com.jvn.villagerretaliation.client.inventory.ProductionClient.Receiver,
         com.jvn.villagerretaliation.client.inventory.TransferClient.Receiver {
     static final float PITCH = SettlementViewCamera.PITCH;
-    private static final double MOVE_RESPONSE = 12.0D;
-    private static final double ZOOM_RESPONSE = 14.0D;
     private final SettlementManagementScreen parent;
     private final UUID session;
     private final SettlementViewSnapshots snapshots;
@@ -89,8 +86,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<BlockPos, SettlementManagementPayload.Bed> beds = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Area> areas = new LinkedHashMap<>();
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
-    private final Set<Integer> heldKeys = new HashSet<>();
-    private final SettlementViewCamera camera = new SettlementViewCamera();
+    private final SettlementViewNavigation navigation;
     private final SettlementViewPeek peek = new SettlementViewPeek();
     private InputConstants.Key peekKey;
     private Set<UUID> peekFocus = Set.of();
@@ -99,13 +95,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementManagementPayload.Header header;
     private final SettlementViewUi.HeaderButton[] statusButtons = new SettlementViewUi.HeaderButton[5];
     private SettlementViewWindow window;
-    private double focusX;
-    private double focusZ;
     private Vec3 requestedFocus;
-    private float viewHeight;
-    private double cameraHeight;
-    private double panVelocityX;
-    private double panVelocityZ;
     private Pick hovered = new Pick(null, null);
     private int requestId;
     private int acceptedRequestId;
@@ -191,18 +181,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.plotSnapshot = payload.plots();
         this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
-        this.focusX = this.window.x();
-        this.focusZ = this.window.z();
-        this.viewHeight = this.window.height();
         this.preferences = SettlementViewPreferences.forSettlement(this.header.id());
         this.sidebarWindow.restore(this.preferences.sidebarWindow);
         this.mapWindow.restore(this.preferences.mapWindow);
         this.selection.restore(this.preferences.groups);
-        this.viewHeight = Math.clamp(this.preferences.height, SettlementViewWindow.MIN_HEIGHT,
-                Math.min(SettlementViewWindow.MAX_HEIGHT, Math.max(SettlementViewWindow.MIN_HEIGHT,
-                        net.minecraft.client.Minecraft.getInstance().options.getEffectiveRenderDistance() * 12.0F)));
-        this.camera.rotate((this.preferences.yaw - this.camera.yaw()) / 90.0D, 1);
-        this.cameraHeight = this.viewHeight;
+        this.navigation = new SettlementViewNavigation(this.window, this.preferences.height, this.preferences.yaw,
+                net.minecraft.client.Minecraft.getInstance().options.getEffectiveRenderDistance());
         this.moved = true;
         this.requestId = payload.requestId();
         this.acceptedRequestId = payload.requestId();
@@ -226,23 +210,23 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     double focusX() {
-        return this.focusX;
+        return this.navigation.x();
     }
 
     double focusZ() {
-        return this.focusZ;
+        return this.navigation.z();
     }
 
     float viewHeight() {
-        return this.viewHeight;
+        return this.navigation.height();
     }
 
     void rotateCamera(double degrees) {
-        this.camera.rotate(degrees / 90.0D, 1.0D);
+        this.navigation.rotate(degrees);
     }
 
     float cameraYaw() {
-        return this.camera.yaw();
+        return this.navigation.yaw();
     }
 
     void resumeManagement(SettlementManagementScreen management) {
@@ -257,7 +241,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     double cameraHeight() {
-        return this.cameraHeight;
+        return this.navigation.cameraHeight();
     }
 
     boolean terrainLoaded() {
@@ -281,12 +265,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         updatePlotActions();
         SettlementViewChunks.update(this.window);
         if (payload.requestId() >= this.requestId && !this.moved) {
-            this.focusX = this.window.x();
-            this.focusZ = this.window.z();
-            this.viewHeight = this.window.height();
-            if (Math.abs(this.cameraHeight - this.viewHeight) < 0.01D) {
-                this.cameraHeight = this.viewHeight;
-            }
+            this.navigation.accept(this.window);
         }
         positionCamera();
     }
@@ -509,8 +488,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             String[] symbols = {"o", "+", "-", "X"};
             Runnable[] actions = {
                     () -> { this.overviewMap.center(); focus(this.window.center().getX() + 0.5D, this.window.center().getZ() + 0.5D); },
-                    () -> this.overviewMap.zoom(-1, this.focusX, this.focusZ),
-                    () -> this.overviewMap.zoom(1, this.focusX, this.focusZ),
+                    () -> this.overviewMap.zoom(-1, this.navigation.x(), this.navigation.z()),
+                    () -> this.overviewMap.zoom(1, this.navigation.x(), this.navigation.z()),
                     () -> {
                         this.preferences.map = false;
                         savePreferences();
@@ -717,12 +696,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         var camera = this.minecraft.gameRenderer.getMainCamera();
         this.overviewMap.render(graphics, this.font, this.plotSnapshot.plots(), List.copyOf(this.areas.values()),
-                List.copyOf(this.projects.values()), markers, this.selectedArea, mapCameraFootprint(), this.focusX, this.focusZ,
-                camera.getPosition().x, camera.getPosition().z, this.camera.yaw(), mouseX, mouseY);
+                List.copyOf(this.projects.values()), markers, this.selectedArea, mapCameraFootprint(), this.navigation.x(), this.navigation.z(),
+                camera.getPosition().x, camera.getPosition().z, this.navigation.yaw(), mouseX, mouseY);
     }
 
     private List<Vec3> mapCameraFootprint() {
-        double ground = terrainHeight((int) Math.floor(this.focusX), (int) Math.floor(this.focusZ));
+        double ground = terrainHeight((int) Math.floor(this.navigation.x()), (int) Math.floor(this.navigation.z()));
         if (!Double.isFinite(ground)) return List.of();
         var corners = new ArrayList<Vec3>();
         for (double[] point : new double[][]{{0, 0}, {this.width, 0}, {this.width, this.height}, {0, this.height}}) {
@@ -786,8 +765,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         long now = Util.getMillis();
         if (now >= this.nextViewRequest && (this.moved || now >= this.keepAliveAt)) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(this.session, nextRequestId(),
-                    this.requestedFocus == null ? this.focusX : this.requestedFocus.x,
-                    this.requestedFocus == null ? this.focusZ : this.requestedFocus.z, this.viewHeight, false));
+                    this.requestedFocus == null ? this.navigation.x() : this.requestedFocus.x,
+                    this.requestedFocus == null ? this.navigation.z() : this.requestedFocus.z, this.navigation.height(), false));
             this.requestedFocus = null;
             this.moved = false;
             this.nextViewRequest = now + 150L;
@@ -816,21 +795,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     void updateCamera(double elapsed) {
         if (!this.minecraft.isWindowActive() || this.search != null && this.search.isFocused()) clearControls();
-        rotateCamera(((held(GLFW.GLFW_KEY_E) ? 1 : 0) - (held(GLFW.GLFW_KEY_Q) ? 1 : 0)) * 90.0D * elapsed);
-        double forward = (held(GLFW.GLFW_KEY_W) || held(GLFW.GLFW_KEY_UP) ? 1 : 0)
-                - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
-        double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
-                - (held(GLFW.GLFW_KEY_A) || held(GLFW.GLFW_KEY_LEFT) ? 1 : 0);
-        double speed = this.viewHeight * (shiftDown() ? 2.5D : 1.0D) / Math.max(1.0D, Math.hypot(forward, right));
-        Vec3 movement = SettlementViewCamera.movement(this.camera.yaw(), right, forward);
-        double response = 1.0D - Math.exp(-MOVE_RESPONSE * elapsed);
-        this.panVelocityX += (movement.x * speed - this.panVelocityX) * response;
-        this.panVelocityZ += (movement.z * speed - this.panVelocityZ) * response;
-        pan(this.panVelocityX * elapsed, this.panVelocityZ * elapsed);
-        this.cameraHeight += (this.viewHeight - this.cameraHeight) * (1.0D - Math.exp(-ZOOM_RESPONSE * elapsed));
-        if (Math.abs(this.viewHeight - this.cameraHeight) < 0.01D) {
-            this.cameraHeight = this.viewHeight;
-        }
+        Vec3 movement = this.navigation.movement(elapsed, shiftDown());
+        pan(movement.x, movement.z);
         positionCamera(elapsed);
     }
 
@@ -1618,7 +1584,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else {
             this.gizmo = null;
         }
-        if (this.gizmo != null) this.gizmo.scale(this.cameraHeight * 0.075);
+        if (this.gizmo != null) this.gizmo.scale(this.navigation.cameraHeight() * 0.075);
     }
 
     private boolean allowedGizmoBounds(AABB bounds) {
@@ -1701,37 +1667,27 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private boolean held(int key) {
-        return this.heldKeys.contains(key);
+        return this.navigation.held(key);
     }
 
     void focus(double x, double z) {
         this.peekFocus = Set.of();
-        this.panVelocityX = 0.0D;
-        this.panVelocityZ = 0.0D;
-        pan(x - this.focusX, z - this.focusZ);
+        this.navigation.stopPan();
+        pan(x - this.navigation.x(), z - this.navigation.z());
         this.requestedFocus = new Vec3(x, 0, z);
         this.moved = true;
     }
 
     private void pan(double x, double z) {
-        var target = this.window.focus(this.focusX + x, this.focusZ + z);
-        double nextX = target.x;
-        double nextZ = target.z;
-        if (nextX != this.focusX || nextZ != this.focusZ) {
+        if (this.navigation.pan(this.window, x, z)) {
             this.requestedFocus = null;
             this.peekFocus = Set.of();
             this.moved = true;
         }
-        this.focusX = nextX;
-        this.focusZ = nextZ;
     }
 
     private void zoom(double direction) {
-        float maximum = Math.min(SettlementViewWindow.MAX_HEIGHT,
-                Math.max(SettlementViewWindow.MIN_HEIGHT, this.minecraft.options.getEffectiveRenderDistance() * 12.0F));
-        float next = (float) Math.clamp(this.viewHeight * Math.pow(1.15D, direction), SettlementViewWindow.MIN_HEIGHT, maximum);
-        this.moved |= next != this.viewHeight;
-        this.viewHeight = next;
+        this.moved |= this.navigation.zoom(direction, this.minecraft.options.getEffectiveRenderDistance());
     }
 
     private void positionCamera() {
@@ -1742,7 +1698,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.minecraft == null || this.minecraft.level == null) {
             return;
         }
-        var pose = this.camera.position(this.window, this.focusX, this.focusZ, this.cameraHeight,
+        var pose = this.navigation.position(this.window,
                 this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D, this::terrainHeight, elapsed);
         SettlementViewClient.position(pose, elapsed);
     }
@@ -1758,10 +1714,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.draggingWindow = null;
         this.resizingWindow = null;
         if (this.gizmo != null) this.gizmo.end();
-        this.heldKeys.clear();
+        this.navigation.clear();
         this.peekKey = null;
-        this.panVelocityX = 0.0D;
-        this.panVelocityZ = 0.0D;
     }
 
     @Override
@@ -1772,7 +1726,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         if (this.storagePicker != null) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) finishStoragePick(null);
-            else if (navigationKey(keyCode)) this.heldKeys.add(keyCode);
+            else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
             return true;
         }
         if (this.search != null && this.search.isFocused()) {
@@ -1844,8 +1798,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             confirmDraft();
             return true;
         }
-        if (navigationKey(keyCode)) {
-            if (this.gizmo == null || !this.gizmo.dragging()) this.heldKeys.add(keyCode);
+        if (SettlementViewNavigation.handles(keyCode)) {
+            if (this.gizmo == null || !this.gizmo.dragging()) this.navigation.press(keyCode);
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -1883,18 +1837,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.peekKey = null;
             return true;
         }
-        if (navigationKey(keyCode)) {
-            this.heldKeys.remove(keyCode);
+        if (SettlementViewNavigation.handles(keyCode)) {
+            this.navigation.release(keyCode);
             return true;
         }
         return super.keyReleased(keyCode, scanCode, modifiers);
-    }
-
-    private static boolean navigationKey(int key) {
-        return key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT
-                || key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL || key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D
-                || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E
-                || key == GLFW.GLFW_KEY_UP || key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_DOWN || key == GLFW.GLFW_KEY_RIGHT;
     }
 
     @Override
@@ -1910,13 +1857,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
         var hoveredWindow = windowAt(x, y);
         if (hoveredWindow == this.mapWindow && this.overviewMap.contains(x, y)) {
-            if (vertical != 0) this.overviewMap.zoom(-vertical, this.focusX, this.focusZ);
+            if (vertical != 0) this.overviewMap.zoom(-vertical, this.navigation.x(), this.navigation.z());
             return true;
         }
         if (hoveredWindow == this.mapWindow) return true;
         if (hoveredWindow == this.sidebarWindow) {
             if (this.sidebarWindow.title(x, y)) return true;
             if (this.inspector.visible()) { this.inspector.scroll(vertical); return true; }
+            if (vertical == 0) return true;
             this.browser.scroll += vertical > 0 ? -1 : 1;
             updateBrowserRows();
             return true;
@@ -2150,12 +2098,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && this.panning) {
-            double scale = 2.0D * this.viewHeight * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2.0D)) / this.height;
-            double yaw = Math.toRadians(this.camera.yaw());
-            this.panVelocityX = 0.0D;
-            this.panVelocityZ = 0.0D;
-            pan((-Math.cos(yaw) * deltaX - Math.sin(yaw) * deltaY) * scale,
-                    (-Math.sin(yaw) * deltaX + Math.cos(yaw) * deltaY) * scale);
+            var movement = this.navigation.drag(deltaX, deltaY, this.height, SettlementViewClient.FOV);
+            pan(movement.x, movement.z);
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.gizmo != null && this.gizmo.dragging()) {
@@ -2652,8 +2596,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     void savePreferences() {
         this.preferences.groups = this.selection.groups();
-        this.preferences.height = this.viewHeight;
-        this.preferences.yaw = this.camera.yaw();
+        this.preferences.height = this.navigation.height();
+        this.preferences.yaw = this.navigation.yaw();
         this.preferences.save();
     }
 
@@ -2662,8 +2606,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 .map(SettlementManagementPayload.Resident::position).toList());
         positions.addAll(this.selection.beds());
         if (!positions.isEmpty()) {
-            focus(positions.stream().mapToInt(BlockPos::getX).average().orElse(this.focusX),
-                    positions.stream().mapToInt(BlockPos::getZ).average().orElse(this.focusZ));
+            focus(positions.stream().mapToInt(BlockPos::getX).average().orElse(this.navigation.x()),
+                    positions.stream().mapToInt(BlockPos::getZ).average().orElse(this.navigation.z()));
             this.peekFocus = Set.copyOf(this.selection.residents());
         } else if (this.selectedArea != null) {
             var area = selectableAreas().stream().filter(row -> row.id().equals(this.selectedArea)).findFirst().orElse(null);
