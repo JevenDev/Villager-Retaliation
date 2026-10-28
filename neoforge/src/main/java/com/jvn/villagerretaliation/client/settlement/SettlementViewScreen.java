@@ -1375,23 +1375,43 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.search != null) this.search.setFocused(false);
         setFocused(null);
         clearControls();
+        if (this.walls.pickingUpgrade()) {
+            var ray = ray(x, y);
+            var hit = SettlementViewPeek.clip(this.minecraft.level, ray.origin(), ray.origin().add(ray.direction().normalize().scale(256)),
+                    ClipContext.Block.OUTLINE, this.minecraft.gameRenderer.getMainCamera().getEntity());
+            if (hit.getType() != HitResult.Type.MISS && this.minecraft.level.hasChunkAt(hit.getBlockPos()))
+                this.walls.selectUpgrade(this.session, hit.getBlockPos(), PacketDistributor::sendToServer);
+            return;
+        }
         int node = SettlementWallGizmo.hit(this.walls.draft(), this::project, x, y);
         if (node >= 0) {
+            if (this.walls.editingPlaced()) {
+                this.walls.draft().begin(node); this.walls.draft().finish(); updateWallButtons(); return;
+            }
+            var draft = this.walls.draft();
+            if (draft.snapping() && draft.extending() && draft.wall().nodes().size() >= 2 && node != draft.wall().nodes().size() - 1) {
+                draft.place(draft.wall().nodes().get(node));
+                this.walls.hover(null);
+                updateWallButtons();
+                return;
+            }
             this.walls.draft().begin(node);
             this.wallDragX = x;
             this.wallDragY = y;
             this.walls.hover(null);
             return;
         }
+        if (this.walls.editingPlaced()) return;
         var point = wallPoint(x, y);
         if (point == null) this.walls.feedback("No loaded ground at this position");
         else if (!this.walls.draft().place(point) && this.walls.draft().extending())
-            this.walls.feedback("Wall has 32 nodes. Confirm this section before adding more");
+            this.walls.feedback(this.walls.draft().wall().nodes().size() >= 32
+                    ? "Wall has 32 nodes. Confirm this section before adding more" : "Choose a different node position");
     }
 
     private void initWallButtons() {
         this.wallButtons.clear();
-        String[] labels = {"Low stone", "Auto towers: off", "Undo", "Redo", "Edit", "Confirm", "Cancel", "Remove", "Close loop", "Extend", "Refresh"};
+        String[] labels = {"Low stone", "Auto towers: off", "Undo", "Redo", "Edit", "Confirm", "Cancel", "Remove", "Close loop", "Extend", "Refresh", "Height -", "Height +", "Height: ground", "Tower: default", "Snap: on"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
             this.wallButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> wallAction(action))
@@ -1426,6 +1446,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             case 8 -> draft.loop();
             case 9 -> { if (draft.extending()) this.walls.stop(); else draft.extend(); }
             case 10 -> this.walls.refresh();
+            case 11 -> draft.height(-1);
+            case 12 -> draft.height(1);
+            case 13 -> draft.toggleLevel();
+            case 14 -> {
+                var choices = com.jvn.villagerretaliation.settlement.SettlementWall.Tower.values();
+                if (draft.selected() >= 0) draft.tower(choices[(draft.wall().nodeTowers().get(draft.selected()).ordinal() + 1)
+                        % (this.walls.upgrading() ? choices.length - 1 : choices.length)]);
+            }
+            case 15 -> draft.toggleSnapping();
             default -> throw new IllegalArgumentException("Unknown wall action");
         }
         this.walls.hover(null);
@@ -1436,7 +1465,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.wallButtons.isEmpty()) return;
         for (int i = 0; i < this.wallButtons.size(); i++) {
             var button = this.wallButtons.get(i);
-            button.visible = this.walls.active() && i < 7;
+            button.visible = this.walls.active() && i < 7
+                    && (!this.walls.pickingUpgrade() || i == 6)
+                    && (!this.walls.destroying() || i >= 4)
+                    && (!this.walls.editingPlaced() || i != 1);
             button.active = this.walls.active() && !this.walls.confirming() && !this.walls.draft().dragging();
             if (!this.walls.active()) continue;
             var draft = this.walls.draft();
@@ -1445,7 +1477,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (i == 2) button.active &= draft.canUndo();
             if (i == 3) button.active &= draft.canRedo();
             if (i == 5) button.active &= this.walls.canConfirm();
-            if (i == 7) button.active &= draft.selected() >= 0;
+            if (i == 7 || i == 11 || i == 12 || i == 14) button.active &= draft.selected() >= 0;
+            if (i == 13) button.setMessage(Component.literal(draft.level() ? "Height: level" : "Height: ground"));
+            if (i == 14) button.setMessage(Component.literal("Tower: " + (draft.selected() < 0 ? "select node"
+                    : draft.wall().nodeTowers().get(draft.selected()).label())));
+            if (i == 15) button.setMessage(Component.literal(draft.snapping() ? "Snap: on" : "Snap: off"));
+            if (this.walls.editingPlaced() && (i == 1 || i == 7 || i == 8 || i == 9 || i == 11 || i == 12 || i == 13 || i == 15
+                    || i == 14 && draft.wall().part() != com.jvn.villagerretaliation.settlement.SettlementWall.Part.TOWER)) button.active = false;
+            if (this.walls.pickingUpgrade() && i != 6 || this.walls.destroying() && i != 4 && i != 5 && i != 6 && i != 10) button.active = false;
+            if (i == 5) button.setMessage(Component.literal(this.walls.destroying() ? "Confirm destroy" : this.walls.upgrading() ? "Confirm upgrade" : "Confirm"));
             if (i == 8) {
                 button.setMessage(Component.literal(draft.wall().closed() ? "Open loop" : "Close loop"));
                 button.active &= draft.wall().nodes().size() >= 3;
@@ -1455,13 +1495,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 button.active &= !draft.wall().closed();
             }
         }
-        this.wallSpacing.visible = this.walls.active();
-        this.wallSpacing.active = this.walls.active() && this.walls.draft().automatic() && !this.walls.confirming() && !this.walls.draft().dragging();
+        this.wallSpacing.visible = this.walls.active() && !this.walls.editingPlaced() && !this.walls.pickingUpgrade();
+        this.wallSpacing.active = this.walls.active() && !this.walls.pickingUpgrade() && !this.walls.editingPlaced() && this.walls.draft().automatic() && !this.walls.confirming() && !this.walls.draft().dragging();
         this.wallSpacing.sync();
         int available = Math.max(80, this.panelLeft - this.layout.worldLeft - 6);
         int x = 0, row = 0;
         for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6}) {
             net.minecraft.client.gui.components.AbstractWidget widget = index < 0 ? this.wallSpacing : this.wallButtons.get(index);
+            if (!widget.visible) continue;
             int width = Math.min(available, index < 0 ? 118 : Math.max(20, this.font.width(widget.getMessage()) + 12));
             if (x > 0 && x + width > available) { x = 0; row++; }
             widget.setWidth(width);
@@ -2031,7 +2072,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) this.walls.stop();
             else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) { if (hasShiftDown()) wall.redo(); else wall.undo(); }
             else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) wall.redo();
-            else if (keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE) wall.remove();
+            else if ((keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE) && !this.walls.editingPlaced() && !this.walls.destroying()) wall.remove();
             else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
                 this.walls.confirm(this.minecraft.level, this.session, PacketDistributor::sendToServer);
             else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
@@ -2154,7 +2195,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     || this.wallSpacing.visible && this.wallSpacing.isMouseOver(x, y);
             boolean ground = this.popup == null && !overControl && worldContains(x, y) && windowAt(x, y) == null;
             int node = ground ? SettlementWallGizmo.hit(this.walls.draft(), this::project, x, y) : -1;
-            this.walls.hover(ground && node < 0 ? wallPoint(x, y) : null);
+            this.walls.hover(!ground ? null : node >= 0 && this.walls.draft().snapping()
+                    ? this.walls.draft().wall().nodes().get(node) : node < 0 ? wallPoint(x, y) : null);
         }
         if (this.paths.active()) {
             boolean overButton = this.pathButtons.stream().anyMatch(button -> button.visible && button.isMouseOver(x, y));
@@ -3235,8 +3277,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             case WALL_EDIT -> {
                 if (!this.walls.active()) { this.popup = null; return; }
                 details.add(Component.literal("Edit wall"));
+                if (this.walls.draft().selected() >= 0) details.add(Component.literal("Node " + (this.walls.draft().selected() + 1)
+                        + " / Y " + this.walls.draft().wall().nodes().get(this.walls.draft().selected()).getY()));
                 updateWallButtons();
-                for (int index : new int[]{7, 8, 9, 10}) {
+                for (int index : this.walls.destroying() ? new int[]{10} : this.walls.upgrading()
+                        ? this.walls.draft().wall().part() == com.jvn.villagerretaliation.settlement.SettlementWall.Part.TOWER
+                                ? new int[]{14, 10} : new int[]{10}
+                        : new int[]{11, 12, 13, 14, 15, 7, 8, 9, 10}) {
                     var button = this.wallButtons.get(index);
                     actions.add(menuAction(button.getMessage(), button.active, () -> wallAction(index)));
                 }
@@ -3252,6 +3299,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         }));
                 actions.add(menuAction(Component.literal("Path"), available, this::beginPath));
                 actions.add(menuAction(Component.literal("Wall"), available, this::beginWall));
+                actions.add(menuAction(Component.literal("Upgrade wall"), available, () -> {
+                    beginWall(); this.walls.beginUpgrade(); updateWallButtons();
+                }));
+                actions.add(menuAction(Component.literal("Destroy wall"), available, () -> {
+                    beginWall(); this.walls.beginDestroy(); updateWallButtons();
+                }));
             }
             case NAVIGATION -> {
                 details.add(Component.literal(this.header.name()));

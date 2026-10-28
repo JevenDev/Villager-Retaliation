@@ -20,6 +20,8 @@ public final class SettlementWallEditor {
     private SettlementWallDraft draft;
     private SettlementWall.Type type = SettlementWall.Type.LOW_STONE;
     private boolean automatic;
+    private boolean level;
+    private boolean snapping = true;
     private int spacing = 16;
     private long revision;
     private int version = -1;
@@ -31,9 +33,25 @@ public final class SettlementWallEditor {
     private List<SettlementWallResultPayload.Cell> cells = List.of();
     private ConstructionBlueprintItem.PreviewData ghost;
     private boolean confirming;
+    private boolean pickingUpgrade;
+    private boolean destroying;
+    private UUID upgrade = EMPTY;
+    private java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> replaced = java.util.Map.of();
     private String feedback = "";
 
     public boolean active() { return this.draft != null; }
+    public boolean pickingUpgrade() { return this.pickingUpgrade; }
+    public boolean upgrading() { return !this.upgrade.equals(EMPTY) && !this.destroying; }
+    public boolean destroying() { return this.destroying; }
+    public boolean editingPlaced() { return !this.upgrade.equals(EMPTY); }
+    public void beginDestroy() { beginUpgrade(); this.destroying = true; }
+    public void beginUpgrade() { begin(); this.pickingUpgrade = true; }
+    public void selectUpgrade(UUID session, BlockPos position, Consumer<SettlementWallRequestPayload> send) {
+        if (!this.pickingUpgrade || this.confirming) return;
+        this.version = this.draft.version();
+        send(new SettlementWallRequestPayload(session, ++this.revision, this.destroying ? SettlementWallRequestPayload.Action.SELECT_DESTROY : SettlementWallRequestPayload.Action.SELECT_UPGRADE,
+                EMPTY, null, EMPTY, position), send);
+    }
     public boolean confirming() { return this.confirming; }
     public SettlementWallDraft draft() { return this.draft; }
     public List<SettlementWallResultPayload.Cell> cells() { return this.cells; }
@@ -43,16 +61,18 @@ public final class SettlementWallEditor {
     public void begin() {
         if (this.confirming) return;
         rememberSettings();
-        this.draft = new SettlementWallDraft(this.type, this.automatic, this.spacing);
+        this.draft = new SettlementWallDraft(this.type, this.automatic, this.spacing, this.level, this.snapping);
         this.version = -1;
         clearPreview();
     }
     private void rememberSettings() {
-        if (!active()) return;
+        if (!active() || editingPlaced() || pickingUpgrade()) return;
         this.type = this.draft.wall().type(); this.automatic = this.draft.automatic(); this.spacing = this.draft.spacing();
+        this.level = this.draft.level(); this.snapping = this.draft.snapping();
     }
     private void clearPreview() {
         this.pending = null; this.result = null; this.shown = null; this.hover = null;
+        this.upgrade = EMPTY; this.replaced = java.util.Map.of(); this.pickingUpgrade = false; this.destroying = false;
         this.cells = List.of(); this.ghost = null; this.feedback = "";
     }
     public void cancel(UUID session, Consumer<SettlementWallRequestPayload> send) {
@@ -68,7 +88,7 @@ public final class SettlementWallEditor {
     }
     public void tick(Level level, UUID session, Predicate<BlockPos> allowed, Consumer<SettlementWallRequestPayload> send) {
         long now = Util.getMillis();
-        if (active() && !this.confirming) {
+        if (active() && !this.confirming && !this.pickingUpgrade) {
             if (this.version != this.draft.version()) {
                 this.version = this.draft.version(); refresh();
             }
@@ -76,7 +96,8 @@ public final class SettlementWallEditor {
             var shown = this.draft.preview(this.hover);
             if (!shown.equals(this.shown) || now - this.previewAt >= 250) {
                 this.shown = shown; this.previewAt = now;
-                var preview = SettlementWallTerrain.preview(level, shown, allowed);
+                var preview = this.destroying ? SettlementWallTerrain.demolition(level, this.replaced, allowed)
+                        : SettlementWallTerrain.preview(level, shown, allowed, this.replaced);
                 this.cells = shown.equals(this.draft.wall()) && this.result != null && !this.result.cells().isEmpty()
                         ? this.result.cells() : preview.cells().stream().map(cell ->
                                 new SettlementWallResultPayload.Cell(cell.position(), cell.target(), cell.kind())).toList();
@@ -86,7 +107,8 @@ public final class SettlementWallEditor {
             }
             if (!this.draft.dragging() && this.draft.wall().nodes().size() >= 2 && this.pending == null && this.result == null
                     && now - this.changedAt >= 150)
-                send(new SettlementWallRequestPayload(session, this.revision, SettlementWallRequestPayload.Action.PREVIEW, EMPTY, this.draft.wall()), send);
+                send(new SettlementWallRequestPayload(session, this.revision, this.destroying ? SettlementWallRequestPayload.Action.PREVIEW_DESTROY : SettlementWallRequestPayload.Action.PREVIEW,
+                        EMPTY, this.destroying ? null : this.draft.wall(), this.upgrade, BlockPos.ZERO), send);
         }
         if (this.pending != null && now - this.sentAt >= 2000) send(this.pending, send);
     }
@@ -102,7 +124,7 @@ public final class SettlementWallEditor {
         }
         var blocks = cells.stream().map(cell -> new ConstructionBlueprintItem.PreviewBlock(cell.position().subtract(origin), cell.state())).toList();
         return new ConstructionBlueprintItem.PreviewData(EMPTY, EMPTY, level.dimension(),
-                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "walls/" + this.type.tower()), this.type.label(),
+                ResourceLocation.fromNamespaceAndPath("villagerretaliation", "walls/" + this.draft.wall().type().tower()), this.draft.wall().type().label(),
                 origin, Rotation.NONE, min.subtract(origin), max.subtract(origin), blocks.size(), 0, 0, "", "", "",
                 false, false, false, false, blocks);
     }
@@ -122,6 +144,14 @@ public final class SettlementWallEditor {
     public boolean accept(SettlementWallResultPayload result) {
         if (!active() || result.revision() != this.revision || this.version != this.draft.version()) return false;
         this.pending = null; this.result = result; this.shown = null; this.feedback = result.message(); this.confirming = false;
+        if (result.status() == SettlementWallResultPayload.Status.SELECTED) {
+            this.upgrade = result.upgrade();
+            this.replaced = result.cells().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
+                    SettlementWallResultPayload.Cell::position, SettlementWallResultPayload.Cell::state));
+            this.draft = SettlementWallDraft.edit(result.selected());
+            this.pickingUpgrade = false; this.result = null; this.version = -1;
+            return false;
+        }
         if (result.status() == SettlementWallResultPayload.Status.APPLIED) {
             rememberSettings(); this.draft = null; clearPreview(); return true;
         }
@@ -129,11 +159,15 @@ public final class SettlementWallEditor {
     }
     public String hint() {
         if (!active()) return this.feedback;
-        if (this.confirming) return "Placing wall...";
+        if (this.confirming) return this.destroying ? "Destroying wall piece..." : upgrading() ? "Upgrading wall..." : "Placing wall...";
+        if (this.pickingUpgrade) return this.feedback.isEmpty() ? "Click a placed wall piece to " + (this.destroying ? "destroy" : "upgrade") + ". Cancel exits." : this.feedback;
+        if (this.destroying) return "Destroy wall piece / " + this.cells.stream().filter(cell -> cell.kind() == SettlementWallTerrain.Kind.PLACE).count()
+                + " blocks / No item drops\n" + (this.feedback.isEmpty() ? "Red outlines mark removal. Replacement blocks are preserved. Confirm destroy applies." : this.feedback);
         long blocks = this.cells.stream().filter(cell -> !cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE).count();
-        return this.type.label() + " / " + blocks + " blocks / Free, instant placement\n"
+        return (upgrading() ? "Upgrade / " : "") + this.draft.wall().type().label() + " / " + blocks + " blocks / Free, instant placement\n"
                 + (!this.feedback.isEmpty() ? this.feedback : this.draft.wall().nodes().isEmpty() ? "Click ground to place the first tower."
+                : upgrading() ? "Choose a type or select a node for tower options. Red outlines mark removals. Confirm upgrade applies."
                 : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm places it. Cancel discards."
-                : "Click adds a tower. Drag nodes to move them. Click the first node to close. Escape stops extending.");
+                : "Click adds a node. Snap to draft nodes to connect. Escape stops drawing so nodes can be edited.");
     }
 }

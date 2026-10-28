@@ -26,6 +26,7 @@ final class SettlementPathClientChecks {
     }
 
     boolean tick(Minecraft minecraft) {
+        if (this.phase == 8 && this.ticks > 15) return true;
         if (++this.ticks > 500) throw new IllegalStateException("Path client checks timed out at " + this.phase + ": " + this.view.pathEditor().hint());
         var editor = this.view.pathEditor();
         if (this.phase == 0) {
@@ -36,7 +37,7 @@ final class SettlementPathClientChecks {
                     .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
                     "path tools are grouped inside Build");
             button("Build").onPress();
-            require(this.view.contextPopup().buttons().size() == 3, "Build offers New Building, Path and Wall");
+            require(this.view.contextPopup().buttons().size() == 5, "Build offers New Building, Path, Wall, Upgrade wall and Destroy wall");
             this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
             this.phase++;
             this.ticks = 0;

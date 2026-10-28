@@ -206,7 +206,8 @@ public final class SettlementWallGameTests {
 
     @GameTest(template = "empty", batch = "settlement_wall")
     public static void payloadsRoundTripWithBoundedDrafts(GameTestHelper helper) {
-        var wall = new SettlementWall(SettlementWall.Type.TIMBER, List.of(BlockPos.ZERO, new BlockPos(24, 0, 0)), false, 12);
+        var wall = new SettlementWall(SettlementWall.Type.TIMBER, List.of(BlockPos.ZERO, new BlockPos(24, 0, 0)), false, 12,
+                List.of(SettlementWall.Tower.NONE, SettlementWall.Tower.LOW_STONE));
         var request = new SettlementWallRequestPayload(UUID.randomUUID(), 2, SettlementWallRequestPayload.Action.PREVIEW, UUID.randomUUID(), wall);
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {
@@ -341,6 +342,85 @@ public final class SettlementWallGameTests {
         helper.assertFalse(preview.error().isEmpty(), "bottomless foundations are rejected");
         helper.assertTrue(preview.cells().size() <= SettlementWall.MAX_BLOCKS, "extensions obey the existing network and placement limit");
         helper.assertValueEqual(SettlementWallTerrain.apply(level, preview), 0, "oversized or unsupported previews never partially apply");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void towerChoicesUseExistingDesignsAndKeepTowerlessSpansContinuous(GameTestHelper helper) {
+        var start = new BlockPos(0, 80, 0);
+        var end = start.east(24);
+        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(start, end), false, 0,
+                List.of(SettlementWall.Tower.NONE, SettlementWall.Tower.TALL_STONE));
+        var plan = SettlementWallGeometry.build(wall);
+        helper.assertTrue(plan.error().isEmpty(), "mixed tower options are valid");
+        helper.assertTrue(plan.cells().stream().anyMatch(cell -> cell.position().equals(start) && !cell.state().isAir()),
+                "removing a tower keeps the wall through its node");
+        helper.assertFalse(plan.cells().stream().anyMatch(cell -> cell.position().equals(start.above(8))),
+                "towerless node has no tower above the span");
+        helper.assertTrue(plan.cells().stream().anyMatch(cell -> cell.position().getY() == end.getY() + 10 && !cell.state().isAir()),
+                "selected tall tower uses its authored height");
+        var automatic = new SettlementWall(wall.type(), wall.nodes(), false, 12, wall.nodeTowers());
+        helper.assertTrue(SettlementWallGeometry.build(automatic).error().isEmpty(), "automatic towers coexist with node overrides");
+        helper.assertValueEqual(automatic.towerAt(start.east(12)), wall.type().tower(), "automatic towers follow the wall type");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void heightAndTowerEditingPreserveDraftHistoryAndSettings(GameTestHelper helper) {
+        var draft = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, false, 16);
+        draft.place(new BlockPos(0, 80, 0));
+        draft.place(new BlockPos(24, 83, 0));
+        draft.height(2);
+        helper.assertValueEqual(draft.wall().nodes().getLast().getY(), 85, "height controls move the selected node");
+        draft.tower(SettlementWall.Tower.NONE);
+        draft.undo();
+        helper.assertValueEqual(draft.wall().nodeTowers().getLast(), SettlementWall.Tower.DEFAULT, "undo restores tower option");
+        draft.redo();
+        draft.toggleLevel();
+        helper.assertTrue(draft.wall().nodes().stream().allMatch(node -> node.getY() == 80), "level mode aligns the route");
+        draft.height(1);
+        helper.assertTrue(draft.wall().nodes().stream().allMatch(node -> node.getY() == 81), "height controls move a level route together");
+        draft.place(new BlockPos(24, 70, 24));
+        helper.assertValueEqual(draft.wall().nodes().getLast().getY(), 81, "new nodes retain the level route height");
+        draft.stop();
+        draft.begin(1); draft.drag(new BlockPos(26, 60, 0)); draft.finish();
+        helper.assertValueEqual(draft.wall().nodes().get(1).getY(), 81, "horizontal dragging retains edited height");
+        draft.undo();
+        helper.assertValueEqual(draft.wall().nodes().get(1), new BlockPos(24, 81, 0), "undo restores moved node");
+        draft.toggleLevel();
+        draft.extend(); draft.place(new BlockPos(0, 75, 24));
+        helper.assertValueEqual(draft.wall().nodes().getLast().getY(), 75, "ground mode accepts the picked elevation");
+        var editor = new SettlementWallEditor();
+        editor.begin(); editor.draft().toggleLevel(); editor.draft().toggleSnapping();
+        editor.cancel(UUID.randomUUID(), request -> {});
+        editor.begin();
+        helper.assertTrue(editor.draft().level() && !editor.draft().snapping(), "height and snapping choices persist between drafts");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void draftSnappingClosesLoopsAndWeldsJunctions(GameTestHelper helper) {
+        var draft = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, false, 16);
+        draft.place(BlockPos.ZERO); draft.place(new BlockPos(24, 0, 0)); draft.place(new BlockPos(24, 0, 24));
+        var loop = draft.preview(new BlockPos(1, 0, 1));
+        helper.assertTrue(loop.closed() && loop.nodes().size() == 3, "snapping previews a closed loop without a duplicate endpoint");
+        draft.place(new BlockPos(1, 0, 1));
+        helper.assertTrue(draft.wall().closed(), "the click matches the snapped preview");
+        draft.undo();
+        helper.assertFalse(draft.wall().closed(), "closing the loop is undoable");
+        draft.place(new BlockPos(25, 0, 1));
+        helper.assertFalse(draft.extending(), "connecting to an intermediate draft node stops extension");
+        helper.assertValueEqual(draft.wall().nodes().getLast(), draft.wall().nodes().get(1), "junction positions match exactly");
+        draft.tower(SettlementWall.Tower.TALL_STONE);
+        helper.assertValueEqual(draft.wall().nodeTowers().get(1), SettlementWall.Tower.TALL_STONE, "junction tower choice is shared");
+        draft.height(2);
+        helper.assertValueEqual(draft.wall().nodes().getLast(), draft.wall().nodes().get(1), "height edits keep the junction welded");
+        draft.begin(1); draft.drag(new BlockPos(26, 0, 1)); draft.finish();
+        helper.assertValueEqual(draft.wall().nodes().getLast(), draft.wall().nodes().get(1), "dragging keeps the junction welded");
+        helper.assertTrue(SettlementWallGeometry.build(draft.wall()).error().isEmpty(), "connected draft builds without duplicate towers");
+        draft.undo(); draft.undo(); draft.undo(); draft.undo();
+        draft.toggleSnapping();
+        helper.assertFalse(draft.preview(new BlockPos(1, 0, 1)).closed(), "snapping can be disabled");
         helper.succeed();
     }
 

@@ -51,6 +51,23 @@ final class SettlementWallClientChecks {
             var kept = editor.draft().wall();
             this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(editor.draft().wall().equals(kept) && !editor.draft().extending(), "Escape keeps the wall and stops extending");
+            int y = editor.draft().wall().nodes().getLast().getY();
+            edit("Height +");
+            require(editor.draft().wall().nodes().getLast().getY() == y + 1, "height control raises selected node");
+            edit("Height -");
+            edit("Height: ground");
+            require(editor.draft().level(), "level placement can be selected");
+            edit("Height: level");
+            for (String choice : java.util.List.of("Default", "Low stone", "Tall stone", "None")) edit("Tower: " + choice);
+            require(editor.draft().wall().nodeTowers().getLast() == com.jvn.villagerretaliation.settlement.SettlementWall.Tower.DEFAULT,
+                    "all existing tower options can be selected");
+            edit("Snap: on"); require(!editor.draft().snapping(), "snapping can be disabled");
+            edit("Snap: off");
+            edit("Extend");
+            click(Vec3.atBottomCenterOf(editor.draft().wall().nodes().getFirst()).add(0, 0.15, 0));
+            require(editor.draft().wall().nodes().getLast().equals(editor.draft().wall().nodes().getFirst()), "click connects to another preview node");
+            button("Undo").onPress();
+            this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             next();
         } else if (this.phase == 2 && editor.canConfirm()) {
             require(editor.ghost() != null && !editor.cells().isEmpty(), "wall preview renders real template blocks");
@@ -86,32 +103,88 @@ final class SettlementWallClientChecks {
             button("Confirm").onPress();
             require(editor.confirming(), "wall confirmation waits for the server");
             next();
-        } else if (this.phase == 6 && !editor.active()) {
+        } else if (this.phase == 6 && !editor.active() && this.ticks > 8) {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
                 this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "confirmed wall matches its block preview"));
-                this.before.forEach((pos, state) -> level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE));
             }).join();
             open();
             require(editor.draft().automatic() && editor.draft().spacing() == 8, "tower distribution survives confirmation");
             require(editor.draft().wall().nodes().isEmpty() && !editor.draft().canUndo(), "confirmed wall history is discarded");
             button("Cancel").onPress();
             require(!editor.active(), "Cancel exits the wall tool");
+            open("Upgrade wall");
+            require(editor.pickingUpgrade(), "upgrade action begins wall selection");
+            var pick = this.targets.entrySet().stream().filter(entry -> !entry.getValue().isAir()
+                    && entry.getKey().getX() == this.start.getX() && entry.getKey().getZ() == this.start.getZ())
+                    .max(java.util.Comparator.comparingInt(entry -> entry.getKey().getY())).orElseThrow().getKey();
+            click(pick.getCenter());
+            next();
+        } else if (this.phase == 7 && editor.upgrading() && editor.canConfirm()) {
+            require(editor.draft().wall().nodes().size() == 2, "selecting placed wall restores its route");
+            button("Low stone").onPress();
+            next();
+        } else if (this.phase == 8 && editor.canConfirm()) {
+            this.capture.accept("wall-upgrade-preview");
+            var cells = java.util.List.copyOf(editor.cells());
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                this.targets.clear();
+                for (var cell : cells) {
+                    this.before.putIfAbsent(cell.position(), level.getBlockState(cell.position()));
+                    this.targets.put(cell.position(), cell.state());
+                }
+            }).join();
+            button("Confirm upgrade").onPress();
+            next();
+        } else if (this.phase == 9 && !editor.active() && this.ticks > 8
+                && this.targets.entrySet().stream().allMatch(entry -> minecraft.level.getBlockState(entry.getKey()).equals(entry.getValue()))) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "upgrade matches the preview"));
+            }).join();
+            open("Destroy wall");
+            require(editor.pickingUpgrade() && editor.destroying(), "Destroy begins piece selection");
+            var pick = this.targets.entrySet().stream().filter(entry -> !entry.getValue().isAir()
+                    && entry.getKey().getX() == this.start.getX() && entry.getKey().getZ() == this.start.getZ())
+                    .max(java.util.Comparator.comparingInt(entry -> entry.getKey().getY())).orElseThrow().getKey();
+            click(pick.getCenter());
+            next();
+        } else if (this.phase == 10 && editor.destroying() && editor.canConfirm()) {
+            require(editor.cells().stream().allMatch(cell -> cell.state().isAir()), "destroy preview only removes recorded blocks");
+            this.capture.accept("wall-destroy-preview");
+            this.targets.clear(); editor.cells().forEach(cell -> this.targets.put(cell.position(), cell.state()));
+            button("Confirm destroy").onPress();
+            next();
+        } else if (this.phase == 11 && !editor.active()) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "destroy matches its removal preview"));
+                this.before.forEach((pos, state) -> level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE));
+            }).join();
             this.view.focus(this.cameraX, this.cameraZ);
             this.view.mouseScrolled(this.view.viewportWidth() / 2.0, 80, 0, 100);
             next();
-        } else if (this.phase == 7 && this.ticks > 20) return true;
+        } else if (this.phase == 12 && this.ticks > 20) return true;
         return false;
     }
     private void next() { this.phase++; this.ticks = 0; }
-    private void open() {
+    private void open() { open("Wall"); }
+    private void open(String label) {
         button("Build").onPress();
         require(this.view.contextPopup().buttons().stream().noneMatch(button -> button.getMessage().getString().equals("Branch")),
                 "Branch is removed from the Build menu");
-        var action = this.view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals("Wall")).findFirst().orElseThrow();
+        var action = this.view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
         this.view.mouseClicked(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         this.view.mouseReleased(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(this.view.wallEditor().active(), "Build opens the Wall tool");
+    }
+    private void edit(String label) {
+        button("Edit").onPress();
+        var action = this.view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
+        require(action.active, "wall edit action is available: " + label);
+        this.view.mouseClicked(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        this.view.mouseReleased(action.getX() + 2, action.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
     private Button button(String label) {
         return this.view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)

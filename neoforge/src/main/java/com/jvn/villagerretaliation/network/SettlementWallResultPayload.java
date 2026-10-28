@@ -12,9 +12,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-public record SettlementWallResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message)
+public record SettlementWallResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message, UUID upgrade, SettlementWall selected)
         implements CustomPacketPayload {
-    public enum Status { PREVIEW, REJECTED, APPLIED, CANCELLED }
+    public enum Status { PREVIEW, REJECTED, APPLIED, CANCELLED, SELECTED }
+    public SettlementWallResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message) {
+        this(session, revision, token, status, cells, message, SettlementWallRequestPayload.NONE, null);
+    }
     public record Cell(BlockPos position, BlockState state, SettlementWallTerrain.Kind kind) {}
     public static final Type<SettlementWallResultPayload> TYPE = VillagerPayloads.type("settlement_wall_result");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementWallResultPayload> STREAM_CODEC = VillagerPayloads.codec((b, p) -> {
@@ -24,6 +27,8 @@ public record SettlementWallResultPayload(UUID session, long revision, UUID toke
             b.writeBlockPos(cell.position()); b.writeVarInt(Block.getId(cell.state())); b.writeEnum(cell.kind());
         }
         b.writeUtf(p.message(), 512);
+        b.writeUUID(p.upgrade());
+        if (p.status() == Status.SELECTED) SettlementWallRequestPayload.writeWall(b, p.selected());
     }, b -> {
         var session = b.readUUID();
         long revision = b.readVarLong();
@@ -32,12 +37,15 @@ public record SettlementWallResultPayload(UUID session, long revision, UUID toke
         int count = VillagerPayloads.readCollectionSize(b, SettlementWall.MAX_BLOCKS, "wall preview blocks");
         var cells = new ArrayList<Cell>();
         for (int i = 0; i < count; i++) cells.add(new Cell(b.readBlockPos(), Block.stateById(b.readVarInt()), b.readEnum(SettlementWallTerrain.Kind.class)));
-        return new SettlementWallResultPayload(session, revision, token, status, cells, b.readUtf(512));
+        var message = b.readUtf(512);
+        var upgrade = b.readUUID();
+        var selected = status == Status.SELECTED ? SettlementWallRequestPayload.readWall(b) : null;
+        return new SettlementWallResultPayload(session, revision, token, status, cells, message, upgrade, selected);
     });
     public SettlementWallResultPayload {
         cells = List.copyOf(cells);
         if (session == null || revision <= 0 || token == null || status == null || cells.size() > SettlementWall.MAX_BLOCKS
-                || message == null || message.length() > 512) throw new IllegalArgumentException("Invalid wall result");
+                || message == null || message.length() > 512 || upgrade == null || (status == Status.SELECTED) != (selected != null)) throw new IllegalArgumentException("Invalid wall result");
     }
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

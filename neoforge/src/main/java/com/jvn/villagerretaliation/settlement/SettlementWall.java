@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.settlement;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 
-public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, int towerSpacing) {
+public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, int towerSpacing, List<Tower> nodeTowers, Part part) {
     public static final int MAX_NODES = 32;
     public static final int MAX_BLOCKS = 16_384;
     public static final int MAX_SPAN = 128;
@@ -22,11 +22,47 @@ public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, in
         public String span() { return this.span; }
     }
 
+    public enum Part { COMPLETE, SPAN, TOWER }
+
+    public SettlementWall(Type type, List<BlockPos> nodes, boolean closed, int towerSpacing, List<Tower> nodeTowers) {
+        this(type, nodes, closed, towerSpacing, nodeTowers, Part.COMPLETE);
+    }
+
+    public enum Tower {
+        DEFAULT("Default"), LOW_STONE("Low stone"), TALL_STONE("Tall stone"), NONE("None");
+        private final String label;
+        Tower(String label) { this.label = label; }
+        public String label() { return this.label; }
+    }
+
+    public SettlementWall(Type type, List<BlockPos> nodes, boolean closed, int towerSpacing) {
+        this(type, nodes, closed, towerSpacing, java.util.Collections.nCopies(nodes == null ? 0 : nodes.size(), Tower.DEFAULT));
+    }
+
+    public String towerAt(BlockPos position) {
+        int index = this.nodes.indexOf(position);
+        var choice = index < 0 ? Tower.DEFAULT : this.nodeTowers.get(index);
+        return switch (choice) {
+            case DEFAULT -> this.type.tower();
+            case LOW_STONE -> "stone_tower_low";
+            case TALL_STONE -> "stone_tower_tall";
+            case NONE -> "";
+        };
+    }
+
     public SettlementWall {
         if (type == null || nodes == null || nodes.size() > MAX_NODES || closed && nodes.size() < 3
                 || towerSpacing != 0 && (towerSpacing < 6 || towerSpacing > 64))
             throw new IllegalArgumentException("Invalid wall draft");
+        if (part == null || part != Part.COMPLETE && (nodes.size() != 2 || closed || towerSpacing != 0))
+            throw new IllegalArgumentException("Invalid wall piece");
+        if (nodeTowers == null || nodeTowers.size() != nodes.size()) throw new IllegalArgumentException("Invalid tower choices");
+        nodeTowers = List.copyOf(nodeTowers);
         nodes = nodes.stream().map(BlockPos::immutable).toList();
+        for (int i = 0; i < nodes.size(); i++) {
+            int first = nodes.indexOf(nodes.get(i));
+            if (nodeTowers.get(first) != nodeTowers.get(i)) throw new IllegalArgumentException("Conflicting junction towers");
+        }
         for (var node : nodes) if (Math.abs((long) node.getX()) > 30_000_000 || Math.abs((long) node.getZ()) > 30_000_000
                 || node.getY() < -2048 || node.getY() > 2048) throw new IllegalArgumentException("Invalid wall position");
     }

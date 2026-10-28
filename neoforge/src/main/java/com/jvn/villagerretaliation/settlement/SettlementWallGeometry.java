@@ -18,16 +18,17 @@ public final class SettlementWallGeometry {
         var cells = new LinkedHashMap<BlockPos, BlockState>();
         var foundations = new HashSet<BlockPos>();
         var span = SettlementWallTemplates.get(wall.type().span());
-        var tower = SettlementWallTemplates.get(wall.type().tower());
-        var nodes = towers(wall);
+        var nodes = wall.part() == SettlementWall.Part.COMPLETE ? towers(wall) : wall.nodes();
         if (nodes.size() > 64) return invalid("Wall draft exceeds 64 towers. Increase spacing or shorten the wall");
-        int segments = nodes.size() - (wall.closed() ? 0 : 1);
+        var towerNodes = nodes.stream().filter(node -> !wall.towerAt(node).isEmpty()).toList();
+        int segments = wall.part() == SettlementWall.Part.TOWER ? 0 : nodes.size() - (wall.closed() ? 0 : 1);
         for (int i = 0; i < segments; i++) {
             var start = nodes.get(i);
             var end = nodes.get((i + 1) % nodes.size());
             int dx = end.getX() - start.getX(), dz = end.getZ() - start.getZ();
             int length = Math.max(Math.abs(dx), Math.abs(dz));
-            if (length < 6) return invalid("Towers must be at least 6 blocks apart");
+            if (length < (wall.towerAt(start).isEmpty() && wall.towerAt(end).isEmpty() ? 1 : 6))
+                return invalid("Towers must be at least 6 blocks apart");
             if (length > SettlementWall.MAX_SPAN) return invalid("Each wall span is limited to 128 blocks");
             var rotation = rotation(start, end);
             for (int step = 0; step <= length; step++) {
@@ -39,7 +40,7 @@ public final class SettlementWallGeometry {
                     if (cell.position().getX() != column) continue;
                     var offset = new BlockPos(0, cell.position().getY(), cell.position().getZ() - span.size().getZ() / 2).rotate(rotation);
                     var pos = center.offset(offset);
-                    if (nodes.stream().anyMatch(node -> Math.abs(node.getX() - pos.getX()) <= 2
+                    if (towerNodes.stream().anyMatch(node -> Math.abs(node.getX() - pos.getX()) <= 2
                             && Math.abs(node.getZ() - pos.getZ()) <= 2)) continue;
                     var state = cell.state().rotate(rotation);
                     if (!state.isAir() || !cells.containsKey(pos)) cells.put(pos, state);
@@ -48,8 +49,11 @@ public final class SettlementWallGeometry {
                 if (cells.size() > SettlementWall.MAX_BLOCKS) return invalid("Wall draft exceeds 16,384 blocks. Confirm a shorter section");
             }
         }
-        for (int i = 0; i < nodes.size(); i++) {
+        var placedTowers = new HashSet<BlockPos>();
+        for (int i = 0; i < (wall.part() == SettlementWall.Part.SPAN ? 0 : wall.part() == SettlementWall.Part.TOWER ? 1 : nodes.size()); i++) {
             var node = nodes.get(i);
+            if (wall.towerAt(node).isEmpty() || !placedTowers.add(node)) continue;
+            var tower = SettlementWallTemplates.get(wall.towerAt(node));
             var direction = i + 1 < nodes.size() ? nodes.get(i + 1)
                     : wall.closed() ? nodes.getFirst() : i > 0 ? node.offset(node.subtract(nodes.get(i - 1))) : node.east();
             var rotation = rotation(node, direction);
@@ -70,6 +74,8 @@ public final class SettlementWallGeometry {
     }
 
     public static List<BlockPos> towers(SettlementWall wall) {
+        if (wall.part() == SettlementWall.Part.TOWER) return List.of(wall.nodes().getFirst());
+        if (wall.part() == SettlementWall.Part.SPAN) return wall.nodes();
         var nodes = new ArrayList<BlockPos>();
         for (int i = 0; i < wall.nodes().size(); i++) {
             var start = wall.nodes().get(i);
@@ -88,6 +94,31 @@ public final class SettlementWallGeometry {
             }
         }
         return List.copyOf(nodes);
+    }
+
+    public static List<SettlementWall> pieces(SettlementWall wall) {
+        var nodes = towers(wall);
+        var pieces = new ArrayList<SettlementWall>();
+        var seen = new HashSet<BlockPos>();
+        for (int i = 0; i < nodes.size(); i++) {
+            var node = nodes.get(i);
+            if (wall.towerAt(node).isEmpty() || !seen.add(node)) continue;
+            var direction = i + 1 < nodes.size() ? nodes.get(i + 1) : wall.closed() ? nodes.getFirst()
+                    : i > 0 ? node.offset(node.subtract(nodes.get(i - 1))) : node.east(6);
+            pieces.add(new SettlementWall(wall.type(), List.of(node, direction), false, 0,
+                    List.of(choice(wall, node), SettlementWall.Tower.NONE), SettlementWall.Part.TOWER));
+        }
+        for (int i = 0; i < nodes.size() - (wall.closed() ? 0 : 1); i++) {
+            var start = nodes.get(i); var end = nodes.get((i + 1) % nodes.size());
+            pieces.add(new SettlementWall(wall.type(), List.of(start, end), false, 0,
+                    List.of(choice(wall, start), choice(wall, end)), SettlementWall.Part.SPAN));
+        }
+        return List.copyOf(pieces);
+    }
+
+    private static SettlementWall.Tower choice(SettlementWall wall, BlockPos node) {
+        int index = wall.nodes().indexOf(node);
+        return index < 0 ? SettlementWall.Tower.DEFAULT : wall.nodeTowers().get(index);
     }
 
     private static Rotation rotation(BlockPos start, BlockPos end) {
