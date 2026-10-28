@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
 import com.jvn.villagerretaliation.client.ui.VillagerUi;
+import com.jvn.villagerretaliation.client.interaction.DialogueCameraOcclusion;
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
 import com.jvn.villagerretaliation.client.settlement.SettlementViewInteraction.Mode;
 import com.jvn.villagerretaliation.client.settlement.SettlementSelectionSet.Operation;
@@ -1926,6 +1927,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
         }
+        if (worldContains(x, y)) updatePeek(x, y);
         var clickedWindow = windowAt(x, y);
         if (clickedWindow != null) {
             this.windows.remove(clickedWindow);
@@ -2680,6 +2682,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private List<UUID> matchingAreas(Pick hit, double x, double y) {
+        var ray = ray(x, y);
+        Vec3 end = hit.position() == null ? ray.end() : ray.origin().add(ray.direction()
+                .scale(ray.origin().distanceTo(Vec3.atCenterOf(hit.position())) + 1.0D));
+        var exterior = this.minecraft.level.clip(new ClipContext(ray.origin(), end, ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE, this.minecraft.gameRenderer.getMainCamera().getEntity()));
+        if (exterior.getType() != HitResult.Type.MISS && DialogueCameraOcclusion.hides(exterior.getBlockPos())) return List.of();
         if (hit.position() != null) {
             var touching = selectableAreas().stream()
                     .filter(area -> new SettlementViewBounds(area.min(), area.max()).box().contains(Vec3.atCenterOf(hit.position())))
@@ -2688,9 +2696,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 return touching;
             }
         }
-        var ray = ray(x, y);
-        Vec3 end = hit.position() == null ? ray.end() : ray.origin().add(ray.direction()
-                .scale(ray.origin().distanceTo(Vec3.atCenterOf(hit.position())) + 1.0D));
         return selectableAreas().stream().filter(area -> new SettlementViewBounds(area.min(), area.max()).box()
                 .clip(ray.origin(), end).isPresent()).map(SettlementManagementPayload.Area::id).toList();
     }

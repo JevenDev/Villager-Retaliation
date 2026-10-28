@@ -109,6 +109,7 @@ final class SettlementPeekClientChecks {
                     view.keyPressed(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
                     hover.invoke(view, sx, sy);
                     require(DialogueCameraOcclusion.hides(roof), "the rendered building under the cursor activates the screen's registered-building cutaway");
+                    verifyInteriorClicks(minecraft, view, center, world, hover);
                     hover.invoke(view, 0.0, 0.0);
                     require(DialogueCameraOcclusion.hides(roof), "leaving the world starts a smooth restoration");
                     view.clearPeek();
@@ -131,7 +132,7 @@ final class SettlementPeekClientChecks {
                         view.clearControls();
                         view.clearPeek();
                     }
-                    verifyEntityFocus(minecraft, view, center, hover);
+                    verifyEntityFocus(minecraft, view, center, hover, world);
                     view.keyPressed(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
                     hover.invoke(view, sx, sy);
                     minecraft.setWindowActive(false);
@@ -148,6 +149,72 @@ final class SettlementPeekClientChecks {
             view.clearPeek();
             minecraft.setWindowActive(focused);
         }
+    }
+
+    private static void verifyInteriorClicks(Minecraft minecraft, SettlementViewScreen view, BlockPos center,
+            Method world, Method hover) throws ReflectiveOperationException {
+        var selected = SettlementViewScreen.class.getDeclaredField("selectedBlock");
+        selected.setAccessible(true);
+        var camera = minecraft.gameRenderer.getMainCamera();
+        for (int x = -7; x <= -4; x++) {
+            for (int z = -2; z <= 2; z++) {
+                var target = center.offset(x, -1, z).getCenter().add(0, 0.51, 0);
+                var point = project(view, target);
+                if (!(Boolean) world.invoke(view, point.x, point.y)) continue;
+                var ray = new SettlementSelectionGizmo.Ray(camera.getPosition(), target.subtract(camera.getPosition()));
+                var exterior = minecraft.level.clip(new ClipContext(ray.origin(), ray.end(),
+                        ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, minecraft.player));
+                if (!DialogueCameraOcclusion.hides(exterior.getBlockPos())) continue;
+                var interior = SettlementViewPeek.clip(minecraft.level, ray.origin(), ray.end(), ClipContext.Block.OUTLINE, minecraft.player);
+                if (interior.getType() == HitResult.Type.MISS || interior.getBlockPos().getY() != center.getY() - 1) continue;
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                require(interior.getBlockPos().equals(selected.get(view)), "left-clicking through the cutaway selects the interior block");
+                require(view.inspectorSelection() == null, "the enclosing building area cannot override an interior block selection");
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                require(view.contextPopup() == null, "right-clicking through the cutaway does not open the enclosing building's actions");
+                view.clearPeek();
+                view.keyPressed(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                require(interior.getBlockPos().equals(selected.get(view)), "a click refreshes the cutaway before the next hover frame");
+                view.keyReleased(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
+                view.clearPeek();
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                require(exterior.getBlockPos().equals(selected.get(view)) && view.inspectorSelection() instanceof SettlementManagementPayload.Area,
+                        "normal building selection still targets the exterior when not peeking");
+                view.keyPressed(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
+                hover.invoke(view, point.x, point.y);
+                var bed = center.offset(-6, 0, 0);
+                var bedPoint = project(view, bed.getCenter());
+                require((Boolean) world.invoke(view, bedPoint.x, bedPoint.y), "the fixture bed is clickable outside the floating windows");
+                view.mouseClicked(bedPoint.x, bedPoint.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                view.mouseReleased(bedPoint.x, bedPoint.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                require(view.selectedBeds().equals(List.of(bed.north())), "left-clicking through the roof selects the interior bed");
+                require(view.contextPopup() != null && view.contextPopup().target().kind() == SettlementViewPopup.Kind.BEDS,
+                        "the interior bed retains its assignment actions");
+                view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+                view.mouseClicked(bedPoint.x, bedPoint.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                require(view.contextPopup() != null && view.contextPopup().target().kind() == SettlementViewPopup.Kind.BEDS,
+                        "right-clicking through the roof targets the bed rather than the enclosing building");
+                view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+                view.keyPressed(GLFW.GLFW_KEY_GRAVE_ACCENT, 0, 0);
+                hover.invoke(view, point.x, point.y);
+                return;
+            }
+        }
+        throw new IllegalStateException("the fixture must have a clickable interior floor outside the floating windows");
+    }
+
+    private static Vec3 project(SettlementViewScreen view, Vec3 target) {
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        var offset = target.subtract(camera.getPosition());
+        double depth = offset.dot(new Vec3(camera.getLookVector()));
+        double scale = view.height / (2 * depth * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2)));
+        return new Vec3(view.viewportWidth() / 2.0 - offset.dot(new Vec3(camera.getLeftVector())) * scale,
+                view.height / 2.0 - offset.dot(new Vec3(camera.getUpVector())) * scale, 0);
     }
 
     private static void verifyFade(Minecraft minecraft, BlockPos roof) {
@@ -205,7 +272,7 @@ final class SettlementPeekClientChecks {
     }
 
     private static void verifyEntityFocus(Minecraft minecraft, SettlementViewScreen view, BlockPos center,
-            Method hover) throws ReflectiveOperationException {
+            Method hover, Method world) throws ReflectiveOperationException {
         var field = SettlementViewScreen.class.getDeclaredField("roster");
         field.setAccessible(true);
         var roster = (Map<?, ?>) field.get(view);
@@ -225,6 +292,15 @@ final class SettlementPeekClientChecks {
                 hover.invoke(view, 0.0, 0.0);
                 require(DialogueCameraOcclusion.hides(center.offset(-5, 4, 1)),
                         "focusing an obscured resident reveals its registered building without the peek key");
+                var point = project(view, entity.getBoundingBox().getCenter());
+                require((Boolean) world.invoke(view, point.x, point.y), "the focused resident is clickable outside the floating windows");
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                view.mouseReleased(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+                require(view.selectedResidents().equals(List.of(resident.id())), "an automatic cutaway lets clicks reach the obscured resident");
+                view.mouseClicked(point.x, point.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                require(view.contextPopup() != null && view.contextPopup().target().kind() == SettlementViewPopup.Kind.RESIDENT
+                        && resident.id().equals(view.contextPopup().target().id()), "right-clicking an automatic cutaway opens the interior resident's actions");
+                view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
                 view.clearPeek();
                 entity.setPos(center.getX() + 8.5, center.getY(), center.getZ() + 8.5);
                 hover.invoke(view, 0.0, 0.0);

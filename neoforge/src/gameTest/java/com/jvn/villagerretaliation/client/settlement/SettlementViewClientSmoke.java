@@ -2250,6 +2250,8 @@ public final class SettlementViewClientSmoke {
         BlockPos bed = center.offset(-6, 0, 0);
         level.setBlockAndUpdate(bed, Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH).setValue(BedBlock.PART, BedPart.FOOT));
         level.setBlockAndUpdate(bed.north(), Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH).setValue(BedBlock.PART, BedPart.HEAD));
+        if (Boolean.getBoolean("villagerretaliation.settlementWorldViewClientSmoke"))
+            level.setBlockAndUpdate(center.offset(-4, 0, 2), Blocks.TORCH.defaultBlockState());
         level.setBlockAndUpdate(center, Blocks.CRAFTING_TABLE.defaultBlockState());
         var registry = VillageAllegianceRegistrySavedData.get(level);
         var id = registry.create(level.getGameTime(), level.dimension().location(), center, "Willowbank");
