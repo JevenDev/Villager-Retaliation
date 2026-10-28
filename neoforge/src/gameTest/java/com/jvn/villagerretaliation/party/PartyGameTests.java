@@ -487,7 +487,6 @@ public final class PartyGameTests {
                 "new parties default to attack with party");
         party.setAttackMode(PartyAttackMode.HOSTILES);
         party.setFriendlyFireAllowed(true);
-        party.setSharedVillagerInventories(false);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
         helper.assertTrue(party.hasAdminPrivileges(leader), "party leader should always have admin privileges");
         helper.assertFalse(party.hasAdminPrivileges(second), "new party members should not have admin privileges");
@@ -549,6 +548,8 @@ public final class PartyGameTests {
         data.putInvitation(invitation);
         party.setMountMode(true);
         CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+        saved.getList("Parties", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0)
+                .putBoolean("SharedVillagerInventories", false);
         PartySavedData loaded = PartySavedData.load(saved, level.registryAccess());
         PartyRecord restored = loaded.party(party.id()).orElseThrow(
                 () -> new GameTestAssertException("serialized party did not load"));
@@ -1345,8 +1346,8 @@ public final class PartyGameTests {
                     "owner can explicitly delegate equipment access to their commander");
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, outsider),
                     "unrelated player job-inventory denial");
-            helper.assertTrue(PartyService.setPolicies(leader, null, null, false).success(),
-                    "leader should disable shared villager inventories");
+            helper.assertFalse(PartyService.setPolicies(leader, null, null, false).success(),
+                    "retired sharing policy must not report a successful change");
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
                     "legacy sharing policy must not revoke explicit admin inventory access");
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),

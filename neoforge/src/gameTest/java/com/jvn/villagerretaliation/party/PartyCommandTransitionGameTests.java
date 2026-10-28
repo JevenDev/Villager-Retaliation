@@ -36,7 +36,9 @@ public final class PartyCommandTransitionGameTests {
                 scenario("mount_commands", PartyGameTests::mountQuickCommandsPersistAndOnlyAffectEnabledAssignments),
                 scenario("mount_follow", PartyGameTests::mountedFollowerKeepsHorseAndUsesLiveFollowRoute),
                 scenario("mount_move", PartyGameTests::mountedMoveToKeepsHorseRouteActive),
-                scenario("mount_combat", PartyGameTests::mountedPartyVillagerRetainsTargetAndMeleeAttacks));
+                scenario("mount_combat", PartyGameTests::mountedPartyVillagerRetainsTargetAndMeleeAttacks),
+                scenario("inventory_authority", PartyGameTests::recruitmentPaymentExtensionCommandsInventoryAndDismissalAreAuthoritative),
+                scenario("permanent_membership", PartyGameTests::unloadedCompanionsPersistAcrossHistoricalExpiry));
     }
 
     private static net.minecraft.gametest.framework.TestFunction scenario(

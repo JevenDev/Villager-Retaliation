@@ -127,6 +127,7 @@
   "villagerretaliation.party.error.companion_owner_required": "Only the companion owner can manage this permission.",
   "villagerretaliation.party.error.companion_in_combat": "Goodbye is unavailable during combat or recovery. Wait until it is safe.",
   "villagerretaliation.party.error.companion_permanent": "This companion stays until you say goodbye. No renewal is needed.",
+  "villagerretaliation.party.error.shared_inventories_retired": "Party-wide inventory sharing is no longer available. Owners can grant equipment access to their assigned commander.",
   "villagerretaliation.party.error.companion_trust_required": "Rebuild this companion's trust before asking them to follow.",
   "villagerretaliation.party.companion_permanent": "Persistent companion. No rental payments. Wait Here keeps their place. Goodbye returns them home.",
   "villagerretaliation.gui.party.companion_permanent": "Persistent companion",

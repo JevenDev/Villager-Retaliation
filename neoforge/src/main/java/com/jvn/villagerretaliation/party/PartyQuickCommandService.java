@@ -104,7 +104,7 @@ public final class PartyQuickCommandService {
             case ATTACK -> attack(player, participants, payload.targetEntityId());
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
             case STAY_HERE -> stayHere(player, participants);
-            case REGROUP -> regroup(player, party, participants);
+            case REGROUP -> regroup(player, participants);
             case STAND_GUARD -> standGuard(player, participants);
             case RANGE -> setWeaponPreference(player, participants, PartyWeaponPreference.RANGED);
             case MELEE -> setWeaponPreference(player, participants, PartyWeaponPreference.MELEE);
@@ -113,8 +113,8 @@ public final class PartyQuickCommandService {
             case LOOT_CONTAINERS -> lootContainers(player, participants, payload.targetPosition());
             case UNEQUIP_WEAPONS -> unequipWeapons(player, participants);
             case REEQUIP_WEAPONS -> reequipWeapons(player, participants);
-            case RIDE_MOUNT -> setMountMode(player, party, participants, true);
-            case DISMOUNT_MOUNT -> setMountMode(player, party, participants, false);
+            case RIDE_MOUNT -> setMountMode(player, participants, true);
+            case DISMOUNT_MOUNT -> setMountMode(player, participants, false);
         };
         if (affected <= 0) {
             notice(player, targetRequired(payload.command())
@@ -353,7 +353,6 @@ public final class PartyQuickCommandService {
 
     private static int setMountMode(
             ServerPlayer player,
-            PartyRecord party,
             List<PartyVillagerRecord> participants,
             boolean enabled) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
@@ -704,7 +703,6 @@ public final class PartyQuickCommandService {
 
     private static int regroup(
             ServerPlayer player,
-            PartyRecord party,
             List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {

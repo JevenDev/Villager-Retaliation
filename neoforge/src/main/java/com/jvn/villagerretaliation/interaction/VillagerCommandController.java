@@ -154,9 +154,14 @@ public final class VillagerCommandController {
         double distanceSqr = villager.distanceToSqr(x, anchor.getY(), z);
         if (distanceSqr > STAY_RETURN_START_DISTANCE_SQR) {
             villager.getLookControl().setLookAt(x, anchor.getY(), z, 20.0F, 20.0F);
-            if (villager.getNavigation().moveTo(x, anchor.getY(), z, STAY_SPEED)) {
-                rememberOwnedNavigationTarget(villager);
+            PathState state = PATH_STATES.get(villager.getUUID());
+            if (state != null && state.targetId() == null
+                    && state.x() == x && state.y() == anchor.getY() && state.z() == z
+                    && villager.level().getGameTime() < state.nextRecalculation()) {
+                return;
             }
+            boolean moved = villager.getNavigation().moveTo(x, anchor.getY(), z, STAY_SPEED);
+            rememberPathAttempt(villager, null, x, anchor.getY(), z, moved);
         } else if (distanceSqr < STAY_RETURN_STOP_DISTANCE_SQR) {
             stopNavigation(villager);
         }
@@ -186,10 +191,10 @@ public final class VillagerCommandController {
         if (!(villager.level() instanceof ServerLevel level)) return false;
         PathState state = PATH_STATES.get(villager.getUUID());
         long gameTime = level.getGameTime();
-        boolean targetChanged = state == null || !state.targetId().equals(target.getUUID());
+        boolean targetChanged = state == null || !target.getUUID().equals(state.targetId());
         boolean targetMoved = state == null || target.distanceToSqr(state.x(), state.y(), state.z()) >= 1.0D;
-        if (!targetChanged && !targetMoved && !villager.getNavigation().isDone() && gameTime < state.nextRecalculation()) {
-            return true;
+        if (!targetChanged && (!state.pathStarted() || !targetMoved) && gameTime < state.nextRecalculation()) {
+            return state.pathStarted();
         }
         boolean moved;
         if (isMountedDriver(villager)) {
@@ -203,10 +208,14 @@ public final class VillagerCommandController {
                 moved = villager.getNavigation().moveTo(target, speed);
             }
         }
-        long delay = PATH_RECALCULATION_MIN_TICKS + villager.getRandom().nextInt(PATH_RECALCULATION_RANDOM_TICKS);
-        PATH_STATES.put(villager.getUUID(), new PathState(target.getUUID(), target.getX(), target.getY(), target.getZ(), gameTime + delay));
-        if (moved) rememberOwnedNavigationTarget(villager);
+        rememberPathAttempt(villager, target.getUUID(), target.getX(), target.getY(), target.getZ(), moved);
         return moved;
+    }
+
+    private static void rememberPathAttempt(Villager villager, UUID targetId, double x, double y, double z, boolean moved) {
+        long delay = PATH_RECALCULATION_MIN_TICKS + villager.getRandom().nextInt(PATH_RECALCULATION_RANDOM_TICKS);
+        PATH_STATES.put(villager.getUUID(), new PathState(targetId, x, y, z, villager.level().getGameTime() + delay, moved));
+        if (moved) rememberOwnedNavigationTarget(villager);
     }
 
     private static void rememberOwnedNavigationTarget(Villager villager) {
@@ -255,6 +264,6 @@ public final class VillagerCommandController {
         WAITING_FOR_OWNER
     }
 
-    private record PathState(UUID targetId, double x, double y, double z, long nextRecalculation) {
+    private record PathState(UUID targetId, double x, double y, double z, long nextRecalculation, boolean pathStarted) {
     }
 }

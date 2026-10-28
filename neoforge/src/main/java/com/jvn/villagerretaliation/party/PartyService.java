@@ -142,6 +142,9 @@ public final class PartyService {
         if (party == null || !party.hasAdminPrivileges(leader.getUUID())) {
             return PartyResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
+        if (sharedVillagerInventories != null) {
+            return PartyResult.failure("villagerretaliation.party.error.shared_inventories_retired");
+        }
         if (combatMode != null) {
             party.setCombatMode(combatMode);
             clearPartyCombatTargets(leader.getServer(), party);
@@ -149,9 +152,6 @@ public final class PartyService {
         if (attackMode != null) {
             party.setAttackMode(attackMode);
             clearPartyCombatTargets(leader.getServer(), party);
-        }
-        if (sharedVillagerInventories != null) {
-            party.setSharedVillagerInventories(sharedVillagerInventories);
         }
         if (friendlyFireAllowed != null) {
             party.setFriendlyFireAllowed(friendlyFireAllowed);

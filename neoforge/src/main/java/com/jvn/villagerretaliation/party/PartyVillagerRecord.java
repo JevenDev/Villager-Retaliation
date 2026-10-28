@@ -52,7 +52,7 @@ public final class PartyVillagerRecord {
     private ResourceLocation stayDimension;
     private BlockPos stayPosition;
     private long contractStartGameTime;
-    private long contractEndGameTime;
+    private final long contractEndGameTime;
     private long legacyContractEndGameTime;
     private boolean commanderEquipmentAccess;
     private int durationDays;
@@ -316,12 +316,6 @@ public final class PartyVillagerRecord {
     void clearMoveToReturnCommander() {
         this.moveToReturnCommanderId = null;
         this.moveToHolding = false;
-    }
-
-    void extend(long newEndGameTime, int additionalDays, int additionalEmeralds) {
-        this.contractEndGameTime = Math.max(this.contractEndGameTime, newEndGameTime);
-        this.durationDays += Math.max(0, additionalDays);
-        this.emeraldsPaid += Math.max(0, additionalEmeralds);
     }
 
     boolean updateDisplay(

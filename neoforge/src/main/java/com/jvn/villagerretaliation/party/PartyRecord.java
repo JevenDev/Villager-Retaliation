@@ -51,7 +51,7 @@ public final class PartyRecord {
     private final Set<UUID> alliedPartyIdsView;
     private PartyCombatMode combatMode;
     private PartyAttackMode attackMode;
-    private boolean sharedVillagerInventories;
+    private final boolean sharedVillagerInventories;
     private boolean friendlyFireAllowed;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
@@ -246,10 +246,6 @@ public final class PartyRecord {
     void setAttackMode(PartyAttackMode mode) {
         this.attackMode = mode == null ? PartyAttackMode.ALL : mode;
         this.villagers.forEach(villager -> villager.bindPartyPolicies(this.combatMode, this.attackMode));
-    }
-
-    void setSharedVillagerInventories(boolean enabled) {
-        this.sharedVillagerInventories = enabled;
     }
 
     void setFriendlyFireAllowed(boolean enabled) {

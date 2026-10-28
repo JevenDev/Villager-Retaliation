@@ -34,8 +34,8 @@ public final class PartyVillagerContractService {
     private static final String PARTY_CONTRACT_ID_TAG = "VillagerRetaliationPartyContractId";
     private static final String PARTY_RECRUITER_ID_TAG = "VillagerRetaliationPartyRecruiterId";
     private static final String EXPIRED_PARTY_ID_TAG = "VillagerRetaliationExpiredPartyId";
-    private static final long EXPIRATION_SCAN_INTERVAL_TICKS = 20L;
-    private static long nextExpirationScanGameTime = Long.MIN_VALUE;
+    private static final long MAINTENANCE_INTERVAL_TICKS = 20L;
+    private static long nextMaintenanceGameTime = Long.MIN_VALUE;
 
     private PartyVillagerContractService() {
     }
@@ -167,34 +167,7 @@ public final class PartyVillagerContractService {
         if (!CompanionAuthority.canManage(player.getUUID(), party, record)) {
             return ContractResult.failure("villagerretaliation.party.error.not_in_party");
         }
-        long now = level.getServer().overworld().getGameTime();
-        if (VillagerContractTime.isExpired(now, record.contractEndGameTime())) {
-            expire(level.getServer(), party, record);
-            return ContractResult.failure("villagerretaliation.party.error.contract_inactive");
-        }
-        if (record.contractEndGameTime() == Long.MAX_VALUE) {
-            return ContractResult.failure("villagerretaliation.party.error.companion_permanent");
-        }
-        int extensionDays = record.availableExtensionDays(now, requestedDays);
-        if (requestedDays <= 0 || extensionDays != requestedDays) {
-            return ContractResult.failure("villagerretaliation.party.error.contract_maximum");
-        }
-        int cost = Math.multiplyExact(extensionDays, DAILY_EMERALD_COST);
-        if (!VillagerCurrencyPayment.tryRemove(player, cost)) {
-            return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
-        }
-        VillagerWalletService.addCurrency(villager, cost);
-        long newEnd = VillagerContractTime.extendEnd(now, record.contractEndGameTime(), extensionDays);
-        record.extend(newEnd, extensionDays, cost);
-        PartyService.markChanged(level);
-        villager.setPersistenceRequired();
-        PartySyncService.syncParty(level.getServer(), party.id());
-        return ContractResult.success(
-                "villagerretaliation.party.contract_extended",
-                party.id(),
-                record,
-                extensionDays,
-                cost);
+        return ContractResult.failure("villagerretaliation.party.error.companion_permanent");
     }
 
     public static ContractResult setFollowing(ServerPlayer player, Villager villager) {
@@ -291,21 +264,15 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        if (!isAuthorizedInventoryUser(player, party, record)) {
-            return false;
-        }
-        long now = level.getServer().overworld().getGameTime();
-        return !VillagerContractTime.isExpired(now, record.contractEndGameTime());
+        return isAuthorizedInventoryUser(player, party, record);
     }
 
     public static Optional<UUID> currentContractId(ServerLevel level, Villager villager) {
         if (level == null || villager == null) {
             return Optional.empty();
         }
-        long now = level.getServer().overworld().getGameTime();
         return PartyService.getPartyForVillager(level, villager.getUUID())
                 .map(party -> party.villager(villager.getUUID()))
-                .filter(record -> !VillagerContractTime.isExpired(now, record.contractEndGameTime()))
                 .map(PartyVillagerRecord::contractId);
     }
 
@@ -421,21 +388,11 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        return record != null && !VillagerContractTime.isExpired(
-                level.getServer().overworld().getGameTime(),
-                record.contractEndGameTime());
+        return record != null;
     }
 
     public static OptionalLong getPartyEndGameTime(ServerLevel level, Villager villager) {
-        if (level == null || villager == null) {
-            return OptionalLong.empty();
-        }
-        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
-        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        return record == null || record.contractEndGameTime() == Long.MAX_VALUE || VillagerContractTime.isExpired(
-                level.getServer().overworld().getGameTime(), record.contractEndGameTime())
-                ? OptionalLong.empty()
-                : OptionalLong.of(record.contractEndGameTime());
+        return OptionalLong.empty();
     }
 
     public static void onVillagerLoaded(Villager villager) {
@@ -450,11 +407,6 @@ public final class PartyVillagerContractService {
                 rememberJobInventoryClaimFromEntityState(level, villager);
                 cleanupEntity(villager);
             }
-            return;
-        }
-        long now = level.getServer().overworld().getGameTime();
-        if (VillagerContractTime.isExpired(now, record.contractEndGameTime())) {
-            expire(level.getServer(), party, record);
             return;
         }
         if (record.updateDisplay(
@@ -532,23 +484,12 @@ public final class PartyVillagerContractService {
             return;
         }
         long now = server.overworld().getGameTime();
-        if (now < nextExpirationScanGameTime) {
+        if (now < nextMaintenanceGameTime) {
             return;
         }
-        nextExpirationScanGameTime = now + EXPIRATION_SCAN_INTERVAL_TICKS;
+        nextMaintenanceGameTime = now + MAINTENANCE_INTERVAL_TICKS;
         CompanionLifecycleService.migrate(server);
-        List<ExpiredContract> expired = new ArrayList<>();
         PartySavedData data = PartySavedData.get(server.overworld());
-        for (PartyRecord party : data.partyRecords()) {
-            for (PartyVillagerRecord villager : party.villagers()) {
-                if (VillagerContractTime.isExpired(now, villager.contractEndGameTime())) {
-                    expired.add(new ExpiredContract(party, villager));
-                }
-            }
-        }
-        for (ExpiredContract contract : expired) {
-            expire(server, contract.party(), contract.villager());
-        }
         var serviceParties = new ArrayList<PartyRecord>();
         data.partyRecords().forEach(serviceParties::add);
         for (PartyRecord party : serviceParties) {
@@ -622,7 +563,7 @@ public final class PartyVillagerContractService {
     }
 
     public static void clearRuntimeState() {
-        nextExpirationScanGameTime = Long.MIN_VALUE;
+        nextMaintenanceGameTime = Long.MIN_VALUE;
         com.jvn.villagerretaliation.quest.QuestContributionService.clearRuntimeState();
     }
 
@@ -634,10 +575,6 @@ public final class PartyVillagerContractService {
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         if (!isAuthorizedLeader(player, party, record)) {
-            return null;
-        }
-        if (VillagerContractTime.isExpired(level.getServer().overworld().getGameTime(), record.contractEndGameTime())) {
-            expire(level.getServer(), party, record);
             return null;
         }
         return new PartyVillagerContext(level, party, record);
@@ -653,35 +590,8 @@ public final class PartyVillagerContractService {
         return ContractResult.success(messageKey, context.party().id(), context.record(), 0, 0);
     }
 
-    private static boolean isAuthorizedPartyMember(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
-        return player != null
-                && party != null
-                && record != null
-                && party.playerIds().contains(player.getUUID());
-    }
-
     private static boolean isAuthorizedInventoryUser(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
         return player != null && CompanionAuthority.canEquip(player.getUUID(), party, record);
-    }
-
-    private static void expire(MinecraftServer server, PartyRecord party, PartyVillagerRecord record) {
-        if (party == null || record == null) {
-            return;
-        }
-        PartyVillagerRecord removed = PartyService.removeVillager(server.overworld(), record.villagerId());
-        if (removed == null) {
-            return;
-        }
-        Villager loaded = VillagerEntityResolver.loaded(server, record.villagerId());
-        if (loaded != null) {
-            updateLastKnownLocation(record, loaded);
-            loaded.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, party.id());
-            rememberJobInventoryClaim((ServerLevel) loaded.level(), loaded, record.contractId(), record.recruiterId());
-            cleanupEntity(loaded);
-            closeJobInventories(server, loaded.getId());
-        }
-        notifyLeader(server, party, "villagerretaliation.party.contract_expired", record);
-        PartySyncService.syncParty(server, party.id());
     }
 
     private static void attachEntityState(ServerLevel level, Villager villager, UUID partyId, PartyVillagerRecord record) {
@@ -886,8 +796,5 @@ public final class PartyVillagerContractService {
     }
 
     private record PartyVillagerContext(ServerLevel level, PartyRecord party, PartyVillagerRecord record) {
-    }
-
-    private record ExpiredContract(PartyRecord party, PartyVillagerRecord villager) {
     }
 }
