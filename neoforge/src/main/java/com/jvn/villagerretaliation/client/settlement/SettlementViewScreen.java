@@ -65,10 +65,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<UUID, SettlementManagementPayload.Resident> roster = new LinkedHashMap<>();
     private final SettlementViewBrowser browser = new SettlementViewBrowser();
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
-    private final SettlementUiWindow sidebarWindow = new SettlementUiWindow();
-    private final SettlementUiWindow mapWindow = new SettlementUiWindow();
+    private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
+    private final SettlementUiWindow mapWindow = new SettlementUiWindow(68, 64 + SettlementUiWindow.TITLE_HEIGHT + 4);
     private final List<SettlementUiWindow> windows = new ArrayList<>(List.of(this.sidebarWindow, this.mapWindow));
     private SettlementUiWindow draggingWindow;
+    private SettlementUiWindow resizingWindow;
     private final List<Button> browserRows = new ArrayList<>();
     private final List<net.minecraft.client.gui.components.AbstractWidget> browserWidgets = new ArrayList<>();
     private final SettlementSelectionInspector inspector = new SettlementSelectionInspector(this::inspectorAction, this::updateInspector,
@@ -393,7 +394,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.sidebarWidgets.clear();
         this.browserRows.clear();
         this.browserWidgets.clear();
-        this.layout = new SettlementViewLayout(this.width, this.height, this.preferences.sidebar, this.preferences.map);
+        this.layout = new SettlementViewLayout(this.width, this.height, this.preferences.sidebar, this.preferences.map,
+                this.sidebarWindow.position(), this.mapWindow.position());
         this.panelWidth = this.layout.panelWidth;
         this.panelLeft = this.layout.panelLeft;
         this.sidebarWindow.layout(this.panelLeft + 2, SettlementViewLayout.HEADER_HEIGHT + 2, this.panelWidth - 4,
@@ -540,7 +542,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementViewUi.IconButton tool(Component label, int top, net.minecraft.world.item.Item icon, boolean portrait,
                                              java.util.function.BooleanSupplier selected, Runnable action) {
         return new SettlementViewUi.IconButton(label, 6, top, this.layout.railSize, this.layout.railSize,
-                new net.minecraft.world.item.ItemStack(icon), false, portrait, selected, action);
+                new net.minecraft.world.item.ItemStack(icon), false, portrait, selected, action).borderless();
     }
 
     private void browseResidents() {
@@ -592,7 +594,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 this.browser.filter = "All";
                 this.browser.scroll = 0;
                 updateBrowserRows();
-            }));
+            }).borderless());
             left += w;
         }
         this.search = addRenderableWidget(new net.minecraft.client.gui.components.EditBox(this.font,
@@ -907,6 +909,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 this.inspector.render(graphics, this.font, pointerX, pointerY);
             } else renderMap(graphics, pointerX, pointerY);
             for (var widget : window.widgets()) widget.render(graphics, pointerX, pointerY, partialTick);
+            window.renderResizeHandles(graphics, pointerX, pointerY);
             graphics.pose().popPose();
         }
         if (allLines.size() > lines.size() && mouseX < this.panelLeft && mouseY >= this.height - 42) {
@@ -1752,6 +1755,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.routeDraft != null) this.routeDraft.cancelDrag();
         this.panning = false;
         this.draggingWindow = null;
+        this.resizingWindow = null;
         if (this.gizmo != null) this.gizmo.end();
         this.heldKeys.clear();
         this.peekKey = null;
@@ -1940,6 +1944,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (clickedWindow != null) {
             this.windows.remove(clickedWindow);
             this.windows.add(clickedWindow);
+            if (button == 0 && clickedWindow.resizeCorner(x, y) != 0) {
+                clearControls();
+                this.boxX = -1;
+                this.boxDragging = false;
+                setFocused(null);
+                this.resizingWindow = clickedWindow;
+                clickedWindow.grabResize(x, y);
+                return true;
+            }
             for (var widget : clickedWindow.widgets()) if (widget.visible && widget.mouseClicked(x, y, button)) {
                 setFocused(widget);
                 if (button == 0) setDragging(true);
@@ -2111,6 +2124,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
         if (SettlementViewClient.transitioning()) return true;
+        if (button == 0 && this.resizingWindow != null) {
+            var window = this.resizingWindow;
+            if (window.resize(x, y)) {
+                rebuildWidgets();
+                this.resizingWindow = window;
+            }
+            return true;
+        }
         if (button == 0 && this.draggingWindow != null) {
             int[] delta = this.draggingWindow.drag(x, y);
             if (this.draggingWindow == this.sidebarWindow) this.inspector.move(delta[0], delta[1]);
@@ -2164,8 +2185,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.peekKey = null;
             return true;
         }
-        if (button == 0 && this.draggingWindow != null) {
+        if (button == 0 && (this.draggingWindow != null || this.resizingWindow != null)) {
+            if (this.resizingWindow != null) mouseDragged(x, y, button, 0, 0);
             this.draggingWindow = null;
+            this.resizingWindow = null;
             this.preferences.sidebarWindow = this.sidebarWindow.position();
             this.preferences.mapWindow = this.mapWindow.position();
             savePreferences();

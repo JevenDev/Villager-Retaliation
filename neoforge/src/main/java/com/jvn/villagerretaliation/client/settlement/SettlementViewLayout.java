@@ -30,5 +30,28 @@ final class SettlementViewLayout {
         this.commandTop = this.commandBottom - 46;
     }
 
+    SettlementViewLayout(int width, int height, boolean sidebar, boolean map,
+                         SettlementViewPreferences.WindowPosition sidebarWindow, SettlementViewPreferences.WindowPosition mapWindow) {
+        var defaults = new SettlementViewLayout(width, height, sidebar, map);
+        this.panelWidth = sidebarWindow != null && sidebarWindow.width() > 0
+                ? SettlementUiWindow.clampSize(sidebarWindow.width(), 140, width - 4) + 4 : defaults.panelWidth;
+        this.panelLeft = defaults.panelLeft;
+        this.railSize = defaults.railSize;
+        this.worldLeft = defaults.worldLeft;
+        this.contentBottom = sidebarWindow != null && sidebarWindow.height() > 0
+                ? HEADER_HEIGHT + SettlementUiWindow.clampSize(sidebarWindow.height(), 140, height - HEADER_HEIGHT - 4)
+                : defaults.contentBottom;
+        this.mapWidth = mapWindow != null && mapWindow.width() > 0
+                ? SettlementUiWindow.clampSize(mapWindow.width() - 4, 64, width - 8) : defaults.mapWidth;
+        this.mapHeight = mapWindow != null && mapWindow.height() > 0
+                ? SettlementUiWindow.clampSize(mapWindow.height() - SettlementUiWindow.TITLE_HEIGHT - 4, 64,
+                        height - HEADER_HEIGHT - SettlementUiWindow.TITLE_HEIGHT - 8) : defaults.mapHeight;
+        this.mapLeft = defaults.mapLeft;
+        this.mapTop = defaults.mapTop;
+        this.dockedMap = defaults.dockedMap;
+        this.commandBottom = defaults.commandBottom;
+        this.commandTop = defaults.commandTop;
+    }
+
     int browserRows() { return Math.max(0, (this.contentBottom - 138) / 28); }
 }

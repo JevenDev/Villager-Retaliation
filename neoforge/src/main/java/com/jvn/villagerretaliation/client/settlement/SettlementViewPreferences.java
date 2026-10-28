@@ -17,7 +17,11 @@ import net.neoforged.fml.loading.FMLPaths;
 public final class SettlementViewPreferences {
     private final Path path;
     private boolean readable = true;
-    public record WindowPosition(int left, int top) { }
+    public record WindowPosition(int left, int top, int width, int height) {
+        public WindowPosition(int left, int top) {
+            this(left, top, 0, 0);
+        }
+    }
 
     public WindowPosition sidebarWindow;
     public WindowPosition mapWindow;
@@ -81,13 +85,23 @@ public final class SettlementViewPreferences {
         String top = values.getProperty(key + ".top");
         if (left == null && top == null) return null;
         if (left == null || top == null) throw new IllegalArgumentException("Incomplete window position");
-        return new WindowPosition(Integer.parseInt(left), Integer.parseInt(top));
+        String width = values.getProperty(key + ".width");
+        String height = values.getProperty(key + ".height");
+        if (width == null && height == null) return new WindowPosition(Integer.parseInt(left), Integer.parseInt(top));
+        if (width == null || height == null) throw new IllegalArgumentException("Incomplete window size");
+        int parsedWidth = Integer.parseInt(width), parsedHeight = Integer.parseInt(height);
+        if (parsedWidth <= 0 || parsedHeight <= 0) throw new IllegalArgumentException("Invalid window size");
+        return new WindowPosition(Integer.parseInt(left), Integer.parseInt(top), parsedWidth, parsedHeight);
     }
 
     private static void position(Properties values, String key, WindowPosition position) {
         if (position == null) return;
         values.setProperty(key + ".left", Integer.toString(position.left()));
         values.setProperty(key + ".top", Integer.toString(position.top()));
+        if (position.width() > 0 && position.height() > 0) {
+            values.setProperty(key + ".width", Integer.toString(position.width()));
+            values.setProperty(key + ".height", Integer.toString(position.height()));
+        }
     }
 
     private static boolean bool(Properties values, String key, boolean fallback) {

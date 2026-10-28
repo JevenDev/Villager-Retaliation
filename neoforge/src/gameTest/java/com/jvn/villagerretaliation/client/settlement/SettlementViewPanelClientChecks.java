@@ -82,6 +82,7 @@ public final class SettlementViewPanelClientChecks {
             view.resize(minecraft, view.width, view.height);
             require(window.left() == movedLeft && window.top() == movedTop,
                     "rebuilding controls retains a dragged window position");
+            verifyResizing(view, window);
             view.mouseClicked(window.left() + 4, window.top() + 4, 0);
             view.mouseDragged(left + 4, top + 4, 0, left - window.left(), top - window.top());
             view.mouseReleased(left + 4, top + 4, 0);
@@ -91,6 +92,77 @@ public final class SettlementViewPanelClientChecks {
                 "dragging and rebuilding windows leave the world camera unchanged");
         var restored = SettlementViewPreferences.forSettlement(view.parent().snapshot().header().id());
         require(restored.sidebarWindow != null && restored.mapWindow != null, "dragged window positions survive preference reload");
+    }
+
+    private static void verifyResizing(SettlementViewScreen view, SettlementUiWindow window) {
+        var minecraft = Minecraft.getInstance();
+        var original = window.position();
+        int width = window.width(), height = window.height();
+        var search = window.widgets().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElse(null);
+        String query = search == null ? "" : search.getValue();
+        if (search != null) search.setValue("resize");
+        var selected = view.selectedResidents();
+        int x = window.left() + width - 2, y = window.top() + height - 2;
+        require(view.mouseClicked(x, y, 0), "the bottom right resize handle captures the pointer");
+        view.mouseDragged(x + 24, y + 20, 0, 24, 20);
+        view.mouseDragged(x + 48, y + 40, 0, 24, 20);
+        view.mouseReleased(x + 48, y + 40, 0);
+        require(window.width() == Math.min(width + 48, view.width - window.left() - 2)
+                        && window.height() == Math.min(height + 40, view.height - window.top() - 2),
+                "successive resize events reflow the window without losing the drag");
+        require(window.widgets().stream().filter(widget -> widget.visible).allMatch(widget ->
+                        widget.getX() >= window.left() && widget.getRight() <= window.left() + window.width()
+                                && widget.getY() >= window.top() && widget.getBottom() <= window.top() + window.height()),
+                "resized controls stay inside their window");
+        require(view.selectedResidents().equals(selected), "resizing does not alter the world selection");
+        if (search != null) {
+            var resizedSearch = window.widgets().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                    .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow();
+            require(resizedSearch.getValue().equals("resize") && resizedSearch.getWidth() == window.width() - 10,
+                    "resizing preserves the browser query and expands its input");
+            resizedSearch.setValue(query);
+        } else {
+            var map = view.overviewMap();
+            require(map.width == window.width() - 4 && map.height == window.height() - SettlementUiWindow.TITLE_HEIGHT - 4,
+                    "the map viewport follows the independently resized dimensions");
+            require(map.contains(map.left + map.width - 1, map.top + map.height - 1),
+                    "resized map input covers the expanded viewport");
+        }
+        var resized = window.position();
+        var restored = SettlementViewPreferences.forSettlement(view.parent().snapshot().header().id());
+        require(resized.equals(search == null ? restored.mapWindow : restored.sidebarWindow),
+                "window dimensions and position survive preference reload");
+        view.resize(minecraft, view.width, view.height);
+        require(window.width() == resized.width() && window.height() == resized.height(),
+                "rebuilding controls retains the resized dimensions");
+        int right = window.left() + window.width();
+        x = window.left() + 2;
+        y = window.top() + window.height() - 2;
+        view.mouseClicked(x, y, 0);
+        view.mouseDragged(right + 1000, -1000, 0, 1000, -1000);
+        view.mouseReleased(right + 1000, -1000, 0);
+        require(window.left() + window.width() == right
+                        && window.width() == (search == null ? 68 : 140)
+                        && window.height() == (search == null ? 82 : 140),
+                "left corner resizing keeps the opposite edge fixed and enforces usable minimum sizes");
+        x = window.left() + 2;
+        y = window.top() + window.height() - 2;
+        view.mouseClicked(x, y, 0);
+        view.mouseDragged(-1000, 10000, 0, -1000, 10000);
+        view.mouseReleased(-1000, 10000, 0);
+        require(window.left() == 2 && window.left() + window.width() == right
+                        && window.top() + window.height() == view.height - 2,
+                "expanding from the left corner stops at the screen edges");
+        int screenWidth = view.width, screenHeight = view.height;
+        view.resize(minecraft, 320, 180);
+        require(window.left() >= 2 && window.top() >= SettlementViewLayout.HEADER_HEIGHT + 2
+                        && window.left() + window.width() <= 318 && window.top() + window.height() <= 178,
+                "saved window bounds fit after reducing the screen size");
+        window.restore(original);
+        view.resize(minecraft, screenWidth, screenHeight);
+        require(window.width() == width && window.height() == height,
+                "legacy position-only preferences retain the automatic panel sizes");
     }
 
     public static void verifyPopup() {

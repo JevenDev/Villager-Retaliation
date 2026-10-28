@@ -4,10 +4,13 @@ import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 
 final class SettlementUiWindow {
     static final int TITLE_HEIGHT = 14;
+    private final int minimumWidth;
+    private final int minimumHeight;
     private List<AbstractWidget> widgets = List.of();
     private SettlementViewPreferences.WindowPosition position;
     private int defaultLeft;
@@ -20,6 +23,13 @@ final class SettlementUiWindow {
     private int screenHeight;
     private double grabX;
     private double grabY;
+    private int resizeCorner;
+    private int resizeAnchor;
+
+    SettlementUiWindow(int minimumWidth, int minimumHeight) {
+        this.minimumWidth = minimumWidth;
+        this.minimumHeight = minimumHeight;
+    }
 
     void restore(SettlementViewPreferences.WindowPosition position) { this.position = position; }
 
@@ -42,6 +52,8 @@ final class SettlementUiWindow {
 
     int left() { return this.left; }
     int top() { return this.top; }
+    int width() { return this.width; }
+    int height() { return this.height; }
     int offsetX() { return this.left - this.defaultLeft; }
     int offsetY() { return this.top - this.defaultTop; }
     List<AbstractWidget> widgets() { return this.widgets; }
@@ -64,16 +76,64 @@ final class SettlementUiWindow {
         int dx = nextX - this.left, dy = nextY - this.top;
         this.left = nextX;
         this.top = nextY;
-        this.position = new SettlementViewPreferences.WindowPosition(nextX, nextY);
+        this.position = new SettlementViewPreferences.WindowPosition(nextX, nextY,
+                this.position == null ? 0 : this.position.width(), this.position == null ? 0 : this.position.height());
         for (var widget : this.widgets) widget.setPosition(widget.getX() + dx, widget.getY() + dy);
         return new int[]{dx, dy};
     }
 
+    int resizeCorner(double x, double y) {
+        if (!contains(x, y) || y < this.top + this.height - 8) return 0;
+        if (x < this.left + 8) return -1;
+        return x >= this.left + this.width - 8 ? 1 : 0;
+    }
+
+    void grabResize(double x, double y) {
+        this.resizeCorner = resizeCorner(x, y);
+        this.resizeAnchor = this.resizeCorner < 0 ? this.left + this.width : this.left;
+        this.grabX = x - (this.resizeCorner < 0 ? this.left : this.left + this.width);
+        this.grabY = y - this.top - this.height;
+    }
+
+    boolean resize(double x, double y) {
+        int edge = (int) Math.round(x - this.grabX);
+        int width = clampSize(this.resizeCorner < 0 ? this.resizeAnchor - edge : edge - this.resizeAnchor,
+                this.minimumWidth, this.resizeCorner < 0 ? this.resizeAnchor - 2 : this.screenWidth - this.resizeAnchor - 2);
+        int height = clampSize((int) Math.round(y - this.grabY) - this.top,
+                this.minimumHeight, this.screenHeight - this.top - 2);
+        int left = this.resizeCorner < 0 ? this.resizeAnchor - width : this.resizeAnchor;
+        if (left == this.left && width == this.width && height == this.height) return false;
+        this.left = left;
+        this.width = width;
+        this.height = height;
+        this.position = new SettlementViewPreferences.WindowPosition(left, this.top, width, height);
+        return true;
+    }
+
+    static int clampSize(int size, int minimum, int maximum) {
+        maximum = Math.max(1, maximum);
+        return Math.clamp(size, Math.min(minimum, maximum), maximum);
+    }
+
     void render(GuiGraphics graphics, Font font, Component title) {
-        SettlementViewUi.frame(graphics, this.left, this.top, this.width, this.height);
-        graphics.fill(this.left + 1, this.top + 1, this.left + this.width - 1, this.top + TITLE_HEIGHT, 0xFF383838);
+        TooltipRenderUtil.renderTooltipBackground(graphics, this.left + 4, this.top + 4, this.width - 8, this.height - 8, 0);
         graphics.drawString(font, font.plainSubstrByWidth(title.getString(), Math.max(0, this.width - 8)),
                 this.left + 4, this.top + 3, 0xFFFFFF, false);
+    }
+
+    void renderResizeHandles(GuiGraphics graphics, int mouseX, int mouseY) {
+        int hovered = resizeCorner(mouseX, mouseY);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 400);
+        for (int corner : new int[]{-1, 1}) {
+            int color = hovered == corner ? 0xFFFFFFFF : 0xFF888888;
+            for (int offset = 0; offset < 3; offset++) {
+                int x = corner < 0 ? this.left + 2 + offset * 2 : this.left + this.width - 3 - offset * 2;
+                int bottom = this.top + this.height - 2;
+                graphics.fill(x, bottom - 1 - offset * 2, x + 1, bottom, color);
+            }
+        }
+        graphics.pose().popPose();
     }
 
     private int clampX(int x) { return Math.clamp(x, 2, Math.max(2, this.screenWidth - this.width - 2)); }

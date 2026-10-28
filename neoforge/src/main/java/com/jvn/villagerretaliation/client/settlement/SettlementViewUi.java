@@ -95,6 +95,7 @@ final class SettlementViewUi {
         private final boolean label;
         private final boolean portrait;
         private Component symbol;
+        private boolean borderless;
 
         IconButton(Component message, int left, int top, int width, int height, ItemStack icon,
                    boolean label, boolean portrait, BooleanSupplier selected, Runnable action) {
@@ -111,11 +112,22 @@ final class SettlementViewUi {
             return this;
         }
 
+        IconButton borderless() {
+            this.borderless = true;
+            return this;
+        }
+
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             boolean selected = this.selected.getAsBoolean();
-            com.jvn.villagerretaliation.client.ui.VillagerUi.row(graphics, getX(), getY(), getWidth(), getHeight(),
-                    selected || isFocused(), isHoveredOrFocused() && this.active);
+            if (this.borderless) {
+                if (this.active && isHoveredOrFocused()) graphics.fill(getX(), getY(), getRight(), getBottom(), 0x30FFFFFF);
+                if (selected || isFocused()) graphics.fill(getX() + 2, getBottom() - 2, getRight() - 2, getBottom() - 1,
+                        this.active ? 0xFFFFFFFF : 0xFF777777);
+            } else {
+                com.jvn.villagerretaliation.client.ui.VillagerUi.row(graphics, getX(), getY(), getWidth(), getHeight(),
+                        selected || isFocused(), isHoveredOrFocused() && this.active);
+            }
             int size = this.label && this.icon.isEmpty() && !this.portrait ? 0 : Math.min(16, getHeight() - 6);
             int left = this.label ? getX() + 5 : getX() + (getWidth() - size) / 2;
             int top = getY() + (getHeight() - size) / 2;
