@@ -103,7 +103,7 @@ public final class SettlementCourierGameTests {
         helper.assertTrue(abstractCopy.isCanceled(), "stored ownership rejects even the previous physical incarnation");
         helper.succeed();
     }
-    @GameTest(template = "empty", timeoutTicks = 500)
+    @GameTest(template = "empty", timeoutTicks = 500, batch = "settlement_courier_native_walk")
     public static void physicalCourierWalksAndNativeCheckpointCompletes(GameTestHelper helper) {
         var fixture = fixture(helper, false); var request = fixture.request; var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));
@@ -116,7 +116,10 @@ public final class SettlementCourierGameTests {
         courier.getPersistentData().putUUID(SettlementCourierService.JOURNEY, journey.id); courier.getPersistentData().putLong(SettlementCourierService.INCARNATION, 2);
         helper.assertTrue(level.addFreshEntity(courier), "current courier is added to ticking terrain");
         var runtime = new SettlementCourierService.Runtime();
-        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(journey.step >= 2 || journey.leg != SettlementCourierJourney.Leg.APPROACH, "physical navigation reaches consecutive route steps: " + journey.presence + "/" + journey.blocker + "/" + courier.position() + "/" + courier.getNavigation().isDone() + "/" + level.isPositionEntityTicking(courier.blockPosition()) + "/" + courier.getPersistentData().getLong(SettlementCourierService.INCARNATION)))
+        helper.startSequence().thenWaitUntil(() -> {
+            helper.assertTrue(SettlementCourierService.owns(courier), "the live courier retains its registered journey throughout navigation");
+            helper.assertTrue(journey.step >= 2 || journey.leg != SettlementCourierJourney.Leg.APPROACH, "physical navigation reaches consecutive route steps: " + journey.presence + "/" + journey.blocker + "/" + courier.position() + "/" + courier.getNavigation().isDone() + "/" + level.isPositionEntityTicking(courier.blockPosition()) + "/" + courier.getPersistentData().getLong(SettlementCourierService.INCARNATION));
+        })
                 .thenWaitUntil(() -> helper.assertTrue(SettlementCourierService.nativeDurable(level, journey, courier, runtime, level.getGameTime()), "native entity checkpoint finishes without blocking"))
                 .thenExecute(() -> {
                     helper.assertValueEqual(level.getEntity(courier.getUUID()), courier, "resident identity remains unchanged");
@@ -245,6 +248,8 @@ public final class SettlementCourierGameTests {
         data.aid().couriers.remove(resident.id()); request.journey = null;
         resident.courier(request.id(), 1, false); var context = resident.context(level);
         context.setHealth(14); context.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+        com.jvn.villagerretaliation.villager.VillagerRecoveryService.restoreRecoveryState(context,
+                new com.jvn.villagerretaliation.villager.VillagerRecoveryService.RecoverySnapshot(17, 0.0F, 0.0F, 0));
         resident.observe(context, fixture.home, level.getGameTime());
         for (int slot = 0; slot < fixture.donor.depot().getContainerSize(); slot++) fixture.donor.depot().setItem(slot, new ItemStack(Items.BREAD, 64));
         var boat = new ItemStack(Items.SPRUCE_BOAT); boat.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Aid ferry"));

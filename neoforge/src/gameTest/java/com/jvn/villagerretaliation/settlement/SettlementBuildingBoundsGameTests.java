@@ -43,6 +43,8 @@ public final class SettlementBuildingBoundsGameTests {
                     new BlockPos(east - width, fixture.town().center().getY(), south - depth))) {
                 var origin = min.subtract(plan.localMin());
                 load(helper, plan.worldMin(origin), plan.worldMax(origin));
+                for (var position : BlockPos.betweenClosed(plan.worldMin(origin), plan.worldMax(origin)))
+                    helper.getLevel().setBlock(position, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
                 helper.assertTrue(fixture.town().contains(plan.worldMin(origin), plan.worldMax(origin)), "the visible farm footprint is entirely owned");
                 var workplace = SettlementConstructionService.workplace(helper.getLevel(), fixture.town(), plan, origin, UUID.randomUUID());
                 helper.assertTrue(fixture.town().owns(workplace), "optional work margins remain inside the owned corner: " + rotation);
