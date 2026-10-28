@@ -20,6 +20,11 @@ public final class ExploredMapRenderer implements AutoCloseable {
         MapFogRenderer.render(graphics, view, ready ? this.tiles : null, cache, lighting);
     }
 
+    void prepare(MapView view) {
+        var repository = ExploredMapClient.repository();
+        if (repository != null) tiles.update(repository, ExploredMapClient.tiles(), view);
+    }
+
     public List<MapSnapshot.Marker> markers() { return this.tiles.markers(); }
 
     @Override

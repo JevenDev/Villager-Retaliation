@@ -12,7 +12,7 @@ final class MapPlayerIcon {
         graphics.pose().pushPose(); graphics.pose().translate(x, y, 0);
         graphics.pose().mulPose(Axis.ZP.rotationDegrees(yaw + 180));
         RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc();
-        graphics.blit(TEXTURE, -8, -8, 0, 0, 16, 16, 16, 16);
+        graphics.blit(TEXTURE, -7, -5, 0, 0, 14, 10, 14, 10);
         graphics.pose().popPose();
     }
 }

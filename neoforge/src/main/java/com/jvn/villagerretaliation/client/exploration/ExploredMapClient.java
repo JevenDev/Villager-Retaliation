@@ -16,6 +16,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,6 +44,9 @@ public final class ExploredMapClient {
     public static void accept(MapObservationPayload payload) {
         var mc = Minecraft.getInstance();
         if (mc.level != null && mc.player != null && mc.level.dimension().location().equals(payload.dimension())) observation = payload;
+    }
+    @SubscribeEvent public static void camera(ViewportEvent.ComputeCameraAngles event) {
+        if (Minecraft.getInstance().screen instanceof ExploredMapScreen map) event.setPitch(map.transitionPitch(event.getPitch()));
     }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { reset(); observation = null; }
     private static void reset() {

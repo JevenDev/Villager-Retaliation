@@ -292,6 +292,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_SKILL_GROWTH_FEEDBACK = bind("trade.enableSkillGrowthFeedback", Boolean.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MIN = bind("trade.skillGrowthPrimaryMin", Integer.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MAX = bind("trade.skillGrowthPrimaryMax", Integer.class);
+    public static final ConfigValue<Boolean> ANIMATE_EXPLORED_MAP_OPENING = bind("debugOverlay.animateExploredMapOpening", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_EXPLORED_MAP_MINIMAP = bind("debugOverlay.showExploredMapMinimap", Boolean.class);
     public static final ConfigValue<Integer> EXPLORED_MAP_MINIMAP_SIZE = bind("debugOverlay.exploredMapMinimapSize", Integer.class);
     public static final ConfigValue<Double> EXPLORED_MAP_MINIMAP_ZOOM = bind("debugOverlay.exploredMapMinimapZoom", Double.class);
