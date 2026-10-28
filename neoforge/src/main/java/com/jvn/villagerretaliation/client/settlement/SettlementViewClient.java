@@ -316,6 +316,7 @@ public final class SettlementViewClient {
 
     public static void beforeRender(float partialTick) {
         if (active == null || camera == null) return;
+        active.beginFrame();
         setEyeHeight(Minecraft.getInstance().gameRenderer.getMainCamera(), 0, 0);
         long now = net.minecraft.Util.getNanos();
         double elapsed = lastFrame == 0 ? 0 : Math.clamp((now - lastFrame) / 1_000_000_000.0D, 0, 0.05D);

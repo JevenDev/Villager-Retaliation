@@ -160,6 +160,7 @@ final class SettlementOverviewMap implements AutoCloseable {
         for (var chunk : this.ownedChunks) {
             int minX = x(chunk.getMinBlockX()), minZ = y(chunk.getMinBlockZ());
             int maxX = x(chunk.getMaxBlockX() + 1), maxZ = y(chunk.getMaxBlockZ() + 1);
+            if (maxX < this.left || minX >= this.left + this.width || maxZ < this.top || minZ >= this.top + this.height) continue;
             if (!this.ownedChunks.contains(new ChunkPos(chunk.x - 1, chunk.z))) g.fill(minX, minZ, minX + 1, maxZ, 0x8078D79B);
             if (!this.ownedChunks.contains(new ChunkPos(chunk.x + 1, chunk.z))) g.fill(maxX - 1, minZ, maxX, maxZ, 0x8078D79B);
             if (!this.ownedChunks.contains(new ChunkPos(chunk.x, chunk.z - 1))) g.fill(minX, minZ, maxX, minZ + 1, 0x8078D79B);
@@ -221,7 +222,29 @@ final class SettlementOverviewMap implements AutoCloseable {
                 Math.max(2, y(max.getZ() + 1) - y(min.getZ())), color);
     }
 
-    private static void line(GuiGraphics g, int x1, int z1, int x2, int z2, int color) {
+    record Line(int x1, int y1, int x2, int y2) { }
+
+    static Line clipLine(int x1, int y1, int x2, int y2, int left, int top, int width, int height) {
+        if (width <= 0 || height <= 0) return null;
+        double dx = (double) x2 - x1, dy = (double) y2 - y1, lower = 0, upper = 1;
+        double[] p = {-dx, dx, -dy, dy};
+        double[] q = {(double) x1 - left, (double) left + width - 1 - x1,
+                (double) y1 - top, (double) top + height - 1 - y1};
+        for (int i = 0; i < 4; i++) {
+            if (p[i] == 0) { if (q[i] < 0) return null; continue; }
+            double fraction = q[i] / p[i];
+            if (p[i] < 0) lower = Math.max(lower, fraction);
+            else upper = Math.min(upper, fraction);
+            if (lower > upper) return null;
+        }
+        return new Line((int) Math.round(x1 + dx * lower), (int) Math.round(y1 + dy * lower),
+                (int) Math.round(x1 + dx * upper), (int) Math.round(y1 + dy * upper));
+    }
+
+    private void line(GuiGraphics g, int x1, int z1, int x2, int z2, int color) {
+        var clipped = clipLine(x1, z1, x2, z2, this.left, this.top, this.width, this.height);
+        if (clipped == null) return;
+        x1 = clipped.x1(); z1 = clipped.y1(); x2 = clipped.x2(); z2 = clipped.y2();
         int steps = Math.max(Math.abs(x2 - x1), Math.abs(z2 - z1));
         for (int i = 0; i <= steps; i++) {
             double fraction = steps == 0 ? 0 : (double) i / steps;

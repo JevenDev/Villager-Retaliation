@@ -62,6 +62,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<UUID, SettlementManagementPayload.Resident> roster = new LinkedHashMap<>();
     private final SettlementViewBrowser browser = new SettlementViewBrowser();
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
+    private final SettlementMapMarkers mapMarkers = new SettlementMapMarkers();
+    private final SettlementViewEntities frameEntities = new SettlementViewEntities();
     private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
     private final SettlementUiWindow mapWindow = new SettlementUiWindow(68, 64 + SettlementUiWindow.TITLE_HEIGHT + 4);
     private final List<SettlementUiWindow> windows = new ArrayList<>(List.of(this.sidebarWindow, this.mapWindow));
@@ -310,6 +312,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (project.status() != SettlementProject.Status.CANCELLED || project.blocker().equals("pending_world")
                     || project.blocker().equals("world_conflict")) this.projects.put(project.id(), project);
         }
+        this.mapMarkers.update(this.areas.values(), this.projects.values());
         if (this.routeReloading && this.routeDraft != null) {
             this.routeReloading = false;
             beginPersistentRoute(this.routeArea, this.routeResident);
@@ -669,24 +672,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void renderMap(GuiGraphics graphics, int mouseX, int mouseY) {
         if (!this.preferences.map) return;
-        var markers = new ArrayList<SettlementOverviewMap.Marker>();
-        for (var area : this.areas.values()) {
-            if (area.kind() == SettlementAreaType.CONSTRUCTION
-                    || area.kind() == SettlementAreaType.HOME && !area.id().equals(this.selectedArea)) continue;
-            markers.add(new SettlementOverviewMap.Marker(area, area.min().offset((area.max().getX() - area.min().getX()) / 2,
-                    0, (area.max().getZ() - area.min().getZ()) / 2), false,
-                    area.id().equals(this.selectedArea) ? 0xFF70CBFF : 0xFF63879C));
-        }
-        for (var project : this.projects.values()) markers.add(new SettlementOverviewMap.Marker(project,
-                project.min().offset((project.max().getX() - project.min().getX()) / 2, 0, (project.max().getZ() - project.min().getZ()) / 2),
-                false, project.id().equals(this.selectedArea) ? 0xFF70CBFF : 0xFFE7B64E));
-        Map<UUID, BlockPos> visible = new java.util.HashMap<>();
-        for (var entity : this.minecraft.level.entitiesForRendering()) {
-            if (entity instanceof Villager && contains(entity.blockPosition())) visible.put(entity.getUUID(), entity.blockPosition());
-        }
+        var markers = new ArrayList<>(this.mapMarkers.markers(this.selectedArea));
+        var entities = entities();
         for (var r : this.roster.values()) {
-            boolean live = visible.containsKey(r.id());
-            markers.add(new SettlementOverviewMap.Marker(r, visible.getOrDefault(r.id(), r.position()), !live,
+            var entity = entities.get(r.id());
+            boolean live = entity instanceof Villager && contains(entity.blockPosition());
+            markers.add(new SettlementOverviewMap.Marker(r, live ? entity.blockPosition() : r.position(), !live,
                     this.selection.contains(r.id()) ? 0xFF40CCFF : live ? 0xFF66E478 : 0xFFAAAAAA));
         }
         for (var entry : this.snapshots.entries(Page.ISSUES)) {
@@ -695,8 +686,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (position != null) markers.add(new SettlementOverviewMap.Marker(issue, position, false, 0xFFFF8840));
         }
         var camera = this.minecraft.gameRenderer.getMainCamera();
-        this.overviewMap.render(graphics, this.font, this.plotSnapshot.plots(), List.copyOf(this.areas.values()),
-                List.copyOf(this.projects.values()), markers, this.selectedArea, mapCameraFootprint(), this.navigation.x(), this.navigation.z(),
+        this.overviewMap.render(graphics, this.font, this.plotSnapshot.plots(), this.mapMarkers.areas(),
+                this.mapMarkers.projects(), markers, this.selectedArea, mapCameraFootprint(), this.navigation.x(), this.navigation.z(),
                 camera.getPosition().x, camera.getPosition().z, this.navigation.yaw(), mouseX, mouseY);
     }
 
@@ -716,6 +707,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public void tick() {
+        this.frameEntities.invalidate();
         if (SettlementViewClient.closing()) {
             keepAlive();
             return;
@@ -791,6 +783,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     public Component getNarrationMessage() {
         return this.title.copy().append(". ").append(selectedName()).append(". ").append(text("controls"))
                 .append(this.modeHint).append(this.popup == null ? Component.empty() : this.popup.narration());
+    }
+
+    void beginFrame() { this.frameEntities.invalidate(); }
+
+    private SettlementViewEntities entities() {
+        return this.frameEntities.prepare(this.minecraft.level.entitiesForRendering());
     }
 
     void updateCamera(double elapsed) {
@@ -2206,6 +2204,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             clearPeek();
             return;
         }
+        if (this.peekKey == null && this.peekFocus.isEmpty()) {
+            this.peek.release();
+            return;
+        }
         var candidates = new ArrayList<SettlementViewBounds>();
         for (var area : this.areas.values()) {
             if (area.enabled() && switch (area.kind()) {
@@ -2226,9 +2228,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementSelectionGizmo.Ray focusedPeekRay(List<SettlementViewBounds> candidates) {
         if (this.peekFocus.isEmpty()) return null;
         var start = this.minecraft.gameRenderer.getMainCamera().getPosition();
-        for (var entity : this.minecraft.level.entitiesForRendering()) {
-            if (!this.peekFocus.contains(entity.getUUID()) || !this.selection.residents().contains(entity.getUUID())
-                    || !entity.isAlive() || !this.window.contains(entity.blockPosition())) continue;
+        var entities = entities();
+        for (var id : this.peekFocus) {
+            var entity = entities.get(id);
+            if (entity == null || !this.selection.contains(id) || !entity.isAlive() || !this.window.contains(entity.blockPosition())) continue;
             var end = entity.getEyePosition();
             var hit = this.minecraft.level.clip(new ClipContext(start, end, ClipContext.Block.VISUAL,
                     ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
@@ -2249,7 +2252,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         UUID residentId = null;
         UUID targetId = null;
         BlockPos targetPosition = null;
-        for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+        for (Entity entity : entities().all()) {
             if (this.window.contains(entity.blockPosition()) && (entity instanceof Villager && this.roster.containsKey(entity.getUUID())
                     || this.interaction.is(Mode.TASK_AREA) && entity instanceof net.minecraft.world.entity.LivingEntity)) {
                 var hit = entity.getBoundingBox().inflate(0.2D).clip(start, end);
@@ -2298,15 +2301,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     1.0F, 0.78F, 0.25F, 0.7F);
         }
         if (this.selection.size() != 0 || this.hovered.resident() != null) {
-            for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-                if (this.selection.contains(entity.getUUID())) {
-                    LevelRenderer.renderLineBox(pose, lines, entity.getBoundingBox().inflate(0.08D),
-                            0.25F, 0.9F, 1.0F, 1.0F);
-                } else if (entity.getUUID().equals(this.hovered.resident()) && !SettlementViewClient.panelsOpen(this)) {
-                    LevelRenderer.renderLineBox(pose, lines, entity.getBoundingBox().inflate(0.08D),
-                            1.0F, 0.78F, 0.25F, 0.7F);
-                }
+            var entities = entities();
+            for (var id : this.selection.residents()) {
+                var entity = entities.get(id);
+                if (entity != null) LevelRenderer.renderLineBox(pose, lines, entity.getBoundingBox().inflate(0.08D),
+                        0.25F, 0.9F, 1.0F, 1.0F);
             }
+            var hovered = entities.get(this.hovered.resident());
+            if (hovered != null && !this.selection.contains(hovered.getUUID()) && !SettlementViewClient.panelsOpen(this))
+                LevelRenderer.renderLineBox(pose, lines, hovered.getBoundingBox().inflate(0.08D), 1.0F, 0.78F, 0.25F, 0.7F);
         }
         Set<List<BlockPos>> routes = new java.util.LinkedHashSet<>();
         if (this.guardMode != null) routes.add(List.copyOf(this.guardPoints));
@@ -2353,9 +2356,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
         }
         if (this.preferences.workOverlay || this.preferences.issueOverlay) {
-            for (var entity : this.minecraft.level.entitiesForRendering()) {
-                var r = this.roster.get(entity.getUUID());
-                if (r == null || !contains(entity.blockPosition())) continue;
+            var entities = entities();
+            for (var r : this.roster.values()) {
+                var entity = entities.get(r.id());
+                if (entity == null || !contains(entity.blockPosition())) continue;
                 boolean issue = this.browser.attention.contains(r.id());
                 if (this.preferences.issueOverlay && issue || this.preferences.workOverlay) {
                     boolean paused = r.status().equals("paused") || r.status().equals("area_paused");
@@ -2544,6 +2548,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.selectedResident = null;
         this.resident = null;
         this.areas.remove(id);
+        this.mapMarkers.update(this.areas.values(), this.projects.values());
         this.waitingRequestId = -1;
         this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
     }
@@ -2589,6 +2594,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.commands.clear();
         this.snapshots.clear();
         this.overviewMap.close();
+        this.frameEntities.clear();
+        this.mapMarkers.update(List.of(), List.of());
         this.assignmentReview = null;
         this.selection.select(List.of(), false);
         this.roster.clear();
@@ -2628,7 +2635,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void finishBox() {
         List<UUID> visible = new ArrayList<>();
-        for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+        for (Entity entity : entities().all()) {
             if (!(entity instanceof Villager) || !this.roster.containsKey(entity.getUUID()) || !contains(entity.blockPosition())) continue;
             var point = project(entity.getBoundingBox().getCenter());
             if (point == null || point[0] < 0 || point[0] >= this.width || point[1] < 0 || point[1] >= this.height) continue;
