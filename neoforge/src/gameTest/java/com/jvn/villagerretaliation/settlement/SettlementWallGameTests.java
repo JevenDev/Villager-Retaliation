@@ -112,7 +112,11 @@ public final class SettlementWallGameTests {
         helper.assertFalse(SettlementWallTerrain.preview(level, wall, pos -> true).error().isEmpty(), "water blocks placement");
         level.setBlock(obstacle, Blocks.AIR.defaultBlockState(), 2);
         level.setBlock(obstacle.below(), Blocks.AIR.defaultBlockState(), 2);
-        helper.assertFalse(SettlementWallTerrain.preview(level, wall, pos -> true).error().isEmpty(), "floating spans are rejected");
+        level.setBlock(obstacle.below(2), Blocks.STONE.defaultBlockState(), 2);
+        var extended = SettlementWallTerrain.preview(level, wall, pos -> true);
+        helper.assertTrue(extended.error().isEmpty(), "floating spans extend to support: " + extended.error());
+        helper.assertTrue(extended.cells().stream().anyMatch(cell -> cell.position().equals(obstacle.below())
+                && cell.kind() == SettlementWallTerrain.Kind.PLACE), "the missing foundation block is previewed");
         level.setBlock(obstacle.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
         level.setBlock(obstacle, Blocks.SHORT_GRASS.defaultBlockState(), 2);
         var pig = net.minecraft.world.entity.EntityType.PIG.create(level);
@@ -220,6 +224,123 @@ public final class SettlementWallGameTests {
         try { new SettlementWall(wall.type(), java.util.Collections.nCopies(33, BlockPos.ZERO), false, 0); }
         catch (IllegalArgumentException expected) { invalid = true; }
         helper.assertTrue(invalid, "node count is bounded");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void overhangingWallsAndTowersExtendTheirBaseMaterialsToUnevenGround(GameTestHelper helper) {
+        var level = helper.getLevel();
+        int height = 30;
+        for (var type : SettlementWall.Type.values()) {
+            var base = floor(helper, height);
+            height += 30;
+            var wall = new SettlementWall(type, List.of(base, base.offset(18, 2, 3)), false, 9);
+            var plan = SettlementWallGeometry.build(wall);
+            for (var cell : plan.cells()) level.setBlock(cell.position(), Blocks.AIR.defaultBlockState(), 2);
+            var expected = new java.util.HashMap<BlockPos, net.minecraft.world.level.block.state.BlockState>();
+            for (var cell : plan.cells()) {
+                if (!plan.foundations().contains(cell.position())) continue;
+                int depth = 1 + Math.floorMod(cell.position().getX() + cell.position().getZ(), 4);
+                for (int down = 1; down <= depth; down++) {
+                    var pos = cell.position().below(down);
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                    expected.put(pos, cell.state());
+                }
+                level.setBlock(cell.position().below(depth + 1), Blocks.STONE.defaultBlockState(), 2);
+            }
+            var preview = SettlementWallTerrain.preview(level, wall, pos -> true);
+            helper.assertTrue(preview.error().isEmpty(), "uneven ground supports " + type + ": " + preview.error());
+            helper.assertValueEqual(preview, SettlementWallTerrain.preview(level, wall, pos -> true),
+                    "foundation previews are deterministic");
+            var targets = new java.util.HashMap<BlockPos, net.minecraft.world.level.block.state.BlockState>();
+            preview.cells().forEach(cell -> targets.put(cell.position(), cell.target()));
+            expected.forEach((pos, state) -> helper.assertValueEqual(targets.get(pos), state,
+                    "each extension repeats its authored base material"));
+            helper.assertTrue(SettlementWallTerrain.apply(level, preview) > 0, "extended walls place instantly");
+            for (var cell : preview.cells()) {
+                helper.assertValueEqual(level.getBlockState(cell.position()), cell.target(), "placement matches expanded preview");
+            }
+            expected.keySet().forEach(pos -> helper.assertFalse(level.getBlockState(pos).isAir(), "no air remains beneath the wall"));
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void extendedFoundationsRespectObstaclesEntitiesAndVerticalBounds(GameTestHelper helper) {
+        var base = floor(helper, 130);
+        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
+        var level = helper.getLevel();
+        var gap = base.east(8).below();
+        level.setBlock(gap, Blocks.AIR.defaultBlockState(), 2);
+        level.setBlock(gap.below(), Blocks.AIR.defaultBlockState(), 2);
+        level.setBlock(gap.below(2), Blocks.STONE.defaultBlockState(), 2);
+        for (var obstruction : List.of(Blocks.WATER.defaultBlockState(), Blocks.STONE_SLAB.defaultBlockState())) {
+            level.setBlock(gap, obstruction, 2);
+            var blocked = SettlementWallTerrain.preview(level, wall, pos -> true);
+            helper.assertFalse(blocked.error().isEmpty(), "foundation cannot replace fluid or a non-supporting obstacle");
+            helper.assertValueEqual(SettlementWallTerrain.apply(level, blocked), 0, "blocked foundations do not partially apply");
+            helper.assertValueEqual(level.getBlockState(gap), obstruction, "obstruction remains intact");
+        }
+        level.setBlock(gap, Blocks.AIR.defaultBlockState(), 2);
+        var outside = SettlementWallTerrain.preview(level, wall, pos -> pos.getY() >= base.getY() - 1);
+        helper.assertFalse(outside.error().isEmpty(), "extensions cannot escape allowed vertical bounds");
+        helper.assertValueEqual(SettlementWallTerrain.apply(level, outside), 0, "outside foundations apply nothing");
+        var pig = net.minecraft.world.entity.EntityType.PIG.create(level);
+        pig.setPos(gap.below().getBottomCenter());
+        pig.setNoAi(true);
+        level.addFreshEntity(pig);
+        var occupied = SettlementWallTerrain.preview(level, wall, pos -> true);
+        helper.assertFalse(occupied.error().isEmpty(), "entities below the authored wall are included in collision checks");
+        helper.assertTrue(occupied.cells().stream().anyMatch(cell -> cell.position().equals(gap.below())
+                && cell.kind() == SettlementWallTerrain.Kind.BLOCKED), "blocked foundation remains visible");
+        pig.discard();
+        helper.assertTrue(SettlementWallTerrain.preview(level, wall, pos -> true).error().isEmpty(), "cleared foundations are valid");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void deeperGroundRequiresReviewBeforeFoundationPlacement(GameTestHelper helper) {
+        var base = floor(helper, 160);
+        var level = helper.getLevel();
+        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
+        var gap = base.east(8).below();
+        level.setBlock(gap, Blocks.AIR.defaultBlockState(), 2);
+        level.setBlock(gap.below(), Blocks.STONE.defaultBlockState(), 2);
+        var session = new SettlementWallSession();
+        var id = UUID.randomUUID();
+        var request = new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.PREVIEW, new UUID(0, 0), wall);
+        var preview = session.request(level, id, true, pos -> true, request);
+        helper.assertValueEqual(preview.status(), SettlementWallResultPayload.Status.PREVIEW, "initial overhang is valid");
+        level.setBlock(gap.below(), Blocks.AIR.defaultBlockState(), 2);
+        level.setBlock(gap.below(2), Blocks.STONE.defaultBlockState(), 2);
+        var confirm = new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.CONFIRM, preview.token(), null);
+        var refreshed = session.request(level, id, true, pos -> true, confirm);
+        helper.assertValueEqual(refreshed.status(), SettlementWallResultPayload.Status.PREVIEW, "deeper support refreshes preview");
+        helper.assertFalse(refreshed.token().equals(preview.token()), "changed depth invalidates confirmation");
+        helper.assertValueEqual(refreshed.cells().size(), preview.cells().size() + 1, "the deeper foundation appears in the new preview");
+        helper.assertTrue(level.getBlockState(gap).isAir(), "stale confirmation places nothing");
+        confirm = new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.CONFIRM, refreshed.token(), null);
+        helper.assertValueEqual(session.request(level, id, true, pos -> true, confirm).status(),
+                SettlementWallResultPayload.Status.APPLIED, "reviewed extension applies");
+        for (var cell : refreshed.cells()) helper.assertValueEqual(level.getBlockState(cell.position()), cell.state(),
+                "confirmed terrain matches the extended preview");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void deepFoundationsKeepPreviewPayloadsBounded(GameTestHelper helper) {
+        var base = floor(helper, 220);
+        var level = helper.getLevel();
+        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
+        for (var pos : SettlementWallGeometry.build(wall).foundations()) {
+            for (int y = level.getMinBuildHeight(); y < pos.getY(); y++) {
+                level.setBlock(pos.atY(y), Blocks.AIR.defaultBlockState(), 2);
+            }
+        }
+        var preview = SettlementWallTerrain.preview(level, wall, pos -> true);
+        helper.assertFalse(preview.error().isEmpty(), "bottomless foundations are rejected");
+        helper.assertTrue(preview.cells().size() <= SettlementWall.MAX_BLOCKS, "extensions obey the existing network and placement limit");
+        helper.assertValueEqual(SettlementWallTerrain.apply(level, preview), 0, "oversized or unsupported previews never partially apply");
         helper.succeed();
     }
 
