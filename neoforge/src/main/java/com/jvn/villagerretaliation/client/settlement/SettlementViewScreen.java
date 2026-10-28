@@ -835,7 +835,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         positionCamera(frameTime);
         updatePeek(mouseX, mouseY);
-        this.hovered = worldContains(mouseX, mouseY) ? pick(mouseX, mouseY) : new Pick(null, null);
+        this.hovered = !SettlementViewClient.transitioning() && worldContains(mouseX, mouseY) ? pick(mouseX, mouseY) : new Pick(null, null);
         var currentDraft = this.parent.buildingDraft();
         if (currentDraft != null && !currentDraft.placed && this.hovered.position() != null && terrainLoaded()) {
             currentDraft.move(this.hovered.position().above());
@@ -1738,7 +1738,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         var pose = this.camera.position(this.window, this.focusX, this.focusZ, this.cameraHeight,
                 this.minecraft.options.getEffectiveRenderDistance() * 16.0D - 8.0D, this::terrainHeight, elapsed);
-        SettlementViewClient.position(pose.position().x, pose.position().y, pose.position().z, pose.yaw(), pose.pitch());
+        SettlementViewClient.position(pose, elapsed);
     }
 
     private double terrainHeight(int x, int z) {
@@ -1759,6 +1759,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (SettlementViewClient.transitioning()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) onClose();
+            return true;
+        }
         if (this.storagePicker != null) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) finishStoragePick(null);
             else if (navigationKey(keyCode)) this.heldKeys.add(keyCode);
@@ -1894,6 +1898,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (SettlementViewClient.transitioning()) return true;
         if (this.routeDraft != null && this.routeDraft.dragging()) return true;
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
         var hoveredWindow = windowAt(x, y);
@@ -1918,6 +1923,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        if (SettlementViewClient.transitioning()) return true;
         if (worldContains(x, y) && this.popup == null && (this.search == null || !this.search.isFocused())
                 && SettlementViewKeyMappings.PEEK.matchesMouse(button)) {
             this.peekKey = InputConstants.Type.MOUSE.getOrCreate(button);
@@ -2102,6 +2108,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
+        if (SettlementViewClient.transitioning()) return true;
         if (button == 0 && this.draggingWindow != null) {
             int[] delta = this.draggingWindow.drag(x, y);
             if (this.draggingWindow == this.sidebarWindow) this.inspector.move(delta[0], delta[1]);

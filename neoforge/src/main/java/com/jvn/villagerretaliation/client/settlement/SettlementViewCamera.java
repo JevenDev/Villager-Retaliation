@@ -58,6 +58,19 @@ public final class SettlementViewCamera {
                 (float) Math.toDegrees(Math.atan2(y - this.terrain, offset)));
     }
 
+    public static double transitionProgress(double elapsed) {
+        double t = Math.clamp(elapsed / 0.85D, 0.0D, 1.0D);
+        return t * t * t * (t * (t * 6.0D - 15.0D) + 10.0D);
+    }
+
+    public static Pose transition(Pose start, Pose target, double progress) {
+        if (progress <= 0) return start;
+        if (progress >= 1) return target;
+        return new Pose(start.position().lerp(target.position(), progress),
+                start.yaw() + net.minecraft.util.Mth.wrapDegrees(target.yaw() - start.yaw()) * (float) progress,
+                start.pitch() + (target.pitch() - start.pitch()) * (float) progress);
+    }
+
     public static double boundaryOffset(SettlementViewWindow window, double x, double z, double dx, double dz) {
         double limit = Math.max(0.0D, Math.min(96.0D, Math.min(axisLimit(x, window.center().getX(), window.radius(), dx),
                 axisLimit(z, window.center().getZ(), window.radius(), dz))));

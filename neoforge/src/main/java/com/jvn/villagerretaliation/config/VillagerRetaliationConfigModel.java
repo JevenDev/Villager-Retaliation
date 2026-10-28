@@ -85,6 +85,7 @@ public final class VillagerRetaliationConfigModel {
     public static final class Settlements {
         public boolean stateNotifications = true;
         public boolean problemNotifications = false;
+        public boolean animateWorldViewTransition = true;
 
         @RangeConstraint(min = 0, max = 10000)
         public int maxBackgroundVillages = 100;

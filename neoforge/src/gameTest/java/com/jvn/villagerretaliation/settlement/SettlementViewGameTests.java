@@ -678,6 +678,64 @@ public final class SettlementViewGameTests {
         }
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void shortcutRequiresAccessToTheOccupiedVillage(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var owner = fixture.player();
+        var delegate = player(helper, "LocalViewer");
+        try {
+            helper.assertTrue(SettlementViewService.currentTown(owner) == null, "remote ownership does not select a village");
+            owner.setPos(fixture.town().center().getCenter());
+            delegate.setPos(owner.position());
+            helper.assertTrue(SettlementViewService.currentTown(owner) == fixture.town(), "the owner can view the occupied village");
+            helper.assertTrue(SettlementViewService.currentTown(delegate) == null, "being in a village does not grant access");
+            fixture.town().setPermissions(owner.getUUID(), delegate.getUUID(), Set.of(SettlementPermission.VIEW));
+            helper.assertTrue(SettlementViewService.currentTown(delegate) == fixture.town(), "view delegates can use the shortcut");
+            fixture.town().setPermissions(owner.getUUID(), delegate.getUUID(), Set.of());
+            helper.assertTrue(SettlementViewService.currentTown(delegate) == null, "revoked access is immediately rejected");
+            owner.hurtTime = 1;
+            helper.assertTrue(SettlementViewService.currentTown(owner) == null, "damage prevents opening");
+            owner.hurtTime = 0;
+            owner.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+            helper.assertTrue(SettlementViewService.currentTown(owner) == null, "spectators cannot open the view");
+            owner.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            owner.setPos(fixture.town().center().offset(512, 0, 512).getCenter());
+            helper.assertTrue(SettlementViewService.currentTown(owner) == null, "leaving the village prevents opening");
+            var request = new com.jvn.villagerretaliation.network.SettlementViewOpenPayload(12);
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOpenPayload.STREAM_CODEC, request);
+            roundTrip(helper, com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload.STREAM_CODEC,
+                    new com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload(request.requestId(), null));
+            SettlementViewService.openCurrent(owner, request);
+            helper.assertTrue(SettlementViewService.session(owner.getUUID()) == null, "the server rejects out-of-village shortcut requests");
+            expectInvalid(helper, () -> new com.jvn.villagerretaliation.network.SettlementViewOpenPayload(0));
+        } finally {
+            SettlementViewService.close(owner.getUUID(), false);
+            SettlementViewService.close(delegate.getUUID(), false);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void openingCameraPreservesEndpointsAndTakesTheShortestTurn(GameTestHelper helper) {
+        var start = new SettlementViewCamera.Pose(new net.minecraft.world.phys.Vec3(10, 65, -10), 350, -45);
+        var target = new SettlementViewCamera.Pose(new net.minecraft.world.phys.Vec3(40, 100, 20), 10, 35);
+        helper.assertValueEqual(SettlementViewCamera.transition(start, target, 0), start, "opening starts at the rendered camera pose");
+        helper.assertValueEqual(SettlementViewCamera.transition(start, target, 1), target, "opening finishes at the world view pose");
+        var halfway = SettlementViewCamera.transition(start, target, SettlementViewCamera.transitionProgress(0.425));
+        helper.assertTrue(halfway.position().distanceTo(start.position().lerp(target.position(), 0.5)) < 0.00001,
+                "position eases continuously between camera poses");
+        helper.assertTrue(Math.abs(halfway.yaw() - 360) < 0.001, "yaw crosses zero without turning the long way");
+        double previous = 0;
+        for (int frame = 0; frame <= 100; frame++) {
+            double progress = SettlementViewCamera.transitionProgress(frame / 100.0);
+            helper.assertTrue(progress >= previous && progress <= 1, "the animation never reverses or overshoots");
+            previous = progress;
+        }
+        helper.assertValueEqual(SettlementViewCamera.transitionProgress(-1), 0.0, "negative time stays at the start");
+        helper.assertValueEqual(previous, 1.0, "the transition has a bounded duration");
+        helper.succeed();
+    }
+
     private static ServerPlayer player(GameTestHelper helper, String name) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
         player.setPos(helper.absolutePos(BlockPos.ZERO).getCenter());

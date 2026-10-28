@@ -33,7 +33,39 @@ public final class SettlementViewService {
     private SettlementViewService() {
     }
 
+    public static void openCurrent(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementViewOpenPayload request) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 10L)) return;
+        var level = player.serverLevel();
+        var data = SettlementSavedData.get(level);
+        var town = currentTown(player);
+        if (town == null) {
+            PacketDistributor.sendToPlayer(player, new com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload(request.requestId(), null));
+            return;
+        }
+        var summary = new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(town.id().value(),
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.SUMMARY, 0, "", request.requestId(), false);
+        data.simulation.requests.submit(player, summary, snapshot -> {
+            if (player.serverLevel() != level || currentTown(player) != town || snapshot.header() == null
+                    || !snapshot.header().id().equals(town.id().value())) {
+                PacketDistributor.sendToPlayer(player, new com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload(request.requestId(), null));
+                return;
+            }
+            PacketDistributor.sendToPlayer(player, new com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload(request.requestId(), snapshot));
+            open(player, town.id(), request.requestId());
+        });
+    }
+
+    static SettlementRecord currentTown(ServerPlayer player) {
+        var town = SettlementSavedData.get(player.serverLevel())
+                .at(player.serverLevel().dimension().location(), player.blockPosition()).orElse(null);
+        return town != null && eligible(player, town) ? town : null;
+    }
+
     public static boolean open(ServerPlayer player, VillageAllegianceId townId) {
+        return open(player, townId, 0);
+    }
+
+    private static boolean open(ServerPlayer player, VillageAllegianceId townId, int requestId) {
         SettlementRecord town = SettlementSavedData.get(player.serverLevel()).get(townId).orElse(null);
         if (town == null || !eligible(player, town)) {
             return false;
@@ -41,6 +73,7 @@ public final class SettlementViewService {
         close(player.getUUID(), true);
         var session = new Session(player, town, SettlementViewWindow.around(player.serverLevel(), town, town.center().getX() + 0.5D,
                 town.center().getZ() + 0.5D, 32.0F), player.serverLevel().getGameTime());
+        session.requestId = requestId;
         SESSIONS.put(player.getUUID(), session);
         sendState(session, true);
         return true;

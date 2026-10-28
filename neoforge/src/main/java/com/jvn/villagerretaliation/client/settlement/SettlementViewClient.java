@@ -25,6 +25,15 @@ public final class SettlementViewClient {
     private static CameraType previousPerspective;
     private static Marker camera;
     private static boolean panels;
+    private static int openingSequence;
+    private static int openingRequest;
+    private static long openingDeadline;
+    private static Level openingLevel;
+    private static SettlementManagementScreen openingParent;
+    private static SettlementViewCamera.Pose transitionStart;
+    private static double transitionElapsed;
+    private static double lastFov = FOV;
+    private static double transitionFov;
 
     private SettlementViewClient() {
     }
@@ -33,6 +42,43 @@ public final class SettlementViewClient {
         if (active != null) {
             active.acceptResult(payload);
         }
+    }
+
+    static void requestCurrent() {
+        var minecraft = Minecraft.getInstance();
+        if (active != null || openingRequest != 0 || minecraft.screen != null || minecraft.level == null
+                || minecraft.player == null || !minecraft.player.isAlive() || minecraft.player.isSpectator()
+                || minecraft.player.hurtTime > 0 || minecraft.getCameraEntity() != minecraft.player) return;
+        openingSequence = openingSequence >= 1_000_000 ? 1 : openingSequence + 1;
+        openingRequest = openingSequence;
+        openingDeadline = net.minecraft.Util.getMillis() + 10_000L;
+        openingLevel = minecraft.level;
+        PacketDistributor.sendToServer(new com.jvn.villagerretaliation.network.SettlementViewOpenPayload(openingRequest));
+    }
+
+    private static boolean expectingCurrent() {
+        var minecraft = Minecraft.getInstance();
+        return openingRequest != 0 && net.minecraft.Util.getMillis() < openingDeadline
+                && minecraft.level == openingLevel && minecraft.screen == null && minecraft.player != null
+                && minecraft.player.isAlive() && !minecraft.player.isSpectator() && minecraft.player.hurtTime == 0
+                && minecraft.getCameraEntity() == minecraft.player;
+    }
+
+    private static void clearOpening() {
+        openingRequest = 0;
+        openingLevel = null;
+        openingParent = null;
+    }
+
+    public static void acceptOpening(com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload payload) {
+        if (!expectingCurrent() || payload.requestId() != openingRequest) return;
+        var snapshot = payload.snapshot();
+        if (snapshot == null || !openingLevel.dimension().location().equals(snapshot.dimension())
+                || !snapshot.header().permissions().contains(com.jvn.villagerretaliation.settlement.SettlementPermission.VIEW)) {
+            clearOpening();
+            return;
+        }
+        openingParent = new SettlementManagementScreen(snapshot);
     }
 
     public static void acceptState(SettlementViewStatePayload payload) {
@@ -53,11 +99,19 @@ public final class SettlementViewClient {
             active.acceptWindow(payload);
             return;
         }
-        if (!(minecraft.screen instanceof SettlementManagementScreen parent) || !parent.expectingView()
-                || parent.snapshot().header() == null || !parent.snapshot().header().id().equals(payload.town())) {
+        SettlementManagementScreen parent;
+        if (expectingCurrent() && openingParent != null && payload.requestId() == openingRequest
+                && openingParent.snapshot().header().id().equals(payload.town())) {
+            parent = openingParent;
+            parent.init(minecraft, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
+        } else if (minecraft.screen instanceof SettlementManagementScreen management && management.expectingView()
+                && management.snapshot().header() != null && management.snapshot().header().id().equals(payload.town())) {
+            parent = management;
+        } else {
             reject(payload);
             return;
         }
+        clearOpening();
         previousCamera = minecraft.getCameraEntity();
         previousPerspective = minecraft.options.getCameraType();
         camera = EntityType.MARKER.create(minecraft.level);
@@ -65,6 +119,11 @@ public final class SettlementViewClient {
             reject(payload);
             return;
         }
+        var currentCamera = minecraft.gameRenderer.getMainCamera();
+        transitionStart = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.get()
+                ? new SettlementViewCamera.Pose(currentCamera.getPosition(), currentCamera.getYRot(), currentCamera.getXRot()) : null;
+        transitionElapsed = 0;
+        transitionFov = lastFov;
         SettlementViewChunks.begin(minecraft.level, payload.session(), payload.window());
         active = new SettlementViewScreen(parent, payload);
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
@@ -83,6 +142,8 @@ public final class SettlementViewClient {
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (openingRequest != 0 && !expectingCurrent()) clearOpening();
+        while (SettlementViewKeyMappings.OPEN.consumeClick()) requestCurrent();
         if (active == null) {
             return;
         }
@@ -156,6 +217,7 @@ public final class SettlementViewClient {
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        clearOpening();
         if (active != null) {
             end(active);
         }
@@ -171,7 +233,7 @@ public final class SettlementViewClient {
     public static float projectionOffset() {
         var minecraft = Minecraft.getInstance();
         return active != null && (minecraft.screen == active || connectedPanel()) && minecraft.getCameraEntity() == camera && active.width > 0
-                ? (float) (active.width - active.viewportWidth()) / active.width : 0;
+                ? (float) ((active.width - active.viewportWidth()) / (double) active.width * transitionProgress()) : 0;
     }
 
     public static boolean ownsCamera(Camera current) {
@@ -180,7 +242,9 @@ public final class SettlementViewClient {
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (ownsCamera(event.getCamera())) {
-            event.setFOV(FOV);
+            event.setFOV(transitionFov + (FOV - transitionFov) * transitionProgress());
+        } else if (event.usedConfiguredFov()) {
+            lastFov = event.getFOV();
         }
     }
 
@@ -206,11 +270,24 @@ public final class SettlementViewClient {
         }
     }
 
-    static void position(double x, double y, double z, float yaw, float pitch) {
-        if (camera != null) {
-            camera.moveTo(x, y, z, yaw, pitch);
-            camera.setOldPosAndRot();
+    static boolean transitioning() {
+        return transitionStart != null;
+    }
+
+    private static double transitionProgress() {
+        return transitionStart == null ? 1.0D : SettlementViewCamera.transitionProgress(transitionElapsed);
+    }
+
+    static void position(SettlementViewCamera.Pose target, double elapsed) {
+        if (camera == null) return;
+        if (transitionStart != null) {
+            transitionElapsed += Math.max(0, elapsed);
+            double progress = transitionProgress();
+            target = SettlementViewCamera.transition(transitionStart, target, progress);
+            if (progress >= 1) transitionStart = null;
         }
+        camera.moveTo(target.position().x, target.position().y, target.position().z, target.yaw(), target.pitch());
+        camera.setOldPosAndRot();
     }
 
     static void end(SettlementViewScreen screen) {
@@ -221,6 +298,7 @@ public final class SettlementViewClient {
         screen.endSession();
         active = null;
         panels = false;
+        transitionStart = null;
         if (minecraft.getConnection() != null) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(screen.session(), screen.nextRequestId(),
                     screen.focusX(), screen.focusZ(), screen.viewHeight(), true));

@@ -30,6 +30,11 @@ final class SettlementWorldViewClientChecks {
     private SettlementPeekClientChecks.LiveFade peekFade;
     private int phase;
     private int ticks;
+    private int openingCase;
+    private net.minecraft.client.CameraType openingPerspective;
+    private net.minecraft.world.phys.Vec3 openingPosition;
+    private net.minecraft.world.phys.Vec3 playerPosition;
+    private boolean savedTransitionSetting;
 
     SettlementWorldViewClientChecks(SettlementViewScreen view, VillageAllegianceId town, BlockPos center, Consumer<String> capture) {
         this.view = view;
@@ -143,7 +148,56 @@ final class SettlementWorldViewClientChecks {
             this.capture.accept("normal-play-owned-bounds");
             require(SettlementBoundsClient.enabled(this.town.value()), "owned borders remain enabled outside the world view");
             SettlementBoundsClient.toggle(this.town.value());
-            return true;
+            this.savedTransitionSetting = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.get();
+            this.ticks = 0;
+            this.phase = 9;
+        } else if (this.phase == 9) {
+            this.openingPerspective = switch (this.openingCase) {
+                case 1 -> net.minecraft.client.CameraType.THIRD_PERSON_BACK;
+                case 2 -> net.minecraft.client.CameraType.THIRD_PERSON_FRONT;
+                default -> net.minecraft.client.CameraType.FIRST_PERSON;
+            };
+            minecraft.options.setCameraType(this.openingPerspective);
+            com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.set(this.openingCase != 3);
+            if (++this.ticks < 25) return false;
+            this.openingPosition = minecraft.gameRenderer.getMainCamera().getPosition();
+            this.playerPosition = minecraft.player.position();
+            net.minecraft.client.KeyMapping.click(SettlementViewKeyMappings.OPEN.getKey());
+            this.ticks = 0;
+            this.phase = 10;
+        } else if (this.phase == 10) {
+            require(!(minecraft.screen instanceof SettlementManagementScreen), "the shortcut never flashes the management screen");
+            if (!(minecraft.screen instanceof SettlementViewScreen opened)) {
+                require(++this.ticks < 200, "the current village shortcut opens an authorized view");
+                return false;
+            }
+            require(opened.parent().snapshot().header().id().equals(this.town.value()), "the shortcut opens the occupied village");
+            require(SettlementViewClient.transitioning() == (this.openingCase != 3), "the config controls opening animation");
+            if (this.openingCase != 3) {
+                require(minecraft.getCameraEntity().position().distanceTo(this.openingPosition) < 1,
+                        "first and third person transitions begin at the actual rendered camera");
+            }
+            this.ticks = 0;
+            this.phase = 11;
+        } else if (this.phase == 11) {
+            var opened = (SettlementViewScreen) minecraft.screen;
+            if (this.openingCase == 4) {
+                opened.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            } else {
+                if (++this.ticks < 30 || SettlementViewClient.transitioning()) return false;
+                require(minecraft.player.position().distanceTo(this.playerPosition) < 0.01, "the transition leaves the player body in place");
+                this.capture.accept("world-view-shortcut-" + this.openingCase);
+                opened.onClose();
+            }
+            require(minecraft.screen == null && minecraft.getCameraEntity() == minecraft.player, "closing restores the player camera");
+            require(minecraft.options.getCameraType() == this.openingPerspective, "closing restores the original perspective");
+            require(!SettlementViewClient.transitioning(), "closing clears animation state even during opening");
+            if (++this.openingCase == 5) {
+                com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.set(this.savedTransitionSetting);
+                return true;
+            }
+            this.ticks = 0;
+            this.phase = 9;
         }
         return false;
     }

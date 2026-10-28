@@ -99,10 +99,12 @@ final class VillageRelationsClientChecks {
                 require(screen.snapshot().entries().size() == 1, "other village reveals only its mutually known relation");
                 require(screen.snapshot().entries().stream().noneMatch(entry -> entry.name().contains("Hidden")), "popup view keeps hidden contact private");
                 screen.onClose(); require(minecraft.screen == map, "return keeps the same map and selection");
-                map.onClose(); require(minecraft.screen == relations, "map returns to original relations screen");
+                map.onClose();
                 next();
             }
             case 7 -> {
+                if (minecraft.screen == map) return false;
+                require(minecraft.screen == relations, "map returns to original relations screen");
                 aidButton(relations, "title").onPress(); next();
             }
             case 8 -> {

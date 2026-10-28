@@ -29,6 +29,7 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigValue<Boolean> SETTLEMENT_STATE_NOTIFICATIONS = bind("settlements.stateNotifications", Boolean.class);
     public static final ConfigValue<Boolean> SETTLEMENT_PROBLEM_NOTIFICATIONS = bind("settlements.problemNotifications", Boolean.class);
+    public static final ConfigValue<Boolean> ANIMATE_WORLD_VIEW_TRANSITION = bind("settlements.animateWorldViewTransition", Boolean.class);
     public static final ConfigValue<Integer> SETTLEMENT_VIEW_CHUNKS = bind("settlements.remoteViewChunks", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_VIEW_LOADS = bind("settlements.remoteViewLoadsPerTick", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_VIEW_SENDS = bind("settlements.remoteViewSendsPerTick", Integer.class);

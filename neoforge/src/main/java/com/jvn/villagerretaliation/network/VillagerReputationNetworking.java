@@ -213,6 +213,19 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.settlement.SettlementManagementClient",
                 "acceptResult"
         );
+        network.safePlayToClientThreaded(
+                SettlementViewOpenResultPayload.TYPE,
+                SettlementViewOpenResultPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.settlement.SettlementViewClient",
+                "acceptOpening"
+        );
+        network.playToServer(
+                SettlementViewOpenPayload.TYPE,
+                SettlementViewOpenPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.settlement.SettlementViewService.openCurrent(player, payload)))
+        );
         network.playToServer(
                 SettlementManagementRequestPayload.TYPE,
                 SettlementManagementRequestPayload.STREAM_CODEC,
