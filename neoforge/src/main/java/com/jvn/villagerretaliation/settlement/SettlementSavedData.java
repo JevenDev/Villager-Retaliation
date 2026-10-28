@@ -131,6 +131,31 @@ public final class SettlementSavedData extends SavedData {
         return Optional.of(town);
     }
 
+    Optional<SettlementRecord> establishDebug(ServerLevel level, UUID leader, BlockPos center, Set<Long> plots) {
+        if (readOnly() || leader == null || plots.isEmpty()
+                || !plots.contains(new net.minecraft.world.level.ChunkPos(center).toLong())) return Optional.empty();
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        var id = VillageAllegianceId.random();
+        var town = new SettlementRecord(id, level.dimension().location(), center, leader, level.getGameTime(), this::setDirty);
+        var occupied = occupied(registry, town);
+        for (long plot : plots) {
+            var chunk = new net.minecraft.world.level.ChunkPos(plot);
+            if (!SettlementTerritory.validChunk(chunk.x, chunk.z)
+                    || !level.getWorldBorder().isWithinBounds(new BlockPos(chunk.getMinBlockX(), center.getY(), chunk.getMinBlockZ()))
+                    || !level.getWorldBorder().isWithinBounds(new BlockPos(chunk.getMaxBlockX(), center.getY(), chunk.getMaxBlockZ()))
+                    || occupied.contains(plot)) return Optional.empty();
+        }
+        town.migrateTerritory(plots, "");
+        registry.ensureRecord(id, level.getGameTime(), town.dimension(), center);
+        registry.rename(id, "Debug Village " + id.value().toString().substring(0, 8));
+        this.settlements.put(id, town);
+        index(town);
+        town.recordEvent(level.getGameTime(), SettlementEvent.Type.ESTABLISHED, "");
+        updateFootprint(registry, town);
+        setDirty();
+        return Optional.of(town);
+    }
+
     Optional<SettlementRecord> establishAutonomous(ServerLevel level, VillageAllegianceRegistrySavedData.AllegianceRecord village) {
         var registry=VillageAllegianceRegistrySavedData.get(level);
         village=village==null ? null : registry.canonicalRecord(village.id()).orElse(null);

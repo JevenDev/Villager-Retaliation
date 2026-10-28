@@ -414,6 +414,11 @@ final class VrAdminCommands {
                             () -> Component.translatable("villagerretaliation.command.admin.debug.help"), false);
                     return 1;
                 })
+                .then(literal("village")
+                        .then(argument("radius", IntegerArgumentType.integer(1,
+                                com.jvn.villagerretaliation.settlement.SettlementDebugService.MAX_RADIUS))
+                                .executes(context -> com.jvn.villagerretaliation.settlement.SettlementDebugService.create(
+                                        context.getSource(), IntegerArgumentType.getInteger(context, "radius")))))
                 .then(debugDuel())
                 .then(debugHired())
                 .then(literal("raid")

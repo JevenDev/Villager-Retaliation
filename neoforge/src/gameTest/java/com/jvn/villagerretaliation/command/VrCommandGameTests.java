@@ -58,6 +58,7 @@ public final class VrCommandGameTests {
         child(quest, "fireTrigger");
 
         CommandNode<CommandSourceStack> debug = child(admin, "debug");
+        child(child(debug, "village"), "radius");
         child(debug, "duel");
         child(debug, "raid");
         child(debug, "builder");
