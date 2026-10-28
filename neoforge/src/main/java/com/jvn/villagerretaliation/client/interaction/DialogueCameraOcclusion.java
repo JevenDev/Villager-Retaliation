@@ -33,6 +33,8 @@ public final class DialogueCameraOcclusion {
     private static final Map<Object, Build> sodiumOutputs = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
     private static Set<BlockPos> dialogueBlocks = Set.of();
     private static Set<BlockPos> settlementBlocks = Set.of();
+    private static volatile Set<SectionPos> settlementSections = Set.of();
+    private static final Map<SectionPos, Snapshot> settlementMeshes = new HashMap<>();
     private static Set<UUID> hiddenEntities = Set.of();
     private static Vec3 lastPosition;
     private static long nextScan;
@@ -56,7 +58,7 @@ public final class DialogueCameraOcclusion {
     }
 
     public static void built(SectionPos section, Snapshot used) {
-        if (!used.blocks().isEmpty() || !snapshot.blocks().isEmpty() || used.version() != snapshot.version())
+        if (settlementSections.contains(section) || !used.blocks().isEmpty() || !snapshot.blocks().isEmpty() || used.version() != snapshot.version())
             builds.add(new Build(section, used));
     }
     public static void beginBuild() { meshBuild.remove(); }
@@ -256,6 +258,21 @@ public final class DialogueCameraOcclusion {
         }, blocks -> null);
     }
 
+    public static void watchSettlementMeshes(Set<BlockPos> positions) {
+        var sections = new HashSet<SectionPos>();
+        positions.forEach(position -> sections.add(SectionPos.of(position)));
+        settlementSections = Set.copyOf(sections);
+        settlementMeshes.keySet().retainAll(sections);
+    }
+
+    public static boolean settlementMeshesReady(Set<BlockPos> positions) {
+        for (var position : positions) {
+            var mesh = settlementMeshes.get(SectionPos.of(position));
+            if (mesh == null || mesh.level() != snapshot.level() || mesh.hides(position) != snapshot.hides(position)) return false;
+        }
+        return true;
+    }
+
     public static void settlementMask(Set<BlockPos> hidden) {
         settlementBlocks = Set.copyOf(hidden);
         publish(dialogueBlocks);
@@ -290,7 +307,9 @@ public final class DialogueCameraOcclusion {
 
     public static void tick() {
         for (Build build; (build = builds.poll()) != null;) {
-            if (build.snapshot().level() != Minecraft.getInstance().level || build.snapshot().version() == snapshot.version()) continue;
+            if (build.snapshot().level() != Minecraft.getInstance().level) continue;
+            if (settlementSections.contains(build.section())) settlementMeshes.put(build.section(), build.snapshot());
+            if (build.snapshot().version() == snapshot.version()) continue;
             var changed = new HashSet<BlockPos>();
             for (var position : build.snapshot().blocks())
                 if (affects(build.section(), position) && !snapshot.blocks().contains(position)) changed.add(position);

@@ -8,6 +8,7 @@ import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
 final class SettlementViewKeyMappings {
+    static final KeyMapping PEEK = key("peek", GLFW.GLFW_KEY_GRAVE_ACCENT);
     static final KeyMapping SELECT = key("select", GLFW.GLFW_KEY_V);
     static final KeyMapping MOVE = key("move", GLFW.GLFW_KEY_G);
     static final KeyMapping RESIZE = key("resize", GLFW.GLFW_KEY_R);
@@ -24,7 +25,7 @@ final class SettlementViewKeyMappings {
     }
 
     static void register(RegisterKeyMappingsEvent event) {
-        for (var mapping : new KeyMapping[]{SELECT, MOVE, RESIZE, DRAW, PLOTS, BOUNDS, ACTIONS}) event.register(mapping);
+        for (var mapping : new KeyMapping[]{SELECT, MOVE, RESIZE, DRAW, PLOTS, BOUNDS, ACTIONS, PEEK}) event.register(mapping);
     }
 
     static boolean matches(KeyMapping mapping, int key, int scan) {

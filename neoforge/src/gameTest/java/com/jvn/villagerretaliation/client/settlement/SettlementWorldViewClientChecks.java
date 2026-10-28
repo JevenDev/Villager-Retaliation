@@ -27,6 +27,7 @@ final class SettlementWorldViewClientChecks {
     private CompletableFuture<Boolean> deletion;
     private CompletableFuture<?> homecoming;
     private SettlementArea area;
+    private SettlementPeekClientChecks.LiveFade peekFade;
     private int phase;
     private int ticks;
 
@@ -39,7 +40,12 @@ final class SettlementWorldViewClientChecks {
 
     boolean tick(Minecraft minecraft) {
         if (this.phase == 0) {
-            SettlementPeekClientChecks.verify(minecraft, this.view, this.center);
+            if (this.peekFade == null) {
+                SettlementPeekClientChecks.verify(minecraft, this.view, this.center);
+                this.peekFade = new SettlementPeekClientChecks.LiveFade(this.center.offset(-5, 4, 1));
+                return false;
+            }
+            if (!this.peekFade.tick()) return false;
             UUID player = minecraft.player.getUUID();
             this.preparation = minecraft.getSingleplayerServer().submit(() -> {
                 var owner = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);

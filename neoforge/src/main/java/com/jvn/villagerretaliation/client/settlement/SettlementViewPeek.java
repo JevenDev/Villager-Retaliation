@@ -16,8 +16,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 final class SettlementViewPeek {
+    private final SettlementPeekRenderer fade = new SettlementPeekRenderer();
     private Level level;
     private SettlementInteriorCutaway.Room room;
     private long nextValidation;
@@ -36,7 +38,7 @@ final class SettlementViewPeek {
                 .filter(candidate -> candidate.box().contains(hit.getBlockPos().getCenter()))
                 .min(Comparator.comparingLong(SettlementViewBounds::volume)).orElse(null);
         if (bounds == null) {
-            clear();
+            release();
             return;
         }
         long now = Util.getMillis();
@@ -51,7 +53,15 @@ final class SettlementViewPeek {
             this.target = bounds;
             this.targetHit = hit.getBlockPos();
         }
-        DialogueCameraOcclusion.settlementMask(this.room == null ? Set.of() : this.room.mask(ray.origin()));
+        this.fade.target(this.room == null ? Set.of() : this.room.mask(ray.origin()));
+    }
+
+    void release() {
+        this.fade.target(Set.of());
+    }
+
+    void render(RenderLevelStageEvent event) {
+        this.fade.render(event);
     }
 
     void clear() {
@@ -60,7 +70,7 @@ final class SettlementViewPeek {
         this.nextValidation = 0;
         this.target = null;
         this.targetHit = null;
-        DialogueCameraOcclusion.settlementMask(Set.of());
+        this.fade.clear();
     }
 
     static BlockHitResult clip(Level level, Vec3 start, Vec3 end, ClipContext.Block mode, Entity entity) {

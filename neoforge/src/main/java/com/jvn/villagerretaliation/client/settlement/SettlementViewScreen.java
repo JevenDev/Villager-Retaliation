@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.settlement.SettlementProject;
 import com.jvn.villagerretaliation.settlement.SettlementViewAction;
 import com.jvn.villagerretaliation.settlement.SettlementViewWindow;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -88,6 +89,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Set<Integer> heldKeys = new HashSet<>();
     private final SettlementViewCamera camera = new SettlementViewCamera();
     private final SettlementViewPeek peek = new SettlementViewPeek();
+    private InputConstants.Key peekKey;
+    private Set<UUID> peekFocus = Set.of();
     private SettlementViewPopup popup;
     private boolean panning;
     private SettlementManagementPayload.Header header;
@@ -862,6 +865,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
         if (this.routeDraft != null) hint = routeHint();
+        else if (this.interaction.is(Mode.SELECT) && draft == null && this.editingArea == null)
+            hint = text("peek_hint", SettlementViewKeyMappings.PEEK.getTranslatedKeyMessage()).copy().append("\n").append(hint);
         if (this.snapshots.stale(now)) hint = Component.literal("Overview stale / loading").append("\n").append(hint);
         else if (this.snapshots.loading()) hint = Component.literal("Refreshing overview").append("\n").append(hint);
         if (this.queuedChunks > 0) hint = Component.translatable("villagerretaliation.gui.settlement.view_queue",
@@ -1693,6 +1698,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void focus(double x, double z) {
+        this.peekFocus = Set.of();
         this.panVelocityX = 0.0D;
         this.panVelocityZ = 0.0D;
         pan(x - this.focusX, z - this.focusZ);
@@ -1706,6 +1712,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         double nextZ = target.z;
         if (nextX != this.focusX || nextZ != this.focusZ) {
             this.requestedFocus = null;
+            this.peekFocus = Set.of();
             this.moved = true;
         }
         this.focusX = nextX;
@@ -1744,6 +1751,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.draggingWindow = null;
         if (this.gizmo != null) this.gizmo.end();
         this.heldKeys.clear();
+        this.peekKey = null;
         this.panVelocityX = 0.0D;
         this.panVelocityZ = 0.0D;
     }
@@ -1771,6 +1779,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && this.boxX >= 0) {
             this.boxX = -1;
             this.boxDragging = false;
+            return true;
+        }
+        if (SettlementViewKeyMappings.matches(SettlementViewKeyMappings.PEEK, keyCode, scanCode)) {
+            this.peekKey = InputConstants.getKey(keyCode, scanCode);
             return true;
         }
         if (this.routeDraft != null) {
@@ -1855,6 +1867,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (InputConstants.getKey(keyCode, scanCode).equals(this.peekKey)) {
+            this.peekKey = null;
+            return true;
+        }
         if (navigationKey(keyCode)) {
             this.heldKeys.remove(keyCode);
             return true;
@@ -1901,6 +1917,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        if (worldContains(x, y) && this.popup == null && (this.search == null || !this.search.isFocused())
+                && SettlementViewKeyMappings.PEEK.matchesMouse(button)) {
+            this.peekKey = InputConstants.Type.MOUSE.getOrCreate(button);
+            return true;
+        }
         if (this.popup != null) {
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
@@ -2128,6 +2149,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
+        if (InputConstants.Type.MOUSE.getOrCreate(button).equals(this.peekKey)) {
+            this.peekKey = null;
+            return true;
+        }
         if (button == 0 && this.draggingWindow != null) {
             this.draggingWindow = null;
             this.preferences.sidebarWindow = this.sidebarWindow.position();
@@ -2195,8 +2220,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void updatePeek(double x, double y) {
-        if (!permits(SettlementPermission.BUILD) || !worldContains(x, y) || this.popup != null
-                || this.parent.buildingDraft() != null || this.gizmo != null || !this.minecraft.isWindowActive()) {
+        if (!permits(SettlementPermission.BUILD) || this.popup != null
+                || this.parent.buildingDraft() != null || this.gizmo != null || !this.minecraft.isWindowActive()
+                || this.search != null && this.search.isFocused()) {
             clearPeek();
             return;
         }
@@ -2211,7 +2237,26 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (project.status() == SettlementProject.Status.COMPLETED)
                 candidates.add(new SettlementViewBounds(project.min(), project.max()));
         }
-        this.peek.update(this.minecraft.level, this.window, candidates, ray(x, y));
+        var ray = focusedPeekRay(candidates);
+        if (ray == null && this.peekKey != null && worldContains(x, y)) ray = ray(x, y);
+        if (ray == null) this.peek.release();
+        else this.peek.update(this.minecraft.level, this.window, candidates, ray);
+    }
+
+    private SettlementSelectionGizmo.Ray focusedPeekRay(List<SettlementViewBounds> candidates) {
+        if (this.peekFocus.isEmpty()) return null;
+        var start = this.minecraft.gameRenderer.getMainCamera().getPosition();
+        for (var entity : this.minecraft.level.entitiesForRendering()) {
+            if (!this.peekFocus.contains(entity.getUUID()) || !this.selection.residents().contains(entity.getUUID())
+                    || !entity.isAlive() || !this.window.contains(entity.blockPosition())) continue;
+            var end = entity.getEyePosition();
+            var hit = this.minecraft.level.clip(new ClipContext(start, end, ClipContext.Block.VISUAL,
+                    ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+            if (hit.getType() != HitResult.Type.MISS && candidates.stream().anyMatch(bounds ->
+                    bounds.box().contains(end) && bounds.box().contains(hit.getBlockPos().getCenter())))
+                return new SettlementSelectionGizmo.Ray(start, end.subtract(start));
+        }
+        return null;
     }
 
     private Pick pick(double x, double y) {
@@ -2451,6 +2496,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void renderPlotTint(RenderLevelStageEvent event) {
+        this.peek.render(event);
         if (this.interaction.is(Mode.SELECT_PLOT)) {
             SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
         } else if (SettlementBoundsClient.enabled(this.header.id()) || this.interaction.is(Mode.DRAW_AREA)
@@ -2583,6 +2629,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (!positions.isEmpty()) {
             focus(positions.stream().mapToInt(BlockPos::getX).average().orElse(this.focusX),
                     positions.stream().mapToInt(BlockPos::getZ).average().orElse(this.focusZ));
+            this.peekFocus = Set.copyOf(this.selection.residents());
         } else if (this.selectedArea != null) {
             var area = selectableAreas().stream().filter(row -> row.id().equals(this.selectedArea)).findFirst().orElse(null);
             if (area != null) focus((area.min().getX() + area.max().getX()) / 2.0D, (area.min().getZ() + area.max().getZ()) / 2.0D);

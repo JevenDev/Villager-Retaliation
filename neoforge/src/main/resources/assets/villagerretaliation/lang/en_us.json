@@ -3093,6 +3093,8 @@
   "villagerretaliation.gui.settlement.show_bounds": "Show bounds",
   "villagerretaliation.gui.settlement.hide_bounds": "Hide bounds",
   "villagerretaliation.gui.settlement.show_bounds_hint": "Show owned plot borders during normal play and in the settlement world view. Area tools always show plot borders.",
+  "key.villagerretaliation.settlement_peek": "Settlement view: Hold to peek inside",
+  "villagerretaliation.gui.settlement.peek_hint": "Hold %s to peek inside. F focuses residents and reveals their interior.",
   "key.villagerretaliation.settlement_select": "Settlement view: Select",
   "key.villagerretaliation.settlement_move": "Settlement view: Move area",
   "key.villagerretaliation.settlement_resize": "Settlement view: Resize area",

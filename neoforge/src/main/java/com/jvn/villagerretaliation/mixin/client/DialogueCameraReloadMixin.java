@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class DialogueCameraReloadMixin {
     @Inject(method = "allChanged", at = @At("HEAD"))
     private void villagerretaliation$releaseMask(CallbackInfo callback) {
+        DialogueCameraOcclusion.watchSettlementMeshes(java.util.Set.of());
         DialogueCameraOcclusion.settlementMask(java.util.Set.of());
         DialogueCameraOcclusion.clear();
     }
