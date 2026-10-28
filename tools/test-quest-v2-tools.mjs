@@ -144,6 +144,18 @@ try {
 
   run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
 
+  const referenceFixture = JSON.parse(await readFile(validQuest, "utf8"));
+  const referenceAvailability = referenceFixture.availability;
+  referenceFixture.availability = { conditions: [{ type: "quest_fact", scope: "quest", quest: "villagerretaliation:last_light", key: "outcome", value: "on_time" }] };
+  await writeJson(validQuest, referenceFixture);
+  run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest]);
+  referenceFixture.availability.conditions[0].quest = "test:missing_reference";
+  await writeJson(validQuest, referenceFixture);
+  const missingReference = run("node", ["tools/validate-dialogue-data.mjs", "--quiet", "--quest", validQuest], { expectFailure: true });
+  assert(missingReference.stderr.includes('references missing quest id "test:missing_reference"'), "Missing external quests still fail reference validation.");
+  referenceFixture.availability = referenceAvailability;
+  await writeJson(validQuest, referenceFixture);
+
   const conditionFixture = JSON.parse(await readFile(validQuest, "utf8"));
   const discovered = structuredClone(conditionFixture);
   discovered.provider.type = "villagerretaliation:discovery";

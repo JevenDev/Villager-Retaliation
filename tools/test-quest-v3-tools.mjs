@@ -66,9 +66,15 @@ for (const id of ["test:../escape", "test:delivery/../../escape", "test:/absolut
   assert.throws(() => migrationReceipts(new Map([["data/test/quests/village/delivery/quest.json", { ...original, id }]])), /valid quest ID/);
 }
 const receiptDirectory = new URL("../neoforge/src/main/resources/data/villagerretaliation/quest_migrations/", import.meta.url);
+const receiptTransitions = new Set();
 for (const file of await readdir(receiptDirectory)) {
   const receipt = JSON.parse(await readFile(new URL(file, receiptDirectory), "utf8"));
-  assert.equal(file, receipt.quest.split(":")[1] + ".json", "bundled migration receipts use readable quest names");
+  const name = receipt.quest.split(":")[1];
+  assert(file === name + ".json" || file.startsWith(name + "_") && /^[a-z0-9_]+\.json$/.test(file.slice(name.length + 1)),
+    "bundled migration receipts use readable quest names with optional revision suffixes");
+  const transition = receipt.quest + ":" + receipt.from_fingerprint + ":" + receipt.to_fingerprint;
+  assert(!receiptTransitions.has(transition), "migration receipts do not duplicate the same fingerprint transition");
+  receiptTransitions.add(transition);
   assert.match(receipt.from_fingerprint, /^[a-f0-9]{64}$/);
   assert.match(receipt.to_fingerprint, /^[a-f0-9]{64}$/);
 }
