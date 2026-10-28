@@ -837,7 +837,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
         if (this.routeDraft != null) hint = routeHint();
         else if (this.interaction.is(Mode.SELECT) && draft == null && this.editingArea == null)
-            hint = text("peek_hint", SettlementViewKeyMappings.PEEK.getTranslatedKeyMessage()).copy().append("\n").append(hint);
+            hint = Component.translatable("villagerretaliation.gui.settlement.peek_hint", SettlementViewKeyMappings.PEEK.getTranslatedKeyMessage())
+                    .append("\n").append(hint);
         if (this.snapshots.stale(now)) hint = Component.literal("Overview stale / loading").append("\n").append(hint);
         else if (this.snapshots.loading()) hint = Component.literal("Refreshing overview").append("\n").append(hint);
         if (this.queuedChunks > 0) hint = Component.translatable("villagerretaliation.gui.settlement.view_queue",
