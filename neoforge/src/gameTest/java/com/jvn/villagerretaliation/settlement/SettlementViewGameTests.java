@@ -225,7 +225,10 @@ public final class SettlementViewGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
     public static void viewTicketsAreIncrementalAndReleasedWhenTheSessionChanges(GameTestHelper helper) {
         var fixture = fixture(helper);
+        var chunkLimit = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_CHUNKS;
+        int previousChunkLimit = chunkLimit.get();
         try {
+            chunkLimit.set(Math.max(2, previousChunkLimit));
             SettlementViewService.open(fixture.player(), fixture.town().id());
             var session = SettlementViewService.session(fixture.player().getUUID());
             SettlementViewService.update(session);
@@ -249,6 +252,7 @@ public final class SettlementViewGameTests {
             helper.assertTrue(SettlementViewService.session(fixture.player().getUUID()) == null && current.held.isEmpty(),
                     "damage or disconnection releases every ticket");
         } finally {
+            chunkLimit.set(previousChunkLimit);
             fixture.player().hurtTime = 0;
             SettlementViewService.close(fixture.player().getUUID(), false);
             helper.getLevel().getChunkSource().removeEntity(fixture.player());
@@ -502,12 +506,15 @@ public final class SettlementViewGameTests {
     @GameTest(template = "empty", batch = "settlement_view")
     public static void concurrentViewsShareTicketsAndCannotResetTheAggregateBudget(GameTestHelper helper) {
         var fixture = fixture(helper);
+        var chunkLimit = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_CHUNKS;
+        int previousChunkLimit = chunkLimit.get();
         var peer = player(helper, "SharedViewer");
         var server = helper.getLevel().getServer();
         var config = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_LOADS;
         int previous = config.get();
         int sends = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.get();
         try {
+            chunkLimit.set(Math.max(2, previousChunkLimit));
             config.set(2);
             com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.set(1);
             fixture.town().setPermissions(fixture.player().getUUID(), peer.getUUID(), Set.of(SettlementPermission.VIEW));
@@ -537,6 +544,7 @@ public final class SettlementViewGameTests {
                     .shouldForceTicks(pos.toLong())), "the last reference releases the actual ticket");
             SettlementViewService.close(fixture.player().getUUID(), false);
         } finally {
+            chunkLimit.set(previousChunkLimit);
             config.set(previous);
             com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SETTLEMENT_VIEW_SENDS.set(sends);
             SettlementViewService.close(peer.getUUID(), false);

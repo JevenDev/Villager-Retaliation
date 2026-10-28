@@ -16,6 +16,24 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class SettlementConstructionQueueGameTests {
     private SettlementConstructionQueueGameTests() {}
 
+    public static void fundSmokeProject(net.minecraft.server.level.ServerPlayer player,
+                                        com.jvn.villagerretaliation.allegiance.VillageAllegianceId id, UUID request) {
+        var level = player.serverLevel();
+        var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        var project = town.project(request);
+        var plan = SettlementConstructionService.scan(level, project.structure(), project.rotation());
+        var source = SettlementStock.supplies(town, com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER).stream()
+                .filter(depot -> com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker.builderMaterialStorageFilter(plan, project.origin()).test(depot.position()))
+                .findFirst().orElseThrow();
+        for (var material : plan.materials()) {
+            var remaining = source.addItem(material.item().copyWithCount(material.count()));
+            if (!remaining.isEmpty()) throw new IllegalStateException("The smoke depot holds the complete quoted project cost");
+        }
+        SettlementTestPlots.planSupplies(level, town);
+        SettlementConstructionService.tickQueue(level, town);
+        if (!project.active()) throw new IllegalStateException("The supplied smoke project activates: " + project.blocker());
+    }
+
     public static String rejectSmokeCommand(net.minecraft.server.level.ServerPlayer player, SettlementManagementActionPayload command) {
         return SettlementManagementService.executeFailure(player, command);
     }

@@ -1426,11 +1426,13 @@ public final class SettlementViewClientSmoke {
         } else if (phase == 18 && minecraft.screen instanceof SettlementBuildingScreen screen && ++ticks >= 5
                 && screen.parent().buildingDraft().preview != null) {
             var draft = screen.parent().buildingDraft();
-            require(draft.preview.builders().size() == 1 && draft.preview.builders().getFirst().id().equals(projectFixture.builder()), "an unassigned unloaded builder is available");
+            require(draft.preview.builders().stream().anyMatch(builder -> builder.id().equals(projectFixture.builder())), "the assigned unloaded builder is available alongside automatic dispatch");
             require(draft.preview.materials().stream().anyMatch(material -> material.available() < material.required()), "the review identifies missing supplies");
             var rows = screen.children().stream().filter(net.minecraft.client.gui.components.ObjectSelectionList.class::isInstance)
                     .map(child -> (net.minecraft.client.gui.components.ObjectSelectionList<?>) child).findFirst().orElseThrow();
-            rows.children().getFirst().mouseClicked(0, 0, 0);
+            int builderIndex = java.util.stream.IntStream.range(0, draft.preview.builders().size())
+                    .filter(index -> draft.preview.builders().get(index).id().equals(projectFixture.builder())).findFirst().orElseThrow();
+            rows.children().get(builderIndex).mouseClicked(0, 0, 0);
             ticks = 0;
             phase = 19;
         } else if (phase == 19 && minecraft.screen instanceof SettlementBuildingScreen screen && ++ticks >= 5
@@ -1674,7 +1676,7 @@ public final class SettlementViewClientSmoke {
             phase = 43;
         } else if (phase == 43 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
-                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().size() == 2
                 && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed && bed.available()) {
             selectFirstRow(screen);
             button(screen, "villagerretaliation.gui.settlement.assign_home").onPress();
@@ -1696,7 +1698,7 @@ public final class SettlementViewClientSmoke {
             phase = 47;
         } else if (phase == 47 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
-                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().size() == 2
                 && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed
                 && fixture.resident().equals(bed.resident()) && ++ticks >= 5) {
             capture("assigned-home");
@@ -1727,7 +1729,7 @@ public final class SettlementViewClientSmoke {
             phase = 52;
         } else if (phase == 52 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
-                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().size() == 2
                 && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed
                 && fixture.resident().equals(bed.resident())) {
             selectFirstRow(screen);
@@ -1740,7 +1742,7 @@ public final class SettlementViewClientSmoke {
             phase = 49;
         } else if (phase == 49 && minecraft.screen instanceof SettlementManagementScreen screen
                 && screen.snapshot().page() == com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.BEDS
-                && screen.snapshot().entries().size() == 1
+                && screen.snapshot().entries().size() == 2
                 && screen.snapshot().entries().getFirst() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Bed bed && bed.available()) {
             UUID player = minecraft.player.getUUID();
             minecraft.getSingleplayerServer().submit(() -> {
@@ -1806,18 +1808,18 @@ public final class SettlementViewClientSmoke {
             minecraft.getSingleplayerServer().submit(() -> {
                 var serverPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(player);
                 var town = SettlementSavedData.get(serverPlayer.serverLevel()).get(fixture.town()).orElseThrow();
-                com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(serverPlayer.serverLevel(), town, town.center(), town.center().east(600));
+                com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(serverPlayer.serverLevel(), town, town.center().west(600), town.center());
             }).join();
             ticks = 0;
             phase = 104;
         } else if (phase == 104 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 20) {
-            screen.focus(fixture.center().getX() + 600.5D, fixture.center().getZ() + 0.5D);
+            screen.focus(fixture.center().getX() - 599.5D, fixture.center().getZ() + 0.5D);
             ticks = 0;
             phase = 105;
         } else if (phase == 105 && minecraft.screen instanceof SettlementViewScreen screen
-                && screen.focusX() > fixture.center().getX() + 512 && screen.terrainLoaded() && ++ticks >= 20) {
+                && screen.focusX() < fixture.center().getX() - 512 && screen.terrainLoaded() && ++ticks >= 20) {
             require(screen.plots().plots().size() <= SettlementViewWindow.MAX_CHUNKS, "remote plot snapshots stay bounded");
-            require(screen.plots().plots().stream().anyMatch(plot -> plot.owned() && plot.chunk().equals(new ChunkPos(fixture.center().east(600)))),
+            require(screen.plots().plots().stream().anyMatch(plot -> plot.owned() && plot.chunk().equals(new ChunkPos(fixture.center().west(600)))),
                     "the long extension remains visible beyond the old radius ceiling");
             capture("plots-long-extension");
             screen.togglePlots();
@@ -2169,6 +2171,7 @@ public final class SettlementViewClientSmoke {
     private static UUID prepareCrewAssistant(ServerPlayer player) {
         var level = player.serverLevel();
         var town = SettlementSavedData.get(level).get(fixture.town()).orElseThrow();
+        com.jvn.villagerretaliation.settlement.SettlementConstructionQueueGameTests.fundSmokeProject(player, fixture.town(), projectFixture.project());
         var origin = fixture.center().offset(-24, 0, 20);
         var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Builder home",
                 origin, origin.offset(3, 3, 3), 5, true);
@@ -2216,6 +2219,10 @@ public final class SettlementViewClientSmoke {
         VillageAllegianceApi.assignKnown(level, builder, fixture.town(), AllegianceAssignmentSource.EXPLICIT_API);
         require(level.getEntity(builder.getUUID()) == null, "the civic builder remains unloaded");
         SettlementCareService.onUnloaded(builder);
+        var construction = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Builder assignment",
+                origin.offset(-3, -1, -4), origin.offset(-1, 3, -1), 5, true);
+        require(SettlementBuildingService.register(player, fixture.town(), construction), "the construction worksite registers");
+        require(SettlementWorkforceService.assignResident(level, player, fixture.town(), builder.getUUID(), construction.id()), "the unloaded builder receives a construction assignment");
         com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment.give(player, 500);
         require(com.jvn.villagerretaliation.settlement.SettlementTradeService.depositCurrency(player, fixture.town(), 500), "the construction fee is funded");
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);

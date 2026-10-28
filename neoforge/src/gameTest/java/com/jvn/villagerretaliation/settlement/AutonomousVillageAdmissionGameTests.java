@@ -112,6 +112,7 @@ public final class AutonomousVillageAdmissionGameTests {
         final Villager resident;
         final Structure structure;
         private final SettlementSavedData previousData;
+        private final VillageAllegianceRegistrySavedData previousRegistry;
         private final StructureStart previousStart;
         private final BlockState previousBlock;
         private final BlockState previousSupport;
@@ -119,7 +120,9 @@ public final class AutonomousVillageAdmissionGameTests {
         Fixture(GameTestHelper helper) {
             this.level = helper.getLevel();
             this.position = helper.absolutePos(new BlockPos(2, 2, 2));
-            this.registry = VillageAllegianceRegistrySavedData.get(this.level);
+            this.previousRegistry = VillageAllegianceRegistrySavedData.get(this.level);
+            this.registry = new VillageAllegianceRegistrySavedData();
+            this.level.getServer().overworld().getDataStorage().set("villagerretaliation_village_allegiances", this.registry);
             this.previousData = SettlementSavedData.get(this.level);
             this.data = new SettlementSavedData();
             this.level.getServer().overworld().getDataStorage().set("villagerretaliation_settlements", this.data);
@@ -166,6 +169,7 @@ public final class AutonomousVillageAdmissionGameTests {
             this.registry.releaseSettlement(this.id);
             this.registry.removeVillage(this.id);
             this.level.getServer().overworld().getDataStorage().set("villagerretaliation_settlements", this.previousData);
+            this.level.getServer().overworld().getDataStorage().set("villagerretaliation_village_allegiances", this.previousRegistry);
         }
     }
 }

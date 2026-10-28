@@ -270,10 +270,10 @@ public final class SettlementTownProfileScenario {
         demand(player, 1_024, 0);
         for (int index = 0; index < this.builders.size(); index++) {
             UUID builder = this.builders.get(index);
-            if (this.town.projects().values().stream().noneMatch(project -> project.builder().equals(builder) && project.active())) {
+            if (this.town.projects().values().stream().noneMatch(project -> project.builder().equals(builder) && project.unfinished())) {
                 require(SettlementWorkforceService.assignResident(this.level, player, this.town.id(), builder, this.sites.get(index + 4).id()),
                         "the unloaded builder can take the next construction site");
-                commission(player, index, index + 4);
+                commissionQueued(player, index, index + 4);
             }
         }
     }
@@ -366,6 +366,15 @@ public final class SettlementTownProfileScenario {
         player.setItemInHand(InteractionHand.MAIN_HAND, ConstructionBlueprintItem.create(this.level, null, this.plan,
                 this.origins.get(site), id, 0, this.plan.price(), "", 0L));
         require(SettlementConstructionService.start(player, this.town, this.builders.get(builder), id), "the real blueprint is commissioned at site " + site);
+    }
+
+    private void commissionQueued(ServerPlayer player, int builder, int site) {
+        UUID id = UUID.randomUUID();
+        var anchor = this.origins.get(site).offset(Math.floorDiv(this.plan.localMin().getX() + this.plan.localMax().getX(), 2),
+                this.plan.localMin().getY(), Math.floorDiv(this.plan.localMin().getZ() + this.plan.localMax().getZ(), 2));
+        String failure = SettlementConstructionService.commission(player, this.town, id, this.plan.entry().id(), anchor,
+                this.plan.rotation(), this.builders.get(builder));
+        require(failure.isEmpty(), "the real blueprint is commissioned at site " + site + ": " + failure);
     }
 
     private SettlementArea area(ServerPlayer player, SettlementAreaType type, String name, BlockPos min, BlockPos max) {
