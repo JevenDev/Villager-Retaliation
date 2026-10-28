@@ -559,6 +559,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             }
             HiredWorkerBrain.setStorageTarget(context, source);
             BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.COLLECTING_MATERIALS);
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
             var movement = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, source, BUILD_WALK_SPEED);
             // Escrow already owns these stacks. A removed depot does not destroy the reserved parcel:
             // the worker can recover it by reaching its recorded pickup location.
@@ -567,6 +569,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 HiredStorageNavigationGoal.clearStorageTarget(context);
             } else if (movement == HiredStorageNavigationGoal.Result.FAILED) {
                 BuilderTaskState.setBlocked(context.state(), "builder_material_storage_unreachable");
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, source);
                 return WorkResult.idle("interaction.work.builder.materials_unreachable", BuilderTaskState.replacements(context.state()));
             }
             return WorkResult.idle("interaction.work.builder.collecting_materials", BuilderTaskState.replacements(context.state()));

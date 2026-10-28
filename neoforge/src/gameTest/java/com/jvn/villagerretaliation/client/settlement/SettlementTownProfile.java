@@ -223,7 +223,7 @@ public final class SettlementTownProfile {
                 verify(snapshot, 100);
                 var initial = SNAPSHOTS.get("activeStart");
                 require(snapshot.deliveredIron() > initial.deliveredIron(), "native couriers deliver real cargo during the measured interval: " + snapshot);
-                require(snapshot.placed() > initial.placed(), "native builders advance real projects during the measured interval: " + snapshot);
+                require(snapshot.placed() > initial.placed(), "native builders advance real projects during the measured interval: " + snapshot + ", builders=" + fixture.builderDiagnostics());
                 require(snapshot.wheat() > 0, "native farmers produce real wheat: " + snapshot);
                 require(snapshot.bread() < 512, "residents consume real depot meals: " + snapshot);
                 SNAPSHOTS.put("activeEnd", snapshot);
