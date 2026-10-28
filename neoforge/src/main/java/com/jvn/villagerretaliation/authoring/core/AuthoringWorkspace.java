@@ -33,6 +33,9 @@ public final class AuthoringWorkspace {
     private List<JsonObject> observedDeleted = List.of();
     private JsonObject observedPack;
     private List<AuthoringDocument> savedDocuments = List.of();
+    private Map<String, AuthoringDocument> savedDocumentsByPath = Map.of();
+    private long changedRevision = -1;
+    private List<String> changedPaths = List.of();
     private Map<String, byte[]> savedAttachments = Map.of();
     private java.util.Set<String> savedFolders = java.util.Set.of();
     private JsonObject savedPack;
@@ -55,6 +58,7 @@ public final class AuthoringWorkspace {
     private List<String> indexedDocumentPaths = List.of();
     private java.util.Set<String> indexedAttachments = java.util.Set.of();
     private List<String> indexedFiles;
+    private Map<String, AuthoringDocument> indexedByPath = Map.of();
     private final Map<String, byte[]> attachments = new LinkedHashMap<>();
     private final java.util.Set<String> folders = new java.util.TreeSet<>();
     private JsonObject packMetadata = JsonParser.parseString("""
@@ -296,6 +300,7 @@ public final class AuthoringWorkspace {
         paths.add("pack.mcmeta");
         indexedDocuments = List.copyOf(documents);
         indexedDocumentPaths = documents.stream().map(AuthoringDocument::resourcePath).toList();
+        indexedByPath = documents.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(AuthoringDocument::resourcePath, document -> document));
         indexedAttachments = java.util.Set.copyOf(attachments.keySet());
         indexedFiles = List.copyOf(paths);
         return indexedFiles;
@@ -309,23 +314,29 @@ public final class AuthoringWorkspace {
 
     public byte[] savedFile(String path) throws IOException {
         safeRelativePath(path);
-        if (recovered) return savedBaseline().savedFile(path);
-        if (path.equals("pack.mcmeta")) return savedPack == null ? null : AuthoringDocument.JSON.toJson(savedPack).getBytes(StandardCharsets.UTF_8);
-        for (var document : savedDocuments) if (path.equals(document.savedPath()))
-            return AuthoringDocument.JSON.toJson(document.savedJson()).getBytes(StandardCharsets.UTF_8);
-        byte[] bytes = savedAttachments.get(path);
+        byte[] bytes = savedFileBytes(path);
         return bytes == null ? null : bytes.clone();
     }
 
+    private byte[] savedFileBytes(String path) throws IOException {
+        if (recovered) return savedBaseline().savedFileBytes(path);
+        if (path.equals("pack.mcmeta")) return savedPack == null ? null : AuthoringDocument.JSON.toJson(savedPack).getBytes(StandardCharsets.UTF_8);
+        var document = savedDocumentsByPath.get(path);
+        return document == null ? savedAttachments.get(path) : document.savedBytes();
+    }
+
     public List<String> changedFilePaths() throws IOException {
+        long version = revision();
+        if (version == changedRevision) return changedPaths;
         var paths = new java.util.TreeSet<>(filePaths());
         var baseline = savedBaseline();
         paths.addAll(baseline.savedAttachments.keySet());
         baseline.savedDocuments.forEach(document -> { if (document.savedPath() != null) paths.add(document.savedPath()); });
         var current = new HashSet<>(filePaths());
         var changed = new ArrayList<String>();
-        for (String path : paths) if (!java.util.Arrays.equals(savedFile(path), current.contains(path) ? readFile(path) : null)) changed.add(path);
-        return List.copyOf(changed);
+        for (String path : paths) if (!java.util.Arrays.equals(savedFileBytes(path), current.contains(path) ? fileBytes(path) : null)) changed.add(path);
+        changedPaths = List.copyOf(changed); changedRevision = version;
+        return changedPaths;
     }
 
     public List<String> folderPaths() {
@@ -355,12 +366,17 @@ public final class AuthoringWorkspace {
 
     public byte[] readFile(String path) throws IOException {
         safeRelativePath(path);
+        filePaths();
+        return fileBytes(path).clone();
+    }
+
+    private byte[] fileBytes(String path) throws IOException {
         if (path.equals("pack.mcmeta")) return AuthoringDocument.JSON.toJson(packMetadata).getBytes(StandardCharsets.UTF_8);
-        for (AuthoringDocument document : documents) if (document.resourcePath().equals(path))
-            return AuthoringDocument.JSON.toJson(document.json()).getBytes(StandardCharsets.UTF_8);
+        var document = indexedByPath.get(path);
+        if (document != null) return document.jsonBytes();
         byte[] bytes = attachments.get(path);
         if (bytes == null) throw new java.nio.file.NoSuchFileException(path);
-        return bytes.clone();
+        return bytes;
     }
 
     public Map<String, String> supportingFileHashes() {
@@ -1767,6 +1783,7 @@ public final class AuthoringWorkspace {
         savedGeneration++;
         documents.forEach(AuthoringDocument::markSaved);
         savedDocuments = List.copyOf(documents);
+        savedDocumentsByPath = documents.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(AuthoringDocument::savedPath, document -> document));
         savedAttachments = Map.copyOf(attachments);
         savedFolders = java.util.Set.copyOf(folders);
         savedPack = packMetadata.deepCopy();

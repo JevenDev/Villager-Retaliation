@@ -19,6 +19,8 @@ public final class AuthoringDocument {
     private JsonObject metadata = new JsonObject();
     private State saved;
     private long revision;
+    private long serializedRevision = -1;
+    private byte[] serialized, savedBytes;
     private long dirtyRevision = -1;
     private boolean dirty;
     private final Deque<HistoryEntry> undo = new ArrayDeque<>();
@@ -129,9 +131,24 @@ public final class AuthoringDocument {
     }
 
     void loadMetadata(JsonObject value) { metadata = value.deepCopy(); revision++; }
-    void markSaved() { saved = state(); dirty = false; dirtyRevision = revision; }
+    void markSaved() {
+        saved = state(); dirty = false; dirtyRevision = revision;
+        savedBytes = serializedRevision == revision ? serialized : null;
+    }
+    // internal byte snapshots are read-only, workspace file APIs return copies
+    byte[] jsonBytes() {
+        if (serializedRevision != revision) {
+            serialized = JSON.toJson(json).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            serializedRevision = revision;
+        }
+        return serialized;
+    }
+    byte[] savedBytes() {
+        if (saved == null) return null;
+        if (savedBytes == null) savedBytes = JSON.toJson(saved.json()).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return savedBytes;
+    }
     String savedPath() { return saved == null ? null : saved.path(); }
-    JsonObject savedJson() { return saved == null ? null : saved.json().deepCopy(); }
 
     private void remember(String label) {
         undo.push(new HistoryEntry(state(), null, label == null || label.isBlank() ? "Edit document" : label));
