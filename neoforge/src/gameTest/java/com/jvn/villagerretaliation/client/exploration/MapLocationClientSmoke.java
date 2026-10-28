@@ -34,6 +34,7 @@ public final class MapLocationClientSmoke {
     @SubscribeEvent public static void beforeRender(ScreenEvent.Render.Pre event) {
         if (System.getProperty(OUTPUT) == null || phase != 1 || !(event.getScreen() instanceof MapLocationEditScreen editor)) return;
         var mc = Minecraft.getInstance();
+        require(map.transitionProgress() == 1, "the marker editor keeps the map backdrop fully open");
         int top = (int) field(editor, "top");
         coveredLocation = new MapLocation(java.util.UUID.randomUUID(), mc.level.dimension().location(),
                 (int) Math.floor(map.view().worldX(editor.width / 2.0)),
@@ -82,8 +83,9 @@ public final class MapLocationClientSmoke {
         switch (phase) {
             case 0 -> {
                 com.jvn.villagerretaliation.client.settlement.SettlementViewPanelClientChecks.verifyPopup();
-                VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
+                VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(true);
                 map = new ExploredMapScreen(); mc.setScreen(map);
+                require(map.transitionProgress() < 1, "opening a fresh map starts its animation");
                 int x = map.width / 2 + 30, y = map.height / 2 + 20;
                 worldX = (int) Math.floor(map.view().worldX(x)); worldZ = (int) Math.floor(map.view().worldZ(y));
                 require(map.mouseClicked(x, y, 1), "right click opens placement");
@@ -121,6 +123,7 @@ public final class MapLocationClientSmoke {
             }
             case 3 -> {
                 if (!(mc.screen instanceof ExploredMapScreen)) return;
+                require(mc.screen == map && map.transitionProgress() == 1, "saving a new marker resumes the map without opening again");
                 saved = MapLocationsClient.all().stream().filter(location -> location.name().equals("Village supplies and food")).findFirst().orElseThrow();
                 require(saved.x() == worldX && saved.z() == worldZ, "cursor placement retains exact map coordinates");
                 require(saved.previewName().equals("Supplies") && saved.alwaysShowName(), "both names and visibility survive server save");
@@ -140,7 +143,9 @@ public final class MapLocationClientSmoke {
                 require(mc.screen instanceof MapLocationEditScreen, "existing marker opens editor");
                 fields(mc.screen).get(0).setValue("Discarded edit");
                 button(mc.screen, MapLocationsClient.text("always").getString()).onPress();
+                var view = map.view();
                 mc.screen.onClose();
+                require(mc.screen == map && map.transitionProgress() == 1 && map.view().equals(view), "canceling a marker edit preserves the open map and viewport");
                 require(MapLocationsClient.all().contains(saved), "cancel does not mutate saved data");
                 map.mouseClicked(map.width / 2.0, map.height / 2.0, 0);
                 map.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
@@ -160,6 +165,12 @@ public final class MapLocationClientSmoke {
             }
             case 7 -> {
                 require(MapLocationsClient.all().stream().noneMatch(location -> location.id().equals(saved.id())), "confirmed delete syncs to client");
+                map.onClose();
+                require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
+                map.onClose();
+                require(mc.screen == null, "a second close returns to the world");
+                mc.setScreen(new ExploredMapScreen());
+                require(((ExploredMapScreen) mc.screen).transitionProgress() < 1, "a fresh map still animates after returning from the editor");
                 try {
                     Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"),
                             "Map location client smoke passed\nPlacement, item textures, scroll selection, server save, names, labels, cancel, sharing menu and delete passed\n");

@@ -189,5 +189,5 @@ public final class ExploredMapScreen extends Screen {
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
         if (arrow(key) != 0) { heldKeys &= ~arrow(key); return true; } return super.keyReleased(key, scan, modifiers);
     }
-    @Override public void removed() { dragging = false; heldKeys = 0; lastFrame = 0; openedAt = 0; closingAt = 0; }
+    @Override public void removed() { dragging = false; heldKeys = 0; lastFrame = 0; finishOpening(); closingAt = 0; }
 }
