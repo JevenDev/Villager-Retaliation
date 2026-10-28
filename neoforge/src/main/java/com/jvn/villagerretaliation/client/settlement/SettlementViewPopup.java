@@ -14,6 +14,7 @@ import org.lwjgl.glfw.GLFW;
 
 final class SettlementViewPopup {
     private static final int PADDING = 4;
+    private static final int HIT_PADDING = 2;
     private final Target target;
     private final int anchorX;
     private final int anchorY;
@@ -29,10 +30,13 @@ final class SettlementViewPopup {
     private int textHeight;
     private int contentHeight;
     private int bodyHeight;
+    private int bodyWidth;
     private int lineHeight;
     private int scroll;
     private int focus = -1;
     private boolean navigationSelection;
+    private int mouseX = Integer.MIN_VALUE;
+    private int mouseY = Integer.MIN_VALUE;
 
     SettlementViewPopup(Target target, double x, double y) {
         this.target = target;
@@ -84,6 +88,7 @@ final class SettlementViewPopup {
             lines.addAll(font.split(details.get(index).copy().withStyle(index == 0 ? ChatFormatting.WHITE : ChatFormatting.GRAY), this.width - PADDING * 2));
         }
         this.lines = List.copyOf(lines);
+        this.bodyWidth = this.lines.stream().mapToInt(font::width).max().orElse(0);
         this.textHeight = this.lines.size() * this.lineHeight + (this.lines.isEmpty() ? 0 : 2);
         if (!actions.isEmpty()) this.textHeight += 4;
         this.hints = actions.isEmpty() ? List.of() : font.split(hint, this.width - PADDING * 2);
@@ -91,8 +96,10 @@ final class SettlementViewPopup {
         this.contentHeight = this.textHeight;
         for (var action : actions) {
             var label = font.split(action.label(), this.width - PADDING * 2 - font.width("-> ") - (action.icon().isEmpty() ? 0 : 20));
-            Button button = new ActionButton(font, action, label, this.width - PADDING * 2, Math.max(label.size() * this.lineHeight, action.icon().isEmpty() ? 0 : 18));
+            int labelWidth = label.stream().mapToInt(font::width).max().orElse(0) + font.width("-> ") + (action.icon().isEmpty() ? 0 : 20);
+            Button button = new ActionButton(font, action, label, Math.min(this.width - PADDING * 2, labelWidth + HIT_PADDING), Math.max(label.size() * this.lineHeight, action.icon().isEmpty() ? 0 : 18));
             this.buttons.add(button);
+            this.bodyWidth = Math.max(this.bodyWidth, labelWidth);
             this.contentHeight += button.getHeight();
         }
         int hintHeight = this.hints.isEmpty() ? 0 : this.hints.size() * this.lineHeight + 4;
@@ -148,6 +155,9 @@ final class SettlementViewPopup {
     }
 
     void hover(double x, double y) {
+        if (this.mouseX == (int) Math.floor(x) && this.mouseY == (int) Math.floor(y)) return;
+        this.mouseX = (int) Math.floor(x);
+        this.mouseY = (int) Math.floor(y);
         this.navigationSelection = false;
         if (!contains(x, y) || y < this.top + PADDING || y >= this.top + PADDING + this.bodyHeight) return;
         for (int index = 0; index < this.buttons.size(); index++) {
@@ -180,7 +190,11 @@ final class SettlementViewPopup {
 
     boolean scroll(double x, double y, double amount) {
         if (!contains(x, y)) return false;
+        if (x < this.left + PADDING - HIT_PADDING || x >= this.left + PADDING + this.bodyWidth + HIT_PADDING
+                || y < this.top + PADDING - HIT_PADDING || y >= this.top + PADDING + this.bodyHeight + HIT_PADDING) return true;
         if (amount != 0) {
+            this.mouseX = (int) Math.floor(x);
+            this.mouseY = (int) Math.floor(y);
             if (this.actions.stream().anyMatch(Action::enabled)) {
                 this.navigationSelection = true;
                 moveFocus(amount > 0 ? -1 : 1, false);

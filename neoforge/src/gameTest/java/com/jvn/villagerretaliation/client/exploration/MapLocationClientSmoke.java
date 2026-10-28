@@ -81,6 +81,7 @@ public final class MapLocationClientSmoke {
         ticks = 0;
         switch (phase) {
             case 0 -> {
+                com.jvn.villagerretaliation.client.settlement.SettlementViewPanelClientChecks.verifyPopup();
                 VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
                 map = new ExploredMapScreen(); mc.setScreen(map);
                 int x = map.width / 2 + 30, y = map.height / 2 + 20;

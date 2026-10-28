@@ -6,7 +6,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 
-final class SettlementViewPanelClientChecks {
+public final class SettlementViewPanelClientChecks {
     private SettlementViewPanelClientChecks() { }
 
     static void verify(SettlementViewScreen view) {
@@ -93,7 +93,7 @@ final class SettlementViewPanelClientChecks {
         require(restored.sidebarWindow != null && restored.mapWindow != null, "dragged window positions survive preference reload");
     }
 
-    private static void verifyPopup() {
+    public static void verifyPopup() {
         var font = Minecraft.getInstance().font;
         var popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.ACTIONS, null), 630, 350);
         int[] selected = {-1};
@@ -113,7 +113,9 @@ final class SettlementViewPanelClientChecks {
         require(!popup.scroll(-1, -1, -1), "scrolling outside the tooltip is left to the view");
         popup.scroll(x, y, 0);
         require(popup.buttons().getFirst().isFocused(), "horizontal scrolling preserves the selected action");
-        popup.scroll(x, y, -1);
+        popup.hover(x, y);
+        popup.scroll(x + 0.25, y + 0.25, -1);
+        popup.hover(x, y);
         require(popup.buttons().get(2).isFocused() && selected[0] == -1,
                 "the wheel selects the next enabled action without running it");
         popup.update(font, 640, 360, details, actions.subList(0, 3));
@@ -121,6 +123,19 @@ final class SettlementViewPanelClientChecks {
         popup.click(x, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(selected[0] == 2, "click confirms the wheel selection even over a different row");
         selected[0] = -1;
+        double blankX = first.getX() + Math.max(first.getWidth(), details.stream().mapToInt(font::width).max().orElseThrow()) + 8;
+        require(popup.contains(blankX, y), "the tooltip has whitespace beyond its short action labels");
+        popup.hover(blankX, y);
+        require(popup.buttons().get(2).isFocused(), "blank row space does not change the hovered selection");
+        popup.click(blankX, y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(selected[0] == -1, "blank row space does not activate an action");
+        popup.scroll(blankX, y, 1);
+        require(popup.buttons().get(2).isFocused(), "scrolling beyond the padded text area does not select an action");
+        double hintY = popup.buttons().getLast().getBottom() + 6;
+        require(popup.contains(x, hintY) && popup.scroll(x, hintY, 1), "footer scrolling stays inside the tooltip");
+        require(popup.buttons().get(2).isFocused(), "the help footer is outside the scroll area");
+        popup.scroll(first.getX() - 1, y, 1);
+        require(popup.buttons().getFirst().isFocused(), "slight padding around the text accepts scrolling");
         var disabled = popup.buttons().get(1);
         popup.hover(disabled.getX() + 4, disabled.getY() + 2);
         popup.click(disabled.getX() + 4, disabled.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
@@ -131,6 +146,13 @@ final class SettlementViewPanelClientChecks {
         popup.key(GLFW.GLFW_KEY_ENTER);
         require(selected[0] == 2, "keyboard navigation wraps past disabled actions and confirms");
         popup.update(font, 200, 120, details, actions);
+        var startRow = popup.buttons().get(2);
+        double scrollX = startRow.getX() + 2, scrollY = startRow.getY() + 2;
+        for (int index = 3; index < actions.size(); index++) {
+            popup.scroll(scrollX, scrollY, -1);
+            popup.hover(scrollX, scrollY);
+            require(popup.buttons().get(index).isFocused(), "stationary hover cannot pull overflow scrolling back to another row");
+        }
         for (int index = 0; index < 30; index++) popup.key(GLFW.GLFW_KEY_DOWN);
         var focused = popup.buttons().stream().filter(Button::isFocused).findFirst().orElseThrow();
         require(focused.getY() >= 4 && focused.getBottom() <= 116,
