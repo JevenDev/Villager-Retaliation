@@ -90,6 +90,8 @@ public final class SettlementViewClientSmoke {
     private static Villager issueFarmer;
     private static long started;
     private static int phase;
+    private static int productionPhase = -1;
+    private static int productionReadyTick;
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static boolean resourceFormsChecked;
     private static int ticks;
@@ -806,7 +808,7 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 131;
         } else if (phase == 131 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
-                && screen.state().editable() && screen.state().queue() != null && screen.state().queue().orders().size() == 1 && ++ticks >= 5) {
+                && screen.state().editable() && screen.state().queue() != null && screen.state().queue().orders().size() == 1 && ++ticks >= 5 && productionActionReady(minecraft)) {
             var order = screen.state().queue().orders().getFirst();
             require(order.amount() == 5 && order.output().getCount() == 4 && !order.recipe().alternatives().isEmpty(),
                     "the server retains the exact recipe, narrowed ingredient and whole-batch output");
@@ -816,17 +818,17 @@ public final class SettlementViewClientSmoke {
             ticks = 0;
             phase = 132;
         } else if (phase == 132 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
-                && screen.state().editable() && screen.state().queue().orders().getFirst().paused() && ++ticks >= 5) {
+                && screen.state().editable() && screen.state().queue().orders().getFirst().paused() && ++ticks >= 5 && productionActionReady(minecraft)) {
             button(screen, "Resume").onPress();
             ticks = 0;
             phase = 133;
         } else if (phase == 133 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
-                && screen.state().editable() && !screen.state().queue().orders().getFirst().paused() && ++ticks >= 5) {
+                && screen.state().editable() && !screen.state().queue().orders().getFirst().paused() && ++ticks >= 5 && productionActionReady(minecraft)) {
             button(screen, "Cancel").onPress();
             ticks = 0;
             phase = 134;
         } else if (phase == 134 && minecraft.screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionOrdersScreen screen
-                && screen.state().editable() && screen.state().queue().orders().getFirst().cancelled() && ++ticks >= 5) {
+                && screen.state().editable() && screen.state().queue().orders().getFirst().cancelled() && ++ticks >= 5 && productionActionReady(minecraft)) {
             button(screen, "Remove").onPress();
             ticks = 0;
             phase = 135;
@@ -1502,7 +1504,11 @@ public final class SettlementViewClientSmoke {
             crewYaw = screen.cameraYaw();
             ticks = 0;
             phase = 162;
-        } else if (phase == 162 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5) {
+        } else if (phase == 162 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 5
+                && screen.inspectorSelection() instanceof com.jvn.villagerretaliation.network.SettlementManagementPayload.Project currentProject
+                && currentProject.status() == com.jvn.villagerretaliation.settlement.SettlementProject.Status.ACTIVE
+                && currentProject.crewAvailable()) {
+            projectSnapshot = currentProject;
             button(screen, "Staff").onPress();
             capture("inspector-construction-crew");
             button(screen, "Crew and priority").onPress();
@@ -2166,6 +2172,15 @@ public final class SettlementViewClientSmoke {
         com.jvn.villagerretaliation.settlement.SettlementBackgroundService.onUnloaded(villager);
         SettlementManagementService.open(player, fixture.town());
         return villager.getUUID();
+    }
+
+    private static boolean productionActionReady(Minecraft minecraft) {
+        int now = minecraft.getSingleplayerServer().getTickCount();
+        if (productionPhase != phase) {
+            productionPhase = phase;
+            productionReadyTick = now + 5;
+        }
+        return now >= productionReadyTick;
     }
 
     private static UUID prepareCrewAssistant(ServerPlayer player) {
