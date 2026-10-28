@@ -65,6 +65,11 @@ public final class SettlementBuildingBoundsGameTests {
         var min = new BlockPos((chunk.x - 1) << 4, fixture.town().center().getY(), (chunk.z - 1) << 4);
         var origin = min.subtract(plan.localMin());
         load(helper, plan.worldMin(origin), plan.worldMax(origin));
+        helper.getLevel().setBlockAndUpdate(plan.worldMin(origin), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+        helper.assertValueEqual(SettlementConstructionService.placementFailure(fixture.player(), fixture.town(), plan, origin),
+                "blocked_existing", "edge placement still protects existing containers");
+        for (var position : BlockPos.betweenClosed(plan.worldMin(origin), plan.worldMax(origin)))
+            helper.getLevel().setBlock(position, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
         var id = UUID.randomUUID();
         helper.assertValueEqual(SettlementConstructionService.commission(fixture.player(), fixture.town(), id, FARM,
                 anchor(plan, origin), Rotation.NONE, SettlementProject.AUTOMATIC_BUILDER), "", "an edge building enters the queue without a builder or supplies");

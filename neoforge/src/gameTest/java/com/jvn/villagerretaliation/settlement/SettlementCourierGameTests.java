@@ -259,7 +259,12 @@ public final class SettlementCourierGameTests {
         helper.startSequence().thenWaitUntil(() -> {
             var crossing = com.jvn.villagerretaliation.diplomacy.route.DiplomaticRouteService.ready(level, plan.crossing);
             helper.assertTrue(crossing != null && crossing.needsBoat(), "cached terrain produces a real boat crossing");
-            candidate.access = crossing.steps().getFirst().position();
+            var access = crossing.steps().getFirst().position();
+            if (!access.equals(candidate.access)) {
+                com.jvn.villagerretaliation.diplomacy.route.DiplomaticRouteService.forget(level, candidate.approach);
+                candidate.approach = UUID.randomUUID();
+                candidate.access = access;
+            }
             com.jvn.villagerretaliation.diplomacy.route.DiplomaticRouteService.prepare(level, candidate.approach, candidate.origin, candidate.access, false);
             helper.assertTrue(com.jvn.villagerretaliation.diplomacy.route.DiplomaticRouteService.ready(level, candidate.approach) != null, "resident approach is prepared");
         }).thenExecute(() -> {
@@ -324,6 +329,8 @@ public final class SettlementCourierGameTests {
         for (int dx = -1; dx < 7; dx++) for (int dz = -1; dz < 4; dz++) level.setBlockAndUpdate(origin.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
         var courier = EntityType.VILLAGER.create(level); courier.load(request.journey.residentContext.copy());
         courier.moveTo(origin.getX() + 0.5, origin.getY(), origin.getZ() + 0.5); courier.setHealth(14);
+        com.jvn.villagerretaliation.villager.VillagerRecoveryService.restoreRecoveryState(courier,
+                new com.jvn.villagerretaliation.villager.VillagerRecoveryService.RecoverySnapshot(17, 0.0F, 0.0F, 0));
         courier.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
         var journey = new SettlementCourierJourney(request.id(), courier.getUUID(), fixture.home.id(), level.dimension().location(), route(origin, origin),
                 route(origin, origin.offset(80, 0, 0)), courier.saveWithoutId(new CompoundTag()), 2, ItemStack.EMPTY, level.getGameTime());
