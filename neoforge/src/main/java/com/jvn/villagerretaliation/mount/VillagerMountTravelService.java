@@ -18,11 +18,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.HitResult;
 
 /** Coordinates travel without owning any villager work, party, or combat navigation. */
 public final class VillagerMountTravelService {
     static final double BOARD_DISTANCE_SQR = 3.0D * 3.0D;
+    private static final double BOARD_MAX_HEIGHT_DIFFERENCE = 1.5D;
     static final double ROLE_MOUNT_DISTANCE_SQR = 16.0D * 16.0D;
     static final double ROLE_DISMOUNT_DISTANCE_SQR = 8.0D * 8.0D;
     static final double PARK_RETURN_DISTANCE_SQR = 10.0D * 10.0D;
@@ -104,7 +107,7 @@ public final class VillagerMountTravelService {
         // Parking must not constrain the navigator once a rider wants this mount.
         adapter.clearRestriction(mount);
 
-        if (villager.distanceToSqr(mount) <= BOARD_DISTANCE_SQR) {
+        if (villager.distanceToSqr(mount) <= BOARD_DISTANCE_SQR && canBoard(villager, mount)) {
             if (adapter.tryMountAvailableSeat(mount, villager)) {
                 data.setParkingAnchor(villager.getUUID(), null, null);
                 adapter.clearRestriction(mount);
@@ -112,6 +115,11 @@ public final class VillagerMountTravelService {
             return;
         }
         if (!isRetryTick(villager)) {
+            return;
+        }
+        Path current = villager.getNavigation().getPath();
+        if (current != null && !current.isDone() && current.canReach()
+                && current.getTarget().distSqr(mount.blockPosition()) <= 1.0D) {
             return;
         }
         Path approach = villager.getNavigation().createPath(mount, 0);
@@ -145,17 +153,7 @@ public final class VillagerMountTravelService {
                 continue;
             }
             Collection<VillagerMountAssignment> mountAssignments = data.assignmentsForMountView(mountId);
-            boolean wanted = false;
-            for (VillagerMountAssignment mountAssignment : mountAssignments) {
-                Entity assigned = VillagerMountEntities.loaded(server, mountAssignment.villagerId());
-                if (assigned instanceof Villager villager
-                        && villager.level() == mount.level()
-                        && travelDecision((ServerLevel) villager.level(), villager).wantsMount()) {
-                    wanted = true;
-                    break;
-                }
-            }
-            if (wanted) {
+            if (hasTravelDemand(server, mount, mountAssignments)) {
                 adapter.clearRestriction(mount);
                 continue;
             }
@@ -184,6 +182,28 @@ public final class VillagerMountTravelService {
                 adapter.stopNavigation(mount);
             }
         }
+    }
+
+    private static boolean hasTravelDemand(
+            MinecraftServer server, Entity mount, Collection<VillagerMountAssignment> assignments) {
+        for (VillagerMountAssignment assignment : assignments) {
+            Entity assigned = VillagerMountEntities.loaded(server, assignment.villagerId());
+            if (assigned instanceof Villager villager && villager.isAlive()
+                    && villager.level() == mount.level() && !VillagerDownedService.isDowned(villager)
+                    && travelDecision((ServerLevel) villager.level(), villager).wantsMount()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canBoard(Villager villager, Entity mount) {
+        return Math.abs(villager.getY() - mount.getY()) <= BOARD_MAX_HEIGHT_DIFFERENCE
+                && villager.hasLineOfSight(mount)
+                && villager.level().clip(new ClipContext(
+                        villager.position().add(0.0D, 0.5D, 0.0D),
+                        mount.position().add(0.0D, 0.5D, 0.0D),
+                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, villager)).getType() == HitResult.Type.MISS;
     }
 
     public static void onVillagerDowned(Villager villager) {
@@ -301,14 +321,13 @@ public final class VillagerMountTravelService {
             Entity mount,
             VillagerMountAdapter adapter,
             VillagerMountAssignmentSavedData data) {
-        if (villager.getVehicle() == mount) {
-            adapter.tryDismount(mount, villager);
-        }
+        boolean dismounted = villager.getVehicle() == mount && adapter.tryDismount(mount, villager);
         VillagerMountAssignment current = data.forVillager(villager.getUUID()).orElse(null);
         if (current != null && (current.parkingDimension() == null || current.parkingPosition() == null)) {
             data.setParkingAnchor(villager.getUUID(), level.dimension().location(), mount.blockPosition());
         }
-        if (adapter.hasActiveRider(mount) || adapter.isLeashed(mount) || adapter.isPanicking(mount)) {
+        if (adapter.hasActiveRider(mount) || adapter.isLeashed(mount) || adapter.isPanicking(mount)
+                || hasTravelDemand(level.getServer(), mount, data.assignmentsForMountView(mount.getUUID()))) {
             adapter.clearRestriction(mount);
             return;
         }
@@ -317,7 +336,9 @@ public final class VillagerMountTravelService {
                 && level.dimension().location().equals(parked.parkingDimension())
                 && parked.parkingPosition() != null) {
             adapter.restrictTo(mount, parked.parkingPosition(), PARK_RESTRICTION_RADIUS);
-            adapter.stopNavigation(mount);
+            if (dismounted || mount.blockPosition().distSqr(parked.parkingPosition()) <= PARK_SETTLE_DISTANCE_SQR) {
+                adapter.stopNavigation(mount);
+            }
         }
     }
 

@@ -88,6 +88,11 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (!(entity instanceof AbstractHorse horse) || target == null) {
             return false;
         }
+        Path current = horse.getNavigation().getPath();
+        if (current != null && !current.isDone() && current.canReach() && current.getTarget().equals(target)) {
+            horse.getNavigation().setSpeedModifier(speed);
+            return true;
+        }
         Path path = createTravelPath(horse, target);
         return path != null && horse.getNavigation().moveTo(path, speed);
     }

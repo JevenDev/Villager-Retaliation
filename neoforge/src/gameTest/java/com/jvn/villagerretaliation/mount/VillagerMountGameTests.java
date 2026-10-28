@@ -38,7 +38,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
-@GameTestHolder
+@GameTestHolder("mount_travel")
 @PrefixGameTestTemplate(false)
 public final class VillagerMountGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
@@ -439,7 +439,7 @@ public final class VillagerMountGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_speed_policy")
-    public static void mountedVillagerWalksNearTargetAndSprintsBeyondEightBlocks(GameTestHelper helper) {
+    public static void mountedVillagerWalksNearTargetAndSprintsAtLongDistance(GameTestHelper helper) {
         Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
         AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
         horse.setTamed(true);
@@ -448,7 +448,7 @@ public final class VillagerMountGameTests {
                 "The speed-policy fixture must put the villager in the controlling seat");
 
         BlockPos nearby = horse.blockPosition().offset(7, 0, 0);
-        BlockPos distant = horse.blockPosition().offset(9, 0, 0);
+        BlockPos distant = horse.blockPosition().offset(17, 0, 0);
         double walkModifier = VillagerMountSpeedPolicy.toward(villager, nearby, 0.62D);
         double sprintModifier = VillagerMountSpeedPolicy.toward(villager, distant, 0.62D);
         helper.assertTrue(walkModifier * horse.getAttributeValue(Attributes.MOVEMENT_SPEED) >= 0.299D,
@@ -456,7 +456,7 @@ public final class VillagerMountGameTests {
         helper.assertTrue(sprintModifier * horse.getAttributeValue(Attributes.MOVEMENT_SPEED) >= 0.434D,
                 "A distant slow horse must be normalized to the reference catch-up speed");
         helper.assertTrue(sprintModifier > walkModifier,
-                "A mounted villager beyond eight blocks must sprint faster than it walks");
+                "A distant mounted villager must sprint faster than it walks");
 
         helper.assertValueEqual(villager.getNavigation(), horse.getNavigation(),
                 "The controlling villager's navigator must delegate to the horse");
@@ -475,6 +475,65 @@ public final class VillagerMountGameTests {
                 VillagerMountSpeedPolicy.toward(villager, distant, 0.62D),
                 0.62D,
                 "The mount speed policy must preserve ordinary on-foot navigation speed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_speed_transition")
+    public static void mountedSpeedChangesGraduallyAndIgnoresRiderHeight(GameTestHelper helper) {
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.30D);
+        helper.assertTrue(villager.startRiding(horse, true), "The speed fixture must mount its driver");
+        Entity target = helper.spawn(EntityType.ARMOR_STAND, 3, 1, 2);
+        target.setPos(horse.getX() + 8.0D, horse.getY(), horse.getZ());
+        double walk = VillagerMountSpeedPolicy.toward(villager, target, 0.62D);
+        target.setPos(horse.getX() + 8.1D, horse.getY(), horse.getZ());
+        double justOutside = VillagerMountSpeedPolicy.toward(villager, target, 0.62D);
+        helper.assertTrue(justOutside > walk && justOutside - walk < 0.02D,
+                "Crossing the walking radius must not abruptly switch to full sprint");
+        target.setPos(horse.getX() + 12.0D, horse.getY(), horse.getZ());
+        double middle = VillagerMountSpeedPolicy.toward(villager, target, 0.62D);
+        helper.assertTrue(middle > justOutside && middle < VillagerMountSpeedPolicy.SPRINT_SPEED,
+                "The catch-up band must provide an intermediate speed");
+        target.setPos(target.getX(), horse.getY() + 6.0D, target.getZ());
+        helper.assertValueEqual(VillagerMountSpeedPolicy.toward(villager, target, 0.62D), middle,
+                "A rider or elevated target must not change horizontal catch-up speed");
+        helper.assertValueEqual(horse.getAttributeValue(Attributes.MOVEMENT_SPEED), 0.30D,
+                "Riding must preserve the horse movement attribute");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_boarding_obstacles")
+    public static void boardingWaitsForAnOpeningInsteadOfCrossingWallsOrFences(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 3, 1, 2);
+        horse.setTamed(true);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS, "The boarding fixture must assign its horse");
+        BlockPos target = villager.blockPosition().offset(20, 0, 0);
+        layTravelFloor(level, villager.blockPosition(), target);
+        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        BlockPos barrier = villager.blockPosition().east();
+        level.setBlockAndUpdate(barrier, Blocks.STONE.defaultBlockState());
+        level.setBlockAndUpdate(barrier.above(), Blocks.STONE.defaultBlockState());
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isPassenger(), "A nearby horse behind a wall must not be boarded");
+        level.setBlockAndUpdate(barrier.above(), Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(barrier, Blocks.OAK_FENCE.defaultBlockState());
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isPassenger(), "Seeing over a fence must not allow boarding through it");
+        level.setBlockAndUpdate(barrier, Blocks.AIR.defaultBlockState());
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertValueEqual(villager.getVehicle(), horse, "Opening the approach must allow boarding immediately");
         helper.succeed();
     }
 
@@ -716,6 +775,60 @@ public final class VillagerMountGameTests {
         helper.assertTrue(horse.getNavigation().getTargetPos() != null
                         && horse.getNavigation().getTargetPos().distSqr(anchor) <= 1.0D,
                 "A mount beyond ten blocks must navigate back to its parking anchor");
+        var returning = horse.getNavigation().getPath();
+        helper.assertTrue(returning != null && !horse.getNavigation().isDone(),
+                "The return route must be active before the villager ticks");
+        returning.advance();
+        int nextNode = returning.getNextNodeIndex();
+        VillagerMountTravelService.maintainParking(level.getServer());
+        helper.assertTrue(horse.getNavigation().getPath() == returning && returning.getNextNodeIndex() == nextNode,
+                "Parking maintenance must preserve progress along an active return path");
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(horse.getNavigation().isDone(),
+                "An on-foot villager must not cancel its parked horse's return route");
+        horse.moveTo(anchor.getX() + 6.5D, anchor.getY(), anchor.getZ() + 0.5D, 0.0F, 0.0F);
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        VillagerMountTravelService.maintainParking(level.getServer());
+        helper.assertFalse(horse.getNavigation().isDone(),
+                "A returning horse must continue through the parking hysteresis band");
+        horse.moveTo(anchor.getX() + 0.5D, anchor.getY(), anchor.getZ() + 0.5D, 0.0F, 0.0F);
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertTrue(horse.getNavigation().isDone(), "The horse must settle when it reaches its parking anchor");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_shared_parking")
+    public static void onFootRiderYieldsParkingToAnotherAssignedRidersTravel(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager onFoot = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        Villager traveler = helper.spawn(EntityType.VILLAGER, 1, 1, 3);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        for (Villager villager : List.of(onFoot, traveler)) {
+            HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+            helper.assertValueEqual(VillagerMountAssignmentService.assign(hirer, villager, horse),
+                    VillagerMountAssignmentService.AssignmentResult.SUCCESS, "Both riders must share the assignment");
+        }
+        helper.assertFalse(HiredVillagerContractService.toggleMountedTravel(level, onFoot),
+                "The first rider must prefer walking");
+        BlockPos anchor = horse.blockPosition();
+        BlockPos target = anchor.offset(20, 0, 0);
+        layTravelFloor(level, anchor, target);
+        traveler.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        VillagerMountAssignmentSavedData.get(level).setParkingAnchor(
+                onFoot.getUUID(), level.dimension().location(), anchor);
+        helper.assertTrue(horse.getNavigation().moveTo(target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, 0.8D),
+                "The horse must have a route before parking arbitration");
+        VillagerMountTravelService.onVillagerTickPost(onFoot);
+        helper.assertFalse(horse.hasRestriction(), "A shared mount wanted by another rider must remain unrestricted");
+        helper.assertFalse(horse.getNavigation().isDone(), "An on-foot co-rider must not stop shared mount travel");
         helper.succeed();
     }
 
