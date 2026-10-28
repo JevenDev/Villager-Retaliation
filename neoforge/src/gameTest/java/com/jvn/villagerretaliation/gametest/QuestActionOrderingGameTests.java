@@ -16,7 +16,6 @@ import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
-import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageActionService;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
@@ -429,7 +428,7 @@ public final class QuestActionOrderingGameTests {
             var raw = JsonParser.parseString("""
                     {"actions":[{"type":"experience","amount":11},%s,{"type":"experience","amount":17}]}
                     """.formatted(action)).getAsJsonObject();
-            return QuestActionSequenceRunner.runResult(context,
+            return SceneContinuationService.run(context,
                     VillagerActionDefinition.readList(quest.id(), "ordering", raw), Map.of(), null, "ordering/" + quest.id());
         }
 

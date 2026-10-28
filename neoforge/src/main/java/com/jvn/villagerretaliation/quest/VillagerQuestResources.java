@@ -93,6 +93,7 @@ public final class VillagerQuestResources {
     }
 
     public static void clearCache() {
+        com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.clearCache();
         testOverride = emptyCache();
         QuestContentCatalogs.invalidate();
     }
@@ -1660,15 +1661,6 @@ public final class VillagerQuestResources {
             return DatapackJsonReader.readLines(element.getAsJsonObject());
         }
         return List.of();
-    }
-
-    private static ResourceLocation fallbackQuestId(ResourceLocation location) {
-        String path = location.getPath();
-        if (!path.startsWith(RESOURCE_ROOT + "/") || !path.endsWith(".json")) {
-            return null;
-        }
-        String questPath = path.substring((RESOURCE_ROOT + "/").length(), path.length() - ".json".length());
-        return ResourceLocation.tryParse(location.getNamespace() + ":" + questPath);
     }
 
     static String inferQuestline(ResourceLocation location) {

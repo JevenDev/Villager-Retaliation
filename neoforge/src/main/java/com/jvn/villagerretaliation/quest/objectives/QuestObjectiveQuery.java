@@ -1,14 +1,19 @@
 package com.jvn.villagerretaliation.quest.objectives;
 
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceLocation;
 
 public final class QuestObjectiveQuery {
+    private static final int MAX_INDEXED_DEFINITIONS = 512;
+    private static final Map<ResourceLocation, StageIndex> STAGE_OBJECTIVES = new LinkedHashMap<>(16, 0.75F, true);
+
+    private record StageIndex(QuestDefinition definition, Map<String, List<QuestDefinition.Objective>> stages) { }
+
     private QuestObjectiveQuery() {
     }
 
@@ -53,23 +58,37 @@ public final class QuestObjectiveQuery {
         if (definition.stages().isEmpty()) {
             return definition.objectives();
         }
-        QuestDefinition.Stage stage = definition.stages().get(stageId == null ? "" : stageId.trim());
+        String normalizedStage = stageId == null ? "" : stageId.trim();
+        QuestDefinition.Stage stage = definition.stages().get(normalizedStage);
         if (stage == null) {
             return List.of();
         }
         if (stage.objectives().isEmpty()) {
             return List.of();
         }
-        Map<String, QuestDefinition.Objective> objectivesById = definition.objectives().stream()
-                .collect(Collectors.toMap(
-                        QuestDefinition.Objective::id,
-                        objective -> objective,
-                        (first, ignored) -> first,
-                        java.util.LinkedHashMap::new));
-        return stage.objectives().stream()
-                .map(objectivesById::get)
-                .filter(java.util.Objects::nonNull)
-                .toList();
+        return indexedStages(definition).get(normalizedStage);
+    }
+
+    public static synchronized void clearCache() {
+        STAGE_OBJECTIVES.clear();
+    }
+
+    private static synchronized Map<String, List<QuestDefinition.Objective>> indexedStages(QuestDefinition definition) {
+        var cached = STAGE_OBJECTIVES.get(definition.id());
+        if (cached != null && cached.definition() == definition) return cached.stages();
+        Map<String, QuestDefinition.Objective> byId = new LinkedHashMap<>();
+        definition.objectives().forEach(objective -> byId.putIfAbsent(objective.id(), objective));
+        Map<String, List<QuestDefinition.Objective>> stages = new LinkedHashMap<>();
+        definition.stages().forEach((id, stage) -> stages.put(id, stage.objectives().stream()
+                .map(byId::get).filter(java.util.Objects::nonNull).toList()));
+        var resolved = Map.copyOf(stages);
+        STAGE_OBJECTIVES.put(definition.id(), new StageIndex(definition, resolved));
+        if (STAGE_OBJECTIVES.size() > MAX_INDEXED_DEFINITIONS) {
+            var oldest = STAGE_OBJECTIVES.keySet().iterator();
+            oldest.next();
+            oldest.remove();
+        }
+        return resolved;
     }
 
     public static List<QuestDefinition.Objective> requiredObjectives(

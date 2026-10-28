@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.quest;
 
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
+import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDispatchService;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalogs;
 import com.jvn.villagerretaliation.quest.inventory.QuestSubmissionRequirements;
 import com.jvn.villagerretaliation.quest.runtime.QuestProgressionService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStartRules;
@@ -114,7 +117,7 @@ public final class QuestAuditRegressionGameTests {
                 helper.assertTrue(player.isAlive() && !player.isSpectator(), "player can progress quests");
                 helper.assertTrue(player.serverLevel() == level, "player uses the test level");
                 helper.assertValueEqual(quest.asQuestDefinition().objectives().get(1).rules().maintainTicks(), 20, "maintained rules compile");
-                helper.assertValueEqual(com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery.activeObjectives(quest.asQuestDefinition(), progress).size(), 2, "both objectives are active");
+                helper.assertValueEqual(QuestObjectiveQuery.activeObjectives(quest.asQuestDefinition(), progress).size(), 2, "both objectives are active");
                 long now = level.getGameTime();
                 progress.sampleCondition("work.maintain", true, now - 2, 20);
                 progress.sampleCondition("work.maintain", true, now - 1, 20);
@@ -127,6 +130,40 @@ public final class QuestAuditRegressionGameTests {
         } finally {
             data.remove(player.getUUID(), ResourceLocation.parse("test:pause_policy"));
             VillagerQuestService.clearRuntimeState(player);
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void objectiveIndexesRespectDefinitionIdentityAndOrder(GameTestHelper helper) {
+        var first = fixture(true).asQuestDefinition();
+        var second = fixture(false).asQuestDefinition();
+        var objectives = QuestObjectiveQuery.stageObjectives(first, "work");
+        helper.assertValueEqual(objectives.stream().map(QuestDefinition.Objective::id).toList(),
+                List.of("work.event", "work.maintain"), "stage order is preserved");
+        helper.assertTrue(objectives == QuestObjectiveQuery.stageObjectives(first, " work "), "repeated queries reuse resolved objectives");
+        helper.assertTrue(QuestObjectiveQuery.stageObjectives(second, "work").getFirst() == second.objectives().getFirst(),
+                "replacement content with the same quest id never uses the previous definition");
+        helper.assertTrue(QuestObjectiveQuery.stageObjectives(first, "missing").isEmpty(), "unknown stages remain empty");
+        QuestObjectiveQuery.clearCache();
+        helper.assertValueEqual(QuestObjectiveQuery.stageObjectives(first, "work"), objectives, "clearing the cache preserves results");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "quest_reliability_native")
+    public static void maintainedIndexFollowsCatalogReplacement(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        try {
+            VillagerQuestResources.installCompiledTestCatalog(server, List.of(fixture(true)));
+            var catalog = QuestContentCatalogs.current(server);
+            var maintained = QuestObjectiveDispatchService.maintainedDefinitions(catalog);
+            helper.assertValueEqual(maintained.size(), 1, "maintained content is selected");
+            helper.assertTrue(maintained == QuestObjectiveDispatchService.maintainedDefinitions(catalog), "catalog queries reuse their index");
+            VillagerQuestResources.installCompiledTestCatalog(server, List.of());
+            helper.assertTrue(QuestObjectiveDispatchService.maintainedDefinitions(QuestContentCatalogs.current(server)).isEmpty(),
+                    "removed maintained content does not survive reload");
+        } finally {
             VillagerQuestResources.clearCache();
         }
         helper.succeed();

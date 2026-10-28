@@ -4606,7 +4606,7 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void questPersistenceHistoriesAndRecordsAreBounded(GameTestHelper helper) {
+    public static void questPersistenceBoundsHistoriesWithoutDroppingRecords(GameTestHelper helper) {
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000901");
         UUID providerId = UUID.fromString("00000000-0000-0000-0000-000000000902");
         VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();

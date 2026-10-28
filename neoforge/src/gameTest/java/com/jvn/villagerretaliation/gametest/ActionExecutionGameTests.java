@@ -10,7 +10,6 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
-import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
 import com.jvn.villagerretaliation.quest.QuestV2Compiler;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
@@ -62,7 +61,7 @@ public final class ActionExecutionGameTests {
                   {"type":"experience","amount":7}]}
                 """);
         int before = context.player().totalExperience;
-        var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "required_missing");
+        var result = SceneContinuationService.run(context, actions, Map.of(), null, "required_missing");
         helper.assertValueEqual(result.outcome().status(), ActionStatus.UNAVAILABLE, "missing scene result");
         helper.assertValueEqual(context.player().totalExperience, before, "required failure must block the reward");
         helper.succeed();
@@ -77,7 +76,7 @@ public final class ActionExecutionGameTests {
                   {"type":"experience","amount":7}]}
                 """);
         int before = context.player().totalExperience;
-        var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "optional_missing");
+        var result = SceneContinuationService.run(context, actions, Map.of(), null, "optional_missing");
         helper.assertTrue(result.outcome().success(), "optional failure must allow sequence completion");
         helper.assertValueEqual(context.player().totalExperience, before + 7, "optional failure reward");
         helper.succeed();
@@ -96,7 +95,7 @@ public final class ActionExecutionGameTests {
         helper.assertTrue(first.success(), "initial fact write");
         helper.assertValueEqual(repeat.status(), ActionStatus.ALREADY_SATISFIED, "repeated fact write");
         int before = context.player().totalExperience;
-        var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "satisfied_fact");
+        var result = SceneContinuationService.run(context, actions, Map.of(), null, "satisfied_fact");
         helper.assertTrue(result.outcome().success(), "required satisfied fact must permit completion");
         helper.assertValueEqual(context.player().totalExperience, before + 7, "reward after satisfied fact");
         helper.succeed();
@@ -114,7 +113,7 @@ public final class ActionExecutionGameTests {
                 """);
         helper.assertValueEqual(actions.size(), 2, "transition fixture parses");
         int before = context.player().totalExperience;
-        var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "rejected_transition");
+        var result = SceneContinuationService.run(context, actions, Map.of(), null, "rejected_transition");
         helper.assertFalse(result.outcome().success(), "an unavailable transition cannot satisfy a required action");
         helper.assertValueEqual(context.player().totalExperience, before, "transition rejection blocks reward");
         helper.succeed();
@@ -163,7 +162,7 @@ public final class ActionExecutionGameTests {
                       {"type":"experience","amount":7}]}
                     """);
             int before = context.player().totalExperience;
-            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "wait_reload");
+            var result = SceneContinuationService.run(context, actions, Map.of(), null, "wait_reload");
             helper.assertTrue(result.suspended(), "waiting scene suspends the sequence");
             helper.assertValueEqual(context.player().totalExperience, before, "reward waits for scene completion");
             SceneSavedData original = SceneSavedData.get(context.level());
@@ -258,11 +257,11 @@ public final class ActionExecutionGameTests {
                       {"type":"experience","amount":7}]}
                     """);
             int before = context.player().totalExperience;
-            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "wait_transition");
+            var result = SceneContinuationService.run(context, actions, Map.of(), null, "wait_transition");
             helper.assertTrue(result.suspended(), "waiting scene suspends before transition");
             helper.assertFalse(result.outcome().legacyResult().replacements().containsKey("quest_transition_status"),
                     "the following transition must not run while the scene is pending");
-            QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "wait_transition");
+            SceneContinuationService.run(context, actions, Map.of(), null, "wait_transition");
             helper.assertValueEqual(context.player().totalExperience, before + 2, "duplicate request must not replay earlier effects");
             SceneSavedData data = SceneSavedData.get(context.level());
             var continuation = data.continuations().stream().filter(value -> value.id().equals(result.continuationId()))
@@ -271,7 +270,7 @@ public final class ActionExecutionGameTests {
             SceneContinuationService.maintain(context.level().getServer(), data);
             helper.assertValueEqual(continuation.actionStatus(), ActionStatus.UNAVAILABLE, "resumed transition rejection is durable");
             helper.assertValueEqual(context.player().totalExperience, before + 2, "rejected resumed transition blocks following reward");
-            QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "wait_transition");
+            SceneContinuationService.run(context, actions, Map.of(), null, "wait_transition");
             helper.assertValueEqual(context.player().totalExperience, before + 2, "completed failure cannot replay earlier effects");
         } finally {
             SceneResources.clearCache();
@@ -349,7 +348,7 @@ public final class ActionExecutionGameTests {
         helper.assertValueEqual(scene.sceneOperationId(), "hook", "lifecycle compilation preserves operation identity");
         DialogueContext context = context(helper);
         int before = context.player().totalExperience;
-        var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "compiled_hook");
+        var result = SceneContinuationService.run(context, actions, Map.of(), null, "compiled_hook");
         helper.assertValueEqual(result.outcome().status(), ActionStatus.UNAVAILABLE, "compiled required action remains a barrier");
         helper.assertValueEqual(context.player().totalExperience, before, "compiled hook failure blocks local effects");
         helper.succeed();
@@ -483,7 +482,7 @@ public final class ActionExecutionGameTests {
                      {"type":"quest","quest":"villagerretaliation:nested_parent","action":"start","required":true},
                      {"type":"experience","amount":17}]}
                     """);
-            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_start");
+            var result = SceneContinuationService.run(context, actions, Map.of(), null, "nested_start");
             helper.assertTrue(result.suspended(), "the outer start waits for the nested entry");
             helper.assertValueEqual(context.player().totalExperience, before + 20, "only prefixes have executed");
             var parentProgress = originalQuests.get(context.player().getUUID(), parent.id());
@@ -509,7 +508,7 @@ public final class ActionExecutionGameTests {
             helper.assertTrue(restoredScenes.continuation(result.continuationId()).orElseThrow().completionReceipt(), "all nested work completes");
             helper.assertValueEqual(context.player().totalExperience, before + 58, "each prefix and suffix runs exactly once");
             helper.assertTrue(QuestStageActionService.ready(context, restoredQuests.get(context.player().getUUID(), parent.id())), "parent checkpoint settles");
-            var duplicate = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_start");
+            var duplicate = SceneContinuationService.run(context, actions, Map.of(), null, "nested_start");
             helper.assertTrue(duplicate.outcome().success(), "duplicate start returns the committed result");
             helper.assertValueEqual(context.player().totalExperience, before + 58, "duplicate start cannot repeat outer rewards");
         } finally {
@@ -543,7 +542,7 @@ public final class ActionExecutionGameTests {
                     {"actions":[{"type":"quest","quest":"villagerretaliation:nested_failure","action":"start","required":true},
                      {"type":"experience","amount":17}]}
                     """);
-            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_failure");
+            var result = SceneContinuationService.run(context, actions, Map.of(), null, "nested_failure");
             helper.assertTrue(result.suspended(), "nested start suspends");
             var data = SceneSavedData.get(context.level());
             var parent = data.continuation(result.continuationId()).orElseThrow();
@@ -583,7 +582,7 @@ public final class ActionExecutionGameTests {
                       "target_stage":"finish","scene_path":"offer","response_id":"accept","required":true},
                      {"type":"experience","amount":7}]}
                     """);
-            var result = QuestActionSequenceRunner.runResult(context, actions, Map.of(), null, "nested_transition");
+            var result = SceneContinuationService.run(context, actions, Map.of(), null, "nested_transition");
             helper.assertTrue(result.suspended(), "transition forwards the exit suspension");
             var progress = VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), definition.id());
             helper.assertFalse(progress.hasChoice("offer", "accept", "offer"), "choice waits for exit actions");
@@ -621,7 +620,7 @@ public final class ActionExecutionGameTests {
         VillagerQuestService.setClientEffectsSuppressedForTests(context.player(), true);
         try {
             int before = context.player().totalExperience;
-            var result = QuestActionSequenceRunner.runResult(context, actions("""
+            var result = SceneContinuationService.run(context, actions("""
                     {"actions":[{"type":"quest","quest":"villagerretaliation:nested_lifecycle","action":"start","required":true},
                      {"type":"experience","amount":7}]}
                     """), Map.of(), null, "nested_lifecycle");

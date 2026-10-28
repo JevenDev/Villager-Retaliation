@@ -3270,10 +3270,6 @@ public final class VillagerQuestService {
                 >= 1;
     }
 
-    private static boolean hasItemCount(ServerPlayer player, ResourceLocation itemId, int count) {
-        return itemCount(player, itemId) >= Math.max(1, count);
-    }
-
     private static int itemCount(ServerPlayer player, ResourceLocation itemId) {
         return QuestInventoryService.itemCount(player, itemId);
     }
@@ -3464,20 +3460,15 @@ public final class VillagerQuestService {
         if (!player.isAlive() || player.isSpectator()) return;
         var level = player.serverLevel();
         var data = VillagerQuestSavedData.get(level);
-        for (var entry : data.progress(player.getUUID())) {
-            var progress = entry.getValue();
-            if (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
-                    || com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(player, entry.getKey())) continue;
-            var definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
-            if (definition == null || !CampaignQuestAccess.executionIssue(level, player.getUUID(), definition, progress).isBlank()) continue;
+        for (var definition : QuestObjectiveDispatchService.maintainedDefinitions(com.jvn.villagerretaliation.quest.content.QuestContentCatalogs.current(level.getServer()))) {
+            var progress = data.get(player.getUUID(), definition.id());
+            if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE
+                    || com.jvn.villagerretaliation.authoring.preview.QuestPlaytestSession.suspended(player, definition.id())) continue;
+            if (!CampaignQuestAccess.executionIssue(level, player.getUUID(), definition, progress).isBlank()) continue;
             var context = contextForStartedVillager(level, player, progress).orElse(null);
             boolean active = progressionAllowed(player, definition, progress, context);
             var evaluation = objectiveEvaluationContext(player, context, level, definition, progress);
-            for (var objective : QuestObjectiveQuery.activeObjectives(definition, progress)) {
-                if (objective.rules().maintainTicks() == 0) continue;
-                if (progress.sampleCondition(objective.id(), active && QuestObjectiveRegistry.maintainedConditionMet(evaluation, objective), level.getGameTime(), objective.rules().maintainTicks()))
-                    data.setDirty();
-            }
+            if (QuestObjectiveDispatchService.sampleMaintained(evaluation, active)) data.setDirty();
         }
     }
 
@@ -4288,7 +4279,6 @@ public final class VillagerQuestService {
         }
         applyQuestlineProgress(level, player, data, entries);
         String signature = QuestTrackerPresenter.syncSignature(entries, trackedQuestIds);
-        Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         long gameTime = level.getGameTime();
         TrackerSyncState previous = LAST_TRACKER_SYNCS.get(player.getUUID());
         boolean heartbeatDue = previous == null
@@ -4306,6 +4296,7 @@ public final class VillagerQuestService {
         String syncReason = flash ? "flash" : force ? "force" : previous == null ? "initial" : heartbeatDue ? "heartbeat" : "changed";
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRACKER_SYNC, trackedQuestId,
                 "result=sent reason=" + syncReason + " entries=" + entries.size());
+        Map<String, String> entrySignatures = QuestTrackerPresenter.entrySignatures(entries);
         List<QuestTrackerSyncPayload.Entry> syncEntries =
                 markQuestUpdateEntries(entries, entrySignatures, previous, flash, trackedQuestIds);
         List<QuestTrackerSyncPayload.QuestlineNode> questlineNodes =

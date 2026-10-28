@@ -1,15 +1,12 @@
 package com.jvn.villagerretaliation.quest.runtime;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
-import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
-/** Pure quest lifecycle mutations. Minecraft side effects are returned as follow-up requirements. */
 public final class QuestStateMachine {
     private QuestStateMachine() {
     }
@@ -58,8 +55,7 @@ public final class QuestStateMachine {
         if (!forceRestart && legacyState(progress) == VillagerQuestSavedData.QuestState.ACTIVE) {
             return blocked(progress, "quest_already_active");
         }
-        return mutate(progress, LifecycleEvent.STARTED, "", () -> progress.start(providerId, dimension, target, gameTime),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.STARTED, "", () -> progress.start(providerId, dimension, target, gameTime));
     }
 
     public static TransitionResult initializeStage(
@@ -75,8 +71,7 @@ public final class QuestStateMachine {
         if (progress == null || normalized.isBlank()) {
             return blocked(progress, "missing_entry_stage");
         }
-        return mutate(progress, LifecycleEvent.STAGE_CHANGED, "", () -> progress.setCurrentStage(normalized),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.RUN_STAGE_ACTIONS, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.STAGE_CHANGED, "", () -> progress.setCurrentStage(normalized));
     }
 
     public static TransitionResult transitionStage(
@@ -98,8 +93,7 @@ public final class QuestStateMachine {
         if (normalized.equals(progress.currentStage())) {
             return blocked(progress, "stage_unchanged");
         }
-        return mutate(progress, LifecycleEvent.STAGE_CHANGED, "", () -> progress.setCurrentStage(normalized),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.RUN_STAGE_ACTIONS, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.STAGE_CHANGED, "", () -> progress.setCurrentStage(normalized));
     }
 
     public static TransitionResult complete(
@@ -116,8 +110,7 @@ public final class QuestStateMachine {
         if (!active(progress)) {
             return blocked(progress, "quest_not_active");
         }
-        return mutate(progress, LifecycleEvent.COMPLETED, "", () -> progress.complete(gameTime, consume),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.APPLY_REWARDS, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.COMPLETED, "", () -> progress.complete(gameTime, consume));
     }
 
     public static TransitionResult fail(
@@ -135,8 +128,7 @@ public final class QuestStateMachine {
             return blocked(progress, "quest_not_active");
         }
         String normalized = normalizeCode(reason, "unspecified_failure");
-        return mutate(progress, LifecycleEvent.FAILED, normalized, () -> progress.fail(gameTime, normalized),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.CLEAR_TRACKING, FollowUp.DETACH_PARTY, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.FAILED, normalized, () -> progress.fail(gameTime, normalized));
     }
 
     public static TransitionResult abandon(
@@ -153,8 +145,7 @@ public final class QuestStateMachine {
         if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
-        return mutate(progress, LifecycleEvent.ABANDONED, "", () -> progress.abandon(gameTime, consume),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.CLEAR_TRACKING, FollowUp.DETACH_PARTY, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.ABANDONED, "", () -> progress.abandon(gameTime, consume));
     }
 
     public static TransitionResult expire(
@@ -171,8 +162,7 @@ public final class QuestStateMachine {
         if (!active(progress) || progress.completionPending()) {
             return blocked(progress, "quest_not_active");
         }
-        return mutate(progress, LifecycleEvent.EXPIRED, "", () -> progress.expire(gameTime, consume),
-                FollowUp.DISPATCH_LIFECYCLE, FollowUp.CLEAR_TRACKING, FollowUp.DETACH_PARTY, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.EXPIRED, "", () -> progress.expire(gameTime, consume));
     }
 
     public static TransitionResult consume(
@@ -194,8 +184,7 @@ public final class QuestStateMachine {
             return blocked(progress, "quest_already_consumed");
         }
         String normalized = normalizeCode(reason, "consumed");
-        return mutate(progress, LifecycleEvent.CONSUMED, normalized, () -> progress.consume(normalized),
-                FollowUp.CLEAR_TRACKING, FollowUp.SYNC_TRACKER);
+        return mutate(progress, LifecycleEvent.CONSUMED, normalized, () -> progress.consume(normalized));
     }
 
     public static String normalizeCode(String value, String fallback) {
@@ -213,8 +202,7 @@ public final class QuestStateMachine {
             QuestProgressModel progress,
             LifecycleEvent event,
             String code,
-            Runnable mutation,
-            FollowUp... followUps) {
+            Runnable mutation) {
         VillagerQuestSavedData.QuestState previousState = legacyState(progress);
         String previousStage = progress.currentStage();
         mutation.run();
@@ -228,8 +216,7 @@ public final class QuestStateMachine {
                 event,
                 dirty,
                 dirty ? "" : "state_unchanged",
-                code,
-                followUps.length == 0 ? Set.of() : Set.copyOf(EnumSet.of(followUps[0], followUps)));
+                code);
     }
 
     private static TransitionResult blocked(QuestProgressModel progress, String blocker) {
@@ -237,7 +224,7 @@ public final class QuestStateMachine {
                 ? VillagerQuestSavedData.QuestState.NOT_STARTED
                 : legacyState(progress);
         String stage = progress == null ? "" : progress.currentStage();
-        return new TransitionResult(state, state, stage, stage, LifecycleEvent.NONE, false, blocker, "", Set.of());
+        return new TransitionResult(state, state, stage, stage, LifecycleEvent.NONE, false, blocker, "");
     }
 
     private static VillagerQuestSavedData.QuestState legacyState(QuestProgressModel progress) {
@@ -259,15 +246,6 @@ public final class QuestStateMachine {
         CONSUMED
     }
 
-    public enum FollowUp {
-        DISPATCH_LIFECYCLE,
-        RUN_STAGE_ACTIONS,
-        APPLY_REWARDS,
-        CLEAR_TRACKING,
-        DETACH_PARTY,
-        SYNC_TRACKER
-    }
-
     public record TransitionResult(
             VillagerQuestSavedData.QuestState previousState,
             VillagerQuestSavedData.QuestState newState,
@@ -276,14 +254,12 @@ public final class QuestStateMachine {
             LifecycleEvent lifecycleEvent,
             boolean dirty,
             String blockerCode,
-            String failureCode,
-            Set<FollowUp> requiredFollowUps) {
+            String failureCode) {
         public TransitionResult {
             previousStage = normalize(previousStage);
             newStage = normalize(newStage);
             blockerCode = normalize(blockerCode);
             failureCode = normalize(failureCode);
-            requiredFollowUps = requiredFollowUps == null ? Set.of() : Set.copyOf(requiredFollowUps);
         }
     }
 

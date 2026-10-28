@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.campaign.CampaignQuestAccess;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugTraceService;
+import com.jvn.villagerretaliation.quest.content.QuestContentCatalog;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -11,6 +13,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
 public final class QuestObjectiveDispatchService {
+    private static QuestContentCatalog maintainedCatalog;
+    private static List<QuestDefinition> maintainedDefinitions = List.of();
+
     private QuestObjectiveDispatchService() {
     }
 
@@ -21,16 +26,32 @@ public final class QuestObjectiveDispatchService {
     public static boolean poll(QuestObjectiveEvaluationContext context, boolean executionAllowed,
             Consumer<QuestDefinition.Objective> completed) {
         if (!executionAllowed) return false;
-        boolean sampled = false;
-        for (var objective : QuestObjectiveQuery.activeObjectives(context.definition(), context.model())) {
-            if (objective.rules().maintainTicks() > 0) sampled |= context.model().sampleCondition(objective.id(),
-                    QuestObjectiveRegistry.maintainedConditionMet(context, objective), context.level().getGameTime(), objective.rules().maintainTicks());
-        }
+        boolean sampled = sampleMaintained(context, true);
         boolean changed = QuestObjectiveDispatcher.poll(context.model(),
                 QuestObjectiveQuery.activeObjectives(context.definition(), context.model()), executionAllowed,
                 objective -> isComplete(context, objective), completed);
         if (changed) updatePerformance(context);
         return changed || sampled;
+    }
+
+    public static synchronized List<QuestDefinition> maintainedDefinitions(QuestContentCatalog catalog) {
+        if (catalog != maintainedCatalog) {
+            maintainedDefinitions = catalog.questDefinitions().stream()
+                    .filter(definition -> definition.objectives().stream().anyMatch(objective -> objective.rules().maintainTicks() > 0))
+                    .toList();
+            maintainedCatalog = catalog;
+        }
+        return maintainedDefinitions;
+    }
+
+    public static boolean sampleMaintained(QuestObjectiveEvaluationContext context, boolean active) {
+        boolean changed = false;
+        for (var objective : QuestObjectiveQuery.activeObjectives(context.definition(), context.model())) {
+            if (objective.rules().maintainTicks() > 0) changed |= context.model().sampleCondition(objective.id(),
+                    active && QuestObjectiveRegistry.maintainedConditionMet(context, objective),
+                    context.level().getGameTime(), objective.rules().maintainTicks());
+        }
+        return changed;
     }
 
     public static boolean dispatch(QuestObjectiveEvaluationContext context, QuestObjectiveEvent event,
