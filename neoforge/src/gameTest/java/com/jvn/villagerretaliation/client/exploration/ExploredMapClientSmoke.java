@@ -55,12 +55,14 @@ public final class ExploredMapClientSmoke {
             ExploredMapClient.tiles().close(); ExploredMapScreen.resetTiles();
             VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
             mc.setScreen(new ExploredMapScreen());
-            require(((ExploredMapScreen)mc.screen).coversWorld() && ((ExploredMapScreen)mc.screen).openingProgress() == 1, "disabled opening animation displays the map immediately");
+            require(((ExploredMapScreen)mc.screen).coversWorld() && ((ExploredMapScreen)mc.screen).transitionProgress() == 1, "disabled opening animation displays the map immediately");
+            mc.screen.onClose();
+            require(mc.screen == null, "disabled animation closes the map immediately");
             VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(true);
             mc.setScreen(new ExploredMapScreen());
             require(!((ExploredMapScreen)mc.screen).coversWorld(), "enabled opening animation initially shows the world camera");
             ((ExploredMapScreen)mc.screen).mouseScrolled(100, 100, 0, 1);
-            require(((ExploredMapScreen)mc.screen).openingProgress() == 1, "map input skips the transition immediately");
+            require(((ExploredMapScreen)mc.screen).transitionProgress() == 1, "map input skips the transition immediately");
             mc.setScreen(new ExploredMapScreen());
             openingPitch = mc.player.getXRot(); openingYaw = mc.player.getYRot();
             set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
@@ -76,7 +78,7 @@ public final class ExploredMapClientSmoke {
         if (phase == 3 && ++ticks >= 160) {
             var screen = (ExploredMapScreen)mc.screen;
             require(ExploredMapClient.tiles().uploads() > 100, "recorded cells uploaded to GPU atlas");
-            require(screen.openingProgress() == 1 && screen.view().scale() == 1.0, "opening finishes without changing map zoom");
+            require(screen.transitionProgress() == 1 && screen.view().scale() == 1.0, "opening finishes without changing map zoom");
             require(mc.gameRenderer.getMainCamera().getXRot() == mc.player.getXRot(), "camera orientation restores beneath the map");
             results.add("Upward camera tilt, layered cloud reveal, input skip, instant-open config and camera restoration passed");
             verifyControls(screen); screenshot("flat-map-day.png");
@@ -101,7 +103,26 @@ public final class ExploredMapClientSmoke {
             screenshot("flat-map-night.png");
             require(brightness() < day * .9, "night shader changes brightness without rebuilding tiles");
             results.add("Day and night lighting changes on cached terrain passed");
-            mc.setScreen(null); VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.set(true); phase = 6; ticks = 0;
+            var screen = (ExploredMapScreen)mc.screen;
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(mc.screen == screen && screen.coversWorld(), "closing keeps the map visible until clouds cover it");
+            double zoom = screen.view().scale();
+            screen.mouseScrolled(100, 100, 0, 1);
+            require(screen.view().scale() == zoom, "closing ignores map manipulation");
+            phase = 12; ticks = 0;
+        }
+        if (phase == 12 && ticks == 4) screenshot("flat-map-closing.png");
+        if (phase == 12 && ticks == 10) screenshot("flat-map-closing-covered.png");
+        if (phase == 12 && ticks == 14) {
+            screenshot("flat-map-closing-world.png");
+            require(mc.screen instanceof ExploredMapScreen && !((ExploredMapScreen)mc.screen).coversWorld(), "closing reveals the world before releasing the screen");
+            require(mc.player.getXRot() == openingPitch && mc.player.getYRot() == openingYaw, "closing does not change player rotation");
+        }
+        if (phase == 12 && ++ticks >= 40) {
+            require(mc.screen == null, "closing finishes automatically");
+            require(mc.gameRenderer.getMainCamera().getXRot() == mc.player.getXRot(), "closing restores the world camera");
+            results.add("Reverse cloud close, world reveal, camera restoration and instant-close config passed");
+            VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.set(true); phase = 6; ticks = 0;
         }
         if (phase == 6 && ++ticks >= 60) {
             screenshot("flat-minimap.png");
@@ -128,6 +149,19 @@ public final class ExploredMapClientSmoke {
         if (phase == 11 && ++ticks >= 40) {
             require(uploads == ExploredMapClient.tiles().uploads(), "closed map with minimap disabled performs no terrain uploads");
             results.add("Closed map with minimap disabled performs no terrain uploads");
+            var screen = new ExploredMapScreen(); mc.setScreen(screen);
+            set(ExploredMapScreen.class, screen, "openedAt", System.nanoTime() - 250_000_000L);
+            screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(screen.transitionProgress() > 0 && screen.transitionProgress() < .25f, "closing during opening reverses from the current position");
+            phase = 13; ticks = 0;
+        }
+        if (phase == 13 && ++ticks >= 20) {
+            require(mc.screen == null, "interrupted opening closes automatically");
+            var screen = new ExploredMapScreen(); mc.setScreen(screen);
+            screen.mouseScrolled(100, 100, 0, 1);
+            screen.onClose(); screen.onClose();
+            require(mc.screen == null, "second close request skips the closing animation");
+            results.add("Close during opening and repeated close input passed");
             try { Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Explored map client checks passed\n" + String.join("\n", results)); }
             catch (IOException e) { throw new UncheckedIOException(e); }
             phase = 99; mc.stop();

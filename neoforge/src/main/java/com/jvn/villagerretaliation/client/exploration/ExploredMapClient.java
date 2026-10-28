@@ -46,7 +46,7 @@ public final class ExploredMapClient {
         if (mc.level != null && mc.player != null && mc.level.dimension().location().equals(payload.dimension())) observation = payload;
     }
     @SubscribeEvent public static void camera(ViewportEvent.ComputeCameraAngles event) {
-        if (Minecraft.getInstance().screen instanceof ExploredMapScreen map) event.setPitch(map.openingPitch(event.getPitch()));
+        if (Minecraft.getInstance().screen instanceof ExploredMapScreen map) event.setPitch(map.transitionPitch(event.getPitch()));
     }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { reset(); observation = null; }
     private static void reset() {
