@@ -71,7 +71,8 @@ final class SettlementLifecyclePlan {
                 if (key.equals("AnimalBirths") && !((CompoundTag) entry).hasUUID("ReceiptTown")) ((CompoundTag) entry).putUUID("ReceiptTown", source.id().value());
                 if (key.equals("Projects") || key.equals("ProjectHistory")) ((CompoundTag) entry).getCompound("Task").putUUID("SettlementTown", target.id().value());
                 if (key.equals("Arrivals") && !((CompoundTag) entry).contains("Origin")) ((CompoundTag) entry).putLong("Origin", source.center().asLong());
-                if (key.equals("Navigation") && combined.contains(entry)) continue;
+                if (key.equals("Navigation") && combined.stream().anyMatch(existing -> ((CompoundTag) existing).getLong("Origin")
+                        == ((CompoundTag) entry).getLong("Origin"))) continue;
                 combined.add(entry);
             }
             into.put(key, combined);

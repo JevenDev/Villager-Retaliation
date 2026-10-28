@@ -386,6 +386,26 @@ public final class SettlementLifecycleGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_lifecycle")
+    public static void mergeKeepsOneNavigationObservationPerSection(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var source = fixture.town();
+        var target = neighbor(helper, source, source.center().east(48));
+        var level = helper.getLevel();
+        var position = helper.absolutePos(new BlockPos(8, 2, 8));
+        var origin = SettlementTerrainSection.sectionOrigin(position);
+        var chunk = level.getChunkAt(position);
+        source.recordNavigation(SettlementNavigationSection.capture(origin, chunk));
+        var unique = origin.above(16);
+        source.recordNavigation(SettlementNavigationSection.capture(unique, chunk));
+        level.setBlock(position, Blocks.GOLD_BLOCK.defaultBlockState(), 3);
+        target.recordNavigation(SettlementNavigationSection.capture(origin, chunk));
+        var merged = SettlementRecord.load(SettlementLifecyclePlan.merge(level, source, target), level.registryAccess(), () -> {});
+        helper.assertValueEqual(merged.navigation().size(), 2, "merging retains unique sections without duplicating shared origins");
+        helper.assertTrue(merged.navigation().get(origin).state(position).is(Blocks.GOLD_BLOCK), "the destination observation wins conflicts");
+        helper.succeed();
+    }
+
     private static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);

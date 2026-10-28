@@ -737,8 +737,8 @@ public final class SettlementRecord {
         if (!permits(actor, SettlementPermission.BUILD) || expected != this.constructionQueueRevision
                 || project == null || !project.pending() || before == null || !before.pending() || project == before) return false;
         var pending = new java.util.ArrayList<>(this.projects.values().stream().filter(SettlementProject::pending).toList());
-        int destination = pending.indexOf(before);
         pending.remove(project);
+        int destination = pending.indexOf(before);
         pending.add(destination, project);
         var iterator = pending.iterator();
         var reordered = new LinkedHashMap<UUID, SettlementProject>();
@@ -1401,8 +1401,6 @@ public final class SettlementRecord {
                 || this.areas.remove(area) == null) {
             return false;
         }
-        this.projects.values().stream().filter(project -> project.active() && project.area().equals(area))
-                .forEach(project -> finishProject(project.id(), SettlementProject.Status.CANCELLED));
         this.duties.entrySet().stream().filter(duty -> duty.getValue().equals(area)).map(Map.Entry::getKey).toList().forEach(this::removeDuty);
         this.guardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));
         this.temporaryGuardOrders.keySet().removeIf(resident -> !this.duties.containsKey(resident));

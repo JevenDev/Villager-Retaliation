@@ -82,6 +82,8 @@ public final class SettlementConstructionQueueGameTests {
             town.advance();
             var first = queued(helper, fixture, 0);
             var second = queued(helper, fixture, 10);
+            helper.assertTrue(town.reorderProject(town.leader(), first.id(), second.id(), town.constructionQueueRevision()), "forward moves use the target as the before anchor");
+            helper.assertValueEqual(List.copyOf(town.projects().keySet()), List.of(first.id(), second.id()), "moving before the next project keeps the existing order");
             long revision = town.constructionQueueRevision();
             helper.assertFalse(town.reorderProject(UUID.randomUUID(), second.id(), first.id(), revision), "outsiders cannot reorder construction");
             helper.assertTrue(town.reorderProject(fixture.leader().getUUID(), second.id(), first.id(), revision), "a pending project can move to the head");
