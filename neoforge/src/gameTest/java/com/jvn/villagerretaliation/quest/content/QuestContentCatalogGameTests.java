@@ -81,7 +81,9 @@ public final class QuestContentCatalogGameTests {
                 "farming", "fishing", "hunting", "logging", "mining", "nitwit", "smelter"))
             expected.add(ResourceLocation.fromNamespaceAndPath("villagerretaliation", "clipboard_" + role));
         expected.addAll(List.of(ResourceLocation.parse("villagerretaliation:urgent_dispatch"),
-                ResourceLocation.parse("villagerretaliation:second_dispatch")));
+                ResourceLocation.parse("villagerretaliation:second_dispatch"),
+                ResourceLocation.parse("villagerretaliation:missing_neighbor"),
+                ResourceLocation.parse("villagerretaliation:last_light")));
         helper.assertValueEqual(catalog.quests().keySet(), expected,
                 "packaged quests retain the frozen inventory, worker tutorials and courier outcomes");
 

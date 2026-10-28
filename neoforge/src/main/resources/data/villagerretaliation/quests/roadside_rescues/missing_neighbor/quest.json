@@ -376,6 +376,8 @@
   "rewards": {
     "experience": 150,
     "reputation": 10,
+    "gossip_reputation": 2,
+    "memory_event": "villagerretaliation:player_completed_quest",
     "loot_table": "villagerretaliation:quest/missing_neighbor"
   },
   "display": {

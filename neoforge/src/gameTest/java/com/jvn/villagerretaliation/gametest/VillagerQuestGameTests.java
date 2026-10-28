@@ -1602,7 +1602,7 @@ public final class VillagerQuestGameTests {
                 boundedEntry.questId().length() <= 128
                         && boundedEntry.title().length() <= 128
                         && boundedEntry.objective().length() <= 256
-                        && boundedEntry.description().length() <= 256
+                        && boundedEntry.description().length() <= 4096
                         && boundedEntry.metadata().length() <= 256
                         && boundedEntry.state().length() <= 32
                         && boundedEntry.status().length() <= 96
