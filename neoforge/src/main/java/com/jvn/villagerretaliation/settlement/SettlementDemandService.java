@@ -661,9 +661,11 @@ public final class SettlementDemandService {
             var status = project.status();
             int placed = project.placed();
             long revision = project.crewRevision();
+            boolean reserved = SettlementConstructionMaterials.reserved(project);
             this.consumersCurrent.put(project.id(), () -> this.town.projects().get(project.id()) == project
-                    && project.status() == status && project.placed() == placed && project.crewRevision() == revision);
-            if (!project.active()) return;
+                    && project.status() == status && project.placed() == placed && project.crewRevision() == revision
+                    && SettlementConstructionMaterials.reserved(project) == reserved);
+            if (!project.active() || reserved) return;
             var area = this.town.areas().get(project.area());
             if (area == null || !area.enabled()) return;
             var sources = sources(project.area());

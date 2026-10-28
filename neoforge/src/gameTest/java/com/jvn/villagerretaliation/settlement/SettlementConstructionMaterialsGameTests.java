@@ -463,6 +463,25 @@ public final class SettlementConstructionMaterialsGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void reservedProjectCannotClaimAnotherProjectsMaterialsAgain(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.fixture(helper, false, blocks(), fixture -> {
+            var level = helper.getLevel();
+            fixture.depot().setItem(0, new ItemStack(Items.OAK_PLANKS, 8));
+            var plan = withCost(fixture.plan(), BuilderConstructionCost.EXACT);
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            helper.assertTrue(SettlementConstructionMaterials.reserve(level, fixture.town(), fixture.project(), plan, fixture.builder()), "the first project reserves four planks");
+            helper.assertValueEqual(fixture.depot().count(stack -> stack.is(Items.OAK_PLANKS)), 4, "four planks remain for another request");
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            var next = SettlementProject.create(fixture.town(), fixture.area().id(), fixture.builder().getUUID(), plan,
+                    fixture.origin().south(2), java.util.UUID.randomUUID(), level.getGameTime());
+            helper.assertTrue(SettlementConstructionMaterials.reserve(level, fixture.town(), next, plan, fixture.builder()), "already owned escrow cannot allocate the remaining stock a second time");
+            helper.assertTrue(fixture.depot().isEmpty(), "both projects have exactly their quoted materials");
+            SettlementConstructionMaterials.validate(fixture.project().materialEscrow());
+            SettlementConstructionMaterials.validate(next.materialEscrow());
+        });
+    }
+
     private static Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks() {
         return Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState(), BlockPos.ZERO.east(), Blocks.OAK_PLANKS.defaultBlockState(),
                 BlockPos.ZERO.south(), Blocks.OAK_PLANKS.defaultBlockState(), BlockPos.ZERO.east().south(), Blocks.OAK_PLANKS.defaultBlockState());
