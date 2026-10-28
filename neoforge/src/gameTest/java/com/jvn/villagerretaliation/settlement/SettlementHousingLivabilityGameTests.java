@@ -170,6 +170,32 @@ public final class SettlementHousingLivabilityGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_housing_livability")
+    public static void currentUsableBedSurvivesAnOutdatedSurvey(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var home = home(helper);
+        var registry = new VillageAllegianceRegistrySavedData();
+        var data = new SettlementSavedData();
+        var id = registry.create(0L, level.dimension().location(), home.min(), "");
+        var town = data.establish(registry, id, UUID.randomUUID(), home.min(), 0L).orElseThrow();
+        SettlementTestPlots.claim(level, town, home.min(), home.max());
+        helper.assertTrue(town.putArea(town.leader(), home), "the observed home area registers");
+        var resident = UUID.randomUUID();
+        var bed = home.min().offset(3, 0, 2);
+        helper.assertValueEqual(SettlementBuildingSurvey.inspectBed(level, home, bed),
+                SettlementBuildingSurvey.BedState.AVAILABLE, "the current bed is usable");
+        helper.assertTrue(town.assignHome(resident, bed), "the home predates the outdated survey");
+        town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), List.of(), List.of(), false));
+        long version = town.homes().get(resident).version();
+        SettlementHousingService.update(level, town);
+        helper.assertValueEqual(town.homes().get(resident).bed(), bed, "current valid terrain preserves the explicit home");
+        helper.assertValueEqual(town.homes().get(resident).version(), version, "an outdated survey cannot change the home version");
+        level.setBlock(bed, Blocks.AIR.defaultBlockState(), 2);
+        SettlementHousingService.update(level, town);
+        helper.assertTrue(town.homes().get(resident).bed() == null, "a confirmed missing bed still releases the assignment");
+        helper.succeed();
+    }
+
     private static SettlementArea home(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));

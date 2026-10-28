@@ -251,7 +251,7 @@ public final class SettlementHousingService {
         var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
         return town.areas().values().stream().noneMatch(area -> area.enabled() && town.owns(area)
                 && area.type() == SettlementAreaType.HOME && area.contains(bed)
-                && SettlementBuildingSurvey.inspectBed(blocks, area, bed) == SettlementBuildingSurvey.BedState.UNOBSERVED);
+                && SettlementBuildingSurvey.inspectBed(blocks, area, bed) != SettlementBuildingSurvey.BedState.BLOCKED);
     }
 
     static boolean usable(SettlementRecord town, BlockPos bed) {
