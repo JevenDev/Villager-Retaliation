@@ -177,6 +177,7 @@ public final class VillagerInteractionClientHandler {
                 payload.familyTree(),
                 payload.relationships()
         );
+        screen.conversationSessionId(payload.sessionId());
         if (shouldPreserveDialogueOnReplacement(payload, replacingSameVillager)) {
             previousInteractionScreen.copyCurrentDialogueTo(screen);
         }

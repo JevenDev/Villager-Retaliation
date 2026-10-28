@@ -86,7 +86,8 @@ public final class VillagerGiftRequestHandler {
         ItemStack offeredStack = selectedStack.copyWithCount(resolvedAmount);
         ResolvedGiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
         boolean rejected = rejectsGift(giftPreference.reaction());
-        if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(offeredStack))) {
+        if (!rejected && !VillagerInventoryAccess.canAddItems(villager,
+                List.of(VillagerGiftKeepsakes.prepareGift(player, villager, offeredStack)))) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
             return;
         }

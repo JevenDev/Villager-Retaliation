@@ -154,14 +154,6 @@ public final class InteractionRequestValidator {
         return Optional.empty();
     }
 
-    private static Optional<InteractionTargetContext> requireVillagerTarget(
-            ServerPlayer player,
-            int entityId,
-            String unavailableNoticeKey,
-            boolean allowForcedSessionTarget) {
-        return requireVillagerTarget(player, entityId, unavailableNoticeKey, allowForcedSessionTarget, null);
-    }
-
     private static Optional<InteractionTargetContext> requireVillagerTarget(ServerPlayer player, int entityId,
             String unavailableNoticeKey, boolean allowForcedSessionTarget, java.util.UUID greetingRequestId) {
         Entity entity = player.serverLevel().getEntity(entityId);

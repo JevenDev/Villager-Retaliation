@@ -218,6 +218,7 @@ public final class VillagerInteractionScreenOpener {
         HiredHuntingTargets.Selection huntingTargets = HiredHuntingTargets.fromState(workState);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),
+                VillagerConversationService.sessionId(player, villager),
                 "",
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),

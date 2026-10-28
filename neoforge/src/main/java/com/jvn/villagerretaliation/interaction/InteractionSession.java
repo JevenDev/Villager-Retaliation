@@ -16,6 +16,7 @@ public class InteractionSession {
     private final boolean forced;
     private long lastInteractionGameTime;
     private boolean active = true;
+    private final java.util.LinkedHashSet<UUID> acceptedDialogueRequests = new java.util.LinkedHashSet<>();
 
     public InteractionSession(UUID playerId, UUID actorId, int entityId, ResourceKey<Level> dimension,
             BlockPos startPosition, long gameTime, boolean forced) {
@@ -66,7 +67,14 @@ public class InteractionSession {
         this.lastInteractionGameTime = gameTime;
     }
 
+    boolean acceptDialogueRequest(UUID requestId) {
+        if (!this.active || !this.acceptedDialogueRequests.add(requestId)) return false;
+        if (this.acceptedDialogueRequests.size() > 256) this.acceptedDialogueRequests.removeFirst();
+        return true;
+    }
+
     public void deactivate() {
         this.active = false;
+        this.acceptedDialogueRequests.clear();
     }
 }

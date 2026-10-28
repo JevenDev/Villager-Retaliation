@@ -19,6 +19,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record OpenVillagerInteractionPayload(
         int entityId,
+        java.util.UUID sessionId,
         String villagerNameKey,
         String villagerNameFallback,
         String professionName,
@@ -111,6 +112,7 @@ public record OpenVillagerInteractionPayload(
 
     private static void encode(RegistryFriendlyByteBuf buffer, OpenVillagerInteractionPayload payload) {
         buffer.writeVarInt(payload.entityId());
+        buffer.writeNullable(payload.sessionId(), RegistryFriendlyByteBuf::writeUUID);
         buffer.writeUtf(payload.villagerNameKey(), VILLAGER_NAME_KEY_LENGTH);
         buffer.writeUtf(payload.villagerNameFallback(), VILLAGER_NAME_FALLBACK_LENGTH);
         buffer.writeUtf(payload.professionName(), PROFESSION_NAME_LENGTH);
@@ -194,6 +196,7 @@ public record OpenVillagerInteractionPayload(
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
         return new OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
+                buffer.readNullable(RegistryFriendlyByteBuf::readUUID),
                 buffer.readUtf(VILLAGER_NAME_KEY_LENGTH),
                 buffer.readUtf(VILLAGER_NAME_FALLBACK_LENGTH),
                 buffer.readUtf(PROFESSION_NAME_LENGTH),

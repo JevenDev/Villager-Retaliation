@@ -17,6 +17,12 @@ public final class VillagerGiftKeepsakes {
     private VillagerGiftKeepsakes() {
     }
 
+    static ItemStack prepareGift(ServerPlayer player, Villager villager, ItemStack offeredStack) {
+        ItemStack prepared = offeredStack.copy();
+        com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker.clear(prepared);
+        return VillagerGiftReturnTracker.markStoredGift(prepared, player, villager);
+    }
+
     public static void storeGift(
             ServerLevel level,
             Villager villager,
@@ -35,7 +41,7 @@ public final class VillagerGiftKeepsakes {
 
         ItemStack remainder = VillagerInventoryAccess.addItem(
                 villager,
-                VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player, villager)
+                prepareGift(player, villager, giftedStack)
         );
         int storedCount = giftedStack.getCount() - remainder.getCount();
         if (storedCount > 0) {
@@ -75,7 +81,7 @@ public final class VillagerGiftKeepsakes {
             return false;
         }
 
-        ItemStack keepsake = VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player, villager);
+        ItemStack keepsake = prepareGift(player, villager, giftedStack);
         EquipmentSlot preferredSlot = equipmentSlotFor(keepsake);
         if (preferredSlot != null && tryEquip(villager, preferredSlot, keepsake)) {
             return true;

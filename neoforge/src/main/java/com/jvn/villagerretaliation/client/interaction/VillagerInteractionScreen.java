@@ -386,6 +386,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String campaignPreviousDialogue = "";
     private List<DialogueTextSegment> campaignPreviousSegments = List.of();
     private boolean closingWithAnimation;
+    private java.util.UUID conversationSessionId;
     private boolean closingFromServer;
     private boolean replacingFromServer;
     private boolean openingChat;
@@ -828,6 +829,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     public void updateDuelStatus(OpenVillagerDuelPayload status) {
         this.duel.updateDuelStatus(status);
+    }
+
+    void conversationSessionId(java.util.UUID sessionId) {
+        this.conversationSessionId = sessionId;
     }
 
     public void replaceFromServer() {
@@ -1374,8 +1379,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerChatEffectRenderer.startReappearFade();
             ClientVillagerConversationState.clear();
         }
-        if (!this.closingFromServer) {
-            sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
+        if (!this.closingFromServer && this.conversationSessionId != null) {
+            sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId, this.conversationSessionId));
         }
         super.removed();
         if (localPresentation != null) localPresentation.removed();

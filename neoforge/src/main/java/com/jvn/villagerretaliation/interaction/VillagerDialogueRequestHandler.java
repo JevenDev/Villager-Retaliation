@@ -39,7 +39,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueRequestHandler {
-    private static final Map<ServerPlayer, java.util.Set<java.util.UUID>> ACCEPTED_REQUESTS = new java.util.WeakHashMap<>();
     private VillagerDialogueRequestHandler() {
     }
 
@@ -61,7 +60,7 @@ public final class VillagerDialogueRequestHandler {
             return;
         }
         // A retransmitted automatic exchange must not execute its original action again.
-        if (greetingRequestId != null && !ACCEPTED_REQUESTS.computeIfAbsent(player, ignored -> new java.util.HashSet<>()).add(greetingRequestId)) return;
+        if (greetingRequestId != null && !InteractionSessions.current(player).orElseThrow().acceptDialogueRequest(greetingRequestId)) return;
         Villager villager = target.villager();
         if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
             return;

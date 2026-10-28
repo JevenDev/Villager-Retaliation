@@ -2593,6 +2593,14 @@ public final class VillagerInteractionService {
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
+        InteractionSessions.current(player).ifPresent(session ->
+                handleConversationEndRequest(player, entityId, session.id()));
+    }
+
+    public static void handleConversationEndRequest(ServerPlayer player, int entityId, UUID sessionId) {
+        var session = InteractionSessions.current(player).orElse(null);
+        if (session == null || !VillagerConversationService.isConversing(player)
+                || session.entityId() != entityId || !session.id().equals(sessionId)) return;
         if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleConversationEndRequest(player, entityId)) {
             return;
         }
