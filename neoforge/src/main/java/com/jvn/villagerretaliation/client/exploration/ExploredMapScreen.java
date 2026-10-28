@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.exploration.*;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -91,17 +92,17 @@ public final class ExploredMapScreen extends Screen {
             graphics.fill(0, 0, width, height, lighting.background());
             graphics.drawCenteredString(font, Component.translatable("map.villagerretaliation.connecting"), width / 2, height / 2, 0xddd7cc);
         }
-        if (opening < 1) {
-            MapFogRenderer.renderOpening(graphics, width, height, lighting, opening);
-            return;
-        }
+        if (opening < 1) MapFogRenderer.renderOpening(graphics, width, height, lighting, opening);
+        float controlsAlpha = ease(Math.clamp((opening - .8f) / .2f, 0, 1));
+        for (var child : children()) if (child instanceof AbstractWidget widget) widget.setAlpha(controlsAlpha);
+        if (controlsAlpha < .02f) return;
         int titleColor = repository != null && lighting.red() + lighting.green() + lighting.blue() > 2.1f ? 0x40464f : 0xffffff;
-        graphics.drawCenteredString(font, title, width / 2, 12, titleColor);
+        graphics.drawCenteredString(font, title, width / 2, 12, titleColor | ((int)(controlsAlpha * 255) << 24));
         super.render(graphics, mouseX, mouseY, partial);
         relations.renderPopup(graphics, font, mouseX, mouseY, partial);
     }
     float transitionProgress() {
-        if (closingAt != 0) return (float)Math.max(0, closingFrom - (System.nanoTime() - closingAt) / 900_000_000.0);
+        if (closingAt != 0) return (float)Math.max(0, closingFrom - (System.nanoTime() - closingAt) / 600_000_000.0);
         return openedAt < 0 || !VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.get()
                 ? 1 : (float)Math.clamp((System.nanoTime() - openedAt) / 1_250_000_000.0, 0, 1);
     }
@@ -109,9 +110,11 @@ public final class ExploredMapScreen extends Screen {
     float transitionPitch(float pitch) {
         float progress = transitionProgress();
         if (progress >= .4f) return pitch;
-        float turn = Math.clamp(progress / .33f, 0, 1);
-        turn = turn * turn * (3 - 2 * turn);
-        return pitch + (Math.min(pitch, -65) - pitch) * turn;
+        float turn = ease(Math.clamp(progress / .4f, 0, 1));
+        return pitch + (Math.max(-90, pitch - 6) - pitch) * turn;
+    }
+    private static float ease(float progress) {
+        return Math.clamp(progress * progress * progress * (progress * (progress * 6 - 15) + 10), 0, 1);
     }
     private void finishOpening() { openedAt = -1; }
     MapView view() { return new MapView(width, height, centerX, centerZ, zoom); }
