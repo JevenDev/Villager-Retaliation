@@ -144,6 +144,32 @@ public final class SettlementHousingLivabilityGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_housing_livability")
+    public static void incompleteObservationKeepsAssignedHomeUntilInvalidityIsKnown(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var min = new BlockPos(8_000_000, 80, 8_000_000);
+        var registry = new VillageAllegianceRegistrySavedData();
+        var data = new SettlementSavedData();
+        var id = registry.create(0L, level.dimension().location(), min, "");
+        var town = data.establish(registry, id, UUID.randomUUID(), min, 0L).orElseThrow();
+        var home = new SettlementArea(UUID.randomUUID(), SettlementAreaType.HOME, "Remote home", min, min.offset(4, 3, 4), 5, true);
+        SettlementTestPlots.claim(level, town, home.min(), home.max());
+        helper.assertTrue(town.putArea(town.leader(), home), "the remote home area registers");
+        var resident = UUID.randomUUID();
+        var bed = min.offset(1, 0, 1);
+        helper.assertTrue(town.assignHome(resident, bed), "the recorded home predates the incomplete survey");
+        town.recordSurvey(home.id(), new SettlementBuildingSurvey.Survey(level.getGameTime(), List.of(), List.of(), false));
+        long version = town.homes().get(resident).version();
+        SettlementHousingService.update(level, town);
+        helper.assertValueEqual(town.homes().get(resident).bed(), bed, "unknown terrain cannot erase an explicit home");
+        helper.assertValueEqual(town.homes().get(resident).version(), version, "an incomplete observation cannot advance the home version");
+        helper.assertTrue(town.putArea(town.leader(), new SettlementArea(home.id(), home.type(), home.name(), home.min(), home.max(), 5, false)), "the home is explicitly disabled");
+        SettlementHousingService.update(level, town);
+        helper.assertTrue(town.homes().get(resident).bed() == null, "disabled housing still releases the assignment");
+        helper.assertFalse(level.hasChunkAt(bed), "validation does not load remote home chunks");
+        helper.succeed();
+    }
+
     private static SettlementArea home(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(new BlockPos(1, 2, 1));

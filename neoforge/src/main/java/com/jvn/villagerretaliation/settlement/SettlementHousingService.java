@@ -98,7 +98,7 @@ public final class SettlementHousingService {
     static void update(ServerLevel level, SettlementRecord town) {
         flushReleases(level, town);
         for (var home : List.copyOf(town.homes().values())) {
-            if (home.bed() != null && !usable(town, home.bed())) {
+            if (home.bed() != null && invalid(level, town, home.bed())) {
                 town.assignHome(home.resident(), null);
                 applyLoaded(level, town, home.resident());
             }
@@ -154,7 +154,7 @@ public final class SettlementHousingService {
             if (!registered(level, town, villager.getUUID())) return;
         } else if (!member(level, town, villager.getUUID())) return;
         var home = town.homes().get(villager.getUUID());
-        if (home != null && home.bed() != null && !usable(town, home.bed())) {
+        if (home != null && home.bed() != null && invalid(level, town, home.bed())) {
             town.assignHome(villager.getUUID(), null);
             home = town.homes().get(villager.getUUID());
         }
@@ -244,6 +244,14 @@ public final class SettlementHousingService {
             }
         }
         return null;
+    }
+
+    private static boolean invalid(ServerLevel level, SettlementRecord town, BlockPos bed) {
+        if (usable(town, bed)) return false;
+        var blocks = new SettlementBuildingSurvey.ObservedBlocks(level, null, town);
+        return town.areas().values().stream().noneMatch(area -> area.enabled() && town.owns(area)
+                && area.type() == SettlementAreaType.HOME && area.contains(bed)
+                && SettlementBuildingSurvey.inspectBed(blocks, area, bed) == SettlementBuildingSurvey.BedState.UNOBSERVED);
     }
 
     static boolean usable(SettlementRecord town, BlockPos bed) {
