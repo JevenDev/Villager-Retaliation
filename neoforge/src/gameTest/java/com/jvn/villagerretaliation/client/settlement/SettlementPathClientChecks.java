@@ -95,6 +95,27 @@ final class SettlementPathClientChecks {
             this.view.mouseDragged(point.x + 8, point.y + 4, GLFW.GLFW_MOUSE_BUTTON_MIDDLE, 8, 4);
             this.view.mouseReleased(point.x + 8, point.y + 4, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
             require(editor.draft().path().nodes().size() == 2, "panning keeps the path draft intact");
+            var kept = editor.draft().path();
+            this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(editor.active() && editor.draft().path().equals(kept) && !editor.draft().extending(),
+                    "Escape stops extending without clearing the draft");
+            var cursor = project(this.start.add(5, 0, -6));
+            this.view.mouseMoved(cursor.x, cursor.y);
+            require(editor.hover() == null, "a stopped draft has no cursor connection");
+            click(this.start.add(5, 0, -6));
+            require(editor.draft().path().equals(kept), "ground clicks do not extend a stopped draft");
+            button("Extend").onPress();
+            click(this.start.add(5, 0, -6));
+            require(editor.draft().path().nodes().size() == 3, "Extend adds a third node away from existing curve handles");
+            require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0,
+                    "new nodes retain the curve choice without dragging");
+            click(editor.draft().path().nodes().getFirst().position());
+            require(editor.draft().path().closed(), "clicking the first node closes the loop: " + editor.draft().selected() + " / " + editor.draft().extending());
+            button("Undo").onPress();
+            require(!editor.draft().path().closed(), "loop closure can be undone");
+            button("Redo").onPress();
+            require(editor.draft().path().closed(), "loop closure can be restored");
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 4 && editor.canConfirm()) {
@@ -104,7 +125,7 @@ final class SettlementPathClientChecks {
                 this.refreshed = true;
                 return false;
             }
-            this.capture.accept("path-curve-confirmation");
+            this.capture.accept("path-loop-confirmation");
             button("Confirm").onPress();
             require(editor.confirming(), "Confirm waits for the server");
             this.phase++;
@@ -113,10 +134,12 @@ final class SettlementPathClientChecks {
             chooseBuildTool("Branch");
             require(editor.draft().path().branch(), "Build menu selects the branch tool");
             require(editor.draft().path().width() == 4, "settings survive confirmation");
+            require(editor.draft().smoothMode(), "curve mode survives confirmation");
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "Branch attaches to actual path terrain");
             click(this.start.add(0, 0, -4));
             require(editor.draft().path().nodes().size() == 2, "branch can extend away from the existing path");
+            require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0, "the next path continues with curved nodes");
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 6 && editor.canConfirm()) {
@@ -126,8 +149,18 @@ final class SettlementPathClientChecks {
         } else if (this.phase == 7 && !editor.active()) {
             chooseBuildTool("Path");
             require(editor.draft().path().nodes().isEmpty() && !editor.draft().canUndo(), "confirmed nodes and history are discarded");
+            button("Curves").onPress();
+            click(this.start);
+            click(this.start.add(3, 0, 0));
+            require(editor.draft().path().nodes().stream().allMatch(node -> node.incoming().lengthSqr() == 0 && node.outgoing().lengthSqr() == 0),
+                    "corner mode creates straight segments");
+            this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            require(editor.active(), "Escape keeps a corner draft too");
             button("Cancel").onPress();
-            require(!editor.active(), "Cancel closes the draft");
+            require(!editor.active(), "Cancel clears the draft");
+            chooseBuildTool("Path");
+            require(!editor.draft().smoothMode(), "corner mode remains selected for the next path");
+            button("Cancel").onPress();
             this.view.focus(this.cameraX, this.cameraZ);
             this.phase++;
             this.ticks = 0;

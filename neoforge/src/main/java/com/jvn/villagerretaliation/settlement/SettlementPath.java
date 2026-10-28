@@ -4,7 +4,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
-public record SettlementPath(List<Node> nodes, int width, Style style, Material material, long seed, boolean branch) {
+public record SettlementPath(List<Node> nodes, int width, Style style, Material material, long seed, boolean branch, boolean closed) {
     public static final int MAX_NODES = 64;
     public static final int MAX_COLUMNS = 4096;
     public enum Style { CLEAN, NATURAL }
@@ -21,9 +21,12 @@ public record SettlementPath(List<Node> nodes, int width, Style style, Material 
                     && Math.abs(value.x) <= limit && Math.abs(value.y) <= limit && Math.abs(value.z) <= limit;
         }
     }
+    public SettlementPath(List<Node> nodes, int width, Style style, Material material, long seed, boolean branch) {
+        this(nodes, width, style, material, seed, branch, false);
+    }
     public SettlementPath {
         nodes = List.copyOf(nodes);
-        if (nodes.size() > MAX_NODES || width < 1 || width > 7 || style == null || material == null)
+        if (nodes.size() > MAX_NODES || closed && nodes.size() < 3 || width < 1 || width > 7 || style == null || material == null)
             throw new IllegalArgumentException("Invalid path settings");
     }
     public BlockPos start() { return BlockPos.containing(this.nodes.getFirst().position()); }

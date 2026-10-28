@@ -24,6 +24,7 @@ public record SettlementPathRequestPayload(UUID session, long revision, Action a
             b.writeEnum(p.path().material());
             b.writeLong(p.path().seed());
             b.writeBoolean(p.path().branch());
+            b.writeBoolean(p.path().closed());
             b.writeVarInt(p.path().nodes().size());
             for (var node : p.path().nodes()) {
                 writeVector(b, node.position());
@@ -43,10 +44,11 @@ public record SettlementPathRequestPayload(UUID session, long revision, Action a
             var material = b.readEnum(SettlementPath.Material.class);
             long seed = b.readLong();
             boolean branch = b.readBoolean();
+            boolean closed = b.readBoolean();
             int count = VillagerPayloads.readCollectionSize(b, SettlementPath.MAX_NODES, "path nodes");
             var nodes = new ArrayList<SettlementPath.Node>();
             for (int i = 0; i < count; i++) nodes.add(new SettlementPath.Node(readVector(b), readVector(b), readVector(b)));
-            path = new SettlementPath(nodes, width, style, material, seed, branch);
+            path = new SettlementPath(nodes, width, style, material, seed, branch, closed);
         }
         return new SettlementPathRequestPayload(session, revision, action, token, path);
     });

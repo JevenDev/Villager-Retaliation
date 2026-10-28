@@ -1370,6 +1370,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.paths.startDrag(x, y, handle.part());
             return;
         }
+        if (!draft.extending() && !draft.inserting()) return;
         var point = pathPoint(x, y);
         if (point == null) { this.paths.feedback("No loaded ground at this position"); return; }
         if (draft.path().nodes().isEmpty()) {
@@ -1386,7 +1387,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void initPathButtons() {
         this.pathButtons.clear();
-        String[] labels = {"Width -", "Width +", "Clean", "Undo", "Redo", "Corner / Smooth", "Insert", "Remove", "Confirm", "Cancel", "Refresh"};
+        String[] labels = {"Width -", "Width +", "Clean", "Undo", "Redo", "Corners", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
             this.pathButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> pathAction(action))
@@ -1411,6 +1412,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             case 8 -> this.paths.confirm(this.session, PacketDistributor::sendToServer);
             case 9 -> enterMode(Mode.SELECT);
             case 10 -> this.paths.refresh();
+            case 11 -> draft.toggleLoop();
+            case 12 -> { if (draft.extending()) this.paths.stopExtending(); else draft.extend(); }
             default -> throw new IllegalArgumentException("Unknown path action");
         }
         this.paths.hover(null);
@@ -1438,16 +1441,27 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (i == 2) button.setMessage(Component.literal(path.style() == com.jvn.villagerretaliation.settlement.SettlementPath.Style.CLEAN ? "Clean" : "Natural"));
             if (i == 3) button.active &= draft.canUndo();
             if (i == 4) button.active &= draft.canRedo();
-            if (i >= 5 && i <= 7) button.active &= draft.selected() >= 0;
+            if (i == 5) button.setMessage(Component.literal(draft.smoothMode() ? "Curves" : "Corners"));
+            if (i >= 6 && i <= 7) button.active &= draft.selected() >= 0;
             if (i == 6) button.setMessage(Component.literal(draft.inserting() ? "Insert: on" : "Insert"));
             if (i == 7) button.active &= !path.branch() || draft.selected() != 0;
             if (i == 8) button.active &= this.paths.canConfirm();
             if (i == 10) button.active &= path.nodes().size() >= 2;
+            if (i == 11) {
+                button.setMessage(Component.literal(path.closed() ? "Open loop" : "Close loop"));
+                button.active &= path.closed() || draft.canClose();
+            }
+            if (i == 12) {
+                button.setMessage(Component.literal(draft.extending() ? "Stop extending" : "Extend"));
+                button.active &= !path.closed();
+            }
             button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(switch (i) {
-                case 5 -> "Switch the selected node between a sharp corner and a smooth curve.";
+                case 5 -> "Choose corners or curves for the selected node and new nodes. This choice is remembered.";
                 case 6 -> "Place the next node after the selected node.";
                 case 8 -> "Apply all previewed path blocks. Placement cannot be undone.";
                 case 10 -> "Review the latest terrain after loading chunks or changing the view.";
+                case 11 -> "Connect the last node back to the first, or reopen the loop.";
+                case 12 -> "Stop or resume adding nodes while keeping the draft. Escape stops extending.";
                 default -> button.getMessage().getString();
             })));
         }
@@ -1853,8 +1867,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (this.paths.confirming()) return true;
             var path = this.paths.draft();
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                if (path.dragging()) path.cancelDrag();
-                else enterMode(Mode.SELECT);
+                this.paths.stopExtending();
             } else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) {
                 if (hasShiftDown()) path.redo(); else path.undo();
             } else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) path.redo();
@@ -2085,8 +2098,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.paths.active() && button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
             if (this.paths.confirming()) return true;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                if (this.paths.draft().dragging()) this.paths.draft().cancelDrag();
-                else enterMode(Mode.SELECT);
+                this.paths.stopExtending();
             } else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) pathClick(x, y);
             updatePathButtons();
             return true;
@@ -2278,8 +2290,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.paths.active() && this.paths.draft().dragging()) {
             if (worldContains(x, y)) {
+                boolean closeLoop = !this.paths.moved(x, y) && this.paths.draft().closingClick();
                 mouseDragged(x, y, button, 0, 0);
                 this.paths.draft().finish();
+                if (closeLoop) this.paths.draft().toggleLoop();
             } else this.paths.draft().cancelDrag();
             updatePathButtons();
             return true;

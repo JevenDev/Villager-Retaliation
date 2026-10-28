@@ -20,9 +20,9 @@ public final class SettlementPathGeometry {
 
     public static List<Vec3> samples(SettlementPath path) {
         var points = new ArrayList<Vec3>();
-        for (int i = 1; i < path.nodes().size(); i++) {
+        for (int i = 1; i < path.nodes().size() + (path.closed() ? 1 : 0); i++) {
             var a = path.nodes().get(i - 1);
-            var b = path.nodes().get(i);
+            var b = path.nodes().get(i % path.nodes().size());
             double length = a.outgoing().length() + a.position().add(a.outgoing()).distanceTo(b.position().add(b.incoming()))
                     + b.incoming().length();
             if (length > 4096 || points.size() + Math.ceil(length * 4) > 32768)

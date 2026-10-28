@@ -4,7 +4,6 @@ import com.jvn.villagerretaliation.network.SettlementPathRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementPathResultPayload;
 import com.jvn.villagerretaliation.settlement.SettlementPath;
 import com.jvn.villagerretaliation.settlement.SettlementPathTerrain;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -19,6 +18,7 @@ public final class SettlementPathEditor {
     private SettlementPathDraft draft;
     private int width = 3;
     private SettlementPath.Style style = SettlementPath.Style.CLEAN;
+    private boolean smooth;
     private long revision;
     private int version = -1;
     private long changedAt;
@@ -48,7 +48,8 @@ public final class SettlementPathEditor {
     public void feedback(String message) { this.feedback = message; }
     public void begin(boolean branch) {
         if (this.confirming) return;
-        this.draft = new SettlementPathDraft(this.width, this.style, UUID.randomUUID().getLeastSignificantBits(), branch);
+        rememberSettings();
+        this.draft = new SettlementPathDraft(this.width, this.style, UUID.randomUUID().getLeastSignificantBits(), branch, this.smooth);
         this.version = -1;
         this.hoveredHandle = null;
         this.result = null;
@@ -61,8 +62,7 @@ public final class SettlementPathEditor {
     }
     public void cancel(UUID session, Consumer<SettlementPathRequestPayload> send) {
         if (!active() || this.confirming) return;
-        this.width = this.draft.path().width();
-        this.style = this.draft.path().style();
+        rememberSettings();
         this.draft = null;
         this.hover = null;
         this.shown = null;
@@ -71,7 +71,23 @@ public final class SettlementPathEditor {
         this.result = null;
         send(new SettlementPathRequestPayload(session, ++this.revision, SettlementPathRequestPayload.Action.CANCEL, EMPTY, null), send);
     }
-    public void hover(Vec3 point) { this.hover = this.confirming || active() && this.draft.dragging() ? null : point; }
+    private void rememberSettings() {
+        if (!active()) return;
+        this.width = this.draft.path().width();
+        this.style = this.draft.path().style();
+        this.smooth = this.draft.smoothMode();
+    }
+    public void stopExtending() {
+        if (!active() || this.confirming) return;
+        this.draft.stopExtending();
+        this.hover = null;
+        this.hoveredHandle = null;
+        this.shown = null;
+        this.feedback = "";
+    }
+    public void hover(Vec3 point) {
+        this.hover = this.confirming || active() && (this.draft.dragging() || !this.draft.extending()) ? null : point;
+    }
     public void startDrag(double x, double y, int part) { this.dragX = x; this.dragY = y; this.dragPart = part; this.hover = null; }
     public boolean moved(double x, double y) { return Math.hypot(x - this.dragX, y - this.dragY) >= 3; }
 
@@ -88,13 +104,13 @@ public final class SettlementPathEditor {
                 this.feedback = "";
             }
             var path = this.draft.path();
-            this.width = path.width();
-            this.style = path.style();
+            rememberSettings();
             var shown = path;
-            if (this.hover != null && !path.nodes().isEmpty() && path.nodes().size() < SettlementPath.MAX_NODES && !this.draft.inserting()) {
-                var nodes = new ArrayList<>(path.nodes());
-                nodes.add(new SettlementPath.Node(this.hover));
-                shown = new SettlementPath(nodes, path.width(), path.style(), path.material(), path.seed(), path.branch());
+            if (this.draft.extending() && !this.draft.inserting()) {
+                if (this.hoveredHandle != null && this.hoveredHandle.node() == 0 && this.hoveredHandle.part() == 0 && this.draft.canClose())
+                    shown = this.draft.loopPreview();
+                else if (this.hover != null && !path.nodes().isEmpty() && path.nodes().size() < SettlementPath.MAX_NODES)
+                    shown = this.draft.preview(this.hover);
             }
             if (!shown.equals(this.shown)) {
                 this.shown = shown;
@@ -104,7 +120,7 @@ public final class SettlementPathEditor {
                 this.cells = preview.cells().stream().map(cell -> new SettlementPathResultPayload.Cell(cell.position(), cell.kind())).toList();
                 if (this.result == null) this.feedback = preview.error();
             }
-            if (this.hover == null && this.result != null) this.cells = this.result.cells();
+            if (shown.equals(path) && this.result != null) this.cells = this.result.cells();
             if (!this.draft.dragging() && path.nodes().size() >= 2 && this.pending == null && this.result == null && now - this.changedAt >= 150)
                 send(new SettlementPathRequestPayload(session, this.revision, SettlementPathRequestPayload.Action.PREVIEW, EMPTY, path), send);
         }
@@ -132,6 +148,7 @@ public final class SettlementPathEditor {
     }
     public void confirm(UUID session, Consumer<SettlementPathRequestPayload> send) {
         if (!canConfirm()) return;
+        rememberSettings();
         this.hover = null;
         this.cells = this.result.cells();
         this.centerline = com.jvn.villagerretaliation.settlement.SettlementPathGeometry.samples(this.draft.path());
@@ -145,6 +162,7 @@ public final class SettlementPathEditor {
         this.feedback = result.message();
         this.confirming = false;
         if (result.status() == SettlementPathResultPayload.Status.APPLIED) {
+            rememberSettings();
             this.draft = null;
             this.shown = null;
             this.centerline = List.of();
@@ -161,7 +179,9 @@ public final class SettlementPathEditor {
         long skipped = this.cells.stream().filter(cell -> cell.kind() == SettlementPathTerrain.Kind.SKIPPED).count();
         String state = this.draft.path().nodes().isEmpty()
                 ? this.draft.path().branch() ? "Select an existing dirt path to branch from" : "Click valid ground to start. Click-drag draws a curve."
-                : this.feedback.isEmpty() ? "Click adds a node. Drag draws a curve. Alt-drag splits handles. Confirm applies the draft." : this.feedback;
+                : this.feedback.isEmpty() ? this.draft.path().closed() ? "Loop closed. Edit nodes or Confirm. Cancel discards the draft."
+                        : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm applies it. Cancel discards it."
+                        : "Click adds a node. Click the first node to close a loop. Escape stops extending. Cancel discards." : this.feedback;
         return (this.draft.path().branch() ? "Branch" : "Path") + " / " + this.draft.path().nodes().size() + "/64 nodes / "
                 + converted + " convert / " + skipped + " skipped\n" + state;
     }

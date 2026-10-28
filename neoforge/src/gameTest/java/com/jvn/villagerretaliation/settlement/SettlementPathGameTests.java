@@ -220,6 +220,82 @@ public final class SettlementPathGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_path")
+    public static void loopsCloseAtEveryWidthAndApplyTheClosingSegment(GameTestHelper helper) {
+        var base = helper.absolutePos(new BlockPos(1, 20, 1));
+        var level = helper.getLevel();
+        for (int x = -4; x <= 10; x++) for (int z = -4; z <= 10; z++) {
+            level.setBlock(base.offset(x, 0, z), Blocks.DIRT.defaultBlockState(), 2);
+            for (int y = 1; y <= 4; y++) level.setBlock(base.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+        }
+        var nodes = List.of(new SettlementPath.Node(base.getCenter()), new SettlementPath.Node(base.offset(6, 0, 0).getCenter()),
+                new SettlementPath.Node(base.offset(6, 0, 6).getCenter()), new SettlementPath.Node(base.offset(0, 0, 6).getCenter()));
+        for (int width = 1; width <= 7; width++) for (var style : SettlementPath.Style.values()) {
+            var loop = new SettlementPath(nodes, width, style, SettlementPath.Material.DIRT, 42, false, true);
+            var samples = SettlementPathGeometry.samples(loop);
+            helper.assertValueEqual(samples.getLast(), samples.getFirst(), "closed curves return to the first anchor");
+            connected(helper, SettlementPathGeometry.rasterize(loop).columns());
+        }
+        var loop = new SettlementPath(nodes, 1, SettlementPath.Style.NATURAL, SettlementPath.Material.DIRT, 42, false, true);
+        var session = new SettlementPathSession();
+        var id = UUID.randomUUID();
+        var request = new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.PREVIEW, new UUID(0, 0), loop);
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        try {
+            SettlementPathRequestPayload.STREAM_CODEC.encode(buffer, request);
+            helper.assertValueEqual(SettlementPathRequestPayload.STREAM_CODEC.decode(buffer), request, "closed loops round trip");
+        } finally { buffer.release(); }
+        var preview = session.request(level, id, true, pos -> true, request);
+        helper.assertValueEqual(preview.status(), SettlementPathResultPayload.Status.PREVIEW, "server previews loops");
+        var result = session.request(level, id, true, pos -> true,
+                new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, preview.token(), null));
+        helper.assertValueEqual(result.status(), SettlementPathResultPayload.Status.APPLIED, "server confirms loops");
+        helper.assertTrue(level.getBlockState(base.offset(0, 0, 3)).is(Blocks.DIRT_PATH), "the closing segment becomes terrain");
+        boolean invalid = false;
+        try { new SettlementPath(nodes.subList(0, 2), 1, loop.style(), loop.material(), 42, false, true); }
+        catch (IllegalArgumentException expected) { invalid = true; }
+        helper.assertTrue(invalid, "loops require at least three nodes");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_path")
+    public static void stoppingExtensionKeepsDraftAndCurvedNodesContinue(GameTestHelper helper) {
+        var draft = new SettlementPathDraft(3, SettlementPath.Style.CLEAN, 42, false, true);
+        draft.place(new Vec3(0.5, 70, 0.5));
+        draft.finish();
+        var preview = draft.preview(new Vec3(6.5, 70, 0.5));
+        draft.place(new Vec3(6.5, 70, 0.5));
+        draft.finish();
+        helper.assertValueEqual(draft.path(), preview, "curved hover preview matches the placed nodes");
+        helper.assertTrue(draft.path().nodes().stream().allMatch(node -> node.outgoing().lengthSqr() > 0),
+                "curved placement initializes mirrored handles without dragging");
+        var kept = draft.path();
+        draft.stopExtending();
+        helper.assertValueEqual(draft.path(), kept, "stopping does not discard geometry");
+        helper.assertFalse(draft.place(new Vec3(6.5, 70, 6.5)), "stopped drafts reject extension");
+        draft.extend();
+        draft.place(new Vec3(6.5, 70, 6.5));
+        draft.finish();
+        draft.toggleLoop();
+        helper.assertTrue(draft.path().closed() && !draft.extending(), "closed drafts stop extending");
+        draft.undo();
+        helper.assertFalse(draft.path().closed(), "undo opens the loop");
+        draft.redo();
+        helper.assertTrue(draft.path().closed(), "redo closes the loop");
+        draft.begin(0, 0);
+        draft.drag(new Vec3(1.5, 70, 1.5), false);
+        draft.finish();
+        var samples = SettlementPathGeometry.samples(draft.path());
+        helper.assertValueEqual(samples.getLast(), draft.path().nodes().getFirst().position(), "moving the start keeps the loop attached");
+        draft.remove();
+        helper.assertFalse(draft.path().closed(), "removing down to two nodes opens the loop");
+        draft.smooth();
+        helper.assertFalse(draft.smoothMode(), "the player can return to corners");
+        draft.undo();
+        helper.assertTrue(draft.smoothMode(), "undo restores the curve choice");
+        helper.succeed();
+    }
+
     private static SettlementPath path(Vec3 a, Vec3 b, int width, boolean branch) {
         return new SettlementPath(List.of(new SettlementPath.Node(a), new SettlementPath.Node(b)), width,
                 SettlementPath.Style.CLEAN, SettlementPath.Material.DIRT, 1337, branch);
