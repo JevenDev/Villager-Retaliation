@@ -1996,8 +1996,8 @@ public final class SettlementViewClientSmoke {
         require(restored.sidebar && restored.map, "visibility preferences survive reload");
         var map = screen.overviewMap();
         double oldX = screen.focusX();
-        screen.mouseClicked(map.left + 3, map.top + map.height - 3, 0);
-        screen.mouseReleased(map.left + 3, map.top + map.height - 3, 0);
+        screen.mouseClicked(map.left + 12, map.top + map.height - 12, 0);
+        screen.mouseReleased(map.left + 12, map.top + map.height - 12, 0);
         require(screen.focusX() != oldX, "overview terrain pans without moving the player");
         screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
         button(screen, "villagerretaliation.gui.settlement_view.draw_area").onPress();

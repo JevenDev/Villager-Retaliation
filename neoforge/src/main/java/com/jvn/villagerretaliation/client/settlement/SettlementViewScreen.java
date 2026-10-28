@@ -134,18 +134,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementGuardOrder.Mode guardMode;
     private UUID guardWorksite;
     private final List<BlockPos> guardPoints = new ArrayList<>();
-    private SettlementRouteDraft routeDraft;
-    private UUID routeArea;
-    private UUID routeResident;
-    private SettlementGuardOrder routeExpected;
-    private boolean routeInherited;
-    private boolean routeSubmitted;
-    private boolean routeUncertain;
-    private boolean routeReloading;
-    private boolean routeDragHit;
-    private double routeDragX;
-    private double routeDragY;
-    private BlockPos routePlacementPreview;
+    private final SettlementViewInteraction interaction = new SettlementViewInteraction();
+    private final SettlementRouteEditor route = this.interaction.route();
     private final List<Button> routeButtons = new ArrayList<>();
     private final SettlementViewCommandTracker commands = new SettlementViewCommandTracker();
     private long commandSequence;
@@ -166,7 +156,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private BlockPos dragStart;
     private UUID dragEntity;
     private BlockPos dragEnd;
-    private final SettlementViewInteraction interaction = new SettlementViewInteraction();
     private int managementRequestId;
     private int waitingRequestId = -1;
     private Page waitingPage;
@@ -313,10 +302,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     || project.blocker().equals("world_conflict")) this.projects.put(project.id(), project);
         }
         this.mapMarkers.update(this.areas.values(), this.projects.values());
-        if (this.routeReloading && this.routeDraft != null) {
-            this.routeReloading = false;
-            beginPersistentRoute(this.routeArea, this.routeResident);
-        }
+        if (this.route.reloading() && this.route.draft() != null) beginPersistentRoute(this.route.area(), this.route.resident());
         updateBrowserRows();
         updateActions();
     }
@@ -341,10 +327,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void acceptManagementResult(SettlementManagementActionResultPayload payload) {
-        if (this.routeSubmitted) {
-            this.routeSubmitted = false;
-            if (payload.applied()) enterMode(Mode.SELECT);
-        }
+        if (this.route.accept(payload.applied())) enterMode(Mode.SELECT);
         this.guardFeedback = SettlementManagementScreen.resultMessage(payload);
         refreshManagement();
         updateActions();
@@ -712,9 +695,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             keepAlive();
             return;
         }
-        if (this.routeSubmitted && !this.parent.submitting()) {
-            this.routeSubmitted = false;
-            this.routeUncertain = true;
+        if (this.route.timeout(this.parent.submitting())) {
             this.guardFeedback = Component.literal("Outcome unconfirmed. Reload the saved route before resubmitting.");
             updateRouteButtons();
         }
@@ -810,14 +791,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         synchronizeGizmo();
         if (this.gizmo != null && worldContains(mouseX, mouseY) && !SettlementViewClient.panelsOpen(this)) this.gizmo.hover(ray(mouseX, mouseY));
-        this.routePlacementPreview = this.routeDraft != null && !this.routeDraft.dragging() && this.hovered.position() != null
-                && routeHandle(mouseX, mouseY) < 0 ? this.routeDraft.placementPosition(this.hovered.position().above()) : null;
-        if (this.routeDraft != null) {
-            var handles = this.routeDraft.handles();
+        this.route.preview(this.route.draft() != null && !this.route.draft().dragging() && this.hovered.position() != null
+                && routeHandle(mouseX, mouseY) < 0 ? this.route.draft().placementPosition(this.hovered.position().above()) : null);
+        if (this.route.draft() != null) {
+            var handles = this.route.draft().handles();
             for (int index = 0; index < handles.size(); index++) {
                 var point = project(Vec3.atCenterOf(handles.get(index)));
                 if (point != null && worldContains(point[0], point[1]))
-                    graphics.drawString(this.font, Integer.toString(index + 1), (int) point[0] + 5, (int) point[1] - 5, index == this.routeDraft.selected() ? 0xFFDD55 : 0xFFFFFF);
+                    graphics.drawString(this.font, Integer.toString(index + 1), (int) point[0] + 5, (int) point[1] - 5, index == this.route.draft().selected() ? 0xFFDD55 : 0xFFFFFF);
             }
         }
         renderChrome(graphics, mouseX, mouseY);
@@ -833,7 +814,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.guardMode == SettlementGuardOrder.Mode.PATROL) hint = Component.literal(
                 (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
-        if (this.routeDraft != null) hint = routeHint();
+        if (this.route.draft() != null) hint = routeHint();
         else if (this.interaction.is(Mode.SELECT) && draft == null && this.editingArea == null)
             hint = Component.translatable("villagerretaliation.gui.settlement.peek_hint", SettlementViewKeyMappings.PEEK.getTranslatedKeyMessage())
                     .append("\n").append(hint);
@@ -1149,7 +1130,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
         }
         updateRouteButtons();
-        if (this.routeDraft != null || this.storagePicker != null) {
+        if (this.route.draft() != null || this.storagePicker != null) {
             for (var button : this.guardButtons) if (button != null) button.visible = false;
             this.returnToPost.visible = false;
             this.groupActions.visible = false;
@@ -1353,24 +1334,24 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         int top = this.height - 36 - rows * 22;
         for (int index = 0; index < this.routeButtons.size(); index++) {
             var button = this.routeButtons.get(index);
-            button.visible = this.routeDraft != null;
+            button.visible = this.route.draft() != null;
             button.setX(this.layout.worldLeft + index % columns * (width + 4));
             button.setY(top + index / columns * 22);
             button.setWidth(width);
-            button.active = this.routeDraft != null && !this.parent.submitting() && !this.commands.busy();
-            if (this.routeDraft == null) continue;
-            button.active &= !this.routeReloading && (!this.routeDraft.dragging() || index == 1);
-            if (index == 0 || index == 3) button.active &= !this.routeUncertain;
-            if (index == 0) button.active &= this.routeDraft.validation().isEmpty();
-            if (index == 3) button.setMessage(Component.literal(this.routeResident == null ? "Automatic" : "Inherit"));
-            if (index == 4) button.setMessage(Component.literal(this.routeDraft.inserting() ? "Insert: on" : "Insert"));
-            if (index >= 4 && index <= 7 || index == 9) button.active &= this.routeDraft.selected() >= 0;
-            if (index == 8) button.setMessage(Component.literal(this.routeDraft.loop() ? "Loop: on" : "Loop: off"));
-            if (index == 9) button.setMessage(Component.literal(this.routeDraft.branching() ? "Branch: on" : "Branch"));
+            button.active = this.route.draft() != null && !this.parent.submitting() && !this.commands.busy();
+            if (this.route.draft() == null) continue;
+            button.active &= !this.route.reloading() && (!this.route.draft().dragging() || index == 1);
+            if (index == 0 || index == 3) button.active &= !this.route.uncertain();
+            if (index == 0) button.active &= this.route.draft().validation().isEmpty();
+            if (index == 3) button.setMessage(Component.literal(this.route.resident() == null ? "Automatic" : "Inherit"));
+            if (index == 4) button.setMessage(Component.literal(this.route.draft().inserting() ? "Insert: on" : "Insert"));
+            if (index >= 4 && index <= 7 || index == 9) button.active &= this.route.draft().selected() >= 0;
+            if (index == 8) button.setMessage(Component.literal(this.route.draft().loop() ? "Loop: on" : "Loop: off"));
+            if (index == 9) button.setMessage(Component.literal(this.route.draft().branching() ? "Branch: on" : "Branch"));
             button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(switch (index) {
                 case 0 -> "Save this route. Changes stay in the draft until saved.";
                 case 2 -> "Discard this draft and reload the latest saved route.";
-                case 3 -> this.routeResident == null ? "Remove the worksite route and restore automatic behavior." : "Remove only this worker's route override.";
+                case 3 -> this.route.resident() == null ? "Remove the worksite route and restore automatic behavior." : "Remove only this worker's route override.";
                 case 4 -> "Place the next node after the selected node.";
                 case 5 -> "Remove the selected node or branch.";
                 case 9 -> "Select a route node, then place an out-and-back branch.";
@@ -1381,25 +1362,17 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void routeAction(int action) {
-        if (this.routeDraft == null || this.parent.submitting()) return;
+        if (this.route.draft() == null || this.parent.submitting()) return;
         switch (action) {
             case 0 -> savePersistentRoute(false);
             case 1 -> enterMode(Mode.SELECT);
             case 2 -> {
-                this.routeReloading = true;
+                this.route.reload();
                 refreshManagement();
                 this.guardFeedback = Component.literal("Reloading the saved route...");
             }
             case 3 -> savePersistentRoute(true);
-            case 4 -> this.routeDraft.insertAfterSelection();
-            case 5 -> this.routeDraft.remove();
-            case 6 -> this.routeDraft.reorder(-1);
-            case 7 -> this.routeDraft.reorder(1);
-            case 8 -> this.routeDraft.toggleLoop();
-            case 9 -> this.routeDraft.branchFromSelection();
-            case 10 -> this.routeDraft.clear();
-            case 11 -> { if (this.routeDraft.inserting()) this.routeDraft.insertAfterSelection(); if (this.routeDraft.branching()) this.routeDraft.branchFromSelection(); }
-            default -> { }
+            default -> this.route.edit(action);
         }
         updateActions();
     }
@@ -1411,6 +1384,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void beginPersistentRoute(UUID areaId, UUID residentId) {
+        if (this.route.reloading()) enterMode(Mode.SELECT);
         var area = this.areas.get(areaId);
         if (area == null || !permits(SettlementPermission.STAFF) || !SettlementGuardOrder.supports(area.kind().role())) return;
         if (residentId == null && area.plan() == null) {
@@ -1420,45 +1394,38 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var resident = this.roster.get(residentId);
         if (residentId != null && (resident == null || !areaId.equals(resident.area()))) return;
         var expected = residentId == null ? area.plan().route() : resident.guardOrder();
-        var initial = expected != null ? expected : area.plan() == null ? null : area.plan().route();
         enterMode(Mode.EDIT_ROUTE);
-        this.routeArea = areaId;
-        this.routeResident = residentId;
-        this.routeExpected = residentId == null ? expected : initial;
-        this.routeInherited = residentId != null && expected == null;
-        this.routeDraft = new SettlementRouteDraft(area.kind().role(), initial);
-        this.routeUncertain = false;
-        this.routeReloading = false;
+        this.route.begin(areaId, residentId, area.kind().role(), expected, area.plan() == null ? null : area.plan().route());
         this.guardFeedback = Component.empty();
         updateActions();
     }
 
     private void savePersistentRoute(boolean inherit) {
-        if (this.routeDraft == null || this.routeDraft.dragging() || this.routeUncertain || this.routeReloading || this.parent.submitting() || this.commands.busy()) return;
-        if (!inherit && !this.routeDraft.validation().isEmpty()) {
-            this.guardFeedback = Component.literal(this.routeDraft.validation());
+        if (!this.route.canSubmit() || this.parent.submitting() || this.commands.busy()) return;
+        if (!inherit && !this.route.draft().validation().isEmpty()) {
+            this.guardFeedback = Component.literal(this.route.draft().validation());
             return;
         }
-        this.routeSubmitted = true;
-        this.parent.submit(new SettlementManagementActionPayload.SaveRoute(this.routeArea, this.routeResident,
-                this.routeExpected, inherit ? null : this.routeDraft.route()));
+        var request = this.route.submit(inherit);
+        if (request == null) return;
+        this.parent.submit(request);
         this.guardFeedback = Component.literal("Saving route...");
         updateActions();
     }
 
     private Component routeHint() {
-        String scope = this.routeResident == null ? "Worksite default" : this.routeInherited ? "Worker / inherited draft" : "Worker override";
-        String validation = this.routeDraft.validation();
+        String scope = this.route.resident() == null ? "Worksite default" : this.route.inherited() ? "Worker / inherited draft" : "Worker override";
+        String validation = this.route.draft().validation();
         String feedback = !validation.isEmpty() ? validation : this.guardFeedback.getString();
-        return Component.literal(scope + " / " + this.routeDraft.nodes().size() + "/16 nodes"
-                + (this.routeDraft.selected() < 0 ? "" : " / selected " + (this.routeDraft.selected() + 1))
+        return Component.literal(scope + " / " + this.route.draft().nodes().size() + "/16 nodes"
+                + (this.route.draft().selected() < 0 ? "" : " / selected " + (this.route.draft().selected() + 1))
                 + "\n" + (feedback.isEmpty() ? "Click to place. Hold a node to drag. Middle drag pans. Esc cancels." : feedback));
     }
 
     private int routeHandle(double x, double y) {
         int selected = -1;
         double distance = 10;
-        var handles = this.routeDraft.handles();
+        var handles = this.route.draft().handles();
         for (int index = 0; index < handles.size(); index++) {
             var point = project(Vec3.atCenterOf(handles.get(index)));
             if (point == null) continue;
@@ -1532,13 +1499,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.boxDragging = false;
         this.dragStart = null;
         this.dragEnd = null;
-        if (mode != Mode.EDIT_ROUTE) {
-            this.routeDraft = null;
-            this.routeSubmitted = false;
-            this.routeReloading = false;
-            this.routeUncertain = false;
-            this.routeDragHit = false;
-        }
         this.guardMode = null;
         this.guardWorksite = null;
         this.guardPoints.clear();
@@ -1708,7 +1668,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void clearControls() {
-        if (this.routeDraft != null) this.routeDraft.cancelDrag();
+        this.route.cancelDrag();
         this.panning = false;
         this.draggingWindow = null;
         this.resizingWindow = null;
@@ -1750,28 +1710,28 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.peekKey = InputConstants.getKey(keyCode, scanCode);
             return true;
         }
-        if (this.routeDraft != null) {
+        if (this.route.draft() != null) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                if (this.routeDraft.dragging()) this.routeDraft.cancelDrag();
+                if (this.route.draft().dragging()) this.route.cancelDrag();
                 else if (!this.parent.submitting()) enterMode(Mode.SELECT);
                 updateActions();
                 return true;
             }
             if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) { savePersistentRoute(false); return true; }
             if (keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE) {
-                if (!this.parent.submitting()) this.routeDraft.remove();
+                if (!this.parent.submitting()) this.route.draft().remove();
                 updateRouteButtons();
                 return true;
             }
             if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_9) {
-                this.routeDraft.select(keyCode - GLFW.GLFW_KEY_1);
+                this.route.draft().select(keyCode - GLFW.GLFW_KEY_1);
                 updateRouteButtons();
                 return true;
             }
-            if (this.routeDraft.dragging()) return true;
+            if (this.route.draft().dragging()) return true;
         }
-        if (this.routeDraft == null && toolShortcut(keyCode, scanCode)) return true;
-        if (keyCode == GLFW.GLFW_KEY_DELETE && this.routeDraft == null) {
+        if (this.route.draft() == null && toolShortcut(keyCode, scanCode)) return true;
+        if (keyCode == GLFW.GLFW_KEY_DELETE && this.route.draft() == null) {
             if (inspectorSelection() instanceof SettlementManagementPayload.Area area) confirmRemoveArea(area);
             return true;
         }
@@ -1852,7 +1812,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (SettlementViewClient.transitioning()) return true;
-        if (this.routeDraft != null && this.routeDraft.dragging()) return true;
+        if (this.route.draft() != null && this.route.draft().dragging()) return true;
         if (this.popup != null && this.popup.scroll(x, y, vertical) || this.gizmo != null && this.gizmo.dragging()) return true;
         var hoveredWindow = windowAt(x, y);
         if (hoveredWindow == this.mapWindow && this.overviewMap.contains(x, y)) {
@@ -1916,7 +1876,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 return true;
             }
             if (clickedWindow == this.sidebarWindow) {
-                if (this.routeDraft == null) this.inspector.click(x, y, button);
+                if (this.route.draft() == null) this.inspector.click(x, y, button);
                 return true;
             }
             if (!this.overviewMap.contains(x, y)) return true;
@@ -1938,7 +1898,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (this.preferences.map && this.overviewMap.contains(x, y)) {
-            if (this.routeDraft != null) {
+            if (this.route.draft() != null) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
                 return true;
             }
@@ -1957,14 +1917,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         if (!worldContains(x, y)) return true;
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
-            if (this.routeDraft != null && this.routeDraft.dragging()) return true;
+            if (this.route.draft() != null && this.route.draft().dragging()) return true;
             this.panning = true;
             return true;
         }
-        if (this.routeDraft != null) {
+        if (this.route.draft() != null) {
             if (this.parent.submitting()) return true;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                if (this.routeDraft.dragging()) this.routeDraft.cancelDrag();
+                if (this.route.draft().dragging()) this.route.cancelDrag();
                 else enterMode(Mode.SELECT);
                 updateActions();
                 return true;
@@ -1975,14 +1935,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 if (this.search != null) this.search.setFocused(false);
                 setFocused(null);
                 clearControls();
-                this.routeDraft.beginDrag(handle);
-                this.routeDragHit = true;
-                this.routeDragX = x;
-                this.routeDragY = y;
+                this.route.beginDrag(handle, x, y);
             } else {
                 var position = pick(x, y).position();
                 this.guardFeedback = Component.literal(position == null ? "No loaded map surface at this position"
-                        : this.routeDraft.place(position.above()));
+                        : this.route.draft().place(position.above()));
             }
             updateRouteButtons();
             return true;
@@ -2086,13 +2043,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             else layoutMap();
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.routeDraft != null && this.routeDraft.dragging()) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.route.draft() != null && this.route.draft().dragging()) {
             var position = worldContains(x, y) ? pick(x, y).position() : null;
-            this.routeDragHit = position != null;
-            this.routeDragX = x;
-            this.routeDragY = y;
-            if (position != null) this.routeDraft.dragTo(position.above());
-            this.guardFeedback = Component.literal(position == null ? "No map surface. Release restores the original node." : this.routeDraft.validation());
+            this.route.drag(x, y, position);
+            this.guardFeedback = Component.literal(position == null ? "No map surface. Release restores the original node." : this.route.draft().validation());
             updateRouteButtons();
             return true;
         }
@@ -2139,9 +2093,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             setDragging(false);
             return true;
         }
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.routeDraft != null && this.routeDraft.dragging()) {
-            if (x != this.routeDragX || y != this.routeDragY) mouseDragged(x, y, button, 0, 0);
-            boolean valid = this.routeDraft.finishDrag(position -> this.routeDragHit && worldContains(x, y)
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.route.draft() != null && this.route.draft().dragging()) {
+            if (this.route.movedSinceDrag(x, y)) mouseDragged(x, y, button, 0, 0);
+            boolean valid = this.route.finishDrag(position -> worldContains(x, y)
                     && !this.minecraft.level.isOutsideBuildHeight(position));
             this.guardFeedback = Component.literal(valid ? "Draft updated. Save applies the route." : "Invalid drop. Original node restored.");
             updateRouteButtons();
@@ -2323,9 +2277,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var selectedWorksite = this.areas.get(this.selectedArea);
         if (selectedWorksite != null && selectedWorksite.plan() != null && selectedWorksite.plan().route() != null)
             routes.add(selectedWorksite.plan().route().traversal());
-        if (this.routeDraft != null) {
+        if (this.route.draft() != null) {
             routes.clear();
-            routes.add(this.routeDraft.nodes());
+            routes.add(this.route.draft().nodes());
         }
         for (var points : routes) {
             for (int i = 0; i < points.size(); i++) {
@@ -2335,22 +2289,22 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         Vec3.atCenterOf(point), 1, 1, 1, 1);
             }
         }
-        if (this.routeDraft != null) {
-            var nodes = this.routeDraft.nodes();
-            boolean valid = (!this.routeDraft.dragging() || this.routeDragHit) && this.routeDraft.validation().isEmpty();
+        if (this.route.draft() != null) {
+            var nodes = this.route.draft().nodes();
+            boolean valid = (!this.route.draft().dragging() || this.route.dragHit()) && this.route.draft().validation().isEmpty();
             float green = valid ? 0.85F : 0.2F;
-            if (this.routeDraft.loop() && nodes.size() > 1) SettlementSelectionGizmo.line(pose, lines,
+            if (this.route.draft().loop() && nodes.size() > 1) SettlementSelectionGizmo.line(pose, lines,
                     Vec3.atCenterOf(nodes.getLast()), Vec3.atCenterOf(nodes.getFirst()), 1, green, 0.2F, 1);
-            for (var branch : this.routeDraft.branches()) SettlementSelectionGizmo.line(pose, lines,
+            for (var branch : this.route.draft().branches()) SettlementSelectionGizmo.line(pose, lines,
                     Vec3.atCenterOf(branch.anchor()), Vec3.atCenterOf(branch.end()), 1, green, 0.2F, 1);
-            if (this.routePlacementPreview != null && !this.routeDraft.dragging()) {
-                LevelRenderer.renderLineBox(pose, lines, new AABB(this.routePlacementPreview).deflate(0.1), 1, 0.85F, 0.2F, 0.65F);
-                for (var neighbor : this.routeDraft.placementNeighbors()) SettlementSelectionGizmo.line(pose, lines,
-                        Vec3.atCenterOf(neighbor), Vec3.atCenterOf(this.routePlacementPreview), 1, 0.85F, 0.2F, 0.65F);
+            if (this.route.preview() != null && !this.route.draft().dragging()) {
+                LevelRenderer.renderLineBox(pose, lines, new AABB(this.route.preview()).deflate(0.1), 1, 0.85F, 0.2F, 0.65F);
+                for (var neighbor : this.route.draft().placementNeighbors()) SettlementSelectionGizmo.line(pose, lines,
+                        Vec3.atCenterOf(neighbor), Vec3.atCenterOf(this.route.preview()), 1, 0.85F, 0.2F, 0.65F);
             }
-            var handles = this.routeDraft.handles();
+            var handles = this.route.draft().handles();
             for (int index = 0; index < handles.size(); index++) {
-                boolean selected = index == this.routeDraft.selected();
+                boolean selected = index == this.route.draft().selected();
                 LevelRenderer.renderLineBox(pose, lines, new AABB(handles.get(index)).inflate(selected ? 0.1 : -0.1),
                         selected ? 1 : 0.4F, green, selected ? 0.2F : 1, 1);
             }
@@ -3056,7 +3010,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     SettlementSelectionInspector inspector() { return this.inspector; }
-    SettlementRouteDraft routeDraft() { return this.routeDraft; }
+    SettlementRouteDraft routeDraft() { return this.route.draft(); }
 
     SettlementManagementPayload.Entry inspectorSelection() {
         if (this.inspected != null) return this.inspected;
@@ -3085,7 +3039,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void updateInspector() {
         this.inspector.update(this.header, inspectorSelection(), inspectorWorksite(), inspectorStaff(),
                 this.snapshots.entries(Page.DEPOTS), this.snapshots.entries(Page.TRADE),
-                this.preferences.sidebar && !this.interaction.is(Mode.SELECT_PLOT), this.commands.busy() || this.parent.submitting() || this.routeDraft != null || this.storagePicker != null);
+                this.preferences.sidebar && !this.interaction.is(Mode.SELECT_PLOT), this.commands.busy() || this.parent.submitting() || this.route.draft() != null || this.storagePicker != null);
         for (var widget : this.browserWidgets) widget.visible = this.preferences.sidebar && !this.inspector.visible() && !this.interaction.is(Mode.SELECT_PLOT);
         if (this.inspector.visible() && this.search != null) this.search.setFocused(false);
         updateBrowserRows();

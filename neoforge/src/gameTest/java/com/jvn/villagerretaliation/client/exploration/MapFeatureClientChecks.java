@@ -38,6 +38,7 @@ final class MapFeatureClientChecks {
                 fullLayers = VillagerRetaliationConfig.FULL_MAP_LAYERS.get(); minimapLayers = VillagerRetaliationConfig.MINIMAP_LAYERS.get();
                 minimap = VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.get();
                 VillagerRetaliationConfig.FULL_MAP_LAYERS.set(7); VillagerRetaliationConfig.MINIMAP_LAYERS.set(6);
+                verifyMinimapLabels();
                 var dimension = mc.level.dimension().location();
                 int x = mc.player.getBlockX() + 200, z = mc.player.getBlockZ() + 100;
                 var local = new MapLocation(UUID.randomUUID(), dimension, x, z, MapLocation.Icon.EMERALD, "Needle supplies", "Supplies", true);
@@ -151,6 +152,28 @@ final class MapFeatureClientChecks {
         }
         return false;
     }
+    private static void verifyMinimapLabels() {
+        var mc = Minecraft.getInstance();
+        var labels = new java.util.ArrayList<String>();
+        var graphics = new net.minecraft.client.gui.GuiGraphics(mc, mc.renderBuffers().bufferSource()) {
+            @Override public int drawString(net.minecraft.client.gui.Font font, String text, int x, int y, int color) {
+                labels.add(text);
+                return font.width(text);
+            }
+            @Override public void fill(int left, int top, int right, int bottom, int color) { }
+            @Override public void renderItem(net.minecraft.world.item.ItemStack item, int x, int y) { }
+        };
+        var view = new com.jvn.villagerretaliation.exploration.MapView(320, 240, mc.player.getX(), mc.player.getZ(), 1);
+        var dimension = mc.level.dimension().location();
+        var location = new MapDestination(MapDestination.Kind.LOCATION, "label-location", dimension, view.x() - 70, view.z(),
+                "Supplies", "Supplies", MapLocation.Icon.EMERALD, true, 0xffffffff, 0);
+        var quest = new MapDestination(MapDestination.Kind.QUEST, "label-quest", dimension, view.x() + 70, view.z(),
+                "Survey", "Survey", null, true, 0xffffffff, 0);
+        var groups = List.of(new MapMarkerLayout.Group(90, 120, List.of(location)), new MapMarkerLayout.Group(230, 120, List.of(quest)));
+        MapMarkerOverlay.render(graphics, view, mc.font, groups, new MapLayers(true), "", -1, -1, true);
+        require(labels.containsAll(List.of("Supplies", "Survey")), "hiding village names preserves minimap location and quest labels");
+    }
+
     private static void activate(Screen screen, int index) {
         for (int i = 0; i < index; i++) screen.keyPressed(GLFW.GLFW_KEY_DOWN, 0, 0);
         screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);

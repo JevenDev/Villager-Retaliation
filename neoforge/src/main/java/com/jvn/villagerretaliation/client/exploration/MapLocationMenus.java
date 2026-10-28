@@ -43,7 +43,7 @@ final class MapLocationMenus {
         menu = new WorldViewMenu(Minecraft.getInstance().font, screen.width, screen.height, anchorX, anchorY, details, actions);
     }
 
-    void list() {
+    private void list() {
         close();
         Minecraft.getInstance().setScreen(new MapSearchScreen(screen));
     }

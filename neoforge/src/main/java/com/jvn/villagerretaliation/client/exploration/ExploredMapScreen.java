@@ -28,8 +28,6 @@ public final class ExploredMapScreen extends Screen {
         navigation.focus(entry.position().getX(), entry.position().getZ()); centered = true;
         relations.focus(perspective, village);
     }
-    public void acceptRelations(com.jvn.villagerretaliation.network.VillageRelationsPayload payload) { relations.accept(payload); }
-    public void acceptCouriers(com.jvn.villagerretaliation.network.SettlementCourierMapPayload payload) { relations.acceptCouriers(payload); }
     @Override public void tick() {
         if (transition.closing() && (!VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.get() || transitionProgress() == 0)) {
             minecraft.setScreen(parent);

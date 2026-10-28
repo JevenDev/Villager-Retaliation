@@ -462,14 +462,11 @@ tasks.named('runSettlementClientSmoke') {
                 into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
             }
         }
-        if (providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get().toBoolean()
-                || providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get().toBoolean()) {
-            def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
-            if (imgui == null) throw new GradleException('Settlement client checks require the declared ImGuiMC dependency.')
-            copy {
-                from imgui
-                into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
-            }
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Settlement client checks require the declared ImGuiMC dependency.')
+        copy {
+            from imgui
+            into new File(settlementClientSmokeDirectory.get().asFile, 'mods')
         }
         new File(settlementClientSmokeDirectory.get().asFile, 'options.txt').text =
                 'onboardAccessibility:false\npauseOnLostFocus:false\nsoundCategory_master:0.0\n'
