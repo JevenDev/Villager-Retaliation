@@ -64,7 +64,6 @@ final class MapMarkerOverlay {
             }
             if (destination.key().equals(selected)) graphics.renderOutline(x - 10, y - 10, 21, 21, 0xffffe8a3);
         }
-        if (minimap && !layers.visible(MapLayers.Layer.VILLAGE_NAMES)) return;
         var reserved = new java.util.ArrayList<MapMarkerLayout.Box>();
         if (!minimap) {
             reserved.add(new MapMarkerLayout.Box(0, 0, view.width(), 64));

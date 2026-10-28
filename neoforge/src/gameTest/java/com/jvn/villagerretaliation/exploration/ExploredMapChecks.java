@@ -45,6 +45,7 @@ public final class ExploredMapChecks {
         captureQueue();
         cache(fixture);
         batchLoading(fixture);
+        saveRetries(fixture);
         surfaceCache(fixture);
         overview(fixture);
         bulkOverviews();
@@ -393,6 +394,39 @@ public final class ExploredMapChecks {
         await(cache, () -> cache.dirtyCount() == 0);
         cache.close();
         check(cache.awaitClosed(5000), "mixed I/O worker closes cleanly");
+    }
+    private static void saveRetries(Path root) throws Exception {
+        var now = new java.util.concurrent.atomic.AtomicLong();
+        var store = new MapStore(root, "retry-fairness", "world", "player", "dim");
+        var cache = new MapRepository(store, now::get);
+        for (int x = 0; x < 8; x++) {
+            int tileX = x;
+            await(cache, () -> cache.get(tileX, 0) != null);
+        }
+        await(cache, () -> cache.get(16, 0) != null);
+        Path blocked = store.root().resolve("r.0.0.vrregion");
+        Files.createDirectories(blocked);
+        for (int x = 0; x < 8; x++) cache.put(tile(x, 0, 1, "minecraft:stone"));
+        cache.put(tile(16, 0, 1, "minecraft:stone"));
+        await(cache, () -> cache.dirtyCount() == 8);
+        check(store.read(16, 0).revision() == 1, "a full failing batch cannot starve another region");
+        check(!cache.error().isEmpty(), "save failures remain visible during retry backoff");
+        Files.delete(blocked);
+        cache.put(tile(0, 0, 2, "minecraft:dirt_path"));
+        for (int i = 0; i < 100; i++) { cache.tick(); Thread.sleep(1); }
+        check(cache.dirtyCount() == 8 && store.read(0, 0).revision() == 0, "new observations do not bypass a failed tile's backoff");
+        Files.createDirectory(blocked);
+        now.set(250_000_000L);
+        await(cache, () -> cache.get(32, 0) != null);
+        Files.delete(blocked);
+        now.set(749_999_999L);
+        for (int i = 0; i < 100; i++) { cache.tick(); Thread.sleep(1); }
+        check(cache.dirtyCount() == 8, "repeated failures increase the retry delay without dropping dirty tiles");
+        now.set(750_000_000L);
+        await(cache, () -> cache.dirtyCount() == 0);
+        check(store.read(0, 0).revision() == 2 && cache.error().isEmpty(), "recovery saves the latest revision and clears the failure");
+        cache.close();
+        check(cache.awaitClosed(5000), "retry repository closes cleanly");
     }
     private static void surfaceCache(Path root) throws Exception {
         var store = new MapStore(root, "surfaces", "world", "player", "dim");

@@ -729,6 +729,19 @@ tasks.register('verifyEditor', JavaExec) {
     mainClass = 'com.jvn.villagerretaliation.authoring.client.EditorClientChecks'
 }
 
+tasks.register('verifyExploredMap', JavaExec) {
+    group = 'verification'
+    description = 'Runs map storage, cache, terrain and fog regressions without launching Minecraft.'
+    dependsOn tasks.named('gameTestClasses')
+    classpath = sourceSets.gameTest.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.exploration.ExploredMapChecks'
+    args layout.buildDirectory.dir('explored-map-checks').get().asFile.absolutePath
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyExploredMap')
+}
+
 tasks.register('verifyAuthoring', JavaExec) {
     group = 'verification'
     description = 'Runs authoring regressions without launching a Minecraft client or server.'

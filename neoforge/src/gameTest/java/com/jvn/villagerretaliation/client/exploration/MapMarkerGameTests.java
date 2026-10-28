@@ -80,6 +80,22 @@ public final class MapMarkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void villageNameFilterPreservesOtherDestinationLabels(GameTestHelper helper) {
+        var village = village("Village", -80, 0);
+        var location = new MapDestination(MapDestination.Kind.LOCATION, "location", village.dimension(),
+                0, 0, "Supplies", "Supplies", null, true, 0xffffffff, 0);
+        var quest = new MapDestination(MapDestination.Kind.QUEST, "quest", village.dimension(),
+                80, 0, "Quest", "Quest", null, true, 0xffffffff, 0);
+        var view = new MapView(320, 240, 0, 0, 1);
+        var groups = MapMarkerLayout.groups(List.of(village, location, quest), view, "");
+        var labels = MapMarkerLayout.labels(groups, view, "", -1, -1, false, text -> text.length() * 6, 9, List.of());
+        helper.assertTrue(labels.stream().map(MapMarkerLayout.Label::destination).toList().containsAll(List.of(location, quest)),
+                "saved locations and quest labels remain visible with village names disabled");
+        helper.assertFalse(labels.stream().anyMatch(label -> label.destination().equals(village)), "ordinary village names stay hidden");
+        helper.succeed();
+    }
+
     private static MapDestination village(String id, int x, int z) {
         return new MapDestination(MapDestination.Kind.VILLAGE, id, ResourceLocation.withDefaultNamespace("overworld"),
                 x, z, id, id, null, true, 0xffffffff, 0);

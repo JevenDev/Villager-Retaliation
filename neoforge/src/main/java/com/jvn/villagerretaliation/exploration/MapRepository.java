@@ -10,6 +10,9 @@ public final class MapRepository implements AutoCloseable {
     public static final int MAX_TILES = 192, MAX_DIRTY = 64, MAX_REQUESTS = 256, MAX_SURFACES = 4096;
     private static final int READ_BATCH = 128, WRITE_BATCH = 8;
     private final MapStore store;
+    private final java.util.function.LongSupplier clock;
+    private final Map<Long, SaveRetry> saveRetries = new LinkedHashMap<>();
+    private record SaveRetry(long at, long delay, String error) { }
     private final Map<String, MapSnapshot.Marker> markers = new HashMap<>();
     private final LinkedHashMap<Long, MapSnapshot> tiles = new LinkedHashMap<>(256, .75f, true);
     private final LinkedHashSet<Long> dirty = new LinkedHashSet<>(), requested = new LinkedHashSet<>();
@@ -35,7 +38,8 @@ public final class MapRepository implements AutoCloseable {
     private record Result(long key, MapSnapshot tile, MapSurfaceSnapshot surface, boolean write, String error) {
         static Result read(long key, MapSnapshot tile, String error) { return new Result(key, tile, MapSurfaceSnapshot.from(tile), false, error); }
     }
-    public MapRepository(MapStore store) { this.store = store; }
+    public MapRepository(MapStore store) { this(store, System::nanoTime); }
+    MapRepository(MapStore store, java.util.function.LongSupplier clock) { this.store = store; this.clock = clock; }
     public MapSnapshot get(int x, int z) {
         long key = MapSnapshot.key(x, z);
         var tile = tiles.get(key);
@@ -151,10 +155,14 @@ public final class MapRepository implements AutoCloseable {
         tiles.put(tile.key(), tile); rememberSurface(tile); dirty.add(tile.key()); return true;
     }
     public Collection<MapSnapshot> loaded() { return List.copyOf(tiles.values()); }
-    public String error() { return error.isEmpty() ? migrationError : error; }
+    public String error() {
+        if (!saveRetries.isEmpty()) return saveRetries.values().iterator().next().error;
+        return error.isEmpty() ? migrationError : error;
+    }
     public int dirtyCount() { return dirty.size(); }
     public int requestCount() { return requested.size() + reading.size(); }
     public void tick() {
+        long now = clock.getAsLong();
         tickOverviews();
         if (pending != null) {
             if (!pending.isDone()) return;
@@ -165,7 +173,15 @@ public final class MapRepository implements AutoCloseable {
             for (var result : batch.results) {
                 if (!result.error.isEmpty()) error = result.error;
                 if (result.write) {
-                    if (result.error.isEmpty() && tiles.get(result.key) == result.tile) dirty.remove(result.key);
+                    if (result.error.isEmpty()) {
+                        saveRetries.remove(result.key);
+                        if (tiles.get(result.key) == result.tile) dirty.remove(result.key);
+                    } else {
+                        var retry = saveRetries.get(result.key);
+                        long delay = retry == null ? 250_000_000L : Math.min(10_000_000_000L, retry.delay * 2);
+                        saveRetries.put(result.key, new SaveRetry(now + delay, delay, result.error));
+                        dirty.remove(result.key); dirty.add(result.key);
+                    }
                 } else {
                     reading.remove(result.key);
                     // corrupt files stay untouched until a fresh local observation replaces them
@@ -185,7 +201,11 @@ public final class MapRepository implements AutoCloseable {
         }
         if (dirty.isEmpty() && requested.isEmpty() && !migrationPending) return;
         var reads = requested.stream().limit(READ_BATCH).toList();
-        var writes = dirty.stream().limit(WRITE_BATCH).map(tiles::get).toList();
+        var writes = dirty.stream().filter(key -> {
+            var retry = saveRetries.get(key);
+            return retry == null || now - retry.at >= 0;
+        }).limit(WRITE_BATCH).map(tiles::get).toList();
+        if (reads.isEmpty() && writes.isEmpty() && !migrationPending) return;
         requested.removeAll(reads); reading.addAll(reads);
         boolean migrate = migrationPending;
         var details = Set.copyOf(detailRequested);
