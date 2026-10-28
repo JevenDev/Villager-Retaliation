@@ -58,6 +58,8 @@ import com.jvn.villagerretaliation.network.VillagerStudyRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
@@ -672,57 +674,42 @@ public final class VillagerInteractionService {
         VillagerGiftRequestHandler.handle(player, entityId, inventorySlot, amount);
     }
 
+
+
     public static void handleRecruitRequest(
             ServerPlayer player,
             int entityId,
             VillagerRecruitRequestPayload.Action action,
             HiredVillagerRole selectedRole,
             long expectedRevision) {
-        Entity rawEntity = player.serverLevel().getEntity(entityId);
-        Villager villager = rawEntity instanceof Villager found ? found : null;
-        VillagerAssignmentSnapshot before = villager == null
-                ? VillagerAssignmentSnapshot.unassigned(0L)
-                : ensureAssignmentSnapshot(player.serverLevel(), villager);
-        if (expectedRevision < 0L || before.revision() != expectedRevision) {
-            sendRecruitmentResult(player, entityId, false,
-                    com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.STALE_STATE,
-                    before);
-            return;
+        trySendToPlayer(player, recruitmentResult(player, entityId, action, selectedRole, expectedRevision));
+    }
+
+    static RecruitmentResultPayload recruitmentResult(
+            ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole, long expectedRevision) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager)) {
+            return new RecruitmentResultPayload(entityId, false, FailureReason.INVALID_TARGET,
+                    VillagerAssignmentSnapshot.unassigned(0L), "");
         }
-        boolean wasFollowingPlayer = villager != null && VillagerRecruitmentService.isFollowing(villager, player);
-        boolean wasStayingHere = villager != null && VillagerRecruitmentService.isStayingHere(villager, player);
-        handleRecruitRequestInternal(player, entityId, action, selectedRole);
-        VillagerAssignmentSnapshot after = villager == null
-                ? VillagerAssignmentSnapshot.unassigned(0L)
-                : ensureAssignmentSnapshot(player.serverLevel(), villager);
-        boolean success = recruitmentTransitionSatisfied(
-                player, villager, action, selectedRole, after, wasFollowingPlayer, wasStayingHere);
-        sendRecruitmentResult(
-                player,
-                entityId,
-                success,
-                success
-                        ? com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NONE
-                        : recruitmentFailureReason(player, villager, action, selectedRole),
-                after);
+        VillagerAssignmentSnapshot before = ensureAssignmentSnapshot(player.serverLevel(), villager);
+        if (expectedRevision < 0L || before.revision() != expectedRevision) {
+            return new RecruitmentResultPayload(entityId, false, FailureReason.STALE_STATE, before, "");
+        }
+        FailureReason result = handleRecruitRequestInternal(player, entityId, action, selectedRole);
+        VillagerAssignmentSnapshot after = ensureAssignmentSnapshot(player.serverLevel(), villager);
+        return new RecruitmentResultPayload(entityId, result == FailureReason.NONE, result, after, "");
     }
 
-    public static void handleRecruitRequest(
-            ServerPlayer player,
-            int entityId,
-            VillagerRecruitRequestPayload.Action action,
-            HiredVillagerRole selectedRole) {
-        handleRecruitRequest(player, entityId, action, selectedRole, -1L);
-    }
-
-    private static void handleRecruitRequestInternal(
+    private static FailureReason handleRecruitRequestInternal(
             ServerPlayer player,
             int entityId,
             VillagerRecruitRequestPayload.Action action,
             HiredVillagerRole selectedRole) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
-            return;
+            return FailureReason.CONVERSATION_ENDED;
         }
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
@@ -757,7 +744,7 @@ public final class VillagerInteractionService {
                 && recruitedParty != null
                 && !canOpenJobInventory) {
             sendVillagerNotice(player, villager, "interaction.party.error.job_inventory_denied");
-            return;
+            return FailureReason.NOT_OWNER;
         }
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
                 && !(RecruitmentActionMappings.hireDays(action) > 0
@@ -769,13 +756,12 @@ public final class VillagerInteractionService {
                 && !canIssueStayCommand
                 && !canStopFollowCommand) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
+            return FailureReason.REPUTATION_TOO_LOW;
         }
 
         focusVillagerOnPlayer(villager, player);
-        if (handlePartyVillagerRequest(player, level, villager, action, recruitedParty, partyVillager)) {
-            return;
-        }
+        var partyResult = handlePartyVillagerRequest(player, level, villager, action, recruitedParty, partyVillager);
+        if (partyResult.isPresent()) return partyResult.get();
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
@@ -785,23 +771,23 @@ public final class VillagerInteractionService {
             if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
                 if (!VillagerRecruitmentService.startFollowing(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
-                    return;
+                    return FailureReason.NOT_OWNER;
                 }
                 responseKey = "interaction.follow_start";
             } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
                 if (!VillagerRecruitmentService.canCommandStayHere(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-                    return;
+                    return FailureReason.REPUTATION_TOO_LOW;
                 }
                 if (!VillagerRecruitmentService.stayHere(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
-                    return;
+                    return FailureReason.NOT_OWNER;
                 }
                 responseKey = "interaction.follow_hold_position";
             } else {
                 if (!VillagerRecruitmentService.stopFollowing(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
-                    return;
+                    return FailureReason.NOT_OWNER;
                 }
                 if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
                     VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
@@ -815,18 +801,15 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, responseText);
             trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
             VillagerConversationService.endForPlayer(player, false);
-            return;
+            return FailureReason.NONE;
         }
 
-        if (HiredContractRequestHandler.handle(player, level, villager, action, selectedRole)) {
-            return;
-        }
-        if (handleHiredRoleRequest(player, level, villager, action)) {
-            return;
-        }
-        if (handleHiredWorkRequest(player, level, villager, action)) {
-            return;
-        }
+        var contractResult = HiredContractRequestHandler.handle(player, level, villager, action, selectedRole);
+        if (contractResult.isPresent()) return contractResult.get();
+        var roleResult = HiredWorkRequestHandler.handleHiredRoleRequest(player, level, villager, action);
+        if (roleResult.isPresent()) return roleResult.get();
+        var workResult = HiredWorkRequestHandler.handleHiredWorkRequest(player, level, villager, action);
+        if (workResult.isPresent()) return workResult.get();
 
         switch (action) {
             case VIEW_CONTRACT -> sendHiredContractNotice(player, level, villager);
@@ -836,24 +819,27 @@ public final class VillagerInteractionService {
             case OPEN_JOB_INVENTORY -> {
                 if (!com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
-                    return;
+                    return FailureReason.NOT_OWNER;
                 }
                 VillagerConversationService.endForPlayer(player, true);
                 VillagerInventoryAccess.openJobInventory(player, villager);
             }
-            case SHOW_STORAGE -> showAssignedStorage(player, level, villager);
-            case DEPOSIT_EARNINGS -> depositEarnings(player, level, villager);
-            case REMOVE_STORAGE -> removeAssignedStorage(player, level, villager);
-            case SHOW_PAYMENT_STORAGE -> showAssignedPaymentStorage(player, level, villager);
-            case REMOVE_PAYMENT_STORAGE -> removeAssignedPaymentStorage(player, level, villager);
-            case TOGGLE_AUTO_PAYMENT -> toggleAutoPayment(player, level, villager);
-            case START_MOUNT_ASSIGNMENT ->
-                    com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
+            case SHOW_STORAGE -> { return VillagerStorageInteractionHandler.showAssignedStorage(player, level, villager); }
+            case DEPOSIT_EARNINGS -> { return VillagerStorageInteractionHandler.depositEarnings(player, level, villager); }
+            case REMOVE_STORAGE -> { return VillagerStorageInteractionHandler.removeAssignedStorage(player, level, villager); }
+            case SHOW_PAYMENT_STORAGE -> { return VillagerStorageInteractionHandler.showAssignedPaymentStorage(player, level, villager); }
+            case REMOVE_PAYMENT_STORAGE -> { return VillagerStorageInteractionHandler.removeAssignedPaymentStorage(player, level, villager); }
+            case TOGGLE_AUTO_PAYMENT -> { return VillagerStorageInteractionHandler.toggleAutoPayment(player, level, villager); }
+            case START_MOUNT_ASSIGNMENT -> {
+                return mountResult(com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager));
+            }
             case UNASSIGN_MOUNT -> {
-                com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+                var result = com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
                 VillagerInteractionScreenOpener.refreshNormal(player, villager);
+                return mountResult(result);
             }
             case TOGGLE_MOUNTED_TRAVEL -> {
+                if (!ownsContract) return FailureReason.NOT_OWNER;
                 boolean enabled = HiredVillagerContractService.toggleMountedTravel(level, villager);
                 sendVillagerNotice(player, villager, enabled
                         ? "interaction.mount.mounted_travel_enabled"
@@ -863,7 +849,7 @@ public final class VillagerInteractionService {
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.hire.end_requires_hirer");
-                    return;
+                    return FailureReason.NOT_OWNER;
                 }
                 int refund = HiredVillagerContractService.endHireContract(level, villager, player);
                 if (refund > 0) {
@@ -882,8 +868,12 @@ public final class VillagerInteractionService {
                 }
                 VillagerInteractionScreenOpener.refreshNormal(player, villager);
             }
-            default -> sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+            default -> {
+                sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+                return FailureReason.INVALID_TRANSITION;
+            }
         }
+        return FailureReason.NONE;
     }
 
     public static void handleBrewingOrderRequest(
@@ -977,78 +967,6 @@ public final class VillagerInteractionService {
 
     private static VillagerAssignmentSnapshot ensureAssignmentSnapshot(ServerLevel level, Villager villager) {
         return HiredVillagerContractService.synchronizeAssignment(level, villager);
-    }
-
-    private static boolean recruitmentTransitionSatisfied(
-            ServerPlayer player,
-            Villager villager,
-            VillagerRecruitRequestPayload.Action action,
-            HiredVillagerRole selectedRole,
-            VillagerAssignmentSnapshot assignment,
-            boolean wasFollowingPlayer,
-            boolean wasStayingHere) {
-        if (RecruitmentActionMappings.hireDays(action) > 0) {
-            return assignment.ownedBy(player.getUUID())
-                    && HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player);
-        }
-        return switch (action) {
-            case FOLLOW -> VillagerRecruitmentService.isFollowing(villager, player);
-            case STAY_HERE -> VillagerRecruitmentService.isStayingHere(villager, player);
-            case STOP_FOLLOWING -> wasFollowingPlayer && !VillagerRecruitmentService.isFollowing(villager, player);
-            case STOP_STAYING_HERE -> wasStayingHere && !VillagerRecruitmentService.isStayingHere(villager, player);
-            case END_HIRE -> assignment.state() == VillagerAssignmentState.UNASSIGNED;
-            case SET_ROLE_COMBAT, SET_ROLE_HUNTING, SET_ROLE_MINING, SET_ROLE_LOGGING,
-                 SET_ROLE_FARMING, SET_ROLE_FISHING, SET_ROLE_BREWING, SET_ROLE_CRAFTSMAN,
-                 SET_ROLE_BUILDER, SET_ROLE_ANIMAL_HANDLING, SET_ROLE_NITWIT, SET_ROLE_COOK,
-                 SET_ROLE_SMELTER, SET_ROLE_COURIER -> assignment.role() == RecruitmentActionMappings.role(action);
-            default -> true;
-        };
-    }
-
-    private static com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason recruitmentFailureReason(
-            ServerPlayer player, Villager villager, VillagerRecruitRequestPayload.Action action, HiredVillagerRole role) {
-        if (villager == null) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_TARGET;
-        if (!VillagerConversationService.validate(player, villager)) {
-            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.CONVERSATION_ENDED;
-        }
-        if (villager.isBaby()) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INELIGIBLE;
-        if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.BUSY;
-        }
-        if (!VillagerRecruitmentService.canRecruit(player.serverLevel(), villager, player)) {
-            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.REPUTATION_TOO_LOW;
-        }
-        if (HiredVillagerContractService.isHired(player.serverLevel(), villager)
-                && !HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player)) {
-            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.ALREADY_OWNED;
-        }
-        HiredVillagerRole requestedRole = role == null ? HiredVillagerRoles.defaultRole(player.serverLevel(), villager) : role;
-        if (requestedRole != null
-                && !HiredVillagerRoles.availableContractRoles(player.serverLevel(), villager).contains(requestedRole)) {
-            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_ROLE;
-        }
-        int days = RecruitmentActionMappings.hireDays(action);
-        if (days > 0) {
-            if (countCurrency(player) < HiredVillagerContractService.getHireCost(
-                    player.serverLevel(), villager, player, days, requestedRole)) {
-                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INSUFFICIENT_PAYMENT;
-            }
-            HiredVillagerIndex.reconcileLoadedFor(player);
-            if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) {
-                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.HIRE_CAP_REACHED;
-            }
-        }
-        return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NOT_OWNER;
-    }
-
-    private static void sendRecruitmentResult(
-            ServerPlayer player,
-            int entityId,
-            boolean success,
-            com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason reason,
-            VillagerAssignmentSnapshot assignment) {
-        trySendToPlayer(player, new com.jvn.villagerretaliation.network.RecruitmentResultPayload(
-                entityId, success, reason, assignment, ""));
     }
 
     private static boolean isContractAdministrationAction(VillagerRecruitRequestPayload.Action action) {
@@ -1149,7 +1067,7 @@ public final class VillagerInteractionService {
         };
     }
 
-    private static boolean handlePartyVillagerRequest(
+    private static Optional<FailureReason> handlePartyVillagerRequest(
             ServerPlayer player,
             ServerLevel level,
             Villager villager,
@@ -1159,21 +1077,21 @@ public final class VillagerInteractionService {
         if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION) {
             sendVillagerNotice(player, villager, "interaction.party.recruit_confirmation", Map.of(
                     "cost", Integer.toString(com.jvn.villagerretaliation.party.CompanionRelationshipService.recruitmentCost(level, villager, player))));
-            return true;
+            return Optional.of(FailureReason.NONE);
         }
         if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION) {
             sendVillagerNotice(player, villager, "interaction.party.action_cancelled");
-            return true;
+            return Optional.of(FailureReason.NONE);
         }
         if (action == VillagerRecruitRequestPayload.Action.PARTY_RECRUIT) {
             com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
                     com.jvn.villagerretaliation.party.PartyVillagerContractService.recruit(player, villager);
             sendPartyContractResult(player, villager, result);
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
-            return true;
+            return Optional.of(result.success() ? FailureReason.NONE : FailureReason.INVALID_TRANSITION);
         }
         if (party == null || record == null) {
-            return false;
+            return Optional.empty();
         }
         if (action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_COMBAT_MODE
                 || action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_ATTACK_MODE
@@ -1191,7 +1109,7 @@ public final class VillagerInteractionService {
                 sendVillagerNotice(player, villager, "interaction.party.error.leader_only");
             }
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
-            return true;
+            return Optional.of(result.success() ? FailureReason.NONE : FailureReason.INVALID_TRANSITION);
         }
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
@@ -1204,16 +1122,15 @@ public final class VillagerInteractionService {
                 trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), ""));
                 VillagerConversationService.endForPlayer(player, false);
             }
-            return true;
+            return Optional.of(result.success() ? FailureReason.NONE : FailureReason.INVALID_TRANSITION);
         }
         if (action == VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT) {
-            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
-            return true;
+            return Optional.of(mountResult(com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager)));
         }
         if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
-            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+            var result = com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
-            return true;
+            return Optional.of(mountResult(result));
         }
         int extensionDays = switch (action) {
             case EXTEND_ONE_DAY -> 1;
@@ -1232,39 +1149,47 @@ public final class VillagerInteractionService {
                     com.jvn.villagerretaliation.party.PartyVillagerContractService.extend(player, villager, extensionDays);
             sendPartyContractResult(player, villager, result);
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
-            return true;
+            return Optional.of(result.success() ? FailureReason.NONE : FailureReason.INVALID_TRANSITION);
         }
         if (action == VillagerRecruitRequestPayload.Action.VIEW_CONTRACT) {
             if (record.contractEndGameTime() == Long.MAX_VALUE) {
                 player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("villagerretaliation.party.companion_permanent"));
-                return true;
+                return Optional.of(FailureReason.NONE);
             }
             sendVillagerNotice(player, villager, "interaction.party.contract_remaining", Map.of(
                     "time_remaining", Integer.toString(record.remainingDays(level.getServer().overworld().getGameTime())),
                     "cost", Integer.toString(com.jvn.villagerretaliation.party.CompanionRelationshipService.recruitmentCost(level, villager, player))));
-            return true;
+            return Optional.of(FailureReason.NONE);
         }
         if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION) {
             sendVillagerNotice(player, villager, "interaction.party.dismiss_confirmation");
-            return true;
+            return Optional.of(FailureReason.NONE);
         }
         if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_DISMISS_CONFIRMATION) {
             sendVillagerNotice(player, villager, "interaction.party.action_cancelled");
-            return true;
+            return Optional.of(FailureReason.NONE);
         }
         if (action == VillagerRecruitRequestPayload.Action.PARTY_DISMISS) {
             com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
                     com.jvn.villagerretaliation.party.PartyVillagerContractService.dismiss(player, villager);
             sendPartyContractResult(player, villager, result);
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
-            return true;
+            return Optional.of(result.success() ? FailureReason.NONE : FailureReason.INVALID_TRANSITION);
         }
         if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
             sendVillagerNotice(player, villager, "interaction.party.must_follow_or_stay");
-            return true;
+            return Optional.of(FailureReason.INVALID_TRANSITION);
         }
-        return false;
+        return Optional.empty();
+    }
+
+    private static FailureReason mountResult(com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.AssignmentResult result) {
+        return switch (result) {
+            case SUCCESS -> FailureReason.NONE;
+            case UNAUTHORIZED -> FailureReason.NOT_OWNER;
+            default -> FailureReason.INVALID_TRANSITION;
+        };
     }
 
     public static void sendPartyContractResult(
@@ -1457,8 +1382,8 @@ public final class VillagerInteractionService {
         switch (action) {
             case ASSIGN -> assignClipboardStorage(player, level, villager, clipboard, false);
             case ASSIGN_KEEP_SELECTION -> assignClipboardStorage(player, level, villager, clipboard, true);
-            case SHOW -> showAssignedStorage(player, level, villager);
-            case REMOVE -> removeAssignedStorage(player, level, villager);
+            case SHOW -> VillagerStorageInteractionHandler.showAssignedStorage(player, level, villager);
+            case REMOVE -> VillagerStorageInteractionHandler.removeAssignedStorage(player, level, villager);
             case REMOVE_SELECTION -> removeSelectedStorage(player, level, villager, clipboard);
             case CHANGE_SELECTION -> changeSelectedStorage(player, level, villager, clipboard);
             case CLEAR_SELECTION -> {
@@ -1560,98 +1485,6 @@ public final class VillagerInteractionService {
             case APPLY_HELD_DRAFT, PREVIEW, CONFIGURE_ROLE, TEMPORARY_TASK, CANCEL_TASKS,
                     BREED_TASK, SHEAR_TASK, MILK_TASK, CULL_TASK, COLLECT_TASK -> false;
         };
-    }
-
-    private static boolean handleHiredRoleRequest(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            VillagerRecruitRequestPayload.Action action) {
-        HiredVillagerRole role = RecruitmentActionMappings.role(action);
-        if (role == null) {
-            return false;
-        }
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.role_requires_hire");
-            return true;
-        }
-        if (!HiredVillagerContractService.setActiveRole(level, villager, role)) {
-            sendVillagerNotice(
-                    player,
-                    villager,
-                    "interaction.role_not_suitable",
-                    Map.of("role", role.label())
-            );
-            return true;
-        }
-        sendVillagerNotice(
-                player,
-                villager,
-                "interaction.role_assigned",
-                Map.of("role", role.label())
-        );
-        VillagerInteractionScreenOpener.refreshNormal(player, villager);
-        return true;
-    }
-
-    private static boolean handleHiredWorkRequest(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            VillagerRecruitRequestPayload.Action action) {
-        HiredVillagerRole configureRole = switch (action) {
-            case CONFIGURE_COMBAT -> HiredVillagerRole.COMBAT;
-            case CONFIGURE_HUNTING -> HiredVillagerRole.HUNTING;
-            case CONFIGURE_MINING -> HiredVillagerRole.MINING;
-            case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
-            case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
-            case CONFIGURE_FISHING -> HiredVillagerRole.FISHING;
-            case CONFIGURE_BREWING -> HiredVillagerRole.BREWING;
-            case CONFIGURE_BUILDER -> HiredVillagerRole.BUILDER;
-            case CONFIGURE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
-            case CONFIGURE_NITWIT -> HiredVillagerRole.NITWIT;
-            default -> null;
-        };
-        boolean workAction = configureRole != null
-                || action == VillagerRecruitRequestPayload.Action.VIEW_WORK_STATUS
-                || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
-                || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
-                || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
-                || action == VillagerRecruitRequestPayload.Action.TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING
-                || action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
-                || action == VillagerRecruitRequestPayload.Action.STOP_BREWING
-                || action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD;
-        if (!workAction) {
-            return false;
-        }
-        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
-            return true;
-        }
-        if (configureRole != null && HiredVillagerContractService.activeRole(level, villager) != configureRole) {
-            sendVillagerNotice(player, villager, "interaction.work.configure.requires_role", Map.of("role", configureRole.label()));
-            return true;
-        }
-        if (action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
-                && HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.CRAFTSMAN) {
-            return true;
-        }
-        switch (action) {
-            case VIEW_WORK_STATUS -> HiredVillagerWorkService.sendStatus(player, level, villager);
-            case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
-            case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
-            case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
-            case TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING -> HiredVillagerWorkService.toggleHorizontalMiningFloorPatching(player, level, villager);
-            case CYCLE_CRAFTSMAN_MODE -> {
-                var mode = com.jvn.villagerretaliation.interaction.work.CraftsmanWorker
-                        .cycleMode(HiredWorkStateStore.state(villager));
-                sendVillagerNotice(player, villager, "interaction.work.craftsman.mode_changed", Map.of("mode", mode.label()));
-            }
-            case STOP_BREWING -> stopBrewingOrder(player, level, villager);
-            case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredWorkStateStore.state(villager));
-            default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
-        }
-        return true;
     }
 
     private static void previewBuilderOrder(
@@ -1874,11 +1707,11 @@ public final class VillagerInteractionService {
         return Math.max(1, Math.min(5, Math.max(1, jobCost) / 10));
     }
 
-    private static void cancelBuilderOrder(ServerPlayer player, ServerLevel level, Villager villager, CompoundTag state) {
+    static FailureReason cancelBuilderOrder(ServerPlayer player, ServerLevel level, Villager villager, CompoundTag state) {
         BuilderTaskState.clearPendingStructure(state);
         if (!BuilderTaskState.hasTask(state)) {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
-            return;
+            return FailureReason.NONE;
         }
         Optional<UUID> jobId = BuilderTaskState.jobId(state);
         int paid = BuilderTaskState.paidCurrency(state);
@@ -1888,7 +1721,7 @@ public final class VillagerInteractionService {
             refund = BuilderPaymentEscrowService.refund(player, villager, jobId, paid);
             if (refund <= 0) {
                 sendVillagerNotice(player, villager, "interaction.work.builder.cancel_refund_unavailable", Map.of("cost", formatCurrency(level, paid)));
-                return;
+                return FailureReason.INVALID_TRANSITION;
             }
         } else {
             BuilderPaymentEscrowService.releaseToWallet(villager, jobId);
@@ -1905,6 +1738,7 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled");
         }
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
+        return FailureReason.NONE;
     }
 
     private static void giveConstructionBlueprint(
@@ -1931,19 +1765,6 @@ public final class VillagerInteractionService {
         if (!player.getInventory().add(blueprint)) {
             player.drop(blueprint, false);
         }
-    }
-
-    private static void stopBrewingOrder(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BREWING) {
-            sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_change");
-            return;
-        }
-        CompoundTag state = HiredWorkStateStore.state(villager);
-        HiredWorkStateStore.initializeDefaults(state, villager);
-        BrewingWorker.clearOrder(state);
-        HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "interaction.work.brewing.stopped");
-        sendVillagerNotice(player, villager, "interaction.work.brewing.stopped");
-        VillagerInteractionScreenOpener.refreshNormal(player, villager);
     }
 
     public static void handleLoggingFilterRequest(ServerPlayer player, int entityId, String filterId) {
@@ -2228,98 +2049,6 @@ public final class VillagerInteractionService {
         }
         List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
         return !selected.isEmpty() && !selectedAssignments(level, villager, selected).isEmpty();
-    }
-
-    private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.storage.inspect_requires_access");
-            return;
-        }
-        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
-        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
-        int count = assigned.size();
-        sendVillagerNotice(player, villager, "interaction.storage.assigned_count", Map.of("count", Integer.toString(count)));
-    }
-
-    private static void showAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
-            return;
-        }
-        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
-        HiredStorageClipboardItem.sendAssignedStorageOutlines(player, assigned);
-        int count = assigned.size();
-        sendVillagerNotice(player, villager, "interaction.payment_storage.assigned_count", Map.of(
-                "count", Integer.toString(count),
-                "auto_payment", HiredVillagerContractService.isAutoPaymentEnabled(level, villager) ? "on" : "off"));
-    }
-
-    private static void depositEarnings(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.earnings.deposit_requires_access");
-            return;
-        }
-        int excess = VillagerWalletService.getDepositAmount(villager);
-        if (excess <= 0) {
-            sendVillagerNotice(player, villager, "interaction.earnings.no_excess");
-            return;
-        }
-        VillagerWalletService.DepositResult result = VillagerWalletService.tryDepositExcessCurrency(villager);
-        if (result.storageUnavailable()) {
-            sendVillagerNotice(player, villager, "interaction.earnings.storage_unavailable");
-        } else if (!result.assignedStorageAvailable()) {
-            sendVillagerNotice(player, villager, "interaction.earnings.no_assigned_storage");
-        } else if (result.deposited() <= 0) {
-            sendVillagerNotice(player, villager, "interaction.earnings.storage_full");
-        } else if (result.remaining() > 0) {
-            sendVillagerNotice(player, villager, "interaction.earnings.deposited_partial", Map.of(
-                    "deposited", formatCurrency(level, result.deposited()),
-                    "remaining", formatCurrency(level, result.remaining())));
-        } else {
-            sendVillagerNotice(player, villager, "interaction.earnings.deposited_all", Map.of(
-                    "deposited", formatCurrency(level, result.deposited())));
-        }
-        VillagerInteractionScreenOpener.refreshNormal(player, villager);
-    }
-
-    private static void removeAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!canManageAssignedStorage(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.storage.remove_requires_access");
-            return;
-        }
-        int removed = AssignedStorageService.removeAssignedStorage(level, villager);
-        sendVillagerNotice(player, villager, "interaction.storage.removed_count", Map.of(
-                "count", Integer.toString(removed),
-                "plural", plural(removed)));
-    }
-
-    private static void removeAssignedPaymentStorage(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.payment_storage.remove_requires_hirer");
-            return;
-        }
-        int removed = AssignedStorageService.removeAssignedPaymentStorage(level, villager);
-        if (removed > 0) {
-            HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
-        }
-        sendVillagerNotice(player, villager, "interaction.payment_storage.removed_count", Map.of(
-                "count", Integer.toString(removed),
-                "plural", plural(removed)));
-    }
-
-    private static void toggleAutoPayment(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_hire");
-            return;
-        }
-        if (!AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
-            sendVillagerNotice(player, villager, "interaction.auto_payment.requires_storage");
-            return;
-        }
-        boolean enabled = HiredVillagerContractService.toggleAutoPayment(level, villager);
-        sendVillagerNotice(player, villager, enabled
-                ? "interaction.auto_payment.enabled"
-                : "interaction.auto_payment.disabled");
     }
 
     public static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {

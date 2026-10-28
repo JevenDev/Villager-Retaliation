@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason;
+import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload.Action;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -106,6 +108,52 @@ public final class InteractionReliabilityGameTests {
             helper.assertFalse(VillagerInventoryAccess.canAddItems(villager, List.of(prepared)),
                     "gift tracking prevents merging into ordinary items when storage is full");
         } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "interaction_reliability")
+    public static void recruitmentResultsReflectCommandFailures(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayerInLevel();
+        var villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        villager.setNoAi(true);
+        player.teleportTo(villager.getX(), villager.getY(), villager.getZ());
+        try {
+            helper.assertTrue(HiredVillagerContractService.startHireContract(helper.getLevel(), villager, player, 1, 1),
+                    "test contract starts");
+            helper.assertTrue(VillagerConversationService.start(player, villager), "conversation starts");
+            long revision = HiredVillagerContractService.synchronizeAssignment(helper.getLevel(), villager).revision();
+            var extension = VillagerInteractionService.recruitmentResult(player, villager.getId(), Action.EXTEND_ONE_DAY, null, revision);
+            helper.assertFalse(extension.success(), "unpaid extension must not report success");
+            helper.assertValueEqual(extension.failureReason(), FailureReason.INSUFFICIENT_PAYMENT, "extension rejection identifies payment");
+            helper.assertValueEqual(HiredVillagerContractService.getRemainingHireDays(helper.getLevel(), villager), 1,
+                    "failed extension leaves contract unchanged");
+            var role = HiredVillagerContractService.activeRole(helper.getLevel(), villager);
+            var wrongRoleAction = role == HiredVillagerRole.BREWING ? Action.CONFIGURE_MINING : Action.STOP_BREWING;
+            var work = VillagerInteractionService.recruitmentResult(player, villager.getId(), wrongRoleAction, null, revision);
+            helper.assertFalse(work.success(), "wrong-role work command must not report success");
+            helper.assertValueEqual(work.failureReason(), FailureReason.INVALID_ROLE, "work rejection identifies role");
+            var storage = VillagerInteractionService.recruitmentResult(player, villager.getId(), Action.TOGGLE_AUTO_PAYMENT, null, revision);
+            helper.assertFalse(storage.success(), "auto payment needs assigned storage");
+            helper.assertValueEqual(storage.failureReason(), FailureReason.INVALID_TRANSITION, "storage rejection is explicit");
+            var state = HiredWorkStateStore.state(villager);
+            HiredWorkStateStore.initializeDefaults(state, villager);
+            boolean enabled = state.getBoolean("Enabled");
+            var accepted = VillagerInteractionService.recruitmentResult(player, villager.getId(), Action.TOGGLE_WORK_ENABLED, null, revision);
+            helper.assertTrue(accepted.success(), "authorized work toggle succeeds");
+            helper.assertValueEqual(accepted.failureReason(), FailureReason.NONE, "success has no failure reason");
+            helper.assertValueEqual(state.getBoolean("Enabled"), !enabled, "successful command changes work state");
+            var stale = VillagerInteractionService.recruitmentResult(player, villager.getId(), Action.TOGGLE_WORK_ENABLED, null, -1L);
+            helper.assertValueEqual(stale.failureReason(), FailureReason.STALE_STATE, "unversioned command is rejected");
+            helper.assertValueEqual(state.getBoolean("Enabled"), !enabled, "stale command does not mutate state");
+            VillagerConversationService.endForPlayer(player, false);
+            var closed = VillagerInteractionService.recruitmentResult(player, villager.getId(), Action.TOGGLE_WORK_ENABLED, null,
+                    accepted.assignment().revision());
+            helper.assertValueEqual(closed.failureReason(), FailureReason.CONVERSATION_ENDED, "closed conversation rejects commands");
+        } finally {
+            VillagerConversationService.endForPlayer(player, false);
+            HiredVillagerContractService.endHireContract(helper.getLevel(), villager, player);
             villager.discard();
         }
         helper.succeed();

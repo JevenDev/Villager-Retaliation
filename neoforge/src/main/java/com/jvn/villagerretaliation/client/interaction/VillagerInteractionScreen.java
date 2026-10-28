@@ -3010,21 +3010,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         HiredVillagerRole selectedRole = this.contract.roleFor(action);
         sendToServer(new VillagerRecruitRequestPayload(
                 this.villagerEntityId, action, selectedRole, this.assignmentRevision));
-        if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
-            this.brewingWork.active(false);
-            openWorkPage();
-        } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
-            boolean wasOneOffBuilderJob = this.oneOffBuilderJob;
-            this.activeBuilderTask = false;
-            this.oneOffBuilderJob = false;
-            if (wasOneOffBuilderJob) {
-                openRecruitPage();
-            } else {
-                openBuilderReturnPage();
-            }
-        } else if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
-            this.assignedMount = false;
-        }
     }
 
     public void acceptRecruitmentResult(RecruitmentResultPayload payload) {
