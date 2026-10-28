@@ -787,6 +787,8 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class DebugOverlay {
+        public boolean animateExploredMapOpening = true;
+
         public boolean showExploredMapMinimap = false;
 
         @RangeConstraint(min = 80, max = 320)

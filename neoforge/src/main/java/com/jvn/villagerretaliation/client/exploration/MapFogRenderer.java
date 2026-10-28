@@ -19,24 +19,18 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
 public final class MapFogRenderer {
     private static final ResourceLocation CLOUDS = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
+    private static final long WIND_START = System.nanoTime();
     private static ShaderInstance shader;
     private static DynamicTexture clouds, cloudRegions;
     private MapFogRenderer() { }
     public static void registerShaders(RegisterShadersEvent event) {
         try {
             try (var stream = event.getResourceProvider().getResourceOrThrow(CLOUDS).open(); var source = NativeImage.read(stream)) {
-                int width = (source.getWidth() + 3) / 4, height = (source.getHeight() + 3) / 4;
+                int width = source.getWidth(), height = source.getHeight();
                 var silhouettes = new NativeImage(width, height, false);
                 try {
-                    for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) {
-                        int opaque = 0, samples = 0;
-                        for (int sy = y * 4; sy < Math.min(y * 4 + 4, source.getHeight()); sy++)
-                            for (int sx = x * 4; sx < Math.min(x * 4 + 4, source.getWidth()); sx++) {
-                                if (source.getPixelRGBA(sx, sy) >>> 24 != 0) opaque++;
-                                samples++;
-                            }
-                        silhouettes.setPixelRGBA(x, y, opaque * 3 >= samples ? 0xffffffff : 0);
-                    }
+                    for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+                        silhouettes.setPixelRGBA(x, y, source.getPixelRGBA(x, y));
                     var replacement = new DynamicTexture(silhouettes);
                     if (clouds != null) clouds.close();
                     clouds = replacement;
@@ -67,9 +61,12 @@ public final class MapFogRenderer {
                     (float)(pages.originZ(2) - view.z()), (float)(pages.originZ(3) - view.z()));
         }
         shader.safeGetUniform("FirstLevel").set(pages == null ? 4f : (float)view.level());
-        double period = 2048;
+        double period = 3072;
         shader.safeGetUniform("CloudPeriod").set((float)period);
         shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), period * 4), wrap(view.z(), period * 4));
+        double seconds = (System.nanoTime() - WIND_START) / 1e9;
+        shader.safeGetUniform("CloudDriftX").set(wrap(seconds * 2, period), wrap(seconds * .85, period * 2), wrap(seconds * .35, period * 4));
+        shader.safeGetUniform("CloudDriftZ").set(wrap(seconds * .6, period), wrap(seconds * .255, period * 2), wrap(seconds * .105, period * 4));
         shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
         RenderSystem.setShaderTexture(1, clouds.getId());
         RenderSystem.setShaderTexture(4, cloudRegions.getId());

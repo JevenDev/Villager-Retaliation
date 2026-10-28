@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.jvn.villagerretaliation.exploration.*;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,7 +15,8 @@ public final class ExploredMapScreen extends Screen {
     private double centerX, centerZ, zoom = 2.5;
     private boolean centered, dragging;
     private int heldKeys;
-    private long lastFrame, renderedFrames;
+    private long lastFrame, renderedFrames, openedAt;
+    private double openingScale = 1;
     public ExploredMapScreen() { this(null); }
     public ExploredMapScreen(Screen parent) { super(Component.translatable("map.villagerretaliation.title")); this.parent = parent; }
     public void focusRelations(java.util.UUID perspective, java.util.UUID village, com.jvn.villagerretaliation.network.VillageRelationsPayload.Entry entry) {
@@ -28,6 +30,8 @@ public final class ExploredMapScreen extends Screen {
     static void resetTiles() { TILES.close(); }
     long renderedFrames() { return renderedFrames; }
     @Override protected void init() {
+        if (openedAt == 0) openedAt = System.nanoTime();
+        updateOpening();
         if (!centered && minecraft.player != null) { center(); centered = true; }
         addRenderableWidget(Button.builder(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("title"),
                 b -> relations.toggle()).bounds(10, 8, 80, 20).build());
@@ -43,6 +47,7 @@ public final class ExploredMapScreen extends Screen {
     @Override public boolean isPauseScreen() { return false; }
     @Override public void renderBackground(GuiGraphics graphics, int x, int y, float partial) { }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partial) {
+        updateOpening();
         moveWithKeys(); zoom = Math.clamp(zoom, Math.max(width, height) / 2800.0, 24);
         var repository = ExploredMapClient.repository();
         var lighting = minecraft.level == null ? MapLighting.DAY : MapLighting.at(minecraft.level.getTimeOfDay(partial), minecraft.level.dimensionType().hasSkyLight());
@@ -69,13 +74,24 @@ public final class ExploredMapScreen extends Screen {
             graphics.fill(0, 0, width, height, lighting.background());
             graphics.drawCenteredString(font, Component.translatable("map.villagerretaliation.connecting"), width / 2, height / 2, 0xddd7cc);
         }
+        int veil = (int)Math.round((1 - openingScale) / .18 * 160);
+        if (veil > 0) graphics.fill(0, 0, width, height, (veil << 24) | (lighting.background() & 0xffffff));
         int titleColor = repository != null && lighting.red() + lighting.green() + lighting.blue() > 2.1f ? 0x40464f : 0xffffff;
         graphics.drawCenteredString(font, title, width / 2, 12, titleColor);
         super.render(graphics, mouseX, mouseY, partial);
         relations.renderPopup(graphics, font, mouseX, mouseY, partial);
     }
-    MapView view() { return new MapView(width, height, centerX, centerZ, zoom); }
+    private void updateOpening() {
+        double progress = openedAt < 0 || !VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.get()
+                ? 1 : Math.clamp((System.nanoTime() - openedAt) / 550_000_000.0, 0, 1);
+        openingScale = 1 - .18 * Math.pow(1 - progress, 3);
+    }
+    private void finishOpening() {
+        zoom *= openingScale; openingScale = 1; openedAt = -1;
+    }
+    MapView view() { return new MapView(width, height, centerX, centerZ, zoom * openingScale); }
     private void zoomAt(double x, double y, double target) {
+        target *= openingScale; finishOpening();
         var before = view(); zoom = Math.clamp(target, Math.max(width, height) / 2800.0, 24); var after = view();
         pan(before.worldX(x) - after.worldX(x), before.worldZ(y) - after.worldZ(y));
     }
@@ -96,7 +112,7 @@ public final class ExploredMapScreen extends Screen {
         if (ExploredMapClient.OPEN.matchesMouse(button)) { onClose(); return true; }
         if (relations.click(font, view(), TILES.markers(), x, y, button)) return true;
         if (super.mouseClicked(x, y, button)) return true;
-        if (button == 0) { dragging = true; return true; } return false;
+        if (button == 0) { finishOpening(); dragging = true; return true; } return false;
     }
     @Override public boolean mouseReleased(double x, double y, int button) {
         if (button == 0) dragging = false; return super.mouseReleased(x, y, button);
@@ -113,10 +129,10 @@ public final class ExploredMapScreen extends Screen {
         if (relations.key(key)) return true;
         if (ExploredMapClient.OPEN.matches(key, scan)) { onClose(); return true; }
         if (key == GLFW.GLFW_KEY_HOME) { center(); return true; }
-        if (arrow(key) != 0) { heldKeys |= arrow(key); return true; } return super.keyPressed(key, scan, modifiers);
+        if (arrow(key) != 0) { finishOpening(); heldKeys |= arrow(key); return true; } return super.keyPressed(key, scan, modifiers);
     }
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
         if (arrow(key) != 0) { heldKeys &= ~arrow(key); return true; } return super.keyReleased(key, scan, modifiers);
     }
-    @Override public void removed() { dragging = false; heldKeys = 0; }
+    @Override public void removed() { dragging = false; heldKeys = 0; lastFrame = 0; openedAt = 0; }
 }

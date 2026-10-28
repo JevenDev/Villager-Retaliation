@@ -14,6 +14,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = "villagerretaliation", value = Dist.CLIENT)
@@ -25,6 +26,16 @@ public final class ExploredMapClientSmoke {
     private static CompletableFuture<MapRepository> fixture;
     private static final ArrayList<String> results = new ArrayList<>();
     private static double day;
+    private static NativeImage cloudFrame;
+    @SubscribeEvent public static void scroll(ScreenEvent.MouseScrolled.Pre event) {
+        if (System.getProperty(OUTPUT) != null && event.getScreen() instanceof ExploredMapScreen) event.setCanceled(true);
+    }
+    @SubscribeEvent public static void click(ScreenEvent.MouseButtonPressed.Pre event) {
+        if (System.getProperty(OUTPUT) != null && event.getScreen() instanceof ExploredMapScreen) event.setCanceled(true);
+    }
+    @SubscribeEvent public static void key(ScreenEvent.KeyPressed.Pre event) {
+        if (System.getProperty(OUTPUT) != null && event.getScreen() instanceof ExploredMapScreen) event.setCanceled(true);
+    }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if (System.getProperty(OUTPUT) == null || phase == 99) return;
         if (System.getProperty("villagerretaliation.mapPerformanceSource") != null) { MapTerrainPerformanceChecks.tick(); return; }
@@ -41,23 +52,35 @@ public final class ExploredMapClientSmoke {
         if (phase == 2 && fixture.isDone()) {
             ExploredMapClient.repository().close(); set(ExploredMapClient.class, null, "repository", fixture.join());
             ExploredMapClient.tiles().close(); ExploredMapScreen.resetTiles();
-            mc.setScreen(new ExploredMapScreen()); set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
+            VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
+            mc.setScreen(new ExploredMapScreen());
+            require(((ExploredMapScreen)mc.screen).view().scale() == 2.5, "disabled opening animation displays the final zoom immediately");
+            VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(true);
+            mc.setScreen(new ExploredMapScreen());
+            require(((ExploredMapScreen)mc.screen).view().scale() < 2.5, "enabled opening animation starts with a wider view");
+            set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
             set(ExploredMapScreen.class, mc.screen, "zoom", 1.0); phase = 3; ticks = 0;
         }
+        if (phase == 3 && ticks == 3) screenshot("flat-map-opening.png");
         if (phase == 3 && ++ticks >= 160) {
             var screen = (ExploredMapScreen)mc.screen;
             require(ExploredMapClient.tiles().uploads() > 100, "recorded cells uploaded to GPU atlas");
+            require(screen.view().scale() == 1.0, "opening animation settles at the requested zoom");
+            results.add("Opening animation, instant-open config and final zoom passed");
             verifyControls(screen); screenshot("flat-map-day.png");
-            verifyPixels(); day = brightness(); uploads = ExploredMapClient.tiles().uploads(); phase = 4; ticks = 0;
+            verifyPixels(); cloudFrame = Screenshot.takeScreenshot(mc.getMainRenderTarget()); day = brightness(); uploads = ExploredMapClient.tiles().uploads(); phase = 4; ticks = 0;
         }
         if (phase == 4 && ++ticks >= 40) {
             require(uploads == ExploredMapClient.tiles().uploads(), "stationary map reuses terrain without uploading");
+            verifyCloudMotion(); verifyPixels();
+            screenshot("flat-map-cloud-motion.png");
+            results.add("Clouds move across stationary unknown terrain while discovered pixels remain unobstructed");
             results.add("Cursor zoom, drag, keyboard controls, exact top-down coordinates and idle upload reuse passed");
             set(ExploredMapScreen.class, mc.screen, "zoom", .3); phase = 10; ticks = 0;
         }
         if (phase == 10 && ++ticks >= 120) {
             screenshot("flat-map-distant.png"); verifyPixels();
-            results.add("Minecraft map colors, white unknown terrain and large crisp clouds match at near and distant zoom");
+            results.add("Minecraft map colors, neutral fog and moving vanilla cloud layers match at near and distant zoom");
             set(ExploredMapScreen.class, mc.screen, "zoom", 1.0);
             pending = mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().overworld().setDayTime(18000));
             phase = 5; ticks = 0;
@@ -140,7 +163,7 @@ public final class ExploredMapClientSmoke {
             require((land & 0xffffff) == (net.minecraft.world.level.material.MapColor.GRASS.calculateRGBColor(
                     net.minecraft.world.level.material.MapColor.Brightness.NORMAL) & 0xffffff), "grass pixels match Minecraft's map palette");
             require((unknown & 255) == (unknown >> 8 & 255) && (unknown >> 8 & 255) == (unknown >> 16 & 255), "unknown terrain contains only neutral white cloud layers");
-            int white = 0, front = 0, middle = 0, back = 0;
+            int white = 0, middle = 0, back = 0, background = 0;
             for (int y = 90; y < image.getHeight() - 100; y += 3) for (int x = 20; x < image.getWidth() - 20; x += 3) {
                 boolean markerOverlay = Math.abs(x - image.getWidth() / 2) < 120 && Math.abs(y - image.getHeight() / 2) < 100;
                 if (markerOverlay) continue;
@@ -149,14 +172,32 @@ public final class ExploredMapClientSmoke {
                 if (!(wx > 140 || wz > 140 || wx > 55 && wz > 55)) continue;
                 int rgb = image.getPixelRGBA(x, y), red = rgb & 255, green = rgb >> 8 & 255, blue = rgb >> 16 & 255;
                 require(red == green && green == blue, "unexplored terrain never leaks map colors through cloud gaps at " + wx + ", " + wz);
-                require(red >= 203, "undiscovered terrain stays light beneath the cloud layers");
+                require(red >= 218, "undiscovered terrain stays light beneath the cloud layers");
                 if (red == 255) white++;
-                else if (red >= 243 && red <= 246) front++;
-                else if (red >= 223 && red <= 226) middle++;
-                else if (red >= 203 && red <= 206) back++;
+                else if (red >= 241 && red <= 243) middle++;
+                else if (red >= 228 && red <= 231) back++;
+                else if (red >= 218 && red <= 220) background++;
             }
-            require(white > 10 && front > 10 && middle > 10 && back > 10, "unexplored areas show three distinct cloud layers over a white background");
+            require(white > 10 && middle > 10 && back > 10 && background > 10, "unexplored areas show bright vanilla cloud layers over shaded fog");
         }
+    }
+    private static void verifyCloudMotion() {
+        var view = ((ExploredMapScreen)Minecraft.getInstance().screen).view();
+        try (var before = cloudFrame; var after = Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) {
+            int changed = 0, discovered = 0;
+            for (int y = 100; y < before.getHeight() - 100; y += 3) for (int x = 30; x < before.getWidth() - 30; x += 3) {
+                double wx = view.worldX((double)x * view.width() / before.getWidth());
+                double wz = view.worldZ((double)y * view.height() / before.getHeight());
+                if (wx > 140 || wz > 140 || wx > 55 && wz > 55) {
+                    if (before.getPixelRGBA(x, y) != after.getPixelRGBA(x, y)) changed++;
+                } else if (wx > -120 && wx < -30 && wz > -120 && wz < 110) {
+                    require(before.getPixelRGBA(x, y) == after.getPixelRGBA(x, y), "moving clouds never cover discovered water");
+                    discovered++;
+                }
+            }
+            require(changed > 20 && discovered > 100, "cloud motion changes unknown pixels while discovered terrain stays fixed");
+        }
+        cloudFrame = null;
     }
     private static int pixel(NativeImage image, MapView view, double x, double z) {
         return image.getPixelRGBA((int)(view.screenX(x) * image.getWidth() / view.width()), (int)(view.screenY(z) * image.getHeight() / view.height()));
