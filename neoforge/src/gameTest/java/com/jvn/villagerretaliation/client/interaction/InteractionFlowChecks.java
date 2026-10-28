@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreen.
 import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
 import com.jvn.villagerretaliation.duel.DuelKit;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
@@ -22,7 +24,9 @@ public final class InteractionFlowChecks {
         duelSelectionAndAcknowledgement();
         contractSelectionAndConfirmation();
         brewingMissingSelectionRecovery();
-        System.out.println("Passed 3 interaction flow checks.");
+        builderSelectionAndConfirmation();
+        optionAvailabilityControlsActivation();
+        System.out.println("Passed 5 interaction flow checks.");
     }
 
     private static void duelSelectionAndAcknowledgement() {
@@ -34,7 +38,7 @@ public final class InteractionFlowChecks {
         host.duel.updateDuelStatus(status(1, 24, DuelAvailabilityReason.AVAILABLE));
         host.openPage(DialoguePage.DUEL_WAGER);
         require(host.options.stream().filter(DialogueOption::locked).count() == 2, "unaffordable fixed wagers stay locked");
-        host.options.get(host.options.size() - 2).action().run();
+        host.options.get(host.options.size() - 2).activate();
         host.duel.updateDuelStatus(status(1, 8, DuelAvailabilityReason.AVAILABLE));
         host.openPage(DialoguePage.DUEL_CONFIRM);
         host.click("duel.confirm");
@@ -83,6 +87,50 @@ public final class InteractionFlowChecks {
         require(host.page == DialoguePage.WORK, "cancelling configuration returns to work");
     }
 
+    private static void builderSelectionAndConfirmation() {
+        var original = BuilderStructureCatalog.entries();
+        var entry = new BuilderStructureCatalog.Entry(ResourceLocation.withDefaultNamespace("test_house"), "houses", "house", 10);
+        BuilderStructureCatalog.replaceClientEntries(List.of(entry));
+        try {
+            var host = new Host();
+            host.openPage(DialoguePage.BUILDER_CONFIRM);
+            require(host.page == DialoguePage.BUILDER_STRUCTURES, "missing structure selection returns to categories");
+            host.click("recruit.builder_category");
+            require(host.page == DialoguePage.BUILDER_STRUCTURE_CATEGORY, "category selection opens its structures");
+            host.click("house");
+            require(host.page == DialoguePage.BUILDER_CONFIRM
+                    && host.builderRequest.action() == HiredBuilderOrderPayload.Action.PREVIEW
+                    && host.builderRequest.structureId().equals(entry.id()), "structure selection previews the chosen structure");
+            host.click("recruit.builder_confirm");
+            require(host.builderRequest.action() == HiredBuilderOrderPayload.Action.CONFIRM
+                    && host.builderRequest.structureId().equals(entry.id()), "confirmation sends the selected structure");
+            require(host.page == DialoguePage.WORK, "confirmation returns to the existing work flow");
+            host.builder.openBuilderStructuresPage();
+            require(!host.builder.hasSelectedCategory(), "reopening categories clears prior selection");
+            host.openPage(DialoguePage.BUILDER_CONFIRM);
+            require(host.page == DialoguePage.BUILDER_STRUCTURES, "old structure cannot be confirmed after reopening");
+            host.click("recruit.nevermind");
+            require(host.page == DialoguePage.RECRUIT, "cancelling returns through the host");
+        } finally {
+            BuilderStructureCatalog.replaceClientEntries(original);
+        }
+    }
+
+    private static void optionAvailabilityControlsActivation() {
+        int[] calls = {0};
+        Runnable action = () -> calls[0]++;
+        var unavailable = DialogueOption.available("unavailable", action, false);
+        unavailable.activate();
+        DialogueOption.checkbox("unavailable checkbox", false, action, true).activate();
+        require(calls[0] == 0, "disabled options cannot execute their actions");
+        require(!unavailable.enabled() && unavailable.locked(), "disabled appearance matches availability");
+        var hint = DialogueOption.hinted("quest hint", action, true);
+        hint.activate();
+        require(calls[0] == 1 && hint.enabled() && hint.locked(), "visual quest hints remain actionable");
+        DialogueOption.available("available", action, true).activate();
+        require(calls[0] == 2, "available options execute normally");
+    }
+
     private static OpenVillagerDuelPayload status(int entity, int balance, DuelAvailabilityReason reason) {
         return new OpenVillagerDuelPayload(entity, "villager", reason == DuelAvailabilityReason.AVAILABLE, reason,
                 0, 0, 0, 0L, 8, 20, 1200, 1, balance, balance, "emeralds", false,
@@ -94,20 +142,22 @@ public final class InteractionFlowChecks {
         if (!condition) throw new AssertionError(message);
     }
 
-    private static final class Host implements DuelScreenController.Host, ContractScreenController.Host, BrewingWorkScreenController.Host {
+    private static final class Host implements DuelScreenController.Host, ContractScreenController.Host, BrewingWorkScreenController.Host, BuilderScreenController.Host {
         private final DuelScreenController duel = new DuelScreenController(this);
         private final ContractScreenController contract = new ContractScreenController(this);
+        private final BuilderScreenController builder = new BuilderScreenController(this);
         private final BrewingWorkScreenController brewing = new BrewingWorkScreenController(this);
         private final List<DialogueOption> options = new ArrayList<>();
         private DialoguePage page = DialoguePage.ROOT;
         private VillagerDuelRequestPayload duelRequest;
+        private HiredBuilderOrderPayload builderRequest;
         private VillagerRecruitRequestPayload.Action recruitAction;
         private HiredVillagerRole recruitRole;
         private String dialogue = "";
         private boolean closed;
 
         private void click(String label) {
-            options.stream().filter(option -> option.label().equals(label)).findFirst().orElseThrow().action().run();
+            options.stream().filter(option -> option.label().equals(label)).findFirst().orElseThrow().activate();
         }
 
         @Override public int entityId() { return 1; }
@@ -120,6 +170,9 @@ public final class InteractionFlowChecks {
         @Override public void dialogue(String text) { dialogue = text; }
         @Override public void sendToServer(VillagerDuelRequestPayload payload) { duelRequest = payload; }
         @Override public void sendToServer(HiredBrewingOrderPayload payload) { throw new AssertionError("unexpected order"); }
+        @Override public void sendToServer(HiredBuilderOrderPayload payload) { builderRequest = payload; }
+        @Override public void openReturnPage() { openPage(DialoguePage.RECRUIT); }
+        @Override public void openWorkPage() { openPage(DialoguePage.WORK); }
         @Override public ClientLevel level() { return null; }
         @Override public boolean recruitedPartyVillager() { return false; }
         @Override public boolean hiredByPlayer() { return true; }
@@ -144,6 +197,9 @@ public final class InteractionFlowChecks {
                 case DUEL_CONFIRM -> duel.addDuelConfirmOptions();
                 case HIRE_DURATION -> contract.addHireDurationOptions();
                 case END_CONTRACT_CONFIRMATION -> contract.addEndContractConfirmationOptions();
+                case BUILDER_STRUCTURES -> builder.addBuilderCategoryOptions();
+                case BUILDER_STRUCTURE_CATEGORY -> builder.addBuilderStructureOptions();
+                case BUILDER_CONFIRM -> builder.addBuilderConfirmOptions();
                 case BREWING_POTION -> brewing.addBrewingPotionOptions();
                 case BREWING_LEVEL -> brewing.addBrewingLevelOptions();
                 case BREWING_DURATION -> brewing.addBrewingDurationOptions();

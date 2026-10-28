@@ -26,7 +26,6 @@ import com.jvn.villagerretaliation.dialogue.DialoguePlayback;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
-import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions;
@@ -295,6 +294,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean baby;
     private final boolean canTrade;
     private final BrewingWorkScreenController brewingWork = new BrewingWorkScreenController(new BrewingWorkHost());
+    private final BuilderScreenController builder = new BuilderScreenController(new BuilderHost());
     private final ContractScreenController contract = new ContractScreenController(new ContractHost());
     private final DuelScreenController duel = new DuelScreenController(new DuelHost());
     private final boolean duelVisible;
@@ -356,6 +356,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean animalCollection;
     private boolean animalCulling;
     private boolean forceCameraTowardsVillager;
+    private boolean renderingFrame;
+    private List<InteractionMenuButton> frameMenuButtons;
     private final List<DialogueOption> options = new ArrayList<>();
     private OptionListContext outgoingDialogueOptions;
     private boolean dialogueOptionsHidden;
@@ -405,8 +407,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredVillagerRole selectedJobDetails;
     private SkillsProfilePanel skillsProfilePanel = SkillsProfilePanel.SKILLS;
     private long lastProfileRequestMillis = -1L;
-    private String selectedBuilderCategory;
-    private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
     private int selectedGiftAmount = 0;
     private final ToucanLimitFeedback giftLimitFeedback = new ToucanLimitFeedback();
@@ -1064,6 +1064,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         emitDialogueEffects();
         refreshAuthoringPresentation();
         refreshTutorialControlHints();
+        this.renderingFrame = true;
+        try {
+            renderFrame(graphics, mouseX, mouseY, partialTick);
+        } finally {
+            this.renderingFrame = false;
+            this.frameMenuButtons = null;
+        }
+    }
+
+    private void renderFrame(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int slideOffset = slideOffsetY();
         int stateOffsetY = interactionStateTransitionOffsetY();
         int contentOffsetX = interactionStateTransitionContentOffsetX();
@@ -1168,7 +1178,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (!authoringShownOptions.equals(options)) authoringOriginalOptions = List.copyOf(options);
         var updatedOptions = authoringOriginalOptions.stream().map(option -> new DialogueOption(
                 com.jvn.villagerretaliation.authoring.client.EditorPlaytestPresentation.text(option.label()), option.action(),
-                option.locked(), option.checkbox(), option.checked(), option.reason())).toList();
+                option.enabled(), option.locked(), option.checkbox(), option.checked(), option.reason())).toList();
         options.clear(); options.addAll(updatedOptions);
         authoringShownOptions = List.copyOf(options);
     }
@@ -1566,7 +1576,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.optionLayoutVersion++;
         if (localPresentation != null) {
             for (var option : localPresentation.options())
-                this.options.add(DialogueOption.enabled(option.label(), option.action(), option.locked()));
+                this.options.add(DialogueOption.available(option.label(), option.action(), !option.locked()));
         } else if (this.automaticDialogue.active()) {
             // Automatic greetings reveal both speakers without adding a Continue choice.
         } else if (!this.dialogueExchanges.isEmpty()) {
@@ -1606,10 +1616,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.duel.addDuelWagerOptions();
         } else if (this.page == DialoguePage.DUEL_CONFIRM) {
             this.duel.addDuelConfirmOptions();
-        } else if (this.page == DialoguePage.PROFILE) {
-            addProfileOptions();
-        } else if (this.page == DialoguePage.SKILLS) {
-            addSkillsOptions();
         } else if (this.page == DialoguePage.HEAL) {
             addHealingOptions();
         } else if (this.page == DialoguePage.STUDY) {
@@ -1659,11 +1665,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (this.page == DialoguePage.ANIMAL_CULL_CAPS) {
             addAnimalCullCapOptions();
         } else if (this.page == DialoguePage.BUILDER_STRUCTURES) {
-            addBuilderCategoryOptions();
+            this.builder.addBuilderCategoryOptions();
         } else if (this.page == DialoguePage.BUILDER_STRUCTURE_CATEGORY) {
-            addBuilderStructureOptions();
+            this.builder.addBuilderStructureOptions();
         } else if (this.page == DialoguePage.BUILDER_CONFIRM) {
-            addBuilderConfirmOptions();
+            this.builder.addBuilderConfirmOptions();
         } else if (this.page == DialoguePage.BREWING_POTION) {
             this.brewingWork.addBrewingPotionOptions();
         } else if (this.page == DialoguePage.BREWING_LEVEL) {
@@ -1710,7 +1716,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             var before = first.get(index);
             var after = second.get(index);
             if (!before.label().equals(after.label()) || before.locked() != after.locked()
-                    || before.checkbox() != after.checkbox() || before.checked() != after.checked()
+                    || before.enabled() != after.enabled() || before.checkbox() != after.checkbox() || before.checked() != after.checked()
                     || !before.reason().equals(after.reason())) return false;
         }
         return true;
@@ -1760,12 +1766,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
 
-    private void addProfileOptions() {
-    }
-
-    private void addSkillsOptions() {
-    }
-
     private void addStudyOptions() {
         Optional<VillagerProfileClientCache.DisplayEntry> profile =
                 VillagerProfileClientCache.get(this.villagerEntityId);
@@ -1781,10 +1781,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean maxed = value >= VillagerSkillSet.MAX_VALUE;
             String label = translate(maxed ? "study.skill.maxed" : "study.skill.value",
                     localizedSkill(skill), value);
-            this.options.add(DialogueOption.enabled(
-                    label,
-                    maxed ? NO_ACTION : () -> requestStudy(skill),
-                    maxed));
+            this.options.add(DialogueOption.available(label, () -> requestStudy(skill), !maxed));
         }
         addOption("study.back", this::navigateToRootPage);
     }
@@ -1906,7 +1903,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.contract.addHireRoleOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling");
         this.contract.addHireRoleOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit");
         if (canOfferBuilderService()) {
-            addOption("recruit.buy_blueprints", this::openBuilderStructuresPage);
+            addOption("recruit.buy_blueprints", this.builder::openBuilderStructuresPage);
         }
         addOption("recruit.nevermind", this::openRecruitPage);
     }
@@ -2001,7 +1998,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (this.activeBuilderTask) {
                 addOption("recruit.stop_builder_build", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD));
             } else {
-                addOption("recruit.work_config_builder", this::openBuilderStructuresPage);
+                addOption("recruit.work_config_builder", this.builder::openBuilderStructuresPage);
             }
         }
         if (isActiveHiredRole(HiredVillagerRole.ANIMAL_HANDLING)) {
@@ -2104,22 +2101,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
     }
 
-    private void addBuilderCategoryOptions() {
-        Set<String> categories = new LinkedHashSet<>();
-        for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
-            categories.add(entry.category());
-        }
-        if (categories.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("recruit.builder_no_structures"), NO_ACTION));
-        }
-        for (String category : categories) {
-            this.options.add(DialogueOption.enabled(
-                    translate("recruit.builder_category", category),
-                    () -> openBuilderStructureCategoryPage(category)));
-        }
-        addOption("recruit.nevermind", this::openBuilderReturnPage);
-    }
-
     private void addLoggingOption(String optionId, String translationKey, boolean enabled) {
         this.options.add(DialogueOption.checkbox(
                 translate(translationKey),
@@ -2139,40 +2120,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate(translationKey),
                 enabled,
                 () -> requestHuntingTarget(targetId)));
-    }
-
-    private void addBuilderStructureOptions() {
-        if (this.selectedBuilderCategory == null || this.selectedBuilderCategory.isBlank()) {
-            openBuilderStructuresPage();
-            return;
-        }
-        int added = 0;
-        for (BuilderStructureCatalog.Entry entry : BuilderStructureCatalog.entries()) {
-            if (!entry.category().equals(this.selectedBuilderCategory)) {
-                continue;
-            }
-            this.options.add(DialogueOption.enabled(entry.label(), () -> {
-                this.selectedBuilderStructure = entry;
-                requestBuilderOrder(HiredBuilderOrderPayload.Action.PREVIEW, entry);
-                openPage(DialoguePage.BUILDER_CONFIRM);
-            }));
-            added++;
-        }
-        if (added == 0) {
-            this.options.add(DialogueOption.enabled(translate("recruit.builder_no_category_structures"), NO_ACTION));
-        }
-        addOption("recruit.nevermind", this::openBuilderStructuresPage);
-    }
-
-    private void addBuilderConfirmOptions() {
-        if (this.selectedBuilderStructure == null) {
-            openBuilderStructuresPage();
-            return;
-        }
-        this.options.add(DialogueOption.enabled(translate("recruit.builder_selected", this.selectedBuilderStructure.menuLabel()), NO_ACTION));
-        addOption("recruit.builder_confirm", () -> requestBuilderOrder(HiredBuilderOrderPayload.Action.CONFIRM, this.selectedBuilderStructure));
-        addOption("recruit.builder_pick_another", this::openBuilderStructuresPage);
-        addOption("recruit.nevermind", this::openBuilderReturnPage);
     }
 
     private void addRoleChangeOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
@@ -2333,7 +2280,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addDialogueOption(DialogueOptionDefinition option) {
         if (!option.available()) {
-            this.options.add(new DialogueOption(option.label(), NO_ACTION, true, false, false, option.unavailableReason()));
+            this.options.add(DialogueOption.disabled(option.label(), option.unavailableReason()));
             return;
         }
         addDialogueOption(option.label(), option.id(), option.metadata().tags().contains(QUEST_OFFER_HINT_TAG));
@@ -2370,14 +2317,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             default -> label;
         };
         if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
-            this.options.add(DialogueOption.enabled(label, this::openBuilderStructuresPage));
+            this.options.add(DialogueOption.enabled(label, this.builder::openBuilderStructuresPage));
             return;
         }
         if (BLUEPRINT_NEVERMIND_OPTION_ID.equals(optionId)) {
             this.options.add(DialogueOption.enabled(label, this::leaveConversation));
             return;
         }
-        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId), locked));
+        this.options.add(DialogueOption.hinted(label, () -> requestDialogue(optionId), locked));
     }
 
     private void addOption(String labelKey, Runnable action) {
@@ -2430,9 +2377,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addHealingOptions() {
         String label = this.healingState == null ? translate("healing.loading") : this.healingState.healLabel();
-        this.options.add(DialogueOption.enabled(label,
+        this.options.add(DialogueOption.available(label,
                 () -> requestHealing(VillagerHealingRequestPayload.Action.CONFIRM),
-                this.awaitingHealingState || this.healingState == null || !this.healingState.offer().available()));
+                !this.awaitingHealingState && this.healingState != null && this.healingState.offer().available()));
         addOption("recruit.nevermind", () -> openPage(DialoguePage.ROOT));
     }
 
@@ -2561,18 +2508,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openAnimalCullCapsPage() {
         openPage(DialoguePage.ANIMAL_CULL_CAPS);
-    }
-
-    private void openBuilderStructuresPage() {
-        this.selectedBuilderCategory = null;
-        this.selectedBuilderStructure = null;
-        openPage(DialoguePage.BUILDER_STRUCTURES);
-    }
-
-    private void openBuilderStructureCategoryPage(String category) {
-        this.selectedBuilderCategory = category;
-        this.selectedBuilderStructure = null;
-        openPage(DialoguePage.BUILDER_STRUCTURE_CATEGORY);
     }
 
 
@@ -2791,7 +2726,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.BUILDER_CONFIRM) {
-            if (this.selectedBuilderCategory != null && !this.selectedBuilderCategory.isBlank()) {
+            if (this.builder.hasSelectedCategory()) {
                 openPage(DialoguePage.BUILDER_STRUCTURE_CATEGORY);
             } else {
                 openPage(DialoguePage.BUILDER_STRUCTURES);
@@ -3003,7 +2938,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         DialogueOption option = this.options.get(this.state.selectedOption());
-        option.action().run();
+        option.activate();
     }
 
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
@@ -3126,14 +3061,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         sendToServer(new HiredAnimalCullCapPayload(this.villagerEntityId, cap));
         this.animalCullCap = cap;
         rebuildOptionsKeepingListPosition();
-    }
-
-    private void requestBuilderOrder(HiredBuilderOrderPayload.Action action, BuilderStructureCatalog.Entry entry) {
-        ResourceLocation structureId = entry == null ? ResourceLocation.withDefaultNamespace("empty") : entry.id();
-        sendToServer(new HiredBuilderOrderPayload(this.villagerEntityId, action, structureId));
-        if (action == HiredBuilderOrderPayload.Action.CONFIRM || action == HiredBuilderOrderPayload.Action.CANCEL) {
-            openWorkPage();
-        }
     }
 
     private void requestClipboardStorage(ClipboardStorageActionPayload.Action action) {
@@ -3997,6 +3924,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private List<InteractionMenuButton> interactionMenuButtons() {
+        if (!this.renderingFrame) return buildInteractionMenuButtons();
+        if (this.frameMenuButtons == null) this.frameMenuButtons = buildInteractionMenuButtons();
+        return this.frameMenuButtons;
+    }
+
+    private List<InteractionMenuButton> buildInteractionMenuButtons() {
         boolean inventoryAvailable = canRequestVillagerInventory();
         boolean hireJobAvailable = canOpenHireJobMenu();
         boolean stayAvailable = this.recruitedPartyVillager
@@ -6428,6 +6361,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return session.line() == null || session.line().name().isBlank() ? session.title() : session.line().name();
     }
 
+    private final class BuilderHost implements BuilderScreenController.Host {
+        @Override public int entityId() { return villagerEntityId; }
+        @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
+        @Override public void option(DialogueOption option) { options.add(option); }
+        @Override public void openPage(DialoguePage target) { VillagerInteractionScreen.this.openPage(target); }
+        @Override public void openReturnPage() { openBuilderReturnPage(); }
+        @Override public void openWorkPage() { VillagerInteractionScreen.this.openWorkPage(); }
+        @Override public void sendToServer(HiredBuilderOrderPayload payload) { VillagerInteractionScreen.this.sendToServer(payload); }
+    }
+
     private final class BrewingWorkHost implements BrewingWorkScreenController.Host {
         @Override public int entityId() { return villagerEntityId; }
         @Override public net.minecraft.client.multiplayer.ClientLevel level() { return minecraft == null ? null : minecraft.level; }
@@ -6492,9 +6435,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         @Override public String translate(String key, Object... arguments) { return VillagerInteractionScreen.this.translate(key, arguments); }
         @Override public void send(com.jvn.villagerretaliation.network.CampaignConversationRequestPayload payload) { sendToServer(payload); }
-        @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.enabled(label, action, locked)); }
+        @Override public void option(String label, Runnable action, boolean locked) { options.add(DialogueOption.available(label, action, !locked)); }
         @Override public void option(String label, Runnable action, boolean locked, String reason) {
-            options.add(new DialogueOption(label, action, locked, false, false, reason));
+            options.add(new DialogueOption(label, action, !locked, locked, false, false, reason));
         }
         @Override public void updated(boolean session, String text) {
             if (session && page != DialoguePage.CAMPAIGN_CONVERSATION && page != DialoguePage.CAMPAIGN_CONFIRMATION) openPage(DialoguePage.CAMPAIGN_CONVERSATION);
@@ -6601,16 +6544,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked, String reason) {
-        private DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
-            this(label, action, locked, checkbox, checked, "");
-        }
+    record DialogueOption(String label, Runnable action, boolean enabled, boolean locked,
+                          boolean checkbox, boolean checked, String reason) {
         static DialogueOption enabled(String label, Runnable action) {
-            return enabled(label, action, false);
+            return hinted(label, action, false);
         }
 
-        static DialogueOption enabled(String label, Runnable action, boolean locked) {
-            return new DialogueOption(label, action, locked, false, false);
+        static DialogueOption hinted(String label, Runnable action, boolean locked) {
+            return new DialogueOption(label, action, true, locked, false, false, "");
+        }
+
+        static DialogueOption available(String label, Runnable action, boolean available) {
+            return new DialogueOption(label, action, available, !available, false, false, "");
+        }
+
+        static DialogueOption disabled(String label, String reason) {
+            return new DialogueOption(label, () -> {}, false, true, false, false, reason);
         }
 
         static DialogueOption checkbox(String label, boolean checked, Runnable action) {
@@ -6618,7 +6567,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         static DialogueOption checkbox(String label, boolean checked, Runnable action, boolean locked) {
-            return new DialogueOption(label, action, locked, true, checked);
+            return new DialogueOption(label, action, !locked, locked, true, checked, "");
+        }
+
+        void activate() {
+            if (this.enabled) this.action.run();
         }
     }
 
@@ -7032,7 +6985,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         public boolean pixelOptionHighlightActive(int index) {
             return index >= 0
                     && index < displayedOptions().size()
-                    && !displayedOptions().get(index).locked();
+                    && displayedOptions().get(index).enabled();
         }
 
         @Override

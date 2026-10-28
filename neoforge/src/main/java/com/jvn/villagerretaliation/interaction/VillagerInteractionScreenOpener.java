@@ -11,7 +11,6 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
-import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
@@ -31,7 +30,6 @@ import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
-import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.study.VillagerStudyDialogueService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
@@ -69,11 +67,8 @@ public final class VillagerInteractionScreenOpener {
                         com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects.NONE), null)
                 : VillagerDialogueService.selectOpeningSpeech(dialogueContext);
         OpenVillagerInteractionPayload payload = createPayload(
-                level,
-                player,
-                villager,
+                dialogueContext,
                 mood,
-                dialogueContext.primaryMood(),
                 false,
                 false,
                 forceCameraTowardsVillager,
@@ -88,8 +83,7 @@ public final class VillagerInteractionScreenOpener {
 
     public static void openCampaign(ServerPlayer player, Villager villager) {
         var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
-        trySendToPlayer(player, createPayload(player.serverLevel(), player, villager, VillagerDialogueService.moodFor(context),
-                context.primaryMood(), false, false, false, List.of()));
+        trySendToPlayer(player, createPayload(context, VillagerDialogueService.moodFor(context), false, false, false, List.of()));
     }
 
     public static void openForced(
@@ -100,11 +94,8 @@ public final class VillagerInteractionScreenOpener {
         ServerLevel level = player.serverLevel();
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         OpenVillagerInteractionPayload payload = createPayload(
-                level,
-                player,
-                villager,
+                context,
                 VillagerDialogueService.moodFor(context),
-                context.primaryMood(),
                 true,
                 false,
                 forceCameraTowardsVillager,
@@ -122,11 +113,8 @@ public final class VillagerInteractionScreenOpener {
                 .message(context, "interaction.clipboard.assignment.opening")
                 .orElse("");
         OpenVillagerInteractionPayload payload = createPayload(
-                level,
-                player,
-                villager,
+                context,
                 VillagerDialogueService.moodFor(context),
-                context.primaryMood(),
                 false,
                 true,
                 forceCameraTowardsVillager,
@@ -149,11 +137,8 @@ public final class VillagerInteractionScreenOpener {
         dialogueOptions = com.jvn.villagerretaliation.authoring.preview.QuestPlaytestOffers.filter(dialogueContext, dialogueOptions,
                 com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService.activeOptions(dialogueContext).isPresent());
         trySendToPlayer(player, createPayload(
-                level,
-                player,
-                villager,
+                dialogueContext,
                 mood,
-                dialogueContext.primaryMood(),
                 false,
                 false,
                 false,
@@ -170,17 +155,16 @@ public final class VillagerInteractionScreenOpener {
     }
 
     private static OpenVillagerInteractionPayload createPayload(
-            ServerLevel level,
-            ServerPlayer player,
-            Villager villager,
+            DialogueContext dialogueContext,
             DialogueDisposition mood,
-            VillagerMood primaryMood,
             boolean forcedConversation,
             boolean clipboardMenu,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions) {
+        ServerLevel level = dialogueContext.level();
+        ServerPlayer player = dialogueContext.player();
+        Villager villager = dialogueContext.villager();
         dialogueOptions = DialogueChoiceRequests.publish(player, villager.getId(), dialogueOptions);
-        DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         VillagerAssignmentSnapshot assignment =
                 HiredVillagerContractService.synchronizeAssignment(level, villager);
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
@@ -231,7 +215,7 @@ public final class VillagerInteractionScreenOpener {
                 reputation.value(),
                 reputation.level(),
                 mood,
-                primaryMood,
+                dialogueContext.primaryMood(),
                 VillagerRecruitmentService.isFollowing(villager, player),
                 VillagerRecruitmentService.isStayingHere(villager, player),
                 VillagerRecruitmentService.canFollow(level, villager, player),
@@ -298,8 +282,8 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.preferences(),
                 allegianceView(dialogueContext, level, villager, partyVillager != null),
-                VillagerSocialGraphService.familySnapshot(level, villager),
-                VillagerSocialGraphService.relationshipSnapshot(level, villager)
+                dialogueContext.familyTree(),
+                dialogueContext.relationships()
         );
     }
 

@@ -134,10 +134,8 @@ final class DuelScreenController {
     }
 
     void addDuelSetupUnavailableOption() {
-        host.option(DialogueOption.enabled(
-                this.duelStatus == null ? host.translate("duel.loading") : duelUnavailableText(),
-                NO_ACTION,
-                true));
+        host.option(DialogueOption.disabled(
+                this.duelStatus == null ? host.translate("duel.loading") : duelUnavailableText(), ""));
     }
 
     private boolean canConfigureDuel() {
