@@ -50,6 +50,32 @@ public final class SettlementWorkforceGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
+    public static void farmStaffingRequiresAProfessionTheWorkerCanExecute(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var villager = fixture.villager();
+        try {
+            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.NONE));
+            helper.assertFalse(SettlementWorkforceService.availableRoles(level, villager).contains(HiredVillagerRole.FARMING),
+                    "settlement controls do not offer an unusable farming role");
+            helper.assertFalse(SettlementResidentState.capture(villager, fixture.town(), level.getGameTime())
+                    .availableRoles(level).contains(HiredVillagerRole.FARMING), "unloaded eligibility uses the same profession requirement");
+            helper.assertFalse(SettlementWorkforceService.assign(level, fixture.leader(), fixture.town().id(), villager, fixture.area().id()),
+                    "a stale staffing request cannot assign an incompatible farmer");
+            helper.assertFalse(fixture.town().duties().containsKey(villager.getUUID()), "rejected staffing leaves the resident unassigned");
+            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+            helper.assertTrue(SettlementWorkforceService.availableRoles(level, villager).contains(HiredVillagerRole.FARMING),
+                    "a qualified Farmer remains eligible");
+            helper.assertTrue(SettlementResidentState.capture(villager, fixture.town(), level.getGameTime())
+                    .availableRoles(level).contains(HiredVillagerRole.FARMING), "an unloaded Farmer remains eligible");
+            assign(helper, fixture);
+        } finally {
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
     public static void civicEmploymentUsesExistingFarmWithoutOnlineLeader(GameTestHelper helper) {
         Fixture fixture = fixture(helper, new UUID(Long.MIN_VALUE, -helper.getLevel().getGameTime()));
         ServerLevel level = helper.getLevel();

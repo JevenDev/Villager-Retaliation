@@ -48,7 +48,7 @@ public final class SettlementWorkerPoolAssignmentGameTests {
         var context = town.residents().get(resident).context(helper.getLevel());
         SettlementWorkforceService.reconcile(helper.getLevel(), context);
         helper.assertValueEqual(VillagerWorkAppearance.profession(context), VillagerProfession.FARMER, "the native assignment publishes farmer clothing");
-        helper.assertValueEqual(context.getVillagerData().getProfession(), VillagerProfession.TOOLSMITH, "the real profession remains unchanged");
+        helper.assertValueEqual(context.getVillagerData().getProfession(), VillagerProfession.FARMER, "the real profession remains unchanged");
         helper.assertValueEqual(town.workerPools().get(pool.id()).history().getLast(), move, "the same demand and priority explain the move");
         helper.assertValueEqual(town.workerPoolCooldown(resident, 100), 1_200L, "successful assignment starts the durable cooldown");
         helper.assertFalse(SettlementWorkforceService.assignFromPool(helper.getLevel(), town, pool, move), "an old pool object cannot perform another move");
@@ -210,7 +210,7 @@ public final class SettlementWorkerPoolAssignmentGameTests {
         helper.assertTrue(town.putArea(town.leader(), tradingPost), "the destination temporarily requires the restricted trading role");
         helper.assertTrue(town.setWorksitePlan(town.leader(), tradingPost.id(), SettlementWorksitePlan.defaults(HiredVillagerRole.NITWIT)), "the trading post uses its native settings");
         helper.assertFalse(com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(helper.getLevel(), villager).contains(HiredVillagerRole.NITWIT),
-                "the toolsmith fixture is not eligible for nitwit trading work");
+                "the farmer fixture is not eligible for nitwit trading work");
         helper.assertFalse(move(helper, town, pool.id(), villager.getUUID(), tradingPost.id(), 100), "a pool cannot grant an unavailable role");
         helper.assertTrue(town.putArea(town.leader(), fixture.farm()), "the approved farming destination is restored");
         helper.assertTrue(town.setWorksitePlan(town.leader(), fixture.farm().id(), SettlementWorksitePlan.defaults(HiredVillagerRole.FARMING)), "farming uses its native settings");
@@ -319,6 +319,22 @@ public final class SettlementWorkerPoolAssignmentGameTests {
             assistant.discard();
             lead.discard();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_worker_pool_assignment")
+    public static void poolsCannotAssignANonFarmerToFarmWork(GameTestHelper helper) {
+        var fixture = ready(helper, 1);
+        var villager = fixture.residents().getFirst();
+        villager.setVillagerData(villager.getVillagerData().setProfession(
+                net.minecraft.world.entity.npc.VillagerProfession.TOOLSMITH));
+        fixture.town().recordResident(SettlementResidentState.capture(villager, fixture.town(), helper.getLevel().getGameTime()));
+        var pool = pool(helper, fixture, 1);
+        helper.assertValueEqual(SettlementWorkerPoolAssignment.destination(helper.getLevel(), fixture.town(), pool, villager, fixture.farm().id()),
+                "pool_role_unavailable", "pool planning exposes the farming profession requirement");
+        helper.assertFalse(move(helper, fixture.town(), pool.id(), villager.getUUID(), fixture.farm().id(), 100),
+                "a pool cannot bypass the native farmer routine's profession requirement");
+        helper.assertFalse(fixture.town().duties().containsKey(villager.getUUID()), "a rejected pool move leaves the resident unassigned");
         helper.succeed();
     }
 

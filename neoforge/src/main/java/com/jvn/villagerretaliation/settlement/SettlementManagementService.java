@@ -292,7 +292,7 @@ public final class SettlementManagementService {
 
     private static List<HiredVillagerRole> settlementRoles(ServerLevel level, Villager villager, SettlementResidentState care) {
         var roles = new ArrayList<HiredVillagerRole>(villager == null ? care == null ? List.of() : care.availableRoles(level)
-                : HiredVillagerRoles.availableRoles(level, villager));
+                : SettlementWorkforceService.availableRoles(level, villager));
         if ((villager != null && !villager.isBaby() || care != null && care.availableForWork()) && !roles.contains(HiredVillagerRole.BUILDER)) {
             roles.add(HiredVillagerRole.BUILDER);
         }

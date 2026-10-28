@@ -276,6 +276,10 @@ public final class SettlementCityAcceptanceScenario {
                 default -> index < 18 ? this.kitchen : index % 9 == 0 ? this.farms.get(1 + index / 9 % 3) : null;
             };
             if (workplace == null) continue;
+            if (workplace.type() == SettlementAreaType.FARM) {
+                villager.setVillagerData(villager.getVillagerData().setProfession(
+                        net.minecraft.world.entity.npc.VillagerProfession.FARMER));
+            }
             for (var skill : HiredVillagerRoles.roleSkills(workplace.type().role())) VillagerProfileManager.setSkill(this.level, villager, skill, 60);
             require(SettlementWorkforceService.assign(this.level, player, this.town.id(), villager, workplace.id()), "an eligible approved resident takes " + workplace.type());
             var inventory = HiredJobInventory.getJobInventory(villager);

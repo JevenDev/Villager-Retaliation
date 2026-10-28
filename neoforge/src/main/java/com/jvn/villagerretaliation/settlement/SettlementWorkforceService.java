@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -85,7 +86,7 @@ public final class SettlementWorkforceService {
                 || hasPersonalCommitment(villager)) return false;
         SettlementArea area = town.workplace(areaId);
         if (area == null || area.type().role() == null
-                || area.type() != SettlementAreaType.CONSTRUCTION && !HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
+                || area.type() != SettlementAreaType.CONSTRUCTION && !availableRoles(level, villager).contains(area.type().role())
                 || area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
                 || area.type() == SettlementAreaType.TRADING_POST
                         && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) {
@@ -174,6 +175,12 @@ public final class SettlementWorkforceService {
         }
         SettlementArea area = town.workplace(areaId);
         return area == null || area.type().role() == null ? Optional.empty() : Optional.of(new Duty(town, area));
+    }
+
+    static List<HiredVillagerRole> availableRoles(ServerLevel level, Villager villager) {
+        return HiredVillagerRoles.availableRoles(level, villager).stream()
+                .filter(role -> role != HiredVillagerRole.FARMING
+                        || villager.getVillagerData().getProfession() == VillagerProfession.FARMER).toList();
     }
 
     public static HiredVillagerRole role(Villager villager) {

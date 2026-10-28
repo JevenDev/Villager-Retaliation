@@ -47,7 +47,7 @@ final class SettlementAutonomyService {
             int needed = staffingNeeded(town, area);
             for (int index = 0; index < needed && !candidates.isEmpty(); index++) {
                 var candidate = candidates.stream()
-                        .filter(resident -> HiredVillagerRoles.availableRoles(level, resident).contains(area.type().role()))
+                        .filter(resident -> SettlementWorkforceService.availableRoles(level, resident).contains(area.type().role()))
                         .min(Comparator.comparingInt((Villager resident) -> HiredVillagerRoles.roleScore(level, resident, area.type().role())).reversed()
                                 .thenComparingDouble(resident -> resident.blockPosition().distSqr(area.center()))
                                 .thenComparing(Villager::getUUID)).orElse(null);

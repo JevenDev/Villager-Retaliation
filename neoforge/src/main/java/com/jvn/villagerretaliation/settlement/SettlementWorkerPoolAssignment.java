@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.settlement;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.duel.DuelService;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue;
@@ -112,7 +111,7 @@ final class SettlementWorkerPoolAssignment {
         if (destination.equals(from)) return "pool_current_duty";
         var source = pool.configuration().worksites().stream().filter(site -> site.area().equals(from)).findFirst().orElse(null);
         if (source != null && count(town, from) <= source.minimum()) return "pool_staffing_minimum";
-        if (!HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())) return "pool_role_unavailable";
+        if (!SettlementWorkforceService.availableRoles(level, villager).contains(area.type().role())) return "pool_role_unavailable";
         if (!SettlementWorkforceService.workingHours(level.getDayTime(), villager.getUUID(), area.type().role())) return "pool_resting";
         if (area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
                 || area.type() == SettlementAreaType.TRADING_POST && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal())

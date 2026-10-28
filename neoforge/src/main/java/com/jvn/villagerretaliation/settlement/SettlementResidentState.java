@@ -236,6 +236,7 @@ public final class SettlementResidentState {
         var profile = VillagerProfileSavedData.get(level).get(this.id);
         var skills = profile == null ? VillagerSkillSet.EMPTY : profile.skills();
         return Arrays.stream(HiredVillagerRole.values())
+                .filter(role -> role != HiredVillagerRole.FARMING || profession.get() == net.minecraft.world.entity.npc.VillagerProfession.FARMER)
                 .filter(role -> HiredVillagerRoles.isSkillUnlocked(key, false, skills, role)).toList();
     }
 

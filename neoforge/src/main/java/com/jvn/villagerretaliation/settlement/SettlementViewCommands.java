@@ -132,7 +132,7 @@ final class SettlementViewCommands {
             if (destination == null || destination.type().role() == null) return new Outcome(id, Status.FAILED, "Workplace no longer exists");
             var care = town.residents().get(id);
             var roles = session.level.getEntity(id) instanceof Villager villager
-                    ? com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(session.level, villager)
+                    ? SettlementWorkforceService.availableRoles(session.level, villager)
                     : care == null ? List.of() : care.availableRoles(session.level);
             if (destination.type() != SettlementAreaType.CONSTRUCTION && !roles.contains(destination.type().role()))
                 return new Outcome(id, Status.SKIPPED, "Incompatible workplace role");

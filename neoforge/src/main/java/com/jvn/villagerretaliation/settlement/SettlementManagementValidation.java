@@ -136,7 +136,7 @@ final class SettlementManagementValidation {
             if (level != player.serverLevel()) return "resident_away";
             if (!(entity instanceof net.minecraft.world.entity.npc.Villager villager) || !villager.isAlive() || villager.isBaby()) return "resident_unavailable";
             if (SettlementWorkforceService.hasPersonalCommitment(villager)) return "personal_commitment";
-            return area.type() == SettlementAreaType.CONSTRUCTION || com.jvn.villagerretaliation.interaction.HiredVillagerRoles.availableRoles(level, villager).contains(area.type().role())
+            return area.type() == SettlementAreaType.CONSTRUCTION || SettlementWorkforceService.availableRoles(level, villager).contains(area.type().role())
                     ? "" : "role_unavailable";
         }
         var resident = town.residents().get(assign.resident());

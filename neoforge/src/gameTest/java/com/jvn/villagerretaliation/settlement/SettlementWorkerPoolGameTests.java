@@ -42,7 +42,7 @@ public final class SettlementWorkerPoolGameTests {
         var defaults = SettlementWorkerPool.Staffing.defaults(town, fixture.farm().id());
         helper.assertValueEqual(defaults.minimum(), 0, "pool minimums start at zero");
         helper.assertValueEqual(defaults.maximum(), 2, "pool caps use the existing desired staffing");
-        helper.assertValueEqual(resident.getVillagerData().getProfession(), VillagerProfession.TOOLSMITH, "pool data never changes real professions");
+        helper.assertValueEqual(resident.getVillagerData().getProfession(), VillagerProfession.FARMER, "pool data never changes real professions");
         helper.assertFalse(helper.getLevel().hasChunkAt(town.center()), "pool persistence does not load terrain");
         helper.succeed();
     }
@@ -244,7 +244,7 @@ public final class SettlementWorkerPoolGameTests {
         for (int index = 0; index < population; index++) {
             var villager = EntityType.VILLAGER.create(level);
             villager.setPos(center.east(index).getBottomCenter());
-            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
+            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
             VillageAllegianceApi.assignKnown(level, villager, town.id(), AllegianceAssignmentSource.EXPLICIT_API);
             town.recordResident(SettlementResidentState.capture(villager, town, level.getGameTime()));
             residents.add(villager);
