@@ -16,6 +16,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = "villagerretaliation", value = Dist.CLIENT)
@@ -26,6 +27,48 @@ public final class MapLocationClientSmoke {
     private static ExploredMapScreen map;
     private static MapLocation saved;
     private static int worldX, worldZ;
+    private static List<MapLocation> backgroundLocations;
+    private static MapLocation coveredLocation;
+    private static boolean occlusionChecked;
+
+    @SubscribeEvent public static void beforeRender(ScreenEvent.Render.Pre event) {
+        if (System.getProperty(OUTPUT) == null || phase != 1 || !(event.getScreen() instanceof MapLocationEditScreen editor)) return;
+        var mc = Minecraft.getInstance();
+        int top = (int) field(editor, "top");
+        coveredLocation = new MapLocation(java.util.UUID.randomUUID(), mc.level.dimension().location(),
+                (int) Math.floor(map.view().worldX(editor.width / 2.0)),
+                (int) Math.floor(map.view().worldZ(top + 152)), MapLocation.Icon.EMERALD, "Aspenview", "", true);
+        backgroundLocations = MapLocationsClient.all();
+        MapLocationsClient.accept(new com.jvn.villagerretaliation.network.MapLocationsPayload(List.of(coveredLocation)));
+    }
+
+    @SubscribeEvent public static void afterRender(ScreenEvent.Render.Post event) {
+        if (backgroundLocations == null || !(event.getScreen() instanceof MapLocationEditScreen)) return;
+        event.getGuiGraphics().flush();
+        var mc = Minecraft.getInstance();
+        try (var image = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
+            double scaleX = image.getWidth() / (double) event.getScreen().width;
+            double scaleY = image.getHeight() / (double) event.getScreen().height;
+            int center = (int) map.view().screenX(coveredLocation.x());
+            int top = (int) map.view().screenY(coveredLocation.z()) + 10;
+            int halfWidth = mc.font.width(coveredLocation.name()) / 2 + 2;
+            int background = image.getPixelRGBA((int) ((center - halfWidth - 4) * scaleX), (int) ((top + 2) * scaleY));
+            int leaking = 0;
+            for (int y = (int) (top * scaleY); y < (top + mc.font.lineHeight) * scaleY; y++) {
+                for (int x = (int) ((center - halfWidth) * scaleX); x < (center + halfWidth) * scaleX; x++) {
+                    int color = image.getPixelRGBA(x, y);
+                    if (color != background) leaking++;
+                }
+            }
+            image.writeToFile(Path.of(System.getProperty(OUTPUT), "marker-editor-occlusion.png"));
+            require(leaking == 0, "map label cannot show through the editor panel (leaking pixels: " + leaking + ")");
+            occlusionChecked = true;
+        } catch (IOException failure) { throw new UncheckedIOException(failure); }
+        finally {
+            MapLocationsClient.accept(new com.jvn.villagerretaliation.network.MapLocationsPayload(backgroundLocations));
+            backgroundLocations = null;
+        }
+    }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         if (System.getProperty(OUTPUT) == null || phase == 99) return;
@@ -51,6 +94,7 @@ public final class MapLocationClientSmoke {
                 phase = 1;
             }
             case 1 -> {
+                require(occlusionChecked, "editor occlusion was checked on a rendered frame");
                 screenshot("marker-editor.png");
                 for (var icon : MapLocation.Icon.values()) require(!MapLocationsClient.icon(icon).isEmpty(), "every icon resolves to an item");
                 var editor = (MapLocationEditScreen) mc.screen;

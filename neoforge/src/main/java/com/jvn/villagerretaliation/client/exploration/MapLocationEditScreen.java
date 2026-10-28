@@ -91,7 +91,10 @@ final class MapLocationEditScreen extends Screen {
     @Override public void renderBackground(GuiGraphics graphics, int x, int y, float partial) { }
     @Override public void render(GuiGraphics graphics, int x, int y, float partial) {
         parent.render(graphics, -1, -1, partial);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 200);
         graphics.fill(0, 0, width, height, 0x80000000);
+        graphics.fill(left - 3, top - 3, left + panelWidth + 3, top + 208 + 3, 0xff100010);
         TooltipRenderUtil.renderTooltipBackground(graphics, left, top, panelWidth, 208, 0);
         graphics.drawCenteredString(font, title, width / 2, top + 5, 0xffffff);
         graphics.drawCenteredString(font, text("coordinates", original.x(), original.z()), width / 2, top + 17, 0xaaaaaa);
@@ -101,6 +104,7 @@ final class MapLocationEditScreen extends Screen {
         graphics.drawString(font, error, left + 8, top + 163, 0xff9999);
         super.render(graphics, menu == null ? x : -1, menu == null ? y : -1, partial);
         if (menu != null) menu.render(graphics, font, x, y, partial);
+        graphics.pose().popPose();
     }
     @Override public void mouseMoved(double x, double y) {
         if (menu != null) menu.hover(x, y);
