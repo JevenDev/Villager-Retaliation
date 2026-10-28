@@ -117,7 +117,12 @@ final class SettlementUiWindow {
 
     void render(GuiGraphics graphics, Font font, Component title) {
         TooltipRenderUtil.renderTooltipBackground(graphics, this.left + 4, this.top + 4, this.width - 8, this.height - 8, 0);
-        graphics.drawString(font, font.plainSubstrByWidth(title.getString(), Math.max(0, this.width - 8)),
+        int titleRight = this.left + this.width - 4;
+        for (var widget : this.widgets) {
+            if (widget.visible && widget.getY() < this.top + TITLE_HEIGHT)
+                titleRight = Math.min(titleRight, widget.getX() - 2);
+        }
+        graphics.drawString(font, font.plainSubstrByWidth(title.getString(), Math.max(0, titleRight - this.left - 4)),
                 this.left + 4, this.top + 3, 0xFFFFFF, false);
     }
 

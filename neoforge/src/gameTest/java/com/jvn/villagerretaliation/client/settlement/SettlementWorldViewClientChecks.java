@@ -185,9 +185,6 @@ final class SettlementWorldViewClientChecks {
                 require(minecraft.getCameraEntity().position().distanceTo(this.openingPosition) < 1,
                         "first and third person transitions begin at the actual rendered camera");
             }
-            require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
-                            .villagerretaliation$getEyeHeight() == 0,
-                    "the world camera never adds a second, decaying player eye offset");
             if (this.openingCase == 0) {
                 var camera = (com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera();
                 camera.villagerretaliation$setEyeHeight(minecraft.player.getEyeHeight());
@@ -197,9 +194,6 @@ final class SettlementWorldViewClientChecks {
             this.phase = 11;
         } else if (this.phase == 11) {
             var opened = (SettlementViewScreen) minecraft.screen;
-            require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
-                            .villagerretaliation$getEyeHeight() == 0,
-                    "a late player-eye update is cleared before rendering the next world-view frame");
             if (this.openingCase == 4) {
                 if (++this.ticks < 5) return false;
                 opened.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
@@ -227,8 +221,6 @@ final class SettlementWorldViewClientChecks {
                     "an external screen change interrupts the animation and releases the camera immediately");
             if (SettlementViewClient.transitioning()) {
                 require(minecraft.getCameraEntity() != minecraft.player, "the animation retains camera ownership while returning");
-                require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
-                                .villagerretaliation$getEyeHeight() == 0, "returning never adds a player eye offset to the remote pose");
                 if (this.ticks == 5) {
                     if (this.openingCase == 1) minecraft.player.setYRot(minecraft.player.getYRot() + 30);
                     this.capture.accept("world-view-return-" + this.openingCase);

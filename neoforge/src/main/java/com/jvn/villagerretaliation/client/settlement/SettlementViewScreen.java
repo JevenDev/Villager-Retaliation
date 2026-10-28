@@ -404,6 +404,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.inspector.init(this.panelLeft, this.panelWidth, SettlementViewLayout.HEADER_HEIGHT + SettlementUiWindow.TITLE_HEIGHT, this.layout.contentBottom, this::addRenderableWidget);
         this.manage = addRenderableWidget(VillagerUi.buttonBuilder(text("manage_selection"), ignored -> manageSelection())
                 .bounds(this.panelLeft + 6, this.layout.contentBottom - 22, this.panelWidth - 12, 20).build());
+        addRenderableWidget(new SettlementViewUi.IconButton(Component.literal("Hide settlement"),
+                this.panelLeft + this.panelWidth - 16, SettlementViewLayout.HEADER_HEIGHT + 4, 12, 12,
+                net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> false, () -> {
+                    this.preferences.sidebar = false;
+                    savePreferences();
+                    rebuildWidgets();
+                }).symbol("X"));
         for (var child : children()) {
             if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
                 this.sidebarWidgets.add(widget);
@@ -496,31 +503,23 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.cancelGizmo = addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.cancel"), ignored -> cancelGizmo())
                 .bounds(this.layout.worldLeft, this.layout.commandTop + 22, 76, 20).build());
         layoutMap();
-        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(this.preferences.map ? "Hide map" : "Map"), ignored -> {
-            this.preferences.map = !this.preferences.map;
-            savePreferences();
-            rebuildWidgets();
-        }).bounds(this.width - 126, this.height - 24, 72, 18).build());
-        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(this.preferences.sidebar ? ">" : "<"), ignored -> {
-            this.preferences.sidebar = !this.preferences.sidebar;
-            savePreferences();
-            rebuildWidgets();
-        }).bounds(this.width - 50, this.height - 24, 20, 18)
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Toggle settlement browser"))).build());
-        addRenderableWidget(new SettlementViewUi.IconButton(Component.translatable("gui.done"), this.width - 26, this.height - 24, 22, 18,
-                net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> false, this::onClose).symbol("X"));
         var mapWidgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
         if (this.preferences.map) {
-            Component[] labels = {text("center"), text("map_zoom_in"), text("map_zoom_out")};
-            String[] symbols = {"o", "+", "-"};
+            Component[] labels = {text("center"), text("map_zoom_in"), text("map_zoom_out"), Component.literal("Hide map")};
+            String[] symbols = {"o", "+", "-", "X"};
             Runnable[] actions = {
                     () -> { this.overviewMap.center(); focus(this.window.center().getX() + 0.5D, this.window.center().getZ() + 0.5D); },
                     () -> this.overviewMap.zoom(-1, this.focusX, this.focusZ),
-                    () -> this.overviewMap.zoom(1, this.focusX, this.focusZ)};
+                    () -> this.overviewMap.zoom(1, this.focusX, this.focusZ),
+                    () -> {
+                        this.preferences.map = false;
+                        savePreferences();
+                        rebuildWidgets();
+                    }};
             for (int index = 0; index < labels.length; index++) {
                 int action = index;
                 mapWidgets.add(addRenderableWidget(new SettlementViewUi.IconButton(labels[index],
-                        this.layout.mapLeft + this.layout.mapWidth - 38 + index * 13,
+                        this.layout.mapLeft + this.layout.mapWidth - 51 + index * 13,
                         this.layout.mapTop - SettlementUiWindow.TITLE_HEIGHT, 12, 12,
                         net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> false, actions[action]).symbol(symbols[index])));
             }
@@ -2939,6 +2938,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case OVERLAYS -> {
                 details.add(Component.literal("World overlays"));
+                if (!this.preferences.map) actions.add(menuAction(Component.literal("Show map"), true, () -> {
+                    this.preferences.map = true;
+                    savePreferences();
+                    rebuildWidgets();
+                }));
                 actions.add(new SettlementViewPopup.Action(SettlementViewKeyMappings.hint(
                         SettlementManagementScreen.text(SettlementBoundsClient.enabled(this.header.id()) ? "hide_bounds" : "show_bounds"),
                         SettlementViewKeyMappings.BOUNDS), true, () -> SettlementBoundsClient.toggle(this.header.id())));

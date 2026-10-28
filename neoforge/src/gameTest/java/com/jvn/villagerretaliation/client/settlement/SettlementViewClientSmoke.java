@@ -215,6 +215,10 @@ public final class SettlementViewClientSmoke {
                     "the centered settlement camera has an isometric-style tilt");
             SettlementOverviewMapClientChecks.verify(screen, fixture.center());
             SettlementViewPanelClientChecks.verify(screen);
+            hideOverviewMap(screen);
+            showOverviewMap(screen);
+            hidePanel(screen, "Hide settlement");
+            literalButton(screen, "Residents").onPress();
             if (Boolean.getBoolean("villagerretaliation.settlementWorldViewClientSmoke")) {
                 worldViewChecks = new SettlementWorldViewClientChecks(screen, fixture.town(), fixture.center(), SettlementViewClientSmoke::capture);
                 phase = 903;
@@ -1903,7 +1907,31 @@ public final class SettlementViewClientSmoke {
     private static void hideOverviewMap(SettlementViewScreen screen) {
         screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
                 .filter(button -> button.visible && button.getMessage().getString().equals("Hide map"))
-                .findFirst().ifPresent(Button::onPress);
+                .findFirst().ifPresent(button -> hidePanel(screen, "Hide map"));
+    }
+
+    private static void hidePanel(SettlementViewScreen screen, String label) {
+        var button = literalButton(screen, label);
+        var window = screen.uiWindows().stream().filter(value -> value.widgets().contains(button)).findFirst().orElseThrow();
+        require(window.title(button.getX(), button.getY())
+                        && button.getRight() == window.left() + window.width() - 2,
+                "panel hide controls occupy their own top right corners");
+        var position = window.position();
+        var selected = screen.selectedResidents();
+        screen.mouseClicked(button.getX() + 6, button.getY() + 6, 0);
+        screen.mouseReleased(button.getX() + 6, button.getY() + 6, 0);
+        require(window.widgets().stream().noneMatch(widget -> widget.visible),
+                "the corner hide control hides its panel and controls");
+        require(java.util.Objects.equals(position, window.position()) && screen.selectedResidents().equals(selected),
+                "hiding panels preserves their layout and the world selection");
+    }
+
+    private static void showOverviewMap(SettlementViewScreen screen) {
+        literalButton(screen, "Overlays").onPress();
+        screen.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals("Show map"))
+                .findFirst().orElseThrow().onPress();
+        require(screen.contextPopup() == null && literalButton(screen, "Hide map").visible,
+                "overlays reopen the map and dismiss the menu");
     }
 
     private static void verifyViewInteractions(SettlementViewScreen screen) {
@@ -1953,15 +1981,15 @@ public final class SettlementViewClientSmoke {
         screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
         search.setValue("");
         int expanded = screen.viewportWidth();
-        literalButton(screen, ">").onPress();
+        hidePanel(screen, "Hide settlement");
         require(screen.viewportWidth() == expanded, "hiding a floating sidebar preserves the world viewport");
         capture("browser-collapsed");
         literalButton(screen, "Residents").onPress();
         require(screen.viewportWidth() == expanded && !screen.inspector().visible(), "the resident tool reopens the settlement browser");
-        literalButton(screen, ">").onPress();
-        literalButton(screen, "<").onPress();
+        hidePanel(screen, "Hide settlement");
+        literalButton(screen, "Residents").onPress();
         require(screen.viewportWidth() == expanded, "reopening restores the sidebar viewport");
-        literalButton(screen, "Map").onPress();
+        showOverviewMap(screen);
         screen.savePreferences();
         var restored = SettlementViewPreferences.forSettlement(fixture.town().value());
         require(restored.groups.getFirst().contains(fixture.resident()), "control groups survive preference reload");
@@ -2023,7 +2051,7 @@ public final class SettlementViewClientSmoke {
         form.onClose();
         require(minecraft.screen == screen && minecraft.getCameraEntity() == camera, "canceling bed assignments restores the same view");
         clickWorld(screen, visibleResident(minecraft).getBoundingBox().getCenter());
-        literalButton(screen, "Map").onPress();
+        showOverviewMap(screen);
     }
 
     private static void verifyViewBounds(SettlementViewScreen screen) {
@@ -2306,6 +2334,17 @@ public final class SettlementViewClientSmoke {
         SettlementCareService.onUnloaded(resident);
         SettlementManagementService.open(player, id);
         return new Fixture(id, resident.getUUID(), center);
+    }
+
+    @SubscribeEvent
+    public static void onWorldRendered(net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        if (System.getProperty(OUTPUT) == null || phase != 903
+                || event.getStage() != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        if (!SettlementViewClient.ownsCamera(camera)) return;
+        var heights = (com.jvn.villagerretaliation.mixin.client.CameraAccessor) camera;
+        require(heights.villagerretaliation$getEyeHeight() == 0 && heights.villagerretaliation$getEyeHeightOld() == 0,
+                "every rendered world-view frame clears player eye offsets while opening and returning");
     }
 
     @SubscribeEvent
