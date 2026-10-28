@@ -122,6 +122,7 @@ public final class SettlementPathDraft {
         this.gesture = state();
         this.part = part;
         this.creating = false;
+        if (this.smooth && part == 0) initializeCurve();
     }
     public void drag(Vec3 point, boolean independent) {
         if (!dragging() || this.selected < 0) return;
@@ -168,15 +169,19 @@ public final class SettlementPathDraft {
         if (this.selected < 0) return;
         var node = this.nodes.get(this.selected);
         if (!this.smooth) this.nodes.set(this.selected, new SettlementPath.Node(node.position()));
-        else {
-            var before = this.selected > 0 ? this.nodes.get(this.selected - 1).position()
-                    : this.closed ? this.nodes.getLast().position() : node.position();
-            var after = this.selected + 1 < this.nodes.size() ? this.nodes.get(this.selected + 1).position()
-                    : this.closed ? this.nodes.getFirst().position() : node.position();
-            var tangent = after.subtract(before).multiply(1, 0, 1).normalize().scale(2);
-            if (tangent.lengthSqr() == 0) tangent = new Vec3(2, 0, 0);
-            this.nodes.set(this.selected, new SettlementPath.Node(node.position(), tangent.scale(-1), tangent));
-        }
+        else initializeCurve();
+    }
+    private void initializeCurve() {
+        var node = this.nodes.get(this.selected);
+        if (node.incoming().lengthSqr() > 0 || node.outgoing().lengthSqr() > 0) return;
+        var before = this.selected > 0 ? this.nodes.get(this.selected - 1).position()
+                : this.closed ? this.nodes.getLast().position() : node.position();
+        var after = this.selected + 1 < this.nodes.size() ? this.nodes.get(this.selected + 1).position()
+                : this.closed ? this.nodes.getFirst().position() : node.position();
+        var tangent = after.subtract(before).multiply(1, 0, 1).normalize().scale(2);
+        if (tangent.lengthSqr() == 0) tangent = new Vec3(2, 0, 0);
+        this.nodes.set(this.selected, new SettlementPath.Node(node.position(), tangent.scale(-1), tangent));
+        this.version++;
     }
     public void undo() { if (canUndo()) { this.redo.addLast(state()); restore(this.undo.removeLast()); } }
     public void redo() { if (canRedo()) { this.undo.addLast(state()); restore(this.redo.removeLast()); } }

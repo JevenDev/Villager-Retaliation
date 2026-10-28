@@ -184,7 +184,7 @@ public final class SettlementPathGameTests {
         draft.begin(0, 0);
         draft.drag(base.getCenter(), false);
         draft.finish();
-        helper.assertValueEqual(draft.path().nodes().getFirst(), curved.nodes().getFirst(), "branch anchor cannot be moved off its junction");
+        helper.assertValueEqual(draft.path().nodes().getFirst().position(), curved.nodes().getFirst().position(), "branch anchor cannot be moved off its junction");
         draft.inserting(true);
         draft.place(base.offset(4, 0, 2).getCenter());
         draft.finish();
@@ -293,6 +293,57 @@ public final class SettlementPathGameTests {
         helper.assertFalse(draft.smoothMode(), "the player can return to corners");
         draft.undo();
         helper.assertTrue(draft.smoothMode(), "undo restores the curve choice");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_path")
+    public static void curveModeMakesEverySelectedNodeEditable(GameTestHelper helper) {
+        var draft = new SettlementPathDraft(3, SettlementPath.Style.CLEAN, 42, false);
+        for (var point : List.of(new Vec3(0, 70, 0), new Vec3(6, 70, 0), new Vec3(6, 70, 6))) {
+            draft.place(point);
+            draft.finish();
+        }
+        draft.stopExtending();
+        draft.smooth();
+        var before = draft.path();
+        int version = draft.version();
+        draft.begin(0, 0);
+        helper.assertTrue(draft.path().nodes().getFirst().outgoing().lengthSqr() > 0,
+                "selecting a straight node in curve mode immediately exposes handles");
+        helper.assertTrue(draft.version() > version, "new handles invalidate the terrain preview");
+        draft.cancelDrag();
+        helper.assertValueEqual(draft.path(), before, "cancelling selection restores the original handles");
+        draft.begin(0, 0);
+        draft.finish();
+        var curved = draft.path();
+        draft.undo();
+        helper.assertValueEqual(draft.path(), before, "handle initialization can be undone");
+        helper.assertTrue(draft.smoothMode(), "undoing a node edit keeps curve mode");
+        draft.redo();
+        helper.assertValueEqual(draft.path(), curved, "handle initialization can be redone");
+        draft.begin(0, 1);
+        draft.drag(new Vec3(3, 70, 1), true);
+        draft.finish();
+        var adjusted = draft.path().nodes().getFirst();
+        draft.begin(1, 0);
+        draft.finish();
+        helper.assertTrue(draft.path().nodes().get(1).outgoing().lengthSqr() > 0,
+                "another straight node gets handles without toggling the mode again");
+        draft.begin(0, 0);
+        draft.finish();
+        helper.assertValueEqual(draft.path().nodes().getFirst(), adjusted, "reselecting preserves independently edited handles");
+        draft.smooth();
+        draft.begin(1, 0);
+        draft.finish();
+        helper.assertFalse(draft.smoothMode(), "selecting a curved node keeps the chosen lines mode");
+        draft.begin(0, 0);
+        draft.finish();
+        helper.assertTrue(draft.path().nodes().getFirst().outgoing().lengthSqr() == 0,
+                "lines mode does not initialize curve handles on selection");
+        draft.extend();
+        draft.place(new Vec3(12, 70, 6));
+        draft.finish();
+        helper.assertTrue(draft.path().nodes().getLast().outgoing().lengthSqr() == 0, "lines mode continues with straight nodes");
         helper.succeed();
     }
 

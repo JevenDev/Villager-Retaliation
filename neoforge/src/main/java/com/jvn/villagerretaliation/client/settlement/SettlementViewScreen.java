@@ -1393,7 +1393,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void initPathButtons() {
         this.pathButtons.clear();
-        String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Corners", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
+        String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Lines", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
             this.pathButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> pathAction(action))
@@ -1448,7 +1448,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (i == 2) button.setMessage(Component.literal(path.style() == com.jvn.villagerretaliation.settlement.SettlementPath.Style.CLEAN ? "Clean" : "Natural"));
             if (i == 3) button.active &= draft.canUndo();
             if (i == 4) button.active &= draft.canRedo();
-            if (i == 5) button.setMessage(Component.literal(draft.smoothMode() ? "Curves" : "Corners"));
+            if (i == 5) button.setMessage(Component.literal(draft.smoothMode() ? "Curves" : "Lines"));
             if (i >= 6 && i <= 7) button.active &= draft.selected() >= 0;
             if (i == 6) button.setMessage(Component.literal(draft.inserting() ? "Insert: on" : "Insert"));
             if (i == 7) button.active &= !path.branch() || draft.selected() != 0;
@@ -1465,7 +1465,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(switch (i) {
                 case 0 -> "Decrease path width";
                 case 1 -> "Increase path width";
-                case 5 -> "Choose corners or curves for the selected node and new nodes. This choice is remembered.";
+                case 5 -> "Choose lines or curves. In Curves mode, click any node to edit its handles. This choice is remembered.";
                 case 6 -> "Place the next node after the selected node.";
                 case 8 -> "Apply all previewed path blocks. Placement cannot be undone.";
                 case 10 -> "Review the latest terrain after loading chunks or changing the view.";

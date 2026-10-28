@@ -160,13 +160,34 @@ final class SettlementPathClientChecks {
             click(this.start);
             click(this.start.add(3, 0, 0));
             require(editor.draft().path().nodes().stream().allMatch(node -> node.incoming().lengthSqr() == 0 && node.outgoing().lengthSqr() == 0),
-                    "corner mode creates straight segments");
+                    "lines mode creates straight segments");
+            button("Lines").onPress();
+            click(editor.draft().path().nodes().getFirst().position());
+            require(editor.draft().path().nodes().stream().allMatch(node -> node.outgoing().lengthSqr() > 0),
+                    "curve mode exposes handles on another node without toggling again");
+            var first = editor.draft().path().nodes().getFirst();
+            var handle = project(first.position().add(first.outgoing()));
+            var hit = SettlementPathGizmo.hit(editor.draft(), position -> {
+                var point = project(position);
+                return new double[]{point.x, point.y};
+            }, handle.x, handle.y);
+            require(hit != null && hit.node() == 0 && hit.part() == 1, "selected curve handles can be picked immediately");
+            drag(first.position().add(first.outgoing()), first.position().add(1, 0, -2));
+            var adjusted = editor.draft().path().nodes().getFirst();
+            require(!adjusted.outgoing().equals(first.outgoing()), "newly exposed curve handles respond to dragging");
+            click(editor.draft().path().nodes().getLast().position());
+            click(adjusted.position());
+            require(editor.draft().smoothMode() && editor.draft().path().nodes().getFirst().equals(adjusted),
+                    "switching nodes preserves curve mode and edited handles");
+            button("Curves").onPress();
+            click(editor.draft().path().nodes().getLast().position());
+            require(!editor.draft().smoothMode(), "selecting a curved node preserves lines mode");
             this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-            require(editor.active(), "Escape keeps a corner draft too");
+            require(editor.active(), "Escape keeps a lines draft too");
             button("Cancel").onPress();
             require(!editor.active(), "Cancel clears the draft");
             chooseBuildTool("Path");
-            require(!editor.draft().smoothMode(), "corner mode remains selected for the next path");
+            require(!editor.draft().smoothMode(), "lines mode remains selected for the next path");
             button("Cancel").onPress();
             this.view.focus(this.cameraX, this.cameraZ);
             this.phase++;
