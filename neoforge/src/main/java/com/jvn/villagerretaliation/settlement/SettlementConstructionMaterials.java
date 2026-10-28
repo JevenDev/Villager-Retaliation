@@ -20,6 +20,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * Project-owned materials. A lot has exactly one owner throughout reservation, collection,
@@ -275,7 +276,7 @@ public final class SettlementConstructionMaterials {
                 }
             }
         }
-        if (!debit(ledger, amounts)) return false;
+        if (!debit(level, ledger, amounts)) return false;
         var receipt = new CompoundTag();
         receipt.putLong("Position", position);
         paid.add(receipt);
@@ -285,26 +286,46 @@ public final class SettlementConstructionMaterials {
         return true;
     }
 
-    private static boolean debit(CompoundTag ledger, int[] amounts) {
+    private static boolean debit(ServerLevel level, CompoundTag ledger, int[] amounts) {
         var lots = ledger.getList("Lots", Tag.TAG_COMPOUND);
         var quote = ledger.getList("Quote", Tag.TAG_COMPOUND);
         for (int row = 0; row < amounts.length; row++) {
             int available = 0;
-            for (var raw : lots) { var lot = (CompoundTag) raw; if (lot.getInt("Row") == row) available += lot.getInt("Remaining"); }
+            for (var raw : lots) { var lot = (CompoundTag) raw; if (!lot.getBoolean("Remainder") && lot.getInt("Row") == row) available += lot.getInt("Remaining"); }
             if (amounts[row] < 0 || available < amounts[row]) return false;
         }
+        var remainders = new ListTag();
         for (int row = 0; row < amounts.length; row++) {
             int remaining = amounts[row];
             for (var raw : lots) {
                 var lot = (CompoundTag) raw;
-                if (lot.getInt("Row") != row) continue;
+                if (lot.getBoolean("Remainder") || lot.getInt("Row") != row) continue;
                 int count = Math.min(remaining, lot.getInt("Remaining"));
+                if (count > 0) {
+                    var stack = ItemStack.parseOptional(level.registryAccess(), lot.getCompound("Stack"));
+                    var remainder = stack.is(Items.POWDER_SNOW_BUCKET) ? new ItemStack(Items.BUCKET) : stack.getCraftingRemainingItem();
+                    if (!remainder.isEmpty()) {
+                        int produced = Math.multiplyExact(count, remainder.getCount());
+                        while (produced > 0) {
+                            int batch = Math.min(99, produced);
+                            var returned = lot.copy();
+                            returned.putBoolean("Remainder", true);
+                            returned.putInt("Produced", batch);
+                            returned.putInt("Refunded", 0);
+                            returned.put("Stack", remainder.copyWithCount(batch).save(level.registryAccess()));
+                            returned.putInt("Remaining", batch);
+                            remainders.add(returned);
+                            produced -= batch;
+                        }
+                    }
+                }
                 lot.putInt("Remaining", lot.getInt("Remaining") - count);
                 remaining -= count;
             }
             var line = quote.getCompound(row);
             line.putInt("Spent", line.getInt("Spent") + amounts[row]);
         }
+        lots.addAll(remainders);
         return true;
     }
 
@@ -339,7 +360,7 @@ public final class SettlementConstructionMaterials {
             var quote = ledger.getList("Quote", Tag.TAG_COMPOUND);
             int[] remainder = new int[quote.size()];
             for (int row = 0; row < quote.size(); row++) remainder[row] = quote.getCompound(row).getInt("Count") - quote.getCompound(row).getInt("Spent");
-            if (!debit(ledger, remainder)) throw new IllegalStateException("Construction quote escrow is incomplete");
+            if (!debit(level, ledger, remainder)) throw new IllegalStateException("Construction quote escrow is incomplete");
             ledger.putInt("Units", ledger.getInt("TotalUnits"));
             town.changed();
         }
@@ -391,8 +412,7 @@ public final class SettlementConstructionMaterials {
                 var rest = depot.deposit(stack.copyWithCount(offered));
                 int returned = offered - rest.getCount();
                 remaining -= returned;
-                var line = ledger.getList("Quote", Tag.TAG_COMPOUND).getCompound(lot.getInt("Row"));
-                line.putInt("Refunded", line.getInt("Refunded") + returned);
+                recordRefund(ledger, lot, returned);
                 lot.putInt("Remaining", remaining);
                 town.changed();
                 if (remaining == 0) break;
@@ -404,6 +424,11 @@ public final class SettlementConstructionMaterials {
         }
         if (refundPending(project)) ledger.putString("Blocker", "refund_pending"); else ledger.remove("Blocker");
         town.changed();
+    }
+
+    static void recordRefund(CompoundTag ledger, CompoundTag lot, int count) {
+        var line = lot.getBoolean("Remainder") ? lot : ledger.getList("Quote", Tag.TAG_COMPOUND).getCompound(lot.getInt("Row"));
+        line.putInt("Refunded", line.getInt("Refunded") + count);
     }
 
     public static void validate(CompoundTag ledger) {
@@ -424,7 +449,11 @@ public final class SettlementConstructionMaterials {
                     || !lot.contains("Stack", Tag.TAG_COMPOUND) || lot.getInt("Remaining") < 0
                     || lot.getInt("Remaining") > 99 || lot.getInt("Slot") < 0 || lot.getInt("Slot") >= SettlementDepot.SLOT_COUNT)
                 throw new IllegalArgumentException("Invalid construction escrow lot");
-            remaining[row] = Math.addExact(remaining[row], lot.getInt("Remaining"));
+            if (lot.getBoolean("Remainder")) {
+                if (lot.getInt("Produced") < 1 || lot.getInt("Produced") > 99 || lot.getInt("Refunded") < 0
+                        || lot.getInt("Remaining") + lot.getInt("Refunded") != lot.getInt("Produced"))
+                    throw new IllegalArgumentException("Invalid construction container remainder");
+            } else remaining[row] = Math.addExact(remaining[row], lot.getInt("Remaining"));
         }
         for (int row = 0; row < quote.size(); row++) {
             var line = quote.getCompound(row);

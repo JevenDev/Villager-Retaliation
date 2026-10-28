@@ -398,6 +398,71 @@ public final class SettlementConstructionMaterialsGameTests {
                 plan.rotation(), plan.templateSize(), plan.localMin(), plan.localMax(), plan.blocks(), plan.materials(), plan.price(), plan.clearingBlocks());
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void filledBucketsReturnContainersAfterReloadAndCompletion(GameTestHelper helper) {
+        var blocks = Map.of(BlockPos.ZERO, Blocks.WATER.defaultBlockState(), BlockPos.ZERO.east(), Blocks.LAVA.defaultBlockState(),
+                BlockPos.ZERO.south(), Blocks.POWDER_SNOW.defaultBlockState(), BlockPos.ZERO.east().south(),
+                Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true));
+        SettlementBackgroundConstructionGameTests.fixture(helper, false, blocks, fixture -> {
+            var level = helper.getLevel();
+            var plan = withCost(fixture.plan(), BuilderConstructionCost.EXACT);
+            fixture.depot().setItem(0, new ItemStack(Items.WATER_BUCKET));
+            fixture.depot().setItem(1, new ItemStack(Items.WATER_BUCKET));
+            fixture.depot().setItem(2, new ItemStack(Items.LAVA_BUCKET));
+            fixture.depot().setItem(3, new ItemStack(Items.POWDER_SNOW_BUCKET));
+            fixture.depot().setItem(4, new ItemStack(Items.OAK_SLAB));
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            helper.assertTrue(SettlementConstructionMaterials.reserve(level, fixture.town(), fixture.project(), plan, fixture.builder()), "the exact fluid quote reserves");
+            SettlementConstructionMaterials.collect(fixture.town(), fixture.project(), fixture.builder().getUUID(), fixture.depot().position());
+            for (var block : plan.blocks()) {
+                var group = BuilderWorker.placementGroup(plan, fixture.origin(), block);
+                helper.assertTrue(SettlementConstructionMaterials.spend(level, fixture.town(), fixture.project(), group,
+                        List.of(new SettlementConstructionPlacement.Part(group.materialPart().worldPos(), Blocks.AIR.defaultBlockState(), block.state(), null))), "each fluid placement spends once");
+            }
+            SettlementConstructionMaterials.validate(fixture.project().materialEscrow());
+            var restored = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            var project = restored.projects().get(fixture.project().id());
+            SettlementConstructionMaterials.complete(level, restored, project);
+            SettlementConstructionMaterials.complete(level, restored, project);
+            helper.assertValueEqual(restored.depots().get(fixture.depot().id()).count(stack -> stack.is(Items.BUCKET)), 4, "water, lava, powder snow and waterlogging return exactly four containers");
+            helper.assertFalse(SettlementConstructionMaterials.refundPending(project), "all containers reached storage");
+            SettlementConstructionMaterials.validate(project.materialEscrow());
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void cancelledFluidBuildRetainsContainersWhileStorageIsFull(GameTestHelper helper) {
+        SettlementBackgroundConstructionGameTests.fixture(helper, false, Map.of(BlockPos.ZERO, Blocks.WATER.defaultBlockState(),
+                BlockPos.ZERO.east(), Blocks.WATER.defaultBlockState()), fixture -> {
+            var level = helper.getLevel();
+            var plan = withCost(fixture.plan(), BuilderConstructionCost.EXACT);
+            fixture.depot().setItem(0, new ItemStack(Items.WATER_BUCKET));
+            fixture.depot().setItem(1, new ItemStack(Items.WATER_BUCKET));
+            SettlementTestPlots.planSupplies(level, fixture.town());
+            helper.assertTrue(SettlementConstructionMaterials.reserve(level, fixture.town(), fixture.project(), plan, fixture.builder()), "two water placements reserve");
+            SettlementConstructionMaterials.collect(fixture.town(), fixture.project(), fixture.builder().getUUID(), fixture.depot().position());
+            var block = plan.blocks().getFirst();
+            var group = BuilderWorker.placementGroup(plan, fixture.origin(), block);
+            helper.assertTrue(SettlementConstructionMaterials.spend(level, fixture.town(), fixture.project(), group,
+                    List.of(new SettlementConstructionPlacement.Part(group.materialPart().worldPos(), Blocks.AIR.defaultBlockState(), block.state(), null))), "only the first filled bucket is used");
+            for (int slot = 0; slot < fixture.depot().getContainerSize(); slot++) fixture.depot().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+            fixture.project().finish(SettlementProject.Status.CANCELLED);
+            SettlementConstructionMaterials.refund(level, fixture.town(), fixture.project());
+            helper.assertTrue(SettlementConstructionMaterials.refundPending(fixture.project()), "full storage retains both filled and empty bucket ownership");
+            var restored = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+            var project = restored.projects().get(fixture.project().id());
+            var depot = restored.depots().get(fixture.depot().id());
+            depot.setItem(0, ItemStack.EMPTY);
+            depot.setItem(1, ItemStack.EMPTY);
+            SettlementConstructionMaterials.refund(level, restored, project);
+            SettlementConstructionMaterials.refund(level, restored, project);
+            helper.assertValueEqual(depot.count(stack -> stack.is(Items.WATER_BUCKET)), 1, "the unspent filled bucket returns once");
+            helper.assertValueEqual(depot.count(stack -> stack.is(Items.BUCKET)), 1, "the spent bucket container returns once after reload");
+            helper.assertFalse(SettlementConstructionMaterials.refundPending(project), "both retained lots are delivered");
+            SettlementConstructionMaterials.validate(project.materialEscrow());
+        });
+    }
+
     private static Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks() {
         return Map.of(BlockPos.ZERO, Blocks.OAK_PLANKS.defaultBlockState(), BlockPos.ZERO.east(), Blocks.OAK_PLANKS.defaultBlockState(),
                 BlockPos.ZERO.south(), Blocks.OAK_PLANKS.defaultBlockState(), BlockPos.ZERO.east().south(), Blocks.OAK_PLANKS.defaultBlockState());

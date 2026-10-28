@@ -77,8 +77,7 @@ final class SettlementConstructionTransfers {
                 for (var value : ledger.getList("Lots", Tag.TAG_COMPOUND)) {
                     var lot = (CompoundTag) value;
                     if (!lot.getBoolean("Ordinary") || !operation.getUUID("Id").equals(lot.getUUID("Source"))) continue;
-                    var line = ledger.getList("Quote", Tag.TAG_COMPOUND).getCompound(lot.getInt("Row"));
-                    line.putInt("Refunded", line.getInt("Refunded") + lot.getInt("Remaining"));
+                    SettlementConstructionMaterials.recordRefund(ledger, lot, lot.getInt("Remaining"));
                     lot.putInt("Remaining", 0);
                 }
                 operation.putBoolean("Done", true);
@@ -172,11 +171,10 @@ final class SettlementConstructionTransfers {
                 continue;
             }
             var lot = ledger.getList("Lots", Tag.TAG_COMPOUND).getCompound(operation.getInt("Lot"));
-            var line = ledger.getList("Quote", Tag.TAG_COMPOUND).getCompound(lot.getInt("Row"));
             int count = operation.getInt("Amount");
             if (count > lot.getInt("Remaining")) throw new IllegalStateException("Construction refund exceeds retained escrow");
             lot.putInt("Remaining", lot.getInt("Remaining") - count);
-            line.putInt("Refunded", line.getInt("Refunded") + count);
+            SettlementConstructionMaterials.recordRefund(ledger, lot, count);
             operation.putBoolean("Done", true);
             CHECKPOINTS.remove(operation.getUUID("Id"));
             town.changed();
