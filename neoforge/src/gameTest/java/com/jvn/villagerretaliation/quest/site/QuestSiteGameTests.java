@@ -411,6 +411,8 @@ public final class QuestSiteGameTests {
         var fingerprint = com.jvn.villagerretaliation.campaign.CampaignRewardRecovery.fingerprint(helper.getLevel().getServer(), quest.id());
         helper.assertTrue(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(helper.getLevel().getServer(), quest.id(),
                 "3fb79eb68ab3f0b37a2be37bc1d035ff0e8f5627331d6a9a3bacbb5270781bd8", fingerprint), "pending rewards from the previous definition remain recoverable");
+        helper.assertTrue(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(helper.getLevel().getServer(), quest.id(),
+                "e9050a2400ada4ca44431ac1c0dced3bdd9a0c13460fe22ff3f8f4a0e25d37d9", fingerprint), "pending rewards from the preceding rescue definition remain recoverable");
         helper.assertFalse(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.accepts(helper.getLevel().getServer(), quest.id(),
                 "0".repeat(64), fingerprint), "the migration does not authorize unrelated definitions");
         helper.assertValueEqual(quest.target().site().selection(), QuestSiteDefinition.Selection.PREFER_EXISTING,

@@ -1,0 +1,6 @@
+{
+  "schema": "villagerretaliation:quest_migration/v1",
+  "quest": "villagerretaliation:missing_neighbor",
+  "from_fingerprint": "3fb79eb68ab3f0b37a2be37bc1d035ff0e8f5627331d6a9a3bacbb5270781bd8",
+  "to_fingerprint": "226dd123f76d4d51a357e81bfb5b5cb0a84e3108255db43c4d35318552cb0e08"
+}
