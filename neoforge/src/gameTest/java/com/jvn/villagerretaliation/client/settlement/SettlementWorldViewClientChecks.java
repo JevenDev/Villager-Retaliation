@@ -135,7 +135,7 @@ final class SettlementWorldViewClientChecks {
             UUID player = minecraft.player.getUUID();
             this.homecoming = minecraft.getSingleplayerServer().submit(() -> {
                 minecraft.getSingleplayerServer().getPlayerList().getPlayer(player).teleportTo(
-                        this.center.getX() + 0.5, this.center.getY(), this.center.getZ() + 0.5);
+                        this.center.getX() + 8.25, this.center.getY(), this.center.getZ() + 6.75);
             });
             minecraft.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
             this.ticks = 0;
@@ -162,6 +162,7 @@ final class SettlementWorldViewClientChecks {
             if (++this.ticks < 25) return false;
             this.openingPosition = minecraft.gameRenderer.getMainCamera().getPosition();
             this.playerPosition = minecraft.player.position();
+            require(this.playerPosition.distanceTo(this.center.getBottomCenter()) > 8, "the shortcut is tested away from the village center");
             net.minecraft.client.KeyMapping.click(SettlementViewKeyMappings.OPEN.getKey());
             this.ticks = 0;
             this.phase = 10;
@@ -172,6 +173,8 @@ final class SettlementWorldViewClientChecks {
                 return false;
             }
             require(opened.parent().snapshot().header().id().equals(this.town.value()), "the shortcut opens the occupied village");
+            require(Math.abs(opened.focusX() - this.playerPosition.x) < 0.01
+                    && Math.abs(opened.focusZ() - this.playerPosition.z) < 0.01, "the shortcut centers the view on the player's exact position");
             require(SettlementViewClient.transitioning() == (this.openingCase != 3), "the config controls opening animation");
             if (this.openingCase != 3) {
                 require(minecraft.getCameraEntity().position().distanceTo(this.openingPosition) < 1,
@@ -186,6 +189,8 @@ final class SettlementWorldViewClientChecks {
             } else {
                 if (++this.ticks < 30 || SettlementViewClient.transitioning()) return false;
                 require(minecraft.player.position().distanceTo(this.playerPosition) < 0.01, "the transition leaves the player body in place");
+                require(Math.abs(opened.focusX() - this.playerPosition.x) < 0.01
+                        && Math.abs(opened.focusZ() - this.playerPosition.z) < 0.01, "the completed transition stays centered on the player");
                 this.capture.accept("world-view-shortcut-" + this.openingCase);
                 opened.onClose();
             }

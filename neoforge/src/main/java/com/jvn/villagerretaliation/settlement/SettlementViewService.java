@@ -51,7 +51,7 @@ public final class SettlementViewService {
                 return;
             }
             PacketDistributor.sendToPlayer(player, new com.jvn.villagerretaliation.network.SettlementViewOpenResultPayload(request.requestId(), snapshot));
-            open(player, town.id(), request.requestId());
+            open(player, town, request.requestId(), player.getX(), player.getZ());
         });
     }
 
@@ -62,17 +62,17 @@ public final class SettlementViewService {
     }
 
     public static boolean open(ServerPlayer player, VillageAllegianceId townId) {
-        return open(player, townId, 0);
+        SettlementRecord town = SettlementSavedData.get(player.serverLevel()).get(townId).orElse(null);
+        return town != null && open(player, town, 0, town.center().getX() + 0.5D, town.center().getZ() + 0.5D);
     }
 
-    private static boolean open(ServerPlayer player, VillageAllegianceId townId, int requestId) {
-        SettlementRecord town = SettlementSavedData.get(player.serverLevel()).get(townId).orElse(null);
-        if (town == null || !eligible(player, town)) {
+    private static boolean open(ServerPlayer player, SettlementRecord town, int requestId, double x, double z) {
+        if (!eligible(player, town)) {
             return false;
         }
         close(player.getUUID(), true);
-        var session = new Session(player, town, SettlementViewWindow.around(player.serverLevel(), town, town.center().getX() + 0.5D,
-                town.center().getZ() + 0.5D, 32.0F), player.serverLevel().getGameTime());
+        var session = new Session(player, town, SettlementViewWindow.around(player.serverLevel(), town, x, z, 32.0F),
+                player.serverLevel().getGameTime());
         session.requestId = requestId;
         SESSIONS.put(player.getUUID(), session);
         sendState(session, true);
