@@ -136,6 +136,7 @@ public final class MapRepository implements AutoCloseable {
         // keep each observed anchor independent of terrain eviction and LOD load order
         for (var marker : surface.markers()) if (surface.permits(marker)) markers.putIfAbsent(marker.id(), marker);
     }
+    public List<MapSnapshot.Marker> knownMarkers() { return List.copyOf(markers.values()); }
     public boolean hasMarker(String id) { return markers.containsKey(id); }
     public List<MapSnapshot.Marker> resolveMarkers(Collection<MapSnapshot.Marker> visible) {
         var result = new LinkedHashMap<String, MapSnapshot.Marker>();

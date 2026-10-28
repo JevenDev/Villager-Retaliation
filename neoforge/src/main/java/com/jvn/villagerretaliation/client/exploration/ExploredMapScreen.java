@@ -13,7 +13,9 @@ public final class ExploredMapScreen extends Screen {
     private static final ExploredMapRenderer TILES = new ExploredMapRenderer();
     private final Screen parent;
     private final MapLocationMenus locations = new MapLocationMenus(this);
-    private final VillageRelationsMap relations = new VillageRelationsMap(this);
+    private final VillageRelationsMap relations = ExploredMapClient.relations();
+    private final MapLayers layers = new MapLayers(false);
+    private String selectedMarker = "";
     private final MapNavigation navigation = new MapNavigation();
     private final MapScreenTransition transition = new MapScreenTransition();
     private boolean centered;
@@ -31,7 +33,7 @@ public final class ExploredMapScreen extends Screen {
             minecraft.setScreen(parent);
             return;
         }
-        relations.tick();
+        relations.tick(layers);
     }
     @Override public void onClose() {
         if (transition.close(VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.get())) {
@@ -47,6 +49,7 @@ public final class ExploredMapScreen extends Screen {
     }
     @Override protected void init() {
         locations.close();
+        relations.closePopup();
         MapLocationsClient.refresh();
         transition.open();
         navigation.resize(width, height);
@@ -58,6 +61,8 @@ public final class ExploredMapScreen extends Screen {
         addRenderableWidget(Button.builder(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("villages"),
                 b -> minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen(this, null, null, null)))
                 .bounds(width - 90, 8, 80, 20).build());
+        addRenderableWidget(Button.builder(MapLayers.text("layers"), b -> minecraft.setScreen(new MapLayersScreen(this)))
+                .bounds(width - 76, 34, 66, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(width - 76, height - 26, 66, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("map.villagerretaliation.center"), b -> center()).bounds(10, height - 26, 80, 20).build());
         addRenderableWidget(Button.builder(Component.literal("\u2212"), b -> zoomAt(width / 2.0, height / 2.0, view().scale() / 1.25)).bounds(96, height - 26, 24, 20).build());
@@ -82,18 +87,11 @@ public final class ExploredMapScreen extends Screen {
             var view = view();
             TILES.render(graphics, view, lighting);
             graphics.enableScissor(0, 0, width, height);
-            relations.renderTerrain(graphics, view);
-            for (var marker : TILES.markers()) {
-                if (relations.contains(marker.id())) continue;
-                int x = (int)view.screenX(marker.x()), y = (int)view.screenY(marker.z());
-                if (x < -16 || x > width + 16 || y < -16 || y > height + 16) continue;
-                MapVillageIcon.render(graphics, x, y);
-                graphics.drawCenteredString(font, marker.name().isBlank() ? Component.translatable("map.villagerretaliation.village")
-                        : Component.literal(marker.name()), x, y + 10, 0xffe8c0);
-            }
-            relations.render(graphics, view, font);
-            QuestMapOverlay.render(graphics, view, font);
-            MapLocationsClient.render(graphics, view, font, true);
+            relations.renderTerrain(graphics, view, layers);
+            relations.render(graphics, view, font, layers, false);
+            for (var destination : MapMarkerOverlay.visible(destinations(), layers))
+                if (destination.kind() == MapDestination.Kind.QUEST) QuestMapOverlay.renderArea(graphics, view, destination);
+            MapMarkerOverlay.render(graphics, view, font, markerGroups(), layers, selectedMarker, mouseX, mouseY, false);
             if (minecraft.player != null) MapPlayerIcon.render(graphics, (float)view.screenX(minecraft.player.getX()),
                     (float)view.screenY(minecraft.player.getZ()), minecraft.player.getViewYRot(partial));
             graphics.disableScissor(); renderedFrames++;
@@ -117,6 +115,19 @@ public final class ExploredMapScreen extends Screen {
     float transitionPitch(float pitch) { return transition.pitch(pitch, VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.get()); }
     private void finishOpening() { transition.finishOpening(); }
     MapView view() { return navigation.view(); }
+    java.util.List<MapDestination> destinations() {
+        var repository = ExploredMapClient.repository();
+        return MapMarkerOverlay.destinations(repository == null ? java.util.List.of() : repository.knownMarkers(), relations.destinations(layers));
+    }
+    java.util.List<MapMarkerLayout.Group> markerGroups() {
+        return MapMarkerLayout.groups(MapMarkerOverlay.visible(destinations(), layers), view(), selectedMarker);
+    }
+    MapMarkerLayout.Group markerAt(double x, double y) { return MapMarkerOverlay.at(markerGroups(), x, y); }
+    void selectMarker(MapDestination destination) { selectedMarker = destination.key(); }
+    void focusDestination(MapDestination destination) {
+        navigation.focus(destination.x(), destination.z()); centered = true; selectMarker(destination);
+    }
+    boolean openVillage(MapDestination destination, double x, double y, int button) { return relations.click(this, destination, x, y, button); }
     private void zoomAt(double x, double y, double target) {
         finishOpening();
         navigation.zoomAt(x, y, target);
@@ -132,9 +143,10 @@ public final class ExploredMapScreen extends Screen {
         if (transition.closing()) return true;
         finishOpening();
         if (locations.clickOpen(x, y, button)) return true;
-        if (!relations.hasPopup() && locations.clickMarker(x, y, button)) return true;
-        if (relations.click(font, view(), TILES.markers(), x, y, button)) return true;
+        if (relations.clickOpen(x, y, button)) return true;
         if (super.mouseClicked(x, y, button)) return true;
+        if (locations.clickMarker(x, y, button)) return true;
+        if (relations.clickCourier(view(), layers, x, y, button)) return true;
         if (locations.place(x, y, button)) return true;
         if (button == 0) { navigation.beginDrag(); return true; } return false;
     }
@@ -164,5 +176,5 @@ public final class ExploredMapScreen extends Screen {
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
         if (navigation.release(key)) return true; return super.keyReleased(key, scan, modifiers);
     }
-    @Override public void removed() { navigation.clear(); transition.suspend(); }
+    @Override public void removed() { navigation.clear(); transition.suspend(); relations.closePopup(); }
 }

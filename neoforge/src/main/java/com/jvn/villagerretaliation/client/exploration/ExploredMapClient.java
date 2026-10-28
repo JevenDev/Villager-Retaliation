@@ -25,6 +25,10 @@ public final class ExploredMapClient {
     public static final KeyMapping OPEN = new KeyMapping("key.villagerretaliation.explored_map", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_M, "key.categories.villagerretaliation");
     private static MapRepository repository, retiring;
+    private static final VillageRelationsMap RELATIONS = new VillageRelationsMap();
+    static VillageRelationsMap relations() { return RELATIONS; }
+    public static void acceptRelations(com.jvn.villagerretaliation.network.VillageRelationsPayload payload) { RELATIONS.accept(payload); }
+    public static void acceptCouriers(com.jvn.villagerretaliation.network.SettlementCourierMapPayload payload) { RELATIONS.acceptCouriers(payload); }
     private static final MapTileCache TILES = new MapTileCache();
     private static MapObservationPayload observation;
     private static String scope;
@@ -52,12 +56,15 @@ public final class ExploredMapClient {
     private static void reset() {
         if (repository != null) { repository.close(); retiring = repository; repository = null; }
         scope = null; level = null; CAPTURE.clear(); TILES.close(); ExploredMapMinimap.reset(); ExploredMapScreen.resetTiles();
-        captureChunks = List.of(); captureDistance = 0; captureCursor = 0;
+        captureChunks = List.of(); captureDistance = 0; captureCursor = 0; RELATIONS.clear();
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
         if (level != null && level != mc.level) { reset(); observation = null; }
+        if (mc.screen == null) {
+            if (com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.get()) RELATIONS.tick(new MapLayers(true));
+        }
         while (OPEN.consumeClick()) if (mc.screen == null) {
             var conflict = Arrays.stream(mc.options.keyMappings).filter(k -> k != OPEN && !k.isUnbound() && k.same(OPEN)).findFirst();
             if (conflict.isPresent()) {

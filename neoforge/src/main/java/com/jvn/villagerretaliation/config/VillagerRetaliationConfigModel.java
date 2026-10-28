@@ -792,6 +792,12 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean showExploredMapMinimap = false;
 
+        @ExcludeFromScreen
+        public int fullMapLayers = 7;
+
+        @ExcludeFromScreen
+        public int minimapLayers = 6;
+
         @RangeConstraint(min = 80, max = 320)
         public int exploredMapMinimapSize = 160;
 

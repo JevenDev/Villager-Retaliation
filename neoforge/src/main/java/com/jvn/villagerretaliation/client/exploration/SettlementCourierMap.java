@@ -29,7 +29,7 @@ public final class SettlementCourierMap {
     private long epoch, after, nextRequest;
     public static void receive(SettlementCourierMapPayload payload) {
         var minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof ExploredMapScreen map && minecraft.player != null && minecraft.level != null) map.acceptCouriers(payload);
+        if (minecraft.player != null && minecraft.level != null) ExploredMapClient.acceptCouriers(payload);
     }
     void configure(boolean enabled, UUID perspective, UUID village) {
         var level = Minecraft.getInstance().level;
@@ -76,7 +76,7 @@ public final class SettlementCourierMap {
             graphics.fill((int) Math.floor(x), (int) Math.floor(y), (int) Math.ceil(x + view.scale()), (int) Math.ceil(y + view.scale()), 0xff000000 | cell.color());
         }
     }
-    void render(GuiGraphics graphics, MapView view, Font font) {
+    void render(GuiGraphics graphics, MapView view, Font font, boolean minimap) {
         if (!enabled) return;
         for (int index = 1; index < route.size(); index++) {
             var first = route.get(index - 1); var second = route.get(index);
@@ -91,7 +91,7 @@ public final class SettlementCourierMap {
             if (courier.id().equals(selected)) graphics.drawCenteredString(font, "[ ]", x, y - 14, color);
         }
         var selectedCourier = couriers.get(selected);
-        if (selectedCourier != null) {
+        if (selectedCourier != null && !minimap) {
             var label = text(selectedCourier.observed() ? "observed" : "estimated").copy().append(": ")
                     .append(text("stage." + selectedCourier.stage().name().toLowerCase(java.util.Locale.ROOT)));
             if (!selectedCourier.name().isEmpty()) label.append(" / ").append(selectedCourier.name());

@@ -27,8 +27,12 @@ public final class ExploredMapMinimap {
         graphics.enableScissor(left, top, left + width, top + height);
         graphics.pose().pushPose(); graphics.pose().translate(left, top, 0);
         TILES.render(graphics, view, lighting);
-        for (var marker : TILES.markers()) MapVillageIcon.render(graphics, (int)view.screenX(marker.x()), (int)view.screenY(marker.z()));
-        MapLocationsClient.render(graphics, view, mc.font, false);
+        var layers = new MapLayers(true);
+        var relations = ExploredMapClient.relations();
+        relations.renderTerrain(graphics, view, layers);
+        relations.render(graphics, view, mc.font, layers, true);
+        var destinations = MapMarkerOverlay.visible(MapMarkerOverlay.destinations(TILES.markers(), relations.destinations(layers)), layers);
+        MapMarkerOverlay.render(graphics, view, mc.font, MapMarkerLayout.groups(destinations, view, ""), layers, "", -1, -1, true);
         MapPlayerIcon.render(graphics, width / 2f, height / 2f, mc.player.getViewYRot(event.getPartialTick().getGameTimeDeltaPartialTick(false)));
         graphics.pose().popPose(); graphics.disableScissor();
     }

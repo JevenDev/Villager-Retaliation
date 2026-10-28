@@ -13,6 +13,6 @@ public final class VillageRelationsClient {
         var minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null || !minecraft.player.isAlive()) return;
         if (minecraft.screen instanceof VillageRelationsScreen screen) screen.accept(payload);
-        else if (minecraft.screen instanceof com.jvn.villagerretaliation.client.exploration.ExploredMapScreen map) map.acceptRelations(payload);
+        com.jvn.villagerretaliation.client.exploration.ExploredMapClient.acceptRelations(payload);
     }
 }

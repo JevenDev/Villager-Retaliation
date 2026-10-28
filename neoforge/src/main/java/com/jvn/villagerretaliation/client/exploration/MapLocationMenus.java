@@ -29,9 +29,13 @@ final class MapLocationMenus {
     void render(GuiGraphics graphics, Font font, int x, int y, float partial) {
         if (menu != null) menu.render(graphics, font, x, y, partial);
         else if (x >= 0 && y >= 34 && y < screen.height - 32) {
-            var location = MapLocationsClient.at(screen.view(), x, y);
-            if (location != null) graphics.renderComponentTooltip(font, List.of(Component.literal(location.name()),
-                    text("coordinates", location.x(), location.z()), text("edit_hint")), x, y);
+            var group = screen.markerAt(x, y);
+            if (group != null) {
+                var destination = group.members().getFirst();
+                graphics.renderComponentTooltip(font, group.members().size() > 1
+                        ? List.of(MapLayers.text("cluster", group.members().size()), MapLayers.text("cluster_hint"))
+                        : List.of(Component.literal(destination.name()), text("coordinates", (int) destination.x(), (int) destination.z())), x, y);
+            }
         }
     }
 
@@ -57,11 +61,27 @@ final class MapLocationMenus {
 
     boolean clickMarker(double x, double y, int button) {
         if (button != 0 && button != 1 || y < 34 || y >= screen.height - 32) return false;
-        var location = MapLocationsClient.at(screen.view(), x, y);
-        if (location == null) return false;
+        var group = screen.markerAt(x, y);
+        if (group == null) return false;
         anchorX = (int) x; anchorY = (int) y;
-        selected(location);
+        if (group.members().size() > 1) {
+            show(List.of(MapLayers.text("cluster", group.members().size())), group.members().stream().map(destination ->
+                    new Action(Component.literal(destination.name()), true, () -> open(destination))).toList());
+        } else open(group.members().getFirst());
         return true;
+    }
+
+    private void open(MapDestination destination) {
+        screen.selectMarker(destination);
+        if (destination.kind() == MapDestination.Kind.LOCATION) {
+            MapLocationsClient.all().stream().filter(location -> location.id().toString().equals(destination.id())).findFirst().ifPresent(this::selected);
+        } else if (destination.kind() == MapDestination.Kind.VILLAGE) {
+            close(); screen.openVillage(destination, anchorX, anchorY, 1);
+        } else {
+            show(List.of(Component.literal(destination.name())), List.of(new Action(text("focus"), true, () -> {
+                close(); screen.focusDestination(destination);
+            })));
+        }
     }
 
     boolean place(double x, double y, int button) {
