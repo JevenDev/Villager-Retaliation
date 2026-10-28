@@ -43,6 +43,7 @@ final class MapMarkerOverlay {
 
     static void render(GuiGraphics graphics, MapView view, Font font, List<MapMarkerLayout.Group> groups,
                        MapLayers layers, String selected, double mouseX, double mouseY, boolean minimap) {
+        if (!minimap) graphics.enableScissor(0, 64, view.width(), Math.max(64, view.height() - 64));
         for (var group : groups) {
             int x = group.x(), y = group.y();
             if (group.members().size() > 1) {
@@ -64,13 +65,23 @@ final class MapMarkerOverlay {
             if (destination.key().equals(selected)) graphics.renderOutline(x - 10, y - 10, 21, 21, 0xffffe8a3);
         }
         if (minimap && !layers.visible(MapLayers.Layer.VILLAGE_NAMES)) return;
-        var reserved = minimap ? List.<MapMarkerLayout.Box>of() : List.of(new MapMarkerLayout.Box(0, 0, view.width(), 40),
-                new MapMarkerLayout.Box(0, view.height() - 64, view.width(), view.height()));
+        var reserved = new java.util.ArrayList<MapMarkerLayout.Box>();
+        if (!minimap) {
+            reserved.add(new MapMarkerLayout.Box(0, 0, view.width(), 64));
+            reserved.add(new MapMarkerLayout.Box(view.width() - 32, 64, view.width() - 12, 94));
+            reserved.add(new MapMarkerLayout.Box(0, view.height() - 64, view.width(), view.height()));
+        }
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            int x = (int) view.screenX(player.getX()), y = (int) view.screenY(player.getZ());
+            reserved.add(new MapMarkerLayout.Box(x - 9, y - 9, x + 10, y + 10));
+        }
         for (var label : MapMarkerLayout.labels(groups, view, selected, mouseX, mouseY,
                 layers.visible(MapLayers.Layer.VILLAGE_NAMES), font::width, font.lineHeight, reserved)) {
             graphics.fill(label.x() - 2, label.y() - 1, label.x() + label.width() + 2, label.y() + font.lineHeight + 1, 0x99000000);
             graphics.drawString(font, label.destination().label(), label.x(), label.y(), label.destination().color());
         }
+        if (!minimap) graphics.disableScissor();
     }
 
     static MapMarkerLayout.Group at(List<MapMarkerLayout.Group> groups, double x, double y) {

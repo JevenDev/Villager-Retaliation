@@ -151,6 +151,8 @@ public class QuestJournalScreen extends Screen {
     private long lastScrollRenderMillis;
     private int detailsSelectedOption = Integer.MIN_VALUE;
     private int detailsPage;
+    private Screen parent;
+    private String initialQuestId = "";
     private String selectedQuestId = "";
     private String searchQuery = "";
     private boolean searchActive;
@@ -187,6 +189,12 @@ public class QuestJournalScreen extends Screen {
 
     public QuestJournalScreen(QuestJournalSource source) {
         this(source.dataSource());
+    }
+
+    public QuestJournalScreen(QuestJournalSource source, Screen parent, String questId) {
+        this(source);
+        this.parent = parent;
+        this.initialQuestId = questId;
     }
 
     public QuestJournalScreen(QuestJournalDataSource source) {
@@ -237,6 +245,10 @@ public class QuestJournalScreen extends Screen {
         this.lastScrollRenderMillis = Util.getMillis();
         this.detailsSelectedOption = this.state.selectedOption();
         rememberSelectedQuestId();
+        if (!this.initialQuestId.isEmpty()) {
+            openQuestPage(this.initialQuestId);
+            this.initialQuestId = "";
+        }
         this.closingWithAnimation = false;
         this.animationStartMillis = Util.getMillis();
         if (!this.openedSoundPlayed) {
@@ -252,7 +264,7 @@ public class QuestJournalScreen extends Screen {
         }
         if (this.closingWithAnimation) {
             if (animationElapsedMillis() >= JOURNAL_ANIMATION_DURATION_MILLIS) {
-                Minecraft.getInstance().setScreen(null);
+                Minecraft.getInstance().setScreen(this.parent);
             }
             return;
         }
@@ -265,7 +277,7 @@ public class QuestJournalScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (entries().isEmpty()) {
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().setScreen(this.parent);
             return;
         }
         clampSelectedOption();

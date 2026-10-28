@@ -16,6 +16,7 @@ public final class VillagerRetaliationClientPreferences {
     private static final String CONFIRM_QUEST_ABANDONMENT = "confirmQuestAbandonment";
     private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve("villagerretaliation-client.properties");
 
+    private static final java.util.Set<String> mapFavorites = new java.util.LinkedHashSet<>();
     private static boolean loaded;
     private static boolean showVillagerNameTags = true;
     private static boolean confirmQuestAbandonment = true;
@@ -48,6 +49,14 @@ public final class VillagerRetaliationClientPreferences {
         }
     }
 
+    public static boolean mapFavorite(String key) { ensureLoaded(); return mapFavorites.contains(key); }
+
+    public static void toggleMapFavorite(String key) {
+        ensureLoaded();
+        if (!mapFavorites.remove(key)) mapFavorites.add(key);
+        save();
+    }
+
     private static void ensureLoaded() {
         if (loaded) {
             return;
@@ -61,6 +70,8 @@ public final class VillagerRetaliationClientPreferences {
         Properties properties = new Properties();
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             properties.load(reader);
+            properties.stringPropertyNames().stream().filter(key -> key.startsWith("mapFavorite.") && Boolean.parseBoolean(properties.getProperty(key)))
+                    .map(key -> key.substring("mapFavorite.".length())).forEach(mapFavorites::add);
             showVillagerNameTags = Boolean.parseBoolean(properties.getProperty(SHOW_VILLAGER_NAME_TAGS, "true"));
             confirmQuestAbandonment = Boolean.parseBoolean(
                     properties.getProperty(CONFIRM_QUEST_ABANDONMENT, "true"));
@@ -71,6 +82,7 @@ public final class VillagerRetaliationClientPreferences {
 
     private static void save() {
         Properties properties = new Properties();
+        mapFavorites.forEach(key -> properties.setProperty("mapFavorite." + key, "true"));
         properties.setProperty(SHOW_VILLAGER_NAME_TAGS, Boolean.toString(showVillagerNameTags));
         properties.setProperty(CONFIRM_QUEST_ABANDONMENT, Boolean.toString(confirmQuestAbandonment));
         try {

@@ -11,10 +11,17 @@ public final class VillageMapPopup {
 
     public VillageMapPopup(Font font, int width, int height, UUID village, String name, double x, double y,
                            Runnable relations, Runnable select) {
+        this(font, width, height, village, name, x, y, relations, select, List.of(Component.literal(name)), List.of());
+    }
+
+    public VillageMapPopup(Font font, int width, int height, UUID village, String name, double x, double y,
+                           Runnable relations, Runnable select, List<Component> details, List<WorldViewMenu.Action> extraActions) {
         popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.NAVIGATION, village), x, y);
-        popup.update(font, width, height, List.of(Component.literal(name)), List.of(
+        var actions = new java.util.ArrayList<>(List.of(
                 new SettlementViewPopup.Action(VillageRelationsScreen.text("title"), true, relations),
                 new SettlementViewPopup.Action(VillageRelationsScreen.text("map_perspective"), true, select)));
+        extraActions.forEach(action -> actions.add(new SettlementViewPopup.Action(action.label(), action.enabled(), action.run(), null, action.icon())));
+        popup.update(font, width, height, details, actions);
     }
 
     public void render(GuiGraphics graphics, Font font, int x, int y, float partial) { popup.hover(x, y); popup.render(graphics, font, x, y, partial); }

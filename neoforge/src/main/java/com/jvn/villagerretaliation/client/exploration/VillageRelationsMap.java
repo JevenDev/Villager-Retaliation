@@ -42,8 +42,9 @@ final class VillageRelationsMap {
     void renderTerrain(GuiGraphics graphics, MapView view, MapLayers layers) {
         if (layers.visible(MapLayers.Layer.COURIERS)) couriers.renderTerrain(graphics, view);
     }
-    void tick(MapLayers layers) {
-        boolean active = layers.visible(MapLayers.Layer.RELATIONS) || layers.visible(MapLayers.Layer.COURIERS);
+    void tick(MapLayers layers) { tick(layers, false); }
+    void tick(MapLayers layers, boolean searching) {
+        boolean active = searching || layers.visible(MapLayers.Layer.RELATIONS) || layers.visible(MapLayers.Layer.COURIERS);
         if (active && !enabled) refresh();
         enabled = active;
         couriers.configure(layers.visible(MapLayers.Layer.COURIERS), perspective, origin != null ? origin.id() : selected != null ? selected : perspective);
@@ -67,11 +68,11 @@ final class VillageRelationsMap {
     }
 
     List<MapDestination> destinations(MapLayers layers) {
-        if (!layers.visible(MapLayers.Layer.RELATIONS)) return List.of();
+        boolean relations = layers.visible(MapLayers.Layer.RELATIONS);
         return entries.values().stream().map(entry -> new MapDestination(MapDestination.Kind.VILLAGE, entry.id().toString(),
                 entry.dimension(), entry.position().getX(), entry.position().getZ(), entry.name(), entry.name()
-                + (entry.relationKnown() ? " (" + (entry.standing() > 0 ? "+" : "") + entry.standing() + ")" : ""),
-                null, true, entry.relationKnown() ? color(entry.standing()) : 0xffffe8c0, 0)).toList();
+                + (relations && entry.relationKnown() ? " (" + (entry.standing() > 0 ? "+" : "") + entry.standing() + ")" : ""),
+                null, true, relations && entry.relationKnown() ? color(entry.standing()) : 0xffffe8c0, 0)).toList();
     }
 
     void render(GuiGraphics graphics, MapView view, Font font, MapLayers layers, boolean minimap) {
@@ -109,7 +110,13 @@ final class VillageRelationsMap {
         if (button == 0 && new MapLayers(false).visible(MapLayers.Layer.RELATIONS)) { selected = village; refresh(); return true; }
         popup = new VillageMapPopup(Minecraft.getInstance().font, screen.width, screen.height, village, destination.name(), x, y,
                 () -> { popup = null; Minecraft.getInstance().setScreen(new VillageRelationsScreen(screen, perspective, village, null)); },
-                () -> { popup = null; focus(perspective, village); });
+                () -> { popup = null; focus(perspective, village); }, MapLocationMenus.details(destination), List.of(
+                new com.jvn.villagerretaliation.client.settlement.WorldViewMenu.Action(
+                        MapLayers.text(MapDestinationTracker.tracking(destination) ? "stop_tracking" : "track_destination"), true,
+                        () -> { MapDestinationTracker.toggle(destination); popup = null; }),
+                new com.jvn.villagerretaliation.client.settlement.WorldViewMenu.Action(
+                        MapLayers.text(MapDestinationTracker.favorite(destination) ? "unfavorite" : "favorite"), true,
+                        () -> { MapDestinationTracker.toggleFavorite(destination); popup = null; })));
         Minecraft.getInstance().getNarrator().sayNow(popup.narration());
         return true;
     }

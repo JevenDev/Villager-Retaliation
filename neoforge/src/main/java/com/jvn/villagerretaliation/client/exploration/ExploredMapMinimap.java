@@ -32,8 +32,10 @@ public final class ExploredMapMinimap {
         relations.renderTerrain(graphics, view, layers);
         relations.render(graphics, view, mc.font, layers, true);
         var destinations = MapMarkerOverlay.visible(MapMarkerOverlay.destinations(TILES.markers(), relations.destinations(layers)), layers);
-        MapMarkerOverlay.render(graphics, view, mc.font, MapMarkerLayout.groups(destinations, view, ""), layers, "", -1, -1, true);
+        MapMarkerOverlay.render(graphics, view, mc.font, MapMarkerLayout.groups(destinations, view, MapDestinationTracker.key()), layers, MapDestinationTracker.key(), -1, -1, true);
         MapPlayerIcon.render(graphics, width / 2f, height / 2f, mc.player.getViewYRot(event.getPartialTick().getGameTimeDeltaPartialTick(false)));
+        MapDestinationTracker.render(graphics, view, mc.font, true);
+        MapOrientation.render(graphics, view, mc.font, -1, -1, true);
         graphics.pose().popPose(); graphics.disableScissor();
     }
     static int width() {

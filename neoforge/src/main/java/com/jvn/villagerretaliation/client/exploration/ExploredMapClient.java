@@ -32,6 +32,8 @@ public final class ExploredMapClient {
     private static final MapTileCache TILES = new MapTileCache();
     private static MapObservationPayload observation;
     private static String scope;
+    private static java.util.UUID world;
+    static String worldKey() { return world + "/" + (Minecraft.getInstance().player == null ? "" : Minecraft.getInstance().player.getUUID()); }
     private static Object level;
     private static final MapCaptureQueue CAPTURE = new MapCaptureQueue();
     private static final Map<net.minecraft.world.level.block.state.BlockState, String> STATE_NAMES = new IdentityHashMap<>();
@@ -47,12 +49,15 @@ public final class ExploredMapClient {
     static MapTileCache tiles() { return TILES; }
     public static void accept(MapObservationPayload payload) {
         var mc = Minecraft.getInstance();
-        if (mc.level != null && mc.player != null && mc.level.dimension().location().equals(payload.dimension())) observation = payload;
+        if (mc.level != null && mc.player != null && mc.level.dimension().location().equals(payload.dimension())) {
+            if (world != null && !world.equals(payload.world())) MapDestinationTracker.clear();
+            world = payload.world(); observation = payload;
+        }
     }
     @SubscribeEvent public static void camera(ViewportEvent.ComputeCameraAngles event) {
         if (Minecraft.getInstance().screen instanceof ExploredMapScreen map) event.setPitch(map.transitionPitch(event.getPitch()));
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { reset(); observation = null; }
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { reset(); observation = null; world = null; MapDestinationTracker.clear(); }
     private static void reset() {
         if (repository != null) { repository.close(); retiring = repository; repository = null; }
         scope = null; level = null; CAPTURE.clear(); TILES.close(); ExploredMapMinimap.reset(); ExploredMapScreen.resetTiles();
@@ -61,6 +66,7 @@ public final class ExploredMapClient {
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
+        MapDestinationTracker.refresh();
         if (level != null && level != mc.level) { reset(); observation = null; }
         if (mc.screen == null) {
             if (com.jvn.villagerretaliation.config.VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.get()) RELATIONS.tick(new MapLayers(true));

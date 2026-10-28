@@ -244,9 +244,14 @@ public final class ExploredMapClientSmoke {
                     net.minecraft.world.level.material.MapColor.Brightness.NORMAL) & 0xffffff), "grass pixels match Minecraft's map palette");
             require((unknown & 255) == (unknown >> 8 & 255) && (unknown >> 8 & 255) == (unknown >> 16 & 255), "unknown terrain contains only neutral white cloud layers");
             int white = 0, middle = 0, back = 0, background = 0;
+            int tooltipWidth = (Minecraft.getInstance().font.width(MapLocationsClient.text("coordinates", 4, 4)) + 24) * image.getWidth() / view.width();
             for (int y = 90; y < image.getHeight() - 100; y += 3) for (int x = 20; x < image.getWidth() - 20; x += 3) {
-                boolean markerOverlay = Math.abs(x - image.getWidth() / 2) < 120 && Math.abs(y - image.getHeight() / 2) < 100;
-                if (markerOverlay) continue;
+                boolean markerOverlay = x > image.getWidth() / 2 - 120 && x < image.getWidth() / 2 + Math.max(120, tooltipWidth)
+                        && Math.abs(y - image.getHeight() / 2) < 100;
+                double screenX = (double) x * view.width() / image.getWidth();
+                double screenY = (double) y * view.height() / image.getHeight();
+                boolean controls = screenY < 64 || screenY >= view.height() - 64 || screenX >= view.width() - 32 && screenY < 94;
+                if (markerOverlay || controls) continue;
                 double wx = view.worldX((double)x * view.width() / image.getWidth());
                 double wz = view.worldZ((double)y * view.height() / image.getHeight());
                 if (!(wx > 140 || wz > 140 || wx > 55 && wz > 55)) continue;

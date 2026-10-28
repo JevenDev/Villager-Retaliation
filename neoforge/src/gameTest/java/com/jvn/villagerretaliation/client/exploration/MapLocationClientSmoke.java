@@ -165,6 +165,10 @@ public final class MapLocationClientSmoke {
             }
             case 7 -> {
                 require(MapLocationsClient.all().stream().noneMatch(location -> location.id().equals(saved.id())), "confirmed delete syncs to client");
+                phase = 8;
+            }
+            case 8 -> {
+                if (!MapFeatureClientChecks.tick(map)) return;
                 map.onClose();
                 require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
                 map.onClose();

@@ -47,6 +47,39 @@ public final class MapMarkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void searchFiltersDimensionsKindsAndFavoritesBeforeSorting(GameTestHelper helper) {
+        var near = village("Needle near", 10, 0);
+        var far = village("Needle far", 100, 0);
+        var other = new MapDestination(MapDestination.Kind.LOCATION, "other", ResourceLocation.withDefaultNamespace("the_nether"),
+                0, 0, "Needle other", "Supplies", null, true, 0xffffffff, 0);
+        var overworld = near.dimension();
+        var source = List.of(far, other, near);
+        var result = MapSearchModel.filter(source, "  NEEDLE ", null, null, false, destination -> destination.equals(far), true, overworld, 0, 0);
+        helper.assertTrue(result.equals(List.of(near, far, other)), "distance sorting puts other dimensions after comparable distances");
+        result = MapSearchModel.filter(source, "needle", overworld, null, true, destination -> destination.equals(far), false, overworld, 0, 0);
+        helper.assertTrue(result.equals(List.of(far)), "favorites and dimension filters combine with case insensitive search");
+        result = MapSearchModel.filter(source, "supplies", null, MapDestination.Kind.LOCATION, false, destination -> false, false, overworld, 0, 0);
+        helper.assertTrue(result.equals(List.of(other)), "search also matches a marker's short label");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void destinationArrowsAndScaleStayWithinTheViewport(GameTestHelper helper) {
+        helper.assertTrue(MapDestinationTracker.edge(320, 180, 640, 66, 290, 10) == null, "onscreen destinations need no edge arrow");
+        for (double[] point : new double[][]{{-30000000, -30000000}, {30000000, 0}, {320, 30000000}, {0, 180}}) {
+            var edge = MapDestinationTracker.edge(point[0], point[1], 640, 66, 290, 10);
+            helper.assertTrue(edge != null && Double.isFinite(edge.angle()) && edge.x() >= 10 && edge.x() <= 630
+                    && edge.y() >= 66 && edge.y() <= 290, "arrows remain inside the usable map area at world limits");
+        }
+        for (double scale : new double[]{.12, .25, 1, 2.5, 24}) {
+            int blocks = MapOrientation.scaleBlocks(scale, 80);
+            helper.assertTrue(blocks >= 1 && blocks * scale <= 80, "the scale uses real block distances and fits its allotted width");
+        }
+        helper.assertTrue(village("distance", -3, -4).distance(0, 0) == 5, "distance handles negative world coordinates");
+        helper.succeed();
+    }
+
     private static MapDestination village(String id, int x, int z) {
         return new MapDestination(MapDestination.Kind.VILLAGE, id, ResourceLocation.withDefaultNamespace("overworld"),
                 x, z, id, id, null, true, 0xffffffff, 0);
