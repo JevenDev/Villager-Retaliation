@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.HireContractLifecycle;
 import com.jvn.villagerretaliation.interaction.HireContractStore;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
@@ -22,6 +23,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.behavior.ResetProfession;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
@@ -106,9 +109,40 @@ public final class VillagerWorkAppearanceGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "work_appearance")
+    public static void noviceOneOffBuilderKeepsProfessionUntilJobEnds(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var villager = villager(helper);
+        villager.setVillagerData(villager.getVillagerData().setLevel(1));
+        villager.setVillagerXp(0);
+        villager.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
+        var identity = villager.getVillagerData();
+        var trades = saved(villager).getCompound("Offers").copy();
+        HireContractLifecycle.begin(level, villager, HireContract.oneOffBuilder(UUID.randomUUID(), level.getGameTime()));
+        helper.assertFalse(ResetProfession.create().tryStart(level, villager, level.getGameTime()),
+                "a novice builder keeps its profession while waiting without a vanilla job site");
+        helper.assertValueEqual(villager.getVillagerData(), identity, "building preserves the trading identity");
+        helper.assertValueEqual(saved(villager).getCompound("Offers"), trades, "building preserves existing offers");
+        helper.assertValueEqual(villager.getVillagerXp(), 0, "profession protection grants no trade experience");
+        assertRole(helper, villager, HiredVillagerRole.BUILDER, VillagerProfession.MASON);
+        var restored = EntityType.VILLAGER.create(level);
+        restored.load(saved(villager));
+        helper.assertFalse(ResetProfession.create().tryStart(level, restored, level.getGameTime()),
+                "the saved one-off contract protects the profession after reload");
+        assertRole(helper, restored, HiredVillagerRole.BUILDER, VillagerProfession.MASON);
+        HiredVillagerContractService.finishOneOffBuilderJob(level, restored, "interaction.work.status.paused");
+        assertRole(helper, restored, null, VillagerProfession.NONE);
+        helper.assertTrue(ResetProfession.create().tryStart(level, restored, level.getGameTime()),
+                "ordinary profession selection resumes when the one-off job ends");
+        helper.assertValueEqual(restored.getVillagerData().getProfession(), VillagerProfession.NONE,
+                "an unassigned novice can lose its profession normally");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "work_appearance")
     public static void returningCivicWorkerUsesTheSavedTownDutyBeforeTracking(GameTestHelper helper) {
         var level = helper.getLevel();
         var villager = villager(helper);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
         var center = helper.absolutePos(new BlockPos(2, 2, 2));
         villager.setPos(center.getBottomCenter());
         level.getChunkAt(center);
@@ -122,7 +156,7 @@ public final class VillagerWorkAppearanceGameTests {
         var farm = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Farm", center, center.offset(3, 2, 3), 5, true);
         var forest = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FORESTRY, "Forest", center.west(5), center.offset(-2, 2, 3), 5, true);
         helper.assertTrue(town.putArea(leader.getUUID(), farm) && town.putArea(leader.getUUID(), forest), "both worksites are registered");
-        helper.assertTrue(SettlementWorkforceService.assign(level, leader, id, villager, farm.id()), "a toolsmith can take the farming duty");
+        helper.assertTrue(SettlementWorkforceService.assign(level, leader, id, villager, farm.id()), "a farmer can take the farming duty");
         assertRole(helper, villager, HiredVillagerRole.FARMING, VillagerProfession.FARMER);
         var tag = saved(villager);
         villager.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
@@ -170,6 +204,34 @@ public final class VillagerWorkAppearanceGameTests {
         helper.assertValueEqual(VillagerWorkAppearance.profession(villager), VillagerProfession.NONE, "babies ignore even a stale synchronized adult role");
         helper.assertFalse(EntityType.WANDERING_TRADER.create(helper.getLevel()) instanceof VillagerWorkAppearanceHolder,
                 "the entity-data mixin leaves wandering traders unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "work_appearance")
+    public static void farmingContractsRequireTheProfessionUsedByTheWorker(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "FarmingHirer"));
+        for (var profession : new VillagerProfession[] {VillagerProfession.NONE, VillagerProfession.NITWIT,
+                VillagerProfession.TOOLSMITH, VillagerProfession.FARMER}) {
+            var villager = villager(helper);
+            villager.setVillagerData(villager.getVillagerData().setProfession(profession));
+            boolean farmer = profession == VillagerProfession.FARMER;
+            helper.assertValueEqual(HiredVillagerRoles.availableContractRoles(level, villager).contains(HiredVillagerRole.FARMING),
+                    farmer, "only native farmers are offered farming contracts");
+            helper.assertValueEqual(HiredVillagerContractService.startHireContract(level, villager, owner, 1, 1, HiredVillagerRole.FARMING),
+                    farmer, "contract creation enforces the farming profession requirement");
+            if (farmer) {
+                assertRole(helper, villager, HiredVillagerRole.FARMING, VillagerProfession.FARMER);
+                HiredVillagerContractService.endHireContract(level, villager, owner);
+            }
+            helper.assertTrue(HiredVillagerContractService.startHireContract(level, villager, owner, 1, 1, HiredVillagerRole.MINING),
+                    "other ordinary jobs remain available regardless of profession");
+            helper.assertValueEqual(HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.FARMING),
+                    farmer, "role changes enforce the same farming requirement");
+            helper.assertValueEqual(villager.getVillagerData().getProfession(), profession, "work does not rewrite the real profession");
+            HiredVillagerContractService.endHireContract(level, villager, owner);
+            assertRole(helper, villager, null, VillagerProfession.NONE);
+        }
         helper.succeed();
     }
 

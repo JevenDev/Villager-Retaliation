@@ -785,6 +785,7 @@ public final class SettlementSupplyChainGameTests {
             table(town, workshop);
             var post = area(helper, town, SettlementAreaType.GUARD_POST, "Pinned duty", town.center().south(6), town.center().offset(2, 2, 8));
             var resident = fixture.residents().getFirst();
+            var profession = resident.getVillagerData().getProfession();
             resident.setPos(root.west(2).getBottomCenter());
             town.recordResident(SettlementResidentState.capture(resident, town, level.getGameTime()));
             var pinned = fixture.residents().get(1);
@@ -839,7 +840,7 @@ public final class SettlementSupplyChainGameTests {
                     var expected = worker.area().equals(forest.id()) ? VillagerProfession.FLETCHER
                             : worker.area().equals(workshop.id()) ? VillagerProfession.TOOLSMITH : VillagerProfession.CARTOGRAPHER;
                     helper.assertValueEqual(outfit, expected, "the native assignment updates the outfit at every staffing transition");
-                    helper.assertValueEqual(context.getVillagerData().getProfession(), VillagerProfession.TOOLSMITH,
+                    helper.assertValueEqual(context.getVillagerData().getProfession(), profession,
                             "staffing and clothing preserve the actual trading profession");
                     appearances.add(outfit);
                 }
