@@ -94,6 +94,7 @@ public final class SettlementViewClientSmoke {
     private static int productionReadyTick;
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static SettlementPathClientChecks pathChecks;
+    private static SettlementWallClientChecks wallChecks;
     private static boolean resourceFormsChecked;
     private static int ticks;
     private static double originalX;
@@ -130,10 +131,10 @@ public final class SettlementViewClientSmoke {
         if (started == 0L) {
             started = Util.getMillis();
         }
-        if (Util.getMillis() - started >= 180_000L) {
+        if (Util.getMillis() - started >= 240_000L) {
             capture("failure");
         }
-        require(Util.getMillis() - started < 180_000L, "client smoke run timed out at phase " + phase
+        require(Util.getMillis() - started < 240_000L, "client smoke run timed out at phase " + phase
                 + " on " + (minecraft.screen == null ? "game" : minecraft.screen.getClass().getSimpleName()));
         if (minecraft.level == null || minecraft.player == null || minecraft.getSingleplayerServer() == null) {
             return;
@@ -211,6 +212,8 @@ public final class SettlementViewClientSmoke {
                 && (screen.terrainLoaded() || ticks >= 120)) {
             if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
             if (!pathChecks.tick(minecraft)) return;
+            if (wallChecks == null) wallChecks = new SettlementWallClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+            if (!wallChecks.tick(minecraft)) return;
             require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into minimum zoom");
             require(screen.terrainLoaded(), "the minimum zoom capture includes the streamed terrain");

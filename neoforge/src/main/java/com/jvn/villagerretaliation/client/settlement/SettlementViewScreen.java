@@ -142,6 +142,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private SettlementViewBatchPayload assignmentReview;
     private final SettlementPathEditor paths = new SettlementPathEditor();
     private final List<Button> pathButtons = new ArrayList<>();
+    private final SettlementWallEditor walls = new SettlementWallEditor();
+    private final List<Button> wallButtons = new ArrayList<>();
+    private SettlementWallSpacingSlider wallSpacing;
+    private double wallDragX, wallDragY;
     private Button groupActions;
     private Button commandResults;
     private Component guardFeedback = Component.empty();
@@ -251,7 +255,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return;
         }
         this.acceptedRequestId = payload.requestId();
-        if (!this.window.equals(payload.window()) || !this.plotSnapshot.equals(payload.plots())) this.paths.refresh();
+        if (!this.window.equals(payload.window()) || !this.plotSnapshot.equals(payload.plots())) {
+            this.paths.refresh();
+            this.walls.refresh();
+        }
         this.plotSnapshot = payload.plots();
         this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
@@ -416,7 +423,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }));
         this.buildMenu = addRenderableWidget(tool(Component.literal("Build"),
                 toolTop + (this.layout.railSize + 2) * 3, net.minecraft.world.item.Items.BRICKS, false,
-                () -> this.parent.buildingDraft() != null || this.paths.active()
+                () -> this.parent.buildingDraft() != null || this.paths.active() || this.walls.active()
                         || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD,
                 this::openBuildMenu));
         addRenderableWidget(tool(SettlementViewKeyMappings.hint(text("plots"), SettlementViewKeyMappings.PLOTS), toolTop + (this.layout.railSize + 2) * 4,
@@ -443,6 +450,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 openActionPopup(SettlementViewPopup.Kind.RESULTS)).bounds(this.layout.worldLeft + 92, this.layout.commandBottom - 22, 88, 18).build());
         initRouteButtons();
         initPathButtons();
+        initWallButtons();
         this.transform = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_move"), ignored -> {
             if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.TRANSFORM);
         }).bounds(this.layout.worldLeft, this.layout.commandTop, 92, 20).build());
@@ -697,6 +705,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 .map(com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot::chunk).collect(java.util.stream.Collectors.toSet());
         this.paths.tick(this.minecraft.level, this.session,
                 pos -> this.window.contains(pos) && pathPlots.contains(new net.minecraft.world.level.ChunkPos(pos)), PacketDistributor::sendToServer);
+        this.walls.tick(this.minecraft.level, this.session,
+                pos -> this.window.contains(pos) && pathPlots.contains(new net.minecraft.world.level.ChunkPos(pos)), PacketDistributor::sendToServer);
         if (SettlementViewClient.closing()) {
             keepAlive();
             return;
@@ -821,6 +831,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
         if (this.paths.active()) hint = Component.literal(this.paths.hint());
+        else if (this.walls.active()) hint = Component.literal(this.walls.hint());
         else if (this.route.draft() != null) hint = routeHint();
         else if (this.interaction.is(Mode.SELECT) && draft == null && this.editingArea == null)
             hint = Component.translatable("villagerretaliation.gui.settlement.peek_hint", SettlementViewKeyMappings.PEEK.getTranslatedKeyMessage())
@@ -1075,8 +1086,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void updateActions() {
         updateInspector();
         updatePathButtons();
+        updateWallButtons();
         if (!permits(SettlementPermission.BUILD)) {
-            if (this.paths.active() && !this.paths.confirming()) enterMode(Mode.SELECT);
+            if (this.paths.active() && !this.paths.confirming() || this.walls.active() && !this.walls.confirming()) enterMode(Mode.SELECT);
             cancelGizmo();
             if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.dragStart = null;
@@ -1095,7 +1107,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.groupActions.active = !this.commands.busy();
             this.commandResults.visible = !this.commands.outcomes().isEmpty() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
         }
-        if (this.buildMenu != null) this.buildMenu.active = !this.commands.busy() && !this.parent.submitting() && !this.paths.confirming();
+        if (this.buildMenu != null) this.buildMenu.active = !this.commands.busy() && !this.parent.submitting() && !this.paths.confirming() && !this.walls.confirming();
         if (this.transform != null) {
             this.transform.visible = manipulating;
             this.transform.setMessage(text(draft == null ? "gizmo_move" : "gizmo_transform"));
@@ -1139,7 +1151,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
         }
         updateRouteButtons();
-        if (this.route.draft() != null || this.storagePicker != null || this.paths.active()) {
+        if (this.route.draft() != null || this.storagePicker != null || this.paths.active() || this.walls.active()) {
             for (var button : this.guardButtons) if (button != null) button.visible = false;
             this.returnToPost.visible = false;
             this.groupActions.visible = false;
@@ -1335,11 +1347,138 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return actions;
     }
 
-    void beginPath(boolean branch) {
-        if (!permits(SettlementPermission.BUILD) || this.paths.confirming() || this.parent.submitting() || this.commands.busy()) return;
-        enterMode(branch ? Mode.BRANCH_PATH : Mode.CREATE_PATH);
+    void beginWall() {
+        if (!permits(SettlementPermission.BUILD) || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
+        enterMode(Mode.CREATE_WALL);
         this.selection.select(List.of(), false);
-        this.paths.begin(branch);
+        this.walls.begin();
+        updateActions();
+        updatePlotActions();
+    }
+
+    SettlementWallEditor wallEditor() { return this.walls; }
+
+    void acceptWall(com.jvn.villagerretaliation.network.SettlementWallResultPayload payload) {
+        if (this.walls.accept(payload)) {
+            this.guardFeedback = Component.literal(payload.message());
+            enterMode(Mode.SELECT);
+        }
+        updateActions();
+    }
+
+    private BlockPos wallPoint(double x, double y) {
+        var point = pathPoint(x, y);
+        return point == null ? null : BlockPos.containing(point).above();
+    }
+
+    private void wallClick(double x, double y) {
+        if (this.search != null) this.search.setFocused(false);
+        setFocused(null);
+        clearControls();
+        int node = SettlementWallGizmo.hit(this.walls.draft(), this::project, x, y);
+        if (node >= 0) {
+            this.walls.draft().begin(node);
+            this.wallDragX = x;
+            this.wallDragY = y;
+            this.walls.hover(null);
+            return;
+        }
+        var point = wallPoint(x, y);
+        if (point == null) this.walls.feedback("No loaded ground at this position");
+        else if (!this.walls.draft().place(point) && this.walls.draft().extending())
+            this.walls.feedback("Wall has 32 nodes. Confirm this section before adding more");
+    }
+
+    private void initWallButtons() {
+        this.wallButtons.clear();
+        String[] labels = {"Low stone", "Auto towers: off", "Undo", "Redo", "Edit", "Confirm", "Cancel", "Remove", "Close loop", "Extend", "Refresh"};
+        for (int i = 0; i < labels.length; i++) {
+            int action = i;
+            this.wallButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> wallAction(action))
+                    .bounds(8, 52, 64, 18).build()));
+        }
+        this.wallSpacing = addRenderableWidget(new SettlementWallSpacingSlider(this.walls));
+        this.wallSpacing.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
+                "Approximate spacing in blocks. Towers are distributed evenly between your nodes.")));
+    }
+
+    private void wallAction(int action) {
+        if (!this.walls.active() || this.walls.confirming()) return;
+        var draft = this.walls.draft();
+        switch (action) {
+            case 0 -> {
+                var types = com.jvn.villagerretaliation.settlement.SettlementWall.Type.values();
+                draft.type(types[(draft.wall().type().ordinal() + 1) % types.length]);
+            }
+            case 1 -> draft.toggleAutomatic();
+            case 2 -> draft.undo();
+            case 3 -> draft.redo();
+            case 4 -> {
+                clearControls();
+                var edit = this.wallButtons.get(4);
+                this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.WALL_EDIT, null),
+                        edit.getX(), edit.getY() + edit.getHeight());
+                refreshPopup();
+            }
+            case 5 -> this.walls.confirm(this.minecraft.level, this.session, PacketDistributor::sendToServer);
+            case 6 -> enterMode(Mode.SELECT);
+            case 7 -> draft.remove();
+            case 8 -> draft.loop();
+            case 9 -> { if (draft.extending()) this.walls.stop(); else draft.extend(); }
+            case 10 -> this.walls.refresh();
+            default -> throw new IllegalArgumentException("Unknown wall action");
+        }
+        this.walls.hover(null);
+        updateActions();
+    }
+
+    private void updateWallButtons() {
+        if (this.wallButtons.isEmpty()) return;
+        for (int i = 0; i < this.wallButtons.size(); i++) {
+            var button = this.wallButtons.get(i);
+            button.visible = this.walls.active() && i < 7;
+            button.active = this.walls.active() && !this.walls.confirming() && !this.walls.draft().dragging();
+            if (!this.walls.active()) continue;
+            var draft = this.walls.draft();
+            if (i == 0) button.setMessage(Component.literal(draft.wall().type().label()));
+            if (i == 1) button.setMessage(Component.literal(draft.automatic() ? "Auto towers: on" : "Auto towers: off"));
+            if (i == 2) button.active &= draft.canUndo();
+            if (i == 3) button.active &= draft.canRedo();
+            if (i == 5) button.active &= this.walls.canConfirm();
+            if (i == 7) button.active &= draft.selected() >= 0;
+            if (i == 8) {
+                button.setMessage(Component.literal(draft.wall().closed() ? "Open loop" : "Close loop"));
+                button.active &= draft.wall().nodes().size() >= 3;
+            }
+            if (i == 9) {
+                button.setMessage(Component.literal(draft.extending() ? "Stop extending" : "Extend"));
+                button.active &= !draft.wall().closed();
+            }
+        }
+        this.wallSpacing.visible = this.walls.active();
+        this.wallSpacing.active = this.walls.active() && this.walls.draft().automatic() && !this.walls.confirming() && !this.walls.draft().dragging();
+        this.wallSpacing.sync();
+        int available = Math.max(80, this.panelLeft - this.layout.worldLeft - 6);
+        int x = 0, row = 0;
+        for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6}) {
+            net.minecraft.client.gui.components.AbstractWidget widget = index < 0 ? this.wallSpacing : this.wallButtons.get(index);
+            int width = Math.min(available, index < 0 ? 118 : Math.max(20, this.font.width(widget.getMessage()) + 12));
+            if (x > 0 && x + width > available) { x = 0; row++; }
+            widget.setWidth(width);
+            widget.setX(this.layout.worldLeft + x);
+            widget.setY(row * 22);
+            x += width + 4;
+        }
+        int top = this.height - 36 - (row + 1) * 22;
+        for (var button : this.wallButtons) if (button.visible) button.setY(button.getY() + top);
+        this.wallSpacing.setY(this.wallSpacing.getY() + top);
+    }
+
+    void beginPath() {
+        if (!permits(SettlementPermission.BUILD) || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
+        enterMode(Mode.CREATE_PATH);
+        this.selection.select(List.of(), false);
+        this.paths.begin(false);
         updateActions();
         updatePlotActions();
     }
@@ -1664,8 +1803,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void enterMode(Mode mode) {
-        if (this.paths.confirming()) return;
+        if (this.paths.confirming() || this.walls.confirming()) return;
         this.paths.cancel(this.session, PacketDistributor::sendToServer);
+        this.walls.cancel(this.session, PacketDistributor::sendToServer);
         this.resourceKind = null;
         this.resourcePreview = null;
         this.resourceSurvey = null;
@@ -1885,6 +2025,19 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.peekKey = InputConstants.getKey(keyCode, scanCode);
             return true;
         }
+        if (this.walls.active()) {
+            if (this.walls.confirming()) return true;
+            var wall = this.walls.draft();
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) this.walls.stop();
+            else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) { if (hasShiftDown()) wall.redo(); else wall.undo(); }
+            else if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) wall.redo();
+            else if (keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE) wall.remove();
+            else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
+                this.walls.confirm(this.minecraft.level, this.session, PacketDistributor::sendToServer);
+            else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
+            updateWallButtons();
+            return true;
+        }
         if (this.paths.active()) {
             if (this.paths.confirming()) return true;
             var path = this.paths.draft();
@@ -1996,6 +2149,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public void mouseMoved(double x, double y) {
         if (this.popup != null) this.popup.hover(x, y);
+        if (this.walls.active()) {
+            boolean overControl = this.wallButtons.stream().anyMatch(button -> button.visible && button.isMouseOver(x, y))
+                    || this.wallSpacing.visible && this.wallSpacing.isMouseOver(x, y);
+            boolean ground = this.popup == null && !overControl && worldContains(x, y) && windowAt(x, y) == null;
+            int node = ground ? SettlementWallGizmo.hit(this.walls.draft(), this::project, x, y) : -1;
+            this.walls.hover(ground && node < 0 ? wallPoint(x, y) : null);
+        }
         if (this.paths.active()) {
             boolean overButton = this.pathButtons.stream().anyMatch(button -> button.visible && button.isMouseOver(x, y));
             var handle = this.popup == null && !overButton && worldContains(x, y) && windowAt(x, y) == null
@@ -2078,7 +2238,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 return true;
             }
             if (clickedWindow == this.sidebarWindow) {
-                if (this.route.draft() == null && !this.paths.active()) this.inspector.click(x, y, button);
+                if (this.route.draft() == null && !this.paths.active() && !this.walls.active()) this.inspector.click(x, y, button);
                 return true;
             }
             if (!this.overviewMap.contains(x, y)) return true;
@@ -2100,7 +2260,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (this.preferences.map && this.overviewMap.contains(x, y)) {
-            if (this.route.draft() != null || this.paths.active()) {
+            if (this.route.draft() != null || this.paths.active() || this.walls.active()) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
                 return true;
             }
@@ -2118,6 +2278,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (!worldContains(x, y)) return true;
+        if (this.walls.active() && button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            if (this.walls.confirming()) return true;
+            if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) this.walls.stop();
+            else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) wallClick(x, y);
+            updateWallButtons();
+            return true;
+        }
         if (this.paths.active() && button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
             if (this.paths.confirming()) return true;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
@@ -2127,7 +2294,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
-            if (this.route.draft() != null && this.route.draft().dragging() || this.paths.active() && this.paths.draft().dragging()) return true;
+            if (this.route.draft() != null && this.route.draft().dragging() || this.paths.active() && this.paths.draft().dragging()
+                    || this.walls.active() && this.walls.draft().dragging()) return true;
             this.panning = true;
             return true;
         }
@@ -2253,6 +2421,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             else layoutMap();
             return true;
         }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.walls.active() && this.walls.draft().dragging()) {
+            if (Math.hypot(x - this.wallDragX, y - this.wallDragY) >= 3) {
+                var point = wallPoint(x, y);
+                if (point != null) this.walls.draft().drag(point);
+            }
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.paths.active() && this.paths.draft().dragging()) {
             if (this.paths.moved(x, y)) {
                 var node = this.paths.draft().path().nodes().get(this.paths.draft().selected());
@@ -2309,6 +2484,16 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.preferences.mapWindow = this.mapWindow.position();
             savePreferences();
             setDragging(false);
+            return true;
+        }
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.walls.active() && this.walls.draft().dragging()) {
+            boolean close = Math.hypot(x - this.wallDragX, y - this.wallDragY) < 3 && this.walls.draft().selected() == 0
+                    && this.walls.draft().extending() && this.walls.draft().wall().nodes().size() >= 3;
+            if (worldContains(x, y)) {
+                this.walls.draft().finish();
+                if (close) this.walls.draft().loop();
+            } else this.walls.draft().cancelDrag();
+            updateWallButtons();
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.paths.active() && this.paths.draft().dragging()) {
@@ -2453,6 +2638,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     void renderWorldSelection(RenderLevelStageEvent event) {
         var draft = this.parent.buildingDraft();
         if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
+        if (this.walls.active()) ConstructionBlueprintPreviewRenderer.renderPreview(event, this.walls.ghost(), false);
         PoseStack pose = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         var buffers = this.minecraft.renderBuffers().bufferSource();
@@ -2460,6 +2646,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
         if (this.paths.active()) SettlementPathGizmo.renderTerrain(this.paths, pose, lines);
+        if (this.walls.active()) SettlementWallGizmo.renderBlocked(this.walls, pose, lines);
         for (var area : this.areas.values()) {
             if ((area.id().equals(this.selectedArea) || this.preferences.workOverlay)
                     && this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= area.min().getX()
@@ -2577,6 +2764,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);
         }
         if (this.paths.active()) SettlementPathGizmo.renderHandles(this.paths, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
+        if (this.walls.active()) SettlementWallGizmo.renderNodes(this.walls, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         for (var project : this.projects.values()) {
             if ((project.id().equals(this.selectedArea) || this.preferences.issueOverlay)
                     && this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= project.min().getX()
@@ -3044,17 +3232,26 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     actions.add(menuAction(button.getMessage(), button.active, () -> pathAction(index)));
                 }
             }
+            case WALL_EDIT -> {
+                if (!this.walls.active()) { this.popup = null; return; }
+                details.add(Component.literal("Edit wall"));
+                updateWallButtons();
+                for (int index : new int[]{7, 8, 9, 10}) {
+                    var button = this.wallButtons.get(index);
+                    actions.add(menuAction(button.getMessage(), button.active, () -> wallAction(index)));
+                }
+            }
             case BUILD -> {
                 details.add(Component.literal("Build"));
-                boolean available = ready && permits(SettlementPermission.BUILD) && !this.parent.submitting() && !this.paths.confirming();
+                boolean available = ready && permits(SettlementPermission.BUILD) && !this.parent.submitting() && !this.paths.confirming() && !this.walls.confirming();
                 actions.add(menuAction(SettlementManagementScreen.text("new_building"),
-                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null && !this.paths.active(), () -> {
+                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null && !this.paths.active() && !this.walls.active(), () -> {
                             enterMode(Mode.PLACE_BUILDING);
                             updatePlotActions();
                             management().newBuilding();
                         }));
-                actions.add(menuAction(Component.literal("Path"), available, () -> beginPath(false)));
-                actions.add(menuAction(Component.literal("Branch"), available, () -> beginPath(true)));
+                actions.add(menuAction(Component.literal("Path"), available, this::beginPath));
+                actions.add(menuAction(Component.literal("Wall"), available, this::beginWall));
             }
             case NAVIGATION -> {
                 details.add(Component.literal(this.header.name()));

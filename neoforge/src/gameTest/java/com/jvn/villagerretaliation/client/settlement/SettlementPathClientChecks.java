@@ -36,7 +36,7 @@ final class SettlementPathClientChecks {
                     .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
                     "path tools are grouped inside Build");
             button("Build").onPress();
-            require(this.view.contextPopup().buttons().size() == 3, "Build offers New Building, Path and Branch");
+            require(this.view.contextPopup().buttons().size() == 3, "Build offers New Building, Path and Wall");
             this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
             this.phase++;
             this.ticks = 0;
@@ -138,12 +138,12 @@ final class SettlementPathClientChecks {
             this.phase++;
         } else if (this.phase == 5 && !editor.active() && minecraft.level.getBlockState(BlockPos.containing(this.start)).is(Blocks.DIRT_PATH)) {
             require(editor.centerline().isEmpty(), "confirmed curve geometry is discarded");
-            chooseBuildTool("Branch");
-            require(editor.draft().path().branch(), "Build menu selects the branch tool");
+            chooseBuildTool("Path");
+            require(!editor.draft().path().branch(), "the path tool also handles branching");
             require(editor.draft().path().width() == 4, "settings survive confirmation");
             require(editor.draft().smoothMode(), "curve mode survives confirmation");
             click(this.start);
-            require(editor.draft().path().nodes().size() == 1, "Branch attaches to actual path terrain");
+            require(editor.draft().path().nodes().size() == 1, "Path starts on existing path terrain");
             click(this.start.add(0, 0, -4));
             require(editor.draft().path().nodes().size() == 2, "branch can extend away from the existing path");
             require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0, "the next path continues with curved nodes");

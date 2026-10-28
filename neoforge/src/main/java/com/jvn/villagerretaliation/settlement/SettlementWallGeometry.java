@@ -1,0 +1,99 @@
+package com.jvn.villagerretaliation.settlement;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
+
+public final class SettlementWallGeometry {
+    public record Plan(List<SettlementWallTemplates.Cell> cells, Set<BlockPos> foundations, String error) {}
+    private SettlementWallGeometry() {}
+
+    public static Plan build(SettlementWall wall) {
+        var cells = new LinkedHashMap<BlockPos, BlockState>();
+        var foundations = new HashSet<BlockPos>();
+        var span = SettlementWallTemplates.get(wall.type().span());
+        var tower = SettlementWallTemplates.get(wall.type().tower());
+        var nodes = towers(wall);
+        if (nodes.size() > 64) return invalid("Wall draft exceeds 64 towers. Increase spacing or shorten the wall");
+        int segments = nodes.size() - (wall.closed() ? 0 : 1);
+        for (int i = 0; i < segments; i++) {
+            var start = nodes.get(i);
+            var end = nodes.get((i + 1) % nodes.size());
+            int dx = end.getX() - start.getX(), dz = end.getZ() - start.getZ();
+            int length = Math.max(Math.abs(dx), Math.abs(dz));
+            if (length < 6) return invalid("Towers must be at least 6 blocks apart");
+            if (length > SettlementWall.MAX_SPAN) return invalid("Each wall span is limited to 128 blocks");
+            var rotation = rotation(start, end);
+            for (int step = 0; step <= length; step++) {
+                var center = new BlockPos(start.getX() + (int) Math.round(dx * (double) step / length),
+                        start.getY() + (int) Math.round((end.getY() - start.getY()) * (double) step / length),
+                        start.getZ() + (int) Math.round(dz * (double) step / length));
+                int column = Math.floorMod(step - 3, span.size().getX());
+                for (var cell : span.cells()) {
+                    if (cell.position().getX() != column) continue;
+                    var offset = new BlockPos(0, cell.position().getY(), cell.position().getZ() - span.size().getZ() / 2).rotate(rotation);
+                    var pos = center.offset(offset);
+                    if (nodes.stream().anyMatch(node -> Math.abs(node.getX() - pos.getX()) <= 2
+                            && Math.abs(node.getZ() - pos.getZ()) <= 2)) continue;
+                    var state = cell.state().rotate(rotation);
+                    if (!state.isAir() || !cells.containsKey(pos)) cells.put(pos, state);
+                    if (cell.position().getY() == 0 && !state.isAir()) foundations.add(pos);
+                }
+                if (cells.size() > SettlementWall.MAX_BLOCKS) return invalid("Wall draft exceeds 16,384 blocks. Confirm a shorter section");
+            }
+        }
+        for (int i = 0; i < nodes.size(); i++) {
+            var node = nodes.get(i);
+            var direction = i + 1 < nodes.size() ? nodes.get(i + 1)
+                    : wall.closed() ? nodes.getFirst() : i > 0 ? node.offset(node.subtract(nodes.get(i - 1))) : node.east();
+            var rotation = rotation(node, direction);
+            for (var cell : tower.cells()) {
+                var offset = cell.position().offset(-2, 0, -2).rotate(rotation);
+                var pos = node.offset(offset);
+                var state = cell.state().rotate(rotation);
+                cells.put(pos, state);
+                if (offset.getY() == 0 && !state.isAir()) foundations.add(pos);
+            }
+            if (cells.size() > SettlementWall.MAX_BLOCKS) return invalid("Wall draft exceeds 16,384 blocks. Confirm a shorter section");
+        }
+        var ordered = new ArrayList<SettlementWallTemplates.Cell>();
+        cells.forEach((pos, state) -> ordered.add(new SettlementWallTemplates.Cell(pos, state)));
+        ordered.sort(Comparator.comparingInt((SettlementWallTemplates.Cell cell) -> cell.position().getY())
+                .thenComparingInt(cell -> cell.position().getX()).thenComparingInt(cell -> cell.position().getZ()));
+        return new Plan(List.copyOf(ordered), Set.copyOf(foundations), "");
+    }
+
+    public static List<BlockPos> towers(SettlementWall wall) {
+        var nodes = new ArrayList<BlockPos>();
+        for (int i = 0; i < wall.nodes().size(); i++) {
+            var start = wall.nodes().get(i);
+            nodes.add(start);
+            if (i + 1 == wall.nodes().size() && !wall.closed()) continue;
+            var end = wall.nodes().get((i + 1) % wall.nodes().size());
+            int length = Math.max(Math.abs(end.getX() - start.getX()), Math.abs(end.getZ() - start.getZ()));
+            if (length > SettlementWall.MAX_SPAN) return wall.nodes();
+            int intervals = wall.towerSpacing() == 0 ? 1 : Math.max(1, Math.min(length / 6, Math.round(length / (float) wall.towerSpacing())));
+            for (int step = 1; step < intervals; step++) {
+                double t = step / (double) intervals;
+                nodes.add(new BlockPos(start.getX() + (int) Math.round((end.getX() - start.getX()) * t),
+                        start.getY() + (int) Math.round((end.getY() - start.getY()) * t),
+                        start.getZ() + (int) Math.round((end.getZ() - start.getZ()) * t)));
+                if (nodes.size() > 64) return nodes;
+            }
+        }
+        return List.copyOf(nodes);
+    }
+
+    private static Rotation rotation(BlockPos start, BlockPos end) {
+        int dx = end.getX() - start.getX(), dz = end.getZ() - start.getZ();
+        if (Math.abs(dx) >= Math.abs(dz)) return dx >= 0 ? Rotation.NONE : Rotation.CLOCKWISE_180;
+        return dz >= 0 ? Rotation.CLOCKWISE_90 : Rotation.COUNTERCLOCKWISE_90;
+    }
+    private static Plan invalid(String message) { return new Plan(List.of(), Set.of(), message); }
+}
