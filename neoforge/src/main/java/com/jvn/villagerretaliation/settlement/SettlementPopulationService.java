@@ -61,7 +61,7 @@ public final class SettlementPopulationService {
                     town.putApplicant(applicant);
                     arrive(level, town, applicant);
                 }
-                town.scheduleApplicant(now + 24_000L);
+                town.scheduleApplicant(now + Math.clamp(VillagerRetaliationConfig.SETTLEMENT_APPLICANT_INTERVAL_TICKS.get(), 200, 24_000));
             }
         });
     }

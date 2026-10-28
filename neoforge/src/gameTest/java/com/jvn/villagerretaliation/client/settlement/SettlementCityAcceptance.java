@@ -125,7 +125,7 @@ public final class SettlementCityAcceptance {
     private static void writeReport(java.util.Map<String, SettlementCityAcceptanceScenario.Snapshot> checkpoints) {
         var report = new LinkedHashMap<String, Object>();
         report.put("scenario", "Management-block founding, approved arrivals, actual production, four explicit advances, unloaded support and returned City RTS controls");
-        report.put("acceleration", "Native server tick rate 1000, invitations attempted every 20 ticks. Actual default 48000-tick support required at every advancement. No support counters or stages are seeded.");
+        report.put("acceleration", "Native server tick rate 1000, invitations attempted every 20 ticks. Actual configured support interval required at every advancement. No support counters or stages are seeded.");
         report.put("fixture", "Prepared terrain, 75 real beds, one mature wheat field and three mature carrot fields, finite 128 bread, 512 seeds, 64 logs, 256 iron and one house plan. Assigned workers receive tools, one guard receives 64 arrows, and workers receive aptitude 60. Kitchen staffing grows to eleven cooks using five crafting tables. Farmer staffing grows to nine residents across the four fields. Male residents with enabled family and gender rules isolate progression from separately tested family growth.");
         report.put("scope", "Single-player acceptance. Multiplayer transport requires separate validation.");
         report.put("elapsedMilliseconds", Util.getMillis() - started);

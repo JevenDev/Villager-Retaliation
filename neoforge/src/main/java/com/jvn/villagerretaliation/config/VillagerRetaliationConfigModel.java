@@ -102,7 +102,10 @@ public final class VillagerRetaliationConfigModel {
         public int dailyNutrition = 12;
 
         @RangeConstraint(min = 1, max = 30)
-        public int advancementDays = 2;
+        public int advancementDays = 1;
+
+        @RangeConstraint(min = 200, max = 24000)
+        public int applicantIntervalTicks = 6000;
 
         @RangeConstraint(min = 1, max = 30)
         public int foodReserveDays = 1;

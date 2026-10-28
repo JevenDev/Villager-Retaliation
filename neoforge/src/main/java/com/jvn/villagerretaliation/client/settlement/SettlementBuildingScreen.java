@@ -108,12 +108,13 @@ public final class SettlementBuildingScreen extends VillagerWindowScreen {
         if (this.draft.preview != null) {
             graphics.drawString(this.font, SettlementManagementScreen.text("building_price", this.draft.preview.price(), this.draft.preview.funds().mixedFraction()), this.left, this.top + 36, 0xD0D0D0);
         }
-        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders"), this.left, this.top + 60, 0xFFFFFF);
-        if (this.candidates.isEmpty()) graphics.drawString(this.font, SettlementManagementScreen.text("building_no_builders"), this.left + 6, this.top + 83, 0xB0B0B0);
+        long available = this.candidates.stream().filter(candidate -> !candidate.id().equals(
+                com.jvn.villagerretaliation.settlement.SettlementProject.AUTOMATIC_BUILDER)).count();
+        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders_count", available), this.left, this.top + 60, 0xFFFFFF);
         graphics.drawString(this.font, SettlementManagementScreen.text("building_materials"), this.left, this.materialTop - 14, 0xFFFFFF);
         String failure = this.draft.failure.isEmpty() && this.draft.preview != null ? this.draft.preview.failure() : this.draft.failure;
         Component hint = this.draft.submitting ? SettlementManagementScreen.text("saving") : failure.isEmpty()
-                ? SettlementManagementScreen.text("building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
+                ? SettlementManagementScreen.text(available == 0 && this.draft.preview != null ? "building_no_builders" : "building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
                         SettlementManagementScreen.text("building_failure_" + failure).getString());
         graphics.drawWordWrap(this.font, hint, this.left, this.top + this.panelHeight - 55, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
     }

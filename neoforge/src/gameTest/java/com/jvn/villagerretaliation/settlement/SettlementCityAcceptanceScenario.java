@@ -45,6 +45,7 @@ public final class SettlementCityAcceptanceScenario {
     private final SettlementRecord town;
     private final List<UUID> residents = new ArrayList<>();
     private final List<BlockPos> beds = new ArrayList<>();
+    private final Map<UUID, BlockPos> assignedHomes = new java.util.LinkedHashMap<>();
     private final List<SettlementArea> farms = new ArrayList<>();
     private final Map<String, Snapshot> checkpoints = new LinkedHashMap<>();
     private SettlementArea kitchen;
@@ -186,7 +187,7 @@ public final class SettlementCityAcceptanceScenario {
             require(unloaded(), "the advancement interval does not force the town to load");
             var status = SettlementProgressionService.assess(this.level, this.town);
             if (!status.ready() || now - this.phaseStarted < 2_000L) return;
-            require(status.requiredTicks() == 48_000L && now - this.advancedAt >= status.requiredTicks(), "advancement earns both default days through native server ticks");
+            require(status.requiredTicks() == SettlementProgressionService.requiredTicks() && now - this.advancedAt >= status.requiredTicks(), "advancement earns the configured support interval through native server ticks");
             var before = this.town.stage();
             require(SettlementProgressionService.advance(player, this.town.id()), "the leader explicitly approves advancement from " + before);
             require(this.town.stage() == before.next().orElseThrow(), "one explicit action advances exactly one stage");
@@ -200,7 +201,10 @@ public final class SettlementCityAcceptanceScenario {
             if (now - this.phaseStarted < 400 || this.residents.stream().anyMatch(id -> !(this.level.getEntity(id) instanceof Villager))) return;
             require(this.transitions == 4 && population() == 75 && this.town.homes().size() == 75, "City returns with all 75 approved residents and homes");
             require(this.nativeProductionBread > INITIAL_BREAD && count(Items.IRON_INGOT) == 256, "production and hauling preserve the real resource balances");
-            require(constructionProjects().stream().anyMatch(project -> project.placed() > 0), "the civic builder made real progress");
+            require(this.assignedHomes.entrySet().stream().allMatch(entry -> this.town.homes().get(entry.getKey()) != null
+                    && entry.getValue().equals(this.town.homes().get(entry.getKey()).bed())), "explicit homes remain stable through all four unloaded advancement windows");
+            require(constructionProjects().stream().anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED
+                    && project.placed() == project.total()), "the civic builder completes the whole house");
             int verified = 0;
             for (var project : constructionProjects()) for (int index = 0; index < project.placed(); index++) {
                 var block = this.plan.blocks().get(index);
@@ -255,6 +259,7 @@ public final class SettlementCityAcceptanceScenario {
                     }
                 }
                 require(assigned, "an arriving resident receives an individual usable bed");
+                this.assignedHomes.put(villager.getUUID(), this.town.homes().get(villager.getUUID()).bed());
             }
             if (this.town.duties().containsKey(villager.getUUID())) continue;
             SettlementArea workplace = switch (index) {

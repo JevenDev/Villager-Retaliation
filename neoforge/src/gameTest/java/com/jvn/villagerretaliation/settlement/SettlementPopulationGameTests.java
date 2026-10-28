@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.social.BreedingBlockReason;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.social.VillagerBreedingPolicy;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.mojang.authlib.GameProfile;
@@ -32,6 +33,29 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder
 @PrefixGameTestTemplate(false)
 public final class SettlementPopulationGameTests {
+    @GameTest(template = "empty", batch = "settlement_population")
+    public static void naturalApplicantSchedulingUsesConfiguredIntervalWithoutEarlyArrivals(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var config = VillagerRetaliationConfig.SETTLEMENT_APPLICANT_INTERVAL_TICKS;
+        int previous = config.get();
+        try {
+            config.set(6000);
+            helper.assertTrue(fixture.town().setManualManagement(fixture.town().leader(), true), "applications wait for leader approval");
+            long now = helper.getLevel().getGameTime();
+            fixture.town().scheduleApplicant(now);
+            SettlementPopulationService.update(helper.getLevel(), fixture.town(), now);
+            helper.assertValueEqual(fixture.town().applicants().size(), 1, "the normal scheduler offers the first applicant");
+            helper.assertValueEqual(fixture.town().nextApplicantAt(), now + 6000L, "the next applicant uses the configured five-minute interval");
+            SettlementPopulationService.update(helper.getLevel(), fixture.town(), now + 5999L);
+            helper.assertValueEqual(fixture.town().applicants().size(), 1, "no applicant arrives before the interval");
+            SettlementPopulationService.update(helper.getLevel(), fixture.town(), now + 6000L);
+            helper.assertValueEqual(fixture.town().applicants().size(), 2, "the next normal application appears when due");
+        } finally {
+            config.set(previous);
+        }
+        helper.succeed();
+    }
+
     private SettlementPopulationGameTests() {
     }
 

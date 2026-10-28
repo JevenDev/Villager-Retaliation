@@ -356,8 +356,11 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 Component.translatable("villagerretaliation.gui.settlement_view.plot_totals",
                         header.plots().owned(), header.plots().capacity(), header.plots().free(), header.plots().spendable().decimal(2)));
         if (!header.plots().conflict().isEmpty()) this.rows.add(null, Component.literal(header.plots().conflict()), Component.empty());
+        long remainingSeconds = Math.max(0L, header.requiredTicks() - header.supportTicks() + 19L) / 20L;
         this.rows.add(null, text("support", decimal(header.supportTicks() / 24_000.0D), decimal(header.requiredTicks() / 24_000.0D)),
-                text(header.ready() ? "ready" : "support_hint"));
+                header.stage().next().isEmpty() ? text("support_complete") : header.ready() ? text("ready") : header.missing().isEmpty()
+                        ? text("support_remaining", String.format(Locale.ROOT, "%dm %02ds", remainingSeconds / 60L, remainingSeconds % 60L))
+                        : text("support_hint"));
         if (header.shortageTicks() > 0L) {
             this.rows.add(null, text("shortage", decimal(header.shortageTicks() / 24_000.0D)), text("shortage_hint"));
         }
@@ -1096,6 +1099,10 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                             ? "Drag onto another pending project to change queue order."
                             : project.status() == SettlementProject.Status.ACTIVE ? "Active construction cannot be moved or paused. Cancel to stop."
                             : "Construction finished."));
+                    if (project.status() == SettlementProject.Status.PENDING) {
+                        var earlier = blockingProject(project);
+                        lines.add(earlier == null ? text("project_queue_hint") : text("project_waiting_for", earlier.name()));
+                    }
                     lines.add(text("project_site", project.origin().toShortString()));
                     lines.add(Component.literal("Priority " + project.priority() + " / crew " + (project.assistants().size() + 1)));
                     lines.add(Component.literal("Lead: " + project.builderName()));
@@ -1118,6 +1125,16 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 setTooltipForNextRenderPass(lines.stream().flatMap(line -> font.split(line, Math.min(300, SettlementManagementScreen.this.width - 24)).stream()).toList());
             }
         }
+    }
+
+    private SettlementManagementPayload.Project blockingProject(SettlementManagementPayload.Project project) {
+        if (project.status() != SettlementProject.Status.PENDING) return null;
+        for (var entry : this.snapshot.entries()) {
+            if (entry.id().equals(project.id())) break;
+            if (entry instanceof SettlementManagementPayload.Project earlier && earlier.status() == SettlementProject.Status.PENDING
+                    && !earlier.blocker().isBlank()) return earlier;
+        }
+        return null;
     }
 
     static SettlementManagementActionPayload.ReorderProject pendingMove(SettlementManagementPayload.Project source,

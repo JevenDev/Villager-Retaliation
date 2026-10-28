@@ -210,7 +210,8 @@ public final class SettlementConstructionService {
     static String placementFailure(ServerLevel level, ServerPlayer player, SettlementRecord town, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
         var min = plan.worldMin(origin);
         var max = plan.worldMax(origin);
-        if (town.stage().projects() == 0 || town.projects().values().stream().filter(SettlementProject::pending).count() >= SettlementRecord.CONSTRUCTION_QUEUE_LIMIT) return "capacity";
+        if (town.stage().projects() == 0) return "stage_capacity";
+        if (town.projects().values().stream().filter(SettlementProject::pending).count() >= SettlementRecord.CONSTRUCTION_QUEUE_LIMIT) return "queue_full";
         if (!town.contains(min, max)
                 || level.isOutsideBuildHeight(min) || level.isOutsideBuildHeight(max)
                 || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)) return "bounds";

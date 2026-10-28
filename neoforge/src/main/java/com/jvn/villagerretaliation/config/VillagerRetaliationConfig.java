@@ -34,6 +34,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> SETTLEMENT_VIEW_SENDS = bind("settlements.remoteViewSendsPerTick", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_MAX_BACKGROUND_VILLAGES = bind("settlements.maxBackgroundVillages", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_DAILY_NUTRITION = bind("settlements.dailyNutrition", Integer.class);
+    public static final ConfigValue<Integer> SETTLEMENT_APPLICANT_INTERVAL_TICKS = bind("settlements.applicantIntervalTicks", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_ADVANCEMENT_DAYS = bind("settlements.advancementDays", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_FOOD_RESERVE_DAYS = bind("settlements.foodReserveDays", Integer.class);
     public static final ConfigValue<Integer> SETTLEMENT_DEPARTURE_GRACE_DAYS = bind("settlements.departureGraceDays", Integer.class);
