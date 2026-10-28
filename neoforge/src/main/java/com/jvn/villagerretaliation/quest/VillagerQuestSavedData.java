@@ -14,7 +14,6 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.common.IOUtilities;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData implements com.jvn.villagerretaliation.quest.runtime.QuestProgressStore<VillagerQuestSavedData.QuestProgress> {
     public static final int CURRENT_DATA_VERSION = 11;
-    public static final int MAX_QUEST_RECORDS_PER_PLAYER = 1024;
     public static final int MAX_CHOICE_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_CHOICE_HISTORY;
     public static final int MAX_COMPLETION_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_COMPLETION_HISTORY;
     public static final int MAX_PROVIDER_REBIND_HISTORY = com.jvn.villagerretaliation.quest.runtime.QuestProgressTypes.MAX_PROVIDER_REBIND_HISTORY;
@@ -154,13 +152,6 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
                 data.trackQuest(entryTag.getUUID(TAG_PLAYER), questId, false, false);
             }
         }
-        int pruned = 0;
-        for (Map<ResourceLocation, QuestProgress> playerEntries : data.entries.values()) {
-            pruned += pruneTerminalQuestRecords(playerEntries, MAX_QUEST_RECORDS_PER_PLAYER);
-        }
-        if (pruned > 0 && data.futureVersionData == null) {
-            data.setDirty();
-        }
         return data;
     }
 
@@ -252,39 +243,7 @@ public class VillagerQuestSavedData extends SavedData implements com.jvn.village
     public QuestProgress getOrCreate(UUID playerId, ResourceLocation questId) {
         Map<ResourceLocation, QuestProgress> playerEntries =
                 this.entries.computeIfAbsent(playerId, ignored -> new HashMap<>());
-        if (!playerEntries.containsKey(questId) && playerEntries.size() >= MAX_QUEST_RECORDS_PER_PLAYER) {
-            if (pruneTerminalQuestRecords(playerEntries, MAX_QUEST_RECORDS_PER_PLAYER - 1) > 0) {
-                setDirty();
-            }
-        }
         return playerEntries.computeIfAbsent(questId, ignored -> new QuestProgress());
-    }
-
-    private static int pruneTerminalQuestRecords(
-            Map<ResourceLocation, QuestProgress> playerEntries,
-            int targetSize) {
-        if (playerEntries == null || playerEntries.size() <= targetSize) {
-            return 0;
-        }
-        List<Map.Entry<ResourceLocation, QuestProgress>> terminalEntries = playerEntries.entrySet().stream()
-                .filter(entry -> entry.getValue() != null && entry.getValue().terminal()
-                        && !entry.getValue().pendingPartyReward())
-                .sorted(Comparator
-                        .comparingLong((Map.Entry<ResourceLocation, QuestProgress> entry) ->
-                                entry.getValue().lastActivityGameTime())
-                        .thenComparing(entry -> entry.getKey().toString()))
-                .toList();
-        int requested = playerEntries.size() - Math.max(0, targetSize);
-        int removed = 0;
-        for (Map.Entry<ResourceLocation, QuestProgress> entry : terminalEntries) {
-            if (removed >= requested) {
-                break;
-            }
-            if (playerEntries.remove(entry.getKey(), entry.getValue())) {
-                removed++;
-            }
-        }
-        return removed;
     }
 
     public QuestProgress remove(UUID playerId, ResourceLocation questId) {

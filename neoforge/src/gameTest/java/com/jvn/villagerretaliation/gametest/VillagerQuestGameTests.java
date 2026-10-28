@@ -4655,7 +4655,7 @@ public final class VillagerQuestGameTests {
                 "objective counter positive saturation");
 
         VillagerQuestSavedData bounded = new VillagerQuestSavedData();
-        for (int index = 0; index < VillagerQuestSavedData.MAX_QUEST_RECORDS_PER_PLAYER + 3; index++) {
+        for (int index = 0; index < 1027; index++) {
             ResourceLocation questId = VillagerRetaliation.id("bounded_terminal_" + index);
             VillagerQuestSavedData.QuestProgress terminal = bounded.getOrCreate(playerId, questId);
             terminal.start(providerId, Level.OVERWORLD, null, index);
@@ -4663,11 +4663,11 @@ public final class VillagerQuestGameTests {
         }
         helper.assertValueEqual(
                 bounded.progress(playerId).size(),
-                VillagerQuestSavedData.MAX_QUEST_RECORDS_PER_PLAYER,
-                "per-player terminal quest record cap");
+                1027,
+                "terminal records retain authoritative completion evidence");
         helper.assertTrue(
-                bounded.get(playerId, VillagerRetaliation.id("bounded_terminal_0")) == null,
-                "oldest terminal quest record should be evicted first");
+                bounded.get(playerId, VillagerRetaliation.id("bounded_terminal_0")).completionCount() == 1,
+                "oldest terminal quest retains its completion limit");
         helper.succeed();
     }
 

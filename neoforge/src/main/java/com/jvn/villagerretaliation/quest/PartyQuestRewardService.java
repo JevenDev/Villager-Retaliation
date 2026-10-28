@@ -78,10 +78,8 @@ final class PartyQuestRewardService {
             PartyService.markChanged(completingContext.level());
             SceneLifecycleIntegration.onQuestTerminal(completingContext.level(), enrollment.playerId(), definition.id(), "completed");
             ServerPlayer player = completingContext.level().getServer().getPlayerList().getPlayer(enrollment.playerId());
-            Villager provider = VillagerEntityResolver.loaded(
-                    completingContext.level().getServer(), shared.sourceVillagerId());
-            if (player == null || provider == null || player.serverLevel() != provider.level()) continue;
-            DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
+            DialogueContext context = pendingPartyRewardContext(player, progress);
+            if (context == null) continue;
             finishLinkedPartyReward(context, definition, progress, enrollment);
         }
         if (party != null && shared.settled()) {
@@ -133,10 +131,8 @@ final class PartyQuestRewardService {
         if (definition == null) {
             return;
         }
-        Villager provider = pendingPartyRewardProvider(player, progress);
-        if (provider == null) {
-            return;
-        }
+        DialogueContext context = pendingPartyRewardContext(player, progress);
+        if (context == null) return;
         com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = null;
         com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment = null;
         if (party != null && progress.partyQuestInstanceId() != null) {
@@ -146,7 +142,6 @@ final class PartyQuestRewardService {
                     .orElse(null);
             enrollment = shared == null ? null : shared.enrollment(player.getUUID());
         }
-        DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
         finishLinkedPartyReward(context, definition, progress, enrollment);
         if (shared != null && shared.settled()) {
             party.removeSharedQuest(shared.instanceId());
@@ -154,6 +149,13 @@ final class PartyQuestRewardService {
         if (enrollment != null || shared != null) {
             com.jvn.villagerretaliation.party.PartyService.markChanged(player.serverLevel());
         }
+    }
+
+    static DialogueContext pendingPartyRewardContext(ServerPlayer player, VillagerQuestSavedData.QuestProgress progress) {
+        if (player == null) return null;
+        if (progress.startedVillagerId() == null) return DialogueContext.forPlayer(player);
+        Villager provider = pendingPartyRewardProvider(player, progress);
+        return provider == null ? null : VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
     }
 
     static Villager pendingPartyRewardProvider(
