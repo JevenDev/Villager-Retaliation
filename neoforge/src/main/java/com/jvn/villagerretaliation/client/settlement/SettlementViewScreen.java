@@ -34,6 +34,7 @@ import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -954,7 +955,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void renderChrome(GuiGraphics graphics, int mouseX, int mouseY) {
         renderHeader(graphics, mouseX, mouseY, this.width);
-        SettlementViewUi.frame(graphics, 3, SettlementViewLayout.HEADER_HEIGHT + 3, this.layout.railSize + 6, (this.layout.railSize + 2) * 7 + 4);
+        TooltipRenderUtil.renderTooltipBackground(graphics, 6, SettlementViewLayout.HEADER_HEIGHT + 6,
+                this.layout.railSize, (this.layout.railSize + 2) * 7 - 2, 0);
         var commands = contextButtons().stream().filter(button -> button.visible).toList();
         if (!commands.isEmpty()) {
             int left = commands.stream().mapToInt(Button::getX).min().orElse(0) - 3;
