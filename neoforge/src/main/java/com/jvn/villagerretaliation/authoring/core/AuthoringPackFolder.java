@@ -14,6 +14,8 @@ import java.util.Set;
 
 final class AuthoringPackFolder {
     private final Path root;
+    private long revision;
+    long revision() { return revision; }
     private final Map<String, String> hashes = new LinkedHashMap<>();
     private final Map<String, String> accepted = new LinkedHashMap<>();
     private final Set<String> overwrite = new LinkedHashSet<>();
@@ -87,6 +89,7 @@ final class AuthoringPackFolder {
     }
 
     void accept(AuthoringWorkspace.SourceChange change, boolean useDisk, byte[] editor) {
+        revision++;
         synchronized (hashes) {
             if (change.fingerprint().equals("absent")) hashes.remove(change.path());
             else hashes.put(change.path(), change.fingerprint());
@@ -148,6 +151,7 @@ final class AuthoringPackFolder {
         }
 
         void commit() {
+            revision++;
             synchronized (hashes) { hashes.clear(); hashes.putAll(next); }
             accepted.clear(); overwrite.clear();
         }

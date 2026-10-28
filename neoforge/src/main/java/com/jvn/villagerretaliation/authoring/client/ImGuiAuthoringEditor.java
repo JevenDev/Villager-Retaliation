@@ -66,7 +66,8 @@ final class ImGuiAuthoringEditor {
     private final EditorPackBuild packBuild = new EditorPackBuild();
     private final EditorNavigation navigation = new EditorNavigation();
     private final EditorOpenFiles openFiles = new EditorOpenFiles();
-    private final EditorSession sessions = new EditorSession(MC.gameDirectory.toPath().resolve("config/authoring-editor-sessions.json"));
+    private final EditorRecovery persistence = new EditorRecovery(
+            MC.gameDirectory.toPath().resolve("config/authoring-editor-sessions.json"), net.minecraft.Util.ioPool());
     private final EditorCommands commandPalette = new EditorCommands();
     private final EditorShortcuts shortcuts = new EditorShortcuts();
     private String focusMode = "";
@@ -248,13 +249,14 @@ final class ImGuiAuthoringEditor {
     }
 
     static void tick() {
+        INSTANCE.attempt(INSTANCE.persistence::poll);
         INSTANCE.finishWorldContent();
         if (INSTANCE.worldContent != null) return;
         INSTANCE.updateValidationContext();
         EditorTestWorld.tick(INSTANCE.workspace);
         if (INSTANCE.workspace != null && !INSTANCE.showRecovery && net.minecraft.Util.getMillis() >= INSTANCE.nextRecovery) {
             INSTANCE.nextRecovery = net.minecraft.Util.getMillis() + 10_000;
-            INSTANCE.attempt(INSTANCE::writeRecovery);
+            INSTANCE.attempt(() -> INSTANCE.writeRecovery(false));
         }
         if (INSTANCE.questPreview != null) INSTANCE.simulationCoverage.accept(INSTANCE.questPreview.drainCoverage());
         boolean playtesting = INSTANCE.view == 3 && EditorPlaytestViewport.active() && !EditorTestWorld.applying();
@@ -3945,11 +3947,11 @@ final class ImGuiAuthoringEditor {
     private void saveSession() throws IOException {
         if (workspace == null || showRecovery) return;
         recordLocation();
-        sessions.save(workspace, EditorSession.snapshot(workspace, navigation, openFiles, currentLocation(), snapGrid));
+        persistence.saveSession(workspace, EditorSession.snapshot(workspace, navigation, openFiles, currentLocation(), snapGrid));
     }
 
     private void restoreSession(boolean active) throws IOException {
-        JsonObject saved = sessions.read(workspace);
+        JsonObject saved = persistence.session(workspace);
         var recent = saved.has("recent") ? saved.getAsJsonArray("recent").asList().stream().map(JsonElement::getAsString).toList() : List.<String>of();
         navigation.restore(workspace, EditorSession.positions(workspace, saved), recent);
         openFiles.restore(workspace, saved.has("open_files") ? saved.getAsJsonArray("open_files") : new JsonArray());
@@ -4162,9 +4164,11 @@ final class ImGuiAuthoringEditor {
         status = diagnostic.resourcePath() + diagnostic.pointer() + ": " + diagnostic.message();
     }
 
-    private void writeRecovery() throws IOException {
-        saveSession();
+    private void writeRecovery() throws IOException { writeRecovery(true); }
+
+    private void writeRecovery(boolean wait) throws IOException {
         if (workspace == null || showRecovery) return;
+        recordLocation();
         JsonObject buffers = new JsonObject();
         if (document != null) buffers.addProperty("document", document.resourcePath());
         buffers.addProperty("pointer", pointer.get());
@@ -4173,7 +4177,8 @@ final class ImGuiAuthoringEditor {
         buffers.add("documents", documentBuffers.snapshot());
         buffers.add("pack_file", packFiles.recovery());
         buffers.add("pack_settings", packBuild.recovery());
-        EditorRecovery.write(workspace, buffers, hasPendingDrafts());
+        persistence.write(workspace, buffers, hasPendingDrafts(),
+                EditorSession.snapshot(workspace, navigation, openFiles, currentLocation(), snapGrid), wait);
     }
 
     private void recoverDrafts() throws IOException {

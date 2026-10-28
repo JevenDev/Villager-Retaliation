@@ -25,6 +25,13 @@ import java.util.zip.ZipFile;
 public final class AuthoringWorkspace {
     private static final String FILE = "workspace.json";
     private static final String RECOVERY = "workspace.recovery.json";
+    private long savedGeneration, revision, observedSave = -1, observedSource = -1;
+    private List<AuthoringDocument> observedDocuments = List.of();
+    private long[] observedRevisions = new long[0];
+    private Map<String, byte[]> observedAttachments = Map.of();
+    private java.util.Set<String> observedFolders = java.util.Set.of();
+    private List<JsonObject> observedDeleted = List.of();
+    private JsonObject observedPack;
     private List<AuthoringDocument> savedDocuments = List.of();
     private Map<String, byte[]> savedAttachments = Map.of();
     private java.util.Set<String> savedFolders = java.util.Set.of();
@@ -196,6 +203,22 @@ public final class AuthoringWorkspace {
         } catch (com.google.gson.JsonParseException | IllegalArgumentException | IllegalStateException ex) {
             throw new IOException("Invalid authoring workspace: " + ex.getMessage(), ex);
         }
+    }
+
+    public long revision() {
+        long sourceRevision = sourceFolder == null ? 0 : sourceFolder.revision();
+        boolean current = observedSave == savedGeneration && observedSource == sourceRevision && observedPack == packMetadata
+                && documents.equals(observedDocuments) && attachments.equals(observedAttachments)
+                && folders.equals(observedFolders) && deleted.equals(observedDeleted);
+        for (int i = 0; current && i < documents.size(); i++) current = documents.get(i).revision() == observedRevisions[i];
+        if (!current) {
+            observedSave = savedGeneration; observedSource = sourceRevision; observedPack = packMetadata;
+            observedDocuments = List.copyOf(documents);
+            observedRevisions = documents.stream().mapToLong(AuthoringDocument::revision).toArray();
+            observedAttachments = Map.copyOf(attachments); observedFolders = java.util.Set.copyOf(folders); observedDeleted = List.copyOf(deleted);
+            revision++;
+        }
+        return revision;
     }
 
     public Path directory() { return directory; }
@@ -1698,7 +1721,9 @@ public final class AuthoringWorkspace {
         return String.join("/", java.util.Arrays.copyOf(parts, parts[index + 1].equals("_shared") ? index + 2 : index + 3)) + "/";
     }
 
-    private JsonObject snapshot() {
+    private JsonObject snapshot() { return snapshotState().json(); }
+
+    private WorkspaceSnapshot snapshotState() {
         JsonObject root = new JsonObject();
         root.addProperty("version", 1);
         JsonArray values = new JsonArray();
@@ -1706,9 +1731,6 @@ public final class AuthoringWorkspace {
             values.add(documentState(document));
         }
         root.add("documents", values);
-        JsonObject files = new JsonObject();
-        attachments.forEach((path, bytes) -> files.addProperty(path, Base64.getEncoder().encodeToString(bytes)));
-        root.add("attachments", files);
         JsonArray directories = new JsonArray();
         folders.forEach(directories::add);
         root.add("folders", directories);
@@ -1718,7 +1740,18 @@ public final class AuthoringWorkspace {
         root.add("deleted", trash);
         if (sourceFolder != null) root.add("source_folder", sourceFolder.snapshot());
         else if (sourceState != null) root.add("source_folder", sourceState.deepCopy());
-        return root;
+        return new WorkspaceSnapshot(root, Map.copyOf(attachments));
+    }
+
+    private record WorkspaceSnapshot(JsonObject state, Map<String, byte[]> attachments) {
+        JsonObject json() {
+            JsonObject root = state.deepCopy();
+            JsonObject files = new JsonObject();
+            // workspace asset bytes are replaced, never mutated or exposed to callers
+            attachments.forEach((path, bytes) -> files.addProperty(path, Base64.getEncoder().encodeToString(bytes)));
+            root.add("attachments", files);
+            return root;
+        }
     }
 
     private static JsonObject documentState(AuthoringDocument document) {
@@ -1731,6 +1764,7 @@ public final class AuthoringWorkspace {
     }
 
     private void markSaved() {
+        savedGeneration++;
         documents.forEach(AuthoringDocument::markSaved);
         savedDocuments = List.copyOf(documents);
         savedAttachments = Map.copyOf(attachments);
@@ -1749,16 +1783,20 @@ public final class AuthoringWorkspace {
     public boolean recoveryAvailable() { return Files.isRegularFile(directory.resolve(RECOVERY), LinkOption.NOFOLLOW_LINKS); }
     public JsonObject recoveryBuffers() { return recoveryBuffers.deepCopy(); }
 
-    public void saveRecovery(JsonObject buffers) throws IOException {
-        JsonObject root = snapshot();
-        root.add("recovery_buffers", buffers.deepCopy());
-        atomicWrite(directory.resolve(RECOVERY), AuthoringDocument.JSON.toJson(root).getBytes(StandardCharsets.UTF_8));
+    @FunctionalInterface
+    public interface RecoveryWrite { void write() throws IOException; }
+
+    public RecoveryWrite prepareRecovery(JsonObject buffers, boolean keep) {
+        if (!keep) return AuthoringRecovery.prepare(directory.resolve(RECOVERY), null);
+        var snapshot = snapshotState();
+        snapshot.state().add("recovery_buffers", buffers.deepCopy());
+        return AuthoringRecovery.prepare(directory.resolve(RECOVERY),
+                () -> AuthoringDocument.JSON.toJson(snapshot.json()).getBytes(StandardCharsets.UTF_8));
     }
 
-    public void discardRecovery() throws IOException {
-        rejectSymlinks(directory.resolve(RECOVERY));
-        Files.deleteIfExists(directory.resolve(RECOVERY));
-    }
+    public void saveRecovery(JsonObject buffers) throws IOException { prepareRecovery(buffers, true).write(); }
+
+    public void discardRecovery() throws IOException { prepareRecovery(new JsonObject(), false).write(); }
 
     public void save() throws IOException {
         if (sourceState != null && sourceFolder == null) throw new IOException("Open the original pack folder to save its linked workspace");
