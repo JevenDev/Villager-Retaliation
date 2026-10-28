@@ -80,8 +80,8 @@ public final class ExploredMapClientSmoke {
             require(((ExploredMapScreen)mc.screen).transitionProgress() == 1, "map input skips the transition immediately");
             mc.setScreen(new ExploredMapScreen());
             openingPitch = mc.player.getXRot(); openingYaw = mc.player.getYRot();
-            set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
-            set(ExploredMapScreen.class, mc.screen, "zoom", 1.0); phase = 3; ticks = 0;
+            navigation((ExploredMapScreen) mc.screen).focus(.5, .5);
+            zoom((ExploredMapScreen) mc.screen, 1.0); phase = 3; ticks = 0;
         }
         if (phase == 3 && ticks == 3) {
             screenshot("flat-map-opening.png");
@@ -107,12 +107,12 @@ public final class ExploredMapClientSmoke {
             screenshot("flat-map-cloud-motion.png");
             results.add("Clouds move across stationary unknown terrain while discovered pixels remain unobstructed");
             results.add("Cursor zoom, drag, keyboard controls, exact top-down coordinates and idle upload reuse passed");
-            set(ExploredMapScreen.class, mc.screen, "zoom", .3); phase = 10; ticks = 0;
+            zoom((ExploredMapScreen) mc.screen, .3); phase = 10; ticks = 0;
         }
         if (phase == 10 && ++ticks >= 120) {
             screenshot("flat-map-distant.png"); verifyPixels();
             results.add("Minecraft map colors, neutral fog and moving vanilla cloud layers match at near and distant zoom");
-            set(ExploredMapScreen.class, mc.screen, "zoom", 1.0);
+            zoom((ExploredMapScreen) mc.screen, 1.0);
             pending = mc.getSingleplayerServer().submit(() -> mc.getSingleplayerServer().overworld().setDayTime(18000));
             phase = 5; ticks = 0;
         }
@@ -154,8 +154,8 @@ public final class ExploredMapClientSmoke {
         if (phase == 7 && ++ticks >= 40) {
             require(ExploredMapMinimap.width() == 240, "minimap size applies live"); screenshot("flat-minimap-large.png");
             VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.set(false);
-            mc.setScreen(new ExploredMapScreen()); set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
-            set(ExploredMapScreen.class, mc.screen, "zoom", 1.0);
+            mc.setScreen(new ExploredMapScreen()); navigation((ExploredMapScreen) mc.screen).focus(.5, .5);
+            zoom((ExploredMapScreen) mc.screen, 1.0);
             phase = 8; ticks = 0;
         }
         if (phase == 8 && ++ticks >= 40) {
@@ -172,7 +172,7 @@ public final class ExploredMapClientSmoke {
             require(uploads == ExploredMapClient.tiles().uploads(), "closed map with minimap disabled performs no terrain uploads");
             results.add("Closed map with minimap disabled performs no terrain uploads");
             var screen = new ExploredMapScreen(); mc.setScreen(screen);
-            set(ExploredMapScreen.class, screen, "openedAt", System.nanoTime() - 250_000_000L);
+            set(MapScreenTransition.class, field(screen, "transition"), "startedAt", System.nanoTime() - 250_000_000L);
             screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(screen.transitionProgress() > 0 && screen.transitionProgress() < .25f, "closing during opening reverses from the current position");
             phase = 13; ticks = 0;
@@ -193,13 +193,13 @@ public final class ExploredMapClientSmoke {
         for (float pitch : new float[] {-89, 0, 80}) {
             float previous = pitch;
             for (long elapsed : new long[] {100_000_000L, 250_000_000L, 450_000_000L}) {
-                set(ExploredMapScreen.class, screen, "openedAt", System.nanoTime() - elapsed);
+                set(MapScreenTransition.class, field(screen, "transition"), "startedAt", System.nanoTime() - elapsed);
                 float tilted = screen.transitionPitch(pitch);
                 require(tilted >= -90 && tilted >= pitch - 6.001f && tilted <= previous, "camera gently tilts by at most six degrees from any viewing angle");
                 previous = tilted;
             }
         }
-        set(ExploredMapScreen.class, screen, "openedAt", System.nanoTime());
+        set(MapScreenTransition.class, field(screen, "transition"), "startedAt", System.nanoTime());
     }
     private static MapRepository fixture() {
         var root = Path.of(System.getProperty(OUTPUT), "flat-fixture");
@@ -232,7 +232,7 @@ public final class ExploredMapClientSmoke {
         screen.mouseReleased(screen.width / 2.0, screen.height / 2.0, 0);
         screen.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0);
         require(screen.view().x() == Minecraft.getInstance().player.getX(), "home recenters on player");
-        set(ExploredMapScreen.class, screen, "centerX", .5); set(ExploredMapScreen.class, screen, "centerZ", .5); set(ExploredMapScreen.class, screen, "zoom", 1.0);
+        navigation((ExploredMapScreen) screen).focus(.5, .5); zoom((ExploredMapScreen) screen, 1.0);
     }
     private static void verifyPixels() {
         var screen = (ExploredMapScreen)Minecraft.getInstance().screen; var view = screen.view();
@@ -294,6 +294,16 @@ public final class ExploredMapClientSmoke {
     private static void screenshot(String name) {
         try (var image = Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) { image.writeToFile(Path.of(System.getProperty(OUTPUT), name)); }
         catch (IOException e) { throw new UncheckedIOException(e); }
+    }
+    static MapNavigation navigation(ExploredMapScreen screen) {
+        return (MapNavigation) field(screen, "navigation");
+    }
+    static void zoom(ExploredMapScreen screen, double scale) {
+        navigation(screen).zoomAt(screen.width / 2.0, screen.height / 2.0, scale);
+    }
+    private static Object field(Object target, String name) {
+        try { var field = target.getClass().getDeclaredField(name); field.setAccessible(true); return field.get(target); }
+        catch (ReflectiveOperationException e) { throw new AssertionError(e); }
     }
     private static void set(Class<?> type, Object target, String name, Object value) {
         try { var field = type.getDeclaredField(name); field.setAccessible(true); field.set(target, value); }

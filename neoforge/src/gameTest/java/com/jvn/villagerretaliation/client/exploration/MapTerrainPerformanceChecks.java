@@ -129,8 +129,7 @@ public final class MapTerrainPerformanceChecks {
         if (MODES[stage].equals("open") || MODES[stage].equals("reopen")) open();
         if (MODES[stage].equals("close") || MODES[stage].equals("reclose")) mc.setScreen(null);
         if (MODES[stage].equals("warm-zoom")) {
-            set(ExploredMapScreen.class, mc.screen, "centerX", cameraX);
-            set(ExploredMapScreen.class, mc.screen, "centerZ", cameraZ);
+            ExploredMapClientSmoke.navigation((ExploredMapScreen) mc.screen).focus(cameraX, cameraZ);
         }
     }
     private static boolean moving() {
@@ -143,9 +142,8 @@ public final class MapTerrainPerformanceChecks {
         var mc = Minecraft.getInstance();
         mc.setScreen(new ExploredMapScreen());
         var screen = (ExploredMapScreen)mc.screen;
-        set(ExploredMapScreen.class, screen, "centerX", cameraX);
-        set(ExploredMapScreen.class, screen, "centerZ", cameraZ);
-        set(ExploredMapScreen.class, screen, "zoom", 2.5);
+        ExploredMapClientSmoke.navigation(screen).focus(cameraX, cameraZ);
+        ExploredMapClientSmoke.zoom(screen, 2.5);
     }
 
     private static MapRepository fixture() {
@@ -176,13 +174,13 @@ public final class MapTerrainPerformanceChecks {
         double seconds = (System.nanoTime() - started) / 1e9;
         if (MODES[stage].contains("zoom")) {
             double target = Math.exp(Math.log(.3) + (Math.sin(seconds * 1.8) + 1) * .5 * Math.log(16 / .3));
-            double zoom = (double)get(screen, "zoom");
+            double zoom = screen.view().scale();
             screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, Math.log(target / zoom) / Math.log(1.15));
         }
         if (MODES[stage].contains("pan")) {
             double x = cameraX + 180 * Math.sin(seconds), z = cameraZ + 160 * Math.cos(seconds * .7);
             if (MODES[stage].equals("distant-pan")) { x = cameraX + 500 * Math.sin(seconds * 1.5); z = cameraZ + 400 * Math.cos(seconds); }
-            double dx = x - (double)get(screen, "centerX"), dz = z - (double)get(screen, "centerZ");
+            double dx = x - screen.view().x(), dz = z - screen.view().z();
             var view = currentView(screen);
             screen.mouseClicked(screen.width / 2.0, screen.height / 2.0, 0);
             screen.mouseDragged(screen.width / 2.0, screen.height / 2.0, 0,
@@ -208,10 +206,6 @@ public final class MapTerrainPerformanceChecks {
     }
     private static double percentile(List<Double> values, double p) { return values.isEmpty() ? 0 : values.get(Math.min(values.size() - 1, (int)(values.size() * p))); }
     private static MapView currentView(ExploredMapScreen screen) { return screen.view(); }
-    private static Object get(Object target, String name) {
-        try { var field = target.getClass().getDeclaredField(name); field.setAccessible(true); return field.get(target); }
-        catch (ReflectiveOperationException e) { throw new AssertionError(e); }
-    }
     private static void set(Class<?> type, Object target, String name, Object value) {
         try { var field = type.getDeclaredField(name); field.setAccessible(true); field.set(target, value); }
         catch (ReflectiveOperationException e) { throw new AssertionError(e); }

@@ -33,6 +33,9 @@ final class SettlementOverviewMap implements AutoCloseable {
     private double centerZ;
     private int zoom;
     private List<Marker> markers = List.of();
+    private MapView projection;
+    private List<SettlementPlotSnapshot.Plot> territoryPlots = List.of();
+    private Set<ChunkPos> ownedChunks = Set.of();
 
     void layout(int left, int top, int width, int height, BlockPos center, int radius) {
         this.left = left;
@@ -54,6 +57,7 @@ final class SettlementOverviewMap implements AutoCloseable {
     }
 
     void zoom(double direction, double focusX, double focusZ) {
+        if (direction == 0) return;
         int maximum = Math.max(0, (int) Math.ceil(Math.log(this.boundaryRadius / 16.0D) / Math.log(1.5D)));
         this.zoom = Math.clamp(this.zoom + (direction < 0 ? 1 : -1), 0, maximum);
         this.radius = Math.max(Math.min(16, this.boundaryRadius), this.boundaryRadius / Math.pow(1.5D, this.zoom));
@@ -72,14 +76,13 @@ final class SettlementOverviewMap implements AutoCloseable {
         return x >= this.left && x < this.left + this.width && y >= this.top && y < this.top + this.height;
     }
 
-    boolean coversChrome(double x, double y) {
-        return x >= this.left - 2 && x < this.left + this.width + 2
-                && y >= this.top - SettlementUiWindow.TITLE_HEIGHT - 2 && y < this.top + this.height + 2;
-    }
-
     MapView view() {
-        return new MapView(this.width, this.height, this.centerX, this.centerZ,
-                Math.min(this.width, this.height) / (this.radius * 2.0D));
+        double scale = Math.min(this.width, this.height) / (this.radius * 2.0D);
+        if (this.projection == null || this.projection.width() != this.width || this.projection.height() != this.height
+                || this.projection.x() != this.centerX || this.projection.z() != this.centerZ || this.projection.scale() != scale) {
+            this.projection = new MapView(this.width, this.height, this.centerX, this.centerZ, scale);
+        }
+        return this.projection;
     }
 
     double worldX(double x) { return view().worldX(x - this.left); }
@@ -149,15 +152,18 @@ final class SettlementOverviewMap implements AutoCloseable {
     }
 
     private void territory(GuiGraphics g, List<SettlementPlotSnapshot.Plot> plots) {
-        Set<ChunkPos> owned = plots.stream().filter(SettlementPlotSnapshot.Plot::owned)
-                .map(SettlementPlotSnapshot.Plot::chunk).collect(Collectors.toSet());
-        for (var chunk : owned) {
+        if (!this.territoryPlots.equals(plots)) {
+            this.territoryPlots = List.copyOf(plots);
+            this.ownedChunks = plots.stream().filter(SettlementPlotSnapshot.Plot::owned)
+                    .map(SettlementPlotSnapshot.Plot::chunk).collect(Collectors.toSet());
+        }
+        for (var chunk : this.ownedChunks) {
             int minX = x(chunk.getMinBlockX()), minZ = y(chunk.getMinBlockZ());
             int maxX = x(chunk.getMaxBlockX() + 1), maxZ = y(chunk.getMaxBlockZ() + 1);
-            if (!owned.contains(new ChunkPos(chunk.x - 1, chunk.z))) g.fill(minX, minZ, minX + 1, maxZ, 0x8078D79B);
-            if (!owned.contains(new ChunkPos(chunk.x + 1, chunk.z))) g.fill(maxX - 1, minZ, maxX, maxZ, 0x8078D79B);
-            if (!owned.contains(new ChunkPos(chunk.x, chunk.z - 1))) g.fill(minX, minZ, maxX, minZ + 1, 0x8078D79B);
-            if (!owned.contains(new ChunkPos(chunk.x, chunk.z + 1))) g.fill(minX, maxZ - 1, maxX, maxZ, 0x8078D79B);
+            if (!this.ownedChunks.contains(new ChunkPos(chunk.x - 1, chunk.z))) g.fill(minX, minZ, minX + 1, maxZ, 0x8078D79B);
+            if (!this.ownedChunks.contains(new ChunkPos(chunk.x + 1, chunk.z))) g.fill(maxX - 1, minZ, maxX, maxZ, 0x8078D79B);
+            if (!this.ownedChunks.contains(new ChunkPos(chunk.x, chunk.z - 1))) g.fill(minX, minZ, maxX, minZ + 1, 0x8078D79B);
+            if (!this.ownedChunks.contains(new ChunkPos(chunk.x, chunk.z + 1))) g.fill(minX, maxZ - 1, maxX, maxZ, 0x8078D79B);
         }
     }
 
@@ -229,5 +235,7 @@ final class SettlementOverviewMap implements AutoCloseable {
     public void close() {
         this.terrain.close();
         this.markers = List.of();
+        this.territoryPlots = List.of();
+        this.ownedChunks = Set.of();
     }
 }

@@ -10,14 +10,23 @@ final class SettlementOverviewMapClientChecks {
         map.layout(10, 20, 100, 60, new BlockPos(-128, 64, -256), 80);
         require(map.worldX(60) == -128 && map.worldZ(50) == -256, "the map center preserves negative world coordinates");
         require(map.x(-112) - map.x(-128) == map.y(-240) - map.y(-256), "rectangular layouts keep equal block scale on both axes");
+        var initial = map.view();
+        require(map.view() == initial, "unchanged map projections are reused");
         double originalSpan = map.worldX(110) - map.worldX(10);
         map.zoom(-1, -120, -248);
         require(map.worldX(110) - map.worldX(10) < originalSpan, "map zoom increases terrain detail");
+        var zoomed = map.view();
+        require(zoomed != initial, "zoom invalidates the cached projection");
+        map.zoom(0, 0, 0);
+        require(map.view() == zoomed, "zero scroll preserves both zoom and focus");
+        map.layout(10, 20, 120, 80, new BlockPos(-128, 64, -256), 80);
+        require(map.view().width() == 120 && map.view().height() == 80, "resizing invalidates the cached projection");
+        map.layout(10, 20, 100, 60, new BlockPos(-128, 64, -256), 80);
         for (int i = 0; i < 100; i++) map.zoom(-1, -120, -248);
         require(map.worldZ(80) - map.worldZ(20) == 32, "map zoom stops at sixteen blocks of radius");
         map.center();
         require(map.worldX(110) - map.worldX(10) == originalSpan, "centering restores the settlement overview");
-        require(!map.contains(110, 20) && map.coversChrome(9, 19), "map chrome has a separate hit region from terrain");
+        require(!map.contains(110, 20) && !map.contains(9, 19), "map hit tests exclude the terrain boundary and window chrome");
         require(map.worldX(35) == map.view().worldX(25) && map.worldZ(45) == map.view().worldZ(25),
                 "map input and recorded terrain use the same world projection");
         require(map.x(-112) - map.left == Math.round(map.view().screenX(-112)),
