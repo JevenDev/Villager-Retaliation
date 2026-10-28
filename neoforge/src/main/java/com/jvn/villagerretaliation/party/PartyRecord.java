@@ -53,13 +53,12 @@ public final class PartyRecord {
     private PartyAttackMode attackMode;
     private boolean sharedVillagerInventories;
     private boolean friendlyFireAllowed;
-    private boolean mountMode;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
         this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new LinkedHashSet<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new LinkedHashSet<>(), new LinkedHashSet<>(),
                 PartyCombatMode.ATTACK_WITH_PARTY, PartyAttackMode.ALL,
-                true, false, false);
+                true, false);
     }
 
     private PartyRecord(
@@ -76,8 +75,7 @@ public final class PartyRecord {
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
             boolean sharedVillagerInventories,
-            boolean friendlyFireAllowed,
-            boolean mountMode) {
+            boolean friendlyFireAllowed) {
         this.id = id;
         this.leaderId = leaderId;
         this.createdGameTime = Math.max(0L, createdGameTime);
@@ -98,7 +96,6 @@ public final class PartyRecord {
         this.villagers.forEach(villager -> villager.bindPartyPolicies(this.combatMode, this.attackMode));
         this.sharedVillagerInventories = sharedVillagerInventories;
         this.friendlyFireAllowed = friendlyFireAllowed;
-        this.mountMode = mountMode;
         normalizePlayers();
     }
 
@@ -238,7 +235,7 @@ public final class PartyRecord {
     }
 
     public boolean mountMode() {
-        return this.mountMode;
+        return this.villagers.stream().anyMatch(PartyVillagerRecord::mountMode);
     }
 
     void setCombatMode(PartyCombatMode mode) {
@@ -260,7 +257,7 @@ public final class PartyRecord {
     }
 
     void setMountMode(boolean enabled) {
-        this.mountMode = enabled;
+        this.villagers.forEach(record -> record.setMountMode(enabled));
     }
 
     public void addSharedQuest(PartySharedQuestRecord sharedQuest) {
@@ -379,7 +376,7 @@ public final class PartyRecord {
         tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putBoolean(TAG_SHARED_VILLAGER_INVENTORIES, this.sharedVillagerInventories);
         tag.putBoolean(TAG_FRIENDLY_FIRE_ALLOWED, this.friendlyFireAllowed);
-        tag.putBoolean(TAG_MOUNT_MODE, this.mountMode);
+        tag.putBoolean(TAG_MOUNT_MODE, mountMode());
         tag.put(TAG_ALLIED_PARTIES, savePartyIds(this.alliedPartyIds));
         tag.put(TAG_ALLIANCE_REQUESTS, savePartyIds(this.allianceRequestPartyIds));
         return tag;
@@ -401,7 +398,7 @@ public final class PartyRecord {
         ListTag villagersTag = tag.getList(TAG_VILLAGERS, Tag.TAG_COMPOUND);
         for (Tag rawVillager : villagersTag) {
             if (rawVillager instanceof CompoundTag villagerTag) {
-                PartyVillagerRecord villager = PartyVillagerRecord.load(villagerTag);
+                PartyVillagerRecord villager = PartyVillagerRecord.load(villagerTag, tag.getBoolean(TAG_MOUNT_MODE));
                 if (villager != null) {
                     villagers.add(villager);
                 }
@@ -439,8 +436,7 @@ public final class PartyRecord {
                 loadCombatMode(tag),
                 PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE)),
                 !tag.contains(TAG_SHARED_VILLAGER_INVENTORIES) || tag.getBoolean(TAG_SHARED_VILLAGER_INVENTORIES),
-                tag.getBoolean(TAG_FRIENDLY_FIRE_ALLOWED),
-                tag.getBoolean(TAG_MOUNT_MODE));
+                tag.getBoolean(TAG_FRIENDLY_FIRE_ALLOWED));
     }
 
     private void normalizePlayers() {

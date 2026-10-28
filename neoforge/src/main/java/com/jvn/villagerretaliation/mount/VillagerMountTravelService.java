@@ -258,7 +258,7 @@ public final class VillagerMountTravelService {
         if (partyVillager != null && PartyVillagerContractService.isActivePartyVillager(level, villager)) {
             return new TravelDecision(
                     true,
-                    party.mountMode() && partyVillager.quickCommandsEnabled(),
+                    partyVillager.mountMode() && partyVillager.quickCommandsEnabled(),
                     partyVillager.commandMode() == PartyCommandMode.STAY);
         }
         if (!HiredVillagerContractService.isHired(level, villager)) {

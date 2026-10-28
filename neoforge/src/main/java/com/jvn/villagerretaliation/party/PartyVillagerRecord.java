@@ -68,6 +68,7 @@ public final class PartyVillagerRecord {
     private PartyAttackMode partyAttackMode = PartyAttackMode.ALL;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
     private boolean quickCommandsEnabled = true;
+    private boolean mountMode;
     private PartyWeaponPreference weaponPreference = PartyWeaponPreference.AUTO;
     private boolean weaponsUnequipped;
     private boolean regrouping;
@@ -108,6 +109,10 @@ public final class PartyVillagerRecord {
         this.lastKnownDimension = lastKnownDimension;
         this.lastKnownPosition = lastKnownPosition == null ? null : lastKnownPosition.immutable();
     }
+
+    public boolean mountMode() { return this.mountMode; }
+
+    void setMountMode(boolean enabled) { this.mountMode = enabled; }
 
     public UUID villagerId() {
         return this.villagerId;
@@ -382,6 +387,7 @@ public final class PartyVillagerRecord {
         }
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
+        tag.putBoolean("MountMode", this.mountMode);
         tag.putString(TAG_WEAPON_PREFERENCE, this.weaponPreference.name());
         tag.putBoolean(TAG_WEAPONS_UNEQUIPPED, this.weaponsUnequipped);
         tag.putBoolean(TAG_REGROUPING, this.regrouping);
@@ -393,6 +399,10 @@ public final class PartyVillagerRecord {
     }
 
     static PartyVillagerRecord load(CompoundTag tag) {
+        return load(tag, false);
+    }
+
+    static PartyVillagerRecord load(CompoundTag tag, boolean legacyMountMode) {
         if (!tag.hasUUID(TAG_VILLAGER) || !tag.hasUUID(TAG_RECRUITER)) {
             return null;
         }
@@ -426,6 +436,7 @@ public final class PartyVillagerRecord {
         );
         record.commanderId = tag.hasUUID("Commander") ? tag.getUUID("Commander") : record.recruiterId;
         record.commanderEquipmentAccess = tag.getBoolean("CommanderEquipmentAccess");
+        record.mountMode = tag.contains("MountMode") ? tag.getBoolean("MountMode") : legacyMountMode;
         if (tag.getBoolean(TAG_POLICY_OVERRIDES)) {
             if (tag.contains(TAG_COMBAT_MODE_OVERRIDE, Tag.TAG_STRING)) {
                 record.combatModeOverride = PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE_OVERRIDE));

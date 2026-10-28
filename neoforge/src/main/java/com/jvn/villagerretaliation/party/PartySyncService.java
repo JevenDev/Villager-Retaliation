@@ -123,7 +123,8 @@ public final class PartySyncService {
                 attackModeState(party),
                 party.sharedVillagerInventories(),
                 party.friendlyFireAllowed(),
-                party.mountMode(),
+                party.villagers().stream().filter(PartyVillagerRecord::mountMode)
+                        .map(PartyVillagerRecord::villagerId).collect(java.util.stream.Collectors.toSet()),
                 VillagerMountAssignmentService.featureAvailable(),
                 PartyQuickCommandService.moveTargetDimension(party),
                 PartyQuickCommandService.moveTarget(party),
@@ -140,7 +141,7 @@ public final class PartySyncService {
             PartyAttackModeState attackMode,
             boolean sharedVillagerInventories,
             boolean friendlyFireAllowed,
-            boolean mountMode,
+            java.util.Set<UUID> mountedVillagers,
             boolean mountFeatureAvailable,
             ResourceLocation moveTargetDimension,
             BlockPos moveTarget,
@@ -157,7 +158,9 @@ public final class PartySyncService {
                     this.attackMode,
                     this.sharedVillagerInventories,
                     this.friendlyFireAllowed,
-                    this.mountMode,
+                    this.villagers.stream().anyMatch(villager -> villager.canCommand(recipientId)
+                            && villager.quickCommandsEnabled() && villager.assignedMount()
+                            && this.mountedVillagers.contains(villager.villagerId())),
                     this.mountFeatureAvailable,
                     this.moveTargetDimension,
                     this.moveTarget,

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
@@ -592,16 +593,17 @@ public final class PartyVillagerContractService {
                 return List.of();
             }
         }
-        PartyService.deleteParty(level, party.id());
+        PartySavedData.get(level).removeParty(party.id());
         var personalParties = new java.util.LinkedHashMap<UUID, PartyRecord>();
         for (PartyVillagerRecord record : villagers) {
             if (!record.recruiterId().equals(leader.getUUID())) {
                 var personal = personalParties.computeIfAbsent(record.recruiterId(), owner ->
                         PartySavedData.get(level).createParty(owner, level.getServer().overworld().getGameTime()));
-                record.assignCommander(record.recruiterId());
+                PartyCommandService.reassignCommander(level, record, record.recruiterId());
                 PartySavedData.get(level).addVillager(personal, record);
                 continue;
             }
+            VillagerMountAssignmentService.clearAssignment(level, record.villagerId());
             var state = CompanionSavedData.get(level).find(record.villagerId());
             if (state != null) state.remove("ActiveService");
             CompanionLifecycleService.beginDeparture(level, record.villagerId(), "Party disbanded");

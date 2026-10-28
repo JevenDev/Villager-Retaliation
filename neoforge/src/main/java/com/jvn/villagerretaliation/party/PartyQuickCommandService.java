@@ -356,16 +356,15 @@ public final class PartyQuickCommandService {
             PartyRecord party,
             List<PartyVillagerRecord> participants,
             boolean enabled) {
-        if (!VillagerMountAssignmentService.featureAvailable()
-                || party.villagers().stream().anyMatch(record -> !CompanionAuthority.canCommand(player.getUUID(), party, record))) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
             return 0;
         }
-        int affected = (int) participants.stream()
-                .filter(record -> VillagerMountAssignmentService.hasAssignment(
-                        player.serverLevel(), record.villagerId()))
-                .count();
-        if (affected > 0) {
-            party.setMountMode(enabled);
+        int affected = 0;
+        for (PartyVillagerRecord record : participants) {
+            if (VillagerMountAssignmentService.hasAssignment(player.serverLevel(), record.villagerId())) {
+                record.setMountMode(enabled);
+                affected++;
+            }
         }
         return affected;
     }

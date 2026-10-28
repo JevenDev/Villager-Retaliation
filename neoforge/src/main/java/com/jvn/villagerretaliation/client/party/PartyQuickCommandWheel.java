@@ -435,7 +435,7 @@ public final class PartyQuickCommandWheel {
         var roster = PartyRosterClient.roster();
         if (commandedVillagerId == null
                 && roster.mountFeatureAvailable()
-                && roster.villagers().stream().anyMatch(villager ->
+                && targets.stream().anyMatch(villager ->
                         villager.quickCommandsEnabled() && villager.assignedMount())) {
             entries.add(entry(roster.mountMode()
                     ? PartyQuickCommand.DISMOUNT_MOUNT

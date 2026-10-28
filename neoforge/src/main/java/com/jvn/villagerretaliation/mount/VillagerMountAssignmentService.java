@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.network.VillagerMountTargetModePayload;
 import com.jvn.villagerretaliation.party.PartyRecord;
+import com.jvn.villagerretaliation.party.CompanionAuthority;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartySyncService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
@@ -76,11 +77,10 @@ public final class VillagerMountAssignmentService {
             return false;
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
-        boolean partyLeader = party != null
-                && party.villager(villager.getUUID()) != null
-                && party.leaderId().equals(player.getUUID())
+        boolean canEquip = party != null
+                && CompanionAuthority.canEquip(player.getUUID(), party, party.villager(villager.getUUID()))
                 && PartyVillagerContractService.isActivePartyVillager(level, villager);
-        return partyLeader || HiredVillagerContractService.isHiredBy(level, villager, player);
+        return canEquip || HiredVillagerContractService.isHiredBy(level, villager, player);
     }
 
     public static boolean canRideAssignedMount(ServerPlayer player, Villager villager) {

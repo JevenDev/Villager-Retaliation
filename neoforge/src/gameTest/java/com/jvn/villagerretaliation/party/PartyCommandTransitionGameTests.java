@@ -31,7 +31,12 @@ public final class PartyCommandTransitionGameTests {
                 scenario("gather", PartyGameTests::partyGatherDropsCollectsItemsAndMoveToOverridesIt),
                 scenario("loot", PartyGameTests::partyLootContainersEmptiesContainersNearPing),
                 scenario("gather_unavailable", PartyGameTests::persistentMoveToSurvivesUnavailableGatherCommands),
-                scenario("guard", PartyGameTests::standGuardUsesMainhandShieldWithOffhandTotem));
+                scenario("guard", PartyGameTests::standGuardUsesMainhandShieldWithOffhandTotem),
+                scenario("serialization", PartyGameTests::partyLimitsOrderingAndIndexesSurviveSerialization),
+                scenario("mount_commands", PartyGameTests::mountQuickCommandsPersistAndOnlyAffectEnabledAssignments),
+                scenario("mount_follow", PartyGameTests::mountedFollowerKeepsHorseAndUsesLiveFollowRoute),
+                scenario("mount_move", PartyGameTests::mountedMoveToKeepsHorseRouteActive),
+                scenario("mount_combat", PartyGameTests::mountedPartyVillagerRetainsTargetAndMeleeAttacks));
     }
 
     private static net.minecraft.gametest.framework.TestFunction scenario(
@@ -123,7 +128,7 @@ public final class PartyCommandTransitionGameTests {
         helper.succeed();
     }
 
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         final GameTestHelper helper;
         final ServerPlayer player;
         final EmbeddedChannel channel;

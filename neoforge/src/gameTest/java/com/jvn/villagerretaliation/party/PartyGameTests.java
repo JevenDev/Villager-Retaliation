@@ -488,7 +488,6 @@ public final class PartyGameTests {
         party.setAttackMode(PartyAttackMode.HOSTILES);
         party.setFriendlyFireAllowed(true);
         party.setSharedVillagerInventories(false);
-        party.setMountMode(true);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
         helper.assertTrue(party.hasAdminPrivileges(leader), "party leader should always have admin privileges");
         helper.assertFalse(party.hasAdminPrivileges(second), "new party members should not have admin privileges");
@@ -548,6 +547,7 @@ public final class PartyGameTests {
         PartyInvitation invitation = new PartyInvitation(
                 UUID.randomUUID(), leader, rejectedPlayer, party.id(), now, now + 200L);
         data.putInvitation(invitation);
+        party.setMountMode(true);
         CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
         PartySavedData loaded = PartySavedData.load(saved, level.registryAccess());
         PartyRecord restored = loaded.party(party.id()).orElseThrow(
@@ -569,6 +569,9 @@ public final class PartyGameTests {
         helper.assertTrue(restored.mountMode(), "party mount mode persistence");
         CompoundTag legacyMountParty = party.save();
         legacyMountParty.remove("MountMode");
+        for (var raw : legacyMountParty.getList("Villagers", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            ((CompoundTag) raw).remove("MountMode");
+        }
         helper.assertFalse(PartyRecord.load(legacyMountParty).mountMode(),
                 "legacy parties must begin with mounted party travel disabled");
         CompoundTag legacyFriendlyFireParty = party.save();
