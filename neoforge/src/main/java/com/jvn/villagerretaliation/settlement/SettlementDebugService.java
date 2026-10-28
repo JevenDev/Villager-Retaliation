@@ -24,18 +24,20 @@ public final class SettlementDebugService {
             return 0;
         }
         var level = player.serverLevel();
-        var town = SettlementSavedData.get(level).establishDebug(
-                level, player.getUUID(), player.blockPosition(), plots(player.position(), radius));
+        var data = SettlementSavedData.get(level);
+        boolean expanding = data.at(level.dimension().location(), player.blockPosition()).isPresent();
+        var town = data.establishDebug(level, player.getUUID(), player.blockPosition(), plots(player.position(), radius));
         if (town.isEmpty()) {
-            source.sendFailure(Component.literal("Cannot create debug village: the circle overlaps reserved village plots, "
-                    + "crosses the world border, or settlement data is read-only. No village was created."));
+            source.sendFailure(Component.literal("Cannot create or expand debug village: the circle overlaps another village's reserved plots, "
+                    + "crosses the world border, exceeds settlement limits, or settlement data is read-only. No plots were changed."));
             return 0;
         }
         var created = town.orElseThrow();
-        source.sendSuccess(() -> Component.literal("Created debug village " + created.id().value()
-                + " at " + created.center().toShortString() + " with radius " + radius + " blocks ("
-                + created.territory().plots().size() + " plots). Plots are whole 16x16 chunks touched by the circle. "
-                + "You own this settlement. No buildings or villagers were spawned."), true);
+        source.sendSuccess(() -> Component.literal((expanding ? "Expanded settlement " : "Created debug village ") + created.id().value()
+                + " using a radius of " + radius + " blocks around " + player.blockPosition().toShortString() + " ("
+                + created.territory().plots().size() + " total plots). Plots are whole 16x16 chunks touched by the circle. "
+                + (expanding ? "Existing plots and ownership were preserved. " : "You own this settlement. ")
+                + "No buildings or villagers were spawned."), true);
         return 1;
     }
 

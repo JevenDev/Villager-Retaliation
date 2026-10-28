@@ -89,13 +89,112 @@ public final class SettlementDebugGameTests {
         int count = data.settlements().size();
         var registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
         int records = registry.activeRecords(town.dimension()).size();
-        helper.assertValueEqual(SettlementDebugService.create(source, 32), 0, "repeating at the same location is rejected");
         player.setPos(player.getX() + 64, player.getY(), player.getZ());
         helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 64), 0,
                 "an overlap at the far edge is rejected even when the center is unclaimed");
         helper.assertValueEqual(data.settlements().size(), count, "no partial settlement remains");
         helper.assertValueEqual(registry.activeRecords(town.dimension()).size(), records, "no orphan registry entry remains");
         helper.assertValueEqual(town.territory().plots(), original, "existing territory is untouched");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void commandExpandsExistingSettlementWithoutReplacingItsState(GameTestHelper helper) throws Exception {
+        var founder = player(helper, 4_006_008, -4_006_008);
+        var level = helper.getLevel();
+        var data = SettlementSavedData.get(level);
+        helper.assertValueEqual(SettlementDebugService.create(founder.createCommandSourceStack().withPermission(2), 64), 1, "source settlement exists");
+        var town = data.at(level.dimension().location(), founder.blockPosition()).orElseThrow();
+        town.advance();
+        town.territory().autonomousCapacity(1);
+        int x = new ChunkPos(town.center()).x;
+        int z = new ChunkPos(town.center()).z;
+        while (town.territory().contains(x, z)) x--;
+        town.territory().claim(x, z, false);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        data.claimed(registry, town);
+        var original = java.util.Set.copyOf(town.territory().plots());
+        var center = town.center();
+        var stage = town.stage();
+        int free = town.territory().freeClaims(), paid = town.territory().paidPurchases();
+        int count = data.settlements().size(), records = registry.activeRecords(town.dimension()).size();
+        var operator = player(helper, founder.getX() + 48, founder.getZ());
+        var expected = new java.util.HashSet<>(original);
+        expected.addAll(SettlementDebugService.plots(operator.position(), 32));
+        helper.assertTrue(expected.size() > original.size(), "offset circle adds territory");
+        helper.assertValueEqual(level.getServer().getCommands().getDispatcher().execute("vr admin debug village 32",
+                operator.createCommandSourceStack().withPermission(2)), 1, "command expands the settlement under another operator");
+        helper.assertValueEqual(data.settlements().size(), count, "expansion creates no settlement");
+        helper.assertValueEqual(registry.activeRecords(town.dimension()).size(), records, "expansion creates no registry identity");
+        helper.assertTrue(data.at(town.dimension(), operator.blockPosition()).orElseThrow() == town, "the same record is expanded");
+        helper.assertValueEqual(town.center(), center, "founding center is unchanged");
+        helper.assertValueEqual(town.leader(), founder.getUUID(), "expansion does not transfer ownership to the operator");
+        helper.assertValueEqual(town.stage(), stage, "stage is preserved");
+        helper.assertValueEqual(town.territory().plots(), expected, "circle is added without removing old plots");
+        helper.assertValueEqual(town.territory().freeClaims(), free, "free claim rewards are preserved");
+        helper.assertValueEqual(town.territory().paidPurchases(), paid, "purchase history is preserved");
+        helper.assertTrue(town.economy().constructionFunds().isZero(), "expansion costs nothing");
+        long revision = town.territory().revision();
+        helper.assertValueEqual(SettlementDebugService.create(operator.createCommandSourceStack().withPermission(2), 1), 1, "smaller repeated circle succeeds");
+        helper.assertValueEqual(town.territory().revision(), revision, "a contained circle makes no territory change");
+        helper.assertValueEqual(town.territory().plots(), expected, "smaller radius never shrinks existing territory");
+        var restored = SettlementSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+        var copy = restored.get(town.id()).orElseThrow();
+        helper.assertValueEqual(copy.territory().plots(), expected, "expanded territory survives reload");
+        helper.assertValueEqual(copy.territory().paidPurchases(), paid, "purchase history survives reload");
+        helper.assertTrue(copy.territory().capacity() >= expected.size(), "expanded territory has sufficient saved capacity");
+        helper.assertValueEqual(registry.record(town.id()).orElseThrow().footprintSections().size(), expected.size(), "registry footprint expands");
+        for (long plot : expected) helper.assertValueEqual(restored.owner(town.dimension(), ChunkPos.getX(plot), ChunkPos.getZ(plot)).orElseThrow(),
+                town.id(), "expanded plots are indexed after reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void autonomousExpansionPreservesVillageStateAndUpdatesSections(GameTestHelper helper) {
+        var player = player(helper, 4_010_008, -4_010_008);
+        var level = helper.getLevel();
+        var data = SettlementSavedData.get(level);
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 16), 1, "source settlement exists");
+        var town = data.at(level.dimension().location(), player.blockPosition()).orElseThrow();
+        var state = new AutonomousVillageState();
+        int y = net.minecraft.core.SectionPos.blockToSectionCoord(town.center().getY());
+        for (long plot : town.territory().plots()) for (int dy = -1; dy <= 1; dy++)
+            state.sections.add(net.minecraft.core.SectionPos.asLong(ChunkPos.getX(plot), y + dy, ChunkPos.getZ(plot)));
+        state.ruler = UUID.randomUUID();
+        town.autonomous(state);
+        var registry = VillageAllegianceRegistrySavedData.get(level);
+        data.claimed(registry, town);
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 96), 1, "autonomous village expands");
+        helper.assertTrue(town.autonomous() == state, "autonomous decisions are retained");
+        helper.assertTrue(town.contains(town.center().east(64)), "new plots are usable within autonomous vertical bounds");
+        helper.assertFalse(town.contains(town.center().east(64).above(96)), "expansion preserves vertical boundary semantics");
+        helper.assertValueEqual(registry.record(town.id()).orElseThrow().footprintSections(), state.sections, "registry uses the expanded sections");
+        var restored = SettlementRecord.load(town.save(level.registryAccess()), level.registryAccess(), () -> {});
+        helper.assertValueEqual(restored.autonomous().sections, state.sections, "expanded autonomous boundary survives reload");
+        helper.assertValueEqual(restored.autonomous().ruler(), state.ruler(), "ruler survives expansion and reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void expansionRejectsOtherVillagesWithoutPartialClaims(GameTestHelper helper) {
+        var player = player(helper, 4_008_008, -4_008_008);
+        var level = helper.getLevel();
+        var data = SettlementSavedData.get(level);
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 16), 1, "first settlement exists");
+        var town = data.at(level.dimension().location(), player.blockPosition()).orElseThrow();
+        var neighborPlayer = player(helper, player.getX() + 128, player.getZ());
+        helper.assertValueEqual(SettlementDebugService.create(neighborPlayer.createCommandSourceStack().withPermission(2), 16), 1, "neighbor exists");
+        var neighbor = data.at(town.dimension(), neighborPlayer.blockPosition()).orElseThrow();
+        var original = java.util.Set.copyOf(town.territory().plots());
+        var other = java.util.Set.copyOf(neighbor.territory().plots());
+        long revision = town.territory().revision();
+        int capacity = town.territory().capacity(), count = data.settlements().size();
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 160), 0, "overlapping expansion is rejected");
+        helper.assertValueEqual(town.territory().plots(), original, "no partial plots are added");
+        helper.assertValueEqual(neighbor.territory().plots(), other, "neighbor retains all plots");
+        helper.assertValueEqual(town.territory().revision(), revision, "rejection preserves revision");
+        helper.assertValueEqual(town.territory().capacity(), capacity, "rejection preserves capacity");
+        helper.assertValueEqual(data.settlements().size(), count, "rejection creates no settlement");
         helper.succeed();
     }
 
@@ -142,6 +241,11 @@ public final class SettlementDebugGameTests {
                 "a circle crossing the world border is rejected");
         helper.assertValueEqual(data.settlements().size(), towns, "no partial village is created at the border");
         helper.assertValueEqual(registry.activeRecords(level.dimension().location()).size(), records, "no registry entry is leaked");
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 1), 1, "small circle fits inside border");
+        var town = data.at(level.dimension().location(), player.blockPosition()).orElseThrow();
+        var original = java.util.Set.copyOf(town.territory().plots());
+        helper.assertValueEqual(SettlementDebugService.create(player.createCommandSourceStack().withPermission(2), 64), 0, "expansion crossing border is rejected");
+        helper.assertValueEqual(town.territory().plots(), original, "border rejection preserves the settlement");
         helper.succeed();
     }
 

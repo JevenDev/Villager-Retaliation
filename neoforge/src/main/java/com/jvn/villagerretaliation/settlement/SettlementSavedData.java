@@ -135,8 +135,9 @@ public final class SettlementSavedData extends SavedData {
         if (readOnly() || leader == null || plots.isEmpty()
                 || !plots.contains(new net.minecraft.world.level.ChunkPos(center).toLong())) return Optional.empty();
         var registry = VillageAllegianceRegistrySavedData.get(level);
-        var id = VillageAllegianceId.random();
-        var town = new SettlementRecord(id, level.dimension().location(), center, leader, level.getGameTime(), this::setDirty);
+        var existing = at(level.dimension().location(), center);
+        var id = existing.map(SettlementRecord::id).orElseGet(VillageAllegianceId::random);
+        var town = existing.orElseGet(() -> new SettlementRecord(id, level.dimension().location(), center, leader, level.getGameTime(), this::setDirty));
         var occupied = occupied(registry, town);
         for (long plot : plots) {
             var chunk = new net.minecraft.world.level.ChunkPos(plot);
@@ -144,6 +145,20 @@ public final class SettlementSavedData extends SavedData {
                     || !level.getWorldBorder().isWithinBounds(new BlockPos(chunk.getMinBlockX(), center.getY(), chunk.getMinBlockZ()))
                     || !level.getWorldBorder().isWithinBounds(new BlockPos(chunk.getMaxBlockX(), center.getY(), chunk.getMaxBlockZ()))
                     || occupied.contains(plot)) return Optional.empty();
+        }
+        if (existing.isPresent()) {
+            if (!town.territory().active()) return Optional.empty();
+            if (town.autonomous() != null) {
+                var sections = new LinkedHashSet<>(town.autonomous().sections);
+                int y = SectionPos.blockToSectionCoord(town.center().getY());
+                for (long plot : plots) for (int dy = -1; dy <= 1; dy++)
+                    sections.add(SectionPos.asLong(net.minecraft.world.level.ChunkPos.getX(plot), y + dy, net.minecraft.world.level.ChunkPos.getZ(plot)));
+                if (sections.size() > 65_536) return Optional.empty();
+                town.autonomous().sections.addAll(sections);
+            }
+            town.territory().expandDebug(plots);
+            claimed(registry, town);
+            return Optional.of(town);
         }
         town.migrateTerritory(plots, "");
         registry.ensureRecord(id, level.getGameTime(), town.dimension(), center);
