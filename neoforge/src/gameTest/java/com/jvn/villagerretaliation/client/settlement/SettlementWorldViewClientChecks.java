@@ -131,6 +131,11 @@ final class SettlementWorldViewClientChecks {
             minecraft.screen.onClose();
             require(minecraft.screen == this.view, "closing the table resumes the view");
             this.view.onClose();
+            this.ticks = 0;
+            this.phase = 12;
+        } else if (this.phase == 12) {
+            require(++this.ticks < 100, "the return animation finishes");
+            if (SettlementViewClient.transitioning()) return false;
             require(minecraft.screen == null && minecraft.getCameraEntity() == minecraft.player, "normal play restores the player camera");
             UUID player = minecraft.player.getUUID();
             this.homecoming = minecraft.getSingleplayerServer().submit(() -> {
@@ -180,13 +185,26 @@ final class SettlementWorldViewClientChecks {
                 require(minecraft.getCameraEntity().position().distanceTo(this.openingPosition) < 1,
                         "first and third person transitions begin at the actual rendered camera");
             }
+            require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
+                            .villagerretaliation$getEyeHeight() == 0,
+                    "the world camera never adds a second, decaying player eye offset");
+            if (this.openingCase == 0) {
+                var camera = (com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera();
+                camera.villagerretaliation$setEyeHeight(minecraft.player.getEyeHeight());
+                camera.villagerretaliation$setEyeHeightOld(minecraft.player.getEyeHeight());
+            }
             this.ticks = 0;
             this.phase = 11;
         } else if (this.phase == 11) {
             var opened = (SettlementViewScreen) minecraft.screen;
+            require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
+                            .villagerretaliation$getEyeHeight() == 0,
+                    "a late player-eye update is cleared before rendering the next world-view frame");
             if (this.openingCase == 4) {
+                if (++this.ticks < 5) return false;
                 opened.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             } else {
+                require(this.ticks < 100, "the opening animation has a bounded duration");
                 if (++this.ticks < 30 || SettlementViewClient.transitioning()) return false;
                 require(minecraft.player.position().distanceTo(this.playerPosition) < 0.01, "the transition leaves the player body in place");
                 require(Math.abs(opened.focusX() - this.playerPosition.x) < 0.01
@@ -194,10 +212,43 @@ final class SettlementWorldViewClientChecks {
                 this.capture.accept("world-view-shortcut-" + this.openingCase);
                 opened.onClose();
             }
-            require(minecraft.screen == null && minecraft.getCameraEntity() == minecraft.player, "closing restores the player camera");
+            require(SettlementViewClient.closing() == (this.openingCase != 3),
+                    "the animation setting controls the return as well as opening");
+            if (this.openingCase != 3) {
+                require(minecraft.screen == opened && minecraft.getCameraEntity() != minecraft.player,
+                        "closing keeps the remote camera until the return animation finishes");
+                if (this.openingCase == 5) minecraft.setScreen(null);
+            }
+            this.ticks = 0;
+            this.phase = 13;
+        } else if (this.phase == 13) {
+            require(++this.ticks < 100, "returning from every perspective finishes");
+            if (this.openingCase == 5) require(!SettlementViewClient.transitioning(),
+                    "an external screen change interrupts the animation and releases the camera immediately");
+            if (SettlementViewClient.transitioning()) {
+                require(minecraft.getCameraEntity() != minecraft.player, "the animation retains camera ownership while returning");
+                require(((com.jvn.villagerretaliation.mixin.client.CameraAccessor) minecraft.gameRenderer.getMainCamera())
+                                .villagerretaliation$getEyeHeight() == 0, "returning never adds a player eye offset to the remote pose");
+                if (this.ticks == 5) {
+                    if (this.openingCase == 1) minecraft.player.setYRot(minecraft.player.getYRot() + 30);
+                    this.capture.accept("world-view-return-" + this.openingCase);
+                }
+                return false;
+            }
+            require(minecraft.screen == null && minecraft.getCameraEntity() == minecraft.player, "returning restores the player camera");
             require(minecraft.options.getCameraType() == this.openingPerspective, "closing restores the original perspective");
-            require(!SettlementViewClient.transitioning(), "closing clears animation state even during opening");
-            if (++this.openingCase == 5) {
+            var actual = minecraft.gameRenderer.getMainCamera();
+            var expected = new net.minecraft.client.Camera();
+            var heights = (com.jvn.villagerretaliation.mixin.client.CameraAccessor) expected;
+            heights.villagerretaliation$setEyeHeight(minecraft.player.getEyeHeight());
+            heights.villagerretaliation$setEyeHeightOld(minecraft.player.getEyeHeight());
+            expected.setup(minecraft.level, minecraft.player, !this.openingPerspective.isFirstPerson(),
+                    this.openingPerspective.isMirrored(), actual.getPartialTickTime());
+            require(actual.getPosition().distanceTo(expected.getPosition()) < 0.01
+                            && Math.abs(net.minecraft.util.Mth.wrapDegrees(actual.getYRot() - expected.getYRot())) < 0.01
+                            && Math.abs(actual.getXRot() - expected.getXRot()) < 0.01,
+                    "the final frame matches the live vanilla camera without an eye-height or perspective jump");
+            if (++this.openingCase == 6) {
                 com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.set(this.savedTransitionSetting);
                 return true;
             }

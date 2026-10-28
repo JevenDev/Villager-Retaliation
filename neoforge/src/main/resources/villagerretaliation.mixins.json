@@ -129,6 +129,7 @@
     "client.SettlementEntityRendererMixin",
     "client.SettlementBlockEntityRendererMixin",
     "client.SettlementLevelRendererMixin",
+    "client.CameraAccessor",
     "client.SettlementViewProjectionMixin",
     "client.ExploredMapWorldRenderMixin",
     "client.SlotAccessor",

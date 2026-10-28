@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.mixin.client.CameraAccessor;
 import com.jvn.villagerretaliation.network.SettlementViewRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementViewStatePayload;
 import net.minecraft.client.Camera;
@@ -34,6 +35,10 @@ public final class SettlementViewClient {
     private static double transitionElapsed;
     private static double lastFov = FOV;
     private static double transitionFov;
+    private static double renderedFov = FOV;
+    private static Camera returnCamera;
+    private static boolean closing;
+    private static long lastFrame;
 
     private SettlementViewClient() {
     }
@@ -113,6 +118,7 @@ public final class SettlementViewClient {
         }
         clearOpening();
         previousCamera = minecraft.getCameraEntity();
+        if (previousCamera == null) previousCamera = minecraft.player;
         previousPerspective = minecraft.options.getCameraType();
         camera = EntityType.MARKER.create(minecraft.level);
         if (camera == null) {
@@ -120,10 +126,18 @@ public final class SettlementViewClient {
             return;
         }
         var currentCamera = minecraft.gameRenderer.getMainCamera();
+        returnCamera = new Camera();
+        copyEyeHeight(currentCamera, returnCamera);
+        returnCamera.setup(minecraft.level, previousCamera, !previousPerspective.isFirstPerson(), previousPerspective.isMirrored(),
+                currentCamera.getPartialTickTime());
+        setEyeHeight(currentCamera, 0, 0);
+        closing = false;
+        lastFrame = 0;
         transitionStart = com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.get()
                 ? new SettlementViewCamera.Pose(currentCamera.getPosition(), currentCamera.getYRot(), currentCamera.getXRot()) : null;
         transitionElapsed = 0;
         transitionFov = lastFov;
+        renderedFov = transitionStart == null ? FOV : transitionFov;
         SettlementViewChunks.begin(minecraft.level, payload.session(), payload.window());
         active = new SettlementViewScreen(parent, payload);
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
@@ -148,6 +162,7 @@ public final class SettlementViewClient {
             return;
         }
         var management = SettlementManagementClient.current();
+        if (returnCamera != null) returnCamera.tick();
         boolean linked = panels && management != null && management.root() == active.parent().root()
                 && management.snapshot().header() != null;
         if (minecraft.screen != active && !linked || minecraft.level == null || minecraft.player == null
@@ -233,7 +248,7 @@ public final class SettlementViewClient {
     public static float projectionOffset() {
         var minecraft = Minecraft.getInstance();
         return active != null && (minecraft.screen == active || connectedPanel()) && minecraft.getCameraEntity() == camera && active.width > 0
-                ? (float) ((active.width - active.viewportWidth()) / (double) active.width * transitionProgress()) : 0;
+                ? (float) ((active.width - active.viewportWidth()) / (double) active.width * (closing ? 1 - transitionProgress() : transitionProgress())) : 0;
     }
 
     public static boolean ownsCamera(Camera current) {
@@ -242,7 +257,9 @@ public final class SettlementViewClient {
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (ownsCamera(event.getCamera())) {
-            event.setFOV(transitionFov + (FOV - transitionFov) * transitionProgress());
+            double target = closing ? event.getFOV() : FOV;
+            event.setFOV(transitionFov + (target - transitionFov) * transitionProgress());
+            if (event.usedConfiguredFov()) renderedFov = event.getFOV();
         } else if (event.usedConfiguredFov()) {
             lastFov = event.getFOV();
         }
@@ -270,6 +287,67 @@ public final class SettlementViewClient {
         }
     }
 
+    static boolean closing() { return closing; }
+
+    static void close(SettlementViewScreen screen) {
+        var minecraft = Minecraft.getInstance();
+        if (active != screen || closing) return;
+        if (!com.jvn.villagerretaliation.config.VillagerRetaliationConfig.ANIMATE_WORLD_VIEW_TRANSITION.get()
+                || !canReturn(minecraft)) {
+            minecraft.setScreen(null);
+            return;
+        }
+        screen.clearControls();
+        screen.clearPeek();
+        var current = minecraft.gameRenderer.getMainCamera();
+        transitionStart = new SettlementViewCamera.Pose(current.getPosition(), current.getYRot(), current.getXRot());
+        transitionFov = renderedFov;
+        transitionElapsed = 0;
+        lastFrame = 0;
+        closing = true;
+    }
+
+    private static boolean canReturn(Minecraft minecraft) {
+        return camera != null && minecraft.getCameraEntity() == camera && returnCamera != null
+                && previousCamera != null && !previousCamera.isRemoved() && previousCamera.level() == minecraft.level
+                && previousPerspective != null && minecraft.player != null && minecraft.player.isAlive()
+                && !minecraft.player.isSpectator() && minecraft.player.hurtTime == 0;
+    }
+
+    public static void beforeRender(float partialTick) {
+        if (active == null || camera == null) return;
+        setEyeHeight(Minecraft.getInstance().gameRenderer.getMainCamera(), 0, 0);
+        long now = net.minecraft.Util.getNanos();
+        double elapsed = lastFrame == 0 ? 0 : Math.clamp((now - lastFrame) / 1_000_000_000.0D, 0, 0.05D);
+        lastFrame = now;
+        if (!closing) {
+            active.updateCamera(elapsed);
+            return;
+        }
+        if (!canReturn(Minecraft.getInstance())) {
+            Minecraft.getInstance().setScreen(null);
+            return;
+        }
+        returnCamera.setup(Minecraft.getInstance().level, previousCamera, !previousPerspective.isFirstPerson(),
+                previousPerspective.isMirrored(), partialTick);
+        position(new SettlementViewCamera.Pose(returnCamera.getPosition(), returnCamera.getYRot(), returnCamera.getXRot()), elapsed);
+        if (transitionProgress() >= 1) {
+            end(active);
+            Minecraft.getInstance().setScreen(null);
+        }
+    }
+
+    private static void copyEyeHeight(Camera source, Camera target) {
+        var access = (CameraAccessor) source;
+        setEyeHeight(target, access.villagerretaliation$getEyeHeight(), access.villagerretaliation$getEyeHeightOld());
+    }
+
+    private static void setEyeHeight(Camera target, float height, float previous) {
+        var access = (CameraAccessor) target;
+        access.villagerretaliation$setEyeHeight(height);
+        access.villagerretaliation$setEyeHeightOld(previous);
+    }
+
     static boolean transitioning() {
         return transitionStart != null;
     }
@@ -284,7 +362,7 @@ public final class SettlementViewClient {
             transitionElapsed += Math.max(0, elapsed);
             double progress = transitionProgress();
             target = SettlementViewCamera.transition(transitionStart, target, progress);
-            if (progress >= 1) transitionStart = null;
+            if (progress >= 1 && !closing) transitionStart = null;
         }
         camera.moveTo(target.position().x, target.position().y, target.position().z, target.yaw(), target.pitch());
         camera.setOldPosAndRot();
@@ -299,11 +377,14 @@ public final class SettlementViewClient {
         active = null;
         panels = false;
         transitionStart = null;
+        closing = false;
+        lastFrame = 0;
         if (minecraft.getConnection() != null) {
             PacketDistributor.sendToServer(new SettlementViewRequestPayload(screen.session(), screen.nextRequestId(),
                     screen.focusX(), screen.focusZ(), screen.viewHeight(), true));
         }
         if (minecraft.getCameraEntity() == camera) {
+            if (returnCamera != null) copyEyeHeight(returnCamera, minecraft.gameRenderer.getMainCamera());
             minecraft.setCameraEntity(previousCamera != null && !previousCamera.isRemoved() && previousCamera.level() == minecraft.level
                     ? previousCamera : minecraft.player);
         }
@@ -313,6 +394,7 @@ public final class SettlementViewClient {
         SettlementViewChunks.clear();
         SettlementPlotRenderer.clear();
         camera = null;
+        returnCamera = null;
         previousCamera = null;
         previousPerspective = null;
     }

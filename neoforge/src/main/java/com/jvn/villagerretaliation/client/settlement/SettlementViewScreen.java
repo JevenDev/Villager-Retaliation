@@ -112,7 +112,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private int queuedChunks;
     private long nextViewRequest;
     private long keepAliveAt;
-    private long lastFrame;
     private boolean moved;
     private int panelLeft;
     private int panelWidth;
@@ -253,7 +252,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.header = updated;
         }
         clearControls();
-        this.lastFrame = 0L;
         this.waitingRequestId = -1;
         this.detailsAt = Math.max(this.detailsAt, Util.getMillis() + 300L);
     }
@@ -390,7 +388,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     protected void init() {
         clearControls();
-        this.lastFrame = 0L;
         this.sidebarWidgets.clear();
         this.browserRows.clear();
         this.browserWidgets.clear();
@@ -741,6 +738,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public void tick() {
+        if (SettlementViewClient.closing()) {
+            keepAlive();
+            return;
+        }
         if (this.routeSubmitted && !this.parent.submitting()) {
             this.routeSubmitted = false;
             this.routeUncertain = true;
@@ -814,14 +815,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 .append(this.modeHint).append(this.popup == null ? Component.empty() : this.popup.narration());
     }
 
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        long now = Util.getMillis();
-        double frameTime = this.lastFrame == 0L ? 0.0D : Math.max(0.0D, (now - this.lastFrame) / 1_000.0D);
-        double elapsed = Math.min(frameTime, 0.05D);
-        this.lastFrame = now;
+    void updateCamera(double elapsed) {
         if (!this.minecraft.isWindowActive() || this.search != null && this.search.isFocused()) clearControls();
-        rotateCamera(((held(GLFW.GLFW_KEY_E) ? 1 : 0) - (held(GLFW.GLFW_KEY_Q) ? 1 : 0)) * 90.0D * frameTime);
+        rotateCamera(((held(GLFW.GLFW_KEY_E) ? 1 : 0) - (held(GLFW.GLFW_KEY_Q) ? 1 : 0)) * 90.0D * elapsed);
         double forward = (held(GLFW.GLFW_KEY_W) || held(GLFW.GLFW_KEY_UP) ? 1 : 0)
                 - (held(GLFW.GLFW_KEY_S) || held(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
         double right = (held(GLFW.GLFW_KEY_D) || held(GLFW.GLFW_KEY_RIGHT) ? 1 : 0)
@@ -836,7 +832,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (Math.abs(this.viewHeight - this.cameraHeight) < 0.01D) {
             this.cameraHeight = this.viewHeight;
         }
-        positionCamera(frameTime);
+        positionCamera(elapsed);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (SettlementViewClient.closing()) return;
+        long now = Util.getMillis();
         updatePeek(mouseX, mouseY);
         this.hovered = !SettlementViewClient.transitioning() && worldContains(mouseX, mouseY) ? pick(mouseX, mouseY) : new Pick(null, null);
         var currentDraft = this.parent.buildingDraft();
@@ -3278,7 +3280,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public void removed() {
         clearControls();
-        this.lastFrame = 0L;
         if (!SettlementViewClient.panelsOpen(this)) {
             SettlementViewClient.end(this);
         }
@@ -3286,7 +3287,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(null);
+        SettlementViewClient.close(this);
     }
 
     @Override
