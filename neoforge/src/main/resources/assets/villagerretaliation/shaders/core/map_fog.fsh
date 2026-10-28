@@ -5,6 +5,7 @@ uniform sampler2D Sampler1;
 uniform sampler2D Sampler2;
 uniform sampler2D Sampler3;
 uniform sampler2D Sampler4;
+uniform float OpeningProgress;
 uniform vec2 Viewport;
 uniform vec2 WorldSpan;
 uniform vec4 PageX;
@@ -74,7 +75,38 @@ float cloudAt(vec2 plane, int layer) {
     return opacity * smoothstep(3.0, 12.0, sizeOnScreen);
 }
 
+vec4 openingClouds() {
+    float y = screenPos.y / Viewport.y;
+    vec3 color = vec3(0.0);
+    float remaining = 1.0;
+    ivec2 size = textureSize(Sampler1, 0);
+    for (int layer = 0; layer < 3; layer++) {
+        float depth = float(layer);
+        float rise = smoothstep(0.0, 0.33 - depth * 0.035, OpeningProgress);
+        float leave = smoothstep(0.53 - depth * 0.065, 1.0 - depth * 0.06, OpeningProgress);
+        float top = mix(1.2, -0.65, rise) - leave * 1.8;
+        float bottom = top + 1.9;
+        vec2 position = (screenPos - vec2(0.0, top * Viewport.y)) / (6.0 + depth * 3.0)
+                + vec2(depth * 73.0, depth * 131.0);
+        float cloud = silhouette(position, size);
+        ivec2 crest = ivec2(floor(position.x / 3.0), int(depth * 17.0));
+        float leading = 0.08 + cloudAlpha(crest, size) * 0.10 + cloudAlpha(crest + ivec2(13, 7), size) * 0.06;
+        float trailing = 0.08 + cloudAlpha(crest + ivec2(37, 23), size) * 0.10 + cloudAlpha(crest + ivec2(51, 31), size) * 0.06;
+        float body = step(top + leading, y) * step(y, bottom - trailing);
+        float opacity = step(top, y) * step(y, bottom) * max(body, cloud);
+        float shade = 1.0 - depth * 0.05 - (1.0 - cloud) * 0.025;
+        color += vec3(shade) * Lighting * opacity * remaining;
+        remaining *= 1.0 - opacity;
+    }
+    float alpha = 1.0 - remaining;
+    return vec4(alpha > 0.0 ? color / alpha : vec3(0.0), alpha);
+}
+
 void main() {
+    if (OpeningProgress >= 0.0) {
+        fragColor = openingClouds();
+        return;
+    }
     vec2 plane = (screenPos / Viewport - 0.5) * WorldSpan;
     ivec2 pixel = terrainPixel(plane);
     // discovery always wins over cloud motion

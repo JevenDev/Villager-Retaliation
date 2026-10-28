@@ -26,6 +26,7 @@ public final class ExploredMapClientSmoke {
     private static CompletableFuture<MapRepository> fixture;
     private static final ArrayList<String> results = new ArrayList<>();
     private static double day;
+    private static float openingPitch, openingYaw;
     private static NativeImage cloudFrame;
     @SubscribeEvent public static void scroll(ScreenEvent.MouseScrolled.Pre event) {
         if (System.getProperty(OUTPUT) != null && event.getScreen() instanceof ExploredMapScreen) event.setCanceled(true);
@@ -54,19 +55,30 @@ public final class ExploredMapClientSmoke {
             ExploredMapClient.tiles().close(); ExploredMapScreen.resetTiles();
             VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
             mc.setScreen(new ExploredMapScreen());
-            require(((ExploredMapScreen)mc.screen).view().scale() == 2.5, "disabled opening animation displays the final zoom immediately");
+            require(((ExploredMapScreen)mc.screen).coversWorld() && ((ExploredMapScreen)mc.screen).openingProgress() == 1, "disabled opening animation displays the map immediately");
             VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(true);
             mc.setScreen(new ExploredMapScreen());
-            require(((ExploredMapScreen)mc.screen).view().scale() < 2.5, "enabled opening animation starts with a wider view");
+            require(!((ExploredMapScreen)mc.screen).coversWorld(), "enabled opening animation initially shows the world camera");
+            ((ExploredMapScreen)mc.screen).mouseScrolled(100, 100, 0, 1);
+            require(((ExploredMapScreen)mc.screen).openingProgress() == 1, "map input skips the transition immediately");
+            mc.setScreen(new ExploredMapScreen());
+            openingPitch = mc.player.getXRot(); openingYaw = mc.player.getYRot();
             set(ExploredMapScreen.class, mc.screen, "centerX", .5); set(ExploredMapScreen.class, mc.screen, "centerZ", .5);
             set(ExploredMapScreen.class, mc.screen, "zoom", 1.0); phase = 3; ticks = 0;
         }
-        if (phase == 3 && ticks == 3) screenshot("flat-map-opening.png");
+        if (phase == 3 && ticks == 3) {
+            screenshot("flat-map-opening.png");
+            require(mc.gameRenderer.getMainCamera().getXRot() < openingPitch || openingPitch <= -65, "opening tilts the rendered camera upward");
+            require(mc.player.getXRot() == openingPitch && mc.player.getYRot() == openingYaw, "opening does not change player rotation");
+        }
+        if (phase == 3 && ticks == 10) screenshot("flat-map-opening-covered.png");
+        if (phase == 3 && ticks == 17) screenshot("flat-map-opening-reveal.png");
         if (phase == 3 && ++ticks >= 160) {
             var screen = (ExploredMapScreen)mc.screen;
             require(ExploredMapClient.tiles().uploads() > 100, "recorded cells uploaded to GPU atlas");
-            require(screen.view().scale() == 1.0, "opening animation settles at the requested zoom");
-            results.add("Opening animation, instant-open config and final zoom passed");
+            require(screen.openingProgress() == 1 && screen.view().scale() == 1.0, "opening finishes without changing map zoom");
+            require(mc.gameRenderer.getMainCamera().getXRot() == mc.player.getXRot(), "camera orientation restores beneath the map");
+            results.add("Upward camera tilt, layered cloud reveal, input skip, instant-open config and camera restoration passed");
             verifyControls(screen); screenshot("flat-map-day.png");
             verifyPixels(); cloudFrame = Screenshot.takeScreenshot(mc.getMainRenderTarget()); day = brightness(); uploads = ExploredMapClient.tiles().uploads(); phase = 4; ticks = 0;
         }

@@ -13,7 +13,7 @@ public abstract class ExploredMapWorldRenderMixin {
     @ModifyVariable(method = "render", at = @At("HEAD"), argsOnly = true)
     private boolean villagerretaliation$skipCoveredWorld(boolean renderLevel, DeltaTracker delta, boolean original) {
         var mc = Minecraft.getInstance();
-        if (!(mc.screen instanceof ExploredMapScreen) || mc.level == null || mc.player == null) return renderLevel;
+        if (!(mc.screen instanceof ExploredMapScreen map) || !map.coversWorld() || mc.level == null || mc.player == null) return renderLevel;
         if (mc.getCameraEntity() == null) mc.setCameraEntity(mc.player);
         var entity = mc.getCameraEntity();
         float partial = mc.level.tickRateManager().isEntityFrozen(entity) ? 1 : delta.getGameTimeDeltaPartialTick(true);

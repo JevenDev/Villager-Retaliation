@@ -819,7 +819,7 @@
   "text.config.villagerretaliation.option.debugOverlay.showExploredMapMinimap": "Show Explored Map Minimap",
   "text.config.villagerretaliation.option.debugOverlay.showExploredMapMinimap.tooltip": "Shows a live explored-terrain minimap in the top-right corner while testing. Disabled by default.",
   "text.config.villagerretaliation.option.debugOverlay.animateExploredMapOpening": "Animate Map Opening",
-  "text.config.villagerretaliation.option.debugOverlay.animateExploredMapOpening.tooltip": "Ease into the fullscreen map with a brief zoom and fade. Disable to open instantly. Default: enabled.",
+  "text.config.villagerretaliation.option.debugOverlay.animateExploredMapOpening.tooltip": "Tilt the camera upward as cloud layers sweep from bottom to top to reveal the fullscreen map. Disable to open instantly. Default: enabled.",
   "text.config.villagerretaliation.option.debugOverlay.exploredMapMinimapSize": "Explored Map Minimap Size",
   "text.config.villagerretaliation.option.debugOverlay.exploredMapMinimapSize.tooltip": "Minimap width in GUI pixels (80 to 320). Larger sizes show more terrain. Fits within the screen and applies immediately. Default: 160.",
   "text.config.villagerretaliation.option.debugOverlay.exploredMapMinimapZoom": "Explored Map Minimap Zoom",

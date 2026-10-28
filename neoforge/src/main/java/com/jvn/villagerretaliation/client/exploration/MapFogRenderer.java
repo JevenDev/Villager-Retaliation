@@ -51,6 +51,7 @@ public final class MapFogRenderer {
     static void render(GuiGraphics graphics, MapView view, MapTileView pages, MapTileCache cache, MapLighting lighting) {
         if (shader == null) return;
         graphics.flush();
+        shader.safeGetUniform("OpeningProgress").set(-1f);
         shader.safeGetUniform("Viewport").set((float)view.width(), (float)view.height());
         shader.safeGetUniform("WorldSpan").set((float)(view.width() / view.scale()), (float)(view.height() / view.scale()));
         if (pages != null) {
@@ -75,12 +76,27 @@ public final class MapFogRenderer {
         } else {
             RenderSystem.setShaderTexture(0, cache.terrainId()); RenderSystem.setShaderTexture(2, cache.maskId()); RenderSystem.setShaderTexture(3, pages.pageId());
         }
-        RenderSystem.disableBlend(); RenderSystem.setShader(() -> shader);
+        RenderSystem.disableBlend();
+        draw(graphics, view.width(), view.height());
+    }
+    static void renderOpening(GuiGraphics graphics, int width, int height, MapLighting lighting, float progress) {
+        if (shader == null) return;
+        graphics.flush();
+        shader.safeGetUniform("Viewport").set((float)width, (float)height);
+        shader.safeGetUniform("OpeningProgress").set(progress);
+        shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
+        for (int sampler = 0; sampler < 5; sampler++) RenderSystem.setShaderTexture(sampler, clouds.getId());
+        RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc(); RenderSystem.disableDepthTest();
+        draw(graphics, width, height);
+        RenderSystem.enableDepthTest(); RenderSystem.disableBlend();
+    }
+    private static void draw(GuiGraphics graphics, int width, int height) {
+        RenderSystem.setShader(() -> shader);
         var pose = graphics.pose().last().pose();
         shader.safeGetUniform("CanvasOrigin").set(pose.m30(), pose.m31());
         var vertices = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        vertices.addVertex(pose, 0, view.height(), 0); vertices.addVertex(pose, view.width(), view.height(), 0);
-        vertices.addVertex(pose, view.width(), 0, 0); vertices.addVertex(pose, 0, 0, 0);
+        vertices.addVertex(pose, 0, height, 0); vertices.addVertex(pose, width, height, 0);
+        vertices.addVertex(pose, width, 0, 0); vertices.addVertex(pose, 0, 0, 0);
         BufferUploader.drawWithShader(vertices.buildOrThrow());
     }
     private static float wrap(double value, double period) { return (float)(value - Math.floor(value / period) * period); }
