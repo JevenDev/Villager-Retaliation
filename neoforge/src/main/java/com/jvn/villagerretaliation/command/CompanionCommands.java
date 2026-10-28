@@ -67,10 +67,7 @@ final class CompanionCommands {
                             var target = EntityArgument.getPlayer(context, "player");
                             if (!CompanionAuthority.canManage(player.getUUID(), party, record)
                                     || !party.playerIds().contains(target.getUUID())) return denied(context.getSource());
-                            record.assignCommander(target.getUUID());
-                            PartyService.markChanged(player.serverLevel());
-                            var loaded = VillagerEntityResolver.loaded(player.getServer(), id);
-                            if (loaded != null) PartyVillagerContractService.refreshTransferredOwnership((net.minecraft.server.level.ServerLevel)loaded.level(), loaded);
+                            com.jvn.villagerretaliation.party.PartyCommandService.reassignCommander(player.serverLevel(), record, target.getUUID());
                             PartySyncService.syncParty(player.getServer(), party.id());
                             player.sendSystemMessage(Component.literal("Assigned commander: " + target.getName().getString()));
                             return 1;

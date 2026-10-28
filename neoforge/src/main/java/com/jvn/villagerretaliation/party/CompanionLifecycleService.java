@@ -147,6 +147,7 @@ public final class CompanionLifecycleService {
     }
 
     public static void onLogout(ServerPlayer player) {
+        PartyQuickCommandService.onPlayerLogout(player);
         var party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
         if (party == null) return;
         for (var record : party.villagers()) {
@@ -157,8 +158,7 @@ public final class CompanionLifecycleService {
             state.putString("Reason", "Commander logged out");
             data.setDirty();
             var villager = VillagerEntityResolver.loaded(player.getServer(), record.villagerId());
-            if (villager != null) {
-                PartyQuickCommandService.onVillagerUnloaded(villager);
+            if (villager != null && !PartyQuickCommandService.overridesRecruitmentMovement(villager)) {
                 villager.getNavigation().stop();
             }
         }

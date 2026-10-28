@@ -214,9 +214,7 @@ public final class PartyVillagerContractService {
             CompanionSavedData.get(context.level()).setDirty();
         }
         context.record().assignCommander(player.getUUID());
-        context.record().setFollowing();
-        PartyService.markChanged(context.level());
-        VillagerRecruitmentService.applyPartyFollowing(context.level(), villager, player);
+        PartyCommandService.follow(context.level(), context.record());
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_following", context.party().id(), context.record(), 0, 0);
     }
@@ -227,10 +225,7 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         BlockPos anchor = villager.blockPosition();
-        CompanionLifecycleService.resume(context.level(), villager.getUUID(), false);
-        context.record().setStaying(context.level().dimension().location(), anchor);
-        PartyService.markChanged(context.level());
-        VillagerRecruitmentService.applyPartyStay(context.level(), villager, context.record().commanderId(), anchor);
+        PartyCommandService.stay(context.level(), villager, context.record(), anchor);
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_staying", context.party().id(), context.record(), 0, 0);
     }

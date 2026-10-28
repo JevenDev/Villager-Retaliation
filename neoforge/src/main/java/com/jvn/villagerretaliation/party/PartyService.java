@@ -479,10 +479,10 @@ public final class PartyService {
             if (record.recruiterId().equals(playerId)) {
                 if (personalParty == null) personalParty = data.createParty(playerId, serverGameTime(server));
                 data.removeVillager(party, record.villagerId());
-                record.assignCommander(playerId);
+                PartyCommandService.reassignCommander(server.overworld(), record, playerId);
                 data.addVillager(personalParty, record);
             } else if (record.commanderId().equals(playerId)) {
-                record.assignCommander(record.recruiterId());
+                PartyCommandService.reassignCommander(server.overworld(), record, record.recruiterId());
                 data.changed();
             }
         }
