@@ -13,7 +13,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("villagerretaliation")
+@GameTestHolder("settlement_construction")
 @PrefixGameTestTemplate(false)
 public final class SettlementConstructionManagementGameTests {
     private SettlementConstructionManagementGameTests() {}

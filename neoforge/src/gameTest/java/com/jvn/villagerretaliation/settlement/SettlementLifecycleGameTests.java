@@ -402,6 +402,8 @@ public final class SettlementLifecycleGameTests {
         target.recordNavigation(SettlementNavigationSection.capture(origin, chunk));
         var merged = SettlementRecord.load(SettlementLifecyclePlan.merge(level, source, target), level.registryAccess(), () -> {});
         helper.assertValueEqual(merged.navigation().size(), 2, "merging retains unique sections without duplicating shared origins");
+        helper.assertTrue(merged.constructionQueueRevision() > Math.max(source.constructionQueueRevision(), target.constructionQueueRevision()),
+                "merging invalidates queue commands captured in either town");
         helper.assertTrue(merged.navigation().get(origin).state(position).is(Blocks.GOLD_BLOCK), "the destination observation wins conflicts");
         helper.succeed();
     }

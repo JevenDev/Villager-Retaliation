@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_retention")
 @PrefixGameTestTemplate(false)
 public final class SettlementRetentionGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_retention")

@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("villagerretaliation")
+@GameTestHolder("settlement_construction")
 @PrefixGameTestTemplate(false)
 public final class SettlementConstructionExecutionGameTests {
     private SettlementConstructionExecutionGameTests() {}

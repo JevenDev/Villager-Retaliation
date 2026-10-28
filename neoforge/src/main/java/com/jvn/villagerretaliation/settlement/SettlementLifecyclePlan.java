@@ -1,14 +1,12 @@
 package com.jvn.villagerretaliation.settlement;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
-import com.jvn.villagerretaliation.sell.CurrencyAmount;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 
@@ -60,75 +58,7 @@ final class SettlementLifecyclePlan {
         var owned = new HashSet<>(target.territory().plots());
         for (long plot : source.territory().plots()) if (!owned.add(plot)) throw new IllegalArgumentException("The towns have conflicting plot ownership.");
         if (!connected(owned)) throw new IllegalArgumentException("Claim a connecting border before merging these towns.");
-        var from = source.save(level.registryAccess());
-        var into = target.save(level.registryAccess());
-        into.putLong("Revision", Math.max(source.revision(), target.revision()));
-        for (String key : from.getAllKeys()) {
-            if (!(from.get(key) instanceof ListTag list) || Set.of("Delegates", "SupportServices").contains(key)) continue;
-            var combined = ((ListTag) into.get(key)).copy();
-            for (Tag raw : list) {
-                var entry = raw.copy();
-                if (key.equals("AnimalBirths") && !((CompoundTag) entry).hasUUID("ReceiptTown")) ((CompoundTag) entry).putUUID("ReceiptTown", source.id().value());
-                if (key.equals("Projects") || key.equals("ProjectHistory")) ((CompoundTag) entry).getCompound("Task").putUUID("SettlementTown", target.id().value());
-                if (key.equals("Arrivals") && !((CompoundTag) entry).contains("Origin")) ((CompoundTag) entry).putLong("Origin", source.center().asLong());
-                if (key.equals("Navigation") && combined.stream().anyMatch(existing -> ((CompoundTag) existing).getLong("Origin")
-                        == ((CompoundTag) entry).getLong("Origin"))) continue;
-                combined.add(entry);
-            }
-            into.put(key, combined);
-        }
-        for (Tag raw : into.getList("WorkerPools", Tag.TAG_COMPOUND)) {
-            var pool = (CompoundTag) raw;
-            if (pool.getString("State").equals(SettlementWorkerPool.State.ACTIVE.name())
-                    && !target.permits(pool.getUUID("Authority"), SettlementPermission.STAFF)) {
-                pool.putString("State", SettlementWorkerPool.State.SUSPENDED.name());
-                pool.putString("Blocker", "pool_permission_changed");
-                pool.putLong("Revision", Math.addExact(into.getLong("Revision"), 1L));
-            }
-        }
-        long[] oldRetired = from.getLongArray("RetiredProjects"), newRetired = into.getLongArray("RetiredProjects");
-        long[] retired = java.util.Arrays.copyOf(newRetired, newRetired.length + oldRetired.length);
-        System.arraycopy(oldRetired, 0, retired, newRetired.length, oldRetired.length);
-        into.putLongArray("RetiredProjects", retired);
-        var stage = source.stage().ordinal() > target.stage().ordinal() ? source.stage() : target.stage();
-        into.putString("Stage", stage.name());
-        into.putInt("ExpansionRadius", Math.max(from.getInt("ExpansionRadius"), into.getInt("ExpansionRadius")));
-        into.put("Support", new SettlementSupportState().save());
-        into.remove("LeadershipOffer");
-        into.putLong("NextApplicantAt", Math.max(from.getLong("NextApplicantAt"), into.getLong("NextApplicantAt")));
-        into.putLong("NextDepartureAt", Math.max(from.getLong("NextDepartureAt"), into.getLong("NextDepartureAt")));
-        var territory = into.getCompound("Territory");
-        var oldTerritory = from.getCompound("Territory");
-        int capacity = Math.max(territory.getInt("EarnedCapacity"), oldTerritory.getInt("EarnedCapacity"));
-        territory.putInt("EarnedCapacity", capacity);
-        territory.putInt("GrandfatheredCapacity", Math.max(0, owned.size() - capacity));
-        territory.putInt("FreeClaims", Math.addExact(territory.getInt("FreeClaims"), oldTerritory.getInt("FreeClaims")));
-        territory.putInt("PaidPurchases", Math.addExact(territory.getInt("PaidPurchases"), oldTerritory.getInt("PaidPurchases")));
-        territory.putInt("Rewards", territory.getInt("Rewards") | oldTerritory.getInt("Rewards"));
-        territory.putLong("Revision", Math.addExact(Math.max(source.territory().revision(), target.territory().revision()), 1L));
-        territory.putLongArray("Plots", owned.stream().sorted().mapToLong(Long::longValue).toArray());
-        var economy = into.getCompound("Economy");
-        var oldEconomy = from.getCompound("Economy");
-        for (String key : Set.of("Balance", "PendingDeposit", "Reserve", "DailyBudget", "Spent")) {
-            economy.put(key, CurrencyAmount.load(economy.getCompound(key)).add(CurrencyAmount.load(oldEconomy.getCompound(key))).save());
-        }
-        var bankStocks = economy.getCompound("BankStorage").getList("Stocks", Tag.TAG_COMPOUND);
-        oldEconomy.getCompound("BankStorage").getList("Stocks", Tag.TAG_COMPOUND).forEach(stock -> bankStocks.add(stock.copy()));
-        var bankTag = new CompoundTag(); bankTag.put("Stocks", bankStocks); economy.put("BankStorage", bankTag);
-        var orders = economy.getList("Orders", Tag.TAG_COMPOUND);
-        oldEconomy.getList("Orders", Tag.TAG_COMPOUND).forEach(order -> orders.add(order.copy()));
-        var policySpending = economy.getList("PolicySpending", Tag.TAG_COMPOUND);
-        oldEconomy.getList("PolicySpending", Tag.TAG_COMPOUND).forEach(account -> policySpending.add(account.copy()));
-        var markets = economy.getList("Markets", Tag.TAG_COMPOUND);
-        for (Tag raw : oldEconomy.getList("Markets", Tag.TAG_COMPOUND)) {
-            var previous = (CompoundTag) raw;
-            var existing = markets.stream().map(value -> (CompoundTag) value)
-                    .filter(value -> value.getString("Group").equals(previous.getString("Group"))).findFirst().orElse(null);
-            if (existing == null) markets.add(previous.copy());
-            else for (String key : Set.of("Bought", "Sold")) existing.putInt(key, Math.addExact(existing.getInt(key), previous.getInt(key)));
-        }
-        economy.putLong("Period", Math.max(economy.getLong("Period"), oldEconomy.getLong("Period")));
-        economy.putLong("LastTradeAt", Math.max(economy.getLong("LastTradeAt"), oldEconomy.getLong("LastTradeAt")));
+        var into = SettlementLifecycleMerge.merge(source, target, level.registryAccess(), owned);
         return validated(level, into);
     }
 

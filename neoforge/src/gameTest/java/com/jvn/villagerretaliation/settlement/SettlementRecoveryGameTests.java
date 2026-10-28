@@ -21,7 +21,7 @@ import net.neoforged.neoforge.common.IOUtilities;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_persistence")
 @PrefixGameTestTemplate(false)
 public final class SettlementRecoveryGameTests {
     @GameTest(template = "empty")

@@ -46,14 +46,10 @@ public final class SettlementRecord {
     private Map<UUID, ManagedSupplyOrder> managedSupplyOrders;
     private Map<UUID, List<ManagedGathering>> managedGathering;
     private long supplyRevision;
-    private final Map<UUID, SettlementProject> projects = new LinkedHashMap<>();
-    private long constructionQueueRevision;
-    static final int CONSTRUCTION_QUEUE_LIMIT = 128;
-    private final Map<UUID, SettlementProject> projectHistory = new LinkedHashMap<>();
-    private final Set<UUID> retiredProjects = new java.util.LinkedHashSet<>();
-    private final java.util.ArrayDeque<UUID> projectMaintenance = new java.util.ArrayDeque<>();
-    static final int PROJECT_HISTORY_LIMIT = 32;
-    static final int PROJECT_MAINTENANCE_LIMIT = 8;
+    private final SettlementConstructionState construction = new SettlementConstructionState();
+    static final int CONSTRUCTION_QUEUE_LIMIT = SettlementConstructionState.CONSTRUCTION_QUEUE_LIMIT;
+    static final int PROJECT_HISTORY_LIMIT = SettlementConstructionState.PROJECT_HISTORY_LIMIT;
+    static final int PROJECT_MAINTENANCE_LIMIT = SettlementConstructionState.PROJECT_MAINTENANCE_LIMIT;
     SettlementStock.Catalog stockCatalog;
     final Map<SettlementFamilyRoutes.Key, List<BlockPos>> familyRoutes = new LinkedHashMap<>(64, 0.75F, true);
     private final Map<UUID, SettlementDepot> depots = new LinkedHashMap<>();
@@ -650,13 +646,13 @@ public final class SettlementRecord {
         if (id == null) return null;
         var area = this.areas.get(id);
         if (area != null) return effectiveArea(area);
-        return this.projects.values().stream().filter(project -> project.workplace() != null
+        return projects().values().stream().filter(project -> project.workplace() != null
                 && project.area().equals(id) && (project.active() || project.site() != null)).map(SettlementProject::workplace).map(this::effectiveArea).findFirst().orElse(null);
     }
 
     public java.util.List<SettlementArea> workplaces() {
         var result = new java.util.ArrayList<>(this.areas.values());
-        this.projects.values().stream().filter(project -> project.workplace() != null && project.reservesFootprint())
+        projects().values().stream().filter(project -> project.workplace() != null && project.reservesFootprint())
                 .map(SettlementProject::workplace).forEach(result::add);
         return result.stream().map(this::effectiveArea).toList();
     }
@@ -696,112 +692,70 @@ public final class SettlementRecord {
     }
 
     public Map<UUID, SettlementProject> projects() {
-        return Collections.unmodifiableMap(this.projects);
+        return this.construction.projects();
     }
 
-    public long constructionQueueRevision() { return this.constructionQueueRevision; }
+    public long constructionQueueRevision() { return this.construction.queueRevision(); }
 
     boolean queueProject(UUID actor, SettlementProject project) {
         var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
         if (!permits(actor, SettlementPermission.BUILD) || !project.pending() || !actor.equals(project.authority())
                 || !project.town().equals(this.id.value()) || knowsProject(project.id()) || !project.within(area) || !owns(project)
-                || this.stage.projects() == 0 || this.projects.values().stream().filter(SettlementProject::pending).count() >= CONSTRUCTION_QUEUE_LIMIT
-                || this.projects.values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) return false;
-        this.projects.put(project.id(), project);
-        this.projectMaintenance.addLast(project.id());
-        this.constructionQueueRevision++;
+                || this.stage.projects() == 0 || projects().values().stream().filter(SettlementProject::pending).count() >= CONSTRUCTION_QUEUE_LIMIT
+                || projects().values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) return false;
+        this.construction.add(project);
+        this.construction.queueChanged();
         changed();
         return true;
     }
 
     boolean activateProject(SettlementProject project, UUID builder) {
-        if (this.projects.get(project.id()) != project || !project.pending() || !permits(project.authority(), SettlementPermission.BUILD)
+        if (projects().get(project.id()) != project || !project.pending() || !permits(project.authority(), SettlementPermission.BUILD)
                 || activeProject(builder) != null || !owns(project)
                 || project.workplace() == null && !project.area().equals(this.duties.get(builder))
-                || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
+                || projects().values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
                 || project.fee() > 0 && !this.economy.reserveConstruction(project.fee())) return false;
         project.activate(this, builder);
         if (project.workplace() != null) {
             this.duties.put(builder, project.area());
             this.workerSettings.remove(builder);
         }
-        this.constructionQueueRevision++;
+        this.construction.queueChanged();
         changed();
         return true;
     }
 
     /** Move only pending work, relative to another pending project, using a stale-write guard. */
     boolean reorderProject(UUID actor, UUID projectId, UUID beforeId, long expected) {
-        var project = this.projects.get(projectId);
-        var before = this.projects.get(beforeId);
-        if (!permits(actor, SettlementPermission.BUILD) || expected != this.constructionQueueRevision
-                || project == null || !project.pending() || before == null || !before.pending() || project == before) return false;
-        var pending = new java.util.ArrayList<>(this.projects.values().stream().filter(SettlementProject::pending).toList());
-        pending.remove(project);
-        int destination = pending.indexOf(before);
-        pending.add(destination, project);
-        var iterator = pending.iterator();
-        var reordered = new LinkedHashMap<UUID, SettlementProject>();
-        for (var entry : this.projects.values()) {
-            var next = entry.pending() ? iterator.next() : entry;
-            reordered.put(next.id(), next);
-        }
-        this.projects.clear();
-        this.projects.putAll(reordered);
-        this.constructionQueueRevision++;
+        if (!permits(actor, SettlementPermission.BUILD) || !this.construction.reorderProject(projectId, beforeId, expected)) return false;
         changed();
         return true;
     }
 
     public Map<UUID, SettlementProject> projectHistory() {
-        return Collections.unmodifiableMap(this.projectHistory);
+        return this.construction.projectHistory();
     }
 
     public SettlementProject project(UUID id) {
-        var project = this.projects.get(id);
-        return project == null ? this.projectHistory.get(id) : project;
+        return this.construction.project(id);
     }
 
     boolean knowsProject(UUID id) {
-        return this.projects.containsKey(id) || this.projectHistory.containsKey(id) || this.retiredProjects.contains(id);
+        return this.construction.knowsProject(id);
     }
 
     int maintainProjects() {
-        int visited = Math.min(PROJECT_MAINTENANCE_LIMIT, this.projectMaintenance.size());
-        for (int index = 0; index < visited; index++) {
-            var id = this.projectMaintenance.removeFirst();
-            var project = this.projects.get(id);
-            if (project == null) continue;
-            if (!project.settled(this.residents.get(project.builder()))) {
-                this.projectMaintenance.addLast(id);
-                continue;
-            }
-            clearProjectSite(project);
-            this.projects.remove(id);
-            project.summarize();
-            this.projectHistory.put(id, project);
-            trimProjectHistory();
-            changed();
-        }
-        return visited;
-    }
-
-    private void trimProjectHistory() {
-        while (this.projectHistory.size() > PROJECT_HISTORY_LIMIT) {
-            var oldest = this.projectHistory.keySet().iterator().next();
-            this.projectHistory.remove(oldest);
-            this.retiredProjects.add(oldest);
-        }
+        return this.construction.maintainProjects(this);
     }
 
     public SettlementProject activeProject(UUID builder) {
-        return this.projects.values().stream().filter(project -> project.active() && project.builder().equals(builder)).findFirst().orElse(null);
+        return this.construction.activeProject(builder);
     }
 
     public SettlementProject assignedProject(UUID worker) {
         var home = workplace(this.duties.get(worker));
         if (home == null || !home.enabled() || home.type() != SettlementAreaType.CONSTRUCTION) return null;
-        return this.projects.values().stream().filter(project -> project.active() && project.includes(worker) && owns(project)
+        return projects().values().stream().filter(project -> project.active() && project.includes(worker) && owns(project)
                         && workplace(project.area()) != null && workplace(project.area()).enabled()
                         && (project.builder().equals(worker) || this.worksitePlans.containsKey(home.id())))
                 .sorted(java.util.Comparator.comparingInt(SettlementProject::priority).reversed()
@@ -816,13 +770,12 @@ public final class SettlementRecord {
                 || project.workplace() == null && !project.area().equals(this.duties.get(project.builder()))
                 || project.workplace() != null && !Objects.equals(project.previousArea(), this.duties.get(project.builder()))
                 || activeProject(project.builder()) != null
-                || this.projects.values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
-                || this.projects.values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) {
+                || projects().values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
+                || projects().values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) {
             return false;
         }
         if (project.fee() > 0 && !this.economy.reserveConstruction(project.fee())) return false;
-        this.projects.put(project.id(), project);
-        this.projectMaintenance.addLast(project.id());
+        this.construction.add(project);
         if (project.workplace() != null) {
             this.duties.put(project.builder(), project.area());
             this.workerSettings.remove(project.builder());
@@ -841,9 +794,9 @@ public final class SettlementRecord {
     }
 
     void finishProject(UUID id, SettlementProject.Status status) {
-        var project = this.projects.get(id);
+        var project = projects().get(id);
         if (project != null && project.finish(status)) {
-            this.constructionQueueRevision++;
+            this.construction.queueChanged();
             if (status == SettlementProject.Status.COMPLETED) project.earnPayment();
             else this.economy.credit(com.jvn.villagerretaliation.sell.CurrencyAmount.of(project.refundPayment(), 1));
             if (project.workplace() != null && project.area().equals(this.duties.get(project.builder()))) {
@@ -860,7 +813,7 @@ public final class SettlementRecord {
     }
 
     private void cancelProjects(UUID builder) {
-        for (var other : this.projects.values()) if (other.active() && other.detachAssistant(builder)) changed();
+        for (var other : projects().values()) if (other.active() && other.detachAssistant(builder)) changed();
         var project = activeProject(builder);
         if (project != null) {
             if (project.waitFor("builder")) changed();
@@ -1124,7 +1077,7 @@ public final class SettlementRecord {
         var area = this.areas.get(areaId);
         if (!permits(actor, SettlementPermission.STAFF) || area == null || plan == null
                 || area.type().role() != plan.settings().role() || plan.route() != null && !plan.route().within(this)
-                || !plan.settings().enabled() && this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(areaId))) return false;
+                || !plan.settings().enabled() && projects().values().stream().anyMatch(project -> project.active() && project.area().equals(areaId))) return false;
         if (!plan.equals(this.worksitePlans.put(areaId, plan))) changed();
         return true;
     }
@@ -1353,7 +1306,7 @@ public final class SettlementRecord {
     boolean putArea(UUID actor, SettlementArea area) {
         if (!permits(actor, SettlementPermission.BUILD) || area == null
                 || !owns(area)
-                || this.projects.values().stream().anyMatch(project -> project.workplace() != null
+                || projects().values().stream().anyMatch(project -> project.workplace() != null
                         && (project.area().equals(area.id()) || project.reservesFootprint() && project.overlaps(area)
                                 && area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION))
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS
@@ -1361,7 +1314,7 @@ public final class SettlementRecord {
                         && this.duties.containsValue(area.id())
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area.id())
                         && (area.type() == SettlementAreaType.HOME || !area.contains(depot.position())))
-                || this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(area.id()) && (!area.enabled() || !project.within(area)))
+                || projects().values().stream().anyMatch(project -> project.active() && project.area().equals(area.id()) && (!area.enabled() || !project.within(area)))
                 || this.areas.values().stream().anyMatch(existing ->
                         !existing.id().equals(area.id()) && existing.conflictsWith(area))) {
             return false;
@@ -1392,7 +1345,7 @@ public final class SettlementRecord {
 
     boolean removeArea(UUID actor, UUID area) {
         if (!permits(actor, SettlementPermission.BUILD)
-                || this.projects.values().stream().anyMatch(project -> project.active() && project.area().equals(area))
+                || projects().values().stream().anyMatch(project -> project.active() && project.area().equals(area))
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area))
                 || this.transferQueues.containsKey(area) && this.transferQueues.get(area).allocations().stream()
                         .anyMatch(com.jvn.villagerretaliation.interaction.work.courier.HiredTransferQueue.Allocation::started)
@@ -1550,20 +1503,7 @@ public final class SettlementRecord {
             equipmentTags.add(entry);
         });
         tag.put("EquipmentPlans", equipmentTags);
-        ListTag projectTags = new ListTag();
-        this.projects.values().forEach(project -> projectTags.add(project.save()));
-        tag.put("Projects", projectTags);
-        tag.putLong("ConstructionQueueRevision", this.constructionQueueRevision);
-        var projectHistoryTags = new ListTag();
-        this.projectHistory.values().forEach(project -> projectHistoryTags.add(project.save()));
-        tag.put("ProjectHistory", projectHistoryTags);
-        long[] retired = new long[this.retiredProjects.size() * 2];
-        int retiredIndex = 0;
-        for (UUID id : this.retiredProjects) {
-            retired[retiredIndex++] = id.getMostSignificantBits();
-            retired[retiredIndex++] = id.getLeastSignificantBits();
-        }
-        tag.putLongArray("RetiredProjects", retired);
+        this.construction.save(tag);
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
@@ -1908,35 +1848,7 @@ public final class SettlementRecord {
             }
             record.areas.put(area.id(), area);
         }
-        for (Tag raw : tag.getList("Projects", Tag.TAG_COMPOUND)) {
-            var project = SettlementProject.load((CompoundTag) raw);
-            if (!project.town().equals(record.id.value()) || record.projects.putIfAbsent(project.id(), project) != null
-                    || project.workplace() != null && (!record.territory.migrated() && !project.workplace().within(record.center, record.radius)
-                            || record.areas.containsKey(project.area()))) {
-                throw new IllegalArgumentException("Invalid or duplicated construction project");
-            }
-        }
-        record.projectMaintenance.addAll(record.projects.keySet());
-        record.constructionQueueRevision = tag.getLong("ConstructionQueueRevision");
-        if (record.constructionQueueRevision < 0) throw new IllegalArgumentException("Invalid construction queue revision");
-        if (tag.contains("RetiredProjects") && !tag.contains("RetiredProjects", Tag.TAG_LONG_ARRAY)) throw new IllegalArgumentException("Invalid retired construction identities");
-        long[] retired = tag.getLongArray("RetiredProjects");
-        if (retired.length % 2 != 0) throw new IllegalArgumentException("Incomplete retired construction identity");
-        for (int index = 0; index < retired.length; index += 2) {
-            var id = new UUID(retired[index], retired[index + 1]);
-            if (record.knowsProject(id) || !record.retiredProjects.add(id)) throw new IllegalArgumentException("Duplicated retired construction identity");
-        }
-        if (tag.contains("ProjectHistory") && (!(tag.get("ProjectHistory") instanceof ListTag history)
-                || !history.isEmpty() && history.getElementType() != Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid construction summary history");
-        for (Tag raw : tag.getList("ProjectHistory", Tag.TAG_COMPOUND)) {
-            var project = SettlementProject.load((CompoundTag) raw);
-            if (record.knowsProject(project.id()) || project.unfinished() || project.site() != null
-                    || !project.town().equals(record.id.value()) || project.paymentEarned() && !project.paymentDelivered()) {
-                throw new IllegalArgumentException("Construction summary has unresolved obligations or a duplicated identity");
-            }
-            record.projectHistory.put(project.id(), project);
-        }
-        record.trimProjectHistory();
+        record.construction.load(tag, record, record.radius);
         for (Tag raw : tag.getList("Duties", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Resident") || !entry.hasUUID("Area")) {
@@ -2081,24 +1993,7 @@ public final class SettlementRecord {
                 throw new IllegalArgumentException("Worker settings are duplicated or have no matching duty");
             }
         }
-        for (var project : record.projects.values()) {
-            if (project.active() && (!project.within(record.workplace(project.area()))
-                    || !project.area().equals(record.duties.get(project.builder())) && !project.blocker().equals("builder")
-                    || record.projects.values().stream().anyMatch(other -> other != project && other.active() && other.builder().equals(project.builder())))
-                    || project.reservesFootprint() && record.projects.values().stream().anyMatch(existing -> existing != project
-                            && existing.reservesFootprint() && existing.overlaps(project))) {
-                throw new IllegalArgumentException("Construction project overlaps reserved work or has no matching duty");
-            }
-        }
-        for (var project : record.projects.values()) {
-            if (!project.active()) continue;
-            for (var assistant : project.assistants()) {
-                var home = record.workplace(record.duties.get(assistant));
-                if (home == null || home.type() != SettlementAreaType.CONSTRUCTION || !record.worksitePlans.containsKey(home.id())) {
-                    throw new IllegalArgumentException("Construction assistant has no adopted construction assignment");
-                }
-            }
-        }
+        record.construction.validate(record);
         for (Tag raw : tag.getList("Depots", Tag.TAG_COMPOUND)) {
             SettlementDepot depot = SettlementDepot.load((CompoundTag) raw, provider, record::changed);
             SettlementArea area = record.areas.get(depot.area());

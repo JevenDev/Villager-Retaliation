@@ -216,9 +216,34 @@ public final class SettlementConstructionQueueGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "construction_queue")
+    public static void forwardMovesPreserveTheBeforeAnchorAndActiveSlots(GameTestHelper helper) {
+        var fixture = SettlementConstructionGameTests.fixture(helper);
+        try {
+            var town = fixture.town();
+            town.advance();
+            var active = queued(helper, fixture, 0);
+            var first = queued(helper, fixture, 10);
+            var second = queued(helper, fixture, fixture.origin().south(10));
+            var third = queued(helper, fixture, fixture.origin().offset(10, 0, 10));
+            helper.assertTrue(town.activateProject(active, fixture.builder().getUUID()), "the first slot is active");
+            helper.assertTrue(town.reorderProject(town.leader(), first.id(), third.id(), town.constructionQueueRevision()), "pending work can move forward");
+            helper.assertValueEqual(List.copyOf(town.projects().keySet()), List.of(active.id(), second.id(), first.id(), third.id()),
+                    "the moving project stays before its anchor and active work retains its slot");
+            var saved = town.save(helper.getLevel().registryAccess());
+            var restored = SettlementRecord.load(saved, helper.getLevel().registryAccess(), () -> {});
+            helper.assertValueEqual(restored.save(helper.getLevel().registryAccess()), saved, "construction round trips preserve serialized state exactly");
+        } finally { fixture.builder().discard(); }
+        helper.succeed();
+    }
+
     private static SettlementProject queued(GameTestHelper helper, SettlementConstructionGameTests.Fixture fixture, int east) {
+        return queued(helper, fixture, fixture.origin().east(east));
+    }
+
+    private static SettlementProject queued(GameTestHelper helper, SettlementConstructionGameTests.Fixture fixture, net.minecraft.core.BlockPos origin) {
         var project = SettlementProject.create(fixture.town(), fixture.area().id(), fixture.builder().getUUID(), fixture.plan(),
-                fixture.origin().east(east), UUID.randomUUID(), helper.getLevel().getGameTime());
+                origin, UUID.randomUUID(), helper.getLevel().getGameTime());
         project.reservePayment(fixture.plan().price());
         project.queue(fixture.leader().getUUID());
         helper.assertTrue(fixture.town().queueProject(fixture.leader().getUUID(), project), "nonoverlapping pending request is accepted without reserving resources");

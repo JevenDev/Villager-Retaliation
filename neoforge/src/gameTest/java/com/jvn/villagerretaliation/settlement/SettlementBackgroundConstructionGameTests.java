@@ -42,7 +42,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_construction")
 @PrefixGameTestTemplate(false)
 public final class SettlementBackgroundConstructionGameTests {
     private SettlementBackgroundConstructionGameTests() {

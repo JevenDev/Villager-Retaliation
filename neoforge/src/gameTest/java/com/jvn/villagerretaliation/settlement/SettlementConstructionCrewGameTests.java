@@ -20,7 +20,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder("villagerretaliation")
+@GameTestHolder("settlement_construction")
 @PrefixGameTestTemplate(false)
 public final class SettlementConstructionCrewGameTests {
     private SettlementConstructionCrewGameTests() {}
