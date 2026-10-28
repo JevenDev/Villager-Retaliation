@@ -11,7 +11,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 public final class SettlementPathTerrain {
     private SettlementPathTerrain() {}
-    public enum Kind { CONVERT, EXISTING, SKIPPED }
+    public enum Kind { CONVERT, EXISTING, SKIPPED, OUTSIDE, UNAVAILABLE }
     public record Cell(BlockPos position, Kind kind, BlockState soil, BlockState above, BlockState top) {}
     public record Preview(List<Cell> cells, String error) {
         public Preview { cells = List.copyOf(cells); }
@@ -38,12 +38,19 @@ public final class SettlementPathTerrain {
         if (!footprint.error().isEmpty()) return new Preview(List.of(), footprint.error());
         var cells = new ArrayList<Cell>();
         for (var column : footprint.columns()) {
-            if (!allowed.test(column) || !level.getWorldBorder().isWithinBounds(column))
-                return new Preview(List.of(), "Path leaves the available settlement area");
-            if (!level.hasChunkAt(column)) return new Preview(List.of(), "Load the path terrain before confirming");
+            if (!allowed.test(column) || !level.getWorldBorder().isWithinBounds(column)) {
+                cells.add(unavailable(column, Kind.OUTSIDE));
+                continue;
+            }
+            if (!level.hasChunkAt(column)) {
+                cells.add(unavailable(column, Kind.UNAVAILABLE));
+                continue;
+            }
             var pos = surface(level, column.getX(), column.getZ());
-            if (level.isOutsideBuildHeight(pos) || !allowed.test(pos))
-                return new Preview(List.of(), "Path leaves the available settlement area");
+            if (level.isOutsideBuildHeight(pos) || !allowed.test(pos)) {
+                cells.add(unavailable(column, Kind.OUTSIDE));
+                continue;
+            }
             var soil = level.getBlockState(pos);
             var above = level.getBlockState(pos.above());
             var top = level.getBlockState(pos.above(2));
@@ -52,6 +59,10 @@ public final class SettlementPathTerrain {
                     : soil(soil) && clear && Blocks.DIRT_PATH.defaultBlockState().canSurvive(level, pos) ? Kind.CONVERT : Kind.SKIPPED;
             cells.add(new Cell(pos, kind, soil, above, top));
         }
+        if (cells.stream().anyMatch(cell -> cell.kind() == Kind.OUTSIDE))
+            return new Preview(cells, "Red blocks are outside the available settlement area");
+        if (cells.stream().anyMatch(cell -> cell.kind() == Kind.UNAVAILABLE))
+            return new Preview(cells, "Load the path terrain before confirming");
         var start = path.start();
         var first = cells.stream().filter(cell -> cell.position().getX() == start.getX() && cell.position().getZ() == start.getZ())
                 .findFirst().orElseThrow();
@@ -60,7 +71,13 @@ public final class SettlementPathTerrain {
         return new Preview(cells, cells.stream().noneMatch(cell -> cell.kind() == Kind.CONVERT) ? "No soil to convert" : "");
     }
 
+    private static Cell unavailable(BlockPos position, Kind kind) {
+        var air = Blocks.AIR.defaultBlockState();
+        return new Cell(position, kind, air, air, air);
+    }
+
     public static int apply(Level level, Preview preview) {
+        if (!preview.error().isEmpty()) return 0;
         int changed = 0;
         for (var cell : preview.cells()) {
             if (cell.kind() != Kind.CONVERT) continue;

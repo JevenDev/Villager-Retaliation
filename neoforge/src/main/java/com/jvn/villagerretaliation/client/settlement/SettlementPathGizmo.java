@@ -39,9 +39,11 @@ public final class SettlementPathGizmo {
 
     public static void renderTerrain(SettlementPathEditor editor, PoseStack pose, VertexConsumer terrain) {
         for (var cell : editor.cells()) {
-            float red = cell.kind() == SettlementPathTerrain.Kind.SKIPPED ? 1 : 0.25F;
-            float green = cell.kind() == SettlementPathTerrain.Kind.SKIPPED ? 0.35F : 0.9F;
-            float blue = cell.kind() == SettlementPathTerrain.Kind.EXISTING ? 1 : 0.2F;
+            boolean outside = cell.kind() == SettlementPathTerrain.Kind.OUTSIDE;
+            boolean blocked = cell.kind() == SettlementPathTerrain.Kind.SKIPPED || cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE;
+            float red = outside || blocked ? 1 : 0.25F;
+            float green = outside ? 0.05F : blocked ? 0.35F : 0.9F;
+            float blue = outside ? 0.05F : cell.kind() == SettlementPathTerrain.Kind.EXISTING ? 1 : 0.2F;
             var pos = cell.position();
             LevelRenderer.renderLineBox(pose, terrain, new AABB(pos.getX() + 0.03, pos.getY() + 0.94, pos.getZ() + 0.03,
                     pos.getX() + 0.97, pos.getY() + 1.02, pos.getZ() + 0.97), red, green, blue, 0.85F);

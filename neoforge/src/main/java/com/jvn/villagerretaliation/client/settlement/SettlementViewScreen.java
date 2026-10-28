@@ -251,6 +251,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return;
         }
         this.acceptedRequestId = payload.requestId();
+        if (!this.window.equals(payload.window()) || !this.plotSnapshot.equals(payload.plots())) this.paths.refresh();
         this.plotSnapshot = payload.plots();
         this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
@@ -692,7 +693,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public void tick() {
         this.frameEntities.invalidate();
-        this.paths.tick(this.minecraft.level, this.session, this.window::contains, PacketDistributor::sendToServer);
+        var pathPlots = this.plotSnapshot.plots().stream().filter(com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot::owned)
+                .map(com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot::chunk).collect(java.util.stream.Collectors.toSet());
+        this.paths.tick(this.minecraft.level, this.session,
+                pos -> this.window.contains(pos) && pathPlots.contains(new net.minecraft.world.level.ChunkPos(pos)), PacketDistributor::sendToServer);
         if (SettlementViewClient.closing()) {
             keepAlive();
             return;
@@ -1352,10 +1356,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private Vec3 pathPoint(double x, double y) {
         if (!worldContains(x, y)) return null;
-        var hit = pick(x, y).position();
-        if (hit == null || !this.minecraft.level.hasChunkAt(hit)) return null;
-        var pos = com.jvn.villagerretaliation.settlement.SettlementPathTerrain.surface(this.minecraft.level, hit.getX(), hit.getZ());
-        if (!this.window.contains(pos)) return null;
+        var ray = ray(x, y);
+        var hit = SettlementViewPeek.clip(this.minecraft.level, ray.origin(), ray.origin().add(ray.direction().normalize().scale(256)),
+                ClipContext.Block.OUTLINE, this.minecraft.gameRenderer.getMainCamera().getEntity());
+        if (hit.getType() == HitResult.Type.MISS || !this.minecraft.level.hasChunkAt(hit.getBlockPos())) return null;
+        var pos = com.jvn.villagerretaliation.settlement.SettlementPathTerrain.surface(this.minecraft.level,
+                hit.getBlockPos().getX(), hit.getBlockPos().getZ());
         return new Vec3(pos.getX() + 0.5, pos.getY() + 0.98, pos.getZ() + 0.5);
     }
 
@@ -1387,7 +1393,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void initPathButtons() {
         this.pathButtons.clear();
-        String[] labels = {"Width -", "Width +", "Clean", "Undo", "Redo", "Corners", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend"};
+        String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Corners", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
             this.pathButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> pathAction(action))
@@ -1414,6 +1420,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             case 10 -> this.paths.refresh();
             case 11 -> draft.toggleLoop();
             case 12 -> { if (draft.extending()) this.paths.stopExtending(); else draft.extend(); }
+            case 13 -> {
+                clearControls();
+                this.paths.hoveredHandle(null);
+                var edit = this.pathButtons.get(13);
+                this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.PATH_EDIT, null),
+                        edit.getX(), edit.getY() - 96);
+                refreshPopup();
+            }
             default -> throw new IllegalArgumentException("Unknown path action");
         }
         this.paths.hover(null);
@@ -1421,17 +1435,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void updatePathButtons() {
-        int available = this.panelLeft - this.layout.worldLeft - 6;
-        int columns = available < 300 ? 3 : 4;
-        int width = Math.max(32, (available - (columns - 1) * 4) / columns);
-        int rows = (this.pathButtons.size() + columns - 1) / columns;
-        int top = this.height - 36 - rows * 22;
+        if (this.pathButtons.isEmpty()) return;
         for (int i = 0; i < this.pathButtons.size(); i++) {
             var button = this.pathButtons.get(i);
-            button.visible = this.paths.active();
-            button.setX(this.layout.worldLeft + i % columns * (width + 4));
-            button.setY(top + i / columns * 22);
-            button.setWidth(width);
+            button.visible = this.paths.active() && i != 6 && i != 7 && i != 10 && i != 11 && i != 12;
             button.active = this.paths.active() && !this.paths.confirming() && !this.paths.draft().dragging();
             if (!this.paths.active()) continue;
             var draft = this.paths.draft();
@@ -1456,6 +1463,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 button.active &= !path.closed();
             }
             button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(switch (i) {
+                case 0 -> "Decrease path width";
+                case 1 -> "Increase path width";
                 case 5 -> "Choose corners or curves for the selected node and new nodes. This choice is remembered.";
                 case 6 -> "Place the next node after the selected node.";
                 case 8 -> "Apply all previewed path blocks. Placement cannot be undone.";
@@ -1465,6 +1474,19 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 default -> button.getMessage().getString();
             })));
         }
+        int available = Math.max(80, this.panelLeft - this.layout.worldLeft - 6);
+        int x = 0, row = 0;
+        for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) {
+            var button = this.pathButtons.get(index);
+            int width = Math.min(available, Math.max(20, this.font.width(button.getMessage()) + 12));
+            if (x > 0 && x + width > available) { x = 0; row++; }
+            button.setWidth(width);
+            button.setX(this.layout.worldLeft + x);
+            button.setY(row * 22);
+            x += width + 4;
+        }
+        int top = this.height - 36 - (row + 1) * 22;
+        for (var button : this.pathButtons) if (button.visible) button.setY(button.getY() + top);
     }
 
     private void initRouteButtons() {
@@ -1976,9 +1998,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.popup != null) this.popup.hover(x, y);
         if (this.paths.active()) {
             boolean overButton = this.pathButtons.stream().anyMatch(button -> button.visible && button.isMouseOver(x, y));
-            var handle = worldContains(x, y) ? SettlementPathGizmo.hit(this.paths.draft(), this::project, x, y) : null;
+            var handle = this.popup == null && !overButton && worldContains(x, y) && windowAt(x, y) == null
+                    ? SettlementPathGizmo.hit(this.paths.draft(), this::project, x, y) : null;
             this.paths.hoveredHandle(handle);
-            this.paths.hover(worldContains(x, y) && windowAt(x, y) == null && !overButton && handle == null ? pathPoint(x, y) : null);
+            this.paths.hover(this.popup == null && worldContains(x, y) && windowAt(x, y) == null && !overButton && handle == null ? pathPoint(x, y) : null);
         }
         super.mouseMoved(x, y);
     }
@@ -3011,6 +3034,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 actions.add(menuAction(SettlementManagementScreen.enumText("page", Page.SUPPLIES), ready, () -> openManagement(Page.SUPPLIES, "")));
                 actions.add(menuAction(Component.literal("Depots"), true, () -> browse(Page.DEPOTS, "All")));
                 actions.add(menuAction(Component.literal("Settlement issues"), true, () -> browse(Page.ISSUES, "All")));
+            }
+            case PATH_EDIT -> {
+                if (!this.paths.active()) { this.popup = null; return; }
+                details.add(Component.literal("Edit path"));
+                updatePathButtons();
+                for (int index : new int[]{6, 7, 11, 12, 10}) {
+                    var button = this.pathButtons.get(index);
+                    actions.add(menuAction(button.getMessage(), button.active, () -> pathAction(index)));
+                }
             }
             case BUILD -> {
                 details.add(Component.literal("Build"));

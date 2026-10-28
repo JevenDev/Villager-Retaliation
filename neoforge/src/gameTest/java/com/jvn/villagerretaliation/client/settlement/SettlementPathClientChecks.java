@@ -63,7 +63,7 @@ final class SettlementPathClientChecks {
             drag(this.start.add(5, 0, 0), this.start.add(5, 0, 2));
             require(editor.draft().path().nodes().size() == 2, "click-drag creates the second node");
             require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0.1, "click-drag creates curve handles");
-            button("Width +").onPress();
+            button("+").onPress();
             button("Clean").onPress();
             require(editor.draft().path().width() == 4, "width control updates the draft");
             button("Undo").onPress();
@@ -100,13 +100,16 @@ final class SettlementPathClientChecks {
             this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(editor.active() && editor.draft().path().equals(kept) && !editor.draft().extending(),
                     "Escape stops extending without clearing the draft");
-            var cursor = project(this.start.add(5, 0, -6));
+            var extension = this.start.add(0, 0, 5);
+            var cursor = project(extension);
+            require(this.view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .noneMatch(button -> button.visible && button.isMouseOver(cursor.x, cursor.y)), "extension target is clear of the toolbar");
             this.view.mouseMoved(cursor.x, cursor.y);
             require(editor.hover() == null, "a stopped draft has no cursor connection");
-            click(this.start.add(5, 0, -6));
-            require(editor.draft().path().equals(kept), "ground clicks do not extend a stopped draft");
+            click(extension);
+            require(editor.active() && editor.draft().path().equals(kept), "ground clicks do not extend a stopped draft");
             button("Extend").onPress();
-            click(this.start.add(5, 0, -6));
+            click(extension);
             require(editor.draft().path().nodes().size() == 3, "Extend adds a third node away from existing curve handles");
             require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0,
                     "new nodes retain the curve choice without dragging");
@@ -125,6 +128,10 @@ final class SettlementPathClientChecks {
                 this.refreshed = true;
                 return false;
             }
+            require(button("Confirm").getWidth() < 96 && button("Cancel").getWidth() < 96,
+                    "path actions use compact content widths");
+            require(button("Confirm").getY() - button("Natural").getY() <= 22,
+                    "the primary path toolbar fits within two rows");
             this.capture.accept("path-loop-confirmation");
             button("Confirm").onPress();
             require(editor.confirming(), "Confirm waits for the server");
@@ -181,9 +188,12 @@ final class SettlementPathClientChecks {
     }
 
     private Button button(String label) {
-        return this.view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
-                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst().orElseThrow(
-                        () -> new IllegalStateException("Missing path control: " + label));
+        var direct = this.view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.visible && button.getMessage().getString().equals(label)).findFirst();
+        if (direct.isPresent()) return direct.get();
+        button("Edit").onPress();
+        return this.view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals(label))
+                .findFirst().orElseThrow(() -> new IllegalStateException("Missing path control: " + label));
     }
     private Vec3 project(Vec3 position) {
         var camera = Minecraft.getInstance().gameRenderer.getMainCamera();

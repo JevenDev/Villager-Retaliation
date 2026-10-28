@@ -296,6 +296,91 @@ public final class SettlementPathGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_path")
+    public static void invalidColumnsStayVisibleWithoutApplyingAnyTerrain(GameTestHelper helper) {
+        var base = helper.absolutePos(new BlockPos(1, 20, 1));
+        var level = helper.getLevel();
+        for (int x = 0; x < 5; x++) {
+            level.setBlock(base.offset(x, 0, 0), Blocks.DIRT.defaultBlockState(), 2);
+            for (int y = 1; y <= 4; y++) level.setBlock(base.offset(x, y, 0), Blocks.AIR.defaultBlockState(), 2);
+        }
+        var path = path(base.getCenter(), base.offset(4, 0, 0).getCenter(), 1, false);
+        java.util.function.Predicate<BlockPos> inside = pos -> pos.getX() < base.getX() + 3;
+        var preview = SettlementPathTerrain.preview(level, path, inside);
+        helper.assertValueEqual(preview.cells().size(), 5, "invalid columns do not discard the footprint");
+        helper.assertValueEqual(preview.count(SettlementPathTerrain.Kind.CONVERT), 3L, "eligible columns remain visible");
+        helper.assertValueEqual(preview.count(SettlementPathTerrain.Kind.OUTSIDE), 2L, "outside columns have their own preview status");
+        helper.assertValueEqual(SettlementPathTerrain.apply(level, preview), 0, "invalid previews cannot partially apply");
+        var id = UUID.randomUUID();
+        var session = new SettlementPathSession();
+        var result = session.request(level, id, true, inside,
+                new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.PREVIEW, new UUID(0, 0), path));
+        helper.assertValueEqual(result.status(), SettlementPathResultPayload.Status.REJECTED, "server rejects outside paths");
+        helper.assertValueEqual(result.cells().size(), 5, "server rejection includes the visible footprint");
+        var confirm = session.request(level, id, true, inside,
+                new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, result.token(), null));
+        helper.assertValueEqual(confirm.status(), SettlementPathResultPayload.Status.REJECTED, "outside preview tokens cannot confirm");
+        helper.assertTrue(level.getBlockState(base).is(Blocks.DIRT), "rejected paths change no terrain");
+        var unloaded = path(new Vec3(20_000_000.5, 64, 20_000_000.5), new Vec3(20_000_003.5, 64, 20_000_000.5), 1, false);
+        var missing = SettlementPathTerrain.preview(level, unloaded, pos -> true);
+        helper.assertValueEqual(missing.count(SettlementPathTerrain.Kind.UNAVAILABLE), 4L, "unloaded columns keep their footprint without loading chunks");
+        helper.assertFalse(level.hasChunkAt(unloaded.start()), "previewing unavailable terrain does not load it");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), level.registryAccess());
+        try {
+            SettlementPathResultPayload.STREAM_CODEC.encode(buffer, result);
+            helper.assertValueEqual(SettlementPathResultPayload.STREAM_CODEC.decode(buffer), result, "outside preview statuses round trip");
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_path", timeoutTicks = 100)
+    public static void rejectedPreviewsRemainVisibleAndRefreshStationaryTerrain(GameTestHelper helper) {
+        var base = helper.absolutePos(new BlockPos(1, 20, 1));
+        var level = helper.getLevel();
+        for (int x = 0; x < 5; x++) {
+            level.setBlock(base.offset(x, 0, 0), Blocks.DIRT.defaultBlockState(), 2);
+            for (int y = 1; y <= 4; y++) level.setBlock(base.offset(x, y, 0), Blocks.AIR.defaultBlockState(), 2);
+        }
+        var time = new java.util.concurrent.atomic.AtomicLong(1000);
+        var editor = new com.jvn.villagerretaliation.client.settlement.SettlementPathEditor(time::get);
+        var id = UUID.randomUUID();
+        editor.begin(false);
+        editor.draft().settings(1, SettlementPath.Style.CLEAN);
+        editor.draft().place(base.getCenter());
+        editor.draft().finish();
+        editor.draft().place(base.offset(4, 0, 0).getCenter());
+        editor.draft().finish();
+        editor.stopExtending();
+        editor.tick(level, id, pos -> true, request -> {});
+        helper.assertValueEqual(editor.cells().size(), 5, "valid draft has a block preview");
+        editor.accept(new SettlementPathResultPayload(id, 1, UUID.randomUUID(), SettlementPathResultPayload.Status.REJECTED,
+                List.of(), "Review the path"));
+        editor.tick(level, id, pos -> true, request -> {});
+        helper.assertValueEqual(editor.cells().size(), 5, "an empty rejection does not erase the client preview");
+        helper.assertFalse(editor.canConfirm(), "retained previews do not bypass server rejection");
+        helper.assertFalse(editor.centerline().isEmpty(), "rejected paths retain their curve gizmo");
+        level.setBlock(base.offset(2, 0, 0), Blocks.STONE.defaultBlockState(), 2);
+        time.addAndGet(250);
+        editor.tick(level, id, pos -> true, request -> {});
+        helper.assertTrue(editor.cells().stream().anyMatch(cell -> cell.position().equals(base.offset(2, 0, 0))
+                && cell.kind() == SettlementPathTerrain.Kind.SKIPPED), "stationary previews refresh changed terrain");
+        time.addAndGet(250);
+        editor.tick(level, id, pos -> false, request -> {});
+        helper.assertTrue(editor.cells().stream().allMatch(cell -> cell.kind() == SettlementPathTerrain.Kind.OUTSIDE),
+                "changed territory updates a stationary draft to outside markers");
+        helper.assertValueEqual(editor.cells().size(), 5, "outside markers remain visible after an empty rejection");
+        editor.accept(new SettlementPathResultPayload(id, 1, UUID.randomUUID(), SettlementPathResultPayload.Status.REJECTED,
+                List.of(new SettlementPathResultPayload.Cell(base, SettlementPathTerrain.Kind.UNAVAILABLE)), "Load terrain"));
+        editor.tick(level, id, pos -> true, request -> {});
+        time.addAndGet(250);
+        var requests = new java.util.ArrayList<SettlementPathRequestPayload>();
+        editor.tick(level, id, pos -> true, requests::add);
+        helper.assertTrue(requests.stream().anyMatch(request -> request.action() == SettlementPathRequestPayload.Action.PREVIEW
+                && request.revision() == 2), "loaded terrain automatically requests a fresh authoritative preview");
+        helper.assertValueEqual(editor.cells().size(), 5, "automatic refresh keeps the footprint visible");
+        helper.succeed();
+    }
+
     private static SettlementPath path(Vec3 a, Vec3 b, int width, boolean branch) {
         return new SettlementPath(List.of(new SettlementPath.Node(a), new SettlementPath.Node(b)), width,
                 SettlementPath.Style.CLEAN, SettlementPath.Material.DIRT, 1337, branch);
