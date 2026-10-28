@@ -1507,10 +1507,11 @@ public final class VillagerWorkerGameTests {
         for (int slot = 0; slot < storage.getContainerSize(); slot++) storage.setItem(slot, new ItemStack(Items.STONE, 64));
         AssignedStorageService.assign(hirer, villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)), AssignedStorageService.OUTPUT_PURPOSE);
+        int decisionWindow = Math.max(10, com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get()) * 4;
         for (boolean autoDeposit : List.of(true, false)) {
             session.state().putBoolean("AutoDepositOutputs", autoDeposit);
             HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.IDLE);
-            for (int tick = 0; tick < 100; tick++) {
+            for (int tick = 0; tick < decisionWindow; tick++) {
                 ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData()).setGameTime(level.getGameTime() + 1L);
                 villager.getBrain().setActiveActivityIfPossible(Activity.IDLE);
                 HiredVillagerWorkService.onVillagerTickPost(villager);
