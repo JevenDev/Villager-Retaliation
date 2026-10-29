@@ -1,4 +1,5 @@
 {
+  "villagerretaliation.village.opinion": "Village opinion: %s (%s)",
   "interaction.work.farmland.collecting_water": "Collecting water for farmland.",
   "interaction.work.farmland.water_unreachable": "Cannot reach the water supply storage.",
   "interaction.work.farmland.invalid": "Farmland plan is unavailable. Cancel and select the area again.",
