@@ -37,24 +37,42 @@ public final class SettlementPathGizmo {
         return t < 0 || t > 512 ? null : ray.origin().add(ray.direction().scale(t));
     }
 
-    public static void renderTerrain(SettlementPathEditor editor, PoseStack pose, VertexConsumer terrain) {
-        for (var cell : editor.cells()) {
-            boolean outside = cell.kind() == SettlementPathTerrain.Kind.OUTSIDE;
-            boolean blocked = cell.kind() == SettlementPathTerrain.Kind.SKIPPED || cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE;
-            float red = outside || blocked ? 1 : 0.25F;
-            float green = outside ? 0.05F : blocked ? 0.35F : 0.9F;
-            float blue = outside ? 0.05F : cell.kind() == SettlementPathTerrain.Kind.EXISTING ? 1 : 0.2F;
-            var pos = cell.position();
-            LevelRenderer.renderLineBox(pose, terrain, new AABB(pos.getX() + 0.03, pos.getY() + 0.94, pos.getZ() + 0.03,
-                    pos.getX() + 0.97, pos.getY() + 1.02, pos.getZ() + 0.97), red, green, blue, 0.85F);
-        }
+    public static void renderTerrain(SettlementPathEditor editor, net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        com.jvn.villagerretaliation.client.PreviewMeshCache.render(editor, editor.cells(), () -> {
+            var mesh = new com.jvn.villagerretaliation.client.PreviewMeshCache();
+            for (var cell : editor.cells()) {
+                var section = mesh.at(cell.position());
+                renderCell(cell, section.pose(), section.getBuffer(net.minecraft.client.renderer.RenderType.lines()));
+            }
+            return mesh;
+        }, event);
+        com.jvn.villagerretaliation.client.PreviewMeshCache.render(java.util.List.of(editor, "centerline"), editor.centerline(), () -> {
+            var mesh = new com.jvn.villagerretaliation.client.PreviewMeshCache();
+            var samples = editor.centerline();
+            for (int i = 1; i < samples.size(); i++) {
+                var section = mesh.at(net.minecraft.core.BlockPos.containing(samples.get(i - 1)));
+                section.include(samples.get(i));
+                SettlementSelectionGizmo.line(section.pose(), section.getBuffer(SettlementSelectionGizmo.LINES),
+                        samples.get(i - 1), samples.get(i), 0.3F, 0.8F, 1, 1);
+            }
+            return mesh;
+        }, event);
+    }
+
+    private static void renderCell(com.jvn.villagerretaliation.network.SettlementPathResultPayload.Cell cell, PoseStack pose, VertexConsumer terrain) {
+        boolean outside = cell.kind() == SettlementPathTerrain.Kind.OUTSIDE;
+        boolean blocked = cell.kind() == SettlementPathTerrain.Kind.SKIPPED || cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE;
+        float red = outside || blocked ? 1 : 0.25F;
+        float green = outside ? 0.05F : blocked ? 0.35F : 0.9F;
+        float blue = outside ? 0.05F : cell.kind() == SettlementPathTerrain.Kind.EXISTING ? 1 : 0.2F;
+        var pos = cell.position();
+        LevelRenderer.renderLineBox(pose, terrain, new AABB(pos.getX() + 0.03, pos.getY() + 0.94, pos.getZ() + 0.03,
+                pos.getX() + 0.97, pos.getY() + 1.02, pos.getZ() + 0.97), red, green, blue, 0.85F);
     }
 
     public static void renderHandles(SettlementPathEditor editor, PoseStack pose, VertexConsumer handles) {
         if (!editor.active()) return;
         var path = editor.draft().path();
-        var samples = editor.centerline();
-        for (int i = 1; i < samples.size(); i++) SettlementSelectionGizmo.line(pose, handles, samples.get(i - 1), samples.get(i), 0.3F, 0.8F, 1, 1);
         for (int i = 0; i < path.nodes().size(); i++) {
             var node = path.nodes().get(i);
             boolean selected = i == editor.draft().selected();

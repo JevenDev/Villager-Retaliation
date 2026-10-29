@@ -30,6 +30,9 @@ final class SettlementBuildingDraft {
     private long refreshAt;
     private boolean pending;
     private boolean dirty = true;
+    private ConstructionBlueprintItem.PreviewData ghost;
+    private SettlementBuildingPreviewPayload ghostSource;
+    private BlockPos ghostAnchor;
 
     SettlementBuildingDraft(ResourceLocation structure, String label, BlockPos anchor) {
         this.structure = structure;
@@ -100,12 +103,18 @@ final class SettlementBuildingDraft {
     ConstructionBlueprintItem.PreviewData ghost() {
         var minecraft = Minecraft.getInstance();
         if (this.preview == null || this.preview.blocks().isEmpty() || minecraft.level == null) return null;
+        if (this.ghost != null && this.ghostSource == this.preview && this.anchor.equals(this.ghostAnchor)
+                && this.ghost.dimension().equals(minecraft.level.dimension())) return this.ghost;
+        var blocks = this.ghost != null && this.ghostSource == this.preview ? this.ghost.blocks()
+                : this.preview.blocks().stream().map(block -> new ConstructionBlueprintItem.PreviewBlock(block.local(), block.state())).toList();
+        this.ghostSource = this.preview;
+        this.ghostAnchor = this.anchor;
         var min = this.preview.min().subtract(this.preview.origin());
         var max = this.preview.max().subtract(this.preview.origin());
         var origin = this.anchor.offset(-Math.floorDiv(min.getX() + max.getX(), 2), -min.getY(), -Math.floorDiv(min.getZ() + max.getZ(), 2));
-        return new ConstructionBlueprintItem.PreviewData(this.request, this.builder, minecraft.level.dimension(), this.structure,
+        return this.ghost = new ConstructionBlueprintItem.PreviewData(this.request, this.builder, minecraft.level.dimension(), this.structure,
                 this.label, origin, this.preview.rotation(), min, max, this.preview.blocks().size(), 0, this.preview.price(), "", "", "",
-                false, false, false, false, this.preview.blocks().stream().map(block -> new ConstructionBlueprintItem.PreviewBlock(block.local(), block.state())).toList());
+                false, false, false, false, blocks);
     }
 
     AABB bounds() {

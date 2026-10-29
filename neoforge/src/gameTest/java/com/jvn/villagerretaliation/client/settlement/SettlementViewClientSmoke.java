@@ -95,6 +95,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static SettlementPathClientChecks pathChecks;
     private static SettlementWallClientChecks wallChecks;
+    private static boolean previewMeshesRequested, previewMeshesChecked;
     private static boolean resourceFormsChecked;
     private static int ticks;
     private static double originalX;
@@ -214,6 +215,8 @@ public final class SettlementViewClientSmoke {
             if (!pathChecks.tick(minecraft)) return;
             if (wallChecks == null) wallChecks = new SettlementWallClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
             if (!wallChecks.tick(minecraft)) return;
+            previewMeshesRequested = true;
+            if (!previewMeshesChecked) return;
             require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");
             require(Math.abs(screen.cameraHeight() - screen.viewHeight()) < 0.1D, "the camera eases into minimum zoom");
             require(screen.terrainLoaded(), "the minimum zoom capture includes the streamed terrain");
@@ -1391,6 +1394,8 @@ public final class SettlementViewClientSmoke {
             phase = 29;
         } else if (phase == 29 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 10
                 && screen.parent().buildingDraft().preview.rotation() == net.minecraft.world.level.block.Rotation.CLOCKWISE_90) {
+            require(screen.parent().buildingDraft().ghost() == screen.parent().buildingDraft().ghost(),
+                    "unchanged building frames reuse their preview snapshot");
             capture("prefab-positioned");
             var draft = screen.parent().buildingDraft();
             var handle = gizmoPivot(draft.bounds()).add(0, gizmoScale(screen), 0);
@@ -2348,6 +2353,11 @@ public final class SettlementViewClientSmoke {
 
     @SubscribeEvent
     public static void onWorldRendered(net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        if (System.getProperty(OUTPUT) != null && previewMeshesRequested && !previewMeshesChecked
+                && event.getStage() == net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            PreviewMeshClientChecks.verify(event, fixture.center());
+            previewMeshesChecked = true;
+        }
         if (System.getProperty(OUTPUT) == null || phase != 903
                 || event.getStage() != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
         var camera = Minecraft.getInstance().gameRenderer.getMainCamera();

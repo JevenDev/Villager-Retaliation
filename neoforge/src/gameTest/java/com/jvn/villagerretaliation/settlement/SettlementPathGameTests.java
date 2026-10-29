@@ -410,6 +410,12 @@ public final class SettlementPathGameTests {
         helper.assertValueEqual(editor.cells().size(), 5, "an empty rejection does not erase the client preview");
         helper.assertFalse(editor.canConfirm(), "retained previews do not bypass server rejection");
         helper.assertFalse(editor.centerline().isEmpty(), "rejected paths retain their curve gizmo");
+        var cells = editor.cells();
+        var centerline = editor.centerline();
+        time.addAndGet(300);
+        editor.tick(level, id, pos -> true, request -> {});
+        helper.assertTrue(editor.cells() == cells, "unchanged terrain keeps the render snapshot");
+        helper.assertTrue(editor.centerline() == centerline, "stationary terrain refreshes reuse curve samples");
         level.setBlock(base.offset(2, 0, 0), Blocks.STONE.defaultBlockState(), 2);
         time.addAndGet(250);
         editor.tick(level, id, pos -> true, request -> {});

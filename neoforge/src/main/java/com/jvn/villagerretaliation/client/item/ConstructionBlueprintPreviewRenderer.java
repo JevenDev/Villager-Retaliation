@@ -1,14 +1,13 @@
 package com.jvn.villagerretaliation.client.item;
 
+import com.jvn.villagerretaliation.client.PreviewMeshCache;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewBlock;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
@@ -25,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -43,6 +43,8 @@ public final class ConstructionBlueprintPreviewRenderer {
     private static final int GHOST_GREEN = 205;
     private static final int GHOST_BLUE = 255;
     private static final int OUTLINE_COLOR = 0xCC5DCDFF;
+    private static final HeldPreview MAIN_HAND = new HeldPreview();
+    private static final HeldPreview OFF_HAND = new HeldPreview();
 
     private ConstructionBlueprintPreviewRenderer() {
     }
@@ -79,7 +81,7 @@ public final class ConstructionBlueprintPreviewRenderer {
 
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
-        renderBlockGhosts(minecraft, poseStack, bufferSource, preview);
+        PreviewMeshCache.render(preview.jobId(), preview, () -> buildGhosts(minecraft, preview), event);
         if (outline) renderBounds(minecraft.level, poseStack, bufferSource, preview);
         poseStack.popPose();
 
@@ -87,74 +89,44 @@ public final class ConstructionBlueprintPreviewRenderer {
         bufferSource.endBatch(RenderType.lines());
     }
 
-    private static void renderBlockGhosts(
-            Minecraft minecraft,
-            PoseStack poseStack,
-            MultiBufferSource.BufferSource bufferSource,
-            PreviewData preview) {
+    private static PreviewMeshCache buildGhosts(Minecraft minecraft, PreviewData preview) {
+        var mesh = new PreviewMeshCache();
         BlockRenderDispatcher dispatcher = minecraft.getBlockRenderer();
-        GhostBufferSource ghostBufferSource = new GhostBufferSource(bufferSource);
         PreviewBlockAndTintGetter previewLevel = new PreviewBlockAndTintGetter(minecraft.level);
-        VertexConsumer fillConsumer = bufferSource.getBuffer(RenderType.debugFilledBox());
-        List<RenderablePreviewBlock> renderableBlocks = new ArrayList<>();
         for (PreviewBlock block : preview.blocks()) {
-            BlockPos worldPos = previewWorldPos(minecraft.level, preview, block);
-            if (worldPos != null) {
-                previewLevel.put(worldPos, block.state());
-            }
+            BlockPos worldPos = block.worldPos(preview.origin());
+            previewLevel.watch(worldPos);
+            if (minecraft.level.hasChunkAt(worldPos)) previewLevel.put(worldPos, block.state());
         }
-        for (PreviewBlock block : preview.blocks()) {
-            BlockPos worldPos = renderableWorldPos(minecraft.level, preview, block);
-            if (worldPos == null) {
-                continue;
-            }
-            renderableBlocks.add(new RenderablePreviewBlock(worldPos, block.state()));
-            if (shouldRenderSoftFill(previewLevel, worldPos, block.state())) {
-                renderSoftFill(poseStack, fillConsumer, worldPos);
-            }
-        }
-        bufferSource.endBatch(RenderType.debugFilledBox());
-
         RandomSource random = RandomSource.create();
         ModelBlockRenderer.enableCaching();
         try {
-            for (RenderablePreviewBlock block : renderableBlocks) {
+            for (PreviewBlock block : preview.blocks()) {
+                BlockPos worldPos = renderableWorldPos(minecraft.level, preview, block);
                 BlockState state = block.state();
-                if (state.getRenderShape() != RenderShape.MODEL) {
-                    continue;
-                }
+                if (worldPos == null || state.getRenderShape() != RenderShape.MODEL) continue;
+                var section = mesh.at(worldPos);
+                var poseStack = section.pose();
+                if (shouldRenderSoftFill(previewLevel, worldPos, state))
+                    renderSoftFill(poseStack, section.getBuffer(RenderType.debugFilledBox()), worldPos);
+                var vertices = new GhostVertexConsumer(section.getBuffer(RenderType.translucent()));
                 BakedModel model = dispatcher.getBlockModel(state);
-                ModelData modelData = model.getModelData(previewLevel, block.worldPos(), state, ModelData.EMPTY);
-                long seed = state.getSeed(block.worldPos());
+                ModelData modelData = model.getModelData(previewLevel, worldPos, state, ModelData.EMPTY);
+                long seed = state.getSeed(worldPos);
                 random.setSeed(seed);
                 for (RenderType renderType : model.getRenderTypes(state, random, modelData)) {
                     random.setSeed(seed);
                     poseStack.pushPose();
-                    poseStack.translate(block.worldPos().getX(), block.worldPos().getY(), block.worldPos().getZ());
-                    dispatcher.renderBatched(
-                            state,
-                            block.worldPos(),
-                            previewLevel,
-                            poseStack,
-                            ghostBufferSource.getBuffer(renderType),
-                            true,
-                            random,
-                            modelData,
-                            renderType);
+                    poseStack.translate(worldPos.getX(), worldPos.getY(), worldPos.getZ());
+                    dispatcher.renderBatched(state, worldPos, previewLevel, poseStack, vertices, true, random, modelData, renderType);
                     poseStack.popPose();
                 }
             }
         } finally {
             ModelBlockRenderer.clearCache();
         }
-    }
-
-    private record RenderablePreviewBlock(BlockPos worldPos, BlockState state) {
-    }
-
-    private static BlockPos previewWorldPos(Level level, PreviewData preview, PreviewBlock block) {
-        BlockPos worldPos = block.worldPos(preview.origin());
-        return level.hasChunkAt(worldPos) ? worldPos : null;
+        mesh.validateWith(previewLevel::unchanged);
+        return mesh;
     }
 
     private static BlockPos renderableWorldPos(Level level, PreviewData preview, PreviewBlock block) {
@@ -167,7 +139,12 @@ public final class ConstructionBlueprintPreviewRenderer {
     }
 
     private static boolean shouldRenderSoftFill(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-        return state.getRenderShape() == RenderShape.MODEL && state.isSolidRender(level, pos);
+        if (!state.isSolidRender(level, pos)) return false;
+        for (var direction : Direction.values()) {
+            var neighbor = pos.relative(direction);
+            if (!level.getBlockState(neighbor).isSolidRender(level, neighbor)) return true;
+        }
+        return false;
     }
 
     private static void renderSoftFill(PoseStack poseStack, VertexConsumer consumer, BlockPos pos) {
@@ -213,17 +190,29 @@ public final class ConstructionBlueprintPreviewRenderer {
 
     private static Optional<PreviewData> heldBlueprintPreview(Minecraft minecraft) {
         ItemStack mainHand = minecraft.player.getMainHandItem();
-        Optional<PreviewData> mainPreview = ConstructionBlueprintItem.previewData(mainHand);
+        Optional<PreviewData> mainPreview = MAIN_HAND.read(mainHand);
         if (mainPreview.isPresent()) {
             return mainPreview;
         }
-        return ConstructionBlueprintItem.previewData(minecraft.player.getOffhandItem());
+        return OFF_HAND.read(minecraft.player.getOffhandItem());
     }
 
-    private record GhostBufferSource(MultiBufferSource.BufferSource delegate) implements MultiBufferSource {
-        @Override
-        public VertexConsumer getBuffer(RenderType renderType) {
-            return new GhostVertexConsumer(this.delegate.getBuffer(RenderType.translucent()));
+    private static final class HeldPreview {
+        private net.minecraft.world.item.component.CustomData data;
+        private Optional<PreviewData> preview = Optional.empty();
+
+        private Optional<PreviewData> read(ItemStack stack) {
+            if (!(stack.getItem() instanceof ConstructionBlueprintItem)) {
+                this.data = null;
+                this.preview = Optional.empty();
+            } else {
+                var data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+                if (data != this.data) {
+                    this.data = data;
+                    this.preview = ConstructionBlueprintItem.previewData(stack);
+                }
+            }
+            return this.preview;
         }
     }
 
@@ -276,6 +265,33 @@ public final class ConstructionBlueprintPreviewRenderer {
     private static final class PreviewBlockAndTintGetter implements BlockAndTintGetter {
         private final Level delegate;
         private final Map<BlockPos, BlockState> previewStates = new LinkedHashMap<>();
+        private final Map<BlockPos, BlockState> terrain = new LinkedHashMap<>();
+        private final Map<BlockPos, Integer> skyLight = new LinkedHashMap<>();
+        private final Map<BlockPos, Integer> blockLight = new LinkedHashMap<>();
+
+        private void watch(BlockPos pos) {
+            if (!this.terrain.containsKey(pos))
+                this.terrain.put(pos.immutable(), this.delegate.hasChunkAt(pos) ? this.delegate.getBlockState(pos) : null);
+        }
+
+        private boolean unchanged() {
+            for (var entry : this.terrain.entrySet()) {
+                var pos = entry.getKey();
+                if (entry.getValue() != (this.delegate.hasChunkAt(pos) ? this.delegate.getBlockState(pos) : null)) return false;
+            }
+            for (var entry : this.skyLight.entrySet())
+                if (this.delegate.getBrightness(LightLayer.SKY, entry.getKey()) != entry.getValue()) return false;
+            for (var entry : this.blockLight.entrySet())
+                if (this.delegate.getBrightness(LightLayer.BLOCK, entry.getKey()) != entry.getValue()) return false;
+            return true;
+        }
+
+        @Override
+        public int getBrightness(LightLayer layer, BlockPos pos) {
+            int brightness = this.delegate.getBrightness(layer, pos);
+            (layer == LightLayer.SKY ? this.skyLight : this.blockLight).putIfAbsent(pos.immutable(), brightness);
+            return brightness;
+        }
 
         private PreviewBlockAndTintGetter(Level delegate) {
             this.delegate = delegate;
@@ -296,7 +312,9 @@ public final class ConstructionBlueprintPreviewRenderer {
             if (previewState != null) {
                 return previewState;
             }
-            return this.delegate.hasChunkAt(pos) ? this.delegate.getBlockState(pos) : Blocks.AIR.defaultBlockState();
+            watch(pos);
+            var state = this.terrain.get(pos);
+            return state == null ? Blocks.AIR.defaultBlockState() : state;
         }
 
         @Override

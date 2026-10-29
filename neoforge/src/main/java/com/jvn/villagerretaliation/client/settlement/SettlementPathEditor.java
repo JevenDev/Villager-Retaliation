@@ -29,6 +29,8 @@ public final class SettlementPathEditor {
     private SettlementPathResultPayload result;
     private Vec3 hover;
     private SettlementPath shown;
+    private SettlementPath planned;
+    private com.jvn.villagerretaliation.settlement.SettlementPathGeometry.Footprint footprint;
     private long previewAt;
     private List<SettlementPathResultPayload.Cell> localCells = List.of();
     private List<SettlementPathResultPayload.Cell> cells = List.of();
@@ -57,6 +59,8 @@ public final class SettlementPathEditor {
         if (this.confirming) return;
         rememberSettings();
         this.draft = new SettlementPathDraft(this.width, this.style, UUID.randomUUID().getLeastSignificantBits(), branch, this.smooth);
+        this.planned = null;
+        this.footprint = null;
         this.version = -1;
         this.hoveredHandle = null;
         this.result = null;
@@ -72,6 +76,8 @@ public final class SettlementPathEditor {
         if (!active() || this.confirming) return;
         rememberSettings();
         this.draft = null;
+        this.planned = null;
+        this.footprint = null;
         this.hover = null;
         this.shown = null;
         this.centerline = List.of();
@@ -124,9 +130,13 @@ public final class SettlementPathEditor {
             if (!shown.equals(this.shown) || now - this.previewAt >= 250) {
                 this.previewAt = now;
                 this.shown = shown;
-                var preview = SettlementPathTerrain.preview(level, shown, allowed);
-                try { this.centerline = com.jvn.villagerretaliation.settlement.SettlementPathGeometry.samples(shown); }
-                catch (IllegalArgumentException limit) { this.centerline = shown.nodes().stream().map(SettlementPath.Node::position).toList(); }
+                if (!shown.equals(this.planned)) {
+                    this.planned = shown;
+                    this.footprint = com.jvn.villagerretaliation.settlement.SettlementPathGeometry.rasterize(shown);
+                    try { this.centerline = com.jvn.villagerretaliation.settlement.SettlementPathGeometry.samples(shown); }
+                    catch (IllegalArgumentException limit) { this.centerline = shown.nodes().stream().map(SettlementPath.Node::position).toList(); }
+                }
+                var preview = SettlementPathTerrain.preview(level, shown, allowed, this.footprint);
                 this.localCells = preview.cells().stream().map(cell -> new SettlementPathResultPayload.Cell(cell.position(), cell.kind())).toList();
                 this.feedback = shown.equals(path) && this.result != null && !this.result.message().isEmpty()
                         ? this.result.message() : preview.error();
@@ -134,9 +144,10 @@ public final class SettlementPathEditor {
                         && this.result.cells().stream().anyMatch(cell -> cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE)
                         && !this.localCells.isEmpty() && this.localCells.stream().noneMatch(cell -> cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE))
                     refresh();
+                var cells = displayCells(level, shown.equals(path) && this.result != null && !this.result.cells().isEmpty()
+                        ? this.result.cells() : this.localCells);
+                if (!this.cells.equals(cells)) this.cells = cells;
             }
-            this.cells = displayCells(level, shown.equals(path) && this.result != null && !this.result.cells().isEmpty()
-                    ? this.result.cells() : this.localCells);
             if (!this.draft.dragging() && path.nodes().size() >= 2 && this.pending == null && this.result == null && now - this.changedAt >= 150)
                 send(new SettlementPathRequestPayload(session, this.revision, SettlementPathRequestPayload.Action.PREVIEW, EMPTY, path), send);
         }

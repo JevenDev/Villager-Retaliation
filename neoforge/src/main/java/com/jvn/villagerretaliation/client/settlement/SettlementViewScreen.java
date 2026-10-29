@@ -2681,14 +2681,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var draft = this.parent.buildingDraft();
         if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
         if (this.walls.active()) ConstructionBlueprintPreviewRenderer.renderPreview(event, this.walls.ghost(), false);
+        if (this.paths.active()) SettlementPathGizmo.renderTerrain(this.paths, event);
+        if (this.walls.active()) SettlementWallGizmo.renderBlocked(this.walls, event);
         PoseStack pose = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         var buffers = this.minecraft.renderBuffers().bufferSource();
         var lines = buffers.getBuffer(RenderType.lines());
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
-        if (this.paths.active()) SettlementPathGizmo.renderTerrain(this.paths, pose, lines);
-        if (this.walls.active()) SettlementWallGizmo.renderBlocked(this.walls, pose, lines);
         for (var area : this.areas.values()) {
             if ((area.id().equals(this.selectedArea) || this.preferences.workOverlay)
                     && this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= area.min().getX()

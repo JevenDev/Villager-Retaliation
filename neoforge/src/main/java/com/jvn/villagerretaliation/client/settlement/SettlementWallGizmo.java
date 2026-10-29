@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.client.settlement;
 
-import com.jvn.villagerretaliation.settlement.SettlementWallGeometry;
 import com.jvn.villagerretaliation.settlement.SettlementWallTerrain;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -22,19 +21,25 @@ final class SettlementWallGizmo {
         }
         return selected;
     }
-    static void renderBlocked(SettlementWallEditor editor, PoseStack pose, VertexConsumer lines) {
-        for (var cell : editor.cells()) {
-            boolean removal = editor.editingPlaced() && cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE;
-            if (!removal && (cell.kind() == SettlementWallTerrain.Kind.PLACE || cell.kind() == SettlementWallTerrain.Kind.EXISTING)) continue;
-            float green = cell.kind() == SettlementWallTerrain.Kind.SKIPPED ? 0.7F
-                    : cell.kind() == SettlementWallTerrain.Kind.UNAVAILABLE ? 0.5F : 0.08F;
-            LevelRenderer.renderLineBox(pose, lines, new AABB(cell.position()).inflate(0.005), 1, green, 0.05F, 0.8F);
-        }
+    static void renderBlocked(SettlementWallEditor editor, net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        com.jvn.villagerretaliation.client.PreviewMeshCache.render(editor, java.util.List.of(editor.cells(), editor.editingPlaced()), () -> {
+            var mesh = new com.jvn.villagerretaliation.client.PreviewMeshCache();
+            for (var cell : editor.cells()) {
+                boolean removal = editor.editingPlaced() && cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE;
+                if (!removal && (cell.kind() == SettlementWallTerrain.Kind.PLACE || cell.kind() == SettlementWallTerrain.Kind.EXISTING)) continue;
+                float green = cell.kind() == SettlementWallTerrain.Kind.SKIPPED ? 0.7F
+                        : cell.kind() == SettlementWallTerrain.Kind.UNAVAILABLE ? 0.5F : 0.08F;
+                var section = mesh.at(cell.position());
+                LevelRenderer.renderLineBox(section.pose(), section.getBuffer(net.minecraft.client.renderer.RenderType.lines()),
+                        new AABB(cell.position()).inflate(0.005), 1, green, 0.05F, 0.8F);
+            }
+            return mesh;
+        }, event);
     }
     static void renderNodes(SettlementWallEditor editor, PoseStack pose, VertexConsumer lines) {
         if (editor.shown() == null) return;
         var manual = editor.draft().wall().nodes();
-        var nodes = SettlementWallGeometry.towers(editor.shown());
+        var nodes = editor.towerNodes();
         for (var node : nodes) {
             boolean selected = editor.draft().selected() >= 0 && node.equals(manual.get(editor.draft().selected()));
             boolean automatic = !manual.contains(node);

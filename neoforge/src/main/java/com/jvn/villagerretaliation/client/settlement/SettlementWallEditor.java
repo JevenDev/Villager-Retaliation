@@ -29,6 +29,9 @@ public final class SettlementWallEditor {
     private SettlementWallRequestPayload pending;
     private SettlementWallResultPayload result;
     private SettlementWall shown;
+    private SettlementWall planned;
+    private com.jvn.villagerretaliation.settlement.SettlementWallGeometry.Plan plan;
+    private List<BlockPos> towerNodes = List.of();
     private BlockPos hover;
     private List<SettlementWallResultPayload.Cell> cells = List.of();
     private ConstructionBlueprintItem.PreviewData ghost;
@@ -40,6 +43,7 @@ public final class SettlementWallEditor {
     private String feedback = "";
 
     public boolean active() { return this.draft != null; }
+    public List<BlockPos> towerNodes() { return this.towerNodes; }
     public boolean pickingUpgrade() { return this.pickingUpgrade; }
     public boolean upgrading() { return !this.upgrade.equals(EMPTY) && !this.destroying; }
     public boolean destroying() { return this.destroying; }
@@ -74,6 +78,7 @@ public final class SettlementWallEditor {
         this.pending = null; this.result = null; this.shown = null; this.hover = null;
         this.upgrade = EMPTY; this.replaced = java.util.Map.of(); this.pickingUpgrade = false; this.destroying = false;
         this.cells = List.of(); this.ghost = null; this.feedback = "";
+        this.planned = null; this.plan = null; this.towerNodes = List.of();
     }
     public void cancel(UUID session, Consumer<SettlementWallRequestPayload> send) {
         if (!active() || this.confirming) return;
@@ -96,14 +101,26 @@ public final class SettlementWallEditor {
             var shown = this.draft.preview(this.hover);
             if (!shown.equals(this.shown) || now - this.previewAt >= 250) {
                 this.shown = shown; this.previewAt = now;
-                var preview = this.destroying ? SettlementWallTerrain.demolition(level, this.replaced, allowed)
-                        : SettlementWallTerrain.preview(level, shown, allowed, this.replaced);
-                this.cells = shown.equals(this.draft.wall()) && this.result != null && !this.result.cells().isEmpty()
-                        ? this.result.cells() : preview.cells().stream().map(cell ->
-                                new SettlementWallResultPayload.Cell(cell.position(), cell.target(), cell.kind())).toList();
-                this.feedback = shown.equals(this.draft.wall()) && this.result != null && !this.result.message().isEmpty()
-                        ? this.result.message() : preview.error();
-                this.ghost = ghost(level, this.cells);
+                if (!shown.equals(this.planned)) {
+                    this.planned = shown;
+                    this.plan = com.jvn.villagerretaliation.settlement.SettlementWallGeometry.build(shown);
+                    this.towerNodes = com.jvn.villagerretaliation.settlement.SettlementWallGeometry.towers(shown);
+                }
+                List<SettlementWallResultPayload.Cell> cells;
+                if (shown.equals(this.draft.wall()) && this.result != null && !this.result.cells().isEmpty()) {
+                    cells = this.result.cells();
+                    this.feedback = this.result.message();
+                } else {
+                    var preview = this.destroying ? SettlementWallTerrain.demolition(level, this.replaced, allowed)
+                            : SettlementWallTerrain.preview(level, shown, allowed, this.replaced, this.plan);
+                    cells = preview.cells().stream().map(cell ->
+                            new SettlementWallResultPayload.Cell(cell.position(), cell.target(), cell.kind())).toList();
+                    this.feedback = preview.error();
+                }
+                if (!this.cells.equals(cells)) {
+                    this.cells = cells;
+                    this.ghost = ghost(level, cells);
+                }
             }
             if (!this.draft.dragging() && this.draft.wall().nodes().size() >= 2 && this.pending == null && this.result == null
                     && now - this.changedAt >= 150)
@@ -139,6 +156,7 @@ public final class SettlementWallEditor {
     public void confirm(Level level, UUID session, Consumer<SettlementWallRequestPayload> send) {
         if (!canConfirm()) return;
         rememberSettings(); this.hover = null; this.shown = this.draft.wall(); this.cells = this.result.cells();
+        this.towerNodes = com.jvn.villagerretaliation.settlement.SettlementWallGeometry.towers(this.shown);
         this.ghost = ghost(level, this.cells); this.confirming = true;
         send(new SettlementWallRequestPayload(session, this.revision, SettlementWallRequestPayload.Action.CONFIRM, this.result.token(), null), send);
     }

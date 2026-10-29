@@ -78,6 +78,9 @@ final class SettlementWallClientChecks {
             next();
         } else if (this.phase == 2 && editor.canConfirm()) {
             require(editor.ghost() != null && !editor.cells().isEmpty(), "wall preview renders real template blocks");
+            var ghost = editor.ghost();
+            editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> {});
+            require(editor.ghost() == ghost, "unchanged wall previews retain their render snapshot");
             var skipped = editor.cells().stream().filter(cell -> cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.SKIPPED)
                     .map(com.jvn.villagerretaliation.network.SettlementWallResultPayload.Cell::position).collect(java.util.stream.Collectors.toSet());
             require(!skipped.isEmpty() && editor.hint().contains(" skipped"), "terrain overlaps are confirmable and counted");

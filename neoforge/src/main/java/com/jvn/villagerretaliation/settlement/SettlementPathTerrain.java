@@ -34,7 +34,10 @@ public final class SettlementPathTerrain {
     }
 
     public static Preview preview(Level level, SettlementPath path, Predicate<BlockPos> allowed) {
-        var footprint = SettlementPathGeometry.rasterize(path);
+        return preview(level, path, allowed, SettlementPathGeometry.rasterize(path));
+    }
+
+    public static Preview preview(Level level, SettlementPath path, Predicate<BlockPos> allowed, SettlementPathGeometry.Footprint footprint) {
         if (!footprint.error().isEmpty()) return new Preview(List.of(), footprint.error());
         var cells = new ArrayList<Cell>();
         for (var column : footprint.columns()) {

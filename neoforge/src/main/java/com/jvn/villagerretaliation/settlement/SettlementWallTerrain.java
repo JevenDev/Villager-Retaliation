@@ -25,6 +25,11 @@ public final class SettlementWallTerrain {
     }
 
     public static Preview preview(Level level, SettlementWall wall, Predicate<BlockPos> allowed, Map<BlockPos, BlockState> replaced) {
+        return preview(level, wall, allowed, replaced, SettlementWallGeometry.build(wall));
+    }
+
+    public static Preview preview(Level level, SettlementWall wall, Predicate<BlockPos> allowed,
+                                  Map<BlockPos, BlockState> replaced, SettlementWallGeometry.Plan plan) {
         for (var entry : replaced.entrySet()) {
             var pos = entry.getKey();
             if (!allowed.test(pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos))
@@ -33,7 +38,6 @@ public final class SettlementWallTerrain {
             if (!level.getBlockState(pos).equals(entry.getValue()) && !level.getBlockState(pos).isAir() || level.getBlockEntity(pos) != null)
                 return new Preview(List.of(), "This wall has been edited. Restore its blocks before upgrading");
         }
-        var plan = SettlementWallGeometry.build(wall);
         if (!plan.error().isEmpty()) return new Preview(List.of(), plan.error());
         plan = extendFoundations(level, plan, allowed, replaced);
         if (!replaced.isEmpty()) {
