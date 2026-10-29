@@ -1060,7 +1060,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.infrastructure.active()) {
             widgets.addAll(this.infrastructureButtons);
         } else if (this.farms.active()) {
-            widgets.addAll(this.farmButtons);
+            for (int index : new int[]{3, 4, 5, 6, 7, 1, 0, 2}) widgets.add(this.farmButtons.get(index));
         } else if (this.paths.active()) {
             for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
         } else if (this.walls.active()) {
@@ -1721,13 +1721,34 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 ignored -> this.farms.confirm(this.session, PacketDistributor::sendToServer)).shortcut("Enter")));
         this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Refresh"), ignored -> this.farms.refresh())));
         this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT)).shortcut("Esc")));
+        for (var shape : com.jvn.villagerretaliation.settlement.SettlementFarm.Shape.values())
+            this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(shape.label()), ignored -> {
+                this.farms.shape(shape);
+                this.nextPlacementSummary = 0;
+                updateFarmButtons();
+            })));
+        this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Close polygon"), ignored -> {
+            this.farms.finish();
+            updateFarmButtons();
+        })));
+        this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Remove last node"), ignored -> {
+            this.farms.removeNode();
+            updateFarmButtons();
+        })));
     }
 
     private void updateFarmButtons() {
         for (int i = 0; i < this.farmButtons.size(); i++) {
             var button = this.farmButtons.get(i);
-            button.visible = this.farms.active();
+            boolean polygon = this.farms.shape() == com.jvn.villagerretaliation.settlement.SettlementFarm.Shape.POLYGON;
+            button.visible = this.farms.active() && (i < 6 || polygon);
             button.active = this.farms.active() && !this.farms.confirming() && (i != 0 || this.farms.canConfirm());
+            if (i >= 3 && i <= 5) {
+                var shape = com.jvn.villagerretaliation.settlement.SettlementFarm.Shape.values()[i - 3];
+                button.setMessage(Component.literal((this.farms.shape() == shape ? "> " : "") + shape.label()));
+            }
+            if (i == 6) button.active &= this.farms.canFinish();
+            if (i == 7) button.active &= !this.farms.nodes().isEmpty();
         }
     }
 
@@ -2287,9 +2308,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.farms.active()) {
             if (this.farms.confirming()) return true;
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) enterMode(Mode.SELECT);
-            else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
-                this.farms.confirm(this.session, PacketDistributor::sendToServer);
+            else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                if (this.farms.canFinish()) this.farms.finish();
+                else this.farms.confirm(this.session, PacketDistributor::sendToServer);
+            } else if (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE) this.farms.removeNode();
             else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
+            updateFarmButtons();
             return true;
         }
         if (this.parent.buildingDraft() != null && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {

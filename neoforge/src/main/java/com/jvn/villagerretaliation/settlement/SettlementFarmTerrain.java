@@ -12,14 +12,17 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class SettlementFarmTerrain {
-    public enum Kind { TILL, WATER, EXISTING, SKIPPED, OUTSIDE, UNAVAILABLE }
+    public enum Kind { TILL, WATER, EXISTING, SKIPPED, OUTSIDE, UNAVAILABLE, DRY }
     public record Cell(BlockPos position, Kind kind, BlockState soil, BlockState above, BlockState top) {
         Cell withKind(Kind value) { return new Cell(position, value, soil, above, top); }
     }
     public record Preview(List<Cell> cells, String error) {
         public Preview { cells = List.copyOf(cells); }
         public long count(Kind kind) { return cells.stream().filter(cell -> cell.kind() == kind).count(); }
-        public String materials() { return "Hoe and " + count(Kind.WATER) + " water buckets in farmer supplies or assigned storage. Empty buckets are returned."; }
+        public String materials() {
+            return "Hoe and " + count(Kind.WATER) + " water buckets in farmer supplies or assigned storage. Empty buckets are returned."
+                    + (count(Kind.DRY) == 0 ? "" : " Skipping " + count(Kind.DRY) + " dry soil blocks (orange). Expand the selection or add contained water to include them.");
+        }
     }
     private SettlementFarmTerrain() {}
 
@@ -57,6 +60,7 @@ public final class SettlementFarmTerrain {
         var candidates = new ArrayList<BlockPos>();
         for (int x = farm.minX(); x <= farm.maxX(); x++) {
             for (int z = farm.minZ(); z <= farm.maxZ(); z++) {
+                if (!farm.contains(x, z)) continue;
                 var pos = new BlockPos(x, farm.first().getY(), z);
                 Kind kind;
                 if (!allowed.test(pos) || !level.getWorldBorder().isWithinBounds(pos)) kind = Kind.OUTSIDE;
@@ -82,12 +86,20 @@ public final class SettlementFarmTerrain {
         if (cells.stream().anyMatch(cell -> cell.kind() == Kind.OUTSIDE)) return new Preview(cells, "Farmland must stay inside the available settlement area");
         if (cells.stream().anyMatch(cell -> cell.kind() == Kind.UNAVAILABLE)) return new Preview(cells, "Load the farmland terrain before confirming");
         if (level.dimensionType().ultraWarm()) return new Preview(cells, "Water cannot irrigate farmland in this dimension");
+        var excluded = new HashSet<>(dry);
+        for (var source : candidates) {
+            if (excluded.isEmpty()) break;
+            for (var pos : BlockPos.betweenClosed(source.offset(-4, -1, -4), source.offset(4, 0, 4))) excluded.remove(pos);
+        }
+        dry.removeIf(excluded::contains);
         var water = SettlementFarmIrrigation.plan(dry, candidates);
         if (water == null) return new Preview(cells, "Some soil cannot be irrigated safely. Expand the area or provide contained water nearby");
         var sources = new HashSet<>(water);
-        var planned = cells.stream().map(cell -> sources.contains(cell.position()) ? cell.withKind(Kind.WATER) : cell).toList();
+        var planned = cells.stream().map(cell -> sources.contains(cell.position()) ? cell.withKind(Kind.WATER)
+                : excluded.contains(cell.position()) ? cell.withKind(Kind.DRY) : cell).toList();
         if (planned.stream().noneMatch(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.EXISTING))
-            return new Preview(planned, "No tillable farmland remains after irrigation");
+            return new Preview(planned, excluded.isEmpty() ? "No tillable farmland remains after irrigation"
+                    : "No soil can be irrigated safely. Expand the area or provide contained water nearby. Orange blocks will stay unchanged.");
         if (planned.stream().noneMatch(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.WATER))
             return new Preview(planned, "No farmland work is needed");
         var work = planned.stream().filter(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.WATER).toList();

@@ -224,6 +224,132 @@ public final class SettlementFarmGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void shapesKeepBoundariesExcludeConcaveNotchesAndRoundTrip(GameTestHelper helper) {
+        var base = new BlockPos(-15, 70, -17);
+        var rectangle = new SettlementFarm(base.offset(8, 0, 8), base);
+        var polygon = new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.east(8),
+                base.offset(8, 0, 3), base.offset(3, 0, 3), base.offset(3, 0, 8), base.south(8)));
+        helper.assertTrue(rectangle.contains(base.getX() + 8, base.getZ() + 8), "rectangle includes both corners");
+        helper.assertTrue(polygon.contains(base.getX() + 2, base.getZ() + 7), "concave polygon includes its arm");
+        helper.assertFalse(polygon.contains(base.getX() + 6, base.getZ() + 6), "concave polygon excludes its notch");
+        helper.assertTrue(polygon.contains(base.getX() + 3, base.getZ() + 5), "polygon edges are included");
+        var circle = new SettlementFarm(SettlementFarm.Shape.CIRCLE, List.of(base, base.east(4)));
+        helper.assertValueEqual(circle.minX(), base.getX() - 4, "circle extends on both sides of its centre");
+        helper.assertTrue(circle.contains(base.getX(), base.getZ() - 4), "circle includes its radius boundary");
+        helper.assertFalse(circle.contains(base.getX() + 4, base.getZ() + 4), "circle excludes bounding square corners");
+        var reversed = new SettlementFarm(SettlementFarm.Shape.POLYGON, polygon.nodes().reversed());
+        for (int x = polygon.minX(); x <= polygon.maxX(); x++) for (int z = polygon.minZ(); z <= polygon.maxZ(); z++)
+            helper.assertValueEqual(polygon.contains(x, z), reversed.contains(x, z), "polygon winding does not change its footprint");
+        for (var farm : List.of(rectangle, polygon, circle)) {
+            var request = new SettlementFarmRequestPayload(UUID.randomUUID(), 1, Action.PREVIEW, UUID.randomUUID(), farm);
+            var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                SettlementFarmRequestPayload.STREAM_CODEC.encode(buffer, request);
+                helper.assertValueEqual(SettlementFarmRequestPayload.STREAM_CODEC.decode(buffer), request, "all shapes round trip with every node");
+            } finally { buffer.release(); }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void shapesRejectOversizedAndCrossingDrafts(GameTestHelper helper) {
+        var base = BlockPos.ZERO;
+        invalid(helper, () -> new SettlementFarm(base, base.east(64)));
+        invalid(helper, () -> new SettlementFarm(SettlementFarm.Shape.CIRCLE, List.of(base, base.east(32))));
+        invalid(helper, () -> new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.east(4))));
+        invalid(helper, () -> new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.east(4), base.east(8))));
+        invalid(helper, () -> new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.offset(8, 0, 8), base.south(8), base.east(8))));
+        invalid(helper, () -> new SettlementFarm(SettlementFarm.Shape.POLYGON, java.util.Collections.nCopies(SettlementFarm.MAX_NODES + 1, base)));
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void exposedRidgeSkipsOnlyDrySoilAndStillPreparesSafeTerrain(GameTestHelper helper) {
+        var base = ground(helper, 22, 20);
+        var level = helper.getLevel();
+        for (int z = 0; z < 20; z++) level.setBlock(base.offset(10, 1, z), Blocks.DIRT.defaultBlockState(), 2);
+        var preview = SettlementFarmTerrain.preview(level, new SettlementFarm(base, base.offset(21, 0, 19)), pos -> true);
+        helper.assertTrue(preview.error().isEmpty(), preview.error());
+        helper.assertValueEqual(preview.count(SettlementFarmTerrain.Kind.DRY), 20L, "exposed raised ridge is marked dry instead of blocking the field");
+        helper.assertTrue(preview.materials().contains("Skipping 20"), "validated requirements explain dry soil exclusions");
+        var water = preview.cells().stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER).map(SettlementFarmTerrain.Cell::position).toList();
+        for (var cell : preview.cells()) {
+            if (cell.kind() == SettlementFarmTerrain.Kind.WATER)
+                helper.assertTrue(SettlementFarmTerrain.contained(level, cell.position()), "every water hole is contained");
+            if (cell.kind() == SettlementFarmTerrain.Kind.TILL || cell.kind() == SettlementFarmTerrain.Kind.EXISTING)
+                helper.assertTrue(SettlementFarmTerrain.hydrated(level, cell.position())
+                        || water.stream().anyMatch(source -> SettlementFarmIrrigation.reaches(source, cell.position())), "every prepared soil block has irrigation");
+        }
+        helper.assertTrue(level.getBlockState(base.offset(10, 1, 0)).is(Blocks.DIRT), "dry ridge stays unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void shapedTerrainNeverIncludesBoundingBoxCorners(GameTestHelper helper) {
+        var base = ground(helper, 12, 12);
+        for (var farm : List.of(new SettlementFarm(SettlementFarm.Shape.CIRCLE, List.of(base.offset(5, 0, 5), base.offset(9, 0, 5))),
+                new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.east(8), base.south(8))))) {
+            var preview = SettlementFarmTerrain.preview(helper.getLevel(), farm, pos -> farm.contains(pos.getX(), pos.getZ()));
+            helper.assertTrue(preview.error().isEmpty(), preview.error());
+            helper.assertTrue(preview.cells().stream().allMatch(cell -> farm.contains(cell.position().getX(), cell.position().getZ())),
+                    "ownership checks, work and water stay inside the shape");
+            helper.assertFalse(preview.cells().stream().anyMatch(cell -> cell.position().equals(base.offset(9, 0, 9))),
+                    "bounding square corners stay untouched");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void polygonClosureAndModeChangesRequireFreshValidation(GameTestHelper helper) {
+        var base = ground(helper, 12, 12);
+        long[] now = {0};
+        var editor = new SettlementFarmEditor(() -> now[0]);
+        var requests = new ArrayList<SettlementFarmRequestPayload>();
+        var session = UUID.randomUUID();
+        java.util.function.Function<net.minecraft.world.phys.Vec3, double[]> project = point -> new double[]{point.x, point.z};
+        editor.begin();
+        editor.shape(SettlementFarm.Shape.POLYGON);
+        for (var node : List.of(base, base.east(8), base.south(8))) editor.click(node, project, 0, 0);
+        now[0] = 200;
+        editor.tick(helper.getLevel(), session, pos -> true, requests::add);
+        helper.assertTrue(requests.isEmpty(), "open polygon cannot request approval");
+        editor.finish();
+        now[0] = 400;
+        editor.tick(helper.getLevel(), session, pos -> true, requests::add);
+        var polygon = requests.getLast();
+        helper.assertValueEqual(polygon.farm().nodes().size(), 3, "closure keeps exactly the placed nodes");
+        var response = new SettlementFarmResultPayload(session, polygon.revision(), UUID.randomUUID(), Status.PREVIEW, editor.cells(), "ready");
+        editor.accept(response);
+        helper.assertTrue(editor.canConfirm(), "closed polygon can be validated");
+        editor.removeNode();
+        helper.assertFalse(editor.canConfirm(), "removing a node invalidates approval and reopens the polygon");
+        editor.shape(SettlementFarm.Shape.CIRCLE);
+        editor.accept(response);
+        helper.assertFalse(editor.canConfirm(), "a polygon response cannot approve a circle");
+        editor.click(base.offset(5, 0, 5), project, 0, 0);
+        editor.click(base.offset(9, 0, 5), project, 0, 0);
+        editor.click(base.offset(5, 0, 5), project, base.getX() + 5.5, base.getZ() + 5.5);
+        editor.drag(base.offset(6, 0, 5));
+        editor.release();
+        helper.assertValueEqual(editor.second().getX() - editor.first().getX(), 4, "moving circle centre preserves radius");
+        now[0] = 600;
+        editor.tick(helper.getLevel(), session, pos -> true, requests::add);
+        helper.assertValueEqual(requests.getLast().farm().shape(), SettlementFarm.Shape.CIRCLE, "server receives the circle shape");
+        editor.shape(SettlementFarm.Shape.POLYGON);
+        for (var node : List.of(base, base.east(8), base.south(8), base)) editor.click(node, project, 0, 0);
+        helper.assertFalse(editor.selecting(), "clicking the first node closes the polygon");
+        helper.assertValueEqual(editor.nodes().size(), 3, "closing click never duplicates the first node");
+        helper.succeed();
+    }
+
+    private static void invalid(GameTestHelper helper, Runnable construct) {
+        boolean rejected = false;
+        try { construct.run(); }
+        catch (IllegalArgumentException expected) { rejected = true; }
+        helper.assertTrue(rejected, "invalid farmland is rejected");
+    }
+
     private static BlockPos ground(GameTestHelper helper, int width, int depth) {
         var base = helper.absolutePos(new BlockPos(4, 40, 4));
         for (var pos : BlockPos.betweenClosed(base.offset(-1, -1, -1), base.offset(width, 4, depth)))

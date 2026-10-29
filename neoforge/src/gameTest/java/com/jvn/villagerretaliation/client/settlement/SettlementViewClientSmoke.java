@@ -240,6 +240,16 @@ public final class SettlementViewClientSmoke {
                 minecraft.stop();
                 return;
             }
+            if (Boolean.getBoolean("villagerretaliation.settlementFarmClientSmokeOnly")) {
+                if (farmChecks == null) farmChecks = new SettlementFarmClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+                if (!farmChecks.tick(minecraft)) return;
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+                } catch (IOException exception) { throw new UncheckedIOException(exception); }
+                phase = 6;
+                minecraft.stop();
+                return;
+            }
             if (farmChecks == null) {
                 if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
                 if (!pathChecks.tick(minecraft)) return;

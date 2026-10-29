@@ -33,10 +33,10 @@ final class SettlementPlacementSummary {
             materials = paths.requirements();
             positions = paths.cells().stream().map(cell -> cell.position()).toList();
         } else if (farms.active()) {
-            title = "Farmland";
+            title = "Farmland / " + farms.shape().label();
             status = farms.placementStatus();
             materials = farms.requirements();
-            positions = farms.first() == null ? List.of() : List.of(farms.first(), farms.second());
+            positions = farms.cells().isEmpty() ? farms.nodes() : farms.cells().stream().map(cell -> cell.position()).toList();
         } else if (infrastructure.active()) {
             title = infrastructure.type().label();
             status = infrastructure.placementStatus();

@@ -27,7 +27,7 @@ final class SettlementFarmClientChecks {
     }
 
     boolean tick(Minecraft minecraft) {
-        if (this.phase == 7) return true;
+        if (this.phase == 11) return true;
         if (++this.ticks > 600) throw new IllegalStateException("Farmland client checks timed out at " + this.phase + ": " + this.view.farmEditor().hint());
         var editor = this.view.farmEditor();
         if (this.phase == 0) {
@@ -38,6 +38,7 @@ final class SettlementFarmClientChecks {
                     level.setBlock(pos, pos.getY() <= this.start.getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
                 }
                 level.setBlock(this.start.east(2), Blocks.STONE.defaultBlockState(), 2);
+                level.setBlock(this.start.offset(4, 1, 1), Blocks.DIRT.defaultBlockState(), 2);
             }).join();
             this.cameraX = this.view.focusX();
             this.cameraZ = this.view.focusZ();
@@ -62,6 +63,7 @@ final class SettlementFarmClientChecks {
         } else if (this.phase == 3 && this.ticks > 10 && editor.canConfirm()) {
             require(count(SettlementFarmTerrain.Kind.WATER) == 1, "nine-by-nine preview has one water source");
             require(count(SettlementFarmTerrain.Kind.SKIPPED) == 1, "stone is visibly skipped");
+            require(count(SettlementFarmTerrain.Kind.DRY) == 1, "exposed soil is marked dry without blocking the field");
             this.capture.accept("farmland-nine-by-nine");
             var a = project(this.start.offset(8, 0, 8));
             var b = project(this.start.offset(17, 0, 8));
@@ -73,10 +75,40 @@ final class SettlementFarmClientChecks {
         } else if (this.phase == 4 && this.ticks > 10 && editor.canConfirm()) {
             require(count(SettlementFarmTerrain.Kind.WATER) == 2, "resizing repositions water to cover the full field");
             this.capture.accept("farmland-resized-irrigation");
+            button("Circle").onPress();
+            require(editor.nodes().isEmpty() && !editor.canConfirm(), "changing mode clears the rectangle and its approval");
+            click(this.start.offset(8, 0, 4));
+            next();
+        } else if (this.phase == 5 && this.ticks > 3) {
+            click(this.start.offset(12, 0, 4));
+            next();
+        } else if (this.phase == 6 && this.ticks > 10 && editor.canConfirm()) {
+            require(editor.cells().size() == 49, "circle includes the disk and excludes its bounding corners");
+            this.capture.accept("farmland-circle");
+            button("Polygon").onPress();
+            click(this.start);
+            click(this.start.east(8));
+            click(this.start.south(8));
+            require(editor.selecting() && !editor.canConfirm(), "polygon keeps adding nodes until closed");
+            button("Close polygon").onPress();
+            next();
+        } else if (this.phase == 7 && this.ticks > 10 && editor.canConfirm()) {
+            require(editor.cells().size() == 45, "triangle preview follows its polygon footprint");
+            this.capture.accept("farmland-polygon");
+            var a = project(this.start.east(8));
+            var b = project(this.start.east(10));
+            this.view.mouseClicked(a.x, a.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            this.view.mouseDragged(b.x, b.y, GLFW.GLFW_MOUSE_BUTTON_LEFT, b.x - a.x, b.y - a.y);
+            this.view.mouseReleased(b.x, b.y, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+            require(!editor.canConfirm(), "moving a polygon node invalidates approval");
+            next();
+        } else if (this.phase == 8 && this.ticks > 10 && editor.canConfirm()) {
+            require(editor.cells().size() > 45, "dragging a polygon node updates the footprint");
+            this.capture.accept("farmland-polygon-resized");
             button("Cancel").onPress();
             require(!editor.active(), "cancel clears farmland placement");
             next();
-        } else if (this.phase == 5 && this.ticks > 3) {
+        } else if (this.phase == 9 && this.ticks > 3) {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
                 require(level.getBlockState(this.start.offset(4, 0, 4)).is(Blocks.DIRT), "preview and cancellation never till terrain");
@@ -85,8 +117,8 @@ final class SettlementFarmClientChecks {
             this.view.focus(this.cameraX, this.cameraZ);
             this.view.mouseScrolled(this.view.viewportWidth() / 2.0, 80, 0, 100);
             next();
-        } else if (this.phase == 6 && this.ticks > 30) next();
-        return this.phase == 7;
+        } else if (this.phase == 10 && this.ticks > 30) next();
+        return this.phase == 11;
     }
 
     private long count(SettlementFarmTerrain.Kind kind) {

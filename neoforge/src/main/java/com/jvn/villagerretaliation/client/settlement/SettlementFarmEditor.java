@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.network.SettlementFarmRequestPayload;
 import com.jvn.villagerretaliation.network.SettlementFarmResultPayload;
 import com.jvn.villagerretaliation.settlement.SettlementFarm;
 import com.jvn.villagerretaliation.settlement.SettlementFarmTerrain;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -22,8 +23,9 @@ public final class SettlementFarmEditor {
     private boolean selecting;
     private boolean confirming;
     private int dragging = -1;
-    private BlockPos first;
-    private BlockPos second;
+    private SettlementFarm.Shape shape = SettlementFarm.Shape.RECTANGLE;
+    private final List<BlockPos> nodes = new ArrayList<>();
+    private BlockPos hover;
     private long revision;
     private long changedAt;
     private long sentAt;
@@ -39,16 +41,46 @@ public final class SettlementFarmEditor {
     public boolean active() { return this.active; }
     public boolean confirming() { return this.confirming; }
     public boolean dragging() { return this.dragging >= 0; }
-    public BlockPos first() { return this.first; }
-    public BlockPos second() { return this.second; }
+    public BlockPos first() { return this.nodes.isEmpty() ? null : this.nodes.getFirst(); }
+    public BlockPos second() { return this.nodes.size() < 2 ? first() : this.nodes.get(1); }
+    public List<BlockPos> nodes() { return List.copyOf(this.nodes); }
+    public List<BlockPos> outlineNodes() {
+        var points = new ArrayList<>(this.nodes);
+        if (this.shape == SettlementFarm.Shape.POLYGON && this.selecting && this.hover != null
+                && points.stream().noneMatch(node -> sameColumn(node, this.hover))) points.add(this.hover);
+        return points;
+    }
+    public SettlementFarm.Shape shape() { return this.shape; }
+    public boolean selecting() { return this.selecting; }
+    public boolean canFinish() { return active() && !confirming() && this.selecting && this.shape == SettlementFarm.Shape.POLYGON && this.nodes.size() >= 3; }
+    public void shape(SettlementFarm.Shape shape) {
+        if (!active() || confirming() || this.shape == shape) return;
+        begin();
+        this.shape = shape;
+    }
+    public void finish() {
+        if (!canFinish()) return;
+        this.selecting = false;
+        this.hover = null;
+        changed();
+    }
+    public void removeNode() {
+        if (!active() || confirming() || this.shape != SettlementFarm.Shape.POLYGON || this.nodes.isEmpty()) return;
+        this.nodes.removeLast();
+        this.selecting = true;
+        this.hover = null;
+        this.dragging = -1;
+        changed();
+    }
     public List<SettlementFarmResultPayload.Cell> cells() { return this.cells; }
 
     public void begin() {
         this.active = true;
         this.selecting = true;
         this.confirming = false;
-        this.first = null;
-        this.second = null;
+        this.shape = SettlementFarm.Shape.RECTANGLE;
+        this.nodes.clear();
+        this.hover = null;
         this.dragging = -1;
         this.cells = List.of();
         changed();
@@ -56,35 +88,69 @@ public final class SettlementFarmEditor {
 
     public void click(BlockPos pos, Function<Vec3, double[]> project, double x, double y) {
         if (!active() || confirming() || pos == null) return;
-        if (this.first == null) {
-            this.first = pos;
-            this.second = pos;
+        if (this.shape == SettlementFarm.Shape.POLYGON && this.selecting) {
+            if (canFinish() && sameColumn(pos, first())) { finish(); return; }
+            if (this.nodes.size() == SettlementFarm.MAX_NODES) {
+                this.feedback = "Polygon has 32 nodes. Close the polygon or remove the last node.";
+                return;
+            }
+            if (this.nodes.stream().anyMatch(node -> sameColumn(node, pos))) return;
+            this.nodes.add(pos.immutable());
+            this.hover = null;
+        } else if (this.nodes.isEmpty()) {
+            this.nodes.add(pos.immutable());
+            this.nodes.add(pos.immutable());
         } else if (this.selecting) {
-            this.second = pos;
+            this.nodes.set(1, pos.immutable());
             this.selecting = false;
         } else {
-            var a = project.apply(Vec3.atCenterOf(this.first).add(0, 0.5, 0));
-            var b = project.apply(Vec3.atCenterOf(this.second).add(0, 0.5, 0));
-            double da = a == null ? Double.MAX_VALUE : Math.hypot(a[0] - x, a[1] - y);
-            double db = b == null ? Double.MAX_VALUE : Math.hypot(b[0] - x, b[1] - y);
-            this.dragging = da < db ? 0 : 1;
+            double nearest = Double.MAX_VALUE;
+            int handle = -1;
+            for (int i = 0; i < this.nodes.size(); i++) {
+                var screen = project.apply(Vec3.atCenterOf(this.nodes.get(i)).add(0, 0.5, 0));
+                double distance = screen == null ? Double.MAX_VALUE : Math.hypot(screen[0] - x, screen[1] - y);
+                if (distance < nearest) { nearest = distance; handle = i; }
+            }
+            if (handle < 0 || this.shape == SettlementFarm.Shape.POLYGON && nearest > 12) return;
+            this.dragging = handle;
             drag(pos);
         }
         changed();
     }
 
     public void hover(BlockPos pos) {
-        if (active() && !confirming() && this.selecting && this.first != null && pos != null && !pos.equals(this.second)) {
-            this.second = pos;
+        if (!active() || confirming() || !this.selecting || this.nodes.isEmpty()) return;
+        if (this.shape == SettlementFarm.Shape.POLYGON) {
+            if (!java.util.Objects.equals(this.hover, pos)) { this.hover = pos; changed(); }
+        } else if (pos != null && !pos.equals(second())) {
+            this.nodes.set(1, pos.immutable());
             changed();
         }
     }
 
     public void drag(BlockPos pos) {
         if (!dragging() || confirming() || pos == null) return;
-        if (this.dragging == 0) this.first = pos;
-        else this.second = pos;
+        if (pos.equals(this.nodes.get(this.dragging))) return;
+        if (this.shape == SettlementFarm.Shape.CIRCLE && this.dragging == 0) {
+            var offset = pos.subtract(first());
+            this.nodes.set(1, second().offset(offset));
+        }
+        this.nodes.set(this.dragging, pos.immutable());
         changed();
+    }
+
+    private static boolean sameColumn(BlockPos a, BlockPos b) {
+        return a != null && b != null && a.getX() == b.getX() && a.getZ() == b.getZ();
+    }
+
+    private SettlementFarm farm() {
+        var points = new ArrayList<>(this.nodes);
+        if (this.shape == SettlementFarm.Shape.POLYGON && this.selecting && this.hover != null
+                && points.size() < SettlementFarm.MAX_NODES && points.stream().noneMatch(node -> sameColumn(node, this.hover)))
+            points.add(this.hover);
+        if (this.shape == SettlementFarm.Shape.POLYGON && points.size() < 3)
+            throw new IllegalArgumentException("Add at least three polygon corners");
+        return new SettlementFarm(this.shape, points);
     }
 
     public void release() { this.dragging = -1; this.changedAt = this.clock.getAsLong(); }
@@ -94,6 +160,7 @@ public final class SettlementFarmEditor {
         this.revision++;
         this.changedAt = this.clock.getAsLong();
         this.shown = null;
+        this.cells = List.of();
         this.result = null;
         this.pending = null;
         this.feedback = "";
@@ -110,9 +177,9 @@ public final class SettlementFarmEditor {
 
     public void tick(Level level, UUID session, Predicate<BlockPos> allowed, Consumer<SettlementFarmRequestPayload> send) {
         long now = this.clock.getAsLong();
-        if (active() && !confirming() && this.first != null && this.second != null) {
+        if (active() && !confirming() && !this.nodes.isEmpty()) {
             SettlementFarm farm;
-            try { farm = new SettlementFarm(this.first, this.second); }
+            try { farm = farm(); }
             catch (IllegalArgumentException limit) {
                 this.feedback = limit.getMessage();
                 this.cells = List.of();
@@ -175,17 +242,25 @@ public final class SettlementFarmEditor {
         if (confirming()) return "Submitting farmland work...";
         if (canConfirm()) return "Valid terrain: Confirm assigns a farmer";
         if (this.result != null && this.result.status() == SettlementFarmResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
+        if (this.shown == null && !this.feedback.isBlank() && !this.selecting && this.pending == null) return "Cannot place: " + this.feedback;
         return "Finish the draft, then wait for validation";
     }
 
     public String hint() {
         if (confirming()) return "Assigning farmland work...";
-        if (this.first == null) return "Farmland: click the first corner of the area.";
+        if (this.nodes.isEmpty()) return this.shape == SettlementFarm.Shape.POLYGON ? "Farmland: click to add polygon corners."
+                : this.shape == SettlementFarm.Shape.CIRCLE ? "Farmland: click the centre of the circle."
+                : "Farmland: click the first corner of the area.";
         long till = this.cells.stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.TILL).count();
         long water = this.cells.stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER).count();
         long skipped = this.cells.stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.SKIPPED).count();
-        return "Farmland / " + till + " soil / " + water + " water / " + skipped + " skipped\n"
-                + (this.selecting ? "Move to resize, then click the opposite corner. " : "Drag either corner to resize. ")
-                + this.feedback;
+        long dry = this.cells.stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.DRY).count();
+        String instructions = this.shape == SettlementFarm.Shape.POLYGON
+                ? this.selecting ? "Click corners, then click the first node or Close polygon. " : "Drag a node to reshape. "
+                : this.shape == SettlementFarm.Shape.CIRCLE
+                ? this.selecting ? "Move to resize, then click the radius. " : "Drag the centre or radius handle. "
+                : this.selecting ? "Move to resize, then click the opposite corner. " : "Drag either corner to resize. ";
+        return this.shape.label() + " / " + till + " soil / " + water + " water / " + skipped + " skipped / " + dry + " dry\n"
+                + instructions + this.feedback;
     }
 }
