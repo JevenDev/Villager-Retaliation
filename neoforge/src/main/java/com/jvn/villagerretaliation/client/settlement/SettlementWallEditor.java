@@ -172,7 +172,15 @@ public final class SettlementWallEditor {
             return false;
         }
         if (result.status() == SettlementWallResultPayload.Status.APPLIED) {
-            rememberSettings(); this.draft = null; clearPreview(); return true;
+            boolean repeat = editingPlaced();
+            boolean destroy = this.destroying;
+            rememberSettings(); this.draft = null; clearPreview();
+            if (repeat) {
+                this.revision++;
+                if (destroy) beginDestroy();
+                else beginUpgrade();
+            }
+            return true;
         }
         return false;
     }

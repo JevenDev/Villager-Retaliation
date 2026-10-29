@@ -60,6 +60,46 @@ public final class SettlementViewPanelClientChecks {
         view.contextPopup().buttons().getFirst().onPress();
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "filter selection preserves the world camera");
+        verifyBuildMenu(view);
+    }
+
+    private static void verifyBuildMenu(SettlementViewScreen view) {
+        var minecraft = Minecraft.getInstance();
+        int width = view.width, height = view.height;
+        var windows = view.uiWindows();
+        var positions = windows.stream().map(SettlementUiWindow::position).toList();
+        for (int[] size : new int[][]{{280, 180}, {320, 180}, {width, height}}) {
+            view.resize(minecraft, size[0], size[1]);
+            var build = button(view, "Build");
+            for (int repeat = 0; repeat < 3; repeat++) {
+                view.mouseClicked(build.getX() + 2, build.getY() + 2, 0);
+                view.mouseReleased(build.getX() + 2, build.getY() + 2, 0);
+                require(view.contextPopup() != null && view.contextPopup().target().kind() == SettlementViewPopup.Kind.BUILD,
+                        "Build opens consistently with mouse input");
+                require(!view.contextPopup().contains(build.getX() + 2, build.getY() + 2), "Build popup never overlaps its toggle");
+                view.mouseClicked(build.getX() + 2, build.getY() + 2, 0);
+                view.mouseReleased(build.getX() + 2, build.getY() + 2, 0);
+                require(view.contextPopup() == null, "Build closes consistently with mouse input");
+            }
+            build.onPress();
+            boolean buildingAvailable = view.contextPopup().buttons().stream()
+                    .filter(button -> button.getMessage().equals(SettlementManagementScreen.text("new_building"))).findFirst().orElseThrow().active;
+            view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            view.beginWall();
+            build.onPress();
+            var building = view.contextPopup().buttons().stream()
+                    .filter(button -> button.getMessage().equals(SettlementManagementScreen.text("new_building"))).findFirst().orElseThrow();
+            require(building.active == buildingAvailable, "editing walls preserves the building option availability");
+            view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
+            view.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.visible && button.getMessage().getString().equals("Cancel"))
+                    .findFirst().orElseThrow().onPress();
+            require(!view.buildMode(), "cancelling the wall tool restores ordinary world-view input");
+        }
+        for (int index = 0; index < windows.size(); index++) windows.get(index).restore(positions.get(index));
+        view.resize(minecraft, width, height);
+        view.setFocused(null);
+        view.clearControls();
     }
 
     static void verifyBuildPanels(SettlementViewScreen view) {
@@ -260,6 +300,12 @@ public final class SettlementViewPanelClientChecks {
 
     public static void verifyPopup() {
         var font = Minecraft.getInstance().font;
+        var build = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.BUILD, null), 42, 60);
+        build.update(font, 280, 180, java.util.List.of(net.minecraft.network.chat.Component.literal("Build")),
+                java.util.List.of(new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal(
+                        "A construction action long enough to fill the available popup width"), true, () -> {})));
+        require(!build.contains(30, 65) && build.buttons().getFirst().getX() >= 42,
+                "long Build menus remain to the right of the tool rail on narrow screens");
         var popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.ACTIONS, null), 630, 350);
         int[] selected = {-1};
         var details = java.util.List.<net.minecraft.network.chat.Component>of(net.minecraft.network.chat.Component.literal("Resident"),

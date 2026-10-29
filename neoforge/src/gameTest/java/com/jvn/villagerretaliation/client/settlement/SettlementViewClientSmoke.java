@@ -1978,6 +1978,14 @@ public final class SettlementViewClientSmoke {
         require(screen.selectedResidents().isEmpty(), "an empty control group clears selection");
         screen.keyPressed(GLFW.GLFW_KEY_1, 0, 0);
         require(screen.selectedResidents().contains(fixture.resident()), "control groups restore their residents");
+        var destination = screenPoint(screen, entity.blockPosition().east(5).below().getCenter());
+        screen.mouseClicked(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        screen.mouseReleased(destination.x, destination.y, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        require(screen.selectedResidents().contains(fixture.resident()), "right-clicking a destination preserves selected residents");
+        require(screen.contextPopup() != null && screen.contextPopup().buttons().stream()
+                .anyMatch(button -> button.active && button.getMessage().getString().startsWith("Move to")),
+                "right-clicking ground offers Move to for the current selection");
+        screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
         var selectedBeforeChrome = screen.selectedResidents();
         screen.mouseClicked(screen.viewportWidth() / 2.0D, 5, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         screen.mouseReleased(screen.viewportWidth() / 2.0D, 5, GLFW.GLFW_MOUSE_BUTTON_LEFT);

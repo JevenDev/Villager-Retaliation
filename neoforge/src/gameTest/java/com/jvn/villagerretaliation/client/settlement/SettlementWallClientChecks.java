@@ -183,12 +183,13 @@ final class SettlementWallClientChecks {
             }).join();
             button("Confirm upgrade").onPress();
             next();
-        } else if (this.phase == 9 && !editor.active() && this.ticks > 8
+        } else if (this.phase == 9 && editor.pickingUpgrade() && !editor.destroying() && this.ticks > 8
                 && this.targets.entrySet().stream().allMatch(entry -> minecraft.level.getBlockState(entry.getKey()).equals(entry.getValue()))) {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
                 this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "upgrade matches the preview"));
             }).join();
+            require(this.view.buildMode(), "successful upgrade keeps the wall tool open for another selection");
             open("Destroy wall");
             require(editor.pickingUpgrade() && editor.destroying(), "Destroy begins piece selection");
             var pick = this.targets.entrySet().stream().filter(entry -> !entry.getValue().isAir()
@@ -202,13 +203,16 @@ final class SettlementWallClientChecks {
             this.targets.clear(); editor.cells().forEach(cell -> this.targets.put(cell.position(), cell.state()));
             button("Confirm destroy").onPress();
             next();
-        } else if (this.phase == 11 && !editor.active()) {
+        } else if (this.phase == 11 && editor.pickingUpgrade() && editor.destroying()) {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
                 this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "destroy matches its removal preview"));
                 this.before.forEach((pos, state) -> level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE));
                 this.restoreMaterials.run();
             }).join();
+            require(this.view.buildMode(), "successful demolition keeps the destroy tool open");
+            button("Cancel").onPress();
+            require(!editor.active(), "Cancel exits repeated wall destruction");
             this.view.focus(this.cameraX, this.cameraZ);
             this.view.mouseScrolled(this.view.viewportWidth() / 2.0, 80, 0, 100);
             next();
@@ -218,7 +222,9 @@ final class SettlementWallClientChecks {
     private void next() { this.phase++; this.ticks = 0; }
     private void open() { open("Wall"); }
     private void open(String label) {
-        button("Build").onPress();
+        var build = button("Build");
+        this.view.mouseClicked(build.getX() + 2, build.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        this.view.mouseReleased(build.getX() + 2, build.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(this.view.contextPopup().buttons().stream().noneMatch(button -> button.getMessage().getString().equals("Branch")),
                 "Branch is removed from the Build menu");
         var action = this.view.contextPopup().buttons().stream().filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();

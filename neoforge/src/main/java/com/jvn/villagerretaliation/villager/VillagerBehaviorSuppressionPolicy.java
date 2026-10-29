@@ -71,11 +71,12 @@ public final class VillagerBehaviorSuppressionPolicy {
     }
 
     /**
-     * Only a concrete hired-role task suppresses the vanilla Brain. Danger, conversation, trading,
-     * ordinary schedules, and rest for non-guards remain available to the arbiter.
+     * Manual settlement movement and concrete hired-role tasks can suppress the vanilla Brain.
+     * Their controllers yield to danger, conversation, trading, and applicable rest schedules.
      */
     public static boolean shouldSuppressVanillaBrainTick(ServerLevel level, Villager villager) {
-        if (com.jvn.villagerretaliation.settlement.SettlementCourierService.controls(villager)) return true;
+        if (com.jvn.villagerretaliation.settlement.SettlementCourierService.controls(villager)
+                || com.jvn.villagerretaliation.settlement.SettlementMoveService.controls(villager)) return true;
         ControlState state = state(villager);
         if (state == ControlState.DOWNED || state == ControlState.PARTIED) {
             return true;

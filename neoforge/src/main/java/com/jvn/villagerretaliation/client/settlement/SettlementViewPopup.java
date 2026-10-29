@@ -81,7 +81,9 @@ final class SettlementViewPopup {
         int textWidth = details.stream().mapToInt(font::width).max().orElse(0);
         for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> ") + (action.icon().isEmpty() ? 0 : 20));
         if (!actions.isEmpty()) textWidth = Math.max(textWidth, font.width(hint));
-        this.width = Math.min(Math.min(260, viewportWidth - 16), textWidth + PADDING * 2);
+        int minimumLeft = this.target.kind() == Kind.BUILD ? Math.max(4, this.anchorX) : 4;
+        int availableWidth = this.target.kind() == Kind.BUILD ? viewportWidth - minimumLeft - 4 : viewportWidth - 16;
+        this.width = Math.min(Math.min(260, availableWidth), textWidth + PADDING * 2);
         this.lineHeight = font.lineHeight + 1;
         var lines = new ArrayList<FormattedCharSequence>();
         for (int index = 0; index < details.size(); index++) {
@@ -105,7 +107,7 @@ final class SettlementViewPopup {
         int hintHeight = this.hints.isEmpty() ? 0 : this.hints.size() * this.lineHeight + 4;
         this.height = Math.min(this.contentHeight + PADDING * 2 + hintHeight, viewportHeight - 8);
         this.bodyHeight = this.height - PADDING * 2 - hintHeight;
-        this.left = Math.clamp(this.anchorX, 4, viewportWidth - this.width - 4);
+        this.left = Math.clamp(this.anchorX, minimumLeft, viewportWidth - this.width - 4);
         this.top = Math.clamp(this.anchorY, 4, viewportHeight - this.height - 4);
         this.scroll = Math.clamp(this.scroll, 0, Math.max(0, this.contentHeight - this.bodyHeight));
         if (this.focus >= actions.size() || this.focus < 0 || !actions.get(this.focus).enabled()) {

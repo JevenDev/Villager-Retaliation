@@ -105,6 +105,10 @@ final class SettlementViewCommands {
         if (request.action().guard() && (workplace == null || workplace.type() != SettlementAreaType.GUARD_POST)) {
             return new Outcome(id, Status.SKIPPED, "Not assigned to a guard post");
         }
+        if (request.action() == SettlementViewAction.MOVE_TO
+                && !java.util.Objects.equals(target.expectedArea(), town.duties().get(id))) {
+            return new Outcome(id, Status.FAILED, "Assignment changed since review");
+        }
         if ((request.action() == SettlementViewAction.ENABLE || request.action() == SettlementViewAction.PAUSE)
                 && (workplace == null || workplace.type().role() == null)) {
             return new Outcome(id, Status.SKIPPED, "No workplace assignment");

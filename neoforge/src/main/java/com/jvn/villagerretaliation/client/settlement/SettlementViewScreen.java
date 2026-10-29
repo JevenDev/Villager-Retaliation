@@ -1386,7 +1386,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             actions.add(new SettlementViewPopup.Action(Component.literal("Assign beds"), !this.commands.busy(), this::openHousingAssignments));
         }
         for (var action : SettlementViewAction.values()) {
-            if (action == SettlementViewAction.ASSIGN_HOME) continue;
+            if (action == SettlementViewAction.ASSIGN_HOME || action == SettlementViewAction.MOVE_TO) continue;
             long eligible = action == SettlementViewAction.ASSIGN
                     ? this.areas.keySet().stream().mapToLong(id -> eligibleCount(action, id)).max().orElse(0)
                     : eligibleCount(action, null);
@@ -1411,7 +1411,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     void acceptWall(com.jvn.villagerretaliation.network.SettlementWallResultPayload payload) {
         if (this.walls.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
-            enterMode(Mode.SELECT);
+            if (!this.walls.active()) enterMode(Mode.SELECT);
         }
         updateActions();
     }
@@ -3243,6 +3243,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else if (depot != null) {
             inspect(depot);
             this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.DEPOT, depot.id()), x, y);
+        } else if (hit.resident() == null && hit.position() != null && this.editingArea == null
+                && eligibleCount(SettlementViewAction.MOVE_TO, null) > 0) {
+            this.resourceTarget = hit.position().immutable();
+            this.popup = new SettlementViewPopup(SettlementViewPopup.Target.of(SettlementViewPopup.Kind.RESOURCE, null), x, y);
         } else if (hit.position() != null && this.editingArea == null && permits(SettlementPermission.STAFF)
                 && (!resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.ORE).isEmpty()
                 || !resourceWorkers(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.FOREST).isEmpty())) {
@@ -3298,8 +3302,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }
             }
             case RESOURCE -> {
-                details.add(Component.literal("Resource work"));
+                details.add(Component.literal("Commands"));
                 if (this.resourceTarget != null) {
+                    long movable = eligibleCount(SettlementViewAction.MOVE_TO, null);
+                    var destination = this.resourceTarget.above();
+                    if (movable > 0) actions.add(menuAction(SettlementViewUi.actionLabel("Move to", movable, this.selection.size()),
+                            ready && allowedGizmoBounds(new AABB(destination)),
+                            () -> submitBatch(SettlementViewAction.MOVE_TO, null,
+                                    new SettlementGuardOrder(SettlementGuardOrder.Mode.MOVE, List.of(destination)))));
                     var state = this.minecraft.level.getBlockState(this.resourceTarget);
                     details.add(state.getBlock().getName());
                     for (var kind : List.of(com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.TREE,
@@ -3388,7 +3398,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 details.add(Component.literal("Build"));
                 boolean available = ready && permits(SettlementPermission.BUILD) && !this.parent.submitting() && !this.paths.confirming() && !this.walls.confirming() && !this.farms.confirming();
                 actions.add(menuAction(SettlementManagementScreen.text("new_building"),
-                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null && !this.paths.active() && !this.walls.active() && !this.farms.active(), () -> {
+                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null, () -> {
                             enterMode(Mode.PLACE_BUILDING);
                             updatePlotActions();
                             management().newBuilding();
