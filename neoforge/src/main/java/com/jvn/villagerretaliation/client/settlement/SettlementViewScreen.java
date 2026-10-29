@@ -64,6 +64,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
     private final SettlementPanelFade panelFade = new SettlementPanelFade();
     private final SettlementBuildOverlay buildOverlay = new SettlementBuildOverlay();
+    private Button hintToggle;
     private final SettlementMapMarkers mapMarkers = new SettlementMapMarkers();
     private final SettlementViewEntities frameEntities = new SettlementViewEntities();
     private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
@@ -477,6 +478,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }));
         this.changePrefab = addRenderableWidget(new SettlementBuildOverlay.ActionButton(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding()));
         this.cancelGizmo = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.translatable("gui.cancel"), ignored -> cancelGizmo()));
+        this.hintToggle = addRenderableWidget(new SettlementViewUi.IconButton(Component.literal("Hide hints"), 6, this.height - 24, 18, 18,
+                net.minecraft.world.item.ItemStack.EMPTY, false, false, () -> this.preferences.hints, () -> {
+                    this.preferences.hints = !this.preferences.hints;
+                    savePreferences();
+                    layoutBuildControls();
+                }).symbol("?").borderless());
+        this.renderables.remove(this.hintToggle);
         layoutMap();
         var mapWidgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
         if (this.preferences.map) {
@@ -860,7 +868,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         super.render(graphics, mouseX, mouseY, partialTick);
         this.panelFade.render(graphics, this.width, this.height, () -> renderWindows(graphics, mouseX, mouseY, partialTick));
-        this.buildOverlay.renderHint(graphics, this.font, hint, mouseX, mouseY);
+        this.buildOverlay.renderHint(graphics, this.font, hint, this.hintToggle, mouseX, mouseY, partialTick);
         if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
@@ -930,7 +938,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.buildOverlay.renderControls(graphics);
         var commands = contextButtons().stream().filter(button -> button.visible && !(button instanceof SettlementBuildOverlay.ActionButton)).toList();
         if (!commands.isEmpty()) {
-            int offset = Math.min(0, this.buildOverlay.hint().top() - 10 - commands.stream().mapToInt(Button::getBottom).max().orElse(0));
+            int offset = Math.min(0, this.buildOverlay.footerTop() - 10 - commands.stream().mapToInt(Button::getBottom).max().orElse(0));
             for (var button : commands) button.setY(button.getY() + offset);
             int left = commands.stream().mapToInt(Button::getX).min().orElse(0) - 3;
             int top = commands.stream().mapToInt(Button::getY).min().orElse(0) - 3;
@@ -981,7 +989,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     SettlementBuildOverlay buildOverlay() { return this.buildOverlay; }
 
     private void layoutBuildControls() {
-        this.buildOverlay.hint(this.font, this.modeHint, this.width, this.height);
+        this.buildOverlay.hint(this.font, this.modeHint, this.width, this.height, this.preferences.hints);
+        if (this.hintToggle != null) {
+            var label = Component.literal(this.preferences.hints ? "Hide hints" : "Show hints");
+            if (!this.hintToggle.getMessage().equals(label)) {
+                this.hintToggle.setMessage(label);
+                this.hintToggle.setTooltip(net.minecraft.client.gui.components.Tooltip.create(label));
+            }
+            this.hintToggle.setPosition(this.buildOverlay.toggle().left(), this.buildOverlay.toggle().top());
+        }
         var widgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
         if (this.paths.active()) {
             for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
@@ -2249,6 +2265,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             if (this.popup.click(x, y, button)) return true;
             this.popup = null;
+        }
+        if (this.hintToggle.mouseClicked(x, y, button)) {
+            setFocused(this.hintToggle);
+            return true;
         }
         if (worldContains(x, y)) updatePeek(x, y);
         var clickedWindow = windowAt(x, y);

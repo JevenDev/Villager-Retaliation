@@ -66,7 +66,7 @@ public final class SettlementViewPanelClientChecks {
         require(view.buildMode() && view.panelOpacity() == 0, "build mode fades the map and info viewer out");
         var controls = view.buildOverlay().controls();
         var hint = view.buildOverlay().hint();
-        require(hint.left() == 6 && hint.top() + hint.height() == view.height - 6, "help stays pinned to the bottom left");
+        require(view.buildOverlay().toggle().left() == 6 && hint.top() + hint.height() == view.height - 6, "help stays pinned to the bottom left");
         if (controls != null) {
             require(Math.abs(controls.left() * 2 + controls.width() - view.width) <= 1, "build controls are centered on the screen");
             require(controls.top() + controls.height() <= hint.top() - 8, "build controls leave the help tooltip unobstructed");
@@ -81,7 +81,7 @@ public final class SettlementViewPanelClientChecks {
             int height = width * 9 / 16;
             var overlay = new SettlementBuildOverlay();
             var help = net.minecraft.network.chat.Component.literal("Hold to peek inside. Drag selects beds and residents. Shift adds. Ctrl toggles. Ctrl+Shift removes.");
-            overlay.hint(font, help, width, height);
+            overlay.hint(font, help, width, height, true);
             var widgets = new java.util.ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
             for (String label : new String[]{"Width 7 -", "+", "Natural", "Curves", "Undo", "Redo", "Edit", "Confirm", "Cancel"})
                 widgets.add(new SettlementBuildOverlay.ActionButton(net.minecraft.network.chat.Component.literal(label), ignored -> { }));
@@ -99,7 +99,39 @@ public final class SettlementViewPanelClientChecks {
                     "tooltip padding and help capture world input");
             for (var widget : widgets) require(widget.getX() >= bounds.left() && widget.getRight() <= bounds.left() + bounds.width()
                     && widget.getY() >= bounds.top() && widget.getBottom() <= bounds.top() + bounds.height(), "all controls fit their tooltip");
+            var confirm = widgets.get(widgets.size() - 2);
+            int confirmX = confirm.getX(), confirmY = confirm.getY();
+            for (String feedback : new String[]{"Ready", "Ready\nReview terrain\nConfirm placement", "Preview feedback ".repeat(60)}) {
+                overlay.hint(font, net.minecraft.network.chat.Component.literal(feedback), width, height, true);
+                confirm.active = !confirm.active;
+                overlay.layout(font, widgets, width, height, layout.worldLeft);
+                require(bounds.equals(overlay.controls()) && confirm.getX() == confirmX && confirm.getY() == confirmY,
+                        "feedback wrapping and confirmation readiness cannot move the toolbar under the cursor");
+            }
+            var hintBounds = overlay.hint();
+            overlay.hint(font, help, width, height, false);
+            overlay.layout(font, widgets, width, height, layout.worldLeft);
+            require(!overlay.hintsVisible() && !overlay.contains(hintBounds.left() + hintBounds.width() - 1, height - 8),
+                    "hidden hints no longer block the world");
+            require(overlay.contains(overlay.toggle().left(), overlay.toggle().top()), "the hint toggle remains available when hints are hidden");
         }
+    }
+
+    static void verifyHintToggle(SettlementViewScreen view) {
+        var toggle = button(view, "Hide hints");
+        int x = toggle.getX(), y = toggle.getY();
+        require(x == 6 && toggle.getBottom() == view.height - 6, "the help button is pinned to the bottom left");
+        require(view.mouseClicked(x + 8, y + 8, GLFW.GLFW_MOUSE_BUTTON_LEFT), "the hint toggle consumes its click");
+        view.mouseReleased(x + 8, y + 8, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(!view.buildOverlay().hintsVisible(), "the help button hides hint text");
+        require(!SettlementViewPreferences.forSettlement(view.parent().snapshot().header().id()).hints, "hidden hints survive a preference reload");
+        view.resize(Minecraft.getInstance(), view.width, view.height);
+        toggle = button(view, "Show hints");
+        require(toggle.getX() == x && toggle.getY() == y && !view.buildOverlay().hintsVisible(), "rebuilding controls preserves the toggle and its selection");
+        view.mouseClicked(x + 8, y + 8, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        view.mouseReleased(x + 8, y + 8, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        require(view.buildOverlay().hintsVisible() && SettlementViewPreferences.forSettlement(view.parent().snapshot().header().id()).hints,
+                "the same button restores and saves hint visibility");
     }
 
     private static void verifyFade() {

@@ -27,6 +27,7 @@ public final class SettlementViewPreferences {
     public WindowPosition mapWindow;
     public boolean sidebar = true;
     public boolean map = true;
+    public boolean hints = true;
     public boolean workOverlay;
     public boolean issueOverlay;
     public float height = 32;
@@ -42,6 +43,7 @@ public final class SettlementViewPreferences {
             if (!"1".equals(values.getProperty("version"))) throw new IllegalArgumentException("Unsupported view preferences");
             boolean sidebar = bool(values, "sidebar", true);
             boolean map = bool(values, "map", true);
+            boolean hints = bool(values, "hints", true);
             boolean work = bool(values, "work", false);
             boolean issues = bool(values, "issues", false);
             float height = Float.parseFloat(values.getProperty("height", "32"));
@@ -58,6 +60,7 @@ public final class SettlementViewPreferences {
             this.mapWindow = position(values, "window.map");
             this.sidebar = sidebar;
             this.map = map;
+            this.hints = hints;
             this.workOverlay = work;
             this.issueOverlay = issues;
             this.height = Math.clamp(height, SettlementViewWindow.MIN_HEIGHT, SettlementViewWindow.MAX_HEIGHT);
@@ -118,6 +121,7 @@ public final class SettlementViewPreferences {
         position(values, "window.map", this.mapWindow);
         values.setProperty("sidebar", Boolean.toString(this.sidebar));
         values.setProperty("map", Boolean.toString(this.map));
+        values.setProperty("hints", Boolean.toString(this.hints));
         values.setProperty("work", Boolean.toString(this.workOverlay));
         values.setProperty("issues", Boolean.toString(this.issueOverlay));
         values.setProperty("height", Float.toString(this.height));

@@ -24,18 +24,29 @@ final class SettlementBuildOverlay {
     private Bounds hint = new Bounds(6, 0, 0, 0);
     private Bounds controls;
     private boolean clipped;
+    private boolean hintsVisible;
+    private Bounds toggle = new Bounds(6, 0, 18, 18);
+    private int footerTop;
 
     Bounds hint() { return this.hint; }
     Bounds controls() { return this.controls; }
+    Bounds toggle() { return this.toggle; }
+    int footerTop() { return this.footerTop; }
+    boolean hintsVisible() { return this.hintsVisible; }
 
-    void hint(Font font, Component text, int width, int height) {
-        var wrapped = font.split(text, Math.max(40, Math.min(440, width - 16)));
-        int count = Math.min(wrapped.size(), Math.max(1, Math.min(3, height / 3 / (font.lineHeight + 1))));
+    void hint(Font font, Component text, int width, int height, boolean visible) {
+        this.hintsVisible = visible;
+        this.toggle = new Bounds(6, height - 24, 18, 18);
+        int left = this.toggle.left() + this.toggle.width() + 10;
+        var wrapped = visible ? font.split(text, Math.max(40, Math.min(440, width - left - 8))) : List.<FormattedCharSequence>of();
+        int limit = Math.max(1, Math.min(3, height / 3 / (font.lineHeight + 1)));
+        int count = Math.min(wrapped.size(), limit);
         this.lines = wrapped.subList(0, count);
         this.clipped = count < wrapped.size();
         int contentHeight = count * (font.lineHeight + 1);
-        this.hint = new Bounds(6, height - 6 - contentHeight,
+        this.hint = new Bounds(left, height - 6 - contentHeight,
                 this.lines.stream().mapToInt(font::width).max().orElse(0), contentHeight);
+        this.footerTop = height - 6 - Math.max(this.toggle.height(), visible ? limit * (font.lineHeight + 1) : 0);
     }
 
     void layout(Font font, List<AbstractWidget> widgets, int width, int height, int railWidth) {
@@ -59,7 +70,7 @@ final class SettlementBuildOverlay {
         rows.add(row);
         int contentWidth = rows.stream().mapToInt(SettlementBuildOverlay::rowWidth).max().orElse(0);
         int contentHeight = rows.size() * 22 - 4;
-        int bottom = this.hint.top() > 0 ? this.hint.top() - 12 : height - 40;
+        int bottom = this.footerTop > 0 ? this.footerTop - 12 : height - 40;
         int top = Math.max(SettlementViewLayout.HEADER_HEIGHT + 8, bottom - contentHeight);
         this.controls = new Bounds((width - contentWidth) / 2, top, contentWidth, contentHeight);
         for (var current : rows) {
@@ -78,7 +89,8 @@ final class SettlementBuildOverlay {
     }
 
     boolean contains(double x, double y) {
-        return this.hint.contains(x, y) || this.controls != null && this.controls.contains(x, y);
+        return this.toggle.contains(x, y) || this.hintsVisible && this.hint.contains(x, y)
+                || this.controls != null && this.controls.contains(x, y);
     }
 
     void renderControls(GuiGraphics graphics) {
@@ -86,16 +98,20 @@ final class SettlementBuildOverlay {
                 this.controls.left(), this.controls.top(), this.controls.width(), this.controls.height(), 0);
     }
 
-    void renderHint(GuiGraphics graphics, Font font, Component text, int mouseX, int mouseY) {
+    void renderHint(GuiGraphics graphics, Font font, Component text, AbstractWidget toggleButton, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 1000);
-        TooltipRenderUtil.renderTooltipBackground(graphics, this.hint.left(), this.hint.top(), this.hint.width(), this.hint.height(), 0);
-        int y = this.hint.top();
-        for (var line : this.lines) {
-            graphics.drawString(font, line, this.hint.left(), y, 0xFFFFFF);
-            y += font.lineHeight + 1;
+        TooltipRenderUtil.renderTooltipBackground(graphics, this.toggle.left(), this.toggle.top(), this.toggle.width(), this.toggle.height(), 0);
+        toggleButton.render(graphics, mouseX, mouseY, partialTick);
+        if (this.hintsVisible) {
+            TooltipRenderUtil.renderTooltipBackground(graphics, this.hint.left(), this.hint.top(), this.hint.width(), this.hint.height(), 0);
+            int y = this.hint.top();
+            for (var line : this.lines) {
+                graphics.drawString(font, line, this.hint.left(), y, 0xFFFFFF);
+                y += font.lineHeight + 1;
+            }
+            if (this.clipped && this.hint.contains(mouseX, mouseY)) graphics.renderTooltip(font, text, mouseX, mouseY);
         }
-        if (this.clipped && this.hint.contains(mouseX, mouseY)) graphics.renderTooltip(font, text, mouseX, mouseY);
         graphics.pose().popPose();
     }
 

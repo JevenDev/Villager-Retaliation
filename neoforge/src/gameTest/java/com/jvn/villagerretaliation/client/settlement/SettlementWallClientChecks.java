@@ -78,6 +78,15 @@ final class SettlementWallClientChecks {
             next();
         } else if (this.phase == 2 && editor.canConfirm()) {
             require(editor.ghost() != null && !editor.cells().isEmpty(), "wall preview renders real template blocks");
+            var reviewed = editor.draft().wall();
+            editor.draft().extend();
+            editor.hover(this.start.south(8));
+            editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("hover must not request another wall review"); });
+            require(editor.canConfirm() && editor.draft().wall().equals(reviewed), "cursor extensions preserve the confirmed wall revision");
+            editor.stop();
+            editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("leaving the preview must not request another wall review"); });
+            SettlementViewPanelClientChecks.verifyHintToggle(this.view);
+            require(editor.canConfirm() && editor.draft().wall().equals(reviewed), "toggling hints preserves the reviewed wall and Confirm");
             var ghost = editor.ghost();
             editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> {});
             require(editor.ghost() == ghost, "unchanged wall previews retain their render snapshot");

@@ -157,6 +157,14 @@ final class SettlementPathClientChecks {
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 6 && editor.canConfirm()) {
+            var reviewed = editor.draft().path();
+            editor.hover(this.start.add(3, 0, -3));
+            editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("hover must not request another path review"); });
+            require(editor.canConfirm() && editor.draft().path().equals(reviewed), "cursor extensions preserve the confirmed path revision");
+            editor.hover(null);
+            editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("leaving the preview must not request another path review"); });
+            SettlementViewPanelClientChecks.verifyHintToggle(this.view);
+            require(editor.canConfirm() && editor.draft().path().equals(reviewed), "toggling hints preserves the reviewed path and Confirm");
             this.capture.accept("path-branch-preview");
             button("Confirm").onPress();
             this.phase++;
