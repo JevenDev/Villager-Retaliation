@@ -128,10 +128,10 @@ public final class SettlementConstructionService {
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
                 .filter(project -> project.wallConstruction() != null)
                 .forEach(project -> project.wallConstruction().record(level, town, project));
-        int available = town.stage().projects() - (int) town.projects().values().stream().filter(SettlementProject::active).count();
-        if (available <= 0) return;
+        int active = (int) town.projects().values().stream().filter(SettlementProject::active).count();
         for (var project : List.copyOf(town.projects().values())) {
             if (!project.pending()) continue;
+            if (active >= project.capacity(town)) continue;
             String blocker = "";
             if (!town.permits(project.authority(), SettlementPermission.BUILD)) blocker = "permission";
             var builder = project.builder().equals(SettlementProject.AUTOMATIC_BUILDER)
@@ -183,7 +183,7 @@ public final class SettlementConstructionService {
             SettlementBackgroundService.onUnloaded(builder);
             var care = town.residents().get(builder.getUUID());
             if (care != null) care.remember(builder);
-            if (--available <= 0) break;
+            active++;
         }
     }
 

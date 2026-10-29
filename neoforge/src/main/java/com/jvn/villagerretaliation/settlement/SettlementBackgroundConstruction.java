@@ -55,7 +55,7 @@ final class SettlementBackgroundConstruction {
         var plan = SettlementConstructionService.scan(level, project);
         if (plan == null || !project.matchesPlan(plan) || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max())
                 || plan.blocks().size() != project.total()
-                || plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
+                || plan.blocks().size() > plan.blockLimit()) {
             worker.status("construction_plan_changed");
             return;
         }

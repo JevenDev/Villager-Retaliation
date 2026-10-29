@@ -7,7 +7,11 @@ import net.minecraft.nbt.CompoundTag;
 
 public record SettlementArea(
         UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
-        int priority, boolean enabled, SettlementCropPlan crops) {
+        int priority, boolean enabled, SettlementCropPlan crops, boolean wall) {
+    public SettlementArea(UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
+                          int priority, boolean enabled, SettlementCropPlan crops) {
+        this(id, type, name, min, max, priority, enabled, crops, false);
+    }
     public SettlementArea(UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
                           int priority, boolean enabled) {
         this(id, type, name, min, max, priority, enabled, SettlementCropPlan.NONE);
@@ -33,8 +37,11 @@ public record SettlementArea(
         long width = (long) max.getX() - min.getX() + 1L;
         long height = (long) max.getY() - min.getY() + 1L;
         long depth = (long) max.getZ() - min.getZ() + 1L;
-        if (width <= 0 || height <= 0 || depth <= 0 || width > 128 || height > 64 || depth > 128
-                || width * height * depth > MAX_VOLUME || priority < 0 || priority > 9) {
+        if (wall && type != SettlementAreaType.CONSTRUCTION) throw new IllegalArgumentException("Wall bounds require construction");
+        long wallExtent = (long) SettlementWall.MAX_NODES * SettlementWall.MAX_SPAN + 32;
+        if (width <= 0 || height <= 0 || depth <= 0 || priority < 0 || priority > 9
+                || (wall ? width > wallExtent || height > 4096 || depth > wallExtent
+                        : width > 128 || height > 64 || depth > 128 || width * height * depth > MAX_VOLUME)) {
             throw new IllegalArgumentException("Invalid settlement area bounds or priority");
         }
     }
@@ -79,6 +86,7 @@ public record SettlementArea(
         tag.putInt("Priority", priority);
         tag.putBoolean("Enabled", enabled);
         tag.put("Crops", crops.save());
+        if (wall) tag.putBoolean("Wall", true);
         return tag;
     }
 
@@ -86,6 +94,6 @@ public record SettlementArea(
         return new SettlementArea(tag.getUUID("Id"), SettlementAreaType.valueOf(tag.getString("Type")),
                 tag.getString("Name"), BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")),
                 tag.getInt("Priority"), tag.getBoolean("Enabled"),
-                tag.contains("Crops") ? SettlementCropPlan.load(tag.getCompound("Crops")) : SettlementCropPlan.NONE);
+                tag.contains("Crops") ? SettlementCropPlan.load(tag.getCompound("Crops")) : SettlementCropPlan.NONE, tag.getBoolean("Wall"));
     }
 }

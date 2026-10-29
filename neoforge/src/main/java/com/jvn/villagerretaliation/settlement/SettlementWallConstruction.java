@@ -31,6 +31,7 @@ final class SettlementWallConstruction {
     private final Map<BlockPos, Integer> indices = new HashMap<>();
     private BuilderStructureScanner.StructurePlan plan;
     private boolean recorded;
+    private List<BlockPos> surveyOrigins;
 
     private SettlementWallConstruction(SettlementWall wall, List<Cell> cells, SettlementWallMaterials.Cost cost) {
         if (wall.part() != SettlementWall.Part.COMPLETE || cells.isEmpty() || cells.size() > SettlementWall.MAX_BLOCKS
@@ -96,8 +97,40 @@ final class SettlementWallConstruction {
         var entry = new BuilderStructureCatalog.Entry(ResourceLocation.parse("villagerretaliation:wall/" + id), "Walls", this.wall.type().label(), 0,
                 new BuilderConstructionCost(BuilderConstructionCost.Mode.SIMPLIFIED, ingredients), "");
         this.plan = new BuilderStructureScanner.StructurePlan(entry, Rotation.NONE, max.offset(1, 1, 1), BlockPos.ZERO, max,
-                blocks, BuilderStructureScanner.materialRequirements(this.cells.stream().map(Cell::state).toList()), 0);
+                blocks, BuilderStructureScanner.materialRequirements(this.cells.stream().map(Cell::state).toList()), 0, List.of(), true);
         return this.plan;
+    }
+
+    boolean campAvailable() {
+        return this.wall.type() == SettlementWall.Type.PALISADE && this.wall.nodeTowers().stream()
+                .allMatch(tower -> tower == SettlementWall.Tower.DEFAULT || tower == SettlementWall.Tower.PALISADE || tower == SettlementWall.Tower.NONE);
+    }
+
+    boolean owned(SettlementRecord town) {
+        return this.cells.stream().allMatch(cell -> town.contains(cell.position()));
+    }
+
+    SettlementArea workplace(ServerLevel level, UUID id) {
+        var plan = plan(id);
+        var min = origin().offset(-4, -2, -4);
+        var max = plan.worldMax(origin()).offset(4, 2, 4);
+        min = min.atY(Math.max(level.getMinBuildHeight(), min.getY()));
+        max = max.atY(Math.min(level.getMaxBuildHeight() - 1, max.getY()));
+        return new SettlementArea(id, SettlementAreaType.CONSTRUCTION, plan.entry().menuLabel(), min, max, 5, true, SettlementCropPlan.NONE, true);
+    }
+
+    List<BlockPos> surveyOrigins() {
+        if (this.surveyOrigins == null) {
+            var origins = new java.util.TreeSet<BlockPos>(Comparator.comparingLong(BlockPos::asLong));
+            for (var cell : this.cells) {
+                var pos = cell.position();
+                for (int x = (pos.getX() - 6) >> 4; x <= (pos.getX() + 6) >> 4; x++)
+                    for (int y = (pos.getY() - 4) >> 4; y <= (pos.getY() + 4) >> 4; y++)
+                        for (int z = (pos.getZ() - 6) >> 4; z <= (pos.getZ() + 6) >> 4; z++) origins.add(new BlockPos(x << 4, y << 4, z << 4));
+            }
+            this.surveyOrigins = List.copyOf(origins);
+        }
+        return this.surveyOrigins;
     }
 
     boolean available(int index, SettlementConstructionCrew crew) {
@@ -137,9 +170,9 @@ final class SettlementWallConstruction {
         var construction = create(wall, preview);
         var plan = construction.plan(id);
         var origin = construction.origin();
-        if (town.stage().projects() == 0) return "Advance the settlement stage to unlock construction projects";
-        var area = SettlementConstructionService.workplace(player.serverLevel(), town, plan, origin, id);
-        if (area == null || !town.owns(area)) return "This wall exceeds the construction worksite bounds. Confirm a shorter section";
+        if (town.stage().projects() == 0 && !construction.campAvailable()) return "Advance to Hamlet to build stone or reinforced walls. Camps can build basic palisades";
+        if (!construction.owned(town)) return "Keep the wall inside settlement territory";
+        var area = construction.workplace(player.serverLevel(), id);
         if (construction.protectedSite(player.serverLevel(), town)) return "The wall overlaps a protected worksite or container";
         var check = com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.validateSite(player.serverLevel(), player, null,
                 com.jvn.villagerretaliation.interaction.HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, origin);

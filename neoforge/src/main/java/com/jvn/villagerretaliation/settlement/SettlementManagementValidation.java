@@ -128,8 +128,7 @@ final class SettlementManagementValidation {
         var area = town.workplace(assign.area());
         if (area == null || area.type().role() == null) return "area_missing";
         if (town.departures().containsKey(assign.resident())) return "resident_departing";
-        if (area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
-                || area.type() == SettlementAreaType.TRADING_POST && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) return "stage_required";
+        if (area.type() == SettlementAreaType.TRADING_POST && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) return "stage_required";
         for (var level : player.server.getAllLevels()) {
             var entity = level.getEntity(assign.resident());
             if (entity == null) continue;

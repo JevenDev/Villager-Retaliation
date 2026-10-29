@@ -290,6 +290,122 @@ public final class SettlementWallConstructionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "wall_camp")
+    public static void campBuildsOneBasicPalisadeAtATime(GameTestHelper helper) {
+        var fixture = SettlementConstructionGameTests.fixture(helper);
+        try {
+            for (var pos : BlockPos.betweenClosed(fixture.area().min(), fixture.area().max()))
+                helper.getLevel().setBlock(pos, pos.getY() < fixture.origin().getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+            var town = fixture.town();
+            helper.assertValueEqual(town.stage(), SettlementStage.CAMP, "the settlement is still a Camp");
+            town.removeDuty(fixture.builder().getUUID());
+            helper.assertTrue(SettlementWorkforceService.assign(helper.getLevel(), fixture.leader(), town.id(), fixture.builder(), fixture.area().id()),
+                    "Camp residents can be assigned as builders through the staffing service");
+            var wall = wall(fixture);
+            var id = UUID.randomUUID();
+            String failure = SettlementWallConstruction.commission(fixture.leader(), town, id, wall,
+                    SettlementWallTerrain.preview(helper.getLevel(), wall, town::contains));
+            helper.assertTrue(failure.isEmpty(), "Camp can commission a basic palisade: " + failure);
+            var project = town.projects().get(id);
+            SettlementConstructionGameTests.fundAndDispatch(helper, town, project.wallConstruction().plan(id), fixture.origin(), id);
+            helper.assertTrue(project.active(), "a funded Camp palisade starts construction");
+            var nextWall = new SettlementWall(SettlementWall.Type.PALISADE, wall.nodes().stream().map(pos -> pos.south(5)).toList(), false, 0);
+            var nextId = UUID.randomUUID();
+            failure = SettlementWallConstruction.commission(fixture.leader(), town, nextId, nextWall,
+                    SettlementWallTerrain.preview(helper.getLevel(), nextWall, town::contains));
+            helper.assertTrue(failure.isEmpty(), "another palisade can wait in the same queue: " + failure);
+            helper.assertTrue(town.projects().get(nextId).pending(), "Camp has only one active project slot");
+            helper.assertFalse(town.activateProject(town.projects().get(nextId), UUID.randomUUID()), "direct activation also enforces the Camp cap");
+            for (var type : SettlementWall.Type.values()) {
+                if (type == SettlementWall.Type.PALISADE) continue;
+                var advanced = new SettlementWall(type, wall.nodes(), false, 0);
+                failure = SettlementWallConstruction.commission(fixture.leader(), town, UUID.randomUUID(), advanced,
+                        syntheticPreview(advanced));
+                helper.assertTrue(failure.contains("Hamlet"), "advanced walls still require Hamlet: " + type);
+            }
+            var reinforced = new SettlementWall(SettlementWall.Type.PALISADE, wall.nodes(), false, 0,
+                    List.of(SettlementWall.Tower.LOW_STONE, SettlementWall.Tower.DEFAULT, SettlementWall.Tower.DEFAULT));
+            helper.assertFalse(SettlementWallConstruction.create(reinforced, syntheticPreview(reinforced)).campAvailable(),
+                    "stone tower overrides cannot bypass the Camp restriction");
+            var building = SettlementProject.planned(town, fixture.area(), fixture.builder().getUUID(), fixture.plan(),
+                    fixture.origin(), UUID.randomUUID(), helper.getLevel().getGameTime());
+            building.queue(fixture.leader().getUUID());
+            helper.assertValueEqual(building.capacity(town), 0, "ordinary buildings still require Hamlet");
+            helper.assertFalse(town.queueProject(fixture.leader().getUUID(), building), "Camp cannot queue an ordinary building");
+            var restored = SettlementRecord.load(town.save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            helper.assertTrue(restored.projects().get(id).active() && restored.projects().get(nextId).pending(),
+                    "Camp construction and its queue survive reload");
+            helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), town, id), "the first palisade can be cancelled");
+            SettlementConstructionGameTests.fundAndDispatch(helper, town, town.projects().get(nextId).wallConstruction().plan(nextId), fixture.origin(), nextId);
+            helper.assertTrue(town.projects().get(nextId).active(), "the next palisade uses the released slot");
+        } finally { fixture.builder().discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "wall_limits")
+    public static void largeWallUsesItsRouteAndSurvivesReload(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        try {
+            var start = fixture.origin().offset(8, 0, -256);
+            var wall = new SettlementWall(SettlementWall.Type.LOW_STONE,
+                    List.of(start, start.east(128), start.east(128).south(96), start.south(96)), true, 0);
+            var preview = syntheticPreview(wall);
+            var construction = SettlementWallConstruction.create(wall, preview);
+            var id = UUID.randomUUID();
+            var plan = construction.plan(id);
+            helper.assertTrue(plan.blocks().size() > 4096, "the wall exceeds the ordinary building budget");
+            helper.assertValueEqual(plan.blockLimit(), 16_384, "walls use the editor's block budget");
+            helper.assertValueEqual(fixture.plan().blockLimit(),
+                    Math.max(128, com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get()),
+                    "ordinary buildings retain their configured budget");
+            var area = construction.workplace(helper.getLevel(), id);
+            helper.assertTrue(area.max().getX() - area.min().getX() + 1 > 128, "the wall exceeds ordinary area width");
+            helper.assertTrue((long) (area.max().getX() - area.min().getX() + 1) * (area.max().getY() - area.min().getY() + 1)
+                    * (area.max().getZ() - area.min().getZ() + 1) > SettlementArea.MAX_VOLUME, "the enclosure exceeds ordinary area volume");
+            helper.assertFalse(construction.surveyOrigins().stream().anyMatch(pos -> pos.getX() >> 4 == start.east(64).getX() >> 4
+                    && pos.getZ() >> 4 == start.south(48).getZ() >> 4), "empty interior sections are never surveyed");
+            for (var node : SettlementWallGeometry.pieces(wall)) {
+                var piece = SettlementWallGeometry.build(node);
+                for (var cell : piece.cells()) {
+                    var pos = cell.position();
+                    SettlementTestPlots.claim(helper.getLevel(), fixture.town(), pos, pos);
+                }
+            }
+            for (var cell : preview.cells()) helper.getLevel().setBlock(cell.position(), Blocks.AIR.defaultBlockState(), 2);
+            helper.assertFalse(fixture.town().contains(start.east(64).south(48)), "the fixture owns the wall route without its empty interior");
+            String failure = SettlementWallConstruction.commission(fixture.leader(), fixture.town(), id, wall, preview);
+            helper.assertTrue(failure.isEmpty(), "large walls queue without a rectangular territory or volume requirement: " + failure);
+            var project = fixture.town().projects().get(id);
+            helper.assertTrue(project != null && fixture.town().owns(project), "the entire drawing is one owned project");
+            helper.assertTrue(fixture.town().activateProject(project, fixture.builder().getUUID()), "the large wall can activate");
+            SettlementConstructionSiteService.observeArea(helper.getLevel(), fixture.town(), project.workplace(), null);
+            helper.assertTrue(project.site().sections().size() <= 2, "wall surveying captures at most two sections per pass");
+            var supplied = helper.getLevel().getChunkAt(start);
+            int before = project.site().sections().size();
+            SettlementConstructionSiteService.observeArea(helper.getLevel(), fixture.town(), project.workplace(), supplied);
+            helper.assertTrue(project.site().sections().size() <= before + 2, "chunk callbacks retain the survey budget");
+            var restored = SettlementRecord.load(fixture.town().save(helper.getLevel().registryAccess()), helper.getLevel().registryAccess(), () -> {});
+            var saved = restored.projects().get(id);
+            helper.assertTrue(saved.workplace().wall() && restored.owns(saved) && restored.owns(saved.workplace()), "large wall bounds remain valid after reload");
+            helper.assertValueEqual(BuilderStructureScanner.fingerprint(saved.wallConstruction().plan(id)),
+                    BuilderStructureScanner.fingerprint(plan), "the large wall retains its exact construction plan");
+            helper.assertFalse(fixture.town().putArea(fixture.leader().getUUID(), area), "ordinary areas cannot opt into wall bounds");
+            boolean rejected = false;
+            try { new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Ordinary building", area.min(), area.max(), 5, true); }
+            catch (IllegalArgumentException invalid) { rejected = true; }
+            helper.assertTrue(rejected, "ordinary worksite bounds remain enforced");
+        } finally { fixture.builder().discard(); }
+        helper.succeed();
+    }
+
+    private static SettlementWallTerrain.Preview syntheticPreview(SettlementWall wall) {
+        var geometry = SettlementWallGeometry.build(wall);
+        if (!geometry.error().isEmpty()) throw new IllegalArgumentException(geometry.error());
+        return new SettlementWallTerrain.Preview(geometry.cells().stream().filter(cell -> !cell.state().isAir())
+                .map(cell -> new SettlementWallTerrain.Cell(cell.position(), cell.state(), Blocks.AIR.defaultBlockState(),
+                        Blocks.DIRT.defaultBlockState(), SettlementWallTerrain.Kind.PLACE)).toList(), "");
+    }
+
     private static boolean atNode(BlockPos pos, BlockPos first, BlockPos second) {
         return pos.getX() == first.getX() && pos.getZ() == first.getZ() || pos.getX() == second.getX() && pos.getZ() == second.getZ();
     }

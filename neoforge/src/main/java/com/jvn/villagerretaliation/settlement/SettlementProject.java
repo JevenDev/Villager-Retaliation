@@ -131,6 +131,10 @@ public final class SettlementProject {
         return project;
     }
 
+    int capacity(SettlementRecord town) {
+        return this.wallConstruction != null && this.wallConstruction.campAvailable() ? Math.max(1, town.stage().projects()) : town.stage().projects();
+    }
+
     public SettlementArea workplace() {
         return this.workplace;
     }
@@ -425,7 +429,8 @@ public final class SettlementProject {
                 || project.fee > 0 && project.status == Status.CANCELLED && !project.paymentEarned && !project.paymentRefunded) throw new IllegalArgumentException("Invalid construction payment");
         if (tag.contains("Workplace", Tag.TAG_COMPOUND)) {
             project.workplace = SettlementArea.load(tag.getCompound("Workplace"));
-            if (!project.id.equals(project.area) || !project.area.equals(project.workplace.id()) || !project.within(project.workplace)) {
+            if (!project.id.equals(project.area) || !project.area.equals(project.workplace.id()) || !project.within(project.workplace)
+                    || project.workplace.wall() && project.wallConstruction == null) {
                 throw new IllegalArgumentException("Invalid project workplace");
             }
         }

@@ -119,7 +119,6 @@ public final class SettlementWorkerPoolManagementService {
             var need = this.needs.area(area.id());
             boolean available = area.enabled() && this.town.territory().active() && this.town.owns(area)
                     && (plan == null || plan.settings().enabled())
-                    && (area.type() != SettlementAreaType.CONSTRUCTION || this.town.stage().projects() > 0)
                     && (area.type() != SettlementAreaType.TRADING_POST || this.town.stage().ordinal() >= SettlementStage.VILLAGE.ordinal());
             this.worksites.add(new SettlementWorkerPoolSnapshotPayload.Worksite(area.id(), text(area.name()), area.type(), area.center(),
                     available, SettlementWorkerPoolAssignment.count(this.town, area.id()), plan == null ? 1 : plan.desiredStaff(),

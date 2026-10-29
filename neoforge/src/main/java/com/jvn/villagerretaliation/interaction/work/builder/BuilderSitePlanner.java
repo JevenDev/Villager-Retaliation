@@ -29,7 +29,7 @@ public final class BuilderSitePlanner {
             HiredWorkArea area,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
-        if (plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
+        if (plan.blocks().size() > plan.blockLimit()) {
             return SiteResult.failed("interaction.work.builder.too_large");
         }
         if (!withinAllowedBounds(player, villager, area, plan, origin)) {
@@ -60,7 +60,7 @@ public final class BuilderSitePlanner {
             Villager villager,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
-        if (plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {
+        if (plan.blocks().size() > plan.blockLimit()) {
             return SiteResult.failed("interaction.work.builder.too_large");
         }
         for (BuilderStructureScanner.BuildBlock block : plan.siteBlocks(level, origin)) {

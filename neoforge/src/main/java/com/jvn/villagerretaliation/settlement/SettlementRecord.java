@@ -210,9 +210,15 @@ public final class SettlementRecord {
 
     public boolean contains(BlockPos min, BlockPos max) { return this.territory.contains(min, max) && (autonomous == null || autonomous.contains(min,max)); }
 
-    public boolean owns(SettlementArea area) { return area != null && contains(area.min(), area.max()); }
+    public boolean owns(SettlementArea area) {
+        if (area == null) return false;
+        if (!area.wall()) return contains(area.min(), area.max());
+        var project = projects().get(area.id());
+        return project != null && project.wallConstruction() != null && project.within(area) && project.wallConstruction().owned(this);
+    }
 
     boolean owns(SettlementProject project) {
+        if (project.wallConstruction() != null) return project.wallConstruction().owned(this);
         return contains(project.min(), project.max())
                 && (project.workplace() == null || owns(project.workplace()))
                 && (project.site() == null || owns(project.site().area()));
@@ -228,7 +234,7 @@ public final class SettlementRecord {
 
     private SettlementArea effectiveArea(SettlementArea area) {
         return area == null || !this.territory.migrated() || owns(area) || !area.enabled() ? area
-                : new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), false, area.crops());
+                : new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(), area.priority(), false, area.crops(), area.wall());
     }
 
     public SettlementEconomy economy() {
@@ -701,7 +707,7 @@ public final class SettlementRecord {
         var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
         if (!permits(actor, SettlementPermission.BUILD) || !project.pending() || !actor.equals(project.authority())
                 || !project.town().equals(this.id.value()) || knowsProject(project.id()) || !project.within(area) || !owns(project)
-                || this.stage.projects() == 0 || projects().values().stream().filter(SettlementProject::pending).count() >= CONSTRUCTION_QUEUE_LIMIT
+                || project.capacity(this) == 0 || projects().values().stream().filter(SettlementProject::pending).count() >= CONSTRUCTION_QUEUE_LIMIT
                 || projects().values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) return false;
         this.construction.add(project);
         this.construction.queueChanged();
@@ -713,7 +719,7 @@ public final class SettlementRecord {
         if (projects().get(project.id()) != project || !project.pending() || !permits(project.authority(), SettlementPermission.BUILD)
                 || activeProject(builder) != null || !owns(project)
                 || project.workplace() == null && !project.area().equals(this.duties.get(builder))
-                || projects().values().stream().filter(SettlementProject::active).count() >= this.stage.projects()
+                || projects().values().stream().filter(SettlementProject::active).count() >= project.capacity(this)
                 || project.fee() > 0 && !this.economy.reserveConstruction(project.fee())) return false;
         project.activate(this, builder);
         if (project.workplace() != null) {
@@ -1304,7 +1310,7 @@ public final class SettlementRecord {
     }
 
     boolean putArea(UUID actor, SettlementArea area) {
-        if (!permits(actor, SettlementPermission.BUILD) || area == null
+        if (!permits(actor, SettlementPermission.BUILD) || area == null || area.wall()
                 || !owns(area)
                 || projects().values().stream().anyMatch(project -> project.workplace() != null
                         && (project.area().equals(area.id()) || project.reservesFootprint() && project.overlaps(area)

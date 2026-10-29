@@ -113,8 +113,7 @@ final class SettlementWorkerPoolAssignment {
         if (source != null && count(town, from) <= source.minimum()) return "pool_staffing_minimum";
         if (!SettlementWorkforceService.availableRoles(level, villager).contains(area.type().role())) return "pool_role_unavailable";
         if (!SettlementWorkforceService.workingHours(level.getDayTime(), villager.getUUID(), area.type().role())) return "pool_resting";
-        if (area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
-                || area.type() == SettlementAreaType.TRADING_POST && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal())
+        if (area.type() == SettlementAreaType.TRADING_POST && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal())
             return "pool_worksite_unavailable";
         return "";
     }

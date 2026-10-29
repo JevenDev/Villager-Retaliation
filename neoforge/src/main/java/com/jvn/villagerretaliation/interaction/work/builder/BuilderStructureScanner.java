@@ -701,7 +701,19 @@ public final class BuilderStructureScanner {
             List<BuildBlock> blocks,
             List<MaterialRequirement> materials,
             int price,
-            List<BuildBlock> clearingBlocks) {
+            List<BuildBlock> clearingBlocks,
+            boolean wall) {
+        public StructurePlan(BuilderStructureCatalog.Entry entry, Rotation rotation, Vec3i templateSize,
+                             BlockPos localMin, BlockPos localMax, List<BuildBlock> blocks,
+                             List<MaterialRequirement> materials, int price, List<BuildBlock> clearingBlocks) {
+            this(entry, rotation, templateSize, localMin, localMax, blocks, materials, price, clearingBlocks, false);
+        }
+
+        public int blockLimit() {
+            return this.wall ? com.jvn.villagerretaliation.settlement.SettlementWall.MAX_BLOCKS
+                    : Math.max(128, com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get());
+        }
+
         public StructurePlan(BuilderStructureCatalog.Entry entry, Rotation rotation, Vec3i templateSize,
                              BlockPos localMin, BlockPos localMax, List<BuildBlock> blocks,
                              List<MaterialRequirement> materials, int price) {

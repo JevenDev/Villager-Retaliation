@@ -87,7 +87,6 @@ public final class SettlementWorkforceService {
         SettlementArea area = town.workplace(areaId);
         if (area == null || area.type().role() == null
                 || area.type() != SettlementAreaType.CONSTRUCTION && !availableRoles(level, villager).contains(area.type().role())
-                || area.type() == SettlementAreaType.CONSTRUCTION && town.stage().projects() == 0
                 || area.type() == SettlementAreaType.TRADING_POST
                         && town.stage().ordinal() < SettlementStage.VILLAGE.ordinal()) {
             return false;
