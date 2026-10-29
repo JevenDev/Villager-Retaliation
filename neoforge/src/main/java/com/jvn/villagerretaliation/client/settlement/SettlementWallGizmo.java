@@ -26,7 +26,8 @@ final class SettlementWallGizmo {
         for (var cell : editor.cells()) {
             boolean removal = editor.editingPlaced() && cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE;
             if (!removal && (cell.kind() == SettlementWallTerrain.Kind.PLACE || cell.kind() == SettlementWallTerrain.Kind.EXISTING)) continue;
-            float green = cell.kind() == SettlementWallTerrain.Kind.UNAVAILABLE ? 0.5F : 0.08F;
+            float green = cell.kind() == SettlementWallTerrain.Kind.SKIPPED ? 0.7F
+                    : cell.kind() == SettlementWallTerrain.Kind.UNAVAILABLE ? 0.5F : 0.08F;
             LevelRenderer.renderLineBox(pose, lines, new AABB(cell.position()).inflate(0.005), 1, green, 0.05F, 0.8F);
         }
     }

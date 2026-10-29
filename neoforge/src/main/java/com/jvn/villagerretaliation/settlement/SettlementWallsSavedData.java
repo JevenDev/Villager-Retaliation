@@ -56,7 +56,9 @@ public final class SettlementWallsSavedData extends SavedData {
     public void record(UUID id, VillageAllegianceId town, ServerLevel level, SettlementWall wall, SettlementWallTerrain.Preview preview) {
         if (this.readOnly) throw new IllegalStateException("Wall records are read-only");
         var blocks = new LinkedHashMap<BlockPos, BlockState>();
-        preview.cells().stream().filter(cell -> !cell.target().isAir()).forEach(cell -> blocks.put(cell.position(), cell.target()));
+        preview.cells().stream().filter(cell -> !cell.target().isAir()
+                && (cell.kind() == SettlementWallTerrain.Kind.PLACE || cell.kind() == SettlementWallTerrain.Kind.EXISTING))
+                .forEach(cell -> blocks.put(cell.position(), cell.target()));
         if (wall.part() == SettlementWall.Part.COMPLETE) {
             for (var piece : SettlementWallGeometry.pieces(wall)) {
                 var plan = SettlementWallGeometry.build(piece);

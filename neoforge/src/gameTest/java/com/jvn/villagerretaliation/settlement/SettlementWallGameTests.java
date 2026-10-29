@@ -129,7 +129,7 @@ public final class SettlementWallGameTests {
         helper.assertTrue(ready.error().isEmpty(), "replaceable vegetation is allowed");
         helper.assertTrue(SettlementWallTerrain.apply(level, ready) > 0, "instant placement creates blocks without construction resources");
         for (var cell : ready.cells()) helper.assertValueEqual(level.getBlockState(cell.position()), cell.target(), "applied blocks match the preview");
-        helper.assertTrue(SettlementWallTerrain.preview(level, wall, pos -> true).cells().stream().allMatch(cell -> cell.kind() == SettlementWallTerrain.Kind.EXISTING),
+        helper.assertTrue(SettlementWallTerrain.preview(level, wall, pos -> true).cells().stream().allMatch(cell -> cell.kind() == SettlementWallTerrain.Kind.EXISTING || cell.kind() == SettlementWallTerrain.Kind.SKIPPED),
                 "existing matching walls remain unchanged");
         helper.succeed();
     }
@@ -278,8 +278,13 @@ public final class SettlementWallGameTests {
         for (var obstruction : List.of(Blocks.WATER.defaultBlockState(), Blocks.STONE_SLAB.defaultBlockState())) {
             level.setBlock(gap, obstruction, 2);
             var blocked = SettlementWallTerrain.preview(level, wall, pos -> true);
-            helper.assertFalse(blocked.error().isEmpty(), "foundation cannot replace fluid or a non-supporting obstacle");
-            helper.assertValueEqual(SettlementWallTerrain.apply(level, blocked), 0, "blocked foundations do not partially apply");
+            if (obstruction.is(Blocks.WATER)) {
+                helper.assertFalse(blocked.error().isEmpty(), "foundation cannot replace fluid");
+                helper.assertValueEqual(SettlementWallTerrain.apply(level, blocked), 0, "blocked foundations do not partially apply");
+            } else {
+                helper.assertTrue(blocked.error().isEmpty(), "foundation can rest above a slab");
+                helper.assertFalse(blocked.cells().stream().anyMatch(cell -> cell.position().equals(gap)), "slab is not excavated for a foundation");
+            }
             helper.assertValueEqual(level.getBlockState(gap), obstruction, "obstruction remains intact");
         }
         level.setBlock(gap, Blocks.AIR.defaultBlockState(), 2);
@@ -421,6 +426,81 @@ public final class SettlementWallGameTests {
         draft.undo(); draft.undo(); draft.undo(); draft.undo();
         draft.toggleSnapping();
         helper.assertFalse(draft.preview(new BlockPos(1, 0, 1)).closed(), "snapping can be disabled");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void terrainOverlapsAreSkippedAndNeverOwnedByWalls(GameTestHelper helper) {
+        var base = floor(helper, 260);
+        var level = helper.getLevel();
+        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
+        var session = new SettlementWallSession();
+        var id = UUID.randomUUID();
+        var town = com.jvn.villagerretaliation.allegiance.VillageAllegianceId.random();
+        var preview = session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.PREVIEW, UUID.randomUUID(), wall), town);
+        helper.assertValueEqual(preview.status(), SettlementWallResultPayload.Status.PREVIEW, "clear wall previews");
+        var plan = SettlementWallGeometry.build(wall);
+        var matching = plan.cells().stream().filter(cell -> cell.position().equals(base.east(8))).findFirst().orElseThrow();
+        var hollow = plan.cells().stream().filter(cell -> cell.state().isAir()).findFirst().orElseThrow().position();
+        var terrain = java.util.Map.of(base.east(6), Blocks.GRASS_BLOCK.defaultBlockState(),
+                base.east(6).above(), Blocks.DIRT.defaultBlockState(), matching.position(), matching.state(),
+                base.east(9), Blocks.PODZOL.defaultBlockState(), hollow, Blocks.STONE.defaultBlockState());
+        terrain.forEach((pos, state) -> level.setBlock(pos, state, 2));
+        level.setBlock(base.east(6).below(), Blocks.AIR.defaultBlockState(), 2);
+        var reviewed = session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.CONFIRM, preview.token(), null), town);
+        helper.assertValueEqual(reviewed.status(), SettlementWallResultPayload.Status.PREVIEW, "new terrain refreshes instead of rejecting the wall");
+        helper.assertFalse(reviewed.token().equals(preview.token()), "terrain change requires another confirmation");
+        helper.assertTrue(level.getBlockState(base).isAir(), "stale confirmation places nothing");
+        for (var pos : terrain.keySet()) helper.assertTrue(reviewed.cells().stream().anyMatch(cell ->
+                cell.position().equals(pos) && cell.kind() == SettlementWallTerrain.Kind.SKIPPED), "terrain is explicitly skipped");
+        helper.assertFalse(reviewed.cells().stream().anyMatch(cell -> cell.position().equals(base.east(6).below())),
+                "embedded foundations do not extend into caves under terrain");
+        helper.assertValueEqual(session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.CONFIRM, reviewed.token(), null), town).status(),
+                SettlementWallResultPayload.Status.APPLIED, "wall places around terrain");
+        var data = SettlementWallsSavedData.get(level);
+        for (var cell : reviewed.cells()) if (cell.kind() != SettlementWallTerrain.Kind.SKIPPED)
+            helper.assertValueEqual(level.getBlockState(cell.position()), cell.state(), "remaining wall matches preview");
+        terrain.forEach((pos, state) -> {
+            helper.assertValueEqual(level.getBlockState(pos), state, "terrain survives placement");
+            helper.assertTrue(data.at(town, level.dimension().location(), pos) == null, "even matching terrain is not owned by the wall");
+        });
+        var span = data.at(town, level.dimension().location(), base.east(10));
+        helper.assertTrue(span != null, "placed span retains an identity");
+        helper.assertTrue(SettlementWallsSavedData.modification(level, span, pos -> true).isEmpty(), "skipped terrain is not wall damage");
+        var upgrade = new SettlementWall(SettlementWall.Type.TIMBER, span.wall().nodes(), false, 0, span.wall().nodeTowers(), span.wall().part());
+        var changed = SettlementWallTerrain.preview(level, upgrade, pos -> true, span.blocks());
+        helper.assertTrue(changed.error().isEmpty(), "upgrade also skips terrain: " + changed.error());
+        SettlementWallTerrain.apply(level, changed);
+        data.record(span.id(), town, level, upgrade, changed);
+        span = data.get(span.id());
+        var restored = SettlementWallsSavedData.load(data.save(new net.minecraft.nbt.CompoundTag(), level.registryAccess()), level.registryAccess());
+        helper.assertValueEqual(restored.get(span.id()), span, "terrain-aware ownership survives reload");
+        SettlementWallTerrain.apply(level, SettlementWallTerrain.demolition(level, span.blocks(), pos -> true));
+        terrain.forEach((pos, state) -> {
+            helper.assertValueEqual(level.getBlockState(pos), state, "terrain survives upgrade and destruction");
+            helper.assertTrue(restored.at(town, level.dimension().location(), pos) == null, "terrain remains unowned after reload");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void wallsRestOnPathsAndSlabsWithoutExcavatingThem(GameTestHelper helper) {
+        for (var type : SettlementWall.Type.values()) {
+            var base = floor(helper, 280);
+            var wall = new SettlementWall(type, List.of(base, base.east(18)), false, 0);
+            var terrain = new java.util.HashMap<BlockPos, net.minecraft.world.level.block.state.BlockState>();
+            for (var pos : SettlementWallGeometry.build(wall).foundations()) terrain.put(pos.below(),
+                    (pos.getX() % 2 == 0 ? Blocks.DIRT_PATH : Blocks.STONE_SLAB).defaultBlockState());
+            terrain.put(base.east(6), Blocks.STONE_SLAB.defaultBlockState());
+            terrain.forEach((pos, state) -> helper.getLevel().setBlock(pos, state, 2));
+            var preview = SettlementWallTerrain.preview(helper.getLevel(), wall, pos -> true);
+            helper.assertTrue(preview.error().isEmpty(), "partial-height ground accepts " + type + ": " + preview.error());
+            helper.assertTrue(SettlementWallTerrain.apply(helper.getLevel(), preview) > 0, "wall places above partial-height terrain");
+            terrain.forEach((pos, state) -> helper.assertValueEqual(helper.getLevel().getBlockState(pos), state, "paths and slabs remain intact"));
+        }
         helper.succeed();
     }
 

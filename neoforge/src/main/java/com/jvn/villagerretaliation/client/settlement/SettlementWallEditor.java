@@ -113,6 +113,7 @@ public final class SettlementWallEditor {
         if (this.pending != null && now - this.sentAt >= 2000) send(this.pending, send);
     }
     private ConstructionBlueprintItem.PreviewData ghost(Level level, List<SettlementWallResultPayload.Cell> cells) {
+        cells = cells.stream().filter(cell -> cell.kind() != SettlementWallTerrain.Kind.SKIPPED).toList();
         if (cells.isEmpty()) return null;
         var origin = cells.getFirst().position();
         var min = origin;
@@ -164,7 +165,9 @@ public final class SettlementWallEditor {
         if (this.destroying) return "Destroy wall piece / " + this.cells.stream().filter(cell -> cell.kind() == SettlementWallTerrain.Kind.PLACE).count()
                 + " blocks / No item drops\n" + (this.feedback.isEmpty() ? "Red outlines mark removal. Replacement blocks are preserved. Confirm destroy applies." : this.feedback);
         long blocks = this.cells.stream().filter(cell -> !cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE).count();
-        return (upgrading() ? "Upgrade / " : "") + this.draft.wall().type().label() + " / " + blocks + " blocks / Free, instant placement\n"
+        long skipped = this.cells.stream().filter(cell -> cell.kind() == SettlementWallTerrain.Kind.SKIPPED).count();
+        return (upgrading() ? "Upgrade / " : "") + this.draft.wall().type().label() + " / " + blocks + " blocks"
+                + (skipped > 0 ? " / " + skipped + " skipped" : "") + " / Free, instant placement\n"
                 + (!this.feedback.isEmpty() ? this.feedback : this.draft.wall().nodes().isEmpty() ? "Click ground to place the first tower."
                 : upgrading() ? "Choose a type or select a node for tower options. Red outlines mark removals. Confirm upgrade applies."
                 : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm places it. Cancel discards."

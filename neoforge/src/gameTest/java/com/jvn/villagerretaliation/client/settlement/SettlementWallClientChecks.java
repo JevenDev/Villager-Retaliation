@@ -27,6 +27,13 @@ final class SettlementWallClientChecks {
         if (++this.ticks > 600) throw new IllegalStateException("Wall client checks timed out at " + this.phase + ": " + this.view.wallEditor().hint());
         var editor = this.view.wallEditor();
         if (this.phase == 0) {
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                for (var pos : java.util.List.of(this.start.east(12), this.start.east(12).above())) {
+                    this.before.put(pos, level.getBlockState(pos));
+                    level.setBlock(pos, net.minecraft.world.level.block.Blocks.DIRT.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                }
+            }).join();
             this.cameraX = this.view.focusX(); this.cameraZ = this.view.focusZ();
             this.view.focus(this.start.getX() + 12, this.start.getZ());
             this.view.mouseScrolled(this.view.viewportWidth() / 2.0, 80, 0, -10);
@@ -71,6 +78,11 @@ final class SettlementWallClientChecks {
             next();
         } else if (this.phase == 2 && editor.canConfirm()) {
             require(editor.ghost() != null && !editor.cells().isEmpty(), "wall preview renders real template blocks");
+            var skipped = editor.cells().stream().filter(cell -> cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.SKIPPED)
+                    .map(com.jvn.villagerretaliation.network.SettlementWallResultPayload.Cell::position).collect(java.util.stream.Collectors.toSet());
+            require(!skipped.isEmpty() && editor.hint().contains(" skipped"), "terrain overlaps are confirmable and counted");
+            require(editor.ghost().blocks().stream().noneMatch(block -> skipped.contains(editor.ghost().origin().offset(block.localPos()))),
+                    "skipped terrain has no wall ghost");
             this.capture.accept("wall-low-stone-spacing");
             button("Low stone").onPress();
             next();
@@ -95,8 +107,9 @@ final class SettlementWallClientChecks {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
                 for (var cell : cells) {
-                    this.before.put(cell.position(), level.getBlockState(cell.position()));
-                    this.targets.put(cell.position(), cell.state());
+                    this.before.putIfAbsent(cell.position(), level.getBlockState(cell.position()));
+                    this.targets.put(cell.position(), cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.SKIPPED
+                            ? level.getBlockState(cell.position()) : cell.state());
                 }
             }).join();
             this.capture.accept("wall-confirmation");
@@ -132,7 +145,8 @@ final class SettlementWallClientChecks {
                 this.targets.clear();
                 for (var cell : cells) {
                     this.before.putIfAbsent(cell.position(), level.getBlockState(cell.position()));
-                    this.targets.put(cell.position(), cell.state());
+                    this.targets.put(cell.position(), cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.SKIPPED
+                            ? level.getBlockState(cell.position()) : cell.state());
                 }
             }).join();
             button("Confirm upgrade").onPress();

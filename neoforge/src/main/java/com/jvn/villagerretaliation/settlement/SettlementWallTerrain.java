@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 public final class SettlementWallTerrain {
-    public enum Kind { PLACE, EXISTING, BLOCKED, OUTSIDE, UNAVAILABLE }
+    public enum Kind { PLACE, EXISTING, BLOCKED, OUTSIDE, UNAVAILABLE, SKIPPED }
     public record Cell(BlockPos position, BlockState target, BlockState before, BlockState support, Kind kind) {}
     public record Preview(List<Cell> cells, String error) {}
     private SettlementWallTerrain() {}
@@ -63,10 +63,12 @@ public final class SettlementWallTerrain {
             } else {
                 before = level.getBlockState(pos);
                 support = plan.foundations().contains(pos) ? level.getBlockState(pos.below()) : null;
-                if (before.equals(planned.state())) kind = Kind.EXISTING;
+                if (terrainOverlap(level, pos, before, replaced)) kind = Kind.SKIPPED;
+                else if (before.equals(planned.state())) kind = Kind.EXISTING;
                 else if (level.getBlockEntity(pos) != null || !before.getFluidState().isEmpty()
                         || !before.isAir() && !before.canBeReplaced() && !before.equals(replaced.get(pos))
-                        || support != null && !support.isFaceSturdy(level, pos.below(), Direction.UP)) {
+                        || support != null && !support.isFaceSturdy(level, pos.below(), Direction.UP)
+                                && !terrainOverlap(level, pos.below(), support, replaced)) {
                     kind = Kind.BLOCKED;
                     if (error.isEmpty()) error = "Wall is obstructed or cannot reach solid support";
                 } else if (!planned.state().getCollisionShape(level, pos).isEmpty()
@@ -92,6 +94,7 @@ public final class SettlementWallTerrain {
             if (!plan.foundations().contains(bottom) || !columns.add(bottom.atY(0))) continue;
             if (allowed.test(bottom) && !level.isOutsideBuildHeight(bottom)
                     && level.getWorldBorder().isWithinBounds(bottom) && level.hasChunkAt(bottom)) {
+                if (terrainOverlap(level, bottom, level.getBlockState(bottom), replaced)) continue;
                 while (true) {
                     var below = bottom.below();
                     if (!allowed.test(below) || level.isOutsideBuildHeight(below)
@@ -105,7 +108,7 @@ public final class SettlementWallTerrain {
                     }
                     var support = replaced.containsKey(below) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()
                             : level.getBlockState(below);
-                    if (support.isFaceSturdy(level, below, Direction.UP)) break;
+                    if (support.isFaceSturdy(level, below, Direction.UP) || terrainOverlap(level, below, support, replaced)) break;
                     if (level.getBlockEntity(below) != null || !support.getFluidState().isEmpty()
                             || !support.isAir() && !support.canBeReplaced()) {
                         error = "Wall foundations are obstructed before reaching solid support";
@@ -126,6 +129,11 @@ public final class SettlementWallTerrain {
         extended.sort(Comparator.comparingInt((SettlementWallTemplates.Cell cell) -> cell.position().getY())
                 .thenComparingInt(cell -> cell.position().getX()).thenComparingInt(cell -> cell.position().getZ()));
         return new SettlementWallGeometry.Plan(List.copyOf(extended), java.util.Set.copyOf(foundations), error);
+    }
+
+    private static boolean terrainOverlap(Level level, BlockPos pos, BlockState state, Map<BlockPos, BlockState> replaced) {
+        return !state.isAir() && !state.canBeReplaced() && state.getFluidState().isEmpty()
+                && level.getBlockEntity(pos) == null && !state.equals(replaced.get(pos));
     }
 
     private static List<AABB> occupants(Level level, SettlementWallGeometry.Plan plan) {
