@@ -7,12 +7,14 @@ import java.util.UUID;
 
 final class SettlementViewCommandTracker {
     private SettlementViewBatchPayload request;
+    private final java.util.Map<UUID, net.minecraft.core.BlockPos> confirmedMoves = new java.util.HashMap<>();
     private long sentAt;
     private boolean unconfirmed;
     private List<SettlementViewBatchResultPayload.Outcome> outcomes = List.of();
 
     void clear() {
         this.request = null;
+        this.confirmedMoves.clear();
         this.outcomes = List.of();
         this.unconfirmed = false;
     }
@@ -30,6 +32,10 @@ final class SettlementViewCommandTracker {
                 || !this.request.targets().stream().map(SettlementViewBatchPayload.Target::resident).toList()
                     .equals(payload.outcomes().stream().map(SettlementViewBatchResultPayload.Outcome::resident).toList())) return false;
         this.outcomes = payload.outcomes();
+        if (this.request.action() == com.jvn.villagerretaliation.settlement.SettlementViewAction.MOVE_TO) {
+            for (var outcome : this.outcomes) if (outcome.status() == SettlementViewBatchResultPayload.Status.APPLIED)
+                this.confirmedMoves.put(outcome.resident(), this.request.order().points().getFirst());
+        }
         this.request = null;
         this.unconfirmed = false;
         return true;
@@ -40,6 +46,9 @@ final class SettlementViewCommandTracker {
         this.unconfirmed = true;
         return true;
     }
+
+    java.util.Map<UUID, net.minecraft.core.BlockPos> confirmedMoves() { return java.util.Map.copyOf(this.confirmedMoves); }
+    void overviewRefreshed() { this.confirmedMoves.clear(); }
 
     boolean busy() { return this.request != null && !this.unconfirmed; }
     List<SettlementViewBatchResultPayload.Outcome> outcomes() { return this.outcomes; }

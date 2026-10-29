@@ -116,7 +116,10 @@ final class SettlementViewPopup {
         }
         var narration = Component.empty();
         for (var line : details) narration.append(line).append(". ");
-        for (var action : actions) narration.append(action.label()).append(". ");
+        for (var action : actions) {
+            narration.append(action.label()).append(". ");
+            if (!action.enabled() && !action.disabledReason().getString().isEmpty()) narration.append(action.disabledReason()).append(". ");
+        }
         if (!actions.isEmpty()) narration.append(hint);
         this.narration = narration;
         layoutButtons();
@@ -226,6 +229,18 @@ final class SettlementViewPopup {
         if (this.focus >= 0 && this.actions.get(this.focus).enabled()) this.buttons.get(this.focus).onPress();
     }
 
+    Component disabledReasonAt(double x, double y) {
+        if (!contains(x, y) || y < this.top + PADDING || y >= this.top + PADDING + this.bodyHeight) return null;
+        for (int index = 0; index < this.buttons.size(); index++) {
+            var action = this.actions.get(index);
+            var button = this.buttons.get(index);
+            if (!action.enabled() && !action.disabledReason().getString().isEmpty()
+                    && x >= button.getX() && x < button.getX() + button.getWidth()
+                    && y >= button.getY() && y < button.getY() + button.getHeight()) return action.disabledReason();
+        }
+        return null;
+    }
+
     void render(GuiGraphics graphics, Font font, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 1400);
@@ -251,6 +266,8 @@ final class SettlementViewPopup {
             graphics.fill(this.left + this.width - 2, this.top + PADDING + offset, this.left + this.width - 1,
                     this.top + PADDING + offset + thumb, 0xFFAAAAAA);
         }
+        var reason = disabledReasonAt(mouseX, mouseY);
+        if (reason != null) graphics.renderTooltip(font, font.split(reason, Math.max(80, Math.min(240, graphics.guiWidth() - 24))), mouseX, mouseY);
         graphics.pose().popPose();
     }
 
@@ -298,7 +315,10 @@ final class SettlementViewPopup {
         }
     }
 
-    record Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon) {
+    record Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon, Component disabledReason) {
+        Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon) {
+            this(label, enabled, run, key, icon, Component.empty());
+        }
         Action(Component label, boolean enabled, Runnable run, Object key) {
             this(label, enabled, run, key, net.minecraft.world.item.ItemStack.EMPTY);
         }

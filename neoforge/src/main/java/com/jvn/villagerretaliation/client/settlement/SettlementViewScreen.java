@@ -278,6 +278,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     void acceptOverview(com.jvn.villagerretaliation.network.SettlementViewOverviewPayload payload) {
         if (!this.snapshots.accept(payload, Util.getMillis())) return;
+        this.commands.overviewRefreshed();
         this.header = this.snapshots.header();
         if (this.inspected instanceof SettlementManagementPayload.Depot || this.inspected instanceof SettlementManagementPayload.Order) {
             var selected = this.inspected;
@@ -837,6 +838,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     graphics.drawString(this.font, Integer.toString(index + 1), (int) point[0] + 5, (int) point[1] - 5, index == this.route.draft().selected() ? 0xFFDD55 : 0xFFFFFF);
             }
         }
+        for (var destination : movementDestinations()) {
+            var point = project(Vec3.atBottomCenterOf(destination).add(0, 2.6, 0));
+            if (point != null && worldContains(point[0], point[1]))
+                graphics.drawString(this.font, "Move to", (int) point[0] - this.font.width("Move to") / 2, (int) point[1] - this.font.lineHeight, 0xFFFFCC33);
+        }
         var draft = this.parent.buildingDraft();
         Component hint = draft != null ? text(draft.placed ? "building_adjust_hint" : "building_place_hint")
                 : this.editingArea != null ? text("gizmo_area_hint")
@@ -1156,7 +1162,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.groupActions.active = !this.commands.busy();
             this.commandResults.visible = !this.commands.outcomes().isEmpty() && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
         }
-        if (this.buildMenu != null) this.buildMenu.active = !this.commands.busy() && !this.parent.submitting() && !this.paths.confirming() && !this.walls.confirming() && !this.farms.confirming();
+        if (this.buildMenu != null) {
+            String pending = buildPendingReason();
+            this.buildMenu.active = pending.isEmpty();
+            this.buildMenu.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(pending.isEmpty() ? "Build" : "Build\n" + pending)));
+        }
         if (this.transform != null) {
             this.transform.visible = manipulating;
             this.transform.setMessage(text(draft == null ? "gizmo_move" : "gizmo_transform"));
@@ -1336,6 +1346,31 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.snapshots.refresh();
         this.residentRefreshAt = 0;
         updateActions();
+    }
+
+    private String buildPendingReason() {
+        if (this.commands.busy()) return "Wait for the current villager command to finish.";
+        if (this.parent.submitting()) return "Wait for the current settlement action to finish.";
+        if (this.paths.confirming()) return "Wait for the path to finish applying.";
+        if (this.walls.confirming()) return "Wait for the wall change to finish applying.";
+        if (this.farms.confirming()) return "Wait for the farmland order to finish applying.";
+        return "";
+    }
+
+    String buildUnavailableReason(boolean building, boolean farmland) {
+        String pending = buildPendingReason();
+        if (!pending.isEmpty()) return pending;
+        if (!permits(SettlementPermission.BUILD)) return "Requires Build permission. Ask the settlement leader to grant it.";
+        if (farmland && !permits(SettlementPermission.STAFF)) return "Requires Staff permission to assign builders. Ask the settlement leader to grant it.";
+        if (building && this.header.projectLimit() <= 0) return "This settlement has no construction capacity. Advance its stage by meeting the requirements in the settlement summary.";
+        if (building && this.route.draft() != null) return "Finish or cancel the current route before choosing a building.";
+        if (building && this.storagePicker != null) return "Finish or cancel the storage selection before choosing a building.";
+        return "";
+    }
+
+    private SettlementViewPopup.Action buildAction(Component label, String reason, Runnable action) {
+        var item = menuAction(label, reason.isEmpty(), action);
+        return new SettlementViewPopup.Action(item.label(), item.enabled(), item.run(), item.key(), item.icon(), Component.literal(reason));
     }
 
     private void openBuildMenu() {
@@ -2780,6 +2815,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return new Pick(this.interaction.is(Mode.TASK_AREA) && targetPosition != null ? targetPosition : position, residentId, targetId);
     }
 
+    Set<BlockPos> movementDestinations() {
+        var destinations = SettlementMoveMarkers.destinations(this.selection.residents(), this.roster, this.commands.confirmedMoves());
+        destinations.removeIf(destination -> !contains(destination));
+        return destinations;
+    }
+
     void renderWorldSelection(RenderLevelStageEvent event) {
         var draft = this.parent.buildingDraft();
         if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
@@ -2827,6 +2868,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (hovered != null && !this.selection.contains(hovered.getUUID()) && !SettlementViewClient.panelsOpen(this))
                 LevelRenderer.renderLineBox(pose, lines, hovered.getBoundingBox().inflate(0.08D), 1.0F, 0.78F, 0.25F, 0.7F);
         }
+        for (var destination : movementDestinations()) SettlementMoveMarkers.render(pose, lines, destination);
         Set<List<BlockPos>> routes = new java.util.LinkedHashSet<>();
         if (this.guardMode != null) routes.add(List.copyOf(this.guardPoints));
         for (var id : this.selection.residents()) {
@@ -3406,20 +3448,19 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case BUILD -> {
                 details.add(Component.literal("Build"));
-                boolean available = ready && permits(SettlementPermission.BUILD) && !this.parent.submitting() && !this.paths.confirming() && !this.walls.confirming() && !this.farms.confirming();
-                actions.add(menuAction(SettlementManagementScreen.text("new_building"),
-                        available && this.header.projectLimit() > 0 && this.route.draft() == null && this.storagePicker == null, () -> {
+                String unavailable = buildUnavailableReason(false, false);
+                actions.add(buildAction(SettlementManagementScreen.text("new_building"), buildUnavailableReason(true, false), () -> {
                             enterMode(Mode.PLACE_BUILDING);
                             updatePlotActions();
                             management().newBuilding();
                         }));
-                actions.add(menuAction(Component.literal("Farmland"), available && permits(SettlementPermission.STAFF), this::beginFarm));
-                actions.add(menuAction(Component.literal("Path"), available, this::beginPath));
-                actions.add(menuAction(Component.literal("Wall"), available, this::beginWall));
-                actions.add(menuAction(Component.literal("Upgrade wall"), available, () -> {
+                actions.add(buildAction(Component.literal("Farmland"), buildUnavailableReason(false, true), this::beginFarm));
+                actions.add(buildAction(Component.literal("Path"), unavailable, this::beginPath));
+                actions.add(buildAction(Component.literal("Wall"), unavailable, this::beginWall));
+                actions.add(buildAction(Component.literal("Upgrade wall"), unavailable, () -> {
                     beginWall(); this.walls.beginUpgrade(); updateWallButtons();
                 }));
-                actions.add(menuAction(Component.literal("Destroy wall"), available, () -> {
+                actions.add(buildAction(Component.literal("Destroy wall"), unavailable, () -> {
                     beginWall(); this.walls.beginDestroy(); updateWallButtons();
                 }));
             }

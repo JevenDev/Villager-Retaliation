@@ -66,6 +66,8 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
                 b.writeBoolean(r.worksitePlan());
                 b.writeVarInt(r.overrideCount());
                 b.writeUtf(r.temporary(), 180);
+                b.writeBoolean(r.moveDestination() != null);
+                if (r.moveDestination() != null) b.writeBlockPos(r.moveDestination());
             } else SettlementManagementPayload.writeEntry(b, entry);
         }
     }
@@ -99,7 +101,7 @@ public record SettlementViewOverviewPayload(UUID session, int requestId, long ge
             for (int r = 0; r < roles; r++) available.add(b.readEnum(com.jvn.villagerretaliation.interaction.HiredVillagerRole.class));
             entries.add(new Resident(id, name, profession, baby, presence, position, area, -1, -1, status, available,
                     SettlementManagementActionPayload.readGuardOrder(b), null, null, b.readUtf(180),
-                    b.readBoolean(), b.readBoolean(), b.readVarInt(), b.readUtf(180)));
+                    b.readBoolean(), b.readBoolean(), b.readVarInt(), b.readUtf(180), null, b.readBoolean() ? b.readBlockPos() : null));
         }
         return new SettlementViewOverviewPayload(session, request, generation, header, category, index, total, entries);
     }

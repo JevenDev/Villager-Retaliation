@@ -95,6 +95,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static SettlementPathClientChecks pathChecks;
     private static SettlementWallClientChecks wallChecks;
+    private static SettlementMoveClientChecks moveChecks;
     private static SettlementFarmClientChecks farmChecks;
     private static boolean previewMeshesRequested, previewMeshesChecked;
     private static boolean resourceFormsChecked;
@@ -220,6 +221,8 @@ public final class SettlementViewClientSmoke {
                 farmChecks = new SettlementFarmClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
             }
             if (!farmChecks.tick(minecraft)) return;
+            if (moveChecks == null) moveChecks = new SettlementMoveClientChecks(screen, fixture.resident(), SettlementViewClientSmoke::capture);
+            if (!moveChecks.tick(minecraft)) return;
             previewMeshesRequested = true;
             if (!previewMeshesChecked) return;
             require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");

@@ -13,6 +13,7 @@ public final class SettlementViewPanelClientChecks {
         verifyFade();
         verifyBuildOverlay();
         verifyPopup();
+        verifyMovementMarkers();
         SettlementStatusBarClientChecks.verify(view.parent().snapshot().header());
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.getCameraEntity();
@@ -63,6 +64,46 @@ public final class SettlementViewPanelClientChecks {
         verifyBuildMenu(view);
     }
 
+    private static void verifyMovementMarkers() {
+        var first = java.util.UUID.randomUUID();
+        var second = java.util.UUID.randomUUID();
+        var target = new net.minecraft.core.BlockPos(20, 65, 30);
+        var rows = new java.util.HashMap<java.util.UUID, com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident>();
+        for (var id : java.util.List.of(first, second)) rows.put(id,
+                new com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident(id, "Mover",
+                        net.minecraft.resources.ResourceLocation.withDefaultNamespace("none"), false,
+                        com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.HERE, net.minecraft.core.BlockPos.ZERO,
+                        null, -1, -1, "unassigned", java.util.List.of(), null, null, null, "", false, false, 0, "", null, target));
+        require(SettlementMoveMarkers.destinations(java.util.List.of(first, second), rows, java.util.Map.of()).equals(java.util.Set.of(target)),
+                "selected villagers sharing a target produce one marker");
+        require(SettlementMoveMarkers.destinations(java.util.List.of(), rows, java.util.Map.of()).isEmpty(), "unselected villagers do not clutter the world with markers");
+        rows.remove(first);
+        require(SettlementMoveMarkers.destinations(java.util.List.of(first), rows, java.util.Map.of()).isEmpty(), "removed residents leave no marker");
+        rows.put(second, new com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident(second, "Arrived",
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("none"), false,
+                com.jvn.villagerretaliation.network.VillageOverviewPayload.Presence.HERE, target, null, -1, -1, "unassigned", java.util.List.of()));
+        require(SettlementMoveMarkers.destinations(java.util.List.of(second), rows, java.util.Map.of()).isEmpty(), "a completed order disappears on the next snapshot");
+        var tracker = new SettlementViewCommandTracker();
+        var session = java.util.UUID.randomUUID();
+        var operation = com.jvn.villagerretaliation.network.SettlementViewBatchPayload.operation(session, 1);
+        tracker.sent(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload(session, operation, SettlementViewAction.MOVE_TO,
+                java.util.List.of(new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(first, null),
+                        new com.jvn.villagerretaliation.network.SettlementViewBatchPayload.Target(second, null)), null,
+                new com.jvn.villagerretaliation.settlement.SettlementGuardOrder(com.jvn.villagerretaliation.settlement.SettlementGuardOrder.Mode.MOVE,
+                        java.util.List.of(target))), 0);
+        require(tracker.confirmedMoves().isEmpty(), "pending orders do not claim a confirmed destination");
+        require(tracker.accept(new com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload(session, operation, java.util.List.of(
+                new com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Outcome(first,
+                        com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Status.APPLIED, ""),
+                new com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Outcome(second,
+                        com.jvn.villagerretaliation.network.SettlementViewBatchResultPayload.Status.FAILED, "unavailable")))), "matching result is accepted");
+        require(tracker.confirmedMoves().equals(java.util.Map.of(first, target)), "only successful orders show immediately before the overview refresh");
+        require(SettlementMoveMarkers.destinations(java.util.List.of(first), rows, tracker.confirmedMoves()).contains(target),
+                "confirmed movement appears even while the roster snapshot is stale");
+        tracker.overviewRefreshed();
+        require(tracker.confirmedMoves().isEmpty(), "the next complete server snapshot takes over marker lifetime");
+    }
+
     private static void verifyBuildMenu(SettlementViewScreen view) {
         var minecraft = Minecraft.getInstance();
         int width = view.width, height = view.height;
@@ -82,6 +123,11 @@ public final class SettlementViewPanelClientChecks {
                 require(view.contextPopup() == null, "Build closes consistently with mouse input");
             }
             build.onPress();
+            for (var option : view.contextPopup().buttons()) {
+                var reason = view.contextPopup().disabledReasonAt(option.getX() + 2, option.getY() + 2);
+                require(option.active ? reason == null : reason != null && !reason.getString().isBlank(),
+                        "Build options expose a reason exactly when unavailable");
+            }
             boolean buildingAvailable = view.contextPopup().buttons().stream()
                     .filter(button -> button.getMessage().equals(SettlementManagementScreen.text("new_building"))).findFirst().orElseThrow().active;
             view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
@@ -314,7 +360,8 @@ public final class SettlementViewPanelClientChecks {
         for (int index = 0; index < 20; index++) {
             int action = index;
             actions.add(new SettlementViewPopup.Action(net.minecraft.network.chat.Component.literal("Action " + index),
-                    index != 1, () -> selected[0] = action));
+                    index != 1, () -> selected[0] = action, null, net.minecraft.world.item.ItemStack.EMPTY,
+                    net.minecraft.network.chat.Component.literal(index == 1 ? "Requires Build permission. Ask the settlement leader to grant it." : "")));
         }
         popup.update(font, 640, 360, details, actions.subList(0, 3));
         var first = popup.buttons().getFirst();
@@ -348,6 +395,11 @@ public final class SettlementViewPanelClientChecks {
         popup.scroll(first.getX() - 1, y, 1);
         require(popup.buttons().getFirst().isFocused(), "slight padding around the text accepts scrolling");
         var disabled = popup.buttons().get(1);
+        require(popup.disabledReasonAt(disabled.getX() + 4, disabled.getY() + 2).getString().contains("Build permission"),
+                "hovering a disabled action exposes the reason and remedy");
+        require(popup.disabledReasonAt(x, y) == null && popup.disabledReasonAt(-1, -1) == null,
+                "enabled actions and empty space have no disabled tooltip");
+        require(popup.narration().getString().contains("Build permission"), "disabled reasons are available to narration");
         popup.hover(disabled.getX() + 4, disabled.getY() + 2);
         popup.click(disabled.getX() + 4, disabled.getY() + 2, GLFW.GLFW_MOUSE_BUTTON_LEFT);
         require(selected[0] == -1, "clicking a disabled row cannot run another action");

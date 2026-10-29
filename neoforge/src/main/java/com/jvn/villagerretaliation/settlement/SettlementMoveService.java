@@ -42,6 +42,11 @@ public final class SettlementMoveService {
                 && !VillagerAiArbitration.interruptsStudy(level, villager);
     }
 
+    static BlockPos destination(Villager villager) {
+        var order = ORDERS.get(villager);
+        return order != null && controls(villager) && villager.level().getGameTime() < order.expires() ? order.destination() : null;
+    }
+
     private static boolean available(Villager villager) {
         return villager.isAlive() && !villager.isBaby() && !villager.isNoAi()
                 && !SettlementWorkforceService.hasPersonalCommitment(villager)

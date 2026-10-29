@@ -190,6 +190,8 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 buffer.writeVarInt(resident.overrideCount());
                 buffer.writeUtf(resident.temporary(), 180);
                 writeOptionalId(buffer, resident.workerPool());
+                buffer.writeBoolean(resident.moveDestination() != null);
+                if (resident.moveDestination() != null) buffer.writeBlockPos(resident.moveDestination());
             }
             case Area area -> {
                 buffer.writeEnum(area.kind());
@@ -380,7 +382,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                         SettlementManagementActionPayload.readGuardOrder(buffer),
                         buffer.readBoolean() ? SettlementManagementActionPayload.readWorkerSettings(buffer) : null,
                         SettlementManagementActionPayload.readBrewingOrder(buffer), buffer.readUtf(180), buffer.readBoolean(), buffer.readBoolean(),
-                        buffer.readVarInt(), buffer.readUtf(180), readOptionalId(buffer));
+                        buffer.readVarInt(), buffer.readUtf(180), readOptionalId(buffer), buffer.readBoolean() ? buffer.readBlockPos() : null);
             }
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
@@ -719,7 +721,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     public record Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                            BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
                            SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder, String diagnostic, boolean manualStaffing, boolean worksitePlan,
-                           int overrideCount, String temporary, UUID workerPool) implements Entry {
+                           int overrideCount, String temporary, UUID workerPool, BlockPos moveDestination) implements Entry {
         public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
                         BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles) {
             this(id, name, profession, baby, presence, position, area, food, health, status, roles, null, null);
@@ -773,7 +775,16 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     brewingOrder, diagnostic, manualStaffing, worksitePlan, overrideCount, temporary, null);
         }
 
+        public Resident(UUID id, String name, ResourceLocation profession, boolean baby, VillageOverviewPayload.Presence presence,
+                        BlockPos position, UUID area, int food, float health, String status, List<HiredVillagerRole> roles,
+                        SettlementGuardOrder guardOrder, SettlementWorkerSettings settings, SettlementBrewingOrder brewingOrder,
+                        String diagnostic, boolean manualStaffing, boolean worksitePlan, int overrideCount, String temporary, UUID workerPool) {
+            this(id, name, profession, baby, presence, position, area, food, health, status, roles, guardOrder, settings,
+                    brewingOrder, diagnostic, manualStaffing, worksitePlan, overrideCount, temporary, workerPool, null);
+        }
+
         public Resident {
+            if (moveDestination != null) moveDestination = moveDestination.immutable();
             if (overrideCount < 0 || overrideCount > 32 || temporary == null || temporary.length() > 180) {
                 throw new IllegalArgumentException("Invalid worker summary");
             }

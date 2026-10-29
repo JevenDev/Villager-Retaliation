@@ -47,6 +47,26 @@ public final class SettlementMoveGameTests {
         helper.assertTrue(com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob.isValidApproachPosition(level, destination), "destination is standable");
         helper.assertTrue(SettlementMoveService.command(fixture.player(), fixture.town(), civilian.getUUID(), destination), "unassigned resident accepts Move to");
         helper.assertTrue(SettlementMoveService.command(fixture.player(), fixture.town(), worker.getUUID(), destination.south(2)), "non-guard worker accepts Move to");
+        helper.assertValueEqual(SettlementMoveService.destination(civilian), destination, "active orders expose their destination");
+        var page = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
+        var details = SettlementManagementService.snapshot(fixture.player(), new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(
+                fixture.town().id().value(), page, 0, "", 1, false));
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.encode(buffer, details);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.decode(buffer), details,
+                    "detailed resident payload preserves movement destinations");
+            var rows = SettlementManagementService.overview(fixture.player(), fixture.town()).get(page);
+            var overview = new com.jvn.villagerretaliation.network.SettlementViewOverviewPayload(UUID.randomUUID(), 1, 1,
+                    details.header(), page, 0, rows.size(), rows);
+            com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC.encode(buffer, overview);
+            var decoded = com.jvn.villagerretaliation.network.SettlementViewOverviewPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(decoded, overview, "world view snapshots preserve movement destinations");
+            var row = decoded.entries().stream().filter(entry -> entry.id().equals(civilian.getUUID()))
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident.class::cast).findFirst().orElseThrow();
+            helper.assertValueEqual(row.moveDestination(), destination, "server publishes the actual move target");
+            helper.assertValueEqual(buffer.readableBytes(), 0, "movement fields consume exactly their packet bytes");
+        } finally { buffer.release(); }
         helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, civilian),
                 "ordinary wandering yields to the movement order");
         helper.succeedWhen(() -> {
@@ -55,6 +75,11 @@ public final class SettlementMoveGameTests {
             SettlementMoveService.tick(civilian);
             SettlementMoveService.tick(worker);
             helper.assertFalse(SettlementMoveService.controls(civilian) || SettlementMoveService.controls(worker), "arrival releases movement control");
+            helper.assertTrue(SettlementMoveService.destination(civilian) == null && SettlementMoveService.destination(worker) == null,
+                    "arrival removes both destinations");
+            helper.assertTrue(SettlementManagementService.overview(fixture.player(), fixture.town()).get(page).stream()
+                    .map(com.jvn.villagerretaliation.network.SettlementManagementPayload.Resident.class::cast)
+                    .allMatch(row -> row.moveDestination() == null), "refreshed snapshots clear completed markers");
             helper.assertValueEqual(fixture.town().duties().get(worker.getUUID()), area.id(), "movement preserves the farm assignment");
             civilian.discard();
             worker.discard();
@@ -88,6 +113,7 @@ public final class SettlementMoveGameTests {
             helper.assertValueEqual(SettlementViewCommands.apply(session, request, target).status(), Status.APPLIED, "validated batch routes a civilian movement order");
             villager.igniteForSeconds(3);
             helper.assertFalse(SettlementMoveService.controls(villager), "danger immediately releases the vanilla brain");
+            helper.assertTrue(SettlementMoveService.destination(villager) == null, "interrupted orders no longer advertise a target");
             var escape = new net.minecraft.world.entity.ai.memory.WalkTarget(fixture.base().west(), 1.0F, 1);
             villager.getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET, escape);
             helper.assertFalse(SettlementMoveService.tick(villager), "danger cancels movement without blocking emergency behavior");
@@ -100,6 +126,7 @@ public final class SettlementMoveGameTests {
             helper.assertTrue(town.putArea(fixture.player().getUUID(), reassigned), "new assignment area exists");
             helper.assertTrue(town.assignDuty(villager.getUUID(), reassigned.id()), "assignment changes during movement");
             helper.assertFalse(SettlementMoveService.tick(villager), "changed assignments cancel movement orders");
+            helper.assertTrue(SettlementMoveService.destination(villager) == null, "cancelled movement clears the destination");
         } finally {
             SettlementMoveService.clear(villager);
             villager.discard();
