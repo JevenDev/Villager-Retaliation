@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
+import com.jvn.villagerretaliation.allegiance.VillageOpinion;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,8 @@ public record VillageOverviewPayload(
         int workstations,
         int trusted,
         int required,
-        List<Resident> residents) implements CustomPacketPayload {
+        List<Resident> residents,
+        VillageOpinion opinion) implements CustomPacketPayload {
     public static final int MAX_RESIDENTS = 128;
     public static final int MAX_RESIDENT_NAME_LENGTH = 64;
     public static final Type<VillageOverviewPayload> TYPE = VillagerPayloads.type("village_overview");
@@ -54,6 +56,8 @@ public record VillageOverviewPayload(
         buffer.writeVarInt(payload.workstations());
         buffer.writeVarInt(payload.trusted());
         buffer.writeVarInt(payload.required());
+        buffer.writeDouble(payload.opinion().score());
+        buffer.writeEnum(payload.opinion().level());
         buffer.writeVarInt(payload.residents().size());
         for (Resident resident : payload.residents()) {
             buffer.writeUtf(resident.name(), MAX_RESIDENT_NAME_LENGTH);
@@ -79,6 +83,8 @@ public record VillageOverviewPayload(
         int workstations = buffer.readVarInt();
         int trusted = buffer.readVarInt();
         int required = buffer.readVarInt();
+        var opinion = new VillageOpinion(
+                buffer.readDouble(), buffer.readEnum(VillagerReputationLevel.class));
         int count = VillagerPayloads.readCollectionSize(buffer, MAX_RESIDENTS, "village residents");
         List<Resident> residents = new ArrayList<>(count);
         for (int index = 0; index < count; index++) {
@@ -87,7 +93,7 @@ public record VillageOverviewPayload(
                     buffer.readEnum(VillagerReputationLevel.class), buffer.readBlockPos()));
         }
         return new VillageOverviewPayload(anchor, dimension, openScreen, name, lifecycle, adults, children,
-                present, beds, freeBeds, workstations, trusted, required, residents);
+                present, beds, freeBeds, workstations, trusted, required, residents, opinion);
     }
 
     @Override

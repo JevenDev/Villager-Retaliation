@@ -81,6 +81,7 @@ public final class VillageOverviewScreen extends Screen {
             this.summaryLines.addAll(this.font.split(population(), this.panelWidth));
             this.summaryLines.addAll(this.font.split(facilities(), this.panelWidth));
             this.summaryLines.addAll(this.font.split(standing(), this.panelWidth));
+            this.summaryLines.addAll(this.font.split(VillageEntryOverlay.opinionText(this.snapshot.opinion()), this.panelWidth));
             if (this.snapshot.adults() + this.snapshot.children() > this.snapshot.residents().size()) {
                 this.summaryLines.addAll(this.font.split(text("partial_roster", this.snapshot.residents().size(),
                         this.snapshot.adults() + this.snapshot.children()), this.panelWidth));
@@ -328,7 +329,8 @@ public final class VillageOverviewScreen extends Screen {
             return message.append(". ").append(visibleText.toString());
         }
         message.append(". ").append(this.snapshot.name()).append(". ").append(population())
-                .append(". ").append(facilities()).append(". ").append(standing());
+                .append(". ").append(facilities()).append(". ").append(standing())
+                .append(". ").append(VillageEntryOverlay.opinionText(this.snapshot.opinion()));
         int start = this.page * pageSize();
         for (int index = start; index < Math.min(start + pageSize(), this.filtered.size()); index++) {
             message.append(". ").append(residentLine(this.filtered.get(index)))

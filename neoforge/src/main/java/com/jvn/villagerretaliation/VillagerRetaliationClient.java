@@ -68,6 +68,9 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationHoverTooltipOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageEntryOverlay::onRenderGuiLayer);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageEntryOverlay::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageEntryOverlay::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay::onLoggingOut);
