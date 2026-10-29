@@ -60,6 +60,7 @@ final class SettlementConstructionCoordination {
     private static boolean acquire(SettlementProject project, UUID worker, BuilderStructureScanner.StructurePlan plan,
                                    LevelReader view, int index, long now) {
         if (project.wallConstruction() != null && !project.wallConstruction().available(index, project.crew())) return false;
+        if (project.order() != null && !project.order().available(index, project.crew())) return false;
         var group = BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().get(index));
         for (var part : group.parts()) {
             if (!view.hasChunkAt(part.worldPos())) return false;
@@ -67,7 +68,8 @@ final class SettlementConstructionCoordination {
             var current = view.getBlockState(part.worldPos());
             if (BuilderStructureScanner.sameSchematicState(current, part.block().state())
                     || BuilderStructureScanner.canTransformExisting(current, part.block().state())) continue;
-            if (!BuilderSitePlanner.safeReplaceable(view, part.worldPos(), current)
+            if ((part.block().replacedState() != null ? !part.block().approvedReplacement(current)
+                    : !BuilderSitePlanner.safeReplaceable(view, part.worldPos(), current))
                     || part == group.materialPart() && !part.block().state().canSurvive(view, part.worldPos())) return false;
         }
         return project.crew().acquire(worker, index, positions(group), now);

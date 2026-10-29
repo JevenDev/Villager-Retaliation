@@ -75,8 +75,13 @@ final class SettlementWallUpgrade {
         return SettlementWallMaterials.upgradeCost(this.pieces, preview);
     }
 
+    List<SettlementWallsSavedData.Entry> originals() { return List.copyOf(this.pieces.keySet()); }
+
     void record(ServerLevel level, SettlementWallTerrain.Preview preview) {
-        var data = SettlementWallsSavedData.get(level);
+        SettlementWallsSavedData.get(level).replace(replacements(preview));
+    }
+
+    List<SettlementWallsSavedData.Entry> replacements(SettlementWallTerrain.Preview preview) {
         var replacements = new java.util.ArrayList<SettlementWallsSavedData.Entry>();
         for (var entry : this.pieces.entrySet()) {
             var old = entry.getKey();
@@ -86,7 +91,7 @@ final class SettlementWallUpgrade {
                     .forEach(cell -> blocks.put(cell.position(), cell.target()));
             replacements.add(new SettlementWallsSavedData.Entry(old.id(), old.group(), old.town(), old.dimension(), entry.getValue(), blocks));
         }
-        data.replace(replacements);
+        return List.copyOf(replacements);
     }
 
     static List<SettlementWallTerrain.Cell> pieceCells(SettlementWall wall, SettlementWallTerrain.Preview preview) {

@@ -107,6 +107,7 @@ public final class SettlementConstructionService {
     }
 
     static BuilderStructureScanner.StructurePlan scan(ServerLevel level, SettlementProject project) {
+        if (project.order() != null) return project.order().plan(project.id());
         return project.wallConstruction() == null ? scan(level, project.structure(), project.rotation()) : project.wallConstruction().plan(project.id());
     }
 
@@ -128,6 +129,9 @@ public final class SettlementConstructionService {
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
                 .filter(project -> project.wallConstruction() != null)
                 .forEach(project -> project.wallConstruction().record(level, town, project));
+        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
+                .filter(project -> project.order() != null)
+                .forEach(project -> project.order().record(level, town, project));
         int active = (int) town.projects().values().stream().filter(SettlementProject::active).count();
         for (var project : List.copyOf(town.projects().values())) {
             if (!project.pending()) continue;
@@ -188,6 +192,7 @@ public final class SettlementConstructionService {
     }
 
     private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {
+        if (project.order() != null) return project.order().protectedSite(level, town);
         if (project.wallConstruction() != null) return project.wallConstruction().protectedSite(level, town);
         if(project.repairOf()!=null) return !AutonomousVillageMaintenance.safe(level,town,project);
         var footprint = new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)));

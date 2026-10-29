@@ -172,7 +172,7 @@ public final class SettlementConstructionMaterials {
         for (var depot : slots.entrySet()) for (var slot : depot.getValue().entrySet()) depot.getKey().removeItem(slot.getKey(), slot.getValue());
         ledger.putInt("Version", 1);
         ledger.putBoolean("Reserved", true);
-        ledger.putBoolean("Simplified", plan.entry().constructionCost().mode() == BuilderConstructionCost.Mode.SIMPLIFIED);
+        ledger.putBoolean("Simplified", plan.entry().constructionCost().mode() != BuilderConstructionCost.Mode.EXACT);
         ledger.putInt("TotalUnits", plan.blocks().size());
         ledger.putInt("Units", 0);
         ledger.put("Quote", quote);

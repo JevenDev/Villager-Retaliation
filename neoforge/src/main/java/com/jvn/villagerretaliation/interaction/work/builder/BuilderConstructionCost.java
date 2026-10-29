@@ -16,6 +16,7 @@ import net.minecraft.world.item.Items;
 /** The bill for a complete authored template. Payment never changes its block palette. */
 public record BuilderConstructionCost(Mode mode, List<Ingredient> ingredients) {
     public static final BuilderConstructionCost EXACT = new BuilderConstructionCost(Mode.EXACT, List.of());
+    public static final BuilderConstructionCost LABOR = new BuilderConstructionCost(Mode.LABOR, List.of());
     public static final int MAX_INGREDIENTS = 256;
     public static final int MAX_COUNT = 1_000_000;
 
@@ -27,14 +28,14 @@ public record BuilderConstructionCost(Mode mode, List<Ingredient> ingredients) {
         if (mode == Mode.SIMPLIFIED && ingredients.isEmpty()) {
             throw new IllegalArgumentException("Simplified construction costs must not be empty");
         }
-        if (mode == Mode.EXACT && !ingredients.isEmpty()) {
+        if (mode != Mode.SIMPLIFIED && !ingredients.isEmpty()) {
             throw new IllegalArgumentException("Exact costs are derived from the template");
         }
     }
 
     public static List<Ingredient> requirements(BuilderStructureScanner.StructurePlan plan) {
         BuilderConstructionCost cost = plan.entry().constructionCost();
-        if (cost.mode() == Mode.SIMPLIFIED) return cost.ingredients();
+        if (cost.mode() != Mode.EXACT) return cost.ingredients();
         return plan.materials().stream().map(material -> new Ingredient(
                 BuiltInRegistries.ITEM.getKey(material.item().getItem()), false, material.count())).toList();
     }
@@ -57,6 +58,7 @@ public record BuilderConstructionCost(Mode mode, List<Ingredient> ingredients) {
         } catch (RuntimeException exception) {
             throw new IllegalArgumentException("Unknown construction cost mode", exception);
         }
+        if (mode == Mode.LABOR) throw new IllegalArgumentException("Labor costs are reserved for approved construction orders");
         if (mode == Mode.EXACT) {
             if (json.has("materials")) throw new IllegalArgumentException("Exact costs cannot override materials");
             return EXACT;
@@ -103,7 +105,7 @@ public record BuilderConstructionCost(Mode mode, List<Ingredient> ingredients) {
         return new BuilderConstructionCost(mode, ingredients);
     }
 
-    public enum Mode { EXACT, SIMPLIFIED }
+    public enum Mode { EXACT, SIMPLIFIED, LABOR }
 
     public record Ingredient(ResourceLocation id, boolean tag, int count) {
         public Ingredient {

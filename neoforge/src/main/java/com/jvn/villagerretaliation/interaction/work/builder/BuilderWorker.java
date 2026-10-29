@@ -278,9 +278,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
 
         for (PlacementPart part : placementGroup.parts()) {
-            BuilderSitePlanner.PlacementCheck placementCheck = part == placementGroup.materialPart()
-                    ? BuilderSitePlanner.canPlaceAt(level, villager, part.worldPos(), part.block().state())
-                    : BuilderSitePlanner.canReserveAt(level, villager, part.worldPos(), part.block().state());
+            BuilderSitePlanner.PlacementCheck placementCheck = BuilderSitePlanner.placementCheck(
+                    level, villager, part.worldPos(), part.block(), part == placementGroup.materialPart());
             if (!placementCheck.valid()) {
                 BuilderTaskState.setBlocked(context.state(), placementCheck.statusKey());
                 HiredWorkerBrain.setFailure(context, placementCheck.statusKey(), level.getGameTime() + 100L);
@@ -2146,7 +2145,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     private List<PlacementPart> placementObstructions(ServerLevel level, PlacementGroup group) {
         List<PlacementPart> obstructions = new ArrayList<>();
         for (PlacementPart part : group.parts()) {
-            if (BuilderSitePlanner.requiresClearingBeforePlacement(level, part.worldPos(), part.block().state())) {
+            if (part.block().replacedState() == null && BuilderSitePlanner.requiresClearingBeforePlacement(level, part.worldPos(), part.block().state())) {
                 obstructions.add(part);
             }
         }

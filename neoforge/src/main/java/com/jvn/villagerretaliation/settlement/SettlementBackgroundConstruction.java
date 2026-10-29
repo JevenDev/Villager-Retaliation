@@ -96,7 +96,8 @@ final class SettlementBackgroundConstruction {
             for (var block : plan.siteBlocks(view, project.origin())) {
                 var pos = plan.worldPos(project.origin(), block);
                 var current = site.getBlockState(pos);
-                if (!BuilderStructureScanner.sameSchematicState(current, block.state())
+                if (block.replacedState() != null ? !block.approvedReplacement(current)
+                        : !BuilderStructureScanner.sameSchematicState(current, block.state())
                         && !BuilderStructureScanner.canTransformExisting(current, block.state())
                         && !BuilderSitePlanner.safeReplaceable(view, pos, current)
                         && !MiningBlockRules.isBuilderClearableObstruction(site, pos, current)) {
@@ -154,7 +155,8 @@ final class SettlementBackgroundConstruction {
                 for (var part : group.parts()) {
                     var current = site.getBlockState(part.worldPos());
                     if (BuilderStructureScanner.sameSchematicState(current, part.block().state())) continue;
-                    if (!BuilderSitePlanner.safeReplaceable(view, part.worldPos(), current)
+                    if (part.block().replacedState() != null ? !part.block().approvedReplacement(current)
+                            : !BuilderSitePlanner.safeReplaceable(view, part.worldPos(), current)
                             && !BuilderStructureScanner.canTransformExisting(current, part.block().state())) {
                         blocked(worker, "construction_blocked_existing", "blocked_existing");
                         return;
@@ -243,7 +245,7 @@ final class SettlementBackgroundConstruction {
         for (var block : plan.siteBlocks(view, project.origin())) {
             var pos = plan.worldPos(project.origin(), block);
             var current = site.getBlockState(pos);
-            if (!BuilderStructureScanner.sameSchematicState(current, block.state())
+            if (block.replacedState() == null && !BuilderStructureScanner.sameSchematicState(current, block.state())
                     && !BuilderStructureScanner.canTransformExisting(current, block.state())
                     && !BuilderSitePlanner.safeReplaceable(view, pos, current)
                     && MiningBlockRules.isBuilderClearableObstruction(site, pos, current)) positions.add(pos);

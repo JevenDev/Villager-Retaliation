@@ -148,6 +148,21 @@ public final class SettlementWallTerrain {
                 .stream().map(net.minecraft.world.entity.Entity::getBoundingBox).toList();
     }
 
+    public static Preview repair(Level level, Map<BlockPos, BlockState> blocks, Predicate<BlockPos> allowed) {
+        var cells = new ArrayList<Cell>();
+        for (var entry : blocks.entrySet()) {
+            var pos = entry.getKey();
+            if (!allowed.test(pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos))
+                return new Preview(List.of(), "Keep the repair inside the settlement");
+            if (!level.hasChunkAt(pos)) return new Preview(List.of(), "Load the whole wall before repairing");
+            var before = level.getBlockState(pos);
+            if (level.getBlockEntity(pos) != null || !before.equals(entry.getValue()) && !before.isAir())
+                return new Preview(List.of(), "Remove conflicting edits before repairing this wall");
+            cells.add(new Cell(pos, entry.getValue(), before, null, before.equals(entry.getValue()) ? Kind.EXISTING : Kind.PLACE));
+        }
+        return new Preview(List.copyOf(cells), cells.stream().noneMatch(cell -> cell.kind() == Kind.PLACE) ? "This wall needs no repairs" : "");
+    }
+
     public static Preview demolition(Level level, Map<BlockPos, BlockState> blocks, Predicate<BlockPos> allowed) {
         var cells = new ArrayList<Cell>();
         for (var entry : blocks.entrySet()) {

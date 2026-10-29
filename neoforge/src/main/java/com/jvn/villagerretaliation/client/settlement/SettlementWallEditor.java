@@ -38,6 +38,9 @@ public final class SettlementWallEditor {
     private boolean confirming;
     private boolean pickingUpgrade;
     private boolean destroying;
+    private boolean repairing;
+    public boolean repairing() { return this.repairing; }
+    public void beginRepair() { beginUpgrade(); this.repairing = true; }
     private UUID upgrade = EMPTY;
     private java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> replaced = java.util.Map.of();
     private String feedback = "";
@@ -53,7 +56,7 @@ public final class SettlementWallEditor {
     public void selectUpgrade(UUID session, BlockPos position, Consumer<SettlementWallRequestPayload> send) {
         if (!this.pickingUpgrade || this.confirming) return;
         this.version = this.draft.version();
-        send(new SettlementWallRequestPayload(session, ++this.revision, this.destroying ? SettlementWallRequestPayload.Action.SELECT_DESTROY : SettlementWallRequestPayload.Action.SELECT_UPGRADE,
+        send(new SettlementWallRequestPayload(session, ++this.revision, this.destroying ? SettlementWallRequestPayload.Action.SELECT_DESTROY : this.repairing ? SettlementWallRequestPayload.Action.SELECT_REPAIR : SettlementWallRequestPayload.Action.SELECT_UPGRADE,
                 EMPTY, null, EMPTY, position), send);
     }
     public boolean confirming() { return this.confirming; }
@@ -76,7 +79,7 @@ public final class SettlementWallEditor {
     }
     private void clearPreview() {
         this.pending = null; this.result = null; this.shown = null; this.hover = null;
-        this.upgrade = EMPTY; this.replaced = java.util.Map.of(); this.pickingUpgrade = false; this.destroying = false;
+        this.upgrade = EMPTY; this.replaced = java.util.Map.of(); this.pickingUpgrade = false; this.destroying = false; this.repairing = false;
         this.cells = List.of(); this.ghost = null; this.feedback = "";
         this.planned = null; this.plan = null; this.towerNodes = List.of();
     }
@@ -111,7 +114,8 @@ public final class SettlementWallEditor {
                     cells = this.result.cells();
                     this.feedback = this.result.message();
                 } else {
-                    var preview = this.destroying ? SettlementWallTerrain.demolition(level, this.replaced, allowed)
+                    var preview = this.repairing ? SettlementWallTerrain.repair(level, this.replaced, allowed)
+                            : this.destroying ? SettlementWallTerrain.demolition(level, this.replaced, allowed)
                             : SettlementWallTerrain.preview(level, shown, allowed, this.replaced, this.plan);
                     cells = preview.cells().stream().map(cell ->
                             new SettlementWallResultPayload.Cell(cell.position(), cell.target(), cell.kind())).toList();
@@ -174,10 +178,12 @@ public final class SettlementWallEditor {
         if (result.status() == SettlementWallResultPayload.Status.APPLIED) {
             boolean repeat = editingPlaced();
             boolean destroy = this.destroying;
+            boolean repair = this.repairing;
             rememberSettings(); this.draft = null; clearPreview();
             if (repeat) {
                 this.revision++;
                 if (destroy) beginDestroy();
+                else if (repair) beginRepair();
                 else beginUpgrade();
             }
             return true;
@@ -186,20 +192,20 @@ public final class SettlementWallEditor {
     }
     public String hint() {
         if (!active()) return this.feedback;
-        if (this.confirming) return this.destroying ? "Destroying wall piece..." : upgrading() ? "Upgrading wall..." : "Placing wall...";
-        if (this.pickingUpgrade) return this.feedback.isEmpty() ? "Click a placed wall piece to " + (this.destroying ? "destroy" : "upgrade") + ". Cancel exits." : this.feedback;
+        if (this.confirming) return "Queueing wall work...";
+        if (this.pickingUpgrade) return this.feedback.isEmpty() ? "Click a placed wall piece to " + (this.destroying ? "destroy" : this.repairing ? "repair" : "upgrade") + ". Cancel exits." : this.feedback;
         if (this.destroying) return "Destroy wall piece / " + this.cells.stream().filter(cell -> cell.kind() == SettlementWallTerrain.Kind.PLACE).count()
-                + " blocks / No item drops\n" + (this.feedback.isEmpty() ? "Red outlines mark removal. Replacement blocks are preserved. Confirm destroy applies." : this.feedback);
+                + " blocks / No item drops\n" + (this.feedback.isEmpty() ? "Red outlines mark removal. Replacement blocks are preserved. Confirm queues demolition." : this.feedback);
         String placementFeedback = this.feedback;
         if (placementFeedback.isEmpty() && this.result != null && this.result.status() == SettlementWallResultPayload.Status.PREVIEW)
             placementFeedback = this.result.message();
         long blocks = this.cells.stream().filter(cell -> !cell.state().isAir() && cell.kind() == SettlementWallTerrain.Kind.PLACE).count();
         long skipped = this.cells.stream().filter(cell -> cell.kind() == SettlementWallTerrain.Kind.SKIPPED).count();
-        return (upgrading() ? "Upgrade / " : "") + this.draft.wall().type().label() + " / " + blocks + " blocks"
-                + (skipped > 0 ? " / " + skipped + " skipped" : "") + " / Instant placement\n"
+        return (this.repairing ? "Repair / " : upgrading() ? "Upgrade / " : "") + this.draft.wall().type().label() + " / " + blocks + " blocks"
+                + (skipped > 0 ? " / " + skipped + " skipped" : "") + " / Builder construction\n"
                 + (!placementFeedback.isEmpty() ? placementFeedback : this.draft.wall().nodes().isEmpty() ? "Click ground to place the first tower."
-                : upgrading() ? "Choose a type or select a node for tower options. Red outlines mark removals. Confirm upgrade applies."
-                : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm places it. Cancel discards."
+                : upgrading() ? "Choose a type or select a node for tower options. Red outlines mark removals. Confirm queues the upgrade."
+                : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm queues it. Cancel discards."
                 : "Click adds a node. Snap to draft nodes to connect. Escape stops drawing so nodes can be edited.");
     }
 }

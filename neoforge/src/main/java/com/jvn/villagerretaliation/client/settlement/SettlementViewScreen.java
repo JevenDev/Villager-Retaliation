@@ -1560,7 +1560,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             var button = this.wallButtons.get(i);
             button.visible = this.walls.active() && i < 7
                     && (!this.walls.pickingUpgrade() || i == 6)
-                    && (!this.walls.destroying() || i >= 4)
+                    && (!(this.walls.destroying() || this.walls.repairing()) || i >= 4)
                     && (!this.walls.editingPlaced() || i != 1);
             button.active = this.walls.active() && !this.walls.confirming() && !this.walls.draft().dragging();
             if (!this.walls.active()) continue;
@@ -1577,8 +1577,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (i == 15) button.setMessage(Component.literal(draft.snapping() ? "Snap: on" : "Snap: off"));
             if (this.walls.editingPlaced() && (i == 1 || i == 7 || i == 8 || i == 9 || i == 11 || i == 12 || i == 13 || i == 15
                     || i == 14 && draft.wall().part() != com.jvn.villagerretaliation.settlement.SettlementWall.Part.TOWER)) button.active = false;
-            if (this.walls.pickingUpgrade() && i != 6 || this.walls.destroying() && i != 4 && i != 5 && i != 6 && i != 10) button.active = false;
-            if (i == 5) button.setMessage(Component.literal(this.walls.destroying() ? "Confirm destroy" : this.walls.upgrading() ? "Confirm upgrade" : "Confirm"));
+            if (this.walls.pickingUpgrade() && i != 6 || (this.walls.destroying() || this.walls.repairing()) && i != 4 && i != 5 && i != 6 && i != 10) button.active = false;
+            if (i == 5) button.setMessage(Component.literal(this.walls.destroying() ? "Confirm destroy" : this.walls.repairing() ? "Confirm repair" : this.walls.upgrading() ? "Confirm upgrade" : "Confirm"));
             if (i == 8) {
                 button.setMessage(Component.literal(draft.wall().closed() ? "Open loop" : "Close loop"));
                 button.active &= draft.wall().nodes().size() >= 3;
@@ -3459,6 +3459,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 actions.add(buildAction(Component.literal("Wall"), unavailable, this::beginWall));
                 actions.add(buildAction(Component.literal("Upgrade wall"), unavailable, () -> {
                     beginWall(); this.walls.beginUpgrade(); updateWallButtons();
+                }));
+                actions.add(buildAction(Component.literal("Repair wall"), unavailable, () -> {
+                    beginWall(); this.walls.beginRepair(); updateWallButtons();
                 }));
                 actions.add(buildAction(Component.literal("Destroy wall"), unavailable, () -> {
                     beginWall(); this.walls.beginDestroy(); updateWallButtons();

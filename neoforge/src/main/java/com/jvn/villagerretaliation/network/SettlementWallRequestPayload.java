@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record SettlementWallRequestPayload(UUID session, long revision, Action action, UUID token, SettlementWall wall, UUID upgrade, BlockPos pick)
         implements CustomPacketPayload {
-    public enum Action { PREVIEW, CONFIRM, CANCEL, SELECT_UPGRADE, SELECT_DESTROY, PREVIEW_DESTROY }
+    public enum Action { PREVIEW, CONFIRM, CANCEL, SELECT_UPGRADE, SELECT_DESTROY, PREVIEW_DESTROY, SELECT_REPAIR }
     public static final UUID NONE = new UUID(0, 0);
     public SettlementWallRequestPayload(UUID session, long revision, Action action, UUID token, SettlementWall wall) {
         this(session, revision, action, token, wall, NONE, BlockPos.ZERO);
@@ -22,7 +22,7 @@ public record SettlementWallRequestPayload(UUID session, long revision, Action a
         b.writeEnum(p.action());
         b.writeUUID(p.token());
         b.writeUUID(p.upgrade());
-        if (p.action() == Action.SELECT_UPGRADE || p.action() == Action.SELECT_DESTROY) b.writeBlockPos(p.pick());
+        if (p.action() == Action.SELECT_UPGRADE || p.action() == Action.SELECT_DESTROY || p.action() == Action.SELECT_REPAIR) b.writeBlockPos(p.pick());
         if (p.action() == Action.PREVIEW) writeWall(b, p.wall());
     }, b -> {
         var session = b.readUUID();
@@ -30,7 +30,7 @@ public record SettlementWallRequestPayload(UUID session, long revision, Action a
         var action = b.readEnum(Action.class);
         var token = b.readUUID();
         var upgrade = b.readUUID();
-        var pick = action == Action.SELECT_UPGRADE || action == Action.SELECT_DESTROY ? b.readBlockPos() : BlockPos.ZERO;
+        var pick = action == Action.SELECT_UPGRADE || action == Action.SELECT_DESTROY || action == Action.SELECT_REPAIR ? b.readBlockPos() : BlockPos.ZERO;
         SettlementWall wall = action == Action.PREVIEW ? readWall(b) : null;
         return new SettlementWallRequestPayload(session, revision, action, token, wall, upgrade, pick);
     });

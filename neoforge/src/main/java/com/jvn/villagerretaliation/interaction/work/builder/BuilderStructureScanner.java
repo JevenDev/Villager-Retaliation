@@ -95,6 +95,7 @@ public final class BuilderStructureScanner {
             fingerprintPosition(digest, block.localPos());
             fingerprintTag(digest, NbtUtils.writeBlockState(block.state()));
             fingerprintPart(digest, block.toolAction().name());
+            if (block.replacedState() != null) fingerprintTag(digest, NbtUtils.writeBlockState(block.replacedState()));
             fingerprintTag(digest, sanitizeBlockEntityTag(block.state(), block.blockEntityTag()));
         }
     }
@@ -672,7 +673,18 @@ public final class BuilderStructureScanner {
             BlockState state,
             CompoundTag blockEntityTag,
             ItemStack requiredItem,
-            BuilderToolAction toolAction) {
+            BuilderToolAction toolAction,
+            BlockState replacedState) {
+        public BuildBlock(BlockPos localPos, BlockState state, CompoundTag blockEntityTag,
+                          ItemStack requiredItem, BuilderToolAction toolAction) {
+            this(localPos, state, blockEntityTag, requiredItem, toolAction, null);
+        }
+
+        public boolean approvedReplacement(BlockState current) {
+            return this.replacedState != null && !current.hasBlockEntity()
+                    && (current.equals(this.replacedState) || current.equals(this.state) || current.isAir());
+        }
+
         public boolean requiresMaterial() {
             return !this.requiredItem.isEmpty();
         }

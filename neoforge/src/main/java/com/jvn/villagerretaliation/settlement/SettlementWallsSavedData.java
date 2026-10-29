@@ -38,6 +38,16 @@ public final class SettlementWallsSavedData extends SavedData {
         return data;
     }
 
+    static CompoundTag encode(java.util.List<Entry> entries) {
+        var data = new SettlementWallsSavedData();
+        data.replace(entries);
+        return data.save(new CompoundTag(), null);
+    }
+
+    static java.util.List<Entry> decode(CompoundTag tag) {
+        return java.util.List.copyOf(load(tag, null).walls.values());
+    }
+
     public boolean readOnly() { return this.readOnly; }
     public Entry get(UUID id) { return this.walls.get(id); }
     boolean hasGroup(UUID id) { return this.walls.values().stream().anyMatch(entry -> entry.group().equals(id)); }

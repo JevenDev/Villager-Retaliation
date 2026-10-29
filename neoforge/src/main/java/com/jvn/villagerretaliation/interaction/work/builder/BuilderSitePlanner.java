@@ -47,7 +47,7 @@ public final class BuilderSitePlanner {
             if (level.getBlockEntity(worldPos) != null || player != null && !level.mayInteract(player, worldPos)) {
                 return SiteResult.failed("interaction.work.builder.blocked_existing", worldPos);
             }
-            PlacementCheck check = canReserveStartedAt(level, worldPos, block.state());
+            PlacementCheck check = placementCheck(level, null, worldPos, block, false);
             if (!check.valid()) {
                 return SiteResult.failed(check.statusKey(), worldPos);
             }
@@ -68,7 +68,7 @@ public final class BuilderSitePlanner {
             if (!level.hasChunkAt(worldPos)) {
                 return SiteResult.failed("interaction.work.builder.site_unloaded", worldPos);
             }
-            PlacementCheck check = canReserveStartedAt(level, worldPos, block.state());
+            PlacementCheck check = placementCheck(level, null, worldPos, block, false);
             if (!check.valid()) {
                 return SiteResult.failed(check.statusKey(), worldPos);
             }
@@ -80,8 +80,17 @@ public final class BuilderSitePlanner {
         return placementCheck(level, villager, pos, targetState, false);
     }
 
-    private static PlacementCheck canReserveStartedAt(ServerLevel level, BlockPos pos, BlockState targetState) {
-        return placementCheck(level, null, pos, targetState, false);
+    public static PlacementCheck placementCheck(ServerLevel level, Villager villager, BlockPos pos,
+                                                BuilderStructureScanner.BuildBlock block, boolean support) {
+        if (block.replacedState() == null) return placementCheck(level, villager, pos, block.state(), support);
+        if (!level.hasChunkAt(pos)) return PlacementCheck.failed("interaction.work.builder.site_unloaded");
+        if (!block.approvedReplacement(level.getBlockState(pos)) || level.getBlockEntity(pos) != null)
+            return PlacementCheck.failed("interaction.work.builder.blocked_existing");
+        if (support && !block.state().canSurvive(level, pos))
+            return PlacementCheck.failed("interaction.work.builder.blocked_support");
+        if (villager != null && !block.state().getCollisionShape(level, pos).isEmpty() && hasBlockingEntity(level, villager, pos))
+            return PlacementCheck.failed("interaction.work.builder.blocked_entity");
+        return PlacementCheck.success();
     }
 
     public static PlacementCheck canPlaceAt(ServerLevel level, Villager villager, BlockPos pos, BlockState targetState) {
