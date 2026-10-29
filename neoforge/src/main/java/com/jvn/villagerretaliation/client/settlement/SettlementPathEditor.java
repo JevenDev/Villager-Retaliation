@@ -212,6 +212,18 @@ public final class SettlementPathEditor {
         }
         return false;
     }
+    String requirements() {
+        return this.result != null && this.result.status() == SettlementPathResultPayload.Status.PREVIEW && !this.result.message().isBlank()
+                ? this.result.message().replace("Confirm queues builder work. ", "") : "Awaiting validated requirements";
+    }
+
+    String placementStatus() {
+        if (confirming()) return "Submitting builder work...";
+        if (canConfirm()) return "Valid placement: Confirm requests queued builder work";
+        if (this.result != null && this.result.status() == SettlementPathResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
+        return "Finish the draft, then wait for validation";
+    }
+
     public String hint() {
         if (!active()) return this.feedback;
         if (this.confirming) return "Confirming path placement...";

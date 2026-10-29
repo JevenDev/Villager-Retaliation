@@ -47,6 +47,9 @@ public final class SettlementViewPreferences {
     public boolean hints = true;
     public boolean workOverlay;
     public boolean issueOverlay;
+    public boolean constructionOverlay;
+    public boolean structurePreviews;
+    public boolean logisticsOverlay;
     public float height = 32;
     public float yaw = 45;
     public List<List<UUID>> groups = java.util.Collections.nCopies(9, List.of());
@@ -63,6 +66,9 @@ public final class SettlementViewPreferences {
             boolean hints = bool(values, "hints", true);
             boolean work = bool(values, "work", false);
             boolean issues = bool(values, "issues", false);
+            boolean construction = bool(values, "construction", false);
+            boolean previews = bool(values, "structurePreviews", false);
+            boolean logistics = bool(values, "logistics", false);
             float height = Float.parseFloat(values.getProperty("height", "32"));
             float yaw = Float.parseFloat(values.getProperty("yaw", "45"));
             if (!Float.isFinite(height) || !Float.isFinite(yaw)) throw new IllegalArgumentException("Invalid camera preferences");
@@ -100,6 +106,9 @@ public final class SettlementViewPreferences {
             this.hints = hints;
             this.workOverlay = work;
             this.issueOverlay = issues;
+            this.constructionOverlay = construction;
+            this.structurePreviews = previews;
+            this.logisticsOverlay = logistics;
             this.height = Math.clamp(height, SettlementViewWindow.MIN_HEIGHT, SettlementViewWindow.MAX_HEIGHT);
             this.yaw = (yaw % 360 + 360) % 360;
             this.groups = List.copyOf(groups);
@@ -178,6 +187,9 @@ public final class SettlementViewPreferences {
         values.setProperty("hints", Boolean.toString(this.hints));
         values.setProperty("work", Boolean.toString(this.workOverlay));
         values.setProperty("issues", Boolean.toString(this.issueOverlay));
+        values.setProperty("construction", Boolean.toString(this.constructionOverlay));
+        values.setProperty("structurePreviews", Boolean.toString(this.structurePreviews));
+        values.setProperty("logistics", Boolean.toString(this.logisticsOverlay));
         values.setProperty("height", Float.toString(this.height));
         values.setProperty("yaw", Float.toString(this.yaw));
         for (int i = 0; i < 9; i++) values.setProperty("group." + i,

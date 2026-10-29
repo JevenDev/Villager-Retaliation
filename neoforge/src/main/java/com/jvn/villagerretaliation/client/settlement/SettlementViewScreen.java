@@ -64,7 +64,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
     private final SettlementPanelFade panelFade = new SettlementPanelFade();
     private final SettlementBuildOverlay buildOverlay = new SettlementBuildOverlay();
+    private final SettlementConstructionOverlay constructionOverlay = new SettlementConstructionOverlay();
     private Button hintToggle;
+    private List<Component> placementSummary = List.of();
+    private long nextPlacementSummary;
     private final SettlementMapMarkers mapMarkers = new SettlementMapMarkers();
     private final SettlementViewEntities frameEntities = new SettlementViewEntities();
     private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
@@ -439,7 +442,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 net.minecraft.world.item.Items.FILLED_MAP, false, () -> this.interaction.is(Mode.SELECT_PLOT), this::togglePlots));
         this.overlayButton = addRenderableWidget(tool(Component.literal("Overlays"),
                 toolTop + (this.layout.railSize + 2) * 5, net.minecraft.world.item.Items.SPYGLASS, false,
-                () -> this.preferences.workOverlay || this.preferences.issueOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
+                () -> this.preferences.workOverlay || this.preferences.issueOverlay || this.preferences.constructionOverlay || this.preferences.logisticsOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
         addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
                 net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
@@ -483,7 +486,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         this.editingArea.priority(), this.editingArea.enabled(), this.editingArea.beds(), this.editingArea.fixtures(), this.editingArea.workers());
                 editArea(area);
             }
-        }));
+        }).shortcut("Enter"));
         this.changePrefab = addRenderableWidget(new SettlementBuildOverlay.ActionButton(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding()));
         this.cancelGizmo = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.translatable("gui.cancel"), ignored -> cancelGizmo()));
         this.hintToggle = addRenderableWidget(new SettlementViewUi.IconButton(Component.literal("Hide hints"), 6, this.height - 24, 18, 18,
@@ -753,6 +756,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.guardFeedback = Component.literal(this.commands.summary());
         }
         keepAlive();
+        this.constructionOverlay.tick(this.session, this.projects.values(), this.window, this.selectedArea, this.navigation.x(), this.navigation.z(),
+                this.preferences.constructionOverlay && this.preferences.structurePreviews && !buildMode());
         if (this.waitingRequestId >= 0 && now - this.waitingSince > 3_000L) {
             this.waitingRequestId = -1;
         }
@@ -874,6 +879,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.modeHint = hint;
         layoutBuildControls();
         renderChrome(graphics, mouseX, mouseY);
+        renderPlacementBlocker(graphics);
         if (this.boxDragging) {
             int left = (int) Math.min(this.boxX, this.boxEndX);
             int top = (int) Math.min(this.boxY, this.boxEndY);
@@ -995,6 +1001,42 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return buttons;
     }
 
+    private void renderPlacementBlocker(GuiGraphics graphics) {
+        BlockPos position = null;
+        String reason = "";
+        var building = this.parent.buildingDraft();
+        if (building != null && building.currentPreview() && !building.preview.failure().isBlank()) {
+            position = building.preview.blockers().isEmpty() ? building.anchor : building.preview.blockers().getFirst();
+            reason = SettlementPlacementSummary.failure(building.preview.failure());
+        } else if (this.walls.active()) {
+            var cell = this.walls.cells().stream().filter(value -> switch (value.kind()) { case BLOCKED, OUTSIDE, UNAVAILABLE -> true; default -> false; }).findFirst().orElse(null);
+            if (cell != null) { position = cell.position(); reason = cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.OUTSIDE ? "Outside owned land"
+                    : cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.UNAVAILABLE ? "Terrain not loaded" : "Blocked here"; }
+        } else if (this.paths.active()) {
+            var cell = this.paths.cells().stream().filter(value -> value.kind() == com.jvn.villagerretaliation.settlement.SettlementPathTerrain.Kind.OUTSIDE
+                    || value.kind() == com.jvn.villagerretaliation.settlement.SettlementPathTerrain.Kind.UNAVAILABLE).findFirst().orElse(null);
+            if (cell != null) { position = cell.position(); reason = cell.kind() == com.jvn.villagerretaliation.settlement.SettlementPathTerrain.Kind.OUTSIDE ? "Outside owned land" : "Terrain not loaded"; }
+        } else if (this.farms.active()) {
+            var cell = this.farms.cells().stream().filter(value -> value.kind() == com.jvn.villagerretaliation.settlement.SettlementFarmTerrain.Kind.OUTSIDE
+                    || value.kind() == com.jvn.villagerretaliation.settlement.SettlementFarmTerrain.Kind.UNAVAILABLE).findFirst().orElse(null);
+            if (cell != null) { position = cell.position(); reason = cell.kind() == com.jvn.villagerretaliation.settlement.SettlementFarmTerrain.Kind.OUTSIDE ? "Outside owned land" : "Terrain not loaded"; }
+        } else if (this.infrastructure.active()) {
+            var cell = this.infrastructure.cells().stream().filter(value -> value.kind() == com.jvn.villagerretaliation.settlement.SettlementInfrastructureTerrain.Kind.BLOCKED).findFirst().orElse(null);
+            if (cell != null) { position = cell.position(); reason = "Building, container or unsafe block"; }
+        }
+        if (position == null) return;
+        var point = project(Vec3.atCenterOf(position));
+        if (point == null || point[0] < 0 || point[0] > this.width || point[1] < SettlementViewLayout.HEADER_HEIGHT || point[1] > this.height) return;
+        int width = Math.min(220, this.width - 24);
+        var lines = this.font.split(Component.literal(reason + " (" + position.toShortString() + ")"), width);
+        int x = Math.clamp((int) point[0] + 12, 8, this.width - width - 8);
+        int y = Math.clamp((int) point[1] - 12 - lines.size() * this.font.lineHeight, SettlementViewLayout.HEADER_HEIGHT + 8,
+                Math.max(SettlementViewLayout.HEADER_HEIGHT + 8, this.height - lines.size() * this.font.lineHeight - 8));
+        if (this.buildOverlay.controls() != null && y + lines.size() * this.font.lineHeight >= this.buildOverlay.controls().top()) return;
+        TooltipRenderUtil.renderTooltipBackground(graphics, x, y, width, lines.size() * this.font.lineHeight, 0);
+        for (var line : lines) { graphics.drawString(this.font, line, x, y, 0xFFAAAA); y += this.font.lineHeight; }
+    }
+
     boolean buildMode() {
         return this.parent.buildingDraft() != null || this.paths.active() || this.walls.active() || this.farms.active() || this.infrastructure.active()
                 || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD;
@@ -1028,6 +1070,18 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.cancelGizmo})
                 if (button != null) widgets.add(button);
         }
+        var actions = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
+        if (this.infrastructure.active()) { actions.add(this.infrastructureButtons.get(0)); actions.add(this.infrastructureButtons.get(2)); }
+        else if (this.farms.active()) { actions.add(this.farmButtons.get(0)); actions.add(this.farmButtons.get(2)); }
+        else if (this.paths.active()) { actions.add(this.pathButtons.get(8)); actions.add(this.pathButtons.get(9)); }
+        else if (this.walls.active()) { actions.add(this.wallButtons.get(5)); actions.add(this.wallButtons.get(6)); }
+        else if (this.applyGizmo != null && this.cancelGizmo != null) { actions.add(this.applyGizmo); actions.add(this.cancelGizmo); }
+        long now = Util.getMillis();
+        if (!buildMode() || now >= this.nextPlacementSummary) {
+            this.placementSummary = SettlementPlacementSummary.describe(this.parent.buildingDraft(), this.walls, this.paths, this.farms, this.infrastructure);
+            this.nextPlacementSummary = now + 100;
+        }
+        this.buildOverlay.summary(this.placementSummary, actions);
         this.buildOverlay.layout(this.font, widgets, this.width, this.height, this.layout.worldLeft);
     }
 
@@ -1456,6 +1510,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     SettlementWallEditor wallEditor() { return this.walls; }
 
     void acceptWall(com.jvn.villagerretaliation.network.SettlementWallResultPayload payload) {
+        this.nextPlacementSummary = 0;
         if (this.walls.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
             if (!this.walls.active()) enterMode(Mode.SELECT);
@@ -1520,7 +1575,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         String[] labels = {"Low stone", "Auto towers: off", "Undo", "Redo", "Edit", "Confirm", "Cancel", "Remove", "Close loop", "Extend", "Refresh", "Height -", "Height +", "Height: ground", "Tower: default", "Snap: on"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
-            this.wallButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> wallAction(action))));
+            this.wallButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> wallAction(action)).shortcut(i == 5 ? "Enter" : i == 2 ? "Ctrl+Z" : i == 3 ? "Ctrl+Y" : "")));
         }
         this.wallSpacing = addRenderableWidget(new SettlementWallSpacingSlider(this.walls));
         this.wallSpacing.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
@@ -1615,6 +1670,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void acceptInfrastructure(com.jvn.villagerretaliation.network.SettlementInfrastructureResultPayload payload) {
+        this.nextPlacementSummary = 0;
         if (this.infrastructure.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
             enterMode(Mode.SELECT);
@@ -1631,9 +1687,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void initInfrastructureButtons() {
         this.infrastructureButtons.clear();
         this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Confirm"),
-                ignored -> this.infrastructure.confirm(this.session, PacketDistributor::sendToServer))));
+                ignored -> this.infrastructure.confirm(this.session, PacketDistributor::sendToServer)).shortcut("Enter")));
         this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Refresh"), ignored -> this.infrastructure.refresh())));
-        this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT))));
+        this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT)).shortcut("Esc")));
     }
 
     void beginFarm() {
@@ -1646,6 +1702,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void acceptFarm(com.jvn.villagerretaliation.network.SettlementFarmResultPayload payload) {
+        this.nextPlacementSummary = 0;
         if (this.farms.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
             enterMode(Mode.SELECT);
@@ -1661,9 +1718,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void initFarmButtons() {
         this.farmButtons.clear();
         this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Confirm"),
-                ignored -> this.farms.confirm(this.session, PacketDistributor::sendToServer))));
+                ignored -> this.farms.confirm(this.session, PacketDistributor::sendToServer)).shortcut("Enter")));
         this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Refresh"), ignored -> this.farms.refresh())));
-        this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT))));
+        this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT)).shortcut("Esc")));
     }
 
     private void updateFarmButtons() {
@@ -1688,6 +1745,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     SettlementPathEditor pathEditor() { return this.paths; }
 
     void acceptPath(com.jvn.villagerretaliation.network.SettlementPathResultPayload payload) {
+        this.nextPlacementSummary = 0;
         if (this.paths.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
             enterMode(Mode.SELECT);
@@ -1737,7 +1795,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Lines", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
-            this.pathButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> pathAction(action))));
+            this.pathButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> pathAction(action)).shortcut(i == 8 ? "Enter" : i == 3 ? "Ctrl+Z" : i == 4 ? "Ctrl+Y" : "")));
         }
     }
 
@@ -2232,6 +2290,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
                 this.farms.confirm(this.session, PacketDistributor::sendToServer);
             else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
+            return true;
+        }
+        if (this.parent.buildingDraft() != null && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {
+            if (this.parent.buildingDraft().placed && !this.parent.buildingDraft().submitting && this.gizmo != null && !this.gizmo.dragging()
+                    && this.applyGizmo.visible && this.applyGizmo.active) this.applyGizmo.onPress();
             return true;
         }
         if (this.walls.active()) {
@@ -2890,7 +2953,52 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return destinations;
     }
 
+    private void renderStorageLinks(PoseStack pose, com.mojang.blaze3d.vertex.VertexConsumer lines) {
+        var area = inspectorWorksite();
+        if (area == null) return;
+        var selected = inspectorSelection();
+        var settings = selected instanceof SettlementManagementPayload.Resident worker && worker.settings() != null ? worker.settings()
+                : area.plan() == null ? null : area.plan().settings();
+        var origin = selected instanceof SettlementManagementPayload.Resident worker ? Vec3.atCenterOf(worker.position())
+                : new Vec3((area.min().getX() + area.max().getX()) / 2.0D + 0.5, area.min().getY() + 1.0, (area.min().getZ() + area.max().getZ()) / 2.0D + 0.5);
+        var storage = settings == null ? com.jvn.villagerretaliation.settlement.SettlementStorageLinks.AUTOMATIC : settings.storage();
+        if (!storage.automatic()) {
+            for (var link : storage.entries()) storageLine(pose, lines, origin, link.position(), link.purpose().supplies());
+        } else if (area.plan() != null) {
+            var links = area.plan().links();
+            for (var entry : this.snapshots.entries(Page.DEPOTS)) {
+                var depot = (SettlementManagementPayload.Depot) entry;
+                if (links.supplies().contains(depot.id())) storageLine(pose, lines, origin, depot.position(), true);
+                if (links.outputs().contains(depot.id())) storageLine(pose, lines, origin.add(0, 0.15, 0), depot.position(), false);
+            }
+        }
+        for (var entry : this.snapshots.entries(Page.ISSUES)) {
+            var issue = (SettlementManagementPayload.Issue) entry;
+            if (!area.id().equals(issue.area()) || !SettlementIssueView.storageIssue(issue) || !issue.needsAttention()) continue;
+            var position = issuePosition(issue);
+            if (position == null) continue;
+            var center = Vec3.atCenterOf(position).add(0, 1, 0);
+            SettlementSelectionGizmo.line(pose, lines, center.add(-0.6, 0, -0.6), center.add(0.6, 0, 0.6), 1, 0.5F, 0.15F, 1);
+            SettlementSelectionGizmo.line(pose, lines, center.add(-0.6, 0, 0.6), center.add(0.6, 0, -0.6), 1, 0.5F, 0.15F, 1);
+        }
+    }
+
+    private void storageLine(PoseStack pose, com.mojang.blaze3d.vertex.VertexConsumer lines, Vec3 origin, BlockPos destination, boolean supply) {
+        if (!contains(destination)) return;
+        var end = Vec3.atCenterOf(destination).add(0, 0.6, 0);
+        if (supply) SettlementSelectionGizmo.line(pose, lines, origin, end, 0.35F, 0.9F, 0.65F, 0.85F);
+        else for (int i = 0; i < 24; i += 2) SettlementSelectionGizmo.line(pose, lines, origin.lerp(end, i / 24.0), origin.lerp(end, (i + 1) / 24.0), 0.65F, 0.75F, 1, 0.85F);
+        LevelRenderer.renderLineBox(pose, lines, new AABB(destination).inflate(0.025), supply ? 0.35F : 0.65F, supply ? 0.9F : 0.75F, supply ? 0.65F : 1, 0.9F);
+    }
+
+    SettlementConstructionOverlay constructionOverlay() { return this.constructionOverlay; }
+
+    void acceptProjectPreview(com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload payload) {
+        if (this.preferences.constructionOverlay && this.preferences.structurePreviews) this.constructionOverlay.accept(payload);
+    }
+
     void renderWorldSelection(RenderLevelStageEvent event) {
+        if (this.preferences.constructionOverlay && this.preferences.structurePreviews && !buildMode()) this.constructionOverlay.render(event);
         var draft = this.parent.buildingDraft();
         if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
         if (this.walls.active()) ConstructionBlueprintPreviewRenderer.renderPreview(event, this.walls.ghost(), false);
@@ -2918,6 +3026,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         selected ? 1.0F : 0.65F, selected ? 1.0F : 0.45F);
             }
         }
+        if (draft != null && draft.currentPreview()) {
+            for (var blocked : draft.preview.blockers()) LevelRenderer.renderLineBox(pose, lines, new AABB(blocked).inflate(0.025), 1, 0.2F, 0.15F, 1);
+        }
         for (var bed : this.selection.beds()) {
             if (contains(bed)) LevelRenderer.renderLineBox(pose, lines, bedBounds(bed).inflate(0.015D), 0.25F, 0.8F, 1.0F, 1.0F);
         }
@@ -2942,6 +3053,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 LevelRenderer.renderLineBox(pose, lines, hovered.getBoundingBox().inflate(0.08D), 1.0F, 0.78F, 0.25F, 0.7F);
         }
         for (var destination : movementDestinations()) SettlementMoveMarkers.render(pose, lines, destination);
+        if (this.preferences.logisticsOverlay && !buildMode()) renderStorageLinks(pose, lines);
         Set<List<BlockPos>> routes = new java.util.LinkedHashSet<>();
         if (this.guardMode != null) routes.add(List.copyOf(this.guardPoints));
         for (var id : this.selection.residents()) {
@@ -3029,7 +3141,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.paths.active()) SettlementPathGizmo.renderHandles(this.paths, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         if (this.walls.active()) SettlementWallGizmo.renderNodes(this.walls, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         for (var project : this.projects.values()) {
-            if ((project.id().equals(this.selectedArea) || this.preferences.issueOverlay)
+            if ((project.id().equals(this.selectedArea) || this.preferences.issueOverlay && !project.blocker().isBlank()
+                    || this.preferences.constructionOverlay && SettlementConstructionOverlay.unfinished(project))
                     && this.window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= project.min().getX()
                     && chunk.getMinBlockX() <= project.max().getX() && chunk.getMaxBlockZ() >= project.min().getZ()
                     && chunk.getMinBlockZ() <= project.max().getZ())) {
@@ -3229,6 +3342,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.commands.clear();
         this.snapshots.clear();
         this.overviewMap.close();
+        this.constructionOverlay.clear();
         this.panelFade.close();
         this.frameEntities.clear();
         this.mapMarkers.update(List.of(), List.of());
@@ -3469,6 +3583,38 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     }
                 }
             }
+            case ISSUE_ACTIONS -> {
+                if (this.inspected instanceof SettlementManagementPayload.Issue issue) {
+                    details.add(Component.literal("Resolve issue"));
+                    details.add(Component.literal(issue.detail().isBlank() ? issue.diagnostic().recovery() : issue.detail()));
+                    var area = this.areas.get(issue.area());
+                    var worker = this.roster.get(issue.resident());
+                    var project = this.projects.get(issue.targetId());
+                    var position = issuePosition(issue);
+                    if (position != null) actions.add(menuAction(Component.literal("Show affected area"), true,
+                            () -> focus(position.getX() + 0.5D, position.getZ() + 0.5D)));
+                    if (issue.kind() == SettlementManagementPayload.IssueKind.PROJECT && project != null) {
+                        actions.add(menuAction(Component.literal("Assign construction crew"), true,
+                                () -> this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this))));
+                    } else if (worker != null) {
+                        actions.add(menuAction(Component.literal("Assign workplace"), ready && permits(SettlementPermission.STAFF),
+                                () -> management().assignResident(worker)));
+                    }
+                    if (area != null && area.kind().role() != null && (area.plan() != null || worker != null)
+                            && SettlementIssueView.storageIssue(issue)) {
+                        actions.add(menuAction(Component.literal("Link storage"), ready && permits(SettlementPermission.STAFF),
+                                () -> this.minecraft.setScreen(new SettlementStorageScreen(management(), this, area, worker))));
+                    }
+                    if (worker != null && worker.settings() != null) {
+                        actions.add(menuAction(Component.literal("Worker settings"), ready && permits(SettlementPermission.STAFF),
+                                () -> this.minecraft.setScreen(new SettlementWorkerScreen(management(), worker, this))));
+                    }
+                    actions.add(menuAction(Component.literal(SettlementIssueView.detailsLabel(issue)), ready, () -> {
+                        if (!SettlementIssueView.open(management(), issue))
+                            openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
+                    }));
+                }
+            }
             case FILTERS -> {
                 details.add(Component.literal("Choose a filter"));
                 for (var filter : this.browser.filters(this.snapshots.entries(this.browser.page))) {
@@ -3608,6 +3754,44 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case OVERLAYS -> {
                 details.add(Component.literal("World overlays"));
+                actions.add(menuAction(Component.literal("Preset: Construction"), true, () -> {
+                    this.preferences.constructionOverlay = true;
+                    this.preferences.issueOverlay = true;
+                    this.preferences.workOverlay = false;
+                    this.preferences.logisticsOverlay = false;
+                    savePreferences();
+                }));
+                actions.add(menuAction(Component.literal("Preset: Logistics"), true, () -> {
+                    this.preferences.constructionOverlay = false;
+                    this.preferences.issueOverlay = true;
+                    this.preferences.workOverlay = true;
+                    this.preferences.logisticsOverlay = true;
+                    this.constructionOverlay.clear();
+                    savePreferences();
+                }));
+                actions.add(menuAction(Component.literal("Storage links: " + (this.preferences.logisticsOverlay ? "On" : "Off")), true, () -> {
+                    this.preferences.logisticsOverlay = !this.preferences.logisticsOverlay;
+                    savePreferences();
+                }));
+                if (this.preferences.logisticsOverlay) {
+                    details.add(Component.literal("Select a worksite or worker. Solid links: supply. Dashed links: output. Crosses: shortages."));
+                    details.add(Component.literal("Only configured storage links are drawn. Automatic depot choices are not fixed routes."));
+                }
+                actions.add(menuAction(Component.literal("Construction bounds: " + (this.preferences.constructionOverlay ? "On" : "Off")), true, () -> {
+                    this.preferences.constructionOverlay = !this.preferences.constructionOverlay;
+                    if (!this.preferences.constructionOverlay) this.constructionOverlay.clear();
+                    savePreferences();
+                }));
+                actions.add(menuAction(Component.literal("  Structure previews: " + (this.preferences.structurePreviews ? "On" : "Off")), this.preferences.constructionOverlay, () -> {
+                    this.preferences.structurePreviews = !this.preferences.structurePreviews;
+                    if (!this.preferences.structurePreviews) this.constructionOverlay.clear();
+                    savePreferences();
+                }));
+                if (this.preferences.constructionOverlay) {
+                    details.add(Component.literal("Boxes: construction bounds. Ghost blocks: expected structure."));
+                    details.add(Component.literal("Selected projects have a blue outline. Issues remain a separate toggle."));
+                    if (this.preferences.structurePreviews) details.add(Component.literal(this.constructionOverlay.status()));
+                }
                 if (!this.preferences.map) actions.add(menuAction(Component.literal("Show map"), true, () -> {
                     this.preferences.map = true;
                     savePreferences();
@@ -3824,7 +4008,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var area = inspectorWorksite();
         switch (section) {
             case OVERVIEW -> {
-                if (selected instanceof SettlementManagementPayload.Order) manageSelection();
+                if (selected instanceof SettlementManagementPayload.Issue) openActionPopup(SettlementViewPopup.Kind.ISSUE_ACTIONS);
+                else if (selected instanceof SettlementManagementPayload.Order) manageSelection();
                 else focusSelection();
             }
             case STAFF -> {
@@ -3927,9 +4112,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.minecraft.setScreen(new SettlementEditScreen(management(), SettlementEditScreen.Mode.ORDER, order));
             return;
         }
-        if (this.inspected instanceof SettlementManagementPayload.Issue issue) {
-            if (!SettlementIssueView.open(management(), issue))
-                openManagement(issue.target(), issue.targetId() == null ? "" : issue.targetId().toString());
+        if (this.inspected instanceof SettlementManagementPayload.Issue) {
+            openActionPopup(SettlementViewPopup.Kind.ISSUE_ACTIONS);
             return;
         }
         if (this.resident != null) {

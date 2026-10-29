@@ -18,13 +18,19 @@ import net.minecraft.world.level.block.state.BlockState;
 public record SettlementBuildingPreviewPayload(UUID town, int requestId, ResourceLocation structure, BlockPos anchor,
                                                Rotation rotation, BlockPos origin, BlockPos min, BlockPos max,
                                                int price, CurrencyAmount funds, String failure, List<PreviewBlock> blocks,
-                                               List<Material> materials, List<Builder> builders) implements CustomPacketPayload {
+                                               List<Material> materials, List<Builder> builders, List<BlockPos> blockers) implements CustomPacketPayload {
     public static final int MAX_BLOCKS = 65_536;
     public static final int MAX_MATERIALS = 1_024;
     public static final int MAX_BUILDERS = 512;
     public static final Type<SettlementBuildingPreviewPayload> TYPE = VillagerPayloads.type("settlement_building_preview");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementBuildingPreviewPayload> STREAM_CODEC =
             VillagerPayloads.codec(SettlementBuildingPreviewPayload::encode, SettlementBuildingPreviewPayload::decode);
+
+    public SettlementBuildingPreviewPayload(UUID town, int requestId, ResourceLocation structure, BlockPos anchor,
+            Rotation rotation, BlockPos origin, BlockPos min, BlockPos max, int price, CurrencyAmount funds, String failure,
+            List<PreviewBlock> blocks, List<Material> materials, List<Builder> builders) {
+        this(town, requestId, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, List.of());
+    }
 
     public SettlementBuildingPreviewPayload {
         Objects.requireNonNull(town);
@@ -37,10 +43,11 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         Objects.requireNonNull(funds);
         Objects.requireNonNull(failure);
         if (requestId < 0 || price < 0 || failure.length() > 64 || blocks.size() > MAX_BLOCKS
-                || materials.size() > MAX_MATERIALS || builders.size() > MAX_BUILDERS) throw new IllegalArgumentException("Invalid building preview");
+                || materials.size() > MAX_MATERIALS || builders.size() > MAX_BUILDERS || blockers.size() > 128) throw new IllegalArgumentException("Invalid building preview");
         blocks = List.copyOf(blocks);
         materials = List.copyOf(materials);
         builders = List.copyOf(builders);
+        blockers = blockers.stream().map(BlockPos::immutable).toList();
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, SettlementBuildingPreviewPayload payload) {
@@ -72,6 +79,8 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
             buffer.writeUUID(builder.id());
             buffer.writeUtf(builder.name(), 128);
         }
+        buffer.writeVarInt(payload.blockers().size());
+        payload.blockers().forEach(buffer::writeBlockPos);
     }
 
     private static SettlementBuildingPreviewPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -95,7 +104,10 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         var builders = new ArrayList<Builder>();
         count = VillagerPayloads.readCollectionSize(buffer, MAX_BUILDERS, "building preview builders");
         for (int index = 0; index < count; index++) builders.add(new Builder(buffer.readUUID(), buffer.readUtf(128)));
-        return new SettlementBuildingPreviewPayload(town, request, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders);
+        var blockers = new ArrayList<BlockPos>();
+        count = VillagerPayloads.readCollectionSize(buffer, 128, "building blockers");
+        for (int index = 0; index < count; index++) blockers.add(buffer.readBlockPos());
+        return new SettlementBuildingPreviewPayload(town, request, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, blockers);
     }
 
     public record PreviewBlock(BlockPos local, BlockState state) {

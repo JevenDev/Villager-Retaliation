@@ -166,6 +166,18 @@ public final class SettlementFarmEditor {
         return false;
     }
 
+    String requirements() {
+        return this.result != null && this.result.status() == SettlementFarmResultPayload.Status.PREVIEW && !this.result.message().isBlank()
+                ? this.result.message() : "Awaiting validated requirements";
+    }
+
+    String placementStatus() {
+        if (confirming()) return "Submitting farmland work...";
+        if (canConfirm()) return "Valid terrain: Confirm assigns a farmer";
+        if (this.result != null && this.result.status() == SettlementFarmResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
+        return "Finish the draft, then wait for validation";
+    }
+
     public String hint() {
         if (confirming()) return "Assigning farmland work...";
         if (this.first == null) return "Farmland: click the first corner of the area.";

@@ -75,7 +75,31 @@ public final class SettlementBuildingPlanner {
         return new SettlementBuildingPreviewPayload(request.town(), request.requestId(), request.structure(), request.anchor(), request.rotation(),
                 origin, plan.worldMin(origin), plan.worldMax(origin), plan.price(), town.economy().constructionFunds(),
                 failure, blocks, materials,
-                builders.stream().limit(SettlementBuildingPreviewPayload.MAX_BUILDERS).toList());
+                builders.stream().limit(SettlementBuildingPreviewPayload.MAX_BUILDERS).toList(), blockers(level, player, town, plan, origin, failure));
+    }
+
+    private static List<BlockPos> blockers(net.minecraft.server.level.ServerLevel level, ServerPlayer player, SettlementRecord town,
+            BuilderStructureScanner.StructurePlan plan, BlockPos origin, String failure) {
+        if (failure.isEmpty() || !(failure.equals("bounds") || failure.equals("blocked_existing") || failure.equals("site_unloaded"))) return List.of();
+        var positions = new ArrayList<BlockPos>();
+        for (var block : plan.siteBlocks(level, origin)) {
+            var pos = plan.worldPos(origin, block);
+            boolean blocked = failure.equals("bounds") ? !town.contains(pos, pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos)
+                    : !level.hasChunkAt(pos) || level.getBlockEntity(pos) != null || !level.mayInteract(player, pos)
+                    || !com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.placementCheck(level, null, pos, block, false).valid();
+            if (blocked) positions.add(pos);
+            if (positions.size() == 128) break;
+        }
+        return positions;
+    }
+
+    static SettlementBuildingPreviewPayload projectPreview(net.minecraft.server.level.ServerLevel level, SettlementRecord town, SettlementProject project, int requestId) {
+        var plan = SettlementConstructionService.scan(level, project);
+        if (plan == null || !project.matchesPlan(plan) || plan.blocks().size() > SettlementBuildingPreviewPayload.MAX_BLOCKS
+                || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max())) return null;
+        var blocks = plan.blocks().stream().map(block -> new SettlementBuildingPreviewPayload.PreviewBlock(block.localPos(), block.state())).toList();
+        return new SettlementBuildingPreviewPayload(town.id().value(), requestId, project.structure(), project.origin(), project.rotation(),
+                project.origin(), project.min(), project.max(), 0, CurrencyAmount.ZERO, "", blocks, List.of(), List.of());
     }
 
     private static SettlementBuildingPreviewPayload empty(SettlementBuildingPreviewRequestPayload request, String failure) {

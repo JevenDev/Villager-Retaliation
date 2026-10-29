@@ -146,6 +146,10 @@ public final class SettlementViewClient {
         parent.applySupplyFocus(active);
     }
 
+    public static void acceptProjectPreview(com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload payload) {
+        if (active != null && active.session().equals(payload.session())) active.acceptProjectPreview(payload);
+    }
+
     public static void acceptWall(com.jvn.villagerretaliation.network.SettlementWallResultPayload payload) {
         if (active != null && active.session().equals(payload.session())) active.acceptWall(payload);
     }

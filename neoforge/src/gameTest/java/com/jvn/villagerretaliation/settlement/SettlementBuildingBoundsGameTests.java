@@ -127,6 +127,55 @@ public final class SettlementBuildingBoundsGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void previewsIdentifyObstructionsAndKeepQueuedPlans(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var plan = SettlementConstructionService.scan(helper.getLevel(), FARM, Rotation.NONE);
+        var origin = fixture.town().center().above(8).subtract(plan.localMin());
+        load(helper, plan.worldMin(origin), plan.worldMax(origin));
+        for (var position : BlockPos.betweenClosed(plan.worldMin(origin), plan.worldMax(origin)))
+            helper.getLevel().setBlock(position, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+        var blocked = plan.worldPos(origin, plan.blocks().getFirst());
+        helper.getLevel().setBlockAndUpdate(blocked, net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+        var request = new SettlementBuildingPreviewRequestPayload(fixture.town().id().value(), 9, FARM, anchor(plan, origin), Rotation.NONE, SettlementProject.AUTOMATIC_BUILDER);
+        var rejected = SettlementBuildingPlanner.preview(fixture.player(), request);
+        helper.assertValueEqual(rejected.failure(), "blocked_existing", "container blocks placement");
+        helper.assertTrue(rejected.blockers().contains(blocked), "preview identifies the authoritative obstruction block");
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementBuildingPreviewPayload.STREAM_CODEC.encode(buffer, rejected);
+            var decoded = com.jvn.villagerretaliation.network.SettlementBuildingPreviewPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(decoded.blockers(), rejected.blockers(), "obstruction positions survive network serialization");
+        } finally { buffer.release(); }
+        helper.getLevel().setBlockAndUpdate(blocked, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        var project = SettlementProject.create(fixture.town(), UUID.randomUUID(), SettlementProject.AUTOMATIC_BUILDER, plan, origin, UUID.randomUUID(), helper.getLevel().getGameTime());
+        var preview = SettlementBuildingPlanner.projectPreview(helper.getLevel(), fixture.town(), project, 10);
+        helper.assertTrue(preview != null && preview.origin().equals(origin) && preview.blocks().size() == plan.blocks().size(), "project ghost uses the saved origin and complete planned structure");
+        helper.assertTrue(preview.blocks().stream().allMatch(block -> plan.blocks().stream().anyMatch(expected -> expected.localPos().equals(block.local()) && expected.state().equals(block.state()))),
+                "project preview preserves planned block positions and states");
+        var response = new com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload(UUID.randomUUID(), project.id(), 10, preview);
+        var encoded = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload.STREAM_CODEC.encode(encoded, response);
+            var decoded = com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload.STREAM_CODEC.decode(encoded);
+            helper.assertValueEqual(decoded, response, "project previews retain session, project and planned blocks on the wire");
+        } finally { encoded.release(); }
+        helper.succeed();
+    }
+
+    public static void prepareEditorClient(ServerPlayer player, com.jvn.villagerretaliation.allegiance.VillageAllegianceId id, BlockPos center) {
+        var level = player.serverLevel();
+        var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        town.advance();
+        var plan = SettlementConstructionService.scan(level, ResourceLocation.withDefaultNamespace("village/plains/houses/plains_small_house_1"), Rotation.NONE);
+        var origin = center.offset(12, 0, 12);
+        SettlementTestPlots.claim(level, town, plan.worldMin(origin), plan.worldMax(origin));
+        var project = SettlementProject.planned(town, SettlementConstructionService.workplace(level, town, plan, origin, UUID.randomUUID()),
+                SettlementProject.AUTOMATIC_BUILDER, plan, origin, UUID.randomUUID(), level.getGameTime());
+        project.queue(player.getUUID());
+        if (!town.queueProject(player.getUUID(), project)) throw new IllegalStateException("Editor preview project queues");
+    }
+
     private static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         var center = helper.absolutePos(new BlockPos(2, 4, 2));

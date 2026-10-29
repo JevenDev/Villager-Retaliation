@@ -65,6 +65,10 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
     private int contentLeft;
     private int contentWidth;
 
+    void assignResident(SettlementManagementPayload.Resident resident) {
+        if (permits(SettlementPermission.STAFF)) this.minecraft.setScreen(new SettlementManagementScreen(this.snapshot, this, resident, null));
+    }
+
     public SettlementManagementScreen(SettlementManagementPayload snapshot) {
         this(snapshot, null, null, null);
     }

@@ -185,6 +185,7 @@ neoForge {
             gameDirectory.set(settlementClientSmokeDirectory)
             systemProperty 'villagerretaliation.settlementHousingClientSmoke', providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementWorldViewClientSmoke', providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get()
+            systemProperty 'villagerretaliation.settlementEditorClientSmokeOnly', providers.gradleProperty('settlementEditorClientSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.settlementInfrastructureClientSmokeOnly', providers.gradleProperty('settlementInfrastructureClientSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.settlementClientSmoke', settlementClientSmokeDirectory.get().asFile.absolutePath
             programArguments.addAll '--quickPlaySingleplayer', 'SettlementViewSmoke', '--width', '1280', '--height', '720'

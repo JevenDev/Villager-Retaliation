@@ -90,6 +90,20 @@ final class SettlementBuildingDraft {
         this.preview = payload;
     }
 
+    boolean currentPreview() {
+        return !this.dirty && this.preview != null && this.preview.anchor().equals(this.anchor) && this.preview.rotation() == this.rotation;
+    }
+
+    String placementStatus() {
+        if (this.submitting) return "Submitting construction...";
+        if (!this.failure.isBlank()) return "Request failed: " + this.failure.replace('_', ' ');
+        if (!currentPreview() || this.pending) return "Checking placement...";
+        if (!this.preview.failure().isBlank()) return "Cannot place: " + SettlementPlacementSummary.failure(this.preview.failure());
+        boolean shortage = this.preview.materials().stream().anyMatch(material -> material.available() < material.required());
+        boolean noBuilders = this.preview.builders().stream().noneMatch(builder -> !builder.id().equals(com.jvn.villagerretaliation.settlement.SettlementProject.AUTOMATIC_BUILDER));
+        return "Valid placement" + (shortage || noBuilders ? ": queues for " + (shortage ? "materials" : "") + (shortage && noBuilders ? " and " : "") + (noBuilders ? "a builder" : "") : ": ready to queue");
+    }
+
     boolean ready() {
         return this.placed && !this.pending && !this.dirty && !this.submitting && this.preview != null
                 && this.preview.failure().isEmpty();

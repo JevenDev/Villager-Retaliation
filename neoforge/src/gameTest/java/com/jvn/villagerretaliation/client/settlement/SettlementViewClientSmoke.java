@@ -96,6 +96,7 @@ public final class SettlementViewClientSmoke {
     private static int productionReadyTick;
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static SettlementPathClientChecks pathChecks;
+    private static SettlementEditorClientChecks editorChecks;
     private static SettlementWallClientChecks wallChecks;
     private static SettlementMoveClientChecks moveChecks;
     private static SettlementFarmClientChecks farmChecks;
@@ -216,6 +217,19 @@ public final class SettlementViewClientSmoke {
             phase = 62;
         } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
                 && (screen.terrainLoaded() || ticks >= 120)) {
+            if (Boolean.getBoolean("villagerretaliation.settlementEditorClientSmokeOnly")) {
+                if (editorChecks == null) {
+                    verifyPreferenceRecovery();
+                    editorChecks = new SettlementEditorClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+                }
+                if (!editorChecks.tick()) return;
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+                } catch (IOException exception) { throw new UncheckedIOException(exception); }
+                phase = 6;
+                minecraft.stop();
+                return;
+            }
             if (Boolean.getBoolean("villagerretaliation.settlementInfrastructureClientSmokeOnly")) {
                 if (infrastructureChecks == null) infrastructureChecks = new SettlementInfrastructureClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
                 if (!infrastructureChecks.tick(minecraft)) return;
@@ -2137,12 +2151,16 @@ public final class SettlementViewClientSmoke {
             saved.browserPage = Page.PROJECTS;
             saved.browsers.put(Page.PROJECTS, new SettlementViewPreferences.BrowserState("gate", "pending", SettlementViewPreferences.BrowserSort.NAME));
             saved.bookmarks.add(new SettlementViewPreferences.Bookmark("North gate", 21.5, -48.5, 64, 180));
+            saved.constructionOverlay = true;
+            saved.structurePreviews = true;
+            saved.logisticsOverlay = true;
             saved.save();
             var restored = new SettlementViewPreferences(path);
             require(restored.height == SettlementViewWindow.MAX_HEIGHT && restored.yaw == 315 && !restored.sidebar,
                     "restored preferences clamp camera limits");
             require(restored.browserPage == Page.PROJECTS && restored.browsers.get(Page.PROJECTS).equals(saved.browsers.get(Page.PROJECTS))
                     && restored.bookmarks.equals(saved.bookmarks), "browser settings and named camera bookmarks survive reload");
+            require(restored.constructionOverlay && restored.structurePreviews && restored.logisticsOverlay, "overlay choices survive reload");
             var browser = new SettlementViewBrowser();
             browser.restore(restored, Page.PROJECTS);
             browser.remember(restored);
@@ -2393,6 +2411,8 @@ public final class SettlementViewClientSmoke {
         SettlementCareService.onUnloaded(resident);
         if (Boolean.getBoolean("villagerretaliation.settlementInfrastructureClientSmokeOnly"))
             com.jvn.villagerretaliation.settlement.SettlementInfrastructureGameTests.prepareClient(level, id);
+        if (Boolean.getBoolean("villagerretaliation.settlementEditorClientSmokeOnly"))
+            com.jvn.villagerretaliation.settlement.SettlementBuildingBoundsGameTests.prepareEditorClient(player, id, center);
         SettlementManagementService.open(player, id);
         return new Fixture(id, resident.getUUID(), center);
     }

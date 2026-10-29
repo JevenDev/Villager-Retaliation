@@ -37,7 +37,10 @@ final class SettlementPathClientChecks {
                     .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
                     "path tools are grouped inside Build");
             button("Build").onPress();
-            require(this.view.contextPopup().buttons().size() == 6, "Build offers New Building, Farmland, Path, Wall, Upgrade wall and Destroy wall");
+            var buildLabels = this.view.contextPopup().buttons().stream().map(button -> button.getMessage().getString()).toList();
+            require(buildLabels.containsAll(java.util.List.of("Farmland", "Path", "Wall", "Upgrade wall", "Repair wall", "Destroy wall"))
+                    && java.util.Arrays.stream(com.jvn.villagerretaliation.settlement.SettlementInfrastructure.Type.values())
+                            .allMatch(type -> buildLabels.contains(type.label())), "Build offers construction, infrastructure and wall maintenance tools");
             this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
             this.phase++;
             this.ticks = 0;

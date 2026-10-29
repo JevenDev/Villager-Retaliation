@@ -104,6 +104,17 @@ public final class SettlementViewService {
         session.level.getChunkSource().move(player);
     }
 
+    public static void projectPreview(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementProjectPreviewRequestPayload request) {
+        var session = SESSIONS.get(player.getUUID());
+        if (session == null || !session.id.equals(request.session()) || !eligible(player, session.town)
+                || !ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 6L)) return;
+        var project = session.town.projects().get(request.project());
+        var preview = project == null || !project.unfinished() || !session.town.owns(project) ? null
+                : SettlementBuildingPlanner.projectPreview(session.level, session.town, project, request.requestId());
+        PacketDistributor.sendToPlayer(player, new com.jvn.villagerretaliation.network.SettlementProjectPreviewPayload(
+                session.id, request.project(), request.requestId(), preview));
+    }
+
     public static void overview(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementViewOverviewRequestPayload request) {
         var session = SESSIONS.get(player.getUUID());
         if (session == null || !session.id.equals(request.session()) || !eligible(player, session.town)

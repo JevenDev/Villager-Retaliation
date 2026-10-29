@@ -190,6 +190,18 @@ public final class SettlementWallEditor {
         }
         return false;
     }
+    String requirements() {
+        return this.result != null && this.result.status() == SettlementWallResultPayload.Status.PREVIEW && !this.result.message().isBlank()
+                ? this.result.message() : "Awaiting validated requirements";
+    }
+
+    String placementStatus() {
+        if (confirming()) return "Submitting construction...";
+        if (canConfirm()) return "Valid placement: Confirm requests queued construction";
+        if (this.result != null && this.result.status() == SettlementWallResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
+        return "Finish the draft, then wait for validation";
+    }
+
     public String hint() {
         if (!active()) return this.feedback;
         if (this.confirming) return "Queueing wall work...";

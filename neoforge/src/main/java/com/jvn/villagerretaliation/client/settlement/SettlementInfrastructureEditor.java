@@ -40,6 +40,7 @@ public final class SettlementInfrastructureEditor {
 
     public SettlementInfrastructureEditor() { this(Util::getMillis); }
     public SettlementInfrastructureEditor(LongSupplier clock) { this.clock = clock; }
+    SettlementInfrastructure.Type type() { return this.type; }
     public boolean active() { return this.active; }
     public boolean confirming() { return this.confirming; }
     public boolean dragging() { return this.dragging >= 0; }
@@ -195,6 +196,18 @@ public final class SettlementInfrastructureEditor {
                 net.minecraft.resources.ResourceLocation.parse("villagerretaliation:infrastructure"), this.type.label(), origin,
                 net.minecraft.world.level.block.Rotation.NONE, min.subtract(origin), max.subtract(origin), blocks.size(), 0, 0, "", "", "",
                 false, false, false, false, blocks);
+    }
+
+    String requirements() {
+        return this.result != null && this.result.status() == SettlementInfrastructureResultPayload.Status.PREVIEW && !this.result.message().isBlank()
+                ? this.result.message() : "Awaiting validated requirements";
+    }
+
+    String placementStatus() {
+        if (confirming()) return "Submitting construction...";
+        if (canConfirm()) return "Valid placement: Confirm requests queued construction";
+        if (this.result != null && this.result.status() == SettlementInfrastructureResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
+        return "Finish the draft, then wait for validation";
     }
 
     public String hint() {

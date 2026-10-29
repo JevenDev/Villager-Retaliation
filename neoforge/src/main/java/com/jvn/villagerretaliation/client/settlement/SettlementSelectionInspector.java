@@ -189,7 +189,7 @@ final class SettlementSelectionInspector {
                 ? "Edit this worker's route override. Reset restores worksite inheritance." : "Edit the default route for this worksite.")));
         this.back.visible = this.visible;
         String label = switch (this.section) {
-            case OVERVIEW -> this.selected instanceof Order ? "Edit trade order" : "Focus";
+            case OVERVIEW -> this.selected instanceof Issue ? "Resolve issue" : this.selected instanceof Order ? "Edit trade order" : "Focus";
             case STAFF -> this.selected instanceof Project ? "Crew and priority"
                     : this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST

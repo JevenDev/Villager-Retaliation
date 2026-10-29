@@ -62,6 +62,54 @@ public final class SettlementViewPanelClientChecks {
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "filter selection preserves the world camera");
         verifyBuildMenu(view);
+        verifyIssueActions(view);
+        verifyBookmarks(view);
+    }
+
+    private static void verifyIssueActions(SettlementViewScreen view) {
+        var selected = view.inspectorSelection();
+        var issue = new com.jvn.villagerretaliation.network.SettlementManagementPayload.Issue(java.util.UUID.randomUUID(), "Trade needs attention",
+                com.jvn.villagerretaliation.network.SettlementManagementPayload.IssueKind.TRADE, "missing_stock", "Stock is unavailable",
+                com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.TRADE, java.util.UUID.randomUUID(), null, null, false);
+        double x = view.focusX(), z = view.focusZ();
+        view.inspect(issue);
+        button(view, "Resolve issue").onPress();
+        require(view.contextPopup().target().kind() == SettlementViewPopup.Kind.ISSUE_ACTIONS
+                && view.contextPopup().buttons().stream().anyMatch(action -> action.getMessage().getString().equals("Review trade order")),
+                "issue inspector offers a specific resolution action");
+        require(view.contextPopup().buttons().stream().noneMatch(action -> action.getMessage().getString().equals("Link storage")),
+                "issues without a resolved worksite do not offer invalid storage actions");
+        view.contextPopup().buttons().stream().filter(action -> action.getMessage().getString().equals("Review trade order")).findFirst().orElseThrow().onPress();
+        require(Minecraft.getInstance().screen instanceof SettlementManagementScreen, "issue resolution opens the existing management form");
+        Minecraft.getInstance().screen.onClose();
+        require(Minecraft.getInstance().screen == view, "closing issue settings returns to the same editor");
+        require(view.inspectorSelection().equals(issue) && view.focusX() == x && view.focusZ() == z, "issue actions preserve selection and camera");
+        if (selected != null) view.inspect(selected);
+        else button(view, "Browse settlement").onPress();
+    }
+
+    private static void verifyBookmarks(SettlementViewScreen view) {
+        var minecraft = Minecraft.getInstance();
+        double x = view.focusX(), z = view.focusZ();
+        button(view, "Settlement menu").onPress();
+        view.contextPopup().buttons().stream().filter(action -> action.getMessage().getString().equals("Camera bookmarks")).findFirst().orElseThrow().onPress();
+        require(minecraft.screen instanceof SettlementBookmarkScreen && SettlementViewClient.connectedPanel(), "bookmarks remain linked to the world-view session");
+        var screen = minecraft.screen;
+        var name = screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
+                .map(net.minecraft.client.gui.components.EditBox.class::cast).findFirst().orElseThrow();
+        name.setValue("Smoke camera");
+        button(screen, "Save current").onPress();
+        screen.resize(minecraft, 320, 180);
+        var widgets = screen.children().stream().filter(net.minecraft.client.gui.components.AbstractWidget.class::isInstance)
+                .map(net.minecraft.client.gui.components.AbstractWidget.class::cast).filter(widget -> widget.visible).toList();
+        for (int i = 0; i < widgets.size(); i++) for (int j = i + 1; j < widgets.size(); j++) {
+            var a = widgets.get(i);
+            var b = widgets.get(j);
+            require(a.getRight() <= b.getX() || b.getRight() <= a.getX() || a.getBottom() <= b.getY() || b.getBottom() <= a.getY(),
+                    "bookmark controls do not overlap on small screens");
+        }
+        button(screen, "Go").onPress();
+        require(minecraft.screen == view && view.focusX() == x && view.focusZ() == z, "bookmark recall returns to the same editor and camera");
     }
 
     private static void verifyMovementMarkers() {
