@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.google.gson.JsonParser;
+import com.jvn.toucanlib.client.ToucanTextRenderer;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -216,17 +217,17 @@ public final class DialogueCueClientSmoke {
     private static void verifyAnimatedTextSettings() {
         var defaults = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"wavy\":true,\"shake\":true,\"jump\":true,\"pulse\":true}}").getAsJsonObject());
         var tuned = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"wavy\":{\"strength\":0.25,\"speed\":2},\"shake\":{\"strength\":0.25,\"speed\":2},\"jump\":{\"strength\":0.25,\"speed\":2},\"pulse\":{\"speed\":2}}}").getAsJsonObject());
-        require(Math.abs(VillagerStyledTextRenderer.waveOffset(tuned, 17, 24) - VillagerStyledTextRenderer.waveOffset(defaults, 34, 24) * 0.25F) < 0.0001,
+        require(Math.abs(ToucanTextRenderer.waveOffset(VillagerStyledTextRenderer.effects(tuned), 17, 24) - ToucanTextRenderer.waveOffset(VillagerStyledTextRenderer.effects(defaults), 34, 24) * 0.25F) < 0.0001,
                 "wave strength and speed reach the renderer");
-        require(Math.abs(VillagerStyledTextRenderer.shakeOffset(tuned, 17, 4) - VillagerStyledTextRenderer.shakeOffset(defaults, 34, 4) * 0.25F) < 0.0001,
+        require(Math.abs(ToucanTextRenderer.shakeOffset(VillagerStyledTextRenderer.effects(tuned), 17, 4) - ToucanTextRenderer.shakeOffset(VillagerStyledTextRenderer.effects(defaults), 34, 4) * 0.25F) < 0.0001,
                 "shake strength and speed reach the renderer");
-        require(Math.abs(VillagerStyledTextRenderer.jumpOffset(tuned, 17, 4) - VillagerStyledTextRenderer.jumpOffset(defaults, 34, 4) * 0.25F) < 0.0001,
+        require(Math.abs(ToucanTextRenderer.jumpOffset(VillagerStyledTextRenderer.effects(tuned), 17, 4) - ToucanTextRenderer.jumpOffset(VillagerStyledTextRenderer.effects(defaults), 34, 4) * 0.25F) < 0.0001,
                 "jump strength and speed reach the renderer");
-        require(VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, tuned, 0xabcdef, 255, 17, 4)
-                == VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, defaults, 0xabcdef, 255, 34, 4), "pulse animation speed reaches the renderer");
+        require(ToucanTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, VillagerStyledTextRenderer.effects(tuned), 0xabcdef, 255, 17, 4)
+                == ToucanTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, VillagerStyledTextRenderer.effects(defaults), 0xabcdef, 255, 34, 4), "pulse animation speed reaches the renderer");
         var quiet = DialogueTextEffects.read(JsonParser.parseString("{\"text_effects\":{\"shake\":{\"strength\":0},\"pulse\":{\"strength\":0}}}").getAsJsonObject());
-        require(VillagerStyledTextRenderer.shakeOffset(quiet, 17, 4) == 0, "zero shake strength is stationary");
-        require(VillagerStyledTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, quiet, 0xabcdef, 255, 17, 4) == 0xffabcdef,
+        require(ToucanTextRenderer.shakeOffset(VillagerStyledTextRenderer.effects(quiet), 17, 4) == 0, "zero shake strength is stationary");
+        require(ToucanTextRenderer.colorWithAlpha(net.minecraft.network.chat.Style.EMPTY, VillagerStyledTextRenderer.effects(quiet), 0xabcdef, 255, 17, 4) == 0xffabcdef,
                 "zero pulse strength preserves the original color and opacity");
     }
 

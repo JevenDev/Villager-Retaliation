@@ -115,8 +115,6 @@
     "client.DialogueSodiumCameraUploadMixin",
     "client.AbstractContainerScreenAccessor",
     "client.AbstractContainerScreenDuelMixin",
-    "client.ChatComponentMixin",
-    "client.DialogueTextStyleMixin",
     "client.EffectRenderingInventoryScreenMixin",
     "client.BannerHelmetCustomHeadLayerMixin",
     "client.CreateWorldScreenAccessor",

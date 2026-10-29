@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.ToucanTextRenderer;
+import com.jvn.toucanlib.client.ToucanHudText;
+import com.jvn.toucanlib.client.ToucanWorldTextIndicators;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
@@ -88,15 +91,15 @@ public final class TextEffectsClientSmoke {
             var segments = DialogueTextSegment.parse("<" + tag + ">Sample text</" + tag.split(":")[0] + ">", DialogueTextEffects.NONE);
             require(segments.getFirst().effects().active(), "recognized effect " + tag);
             var component = VillagerStyledTextRenderer.component(segments, Style.EMPTY.withColor(0xabcdef), null);
-            boolean animated = VillagerStyledTextRenderer.usesAnimatedRenderer(segments.getFirst().effects());
-            require(VillagerStyledTextRenderer.hasGlyphEffects(component.getVisualOrderText()) == animated, "metadata for " + tag);
+            boolean animated = ToucanTextRenderer.usesAnimatedRenderer(VillagerStyledTextRenderer.effects(segments.getFirst().effects()));
+            require(ToucanTextRenderer.hasGlyphEffects(component.getVisualOrderText()) == animated, "metadata for " + tag);
             for (var line : minecraft.font.split(component, 28))
-                require(VillagerStyledTextRenderer.hasGlyphEffects(line) == animated, "wrapped metadata for " + tag);
+                require(ToucanTextRenderer.hasGlyphEffects(line) == animated, "wrapped metadata for " + tag);
         }
         var repeated = styled("<wave>Same Same</wave> <shake>Same Same</shake>");
-        var expected = new ArrayList<VillagerStyledTextRenderer.GlyphEffect>();
+        var expected = new ArrayList<ToucanTextRenderer.GlyphEffect>();
         repeated.getVisualOrderText().accept((index, style, point) -> {
-            expected.add(VillagerStyledTextRenderer.glyphEffect(style));
+            expected.add(ToucanTextRenderer.glyphEffect(style));
             return true;
         });
         require(expected.get(0).effects().wavy() && expected.get(10).effects().shake(), "duplicate text keeps independent effects");
@@ -104,14 +107,14 @@ public final class TextEffectsClientSmoke {
         var gradient = styled("<wave><gradient:#ff0000:#0000ff>AB</gradient></wave>");
         var colors = new ArrayList<Integer>();
         gradient.getVisualOrderText().accept((index, style, point) -> {
-            var effect = VillagerStyledTextRenderer.glyphEffect(style);
+            var effect = ToucanTextRenderer.glyphEffect(style);
             require(effect != null && effect.effects().wavy(), "gradient retains motion");
-            colors.add(VillagerStyledTextRenderer.colorWithAlpha(style, effect.effects(), 0xffffff, 255, 20, effect.index()) & 0xffffff);
+            colors.add(ToucanTextRenderer.colorWithAlpha(style, effect.effects(), 0xffffff, 255, 20, effect.index()) & 0xffffff);
             return true;
         });
         require(colors.equals(List.of(0xff0000, 0x0000ff)), "gradient endpoints survive animation");
         VillagerStyledTextRenderer.slice(gradient, 1, 2).getVisualOrderText().accept((index, style, point) -> {
-            require(style.getColor().getValue() == 0x0000ff && VillagerStyledTextRenderer.glyphEffect(style).index() == 1,
+            require(style.getColor().getValue() == 0x0000ff && ToucanTextRenderer.glyphEffect(style).index() == 1,
                     "interaction reveal slices retain gradient colors and animation phase");
             return true;
         });
@@ -128,22 +131,22 @@ public final class TextEffectsClientSmoke {
                 Style.EMPTY.withBold(true).withColor(0xabcdef), null);
         inherited.getVisualOrderText().accept((index, style, point) -> {
             require(style.isBold() && style.getColor().getValue() == 0xabcdef, "inherited formatting survives animation");
-            require(VillagerStyledTextRenderer.glyphEffect(style) != null, "whitespace and supplementary glyphs retain metadata");
+            require(ToucanTextRenderer.glyphEffect(style) != null, "whitespace and supplementary glyphs retain metadata");
             return true;
         });
-        require(!VillagerStyledTextRenderer.hasGlyphEffects(Component.literal("ordinary").withColor(0xabcdef).getVisualOrderText()),
+        require(!ToucanTextRenderer.hasGlyphEffects(Component.literal("ordinary").withColor(0xabcdef).getVisualOrderText()),
                 "equal colors on unrelated text do not acquire effects");
         var message = VillagerChatTextFormatter.format(Component.literal("<wave>Hello</wave> <jump>again</jump>"));
         minecraft.gui.getChat().clearMessages(true);
         minecraft.gui.getChat().addMessage(message);
-        require(minecraft.gui.getChat().trimmedMessages.stream().anyMatch(line -> VillagerStyledTextRenderer.hasGlyphEffects(line.content())),
+        require(minecraft.gui.getChat().trimmedMessages.stream().anyMatch(line -> ToucanTextRenderer.hasGlyphEffects(line.content())),
                 "native chat splitting retains effects");
         for (String tag : TAGS) {
             var sample = VillagerChatTextFormatter.format(Component.literal(tag + ": <" + tag + ">Sample text</" + tag.split(":")[0] + ">"));
             minecraft.gui.getChat().addMessage(sample);
         }
         minecraft.gui.getChat().rescaleChat();
-        require(minecraft.gui.getChat().trimmedMessages.stream().anyMatch(line -> VillagerStyledTextRenderer.hasGlyphEffects(line.content())),
+        require(minecraft.gui.getChat().trimmedMessages.stream().anyMatch(line -> ToucanTextRenderer.hasGlyphEffects(line.content())),
                 "chat resize retains effects");
     }
 
@@ -226,9 +229,9 @@ public final class TextEffectsClientSmoke {
             if (!verifiedDraw) {
                 var calls = new ArrayList<String>();
                 var line = styled("<wave>A B</wave>").getVisualOrderText();
-                int end = VillagerStyledTextRenderer.renderChatLine(graphics, font, line, 10, 320, 0xffffffff, tick,
+                int end = ToucanTextRenderer.renderChatLine(graphics, font, line, 10, 320, 0xffffffff, tick,
                         (glyph, x, drawY, color) -> {
-                            calls.add(VillagerStyledTextRenderer.plainText(glyph));
+                            calls.add(ToucanTextRenderer.plainText(glyph));
                             return x + font.width(glyph) + 1 + (calls.size() == 2 ? 10 : 0);
                         });
                 require(calls.equals(List.of("A", " ", "B")), "chat renders every glyph including head insertion spaces");
@@ -246,13 +249,14 @@ public final class TextEffectsClientSmoke {
                 var bidi = styled("<wave>\u05d0\u05d1</wave>").getVisualOrderText();
                 var indices = new ArrayList<Integer>();
                 bidi.accept((index, style, point) -> {
-                    indices.add(VillagerStyledTextRenderer.glyphEffect(style).index());
+                    indices.add(ToucanTextRenderer.glyphEffect(style).index());
                     return true;
                 });
                 require(indices.equals(List.of(1, 0)), "bidi visual order retains logical effect indices");
                 VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.set(true);
                 require(drawSamples(graphics, line, 0).equals(drawSamples(graphics, line, 17)), "disabled effects remain static");
                 VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.set(false);
+                verifyOutlines(graphics);
                 verifiedDraw = true;
             }
             graphics.drawString(font, "Native chat " + headMode, 12, height - 85, 0xffffff);
@@ -268,12 +272,92 @@ public final class TextEffectsClientSmoke {
             frames++;
         }
 
+        private void verifyOutlines(GuiGraphics graphics) {
+            graphics.fill(8, 296, 230, 332, 0xff000000);
+            ToucanHudText.drawOutlinedString(graphics, font, Component.literal("MMMM").withStyle(
+                    Style.EMPTY.withColor(0xff0000).withObfuscated(true).withBold(true)),
+                    12, 302, 0xffffffff, 0xff00ff00);
+            ToucanHudText.drawOutlinedString(graphics, font, "\u00a7cH", 70, 302, 0xffffff, 0x00ff00);
+            ToucanHudText.drawCenteredOutlinedString(graphics, font,
+                    Component.literal("H").withColor(0xff0000), 110, 302, 0xffffffff, 0xff00ff00);
+            ToucanHudText.drawOutlinedString(graphics, font, "Invisible", 140, 302, 0x01ffffff, 0xff00ff00);
+            ToucanWorldTextIndicators.drawOutlinedText(font, graphics.bufferSource(), graphics.pose().last().pose(),
+                    "H", 12, 320, 0xffff0000, false);
+            var styles = List.of(Style.EMPTY.withItalic(true), Style.EMPTY.withBold(true),
+                    Style.EMPTY.withUnderlined(true), Style.EMPTY.withStrikethrough(true));
+            graphics.fill(8, 336, 230, 410, 0xff000000);
+            for (int row = 0; row < styles.size(); row++) {
+                var sample = Component.literal("Sample").withStyle(styles.get(row).withColor(0xff0000));
+                ToucanHudText.drawOutlinedString(graphics, font, sample, 12, 340 + row * 16, 0xffffffff, 0xff00ff00);
+                graphics.drawString(font, sample, 122, 340 + row * 16, 0xffffffff, false);
+            }
+            int[] visits = {0};
+            FormattedCharSequence counted = sink -> {
+                visits[0]++;
+                return Component.literal("One pass").getVisualOrderText().accept(sink);
+            };
+            ToucanTextRenderer.renderOutlinedLine(graphics, font, counted, 240, 302, 0xffffffff, 0);
+            require(visits[0] == 1, "outline resolves the input sequence once for every border pass and foreground");
+            graphics.flush();
+            var minecraft = Minecraft.getInstance();
+            int scale = (int) minecraft.getWindow().getGuiScale();
+            try (var screenshot = Screenshot.takeScreenshot(minecraft.getMainRenderTarget())) {
+                screenshot.writeToFile(Path.of(System.getProperty(OUTPUT), "outline-pixels.png"));
+                int red = 0;
+                int green = 0;
+                for (int y = 298; y < 314; y++) {
+                    for (int x = 10; x < 125; x++) {
+                        int rgb = screenshot.getPixelRGBA(x * scale, y * scale) & 0xffffff;
+                        if (isOutlineForeground(rgb)) red++;
+                        if (rgb == 0x00ff00) {
+                            green++;
+                            boolean adjacent = isOutlineForeground(screenshot.getPixelRGBA((x - 1) * scale, y * scale))
+                                    || isOutlineForeground(screenshot.getPixelRGBA((x + 1) * scale, y * scale))
+                                    || isOutlineForeground(screenshot.getPixelRGBA(x * scale, (y - 1) * scale))
+                                    || isOutlineForeground(screenshot.getPixelRGBA(x * scale, (y + 1) * scale));
+                            require(adjacent, "outline matches the same obfuscated or styled foreground glyph at " + x + "," + y);
+                        }
+                    }
+                }
+                require(red > 30 && green > 30, "styled components and legacy text preserve separate foreground and outline colors");
+                for (int y = 298; y < 314; y++) {
+                    for (int x = 138; x < 220; x++) {
+                        require((screenshot.getPixelRGBA(x * scale, y * scale) & 0xffffff) == 0,
+                                "near-zero alpha outline stays invisible");
+                    }
+                }
+                int worldRed = 0;
+                for (int y = 319; y < 329; y++) {
+                    for (int x = 11; x < 20; x++) {
+                        if ((screenshot.getPixelRGBA(x * scale, y * scale) & 0xffffff) == 0x0000ff) worldRed++;
+                    }
+                }
+                require(worldRed > 0, "world text outline emits its foreground");
+                for (int row = 0; row < styles.size(); row++) {
+                    for (int y = 338 + row * 16; y < 352 + row * 16; y++) {
+                        for (int x = 10; x < 100; x++) {
+                            boolean outlined = (screenshot.getPixelRGBA(x * scale, y * scale) & 0xffffff) == 0x0000ff;
+                            boolean vanilla = (screenshot.getPixelRGBA((x + 110) * scale, y * scale) & 0xffffff) == 0x0000ff;
+                            require(outlined == vanilla, "outline preserves vanilla foreground pixels for style " + row + " at " + x + "," + y);
+                        }
+                    }
+                }
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+        }
+
+        private static boolean isOutlineForeground(int rgba) {
+            int rgb = rgba & 0xffffff;
+            return rgb == 0x0000ff || rgb == 0x5555ff;
+        }
+
         private List<String> drawSamples(GuiGraphics graphics, FormattedCharSequence line, int tick) {
             var samples = new ArrayList<String>();
-            VillagerStyledTextRenderer.renderChatLine(graphics, font, line, 0, 0, 0xffffffff, tick,
+            ToucanTextRenderer.renderChatLine(graphics, font, line, 0, 0, 0xffffffff, tick,
                     (glyph, x, y, color) -> {
                         var pose = graphics.pose().last().pose();
-                        samples.add(VillagerStyledTextRenderer.plainText(glyph) + ":" + x + ":" + y + ":" + color + ":" + pose.m30() + ":" + pose.m31());
+                        samples.add(ToucanTextRenderer.plainText(glyph) + ":" + x + ":" + y + ":" + color + ":" + pose.m30() + ":" + pose.m31());
                         return x + font.width(glyph) + 1;
                     });
             return samples;
