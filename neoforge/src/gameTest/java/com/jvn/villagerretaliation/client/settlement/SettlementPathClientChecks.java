@@ -37,7 +37,7 @@ final class SettlementPathClientChecks {
                     .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
                     "path tools are grouped inside Build");
             button("Build").onPress();
-            require(this.view.contextPopup().buttons().size() == 5, "Build offers New Building, Path, Wall, Upgrade wall and Destroy wall");
+            require(this.view.contextPopup().buttons().size() == 6, "Build offers New Building, Farmland, Path, Wall, Upgrade wall and Destroy wall");
             this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
             this.phase++;
             this.ticks = 0;

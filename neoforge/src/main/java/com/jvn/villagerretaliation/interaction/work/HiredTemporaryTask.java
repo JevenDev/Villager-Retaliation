@@ -153,7 +153,8 @@ public record HiredTemporaryTask(UUID id, Kind kind, BlockPos min, BlockPos max,
         ORE_AREA(HiredVillagerRole.MINING, "Mine exposed ores"),
         TUNNEL(HiredVillagerRole.MINING, "Dig tunnel"),
         STAIRCASE(HiredVillagerRole.MINING, "Dig staircase"),
-        STAIRCASE_PROSPECT(HiredVillagerRole.MINING, "Dig staircase and seek ores");
+        STAIRCASE_PROSPECT(HiredVillagerRole.MINING, "Dig staircase and seek ores"),
+        PREPARE_FARM(HiredVillagerRole.FARMING, "Prepare irrigated farmland");
 
         private final HiredVillagerRole role;
         private final String label;

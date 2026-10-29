@@ -184,6 +184,8 @@ public final class HiredTemporaryWorkService {
             var duty = SettlementWorkforceService.duty(villager).orElse(null);
             return duty != null && duty.town().id().value().equals(queue.owner()) && duty.area().id().equals(queue.worksite())
                     && duty.town().permits(queue.issuer(), SettlementPermission.STAFF)
+                    && (duty.town().permits(queue.issuer(), SettlementPermission.BUILD)
+                            || queue.tasks().stream().noneMatch(task -> task.kind() == HiredTemporaryTask.Kind.PREPARE_FARM))
                     && queue.tasks().stream().allMatch(task -> com.jvn.villagerretaliation.settlement.SettlementExpeditions.permits(level, duty.town(), task));
         }
         var home = HiredWorkArea.fromState(HiredWorkStateStore.state(villager), villager.blockPosition());
@@ -286,6 +288,7 @@ public final class HiredTemporaryWorkService {
         session.state().remove(FINISHED);
         session.state().remove("NextWorkGameTime");
         session.state().remove(MINING_SCAN);
+        session.state().remove(com.jvn.villagerretaliation.settlement.SettlementFarmWork.TAG);
         session.state().remove("TemporaryForestCompletionScan");
         HiredTemporaryEntities.clear(session.state());
     }
@@ -301,6 +304,7 @@ public final class HiredTemporaryWorkService {
 
     public static void clearOrders(CompoundTag state) {
         state.remove(HiredTemporaryQueue.PENDING_TAG);
+        state.remove(com.jvn.villagerretaliation.settlement.SettlementFarmWork.TAG);
         state.remove(MINING_SCAN);
         HiredTemporaryEntities.clear(state);
         write(state, null);
@@ -308,7 +312,8 @@ public final class HiredTemporaryWorkService {
 
     public static void copyState(CompoundTag source, CompoundTag destination) {
         HiredTemporaryEntities.copy(source, destination);
-        for (String key : List.of(HiredTemporaryQueue.STATE_TAG, HiredTemporaryQueue.PENDING_TAG, FINISHED, PREVIOUS_CATCH, INVALID, MINING_SCAN)) {
+        for (String key : List.of(HiredTemporaryQueue.STATE_TAG, HiredTemporaryQueue.PENDING_TAG, FINISHED, PREVIOUS_CATCH, INVALID, MINING_SCAN,
+                com.jvn.villagerretaliation.settlement.SettlementFarmWork.TAG)) {
             destination.remove(key);
             if (source.contains(key)) destination.put(key, source.get(key).copy());
         }

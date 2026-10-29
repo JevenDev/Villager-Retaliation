@@ -327,6 +327,7 @@ public final class HiredFarmingInventoryBridge {
                 || com.jvn.villagerretaliation.interaction.VillagerWorkAuthority.activeRole(level, villager) != HiredVillagerRole.FARMING) return true;
         var state = HiredWorkStateStore.state(villager);
         return !com.jvn.villagerretaliation.settlement.SettlementPlanting.planned(villager)
+                && !com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(state, HiredTemporaryTask.Kind.PREPARE_FARM)
                 && state.getBoolean("Enabled") && HiredFarmingOptions.harvestCrops(state)
                 && com.jvn.villagerretaliation.interaction.HiredWorkEnvironment.resolve(villager).gathering().allowed();
     }

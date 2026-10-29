@@ -95,6 +95,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementWorldViewClientChecks worldViewChecks;
     private static SettlementPathClientChecks pathChecks;
     private static SettlementWallClientChecks wallChecks;
+    private static SettlementFarmClientChecks farmChecks;
     private static boolean previewMeshesRequested, previewMeshesChecked;
     private static boolean resourceFormsChecked;
     private static int ticks;
@@ -211,10 +212,14 @@ public final class SettlementViewClientSmoke {
             phase = 62;
         } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
                 && (screen.terrainLoaded() || ticks >= 120)) {
-            if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
-            if (!pathChecks.tick(minecraft)) return;
-            if (wallChecks == null) wallChecks = new SettlementWallClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
-            if (!wallChecks.tick(minecraft)) return;
+            if (farmChecks == null) {
+                if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+                if (!pathChecks.tick(minecraft)) return;
+                if (wallChecks == null) wallChecks = new SettlementWallClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+                if (!wallChecks.tick(minecraft)) return;
+                farmChecks = new SettlementFarmClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+            }
+            if (!farmChecks.tick(minecraft)) return;
             previewMeshesRequested = true;
             if (!previewMeshesChecked) return;
             require(screen.viewHeight() == SettlementViewWindow.MIN_HEIGHT, "the view reaches minimum zoom");

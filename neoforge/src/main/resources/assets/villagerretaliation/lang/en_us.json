@@ -1,4 +1,12 @@
 {
+  "interaction.work.farmland.collecting_water": "Collecting water for farmland.",
+  "interaction.work.farmland.water_unreachable": "Cannot reach the water supply storage.",
+  "interaction.work.farmland.invalid": "Farmland plan is unavailable. Cancel and select the area again.",
+  "interaction.work.farmland.water_changed": "The planned water hole changed or would leak. Restore it or cancel and replan.",
+  "interaction.work.farmland.dry": "Waiting for irrigation. Restore nearby water to continue.",
+  "interaction.work.farmland.needs_water": "Needs a water bucket in supplies and room for the empty bucket in outputs.",
+  "interaction.work.farmland.finished": "Finished preparing irrigated farmland.",
+  "interaction.work.farmland.working": "Preparing irrigated farmland.",
   "villagerretaliation.gui.aid.blocker.courier_moved": "Courier moved during route preparation. Retry from its current position",
   "villagerretaliation.gui.aid.blocker.terrain_unobserved": "Route observations are unavailable. Prepare the remaining route again",
   "villagerretaliation.gui.relations.reason.courier_interference": "Interference with a courier",
