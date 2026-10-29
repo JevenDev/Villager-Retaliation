@@ -24,20 +24,30 @@ public final class SettlementWallConstructionGameTests {
     @GameTest(template = "empty", timeoutTicks = 100, batch = "wall_construction")
     public static void confirmationQueuesOnceAndWaitsForABuilder(GameTestHelper helper) {
         var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var pig = net.minecraft.world.entity.EntityType.PIG.create(level);
         try {
             var wall = wall(fixture);
             var town = fixture.town();
             town.removeDuty(fixture.builder().getUUID());
+            var cells = SettlementWallTerrain.preview(level, wall, town::contains).cells().stream()
+                    .filter(cell -> cell.kind() == SettlementWallTerrain.Kind.PLACE
+                            && !cell.target().getCollisionShape(level, cell.position()).isEmpty()).toList();
+            var target = cells.getFirst();
+            pig.setPos(target.position().getBottomCenter());
+            pig.setNoAi(true);
+            helper.assertTrue(level.addFreshEntity(pig), "occupant is present in the world");
             var session = new SettlementWallSession();
             var id = UUID.randomUUID();
             var preview = session.request(helper.getLevel(), id, true, town::contains,
                     new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.PREVIEW, id, wall), town.id(), fixture.leader());
-            helper.assertValueEqual(preview.status(), SettlementWallResultPayload.Status.PREVIEW, "the wall preview is valid");
+            helper.assertValueEqual(preview.status(), SettlementWallResultPayload.Status.PREVIEW, "the occupied wall preview is valid");
+            pig.setPos(cells.getLast().position().getBottomCenter());
             var confirm = new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.CONFIRM, preview.token(), null);
             helper.assertValueEqual(session.request(helper.getLevel(), id, false, town::contains, confirm, town.id(), fixture.leader()).status(),
                     SettlementWallResultPayload.Status.REJECTED, "revoked permission cannot queue a wall");
             var accepted = session.request(helper.getLevel(), id, true, town::contains, confirm, town.id(), fixture.leader());
-            helper.assertValueEqual(accepted.status(), SettlementWallResultPayload.Status.APPLIED, "confirmation accepts a construction order: " + accepted.message());
+            helper.assertValueEqual(accepted.status(), SettlementWallResultPayload.Status.APPLIED, "moving entities do not prevent queuing: " + accepted.message());
             var project = town.projects().get(preview.token());
             helper.assertTrue(project != null && project.pending(), "a wall waits in the construction queue");
             helper.assertValueEqual(project.blocker(), "builder", "the project reports its missing builder");
@@ -52,9 +62,20 @@ public final class SettlementWallConstructionGameTests {
             helper.assertTrue(savedProject.pending() && savedProject.wallConstruction() != null, "queued wall survives reload without a builder");
             helper.assertValueEqual(BuilderStructureScanner.fingerprint(SettlementConstructionService.scan(helper.getLevel(), savedProject)),
                     BuilderStructureScanner.fingerprint(plan), "the exact confirmed plan survives reload");
+            pig.setPos(target.position().getBottomCenter());
+            var check = com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.canPlaceAt(
+                    level, fixture.builder(), target.position(), target.target());
+            helper.assertValueEqual(check.statusKey(), "interaction.work.builder.blocked_entity", "native builders wait for occupants");
+            var placement = new SettlementConstructionPlacement(level, List.of(new SettlementConstructionPlacement.Part(
+                    target.position(), target.before(), target.target(), null)));
+            helper.assertFalse(placement.reconcile(level, project.id()), "pending world placement also waits for occupants");
+            helper.assertValueEqual(level.getBlockState(target.position()), target.before(), "occupied blocks remain untouched");
+            pig.discard();
+            helper.assertTrue(placement.reconcile(level, project.id()), "placement resumes when the entity leaves");
+            helper.assertValueEqual(level.getBlockState(target.position()), target.target(), "the cleared block is placed");
             helper.assertTrue(SettlementConstructionService.cancel(fixture.leader(), town, project.id()), "pending wall can be cancelled");
             helper.assertFalse(SettlementWallsSavedData.get(helper.getLevel()).hasGroup(project.id()), "an unbuilt wall has no completed wall ownership");
-        } finally { fixture.builder().discard(); }
+        } finally { pig.discard(); fixture.builder().discard(); }
         helper.succeed();
     }
 

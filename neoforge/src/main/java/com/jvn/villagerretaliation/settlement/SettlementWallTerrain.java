@@ -52,7 +52,6 @@ public final class SettlementWallTerrain {
             plan = new SettlementWallGeometry.Plan(List.copyOf(replacement), plan.foundations(), plan.error());
         }
         var cells = new ArrayList<Cell>();
-        var occupants = occupants(level, plan);
         String error = wall.nodes().size() < 2 ? "Place at least two towers" : plan.error();
         for (var planned : plan.cells()) {
             var pos = planned.position();
@@ -75,10 +74,6 @@ public final class SettlementWallTerrain {
                                 && !terrainOverlap(level, pos.below(), support, replaced)) {
                     kind = Kind.BLOCKED;
                     if (error.isEmpty()) error = "Wall is obstructed or cannot reach solid support";
-                } else if (!planned.state().getCollisionShape(level, pos).isEmpty()
-                        && occupants.stream().anyMatch(bounds -> bounds.intersects(new AABB(pos)))) {
-                    kind = Kind.BLOCKED;
-                    if (error.isEmpty()) error = "Move entities out of the wall before confirming";
                 } else kind = Kind.PLACE;
             }
             cells.add(new Cell(pos, planned.state(), before, support, kind));
@@ -140,12 +135,15 @@ public final class SettlementWallTerrain {
                 && level.getBlockEntity(pos) == null && !state.equals(replaced.get(pos));
     }
 
-    private static List<AABB> occupants(Level level, SettlementWallGeometry.Plan plan) {
-        if (plan.cells().isEmpty()) return List.of();
-        var bounds = new AABB(plan.cells().getFirst().position());
-        for (var cell : plan.cells()) bounds = bounds.minmax(new AABB(cell.position()));
-        return level.getEntities((net.minecraft.world.entity.Entity) null, bounds, entity -> entity.isAlive() && !entity.isSpectator())
+    static boolean entitiesClear(Level level, Preview preview) {
+        var placements = preview.cells().stream().filter(cell -> cell.kind() == Kind.PLACE
+                && !cell.target().getCollisionShape(level, cell.position()).isEmpty()).toList();
+        if (placements.isEmpty()) return true;
+        var bounds = new AABB(placements.getFirst().position());
+        for (var cell : placements) bounds = bounds.minmax(new AABB(cell.position()));
+        var occupants = level.getEntities((net.minecraft.world.entity.Entity) null, bounds, entity -> entity.isAlive() && !entity.isSpectator())
                 .stream().map(net.minecraft.world.entity.Entity::getBoundingBox).toList();
+        return placements.stream().noneMatch(cell -> occupants.stream().anyMatch(occupant -> occupant.intersects(new AABB(cell.position()))));
     }
 
     public static Preview repair(Level level, Map<BlockPos, BlockState> blocks, Predicate<BlockPos> allowed) {
@@ -179,7 +177,7 @@ public final class SettlementWallTerrain {
     }
 
     public static int apply(Level level, Preview preview) {
-        if (!preview.error().isEmpty()) return 0;
+        if (!preview.error().isEmpty() || !entitiesClear(level, preview)) return 0;
         int placed = 0;
         for (var cell : preview.cells()) if (cell.kind() == Kind.PLACE) {
             level.setBlock(cell.position(), cell.target(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);

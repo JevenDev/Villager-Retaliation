@@ -132,6 +132,8 @@ public final class SettlementWallSession {
             this.wall = null;
             return this.result = result(request, Status.APPLIED, List.of(), "Wall construction queued. Add builders from the project's Staff panel to work faster");
         }
+        if (!SettlementWallTerrain.entitiesClear(level, current))
+            return result(request, Status.REJECTED, List.of(), "Move entities out of the wall before placing it instantly");
         if (!this.demolishing && town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
             var payment = payment(server, town, session);
             if (!payment.pay()) return refresh(level, allowed, request, "", town);

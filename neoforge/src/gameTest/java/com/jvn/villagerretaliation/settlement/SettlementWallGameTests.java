@@ -138,7 +138,9 @@ public final class SettlementWallGameTests {
         pig.setPos(obstacle.getBottomCenter());
         pig.setNoAi(true);
         level.addFreshEntity(pig);
-        helper.assertFalse(SettlementWallTerrain.preview(level, wall, pos -> true).error().isEmpty(), "entities cannot be buried by instant walls");
+        var occupied = SettlementWallTerrain.preview(level, wall, pos -> true);
+        helper.assertTrue(occupied.error().isEmpty(), "entities do not block wall planning");
+        helper.assertValueEqual(SettlementWallTerrain.apply(level, occupied), 0, "entities cannot be buried by instant walls");
         pig.discard();
         var ready = SettlementWallTerrain.preview(level, wall, pos -> true);
         helper.assertTrue(ready.error().isEmpty(), "replaceable vegetation is allowed");
@@ -382,9 +384,10 @@ public final class SettlementWallGameTests {
         pig.setNoAi(true);
         level.addFreshEntity(pig);
         var occupied = SettlementWallTerrain.preview(level, wall, pos -> true);
-        helper.assertFalse(occupied.error().isEmpty(), "entities below the authored wall are included in collision checks");
+        helper.assertTrue(occupied.error().isEmpty(), "entities below the authored wall do not block planning");
         helper.assertTrue(occupied.cells().stream().anyMatch(cell -> cell.position().equals(gap.below())
-                && cell.kind() == SettlementWallTerrain.Kind.BLOCKED), "blocked foundation remains visible");
+                && cell.kind() == SettlementWallTerrain.Kind.PLACE), "occupied foundation remains planned");
+        helper.assertValueEqual(SettlementWallTerrain.apply(level, occupied), 0, "instant placement checks extended foundation occupants");
         pig.discard();
         helper.assertTrue(SettlementWallTerrain.preview(level, wall, pos -> true).error().isEmpty(), "cleared foundations are valid");
         helper.succeed();
