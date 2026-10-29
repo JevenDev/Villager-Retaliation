@@ -44,6 +44,8 @@ def animationClientSmokeDirectory = layout.buildDirectory.dir("animation-client-
 def pairedGreetClientSmokeDirectory = layout.buildDirectory.dir("paired-greet-client-smoke/${System.currentTimeMillis()}")
 def companionClientSmokeDirectory = layout.buildDirectory.dir("companion-client-smoke/${System.currentTimeMillis()}")
 def dialogueCameraClientSmokeDirectory = layout.buildDirectory.dir("dialogue-camera-client-smoke/${System.currentTimeMillis()}")
+def textEffectsClientSmokeDirectory = layout.buildDirectory.dir("text-effects-client-smoke/${System.currentTimeMillis()}")
+
 def dialogueCueClientSmokeDirectory = layout.buildDirectory.dir("dialogue-cue-client-smoke/${System.currentTimeMillis()}")
 
 def campaignConversationClientSmokeDirectory = layout.buildDirectory.dir("campaign-conversation-client-smoke/${System.currentTimeMillis()}")
@@ -108,6 +110,14 @@ neoForge {
             systemProperty 'villagerretaliation.authoringEditorWorkflowSmokeOnly', providers.gradleProperty('authoringEditorWorkflowSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorPlaytestSmokeOnly', providers.gradleProperty('authoringEditorPlaytestSmokeOnly').orElse('false').get()
             programArguments.addAll '--quickPlaySingleplayer', 'AuthoringEditorSmoke', '--width', '1920', '--height', '1080'
+        }
+
+        textEffectsClientSmoke {
+            client()
+            sourceSet = sourceSets.gameTest
+            gameDirectory.set(textEffectsClientSmokeDirectory)
+            systemProperty 'villagerretaliation.textEffectsClientSmoke', textEffectsClientSmokeDirectory.get().asFile.absolutePath
+            programArguments.addAll '--width', '1280', '--height', '900'
         }
 
         dialogueCueClientSmoke {
@@ -1031,5 +1041,30 @@ tasks.named('runAnimationClientSmoke') {
         def result = new File(animationClientSmokeDirectory.get().asFile, 'result.txt')
         if (!result.isFile() || !result.text.contains('Animation client checks passed'))
             throw new GradleException('Animation client checks did not finish. Inspect ' + animationClientSmokeDirectory.get().asFile)
+    }
+}
+
+tasks.named('runTextEffectsClientSmoke') {
+    doFirst {
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Text effect checks require the declared ImGuiMC dependency.')
+        copy {
+            from imgui
+            into new File(textEffectsClientSmokeDirectory.get().asFile, 'mods')
+        }
+        def directory = textEffectsClientSmokeDirectory.get().asFile
+        directory.mkdirs()
+        new File(directory, 'options.txt').text = isolatedClientSmokeOptions + 'guiScale:2\n'
+        if (providers.gradleProperty('textEffectsCompatMods').isPresent()) {
+            copy {
+                from fileTree(rootProject.file(providers.gradleProperty('textEffectsCompatMods').get())).matching { include '*.jar' }
+                into new File(directory, 'mods')
+            }
+        }
+    }
+    doLast {
+        def result = new File(textEffectsClientSmokeDirectory.get().asFile, 'result.txt')
+        if (!result.isFile() || !result.text.contains('Text effects client smoke passed'))
+            throw new GradleException('Text effect checks did not finish. Inspect ' + textEffectsClientSmokeDirectory.get().asFile)
     }
 }

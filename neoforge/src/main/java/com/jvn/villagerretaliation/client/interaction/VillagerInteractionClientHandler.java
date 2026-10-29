@@ -350,14 +350,10 @@ public final class VillagerInteractionClientHandler {
             addVillagerChatSeparator(minecraft);
         }
         String displayedSpeaker = startsChatGroup ? resolvedSpeaker : "";
-        List<DialogueTextSegment> displayedSegments = dialogueTextEffectsDisabled()
-                ? List.of()
-                : displayedChatSegments(displayedSpeaker, resolvedSegments);
         addVillagerChatMessage(
                 minecraft,
                 formatVillagerChatMessage(resolvedText, currentChatGroupMessageIndex, displayedSpeaker, accentColor, resolvedSegments),
-                accentColor,
-                displayedSegments
+                accentColor
         );
         currentChatGroupMessageIndex++;
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
@@ -367,10 +363,8 @@ public final class VillagerInteractionClientHandler {
     private static void addVillagerChatMessage(
             Minecraft minecraft,
             Component message,
-            int accentColor,
-            List<DialogueTextSegment> textSegments) {
+            int accentColor) {
         minecraft.gui.getChat().addMessage(message, null, villagerChatTag(accentColor));
-        VillagerAnimatedChatText.remember(textSegments);
     }
 
     private static void addVillagerChatSeparator(Minecraft minecraft) {
@@ -447,17 +441,6 @@ public final class VillagerInteractionClientHandler {
         }
         message.append(VillagerStyledTextRenderer.component(textSegments, Style.EMPTY, color));
         return message;
-    }
-
-    private static List<DialogueTextSegment> displayedChatSegments(
-            String speakerLabel,
-            List<DialogueTextSegment> textSegments) {
-        List<DialogueTextSegment> displayedSegments = new java.util.ArrayList<>();
-        if (speakerLabel != null && !speakerLabel.isBlank()) {
-            displayedSegments.add(new DialogueTextSegment(gui("chat.speaker_prefix", speakerLabel), DialogueTextEffects.NONE));
-        }
-        displayedSegments.addAll(textSegments);
-        return List.copyOf(displayedSegments);
     }
 
     private static List<DialogueTextSegment> resolveChatSegments(

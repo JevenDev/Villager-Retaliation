@@ -37,11 +37,11 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = VillagerRetaliation.MOD_ID, value = Dist.CLIENT)
 public final class DialogueCueClientSmoke {
     private static final String OUTPUT = "villagerretaliation.dialogueCueClientSmoke";
-    private static final String PERFORMANCE = "<look=player><agree>Yes, I heard it too.<sound:entity.villager.yes volume=0.5 pitch=1.1><particle:smoke amount:2><pause=650>"
-            + "<look=left> Over there...<pause=700><look=right> or there?<pause=650>"
-            + "<look=player><disagree> No. Stay here.<pause=600><look=up> Above us?<pause=650>"
-            + "<look=down> Nothing below.<pause=600><reset><disagree>Wait.<pause=100>"
-            + "<agree> Maybe.<pause=100><reset><pause=300><speed=0.5> Let's think.<particle:minecraft:heart amount:3><nervous> I don't like this.</nervous>";
+    private static final String PERFORMANCE = "<look=player><agree><wave>Yes, I heard it too.</wave><sound:entity.villager.yes volume=0.5 pitch=1.1><particle:smoke amount:2><pause=650>"
+            + "<look=left> <shake><italic>Over there...</italic></shake><pause=700><look=right> <jump><bold>or there?</bold></jump><pause=650>"
+            + "<look=player><disagree> <pulse><rainbow>No. Stay here.</rainbow></pulse><pause=600><look=up> <gradient:#ff0000:#0000ff><underline>Above us?</underline></gradient><pause=650>"
+            + "<look=down> <strikethrough>Nothing below.</strikethrough><pause=600><reset><disagree><aqua>Wait.</aqua><pause=100>"
+            + "<agree> <obfuscated>Maybe.</obfuscated><pause=100><reset><pause=300><speed=0.5> Let's think.<particle:minecraft:heart amount:3><nervous> I don't like this.</nervous>";
     private static CompletableFuture<Integer> preparing;
     private static int phase;
     private static int entityId;
@@ -194,12 +194,12 @@ public final class DialogueCueClientSmoke {
             require(com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline().visibleCharacters() > 0,
                     "scrubbing forward reveals text through the native dialogue screen");
             com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.replay();
-            shownAt = now;
+            shownAt = Util.getMillis();
             phase = 11;
         } else if (phase == 11 && now - shownAt >= 750) {
             var timeline = com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.timeline();
             require(timeline != null && timeline.playing() && timeline.position() >= 700,
-                    "editor replay advances the shared timeline");
+                    "editor replay advances the shared timeline: " + timeline);
             captureTimeline("dialogue-timeline-playing");
             com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.stop();
             require(!com.jvn.villagerretaliation.authoring.preview.AuthoringDialoguePreview.active(),

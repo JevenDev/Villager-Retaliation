@@ -37,7 +37,6 @@ public final class VillagerChatTextFormatter {
         }
 
         Component formatted = VillagerStyledTextRenderer.component(segments, message.getStyle(), null);
-        VillagerAnimatedChatText.remember(segments);
         return formatted;
     }
 
