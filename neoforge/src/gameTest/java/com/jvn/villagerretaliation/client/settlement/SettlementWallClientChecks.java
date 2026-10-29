@@ -68,7 +68,7 @@ final class SettlementWallClientChecks {
             edit("Height: ground");
             require(editor.draft().level(), "level placement can be selected");
             edit("Height: level");
-            for (String choice : java.util.List.of("Default", "Low stone", "Tall stone", "None")) edit("Tower: " + choice);
+            for (String choice : java.util.List.of("Default", "Low stone", "Tall stone", "None", "Palisade post", "Plank post")) edit("Tower: " + choice);
             require(editor.draft().wall().nodeTowers().getLast() == com.jvn.villagerretaliation.settlement.SettlementWall.Tower.DEFAULT,
                     "all existing tower options can be selected");
             edit("Snap: on"); require(!editor.draft().snapping(), "snapping can be disabled");
@@ -111,6 +111,20 @@ final class SettlementWallClientChecks {
         } else if (this.phase == 4 && editor.canConfirm() && this.ticks > 5) {
             this.capture.accept("wall-timber-reinforced");
             button("Timber reinforced").onPress();
+            this.phase = 40; this.ticks = 0;
+        } else if (this.phase == 40 && editor.canConfirm() && this.ticks > 5) {
+            require(editor.hint().contains("Storage: Logs") && !editor.hint().contains("Stone"), "palisade uses only logs");
+            require(editor.cells().stream().anyMatch(cell -> cell.state().is(net.minecraft.world.level.block.Blocks.OAK_FENCE)),
+                    "palisade preview includes occasional fence tips");
+            this.capture.accept("wall-oak-palisade");
+            button("Oak palisade").onPress();
+            this.phase = 41; this.ticks = 0;
+        } else if (this.phase == 41 && editor.canConfirm() && this.ticks > 5) {
+            require(editor.hint().contains("Storage: Logs") && !editor.hint().contains("Stone"), "plank fence uses only logs");
+            require(editor.cells().stream().anyMatch(cell -> cell.state().is(net.minecraft.world.level.block.Blocks.OAK_PLANKS)),
+                    "plank preview contains the boarded wall");
+            this.capture.accept("wall-plank-fence");
+            button("Plank fence").onPress();
             var original = editor.draft().wall().nodes().getLast();
             drag(Vec3.atBottomCenterOf(original).add(0, 0.15, 0), Vec3.atBottomCenterOf(original.south()).add(0, 0.15, 0));
             require(!editor.draft().wall().nodes().getLast().equals(original), "tower nodes can be dragged");
@@ -119,7 +133,7 @@ final class SettlementWallClientChecks {
             button("Auto towers: on").onPress();
             require(SettlementWallGeometry.towers(editor.draft().wall()).size() == 2, "turning auto towers off removes generated towers");
             button("Auto towers: off").onPress();
-            next();
+            this.phase = 5; this.ticks = 0;
         } else if (this.phase == 5 && editor.canConfirm()) {
             var cells = java.util.List.copyOf(editor.cells());
             minecraft.getSingleplayerServer().submit(() -> {

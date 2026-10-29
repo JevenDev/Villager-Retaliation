@@ -79,6 +79,8 @@ public final class SettlementWallSession {
             if (this.upgrade != null && !this.demolishing && (!this.upgrade.wall().nodes().equals(request.wall().nodes())
                     || this.upgrade.wall().part() != request.wall().part() || this.upgrade.wall().closed() != request.wall().closed()))
                 return result(request, Status.REJECTED, List.of(), "Upgrades must preserve the placed wall route");
+            if (this.upgrade != null && !this.demolishing && this.wallSpanJunctionsChanged(request.wall()))
+                return result(request, Status.REJECTED, List.of(), "Span upgrades must keep the existing junction posts");
             this.revision = request.revision();
             this.wall = this.demolishing ? this.upgrade.wall() : request.wall();
             return refresh(level, allowed, request, "", town);
@@ -106,6 +108,12 @@ public final class SettlementWallSession {
         this.wall = null;
         this.result = result(request, Status.APPLIED, List.of(), this.demolishing ? "Wall piece destroyed" : count + " wall blocks placed");
         return this.result;
+    }
+
+    private boolean wallSpanJunctionsChanged(SettlementWall replacement) {
+        var original = this.upgrade.wall();
+        return original.part() == SettlementWall.Part.SPAN && original.nodes().stream()
+                .anyMatch(node -> !original.towerAt(node).equals(replacement.towerAt(node)));
     }
 
     private SettlementWallTerrain.Preview terrain(Level level, Predicate<BlockPos> allowed) {

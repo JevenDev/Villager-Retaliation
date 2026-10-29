@@ -1490,9 +1490,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             case 12 -> draft.height(1);
             case 13 -> draft.toggleLevel();
             case 14 -> {
-                var choices = com.jvn.villagerretaliation.settlement.SettlementWall.Tower.values();
-                if (draft.selected() >= 0) draft.tower(choices[(draft.wall().nodeTowers().get(draft.selected()).ordinal() + 1)
-                        % (this.walls.upgrading() ? choices.length - 1 : choices.length)]);
+                var choices = java.util.Arrays.stream(com.jvn.villagerretaliation.settlement.SettlementWall.Tower.values())
+                        .filter(choice -> !this.walls.upgrading() || choice != com.jvn.villagerretaliation.settlement.SettlementWall.Tower.NONE).toList();
+                if (draft.selected() >= 0) draft.tower(choices.get((choices.indexOf(draft.wall().nodeTowers().get(draft.selected())) + 1) % choices.size()));
             }
             case 15 -> draft.toggleSnapping();
             default -> throw new IllegalArgumentException("Unknown wall action");

@@ -22,6 +22,10 @@ public final class SettlementWallMaterials {
     public static final int STONE_PER_LENGTH = 4;
     public static final int TIMBER_STONE_PER_LENGTH = 6;
     public static final double TIMBER_LOGS_PER_LENGTH = 0.5;
+    public static final int PALISADE_POST_LOGS = 2;
+    public static final int PLANK_POST_LOGS = 1;
+    public static final double PALISADE_LOGS_PER_LENGTH = 0.5;
+    public static final double PLANK_LOGS_PER_LENGTH = 0.25;
     public record Cost(int stone, int logs) {
         public static final Cost ZERO = new Cost(0, 0);
     }
@@ -33,8 +37,8 @@ public final class SettlementWallMaterials {
     public record Payment(Cost cost, Cost supplied, String blocker, Runnable debit) {
         public boolean ready() { return blocker.isEmpty() && cost.equals(supplied); }
         public String message() {
-            return "Storage: Stone " + supplied.stone() + "/" + cost.stone() + " (stone/cobble)"
-                    + (cost.logs() > 0 ? ", Logs " + supplied.logs() + "/" + cost.logs() + " (any)" : "")
+            return "Storage: " + (cost.stone() > 0 || cost.logs() == 0 ? "Stone " + supplied.stone() + "/" + cost.stone() + " (stone/cobble)" : "")
+                    + (cost.logs() > 0 ? (cost.stone() > 0 ? ", " : "") + "Logs " + supplied.logs() + "/" + cost.logs() + " (any)" : "")
                     + (ready() ? "" : ". " + (blocker.isEmpty() ? "Not enough available materials" : blocker));
         }
         public boolean pay() {
@@ -82,14 +86,28 @@ public final class SettlementWallMaterials {
             // the normal piece has a fixed price, clipped terrain and extra foundations scale its size
             double scale = count / (double) positions.size();
             if (piece.part() == SettlementWall.Part.TOWER) {
-                stone += scale * (piece.towerAt(piece.nodes().getFirst()).equals("stone_tower_low") ? LOW_TOWER_STONE : TALL_TOWER_STONE);
+                switch (piece.towerAt(piece.nodes().getFirst())) {
+                    case "stone_tower_low" -> stone += scale * LOW_TOWER_STONE;
+                    case "stone_tower_tall" -> stone += scale * TALL_TOWER_STONE;
+                    case "palisade_post" -> logs += scale * PALISADE_POST_LOGS;
+                    case "plank_post" -> logs += scale * PLANK_POST_LOGS;
+                    default -> throw new IllegalArgumentException("Unknown wall post material");
+                }
             } else {
                 var start = piece.nodes().getFirst();
                 var end = piece.nodes().getLast();
                 int length = Math.max(Math.abs(start.getX() - end.getX()), Math.abs(start.getZ() - end.getZ())) + 1
-                        - (piece.towerAt(start).isEmpty() ? 0 : 3) - (piece.towerAt(end).isEmpty() ? 0 : 3);
-                stone += scale * Math.max(0, length) * (piece.type() == SettlementWall.Type.TIMBER ? TIMBER_STONE_PER_LENGTH : STONE_PER_LENGTH);
-                if (piece.type() == SettlementWall.Type.TIMBER) logs += scale * Math.max(0, length) * TIMBER_LOGS_PER_LENGTH;
+                        - (piece.towerRadius(start) + 1) - (piece.towerRadius(end) + 1);
+                double sizedLength = scale * Math.max(0, length);
+                switch (piece.type()) {
+                    case LOW_STONE, TALL_STONE -> stone += sizedLength * STONE_PER_LENGTH;
+                    case TIMBER -> {
+                        stone += sizedLength * TIMBER_STONE_PER_LENGTH;
+                        logs += sizedLength * TIMBER_LOGS_PER_LENGTH;
+                    }
+                    case PALISADE -> logs += sizedLength * PALISADE_LOGS_PER_LENGTH;
+                    case PLANK -> logs += sizedLength * PLANK_LOGS_PER_LENGTH;
+                }
             }
         }
         return new Amount(stone, logs);

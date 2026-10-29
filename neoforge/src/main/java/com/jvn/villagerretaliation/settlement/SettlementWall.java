@@ -11,7 +11,9 @@ public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, in
     public enum Type {
         LOW_STONE("Low stone", "stone_tower_low", "stone_span"),
         TALL_STONE("Tall stone", "stone_tower_tall", "stone_span"),
-        TIMBER("Timber reinforced", "stone_tower_tall", "timber_span");
+        TIMBER("Timber reinforced", "stone_tower_tall", "timber_span"),
+        PALISADE("Oak palisade", "palisade_post", "palisade_span"),
+        PLANK("Plank fence", "plank_post", "plank_span");
 
         private final String label;
         private final String tower;
@@ -29,10 +31,19 @@ public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, in
     }
 
     public enum Tower {
-        DEFAULT("Default"), LOW_STONE("Low stone"), TALL_STONE("Tall stone"), NONE("None");
+        DEFAULT("Default"), LOW_STONE("Low stone"), TALL_STONE("Tall stone"), NONE("None"),
+        PALISADE("Palisade post"), PLANK("Plank post");
         private final String label;
         Tower(String label) { this.label = label; }
         public String label() { return this.label; }
+        public Tower resolved(Type type) {
+            return this != DEFAULT ? this : switch (type) {
+                case LOW_STONE -> LOW_STONE;
+                case TALL_STONE, TIMBER -> TALL_STONE;
+                case PALISADE -> PALISADE;
+                case PLANK -> PLANK;
+            };
+        }
     }
 
     public SettlementWall(Type type, List<BlockPos> nodes, boolean closed, int towerSpacing) {
@@ -47,7 +58,14 @@ public record SettlementWall(Type type, List<BlockPos> nodes, boolean closed, in
             case LOW_STONE -> "stone_tower_low";
             case TALL_STONE -> "stone_tower_tall";
             case NONE -> "";
+            case PALISADE -> "palisade_post";
+            case PLANK -> "plank_post";
         };
+    }
+
+    public int towerRadius(BlockPos position) {
+        var name = towerAt(position);
+        return name.isEmpty() ? -1 : SettlementWallTemplates.get(name).size().getX() / 2;
     }
 
     public SettlementWall {

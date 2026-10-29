@@ -52,8 +52,23 @@ public final class SettlementWallGameTests {
                 int length = Math.max(Math.abs(end.getX()), Math.abs(end.getZ()));
                 for (int step = 0; step <= length; step++) {
                     var center = new BlockPos(Math.round(end.getX() * (float) step / length), 0, Math.round(end.getZ() * (float) step / length));
-                    helper.assertTrue(solid.contains(center), "wall center joins every tower without a gap at " + center);
+                    helper.assertTrue(solid.contains(center) || wall.towerRadius(BlockPos.ZERO) == 0
+                                    && solid.stream().anyMatch(pos -> pos.getY() == 0 && pos.distManhattan(center) <= 1),
+                            "wall stays within one block of the route through rounded intermediate nodes at " + center);
                 }
+                var footprint = new HashSet<BlockPos>();
+                solid.stream().filter(pos -> pos.getY() == 0).forEach(footprint::add);
+                var pending = new java.util.ArrayDeque<BlockPos>();
+                pending.add(BlockPos.ZERO);
+                footprint.remove(BlockPos.ZERO);
+                while (!pending.isEmpty()) {
+                    var current = pending.removeFirst();
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                        var neighbor = current.offset(dx, 0, dz);
+                        if (footprint.remove(neighbor)) pending.add(neighbor);
+                    }
+                }
+                helper.assertTrue(footprint.isEmpty(), "all posts and span columns form one connected barrier");
                 helper.assertValueEqual(plan.cells().size(), new HashSet<>(plan.cells().stream().map(SettlementWallTemplates.Cell::position).toList()).size(),
                         "joins place each block only once");
             }

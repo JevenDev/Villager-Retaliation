@@ -37,7 +37,10 @@ public final class SettlementWallDraft {
     public static SettlementWallDraft edit(SettlementWall wall) {
         var draft = new SettlementWallDraft(wall.type(), wall.towerSpacing() != 0, wall.towerSpacing() == 0 ? 16 : wall.towerSpacing());
         draft.part = wall.part();
-        draft.nodes.addAll(wall.nodes()); draft.towers.addAll(wall.nodeTowers());
+        draft.nodes.addAll(wall.nodes());
+        // span upgrades retain the junction footprints owned by neighboring pieces
+        draft.towers.addAll(wall.part() == SettlementWall.Part.SPAN
+                ? wall.nodeTowers().stream().map(tower -> tower.resolved(wall.type())).toList() : wall.nodeTowers());
         wall.nodes().forEach(node -> { draft.ground.add(node.getY()); draft.offsets.add(0); });
         draft.closed = wall.closed(); draft.extending = false; draft.selected = wall.nodes().isEmpty() ? -1 : 0;
         return draft;

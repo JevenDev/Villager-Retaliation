@@ -21,14 +21,16 @@ public final class SettlementWallGeometry {
         var nodes = wall.part() == SettlementWall.Part.COMPLETE ? towers(wall) : wall.nodes();
         if (nodes.size() > 64) return invalid("Wall draft exceeds 64 towers. Increase spacing or shorten the wall");
         var towerNodes = nodes.stream().filter(node -> !wall.towerAt(node).isEmpty()).toList();
+        var towerRadii = new java.util.HashMap<BlockPos, Integer>();
+        towerNodes.forEach(node -> towerRadii.put(node, wall.towerRadius(node)));
         int segments = wall.part() == SettlementWall.Part.TOWER ? 0 : nodes.size() - (wall.closed() ? 0 : 1);
         for (int i = 0; i < segments; i++) {
             var start = nodes.get(i);
             var end = nodes.get((i + 1) % nodes.size());
             int dx = end.getX() - start.getX(), dz = end.getZ() - start.getZ();
             int length = Math.max(Math.abs(dx), Math.abs(dz));
-            if (length < (wall.towerAt(start).isEmpty() && wall.towerAt(end).isEmpty() ? 1 : 6))
-                return invalid("Towers must be at least 6 blocks apart");
+            if (length < Math.max(1, wall.towerRadius(start) + wall.towerRadius(end) + 2))
+                return invalid("Move the nodes farther apart so their towers do not overlap");
             if (length > SettlementWall.MAX_SPAN) return invalid("Each wall span is limited to 128 blocks");
             var rotation = rotation(start, end);
             for (int step = 0; step <= length; step++) {
@@ -40,8 +42,8 @@ public final class SettlementWallGeometry {
                     if (cell.position().getX() != column) continue;
                     var offset = new BlockPos(0, cell.position().getY(), cell.position().getZ() - span.size().getZ() / 2).rotate(rotation);
                     var pos = center.offset(offset);
-                    if (towerNodes.stream().anyMatch(node -> Math.abs(node.getX() - pos.getX()) <= 2
-                            && Math.abs(node.getZ() - pos.getZ()) <= 2)) continue;
+                    if (towerNodes.stream().anyMatch(node -> Math.abs(node.getX() - pos.getX()) <= towerRadii.get(node)
+                            && Math.abs(node.getZ() - pos.getZ()) <= towerRadii.get(node))) continue;
                     var state = cell.state().rotate(rotation);
                     if (!state.isAir() || !cells.containsKey(pos)) cells.put(pos, state);
                     if (cell.position().getY() == 0 && !state.isAir()) foundations.add(pos);
@@ -58,7 +60,7 @@ public final class SettlementWallGeometry {
                     : wall.closed() ? nodes.getFirst() : i > 0 ? node.offset(node.subtract(nodes.get(i - 1))) : node.east();
             var rotation = rotation(node, direction);
             for (var cell : tower.cells()) {
-                var offset = cell.position().offset(-2, 0, -2).rotate(rotation);
+                var offset = cell.position().offset(-tower.size().getX() / 2, 0, -tower.size().getZ() / 2).rotate(rotation);
                 var pos = node.offset(offset);
                 var state = cell.state().rotate(rotation);
                 cells.put(pos, state);
@@ -111,7 +113,7 @@ public final class SettlementWallGeometry {
         for (int i = 0; i < nodes.size() - (wall.closed() ? 0 : 1); i++) {
             var start = nodes.get(i); var end = nodes.get((i + 1) % nodes.size());
             pieces.add(new SettlementWall(wall.type(), List.of(start, end), false, 0,
-                    List.of(choice(wall, start), choice(wall, end)), SettlementWall.Part.SPAN));
+                    List.of(choice(wall, start).resolved(wall.type()), choice(wall, end).resolved(wall.type())), SettlementWall.Part.SPAN));
         }
         return List.copyOf(pieces);
     }

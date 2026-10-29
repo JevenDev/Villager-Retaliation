@@ -23,7 +23,7 @@ public final class SettlementWallTemplates {
     private SettlementWallTemplates() {}
 
     public static synchronized Piece get(String name) {
-        if (!List.of("stone_tower_low", "stone_tower_tall", "stone_span", "timber_span").contains(name))
+        if (!List.of("stone_tower_low", "stone_tower_tall", "stone_span", "timber_span", "palisade_post", "palisade_span", "plank_post", "plank_span").contains(name))
             throw new IllegalArgumentException("Unknown wall template");
         return CACHE.computeIfAbsent(name, SettlementWallTemplates::read);
     }
