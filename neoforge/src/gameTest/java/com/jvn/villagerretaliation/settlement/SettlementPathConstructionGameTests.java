@@ -24,6 +24,41 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_path_construction")
 @PrefixGameTestTemplate(false)
 public final class SettlementPathConstructionGameTests {
+    public record ClientReview(com.jvn.villagerretaliation.allegiance.VillageAllegianceId town, java.util.Set<UUID> projects,
+                               net.minecraft.nbt.CompoundTag order, java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> terrain) { }
+
+    public static ClientReview reviewClient(net.minecraft.server.level.ServerPlayer player, SettlementPath path) {
+        var level = player.serverLevel();
+        var town = SettlementSavedData.get(level).at(level.dimension().location(), BlockPos.containing(path.nodes().getFirst().position())).orElseThrow();
+        var preview = SettlementPathTerrain.preview(level, path, town::contains);
+        if (!preview.error().isEmpty()) throw new IllegalStateException(preview.error());
+        var terrain = new java.util.LinkedHashMap<BlockPos, net.minecraft.world.level.block.state.BlockState>();
+        for (var cell : preview.cells()) {
+            terrain.put(cell.position(), level.getBlockState(cell.position()));
+            terrain.put(cell.position().above(), level.getBlockState(cell.position().above()));
+        }
+        var order = SettlementPathTerrain.order(preview);
+        if (order.protectedSite(level, town)) throw new IllegalStateException("Smoke path must stay clear of protected worksites");
+        return new ClientReview(town.id(), java.util.Set.copyOf(town.projects().keySet()), order.save(), java.util.Map.copyOf(terrain));
+    }
+
+    public static void verifyClientQueued(net.minecraft.server.level.ServerPlayer player, ClientReview review) {
+        var level = player.serverLevel();
+        var town = SettlementSavedData.get(level).get(review.town()).orElseThrow();
+        var added = town.projects().values().stream().filter(project -> !review.projects().contains(project.id())).toList();
+        if (added.size() != 1) throw new IllegalStateException("Path confirmation must queue exactly one project: " + added.size());
+        var project = added.getFirst();
+        if (!project.pending() || project.blocker().isBlank() || project.order() == null || !project.order().save().equals(review.order()))
+            throw new IllegalStateException("Queued path must retain the reviewed construction order and report its missing builder");
+        review.terrain().forEach((pos, state) -> {
+            if (!level.getBlockState(pos).equals(state)) throw new IllegalStateException("Queued path changed terrain before construction at " + pos);
+        });
+        if (!SettlementConstructionService.cancel(player, town, project.id())) throw new IllegalStateException("Smoke path project cancels");
+        review.terrain().forEach((pos, state) -> {
+            if (!level.getBlockState(pos).equals(state)) throw new IllegalStateException("Cancelling queued path changed terrain at " + pos);
+        });
+    }
+
     @GameTest(template = "empty", timeoutTicks = 100)
     public static void savedPathPreservesSoilsAndRejectsLaterTerrainChanges(GameTestHelper helper) {
         var f = fixture(helper);

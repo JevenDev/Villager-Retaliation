@@ -16,6 +16,8 @@ final class SettlementPathClientChecks {
     private int ticks;
     private boolean refreshed;
     private Vec3 start;
+    private net.minecraft.world.level.block.state.BlockState junctionBefore;
+    private com.jvn.villagerretaliation.settlement.SettlementPathConstructionGameTests.ClientReview reviewed;
     private double cameraX;
     private double cameraZ;
 
@@ -32,7 +34,7 @@ final class SettlementPathClientChecks {
         if (this.phase == 0) {
             this.cameraX = this.view.focusX();
             this.cameraZ = this.view.focusZ();
-            this.view.focus(this.center.getX() + 4, this.center.getZ() + 6);
+            this.view.focus(this.center.getX() + 4, this.center.getZ() + 10);
             require(this.view.children().stream().filter(SettlementViewUi.IconButton.class::isInstance).map(Button.class::cast)
                     .filter(button -> button.visible).noneMatch(button -> button.getMessage().getString().equals("Path") || button.getMessage().getString().equals("Branch")),
                     "path tools are grouped inside Build");
@@ -41,7 +43,15 @@ final class SettlementPathClientChecks {
             require(buildLabels.containsAll(java.util.List.of("Farmland", "Path", "Wall", "Upgrade wall", "Repair wall", "Destroy wall"))
                     && java.util.Arrays.stream(com.jvn.villagerretaliation.settlement.SettlementInfrastructure.Type.values())
                             .allMatch(type -> buildLabels.contains(type.label())), "Build offers construction, infrastructure and wall maintenance tools");
-            this.start = this.center.offset(1, -1, 6).getCenter().add(0, 0.48, 0);
+            this.start = this.center.offset(1, -1, 10).getCenter().add(0, 0.48, 0);
+            minecraft.getSingleplayerServer().submit(() -> {
+                var level = minecraft.getSingleplayerServer().overworld();
+                var town = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level).at(level.dimension().location(), this.center).orElseThrow();
+                com.jvn.villagerretaliation.settlement.SettlementInfrastructureGameTests.prepareClient(level, town.id());
+                var junction = BlockPos.containing(this.start);
+                this.junctionBefore = level.getBlockState(junction);
+                level.setBlockAndUpdate(junction, Blocks.DIRT_PATH.defaultBlockState());
+            }).join();
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 1 && this.ticks > 15) {
@@ -142,19 +152,22 @@ final class SettlementPathClientChecks {
                     "path actions use compact content widths");
             require(button("Confirm").getY() - button("Natural").getY() <= 22,
                     "the primary path toolbar fits within two rows");
+            review(minecraft);
             this.capture.accept("path-loop-confirmation");
             button("Confirm").onPress();
             require(editor.confirming(), "Confirm waits for the server");
             this.phase++;
-        } else if (this.phase == 5 && !editor.active() && minecraft.level.getBlockState(BlockPos.containing(this.start)).is(Blocks.DIRT_PATH)) {
-            require(editor.centerline().isEmpty(), "confirmed curve geometry is discarded");
+        } else if (this.phase == 5 && !editor.active()) {
+            verifyQueued(minecraft);
+            require(editor.centerline().isEmpty(), "queued curve geometry is discarded");
+            require(minecraft.level.getBlockState(BlockPos.containing(this.start)).is(Blocks.DIRT_PATH), "the pre-existing junction is preserved");
             chooseBuildTool("Path");
             require(!editor.draft().path().branch(), "the path tool also handles branching");
             require(editor.draft().path().width() == 4, "settings survive confirmation");
             require(editor.draft().smoothMode(), "curve mode survives confirmation");
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "Path starts on existing path terrain");
-            click(this.start.add(0, 0, -4));
+            click(this.start.add(0, 0, 4));
             require(editor.draft().path().nodes().size() == 2, "branch can extend away from the existing path");
             require(editor.draft().path().nodes().getLast().outgoing().lengthSqr() > 0, "the next path continues with curved nodes");
             this.phase++;
@@ -168,10 +181,12 @@ final class SettlementPathClientChecks {
             editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("leaving the preview must not request another path review"); });
             SettlementViewPanelClientChecks.verifyHintToggle(this.view);
             require(editor.canConfirm() && editor.draft().path().equals(reviewed), "toggling hints preserves the reviewed path and Confirm");
+            review(minecraft);
             this.capture.accept("path-branch-preview");
             button("Confirm").onPress();
             this.phase++;
         } else if (this.phase == 7 && !editor.active()) {
+            verifyQueued(minecraft);
             chooseBuildTool("Path");
             require(editor.draft().path().nodes().isEmpty() && !editor.draft().canUndo(), "confirmed nodes and history are discarded");
             button("Curves").onPress();
@@ -214,11 +229,26 @@ final class SettlementPathClientChecks {
             require(!this.view.buildMode() && this.view.panelOpacity() == 1, "cancel restores the map and info viewer");
             require(this.view.uiWindows().stream().flatMap(window -> window.widgets().stream())
                     .allMatch(this.view.children()::contains), "restored panels accept input again");
+            minecraft.getSingleplayerServer().submit(() -> minecraft.getSingleplayerServer().overworld()
+                    .setBlockAndUpdate(BlockPos.containing(this.start), this.junctionBefore)).join();
             this.capture.accept("build-panels-restored");
             this.phase++;
             return true;
         }
         return false;
+    }
+
+    private void review(Minecraft minecraft) {
+        var path = this.view.pathEditor().draft().path();
+        this.reviewed = minecraft.getSingleplayerServer().submit(() ->
+                com.jvn.villagerretaliation.settlement.SettlementPathConstructionGameTests.reviewClient(
+                        minecraft.getSingleplayerServer().getPlayerList().getPlayer(minecraft.player.getUUID()), path)).join();
+    }
+
+    private void verifyQueued(Minecraft minecraft) {
+        minecraft.getSingleplayerServer().submit(() ->
+                com.jvn.villagerretaliation.settlement.SettlementPathConstructionGameTests.verifyClientQueued(
+                        minecraft.getSingleplayerServer().getPlayerList().getPlayer(minecraft.player.getUUID()), this.reviewed)).join();
     }
 
     private void chooseBuildTool(String label) {
