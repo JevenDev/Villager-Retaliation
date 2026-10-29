@@ -19,6 +19,7 @@ final class SettlementWallClientChecks {
     private final Map<BlockPos, BlockState> before = new LinkedHashMap<>(), targets = new LinkedHashMap<>();
     private int phase, ticks;
     private double cameraX, cameraZ;
+    private Runnable restoreMaterials;
 
     SettlementWallClientChecks(SettlementViewScreen view, BlockPos center, Consumer<String> capture) {
         this.view = view; this.start = center.offset(1, 0, 20); this.capture = capture;
@@ -29,6 +30,8 @@ final class SettlementWallClientChecks {
         if (this.phase == 0) {
             minecraft.getSingleplayerServer().submit(() -> {
                 var level = minecraft.getSingleplayerServer().overworld();
+                var town = com.jvn.villagerretaliation.settlement.SettlementSavedData.get(level).at(level.dimension().location(), this.start).orElseThrow();
+                this.restoreMaterials = com.jvn.villagerretaliation.settlement.SettlementWallMaterialsGameTests.supplyForClient(level, town, this.start.north(8));
                 for (var pos : java.util.List.of(this.start.east(12), this.start.east(12).above())) {
                     this.before.put(pos, level.getBlockState(pos));
                     level.setBlock(pos, net.minecraft.world.level.block.Blocks.DIRT.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -78,11 +81,13 @@ final class SettlementWallClientChecks {
             next();
         } else if (this.phase == 2 && editor.canConfirm()) {
             require(editor.ghost() != null && !editor.cells().isEmpty(), "wall preview renders real template blocks");
+            require(editor.hint().contains("Storage: Stone") && !editor.hint().contains("Free"), "wall controls show the settlement material quote");
             var reviewed = editor.draft().wall();
             editor.draft().extend();
             editor.hover(this.start.south(8));
             editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("hover must not request another wall review"); });
             require(editor.canConfirm() && editor.draft().wall().equals(reviewed), "cursor extensions preserve the confirmed wall revision");
+            require(editor.hint().contains("Storage: Stone"), "cursor extensions retain the reviewed material quote");
             editor.stop();
             editor.tick(minecraft.level, java.util.UUID.randomUUID(), pos -> true, request -> { throw new IllegalStateException("leaving the preview must not request another wall review"); });
             SettlementViewPanelClientChecks.verifyHintToggle(this.view);
@@ -188,6 +193,7 @@ final class SettlementWallClientChecks {
                 var level = minecraft.getSingleplayerServer().overworld();
                 this.targets.forEach((pos, state) -> require(level.getBlockState(pos).equals(state), "destroy matches its removal preview"));
                 this.before.forEach((pos, state) -> level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE));
+                this.restoreMaterials.run();
             }).join();
             this.view.focus(this.cameraX, this.cameraZ);
             this.view.mouseScrolled(this.view.viewportWidth() / 2.0, 80, 0, 100);

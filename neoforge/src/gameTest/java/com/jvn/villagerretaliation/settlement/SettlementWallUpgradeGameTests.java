@@ -251,7 +251,10 @@ public final class SettlementWallUpgradeGameTests {
         }
         var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
         var session = new SettlementWallSession();
-        var id = UUID.randomUUID(); var town = VillageAllegianceId.random();
+        var id = UUID.randomUUID();
+        var record = SettlementWallMaterialsGameTests.town(level, base);
+        SettlementWallMaterialsGameTests.supply(level, record, base.north(8));
+        var town = record.id();
         var preview = session.request(level, id, true, pos -> true,
                 new SettlementWallRequestPayload(id, 1, Action.PREVIEW, UUID.randomUUID(), wall), town);
         helper.assertValueEqual(preview.status(), Status.PREVIEW, "source wall previews: " + preview.message());

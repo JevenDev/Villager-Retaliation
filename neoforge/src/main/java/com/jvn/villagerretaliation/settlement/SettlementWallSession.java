@@ -81,7 +81,7 @@ public final class SettlementWallSession {
                 return result(request, Status.REJECTED, List.of(), "Upgrades must preserve the placed wall route");
             this.revision = request.revision();
             this.wall = this.demolishing ? this.upgrade.wall() : request.wall();
-            return refresh(level, allowed, request, "");
+            return refresh(level, allowed, request, "", town);
         }
         if (request.revision() != this.revision || this.result == null || !this.token.equals(request.token()))
             return result(request, Status.REJECTED, List.of(), "Review the wall before confirming");
@@ -92,7 +92,11 @@ public final class SettlementWallSession {
                 || !this.upgrade.equals(SettlementWallsSavedData.get(server).get(this.upgrade.id()))))
             return result(request, Status.REJECTED, List.of(), "Another upgrade changed this wall. Select it again");
         var current = terrain(level, allowed);
-        if (!this.preview.equals(current)) return refresh(level, allowed, request, "Terrain changed. Review the wall and confirm again");
+        if (!this.preview.equals(current)) return refresh(level, allowed, request, "Terrain changed. Review the wall and confirm again", town);
+        if (!this.demolishing && town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
+            var payment = payment(server, town, session);
+            if (!payment.pay()) return refresh(level, allowed, request, "", town);
+        }
         int count = SettlementWallTerrain.apply(level, current);
         if (town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
             if (this.demolishing) SettlementWallsSavedData.get(server).remove(this.upgrade.id());
@@ -120,8 +124,19 @@ public final class SettlementWallSession {
         return preview;
     }
 
-    private SettlementWallResultPayload refresh(Level level, Predicate<BlockPos> allowed, SettlementWallRequestPayload request, String message) {
+    private SettlementWallMaterials.Payment payment(net.minecraft.server.level.ServerLevel level,
+                                                     com.jvn.villagerretaliation.allegiance.VillageAllegianceId town, UUID consumer) {
+        return SettlementWallMaterials.prepare(level, SettlementSavedData.get(level).get(town).orElse(null), consumer,
+                SettlementWallMaterials.cost(this.wall, this.preview, this.upgrade));
+    }
+
+    private SettlementWallResultPayload refresh(Level level, Predicate<BlockPos> allowed, SettlementWallRequestPayload request, String message,
+                                                 com.jvn.villagerretaliation.allegiance.VillageAllegianceId town) {
         this.preview = terrain(level, allowed);
+        if (this.preview.error().isEmpty() && !this.demolishing && town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
+            var materials = payment(server, town, request.session()).message();
+            message = message.isEmpty() ? materials : message + "\n" + materials;
+        }
         this.token = UUID.randomUUID();
         this.result = result(request, this.preview.error().isEmpty() ? Status.PREVIEW : Status.REJECTED,
                 this.preview.cells().stream().map(cell -> new SettlementWallResultPayload.Cell(cell.position(), cell.target(), cell.kind())).toList(),

@@ -127,7 +127,7 @@ public final class SettlementWallGameTests {
         pig.discard();
         var ready = SettlementWallTerrain.preview(level, wall, pos -> true);
         helper.assertTrue(ready.error().isEmpty(), "replaceable vegetation is allowed");
-        helper.assertTrue(SettlementWallTerrain.apply(level, ready) > 0, "instant placement creates blocks without construction resources");
+        helper.assertTrue(SettlementWallTerrain.apply(level, ready) > 0, "terrain application matches the accepted geometry");
         for (var cell : ready.cells()) helper.assertValueEqual(level.getBlockState(cell.position()), cell.target(), "applied blocks match the preview");
         helper.assertTrue(SettlementWallTerrain.preview(level, wall, pos -> true).cells().stream().allMatch(cell -> cell.kind() == SettlementWallTerrain.Kind.EXISTING || cell.kind() == SettlementWallTerrain.Kind.SKIPPED),
                 "existing matching walls remain unchanged");
@@ -436,7 +436,9 @@ public final class SettlementWallGameTests {
         var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
         var session = new SettlementWallSession();
         var id = UUID.randomUUID();
-        var town = com.jvn.villagerretaliation.allegiance.VillageAllegianceId.random();
+        var record = SettlementWallMaterialsGameTests.town(level, base);
+        SettlementWallMaterialsGameTests.supply(level, record, base.north(8));
+        var town = record.id();
         var preview = session.request(level, id, true, pos -> true,
                 new SettlementWallRequestPayload(id, 1, SettlementWallRequestPayload.Action.PREVIEW, UUID.randomUUID(), wall), town);
         helper.assertValueEqual(preview.status(), SettlementWallResultPayload.Status.PREVIEW, "clear wall previews");
