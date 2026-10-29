@@ -55,6 +55,11 @@ final class SettlementConstructionOrder {
     }
 
     boolean wall() { return !this.originals.isEmpty(); }
+    boolean campAvailable() {
+        return wall() && java.util.stream.Stream.concat(this.originals.stream(), this.replacements.stream()).map(SettlementWallsSavedData.Entry::wall)
+                .allMatch(wall -> wall.type() == SettlementWall.Type.PALISADE && wall.nodeTowers().stream()
+                        .allMatch(tower -> tower == SettlementWall.Tower.DEFAULT || tower == SettlementWall.Tower.PALISADE || tower == SettlementWall.Tower.NONE));
+    }
     boolean registers(SettlementArea area) { return area.equals(this.completedArea); }
 
     BlockPos origin() {
@@ -97,7 +102,7 @@ final class SettlementConstructionOrder {
     String commission(ServerPlayer player, SettlementRecord town, UUID id) {
         if (!SettlementConstructionService.canBuild(player, town)) return "Construction is not permitted";
         if (town.knowsProject(id)) return "";
-        if (town.stage().projects() == 0) return "Advance the settlement stage to unlock construction projects";
+        if (town.stage().projects() == 0 && !campAvailable()) return "Advance the settlement stage to unlock construction projects";
         if (town.projects().values().stream().anyMatch(project -> project.unfinished() && project.order() != null
                 && project.order().originals.stream().anyMatch(old -> this.originals.stream().anyMatch(entry -> entry.id().equals(old.id())))))
             return "This wall already has an unfinished construction order";

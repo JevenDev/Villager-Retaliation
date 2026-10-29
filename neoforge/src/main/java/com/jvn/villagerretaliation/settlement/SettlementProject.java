@@ -135,7 +135,8 @@ public final class SettlementProject {
     }
 
     int capacity(SettlementRecord town) {
-        return this.wallConstruction != null && this.wallConstruction.campAvailable() ? Math.max(1, town.stage().projects()) : town.stage().projects();
+        boolean camp = this.wallConstruction != null && this.wallConstruction.campAvailable() || this.order != null && this.order.campAvailable();
+        return camp ? Math.max(1, town.stage().projects()) : town.stage().projects();
     }
 
     public SettlementArea workplace() {

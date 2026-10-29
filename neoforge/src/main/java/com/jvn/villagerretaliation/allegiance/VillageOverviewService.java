@@ -74,7 +74,7 @@ public final class VillageOverviewService {
                 .flatMap(registry::canonicalRecord).orElse(null);
         if (village == null) {
             return new VillageOverviewPayload(anchor, level.dimension().location(), openScreen, "",
-                    VillageLifecycleState.ACTIVE, 0, 0, 0, 0, 0, 0, 0, 0, List.of());
+                    VillageLifecycleState.ACTIVE, 0, 0, 0, 0, 0, 0, 0, 0, List.of(), VillageOpinion.NEUTRAL);
         }
         var reputation = VillagerReputationSavedData.get(level);
         var social = VillagerSocialGraphSavedData.get(level);
@@ -111,7 +111,8 @@ public final class VillageOverviewService {
         var trust = VillageNamingService.trustGate(level, player, village);
         return new VillageOverviewPayload(anchor, level.dimension().location(), openScreen,
                 village.displayName(), village.lifecycleState(), adults, residents.size() - adults, present,
-                facilities[0], facilities[1], facilities[2], trust.trustedResidents(), trust.requiredResidents(), residents);
+                facilities[0], facilities[1], facilities[2], trust.trustedResidents(), trust.requiredResidents(), residents,
+                VillageOpinion.of(level, village.id(), player.getUUID()));
     }
 
     private static int[] countFacilities(ServerLevel level, BlockPos anchor,

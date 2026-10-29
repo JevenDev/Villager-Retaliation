@@ -161,6 +161,41 @@ public final class SettlementConstructionOrderGameTests {
         }).thenSucceed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "orders_camp")
+    public static void campMaintainsItsBasicPalisades(GameTestHelper helper) {
+        var f = SettlementConstructionGameTests.fixture(helper);
+        try {
+            for (var pos : BlockPos.betweenClosed(f.area().min(), f.area().max()))
+                helper.getLevel().setBlock(pos, pos.getY() < f.origin().getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
+            var entry = wall(helper, f);
+            helper.getLevel().setBlock(f.origin().offset(4, 1, 4), Blocks.AIR.defaultBlockState(), 2);
+            var preview = SettlementWallTerrain.repair(helper.getLevel(), entry.blocks(), f.town()::contains);
+            var repair = SettlementConstructionOrder.wall("Wall repair", preview,
+                    SettlementWallMaterials.cost(entry.wall(), preview, null), List.of(entry), List.of(entry));
+            var id = UUID.randomUUID();
+            String error = repair.commission(f.leader(), f.town(), id);
+            helper.assertTrue(error.isEmpty(), "Camp can repair a palisade: " + error);
+            var project = f.town().projects().get(id);
+            fund(helper, f, project);
+            helper.assertTrue(project.active() && project.capacity(f.town()) == 1, "Camp repair shares its single construction slot");
+            helper.assertValueEqual(SettlementProject.load(project.save()).capacity(f.town()), 1, "Camp order capacity survives reload");
+            helper.assertTrue(SettlementConstructionService.cancel(f.leader(), f.town(), id), "Camp repair can be cancelled");
+            repair.record(helper.getLevel(), f.town(), project);
+            var demolition = SettlementConstructionOrder.wall("Wall demolition",
+                    SettlementWallTerrain.demolition(helper.getLevel(), entry.blocks(), f.town()::contains),
+                    SettlementWallMaterials.Cost.ZERO, List.of(entry), List.of());
+            var removeId = UUID.randomUUID();
+            helper.assertTrue(demolition.commission(f.leader(), f.town(), removeId).isEmpty(), "Camp demolition queues");
+            helper.assertTrue(f.town().projects().get(removeId).active(), "labor-only demolition starts without supplies");
+            var stone = new SettlementWall(SettlementWall.Type.LOW_STONE, entry.wall().nodes(), false, 0,
+                    entry.wall().nodeTowers(), entry.wall().part());
+            var replacement = new SettlementWallsSavedData.Entry(entry.id(), entry.group(), entry.town(), entry.dimension(), stone, entry.blocks());
+            helper.assertFalse(SettlementConstructionOrder.wall("Stone upgrade", preview, SettlementWallMaterials.Cost.ZERO,
+                    List.of(entry), List.of(replacement)).campAvailable(), "upgrades cannot bypass the Hamlet requirement for stone walls");
+        } finally { f.builder().discard(); }
+        helper.succeed();
+    }
+
     private static void fund(GameTestHelper helper, SettlementConstructionGameTests.Fixture f, SettlementProject project) {
         SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), project.order().plan(project.id()), f.origin(), project.id());
         SettlementConstructionMaterials.collect(f.town(), project, f.builder().getUUID(), SettlementConstructionMaterials.collectionTarget(project));
