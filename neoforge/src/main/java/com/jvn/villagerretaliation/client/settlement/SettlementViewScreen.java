@@ -1452,6 +1452,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return;
         }
         if (this.walls.editingPlaced()) return;
+        var automatic = SettlementWallGizmo.hitAutomatic(this.walls.draft(), this::project, x, y);
+        if (automatic != null) {
+            if (this.walls.draft().beginAutomatic(automatic)) {
+                this.wallDragX = x;
+                this.wallDragY = y;
+                this.walls.hover(null);
+            } else this.walls.feedback("Wall has 32 nodes. Confirm this section before editing another auto tower");
+            return;
+        }
         var point = wallPoint(x, y);
         if (point == null) this.walls.feedback("No loaded ground at this position");
         else if (!this.walls.draft().place(point) && this.walls.draft().extending())
@@ -2269,7 +2278,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     || this.wallSpacing.visible && this.wallSpacing.isMouseOver(x, y);
             boolean ground = this.popup == null && !overControl && worldContains(x, y) && windowAt(x, y) == null;
             int node = ground ? SettlementWallGizmo.hit(this.walls.draft(), this::project, x, y) : -1;
-            this.walls.hover(!ground ? null : node >= 0 && this.walls.draft().snapping()
+            boolean automatic = ground && node < 0 && SettlementWallGizmo.hitAutomatic(this.walls.draft(), this::project, x, y) != null;
+            this.walls.hover(!ground || automatic ? null : node >= 0 && this.walls.draft().snapping()
                     ? this.walls.draft().wall().nodes().get(node) : node < 0 ? wallPoint(x, y) : null);
         }
         if (this.paths.active()) {

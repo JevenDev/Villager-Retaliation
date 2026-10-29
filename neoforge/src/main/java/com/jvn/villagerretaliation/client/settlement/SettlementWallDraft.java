@@ -23,6 +23,8 @@ public final class SettlementWallDraft {
     private int selected = -1;
     private int version;
     private State gesture;
+    private BlockPos automaticNode;
+    private int automaticIndex;
 
     public SettlementWallDraft(SettlementWall.Type type, boolean automatic, int spacing) {
         this(type, automatic, spacing, false, true);
@@ -178,9 +180,39 @@ public final class SettlementWallDraft {
         this.selected = index;
         this.gesture = state();
     }
+    public boolean beginAutomatic(BlockPos position) {
+        if (dragging() || !this.automatic || this.part != SettlementWall.Part.COMPLETE
+                || this.nodes.size() >= SettlementWall.MAX_NODES || this.nodes.contains(position)) return false;
+        int next = 0;
+        for (var node : com.jvn.villagerretaliation.settlement.SettlementWallGeometry.towers(wall())) {
+            if (node.equals(position)) {
+                this.gesture = state();
+                this.selected = -1;
+                this.automaticNode = node;
+                this.automaticIndex = next;
+                return true;
+            }
+            if (next < this.nodes.size() && node.equals(this.nodes.get(next))) next++;
+        }
+        return false;
+    }
     public void drag(BlockPos position) {
         if (!dragging()) return;
         restore(this.gesture);
+        if (this.automaticNode != null) {
+            this.selected = this.automaticIndex;
+            int next = this.selected % this.nodes.size();
+            var start = this.nodes.get(this.selected - 1);
+            var end = this.nodes.get(next);
+            double fraction = Math.max(Math.abs(this.automaticNode.getX() - start.getX()), Math.abs(this.automaticNode.getZ() - start.getZ()))
+                    / (double) Math.max(Math.abs(end.getX() - start.getX()), Math.abs(end.getZ() - start.getZ()));
+            int offset = (int) Math.round(this.offsets.get(this.selected - 1)
+                    + (this.offsets.get(next) - this.offsets.get(this.selected - 1)) * fraction);
+            this.nodes.add(this.selected, this.automaticNode);
+            this.towers.add(this.selected, SettlementWall.Tower.DEFAULT);
+            this.ground.add(this.selected, this.automaticNode.getY() - offset);
+            this.offsets.add(this.selected, offset);
+        }
         var old = this.nodes.get(this.selected);
         int groundY = position.getY(), offset = this.offsets.get(this.selected);
         position = snap(position.atY(this.level ? old.getY() : groundY + offset), this.selected);
@@ -196,11 +228,11 @@ public final class SettlementWallDraft {
     public void finish() {
         if (!dragging()) return;
         if (!this.gesture.equals(state())) remember(this.gesture);
-        this.gesture = null;
+        this.gesture = null; this.automaticNode = null;
     }
     public void cancelDrag() {
         if (!dragging()) return;
-        restore(this.gesture); this.gesture = null;
+        restore(this.gesture); this.gesture = null; this.automaticNode = null;
     }
     public void stop() { finish(); this.extending = false; }
     public void extend() { if (!this.closed) this.extending = true; }

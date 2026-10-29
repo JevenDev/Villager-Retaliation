@@ -220,6 +220,77 @@ public final class SettlementWallGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_wall")
+    public static void draggingAutomaticTowersPromotesNodesAndReshapesBothSpans(GameTestHelper helper) {
+        var draft = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, true, 8);
+        draft.place(BlockPos.ZERO); draft.place(new BlockPos(24, 0, 0));
+        var original = draft.wall();
+        var automatic = new BlockPos(8, 0, 0);
+        helper.assertFalse(draft.beginAutomatic(new BlockPos(10, 0, 0)), "only generated towers can start an automatic drag");
+        helper.assertTrue(draft.beginAutomatic(automatic), "generated tower can begin a drag while extending");
+        helper.assertValueEqual(draft.selected(), -1, "clicking an auto tower cannot close the route through a selected manual node");
+        draft.finish();
+        helper.assertValueEqual(draft.wall(), original, "a click without movement leaves the tower automatic");
+        draft.undo();
+        helper.assertValueEqual(draft.wall().nodes().size(), 1, "a click adds no undo entry");
+        draft.redo();
+        draft.beginAutomatic(automatic);
+        draft.drag(new BlockPos(8, 0, 8));
+        var moved = new BlockPos(8, 0, 10);
+        draft.drag(moved);
+        draft.finish();
+        helper.assertValueEqual(draft.wall().nodes(), List.of(BlockPos.ZERO, moved, new BlockPos(24, 0, 0)),
+                "repeated drag updates insert one manual node between the original endpoints");
+        helper.assertTrue(draft.automatic() && draft.spacing() == 8, "automatic spacing remains enabled");
+        var pieces = SettlementWallGeometry.pieces(draft.wall());
+        helper.assertTrue(pieces.stream().anyMatch(piece -> piece.part() == SettlementWall.Part.SPAN && piece.nodes().getLast().equals(moved)),
+                "incoming wall span follows the moved tower");
+        helper.assertTrue(pieces.stream().anyMatch(piece -> piece.part() == SettlementWall.Part.SPAN && piece.nodes().getFirst().equals(moved)),
+                "outgoing wall span follows the moved tower");
+        helper.assertTrue(SettlementWallGeometry.build(draft.wall()).error().isEmpty(), "reshaped spans produce valid wall geometry");
+        var edited = draft.wall();
+        draft.undo();
+        helper.assertValueEqual(draft.wall(), original, "one undo restores the generated tower and original route");
+        draft.redo();
+        helper.assertValueEqual(draft.wall(), edited, "redo restores the whole drag");
+        draft.toggleAutomatic();
+        helper.assertTrue(draft.wall().nodes().contains(moved), "turning off automatic towers preserves the moved manual node");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void automaticTowerDragsRespectLoopsCancellationHeightAndNodeLimits(GameTestHelper helper) {
+        var draft = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, true, 8, true, false);
+        draft.place(new BlockPos(0, 80, 0)); draft.place(new BlockPos(24, 80, 0)); draft.place(new BlockPos(24, 80, 24));
+        draft.loop();
+        var original = draft.wall();
+        var automatic = new BlockPos(8, 80, 8);
+        helper.assertTrue(draft.beginAutomatic(automatic), "closing span's generated towers are editable");
+        draft.drag(new BlockPos(4, 65, 12));
+        helper.assertValueEqual(draft.wall().nodes().getLast(), new BlockPos(4, 80, 12), "closing span inserts at the end and retains level height");
+        helper.assertTrue(draft.wall().closed(), "moving a closing span tower keeps the loop closed");
+        draft.cancelDrag();
+        helper.assertValueEqual(draft.wall(), original, "cancel restores route, generation and height settings");
+        helper.assertTrue(draft.beginAutomatic(automatic), "cancelled generated tower can be dragged again");
+        draft.drag(new BlockPos(4, 65, 12)); draft.finish();
+        helper.assertTrue(SettlementWallGeometry.build(draft.wall()).error().isEmpty(), "reshaped loop geometry remains valid");
+        draft.undo();
+        helper.assertValueEqual(draft.wall(), original, "undo restores the original closed loop");
+        var raised = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, true, 8);
+        raised.place(new BlockPos(0, 80, 0)); raised.height(2);
+        raised.place(new BlockPos(24, 80, 0)); raised.height(4);
+        helper.assertTrue(raised.beginAutomatic(new BlockPos(8, 83, 0)), "generated tower on a raised span can be dragged");
+        raised.drag(new BlockPos(8, 90, 8)); raised.finish();
+        helper.assertValueEqual(raised.wall().nodes().get(1).getY(), 93, "promoted tower inherits the interpolated height offset above ground");
+        var full = new SettlementWallDraft(SettlementWall.Type.LOW_STONE, true, 6);
+        for (int i = 0; i < SettlementWall.MAX_NODES; i++) full.place(new BlockPos(i * 12, 0, 0));
+        var before = full.wall();
+        helper.assertFalse(full.beginAutomatic(new BlockPos(6, 0, 0)), "promotion cannot exceed the network node limit");
+        helper.assertFalse(full.dragging(), "rejected promotion does not start a gesture");
+        helper.assertValueEqual(full.wall(), before, "node limit rejection preserves the draft");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
     public static void payloadsRoundTripWithBoundedDrafts(GameTestHelper helper) {
         var wall = new SettlementWall(SettlementWall.Type.TIMBER, List.of(BlockPos.ZERO, new BlockPos(24, 0, 0)), false, 12,
                 List.of(SettlementWall.Tower.NONE, SettlementWall.Tower.LOW_STONE));

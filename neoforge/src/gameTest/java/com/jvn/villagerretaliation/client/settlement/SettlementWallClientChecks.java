@@ -58,6 +58,24 @@ final class SettlementWallClientChecks {
             button("Undo").onPress();
             require(editor.draft().spacing() == 16, "spacing changes are undoable");
             button("Redo").onPress();
+            var beforeAutoDrag = editor.draft().wall();
+            var automatic = SettlementWallGeometry.towers(beforeAutoDrag).get(1);
+            var automaticPoint = Vec3.atBottomCenterOf(automatic).add(0, 0.15, 0);
+            click(automaticPoint);
+            require(editor.draft().wall().equals(beforeAutoDrag), "clicking an auto tower does not promote it or extend the route");
+            drag(automaticPoint, Vec3.atBottomCenterOf(automatic.south(4)).add(0, -0.02, 0));
+            require(editor.draft().wall().nodes().size() == 3, "dragging an auto tower adds one manual node");
+            var promoted = editor.draft().wall().nodes().get(1);
+            require(!promoted.equals(automatic) && editor.draft().automatic(), "dragged tower moves while automatic spacing stays enabled");
+            require(editor.draft().wall().nodes().getFirst().equals(beforeAutoDrag.nodes().getFirst())
+                    && editor.draft().wall().nodes().getLast().equals(beforeAutoDrag.nodes().getLast()), "auto tower drag preserves the original endpoints");
+            require(SettlementWallGeometry.build(editor.draft().wall()).error().isEmpty(), "both adjoining spans reshape into valid geometry");
+            var afterAutoDrag = editor.draft().wall();
+            button("Undo").onPress();
+            require(editor.draft().wall().equals(beforeAutoDrag), "one Undo restores the automatic tower");
+            button("Redo").onPress();
+            require(editor.draft().wall().equals(afterAutoDrag), "Redo restores the moved tower and spans");
+            button("Undo").onPress();
             var kept = editor.draft().wall();
             this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(editor.draft().wall().equals(kept) && !editor.draft().extending(), "Escape keeps the wall and stops extending");

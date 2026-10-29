@@ -11,10 +11,24 @@ import net.minecraft.world.phys.Vec3;
 final class SettlementWallGizmo {
     private SettlementWallGizmo() {}
     static int hit(SettlementWallDraft draft, Function<Vec3, double[]> project, double x, double y) {
+        var wall = draft.wall();
+        var nodes = wall.part() == com.jvn.villagerretaliation.settlement.SettlementWall.Part.TOWER
+                ? wall.nodes().subList(0, 1) : wall.nodes();
+        return hit(nodes, project, x, y);
+    }
+    static net.minecraft.core.BlockPos hitAutomatic(SettlementWallDraft draft, Function<Vec3, double[]> project, double x, double y) {
+        var wall = draft.wall();
+        if (!draft.automatic() || wall.part() != com.jvn.villagerretaliation.settlement.SettlementWall.Part.COMPLETE) return null;
+        var nodes = com.jvn.villagerretaliation.settlement.SettlementWallGeometry.towers(wall).stream()
+                .filter(node -> !wall.nodes().contains(node)).toList();
+        int index = hit(nodes, project, x, y);
+        return index < 0 ? null : nodes.get(index);
+    }
+    private static int hit(java.util.List<net.minecraft.core.BlockPos> nodes, Function<Vec3, double[]> project, double x, double y) {
         int selected = -1;
         double best = 10;
-        for (int i = 0; i < (draft.wall().part() == com.jvn.villagerretaliation.settlement.SettlementWall.Part.TOWER ? 1 : draft.wall().nodes().size()); i++) {
-            var point = project.apply(Vec3.atBottomCenterOf(draft.wall().nodes().get(i)).add(0, 0.15, 0));
+        for (int i = 0; i < nodes.size(); i++) {
+            var point = project.apply(Vec3.atBottomCenterOf(nodes.get(i)).add(0, 0.15, 0));
             if (point == null) continue;
             double distance = Math.hypot(point[0] - x, point[1] - y);
             if (distance < best) { best = distance; selected = i; }
