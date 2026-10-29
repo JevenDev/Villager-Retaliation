@@ -79,6 +79,22 @@ public final class SettlementPathTerrain {
         return new Cell(position, kind, air, air, air);
     }
 
+    static SettlementConstructionOrder order(Preview preview) {
+        if (!preview.error().isEmpty()) throw new IllegalArgumentException("Invalid path preview");
+        var cells = new ArrayList<SettlementConstructionOrder.Cell>();
+        for (var cell : preview.cells()) {
+            if (cell.kind() != Kind.CONVERT) continue;
+            if (grass(cell.top()) && grass(cell.above()))
+                cells.add(new SettlementConstructionOrder.Cell(cell.position().above(2), cell.top(), Blocks.AIR.defaultBlockState()));
+            if (grass(cell.above()))
+                cells.add(new SettlementConstructionOrder.Cell(cell.position().above(), cell.above(), Blocks.AIR.defaultBlockState()));
+            cells.add(new SettlementConstructionOrder.Cell(cell.position(), cell.soil(), Blocks.DIRT_PATH.defaultBlockState()));
+        }
+        return new SettlementConstructionOrder("Dirt path", cells,
+                com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost.LABOR,
+                List.of(), List.of(), null);
+    }
+
     public static int apply(Level level, Preview preview) {
         if (!preview.error().isEmpty()) return 0;
         int changed = 0;

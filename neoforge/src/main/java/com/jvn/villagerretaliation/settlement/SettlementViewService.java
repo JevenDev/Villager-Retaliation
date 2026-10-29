@@ -158,7 +158,7 @@ public final class SettlementViewService {
         var result = session.paths.request(session.level, session.id,
                 eligible(player, session.town) && session.town.permits(player.getUUID(), SettlementPermission.BUILD),
                 pos -> session.town.contains(pos) && session.window.contains(pos)
-                        && session.sent.contains(new ChunkPos(pos)) && allowed(session, new ChunkPos(pos)), request);
+                        && session.sent.contains(new ChunkPos(pos)) && allowed(session, new ChunkPos(pos)), request, session.town, player);
         PacketDistributor.sendToPlayer(player, result);
     }
 

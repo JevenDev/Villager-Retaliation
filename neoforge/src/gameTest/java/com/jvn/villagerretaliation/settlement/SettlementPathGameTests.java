@@ -108,7 +108,10 @@ public final class SettlementPathGameTests {
 
     @GameTest(template = "empty", batch = "settlement_path")
     public static void confirmationRequiresCurrentTerrainPermissionAndToken(GameTestHelper helper) {
-        var base = helper.absolutePos(new BlockPos(1, 20, 1));
+        var f = SettlementPathConstructionGameTests.fixture(helper);
+        f.town().removeDuty(f.builder().getUUID());
+        f.builder().discard();
+        var base = f.origin().offset(2, -1, 4);
         var level = helper.getLevel();
         for (int i = 0; i < 5; i++) {
             for (int y = 1; y < 5; y++) level.setBlock(base.offset(i, y, 0), Blocks.AIR.defaultBlockState(), 2);
@@ -118,29 +121,35 @@ public final class SettlementPathGameTests {
         UUID id = UUID.randomUUID(), empty = new UUID(0, 0);
         var request = new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.PREVIEW, empty,
                 path(base.getCenter(), base.offset(4, 0, 0).getCenter(), 1, false));
-        var preview = session.request(level, id, true, pos -> true, request);
+        var preview = session.request(level, id, true, f.town()::contains, request, f.town(), f.leader());
         helper.assertValueEqual(preview.status(), SettlementPathResultPayload.Status.PREVIEW, "preview changes no terrain: " + preview.message() + " " + preview.cells().stream().limit(2).toList());
         helper.assertTrue(level.getBlockState(base).is(Blocks.DIRT), "preview leaves soil intact");
         var confirm = new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, preview.token(), null);
-        helper.assertValueEqual(session.request(level, id, false, pos -> true, confirm).status(), SettlementPathResultPayload.Status.REJECTED, "permission is checked again");
-        helper.assertValueEqual(session.request(level, UUID.randomUUID(), true, pos -> true, confirm).status(),
+        helper.assertValueEqual(session.request(level, id, false, f.town()::contains, confirm, f.town(), f.leader()).status(), SettlementPathResultPayload.Status.REJECTED, "permission is checked again");
+        helper.assertValueEqual(session.request(level, UUID.randomUUID(), true, f.town()::contains, confirm, f.town(), f.leader()).status(),
                 SettlementPathResultPayload.Status.REJECTED, "wrong viewing session is rejected");
         var forged = new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, empty, null);
-        helper.assertValueEqual(session.request(level, id, true, pos -> true, forged).status(), SettlementPathResultPayload.Status.REJECTED, "unknown preview token is rejected");
+        helper.assertValueEqual(session.request(level, id, true, f.town()::contains, forged, f.town(), f.leader()).status(), SettlementPathResultPayload.Status.REJECTED, "unknown preview token is rejected");
         level.setBlock(base.offset(2, 0, 0), Blocks.STONE.defaultBlockState(), 2);
-        var refreshed = session.request(level, id, true, pos -> true, confirm);
+        var refreshed = session.request(level, id, true, f.town()::contains, confirm, f.town(), f.leader());
         helper.assertValueEqual(refreshed.status(), SettlementPathResultPayload.Status.PREVIEW, "changed terrain requires a fresh review");
         helper.assertFalse(refreshed.token().equals(preview.token()), "terrain refresh invalidates the old token");
         helper.assertTrue(level.getBlockState(base).is(Blocks.DIRT), "stale confirmation applies nothing");
         confirm = new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, refreshed.token(), null);
-        var applied = session.request(level, id, true, pos -> true, confirm);
-        helper.assertValueEqual(applied.status(), SettlementPathResultPayload.Status.APPLIED, "confirmed path applies without workers or resources");
+        var applied = session.request(level, id, true, f.town()::contains, confirm, f.town(), f.leader());
+        helper.assertValueEqual(applied.status(), SettlementPathResultPayload.Status.APPLIED, applied.message());
+        helper.assertTrue(level.getBlockState(base).is(Blocks.DIRT), "confirmation leaves terrain for the builder");
+        var project = f.town().projects().get(refreshed.token());
+        helper.assertTrue(project.pending() && !project.blocker().isEmpty(), "missing builder is visible on the queued project");
+        helper.assertValueEqual(f.town().projects().size(), 1, "exactly one project is queued");
+        var restored = SettlementProject.load(project.save());
+        helper.assertValueEqual(restored.order().save(), project.order().save(), "approved path survives reload");
         level.setBlock(base, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
-        helper.assertValueEqual(session.request(level, id, true, pos -> true, confirm), applied, "duplicate confirmation returns its receipt");
+        helper.assertValueEqual(session.request(level, id, true, f.town()::contains, confirm, f.town(), f.leader()), applied, "duplicate confirmation returns its receipt");
         helper.assertTrue(level.getBlockState(base).is(Blocks.GRASS_BLOCK), "duplicate confirmation does not overwrite later edits");
         var cancelled = new SettlementPathRequestPayload(id, 2, SettlementPathRequestPayload.Action.CANCEL, empty, null);
-        session.request(level, id, true, pos -> true, cancelled);
-        helper.assertValueEqual(session.request(level, id, true, pos -> true, confirm).status(), SettlementPathResultPayload.Status.REJECTED, "cancelled and older revisions cannot replay");
+        session.request(level, id, true, f.town()::contains, cancelled, f.town(), f.leader());
+        helper.assertValueEqual(session.request(level, id, true, f.town()::contains, confirm, f.town(), f.leader()).status(), SettlementPathResultPayload.Status.REJECTED, "cancelled and older revisions cannot replay");
         helper.assertFalse(SettlementPathTerrain.preview(level, request.path(), pos -> false).error().isEmpty(), "out-of-bounds paths are rejected");
         var unloaded = path(new Vec3(20_000_000.5, 64, 20_000_000.5), new Vec3(20_000_003.5, 64, 20_000_000.5), 1, false);
         helper.assertFalse(SettlementPathTerrain.preview(level, unloaded, pos -> true).error().isEmpty(), "unloaded terrain is never generated by previewing");
@@ -221,8 +230,11 @@ public final class SettlementPathGameTests {
     }
 
     @GameTest(template = "empty", batch = "settlement_path")
-    public static void loopsCloseAtEveryWidthAndApplyTheClosingSegment(GameTestHelper helper) {
-        var base = helper.absolutePos(new BlockPos(1, 20, 1));
+    public static void loopsCloseAtEveryWidthAndQueueTheClosingSegment(GameTestHelper helper) {
+        var f = SettlementPathConstructionGameTests.fixture(helper);
+        f.town().removeDuty(f.builder().getUUID());
+        f.builder().discard();
+        var base = f.origin().offset(2, -1, 4);
         var level = helper.getLevel();
         for (int x = -4; x <= 10; x++) for (int z = -4; z <= 10; z++) {
             level.setBlock(base.offset(x, 0, z), Blocks.DIRT.defaultBlockState(), 2);
@@ -245,12 +257,16 @@ public final class SettlementPathGameTests {
             SettlementPathRequestPayload.STREAM_CODEC.encode(buffer, request);
             helper.assertValueEqual(SettlementPathRequestPayload.STREAM_CODEC.decode(buffer), request, "closed loops round trip");
         } finally { buffer.release(); }
-        var preview = session.request(level, id, true, pos -> true, request);
+        var preview = session.request(level, id, true, f.town()::contains, request, f.town(), f.leader());
         helper.assertValueEqual(preview.status(), SettlementPathResultPayload.Status.PREVIEW, "server previews loops");
-        var result = session.request(level, id, true, pos -> true,
-                new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, preview.token(), null));
-        helper.assertValueEqual(result.status(), SettlementPathResultPayload.Status.APPLIED, "server confirms loops");
-        helper.assertTrue(level.getBlockState(base.offset(0, 0, 3)).is(Blocks.DIRT_PATH), "the closing segment becomes terrain");
+        var result = session.request(level, id, true, f.town()::contains,
+                new SettlementPathRequestPayload(id, 1, SettlementPathRequestPayload.Action.CONFIRM, preview.token(), null), f.town(), f.leader());
+        helper.assertValueEqual(result.status(), SettlementPathResultPayload.Status.APPLIED, result.message());
+        var project = f.town().projects().get(preview.token());
+        var plan = project.order().plan(project.id());
+        helper.assertTrue(plan.blocks().stream().anyMatch(block -> plan.worldPos(project.origin(), block).equals(base.offset(0, 0, 3))
+                && block.state().is(Blocks.DIRT_PATH)), "the closing segment is queued for construction");
+        helper.assertTrue(level.getBlockState(base.offset(0, 0, 3)).is(Blocks.DIRT), "closing segment is not built instantly");
         boolean invalid = false;
         try { new SettlementPath(nodes.subList(0, 2), 1, loop.style(), loop.material(), 42, false, true); }
         catch (IllegalArgumentException expected) { invalid = true; }

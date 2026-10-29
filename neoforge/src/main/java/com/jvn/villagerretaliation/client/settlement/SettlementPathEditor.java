@@ -222,7 +222,7 @@ public final class SettlementPathEditor {
         String state = this.draft.path().nodes().isEmpty()
                 ? this.draft.path().branch() ? "Select an existing dirt path to branch from" : "Click valid ground to start. Click-drag draws a curve."
                 : this.feedback.isEmpty() ? this.draft.path().closed() ? "Loop closed. Edit nodes or Confirm. Cancel discards the draft."
-                        : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm applies it. Cancel discards it."
+                        : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm queues builder work. Cancel discards it."
                         : "Click adds a node. Click the first node to close a loop. Escape stops extending. Cancel discards." : this.feedback;
         return (this.draft.path().branch() ? "Branch" : "Path") + " / " + this.draft.path().nodes().size() + "/64 nodes / "
                 + converted + " convert / " + skipped + " skipped" + (outside == 0 ? "" : " / " + outside + " outside")

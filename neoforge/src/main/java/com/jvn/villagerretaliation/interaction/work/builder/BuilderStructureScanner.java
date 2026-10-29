@@ -682,7 +682,8 @@ public final class BuilderStructureScanner {
 
         public boolean approvedReplacement(BlockState current) {
             return this.replacedState != null && !current.hasBlockEntity()
-                    && (current.equals(this.replacedState) || current.equals(this.state) || current.isAir());
+                    && (current.equals(this.replacedState) || current.equals(this.state)
+                            || current.isAir() && this.toolAction != BuilderToolAction.SHOVEL_FLATTEN);
         }
 
         public boolean requiresMaterial() {

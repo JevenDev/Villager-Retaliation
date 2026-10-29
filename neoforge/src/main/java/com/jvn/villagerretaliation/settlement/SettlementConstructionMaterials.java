@@ -432,6 +432,10 @@ public final class SettlementConstructionMaterials {
     }
 
     public static void validate(CompoundTag ledger) {
+        validate(ledger, false);
+    }
+
+    static void validate(CompoundTag ledger, boolean laborOnly) {
         if (ledger.isEmpty() || !ledger.getBoolean("Reserved")) return;
         if (ledger.getInt("Version") != 1 || ledger.getInt("TotalUnits") < 1 || ledger.getInt("Units") < 0
                 || ledger.getInt("Units") > ledger.getInt("TotalUnits")
@@ -440,7 +444,9 @@ public final class SettlementConstructionMaterials {
         var quote = ledger.getList("Quote", Tag.TAG_COMPOUND);
         var lots = ledger.getList("Lots", Tag.TAG_COMPOUND);
         if (quote.size() > BuilderConstructionCost.MAX_INGREDIENTS || lots.size() > 65536
-                || ledger.getBoolean("Simplified") && quote.isEmpty()) throw new IllegalArgumentException("Construction escrow has an invalid size");
+                || ledger.getBoolean("Simplified") && quote.isEmpty() && !laborOnly
+                || laborOnly && (!ledger.getBoolean("Simplified") || !quote.isEmpty() || !lots.isEmpty()))
+            throw new IllegalArgumentException("Construction escrow has an invalid size");
         int[] remaining = new int[quote.size()];
         for (var raw : lots) {
             var lot = (CompoundTag) raw;

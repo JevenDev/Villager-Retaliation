@@ -91,6 +91,8 @@ public final class SettlementConstructionOrderGameTests {
         var project = f.town().projects().get(id);
         var plan = order.plan(id);
         SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), plan, f.origin(), id);
+        helper.assertValueEqual(SettlementProject.load(project.save()).materialEscrow(), project.materialEscrow(),
+                "active labor-only demolition reloads its empty material quote");
         var worker = new BuilderWorker();
         helper.startSequence().thenWaitUntil(() -> {
             SettlementConstructionService.reconcile(f.builder());

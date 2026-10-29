@@ -427,7 +427,9 @@ public final class SettlementProject {
         project.repairOf=tag.hasUUID("RepairOf")?tag.getUUID("RepairOf"):null;
         project.fee = tag.getInt("Fee");
         project.materialEscrow = tag.getCompound("MaterialEscrow").copy();
-        SettlementConstructionMaterials.validate(project.materialEscrow);
+        SettlementConstructionMaterials.validate(project.materialEscrow, project.order != null
+                && project.order.plan(project.id()).entry().constructionCost().mode()
+                        == com.jvn.villagerretaliation.interaction.work.builder.BuilderConstructionCost.Mode.LABOR);
         if (tag.hasUUID("Authority")) project.authority = tag.getUUID("Authority");
         if (tag.contains("PaymentReserved")) project.paymentReserved = tag.getBoolean("PaymentReserved");
         if (project.pending() && (project.authority == null || project.placed() != 0 || project.paymentReserved)) {
