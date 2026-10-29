@@ -39,6 +39,14 @@ final class SettlementViewNavigation {
         snapHeight();
     }
 
+    void restore(SettlementViewWindow window, SettlementViewPreferences.Bookmark bookmark, int renderDistance) {
+        clear();
+        pan(window, bookmark.x() - this.x, bookmark.z() - this.z);
+        this.height = Math.clamp(bookmark.height(), SettlementViewWindow.MIN_HEIGHT, maximumHeight(renderDistance));
+        this.cameraHeight = this.height;
+        rotate(bookmark.yaw() - yaw());
+    }
+
     void rotate(double degrees) {
         this.camera.rotate(degrees / 90.0D, 1.0D);
     }

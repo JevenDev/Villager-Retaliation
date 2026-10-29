@@ -23,6 +23,23 @@ public final class SettlementViewPreferences {
         }
     }
 
+    public enum BrowserSort { DEFAULT, NAME, KIND, ATTENTION }
+    public record BrowserState(String query, String filter, BrowserSort sort) { }
+    public record Bookmark(String name, double x, double z, float height, float yaw) {
+        public Bookmark {
+            name = name.strip();
+            if (name.isEmpty() || name.length() > 40 || !Double.isFinite(x) || !Double.isFinite(z)
+                    || !Float.isFinite(height) || !Float.isFinite(yaw)) throw new IllegalArgumentException("Invalid camera bookmark");
+            height = Math.clamp(height, SettlementViewWindow.MIN_HEIGHT, SettlementViewWindow.MAX_HEIGHT);
+            yaw = (yaw % 360 + 360) % 360;
+        }
+    }
+    public static final int MAX_BOOKMARKS = 6;
+    public com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page browserPage =
+            com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.RESIDENTS;
+    public final java.util.Map<com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page, BrowserState> browsers = new java.util.EnumMap<>(
+            com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.class);
+    public final List<Bookmark> bookmarks = new ArrayList<>();
     public WindowPosition sidebarWindow;
     public WindowPosition mapWindow;
     public boolean sidebar = true;
@@ -56,6 +73,26 @@ public final class SettlementViewPreferences {
                 if (ids.size() > SettlementViewSelection.LIMIT) throw new IllegalArgumentException("Oversized control group");
                 groups.add(ids);
             }
+            var page = com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.valueOf(values.getProperty("browser.page", "RESIDENTS"));
+            var browsers = new java.util.EnumMap<com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page, BrowserState>(
+                    com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.class);
+            for (var category : com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.values()) {
+                String key = "browser." + category.name();
+                browsers.put(category, new BrowserState(values.getProperty(key + ".query", ""), values.getProperty(key + ".filter", "All"),
+                        BrowserSort.valueOf(values.getProperty(key + ".sort", "DEFAULT"))));
+            }
+            int count = Integer.parseInt(values.getProperty("bookmarks", "0"));
+            if (count < 0 || count > MAX_BOOKMARKS) throw new IllegalArgumentException("Invalid bookmark count");
+            var bookmarks = new ArrayList<Bookmark>();
+            for (int i = 0; i < count; i++) {
+                String key = "bookmark." + i;
+                bookmarks.add(new Bookmark(values.getProperty(key + ".name", ""), Double.parseDouble(values.getProperty(key + ".x", "NaN")),
+                        Double.parseDouble(values.getProperty(key + ".z", "NaN")), Float.parseFloat(values.getProperty(key + ".height", "NaN")),
+                        Float.parseFloat(values.getProperty(key + ".yaw", "NaN"))));
+            }
+            this.browserPage = page;
+            this.browsers.putAll(browsers);
+            this.bookmarks.addAll(bookmarks);
             this.sidebarWindow = position(values, "window.sidebar");
             this.mapWindow = position(values, "window.map");
             this.sidebar = sidebar;
@@ -117,6 +154,23 @@ public final class SettlementViewPreferences {
         if (!this.readable) return;
         var values = new Properties();
         values.setProperty("version", "1");
+        values.setProperty("browser.page", this.browserPage.name());
+        this.browsers.forEach((page, state) -> {
+            String key = "browser." + page.name();
+            values.setProperty(key + ".query", state.query());
+            values.setProperty(key + ".filter", state.filter());
+            values.setProperty(key + ".sort", state.sort().name());
+        });
+        values.setProperty("bookmarks", Integer.toString(this.bookmarks.size()));
+        for (int i = 0; i < this.bookmarks.size(); i++) {
+            var bookmark = this.bookmarks.get(i);
+            String key = "bookmark." + i;
+            values.setProperty(key + ".name", bookmark.name());
+            values.setProperty(key + ".x", Double.toString(bookmark.x()));
+            values.setProperty(key + ".z", Double.toString(bookmark.z()));
+            values.setProperty(key + ".height", Float.toString(bookmark.height()));
+            values.setProperty(key + ".yaw", Float.toString(bookmark.yaw()));
+        }
         position(values, "window.sidebar", this.sidebarWindow);
         position(values, "window.map", this.mapWindow);
         values.setProperty("sidebar", Boolean.toString(this.sidebar));

@@ -69,6 +69,18 @@ public final class SettlementViewNavigationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_view")
+    public static void bookmarksRespectCurrentBoundsAndRenderDistance(GameTestHelper helper) {
+        var navigation = navigation();
+        navigation.press(GLFW.GLFW_KEY_W);
+        navigation.restore(window(), new SettlementViewPreferences.Bookmark("Far away", 100000, -100000, 10000, -45), 2);
+        var expected = window().focus(100000, -100000);
+        helper.assertTrue(navigation.x() == expected.x && navigation.z() == expected.z, "bookmarks obey the current territory bounds");
+        helper.assertTrue(navigation.height() <= 24 && navigation.yaw() == 315, "bookmarks obey render distance and normalize rotation");
+        helper.assertValueEqual(navigation.movement(0.05, false), Vec3.ZERO, "recalling a bookmark clears movement input");
+        helper.succeed();
+    }
+
     private static Vec3 travel(int frames) {
         var navigation = navigation();
         navigation.press(GLFW.GLFW_KEY_W);

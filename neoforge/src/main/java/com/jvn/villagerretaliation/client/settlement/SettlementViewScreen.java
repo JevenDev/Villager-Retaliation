@@ -186,6 +186,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.queuedChunks = payload.queuedChunks();
         this.window = payload.window();
         this.preferences = SettlementViewPreferences.forSettlement(this.header.id());
+        this.browser.restore(this.preferences, this.preferences.browserPage);
         this.sidebarWindow.restore(this.preferences.sidebarWindow);
         this.mapWindow.restore(this.preferences.mapWindow);
         this.selection.restore(this.preferences.groups);
@@ -544,10 +545,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             rebuildWidgets();
         }
         this.inspector.browse();
-        this.browser.page = page;
-        this.browser.filter = filter;
-        this.browser.query = "";
-        this.search.setValue("");
+        this.browser.remember(this.preferences);
+        this.browser.restore(this.preferences, page);
+        if (filter != null) this.browser.filter = filter;
+        this.search.setValue(this.browser.query);
         this.browser.scroll = 0;
         updateInspector();
     }
@@ -576,10 +577,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             addRenderableWidget(new SettlementViewUi.IconButton(Component.literal(label), left,
                     38 + SettlementUiWindow.TITLE_HEIGHT, w, 18, showLabel ? net.minecraft.world.item.ItemStack.EMPTY : new net.minecraft.world.item.ItemStack(icon),
                     showLabel, !showLabel && tab == Page.RESIDENTS, () -> this.browser.page == tab, () -> {
-                this.browser.page = tab;
-                this.browser.filter = "All";
-                this.browser.scroll = 0;
-                updateBrowserRows();
+                browse(tab, null);
             }).borderless());
             left += w;
         }
@@ -3240,7 +3238,22 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         enterMode(Mode.SELECT);
     }
 
+    SettlementViewPreferences.Bookmark bookmark(String name) {
+        return new SettlementViewPreferences.Bookmark(name, this.navigation.x(), this.navigation.z(), this.navigation.height(), this.navigation.yaw());
+    }
+
+    void recallBookmark(SettlementViewPreferences.Bookmark bookmark) {
+        this.requestedFocus = null;
+        this.peekFocus = Set.of();
+        this.navigation.restore(this.window, bookmark, this.minecraft.options.getEffectiveRenderDistance());
+        this.moved = true;
+        this.nextViewRequest = 0;
+        positionCamera();
+        savePreferences();
+    }
+
     void savePreferences() {
+        this.browser.remember(this.preferences);
         this.preferences.groups = this.selection.groups();
         this.preferences.height = this.navigation.height();
         this.preferences.yaw = this.navigation.yaw();
@@ -3465,6 +3478,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         updateBrowserRows();
                     }));
                 }
+                actions.add(menuAction(Component.literal("Sort: " + this.browser.sortLabel()), true, () -> {
+                    var sorts = SettlementViewPreferences.BrowserSort.values();
+                    this.browser.sort = sorts[(this.browser.sort.ordinal() + 1) % sorts.length];
+                    this.browser.scroll = 0;
+                    savePreferences();
+                    updateBrowserRows();
+                }));
             }
             case OVERVIEW -> {
                 details.add(Component.literal(this.header.name()));
@@ -3547,6 +3567,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case NAVIGATION -> {
                 details.add(Component.literal(this.header.name()));
+                actions.add(menuAction(Component.literal("Camera bookmarks"), true, () -> {
+                    management();
+                    this.minecraft.setScreen(new SettlementBookmarkScreen(this, this.preferences));
+                }));
                 actions.add(menuAction(SettlementManagementScreen.enumText("page", Page.SUPPLIES), ready, () -> openManagement(Page.SUPPLIES, "")));
                 for (var page : List.of(Page.RESIDENTS, Page.AREAS, Page.PROJECTS, Page.DEPOTS, Page.TRADE, Page.ISSUES)) {
                     actions.add(menuAction(SettlementManagementScreen.enumText("page", page), true, () -> browse(page, "All")));

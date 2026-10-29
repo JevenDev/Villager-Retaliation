@@ -11,6 +11,31 @@ final class SettlementViewBrowser {
     String query = "";
     String filter = "All";
     int scroll;
+    SettlementViewPreferences.BrowserSort sort = SettlementViewPreferences.BrowserSort.DEFAULT;
+
+    void remember(SettlementViewPreferences preferences) {
+        preferences.browserPage = this.page;
+        preferences.browsers.put(this.page, new SettlementViewPreferences.BrowserState(this.query, this.filter, this.sort));
+    }
+
+    void restore(SettlementViewPreferences preferences, Page page) {
+        this.page = page;
+        var state = preferences.browsers.getOrDefault(page, new SettlementViewPreferences.BrowserState("", "All", SettlementViewPreferences.BrowserSort.DEFAULT));
+        this.query = state.query();
+        this.filter = state.filter();
+        this.sort = state.sort();
+        this.scroll = 0;
+    }
+
+    String sortLabel() {
+        return switch (this.sort) {
+            case DEFAULT -> "Default order";
+            case NAME -> "Name";
+            case KIND -> "Type / status";
+            case ATTENTION -> "Needs attention first";
+        };
+    }
+
     java.util.Set<java.util.UUID> attention = java.util.Set.of();
 
     void updateAttention(List<SettlementManagementPayload.Entry> issues) {
@@ -38,8 +63,25 @@ final class SettlementViewBrowser {
 
     List<SettlementManagementPayload.Entry> rows(List<SettlementManagementPayload.Entry> entries) {
         String needle = this.query.strip().toLowerCase(Locale.ROOT);
-        return entries.stream().filter(entry -> (entry.name() + " " + kind(entry) + " " + detail(entry))
-                .toLowerCase(Locale.ROOT).contains(needle)).filter(entry -> matches(entry, this.filter)).toList();
+        var rows = entries.stream().filter(entry -> (entry.name() + " " + kind(entry) + " " + detail(entry))
+                .toLowerCase(Locale.ROOT).contains(needle)).filter(entry -> matches(entry, this.filter));
+        var names = java.util.Comparator.comparing(SettlementManagementPayload.Entry::name, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(SettlementManagementPayload.Entry::id);
+        return switch (this.sort) {
+            case DEFAULT -> rows.toList();
+            case NAME -> rows.sorted(names).toList();
+            case KIND -> rows.sorted(java.util.Comparator.comparing(SettlementViewBrowser::kind).thenComparing(names)).toList();
+            case ATTENTION -> rows.sorted(java.util.Comparator.comparing((SettlementManagementPayload.Entry entry) -> !needsAttention(entry)).thenComparing(names)).toList();
+        };
+    }
+
+    private boolean needsAttention(SettlementManagementPayload.Entry entry) {
+        return switch (entry) {
+            case SettlementManagementPayload.Resident resident -> this.attention.contains(resident.id());
+            case SettlementManagementPayload.Project project -> !project.blocker().isBlank();
+            case SettlementManagementPayload.Issue issue -> issue.needsAttention();
+            default -> false;
+        };
     }
 
     private boolean matches(SettlementManagementPayload.Entry entry, String filter) {

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page;
+
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
@@ -2132,10 +2134,24 @@ public final class SettlementViewClientSmoke {
             saved.height = 10_000;
             saved.yaw = -45;
             saved.sidebar = false;
+            saved.browserPage = Page.PROJECTS;
+            saved.browsers.put(Page.PROJECTS, new SettlementViewPreferences.BrowserState("gate", "pending", SettlementViewPreferences.BrowserSort.NAME));
+            saved.bookmarks.add(new SettlementViewPreferences.Bookmark("North gate", 21.5, -48.5, 64, 180));
             saved.save();
             var restored = new SettlementViewPreferences(path);
             require(restored.height == SettlementViewWindow.MAX_HEIGHT && restored.yaw == 315 && !restored.sidebar,
                     "restored preferences clamp camera limits");
+            require(restored.browserPage == Page.PROJECTS && restored.browsers.get(Page.PROJECTS).equals(saved.browsers.get(Page.PROJECTS))
+                    && restored.bookmarks.equals(saved.bookmarks), "browser settings and named camera bookmarks survive reload");
+            var browser = new SettlementViewBrowser();
+            browser.restore(restored, Page.PROJECTS);
+            browser.remember(restored);
+            browser.restore(restored, Page.RESIDENTS);
+            require(browser.query.isEmpty() && browser.filter.equals("All"), "new browser categories have independent defaults");
+            browser.restore(restored, Page.PROJECTS);
+            require(browser.query.equals("gate") && browser.sort == SettlementViewPreferences.BrowserSort.NAME, "switching categories restores their settings");
+            Files.writeString(path, "version=1\nsidebar=false\n");
+            require(new SettlementViewPreferences(path).bookmarks.isEmpty(), "older preferences load without new workspace fields");
             Files.writeString(path, "version=broken");
             var corrupt = new SettlementViewPreferences(path);
             corrupt.save();
