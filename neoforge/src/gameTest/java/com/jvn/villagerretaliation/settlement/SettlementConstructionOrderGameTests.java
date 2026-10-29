@@ -111,6 +111,80 @@ public final class SettlementConstructionOrderGameTests {
         }).thenSucceed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 1800, batch = "orders_upgrade_repair")
+    public static void nativeBuilderUpgradesThenRepairsRecordedDesign(GameTestHelper helper) {
+        var f = fixture(helper);
+        SettlementConstructionCrewGameTests.adopt(helper, f);
+        var old = wall(helper, f);
+        var design = new SettlementWall(SettlementWall.Type.LOW_STONE, old.wall().nodes(), false, 0,
+                old.wall().nodeTowers(), old.wall().part());
+        var upgrade = new SettlementWallUpgrade(SettlementWallsSavedData.get(helper.getLevel()), old, design);
+        var preview = upgrade.preview(helper.getLevel(), f.town()::contains);
+        helper.assertTrue(preview.error().isEmpty(), "upgrade is valid: " + preview.error());
+        var order = SettlementConstructionOrder.wall("Wall upgrade", preview, upgrade.cost(preview), upgrade.originals(), upgrade.replacements(preview));
+        var id = UUID.randomUUID();
+        helper.assertTrue(order.commission(f.leader(), f.town(), id).isEmpty(), "upgrade queues");
+        var current = new SettlementProject[]{f.town().projects().get(id)};
+        fund(helper, f, current[0]);
+        var worker = new BuilderWorker();
+        helper.startSequence().thenWaitUntil(() -> work(helper, f, current[0], worker)).thenExecute(() -> {
+            SettlementConstructionService.tickQueue(helper.getLevel(), f.town());
+            var upgraded = SettlementWallsSavedData.get(helper.getLevel()).get(old.id());
+            helper.assertValueEqual(upgraded.wall().type(), SettlementWall.Type.LOW_STONE, "completion records the upgraded design");
+            upgraded.blocks().forEach((pos, state) -> helper.assertTrue(BuilderStructureScanner.sameSchematicState(
+                    helper.getLevel().getBlockState(pos), state), "upgrade matches its recorded blocks"));
+            var missing = upgraded.blocks().keySet().stream().max(java.util.Comparator.comparingInt(BlockPos::getY)).orElseThrow();
+            helper.getLevel().setBlock(missing, Blocks.AIR.defaultBlockState(), 2);
+            var repairPreview = SettlementWallTerrain.repair(helper.getLevel(), upgraded.blocks(), f.town()::contains);
+            var repair = SettlementConstructionOrder.wall("Wall repair", repairPreview,
+                    SettlementWallMaterials.cost(upgraded.wall(), repairPreview, null), List.of(upgraded), List.of(upgraded));
+            var cancelled = UUID.randomUUID();
+            String repairError = repair.commission(f.leader(), f.town(), cancelled);
+            helper.assertTrue(repairError.isEmpty(), "repair queues: " + repairError);
+            helper.assertTrue(SettlementConstructionService.cancel(f.leader(), f.town(), cancelled), "repair cancels");
+            repair.record(helper.getLevel(), f.town(), f.town().projects().get(cancelled));
+            helper.assertTrue(SettlementWallsSavedData.get(helper.getLevel()).get(old.id()).blocks().containsKey(missing),
+                    "cancelling an unbuilt repair preserves the missing design block");
+            var retry = UUID.randomUUID();
+            var resumed = SettlementConstructionOrder.wall("Wall repair", repairPreview,
+                    SettlementWallMaterials.cost(upgraded.wall(), repairPreview, null), List.of(upgraded), List.of(upgraded));
+            String retryError = resumed.commission(f.leader(), f.town(), retry);
+            helper.assertTrue(retryError.isEmpty(), "repair can be commissioned again: " + retryError);
+            current[0] = f.town().projects().get(retry);
+            helper.assertValueEqual(current[0].total(), 1, "repair rebuilds only the missing block");
+            fund(helper, f, current[0]);
+        }).thenWaitUntil(() -> work(helper, f, current[0], worker)).thenExecute(() -> {
+            var repaired = SettlementWallsSavedData.get(helper.getLevel()).get(old.id());
+            repaired.blocks().forEach((pos, state) -> helper.assertTrue(BuilderStructureScanner.sameSchematicState(
+                    helper.getLevel().getBlockState(pos), state), "repair restores " + pos + " expected " + state + " actual " + helper.getLevel().getBlockState(pos)));
+            f.builder().discard();
+        }).thenSucceed();
+    }
+
+    private static void fund(GameTestHelper helper, SettlementConstructionGameTests.Fixture f, SettlementProject project) {
+        SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), project.order().plan(project.id()), f.origin(), project.id());
+        SettlementConstructionMaterials.collect(f.town(), project, f.builder().getUUID(), SettlementConstructionMaterials.collectionTarget(project));
+    }
+
+    private static void work(GameTestHelper helper, SettlementConstructionGameTests.Fixture f, SettlementProject project, BuilderWorker worker) {
+        var plan = project.order().plan(project.id());
+        if (project.site() != null) SettlementConstructionSiteService.refresh(helper.getLevel(), project.site());
+        SettlementConstructionService.reconcile(f.builder());
+        int index = SettlementConstructionCoordination.select(f.town(), project, f.builder().getUUID(), plan,
+                helper.getLevel(), helper.getLevel().getGameTime());
+        if (index >= 0 && index < project.total())
+            f.builder().setPos(plan.worldPos(project.origin(), plan.blocks().get(index)).north(2).getBottomCenter());
+        var session = com.jvn.villagerretaliation.interaction.HiredWorkSession.create(helper.getLevel(), f.builder(),
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.BUILDER);
+        worker.tick(helper.getLevel(), f.builder(), null, session.context());
+        SettlementConstructionService.observe(f.builder(), HiredWorkStateStore.state(f.builder()));
+        helper.assertValueEqual(project.status(), SettlementProject.Status.COMPLETED, "builder completes the order: " + project.blocker());
+        helper.assertTrue(project.site() == null || !project.site().unsettled(), "completed work is saved before another order starts");
+        for (var block : plan.blocks()) helper.assertTrue(BuilderStructureScanner.sameSchematicState(
+                helper.getLevel().getBlockState(plan.worldPos(project.origin(), block)), block.state()),
+                "completed work matches the planned change at " + plan.worldPos(project.origin(), block));
+    }
+
     static SettlementConstructionGameTests.Fixture fixture(GameTestHelper helper) {
         var f = SettlementConstructionGameTests.fixture(helper);
         f.town().advance();

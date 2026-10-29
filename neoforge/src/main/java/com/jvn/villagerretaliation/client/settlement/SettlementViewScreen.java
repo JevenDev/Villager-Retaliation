@@ -1685,6 +1685,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         updatePlotActions();
     }
 
+    SettlementInfrastructureEditor infrastructureEditor() { return this.infrastructure; }
     SettlementFarmEditor farmEditor() { return this.farms; }
     SettlementPathEditor pathEditor() { return this.paths; }
 

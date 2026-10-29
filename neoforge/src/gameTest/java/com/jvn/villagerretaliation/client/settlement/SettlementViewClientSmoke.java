@@ -97,6 +97,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementWallClientChecks wallChecks;
     private static SettlementMoveClientChecks moveChecks;
     private static SettlementFarmClientChecks farmChecks;
+    private static SettlementInfrastructureClientChecks infrastructureChecks;
     private static boolean previewMeshesRequested, previewMeshesChecked;
     private static boolean resourceFormsChecked;
     private static int ticks;
@@ -213,6 +214,16 @@ public final class SettlementViewClientSmoke {
             phase = 62;
         } else if (phase == 62 && minecraft.screen instanceof SettlementViewScreen screen && ++ticks >= 30
                 && (screen.terrainLoaded() || ticks >= 120)) {
+            if (Boolean.getBoolean("villagerretaliation.settlementInfrastructureClientSmokeOnly")) {
+                if (infrastructureChecks == null) infrastructureChecks = new SettlementInfrastructureClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
+                if (!infrastructureChecks.tick(minecraft)) return;
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+                } catch (IOException exception) { throw new UncheckedIOException(exception); }
+                phase = 6;
+                minecraft.stop();
+                return;
+            }
             if (farmChecks == null) {
                 if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
                 if (!pathChecks.tick(minecraft)) return;
@@ -2364,6 +2375,8 @@ public final class SettlementViewClientSmoke {
                 "Shared workshop", post.min(), post.max(), 5, true)), "a workshop can share the guard post");
         require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
+        if (Boolean.getBoolean("villagerretaliation.settlementInfrastructureClientSmokeOnly"))
+            com.jvn.villagerretaliation.settlement.SettlementInfrastructureGameTests.prepareClient(level, id);
         SettlementManagementService.open(player, id);
         return new Fixture(id, resident.getUUID(), center);
     }

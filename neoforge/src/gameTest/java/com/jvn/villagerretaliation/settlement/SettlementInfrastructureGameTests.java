@@ -18,6 +18,11 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_infrastructure")
 @PrefixGameTestTemplate(false)
 public final class SettlementInfrastructureGameTests {
+    public static void prepareClient(net.minecraft.server.level.ServerLevel level, com.jvn.villagerretaliation.allegiance.VillageAllegianceId id) {
+        var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        if (town.stage() == SettlementStage.CAMP) town.advance();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 100)
     public static void routesValidateConnectionsHeadroomAndStairGrade(GameTestHelper helper) {
         var f = SettlementConstructionOrderGameTests.fixture(helper);
