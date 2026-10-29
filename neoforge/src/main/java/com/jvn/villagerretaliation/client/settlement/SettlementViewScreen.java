@@ -2225,6 +2225,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) enterMode(Mode.SELECT);
             else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
                 this.infrastructure.confirm(this.session, PacketDistributor::sendToServer);
+            else if (SettlementViewNavigation.handles(keyCode)) this.navigation.press(keyCode);
             return true;
         }
         if (this.farms.active()) {
@@ -2359,8 +2360,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public void mouseMoved(double x, double y) {
         if (this.popup != null) this.popup.hover(x, y);
-        if (this.infrastructure.active() && this.popup == null && worldContains(x, y) && windowAt(x, y) == null
-                && !this.buildOverlay.contains(x, y)) this.infrastructure.hover(infrastructurePoint(x, y));
+        if (this.infrastructure.active()) this.infrastructure.hover(this.popup == null && worldContains(x, y)
+                && windowAt(x, y) == null && !this.buildOverlay.contains(x, y) ? infrastructurePoint(x, y) : null);
         if (this.farms.active() && this.popup == null && worldContains(x, y) && windowAt(x, y) == null
                 && !this.buildOverlay.contains(x, y)) this.farms.hover(farmPoint(x, y));
         if (this.walls.active()) {

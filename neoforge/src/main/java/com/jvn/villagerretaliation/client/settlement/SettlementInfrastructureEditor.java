@@ -23,6 +23,7 @@ public final class SettlementInfrastructureEditor {
     private boolean selecting;
     private boolean confirming;
     private int dragging = -1;
+    private BlockPos cursor;
     private BlockPos first;
     private BlockPos second;
     private long revision;
@@ -42,6 +43,7 @@ public final class SettlementInfrastructureEditor {
     public boolean active() { return this.active; }
     public boolean confirming() { return this.confirming; }
     public boolean dragging() { return this.dragging >= 0; }
+    public BlockPos cursor() { return this.cursor; }
     public BlockPos first() { return this.first; }
     public BlockPos second() { return this.second; }
     public List<SettlementInfrastructureResultPayload.Cell> cells() { return this.cells; }
@@ -51,6 +53,7 @@ public final class SettlementInfrastructureEditor {
         this.active = true;
         this.selecting = true;
         this.confirming = false;
+        this.cursor = null;
         this.first = null;
         this.second = null;
         this.dragging = -1;
@@ -78,7 +81,9 @@ public final class SettlementInfrastructureEditor {
     }
 
     public void hover(BlockPos pos) {
-        if (active() && !confirming() && this.selecting && this.first != null && pos != null && !pos.equals(this.second)) {
+        if (!active() || confirming()) return;
+        this.cursor = pos;
+        if (this.selecting && this.first != null && pos != null && !pos.equals(this.second)) {
             this.second = pos;
             changed();
         }
@@ -106,6 +111,7 @@ public final class SettlementInfrastructureEditor {
     public void cancel(UUID session, Consumer<SettlementInfrastructureRequestPayload> send) {
         if (!active() || confirming()) return;
         this.active = false;
+        this.cursor = null;
         this.cells = List.of();
         this.result = null;
         this.dragging = -1;
@@ -195,7 +201,7 @@ public final class SettlementInfrastructureEditor {
         if (confirming()) return "Queueing construction...";
         String points = this.type == SettlementInfrastructure.Type.BRIDGE || this.type == SettlementInfrastructure.Type.STAIRS
                 ? "endpoint" : "corner";
-        if (this.first == null) return this.type.label() + ": click the first " + points + ".";
+        if (this.first == null) return this.type.label() + ": move over ground and click the first " + points + ".\nWASD/arrows pan, Q/E rotate.";
         return this.type.label() + " / " + this.cells.stream().filter(cell -> cell.kind() != SettlementInfrastructureTerrain.Kind.EXISTING).count()
                 + " blocks\n" + (this.selecting ? "Click the second " + points + ". " : "Drag either handle to adjust. ")
                 + (this.type == SettlementInfrastructure.Type.LEVEL || this.type == SettlementInfrastructure.Type.FILL

@@ -11,6 +11,15 @@ final class SettlementInfrastructureGizmo {
 
     static void renderHandles(SettlementInfrastructureEditor editor, com.mojang.blaze3d.vertex.PoseStack pose,
                               com.mojang.blaze3d.vertex.VertexConsumer lines) {
+        if (editor.first() == null && editor.cursor() != null) {
+            var pos = editor.cursor();
+            LevelRenderer.renderLineBox(pose, lines, new AABB(pos.getX(), pos.getY() + 0.98, pos.getZ(),
+                    pos.getX() + 1, pos.getY() + 1.04, pos.getZ() + 1), 1, 0.9F, 0.3F, 1);
+        }
+        if (editor.first() != null && editor.second() != null && editor.cells().isEmpty()) {
+            LevelRenderer.renderLineBox(pose, lines, new AABB(editor.first().getCenter().add(0, 0.5, 0),
+                    editor.second().getCenter().add(0, 0.5, 0)).inflate(0.02), 1, 0.6F, 0.2F, 1);
+        }
         for (var pos : new net.minecraft.core.BlockPos[]{editor.first(), editor.second()}) {
             if (pos == null) continue;
             var center = pos.getCenter().add(0, 0.5, 0);

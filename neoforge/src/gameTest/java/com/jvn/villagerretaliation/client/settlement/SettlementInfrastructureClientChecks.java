@@ -17,6 +17,7 @@ final class SettlementInfrastructureClientChecks {
     private final Consumer<String> capture;
     private final Map<BlockPos, BlockState> before = new LinkedHashMap<>();
     private int phase, ticks;
+    private double cameraX, cameraZ;
 
     SettlementInfrastructureClientChecks(SettlementViewScreen view, BlockPos center, Consumer<String> capture) {
         this.view = view;
@@ -41,9 +42,38 @@ final class SettlementInfrastructureClientChecks {
             next();
         } else if (this.phase == 1 && this.ticks > 30) {
             open("Bridge");
-            click(this.start);
-            click(this.start.east(8));
+            this.cameraX = this.view.focusX();
+            this.cameraZ = this.view.focusZ();
+            this.view.keyPressed(GLFW.GLFW_KEY_W, 0, 0);
+            this.phase = 10; this.ticks = 0;
+        } else if (this.phase == 10 && this.ticks >= 8) {
+            this.view.keyReleased(GLFW.GLFW_KEY_W, 0, 0);
+            require(Math.hypot(this.view.focusX() - this.cameraX, this.view.focusZ() - this.cameraZ) > 0.05,
+                    "Bridge keeps keyboard camera navigation available");
+            this.view.focus(this.cameraX, this.cameraZ);
             next();
+        } else if (this.phase == 11 && this.ticks > 20) {
+            hover(this.start);
+            require(this.start.equals(editor.cursor()) && editor.first() == null, "Bridge shows a cursor before placing an endpoint");
+            next();
+        } else if (this.phase == 12 && this.ticks > 10) {
+            this.capture.accept("infrastructure-bridge-cursor");
+            this.view.mouseMoved(-1, -1);
+            require(editor.cursor() == null, "leaving the world hides the placement cursor");
+            click(this.start);
+            hover(this.start.east(8).south(2));
+            next();
+        } else if (this.phase == 13 && this.ticks > 10) {
+            require(editor.cells().isEmpty() && editor.hint().contains("Align"), "invalid alignment retains its endpoint guide and explains the problem");
+            this.capture.accept("infrastructure-bridge-alignment");
+            hover(this.start.east(8));
+            next();
+        } else if (this.phase == 14 && this.ticks > 10 && editor.ghost(minecraft.level) != null) {
+            require(editor.first().equals(this.start) && editor.second().equals(this.start.east(8)), "hover stretches the bridge from its first endpoint");
+            require(!editor.canConfirm(), "the live preview waits for the second click");
+            this.capture.accept("infrastructure-bridge-live");
+            click(this.start.east(8));
+            this.phase = 2; this.ticks = 0;
         } else if (this.phase == 2 && this.ticks > 10 && editor.canConfirm()) {
             require(editor.cells().stream().anyMatch(cell -> cell.state().is(Blocks.OAK_FENCE)), "bridge preview includes rails");
             require(editor.ghost(minecraft.level) != null, "bridge has a rendered construction preview");
@@ -102,6 +132,10 @@ final class SettlementInfrastructureClientChecks {
         double scale = this.view.height / (2 * distance * Math.tan(Math.toRadians(SettlementViewClient.FOV / 2)));
         return new Vec3(this.view.viewportWidth() / 2.0 - relative.dot(new Vec3(camera.getLeftVector())) * scale,
                 this.view.height / 2.0 - relative.dot(new Vec3(camera.getUpVector())) * scale, 0);
+    }
+    private void hover(BlockPos pos) {
+        var point = project(pos);
+        this.view.mouseMoved(point.x, point.y);
     }
     private void click(BlockPos pos) {
         var point = project(pos);
