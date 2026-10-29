@@ -1396,6 +1396,7 @@ public final class SettlementViewClientSmoke {
                 && screen.parent().buildingDraft().preview.rotation() == net.minecraft.world.level.block.Rotation.CLOCKWISE_90) {
             require(screen.parent().buildingDraft().ghost() == screen.parent().buildingDraft().ghost(),
                     "unchanged building frames reuse their preview snapshot");
+            SettlementViewPanelClientChecks.verifyBuildPanels(screen);
             capture("prefab-positioned");
             var draft = screen.parent().buildingDraft();
             var handle = gizmoPivot(draft.bounds()).add(0, gizmoScale(screen), 0);

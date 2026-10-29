@@ -10,6 +10,7 @@ public final class SettlementViewPanelClientChecks {
     private SettlementViewPanelClientChecks() { }
 
     static void verify(SettlementViewScreen view) {
+        verifyFade();
         verifyPopup();
         SettlementStatusBarClientChecks.verify(view.parent().snapshot().header());
         var minecraft = Minecraft.getInstance();
@@ -58,6 +59,31 @@ public final class SettlementViewPanelClientChecks {
         view.contextPopup().buttons().getFirst().onPress();
         require(view.focusX() == x && view.focusZ() == z && view.viewHeight() == height && view.cameraYaw() == yaw,
                 "filter selection preserves the world camera");
+    }
+
+    static void verifyBuildPanels(SettlementViewScreen view) {
+        require(view.buildMode() && view.panelOpacity() == 0, "build mode fades the map and info viewer out");
+        require(view.uiWindows().stream().flatMap(window -> window.widgets().stream())
+                .noneMatch(view.children()::contains), "hidden panel controls cannot intercept build input");
+    }
+
+    private static void verifyFade() {
+        var fade = new SettlementPanelFade();
+        fade.update(false, 1000);
+        require(fade.opacity() == 1, "panels start fully visible");
+        fade.update(true, 1000);
+        fade.update(true, 1100);
+        require(fade.opacity() == 0.5F, "panels fade gradually");
+        fade.update(false, 1100);
+        require(fade.opacity() == 0.5F, "reversing a fade preserves its current opacity");
+        fade.update(false, 1300);
+        require(fade.opacity() == 1, "reversed fades return to full visibility");
+        fade.update(true, 1300);
+        fade.update(true, 1500);
+        require(fade.opacity() == 0, "hidden panels finish fading completely");
+        fade.update(false, 1500);
+        fade.update(false, 1700);
+        require(fade.opacity() == 1, "leaving build mode restores the panels");
     }
 
     private static void verifyFloatingWindows(SettlementViewScreen view) {

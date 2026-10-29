@@ -62,6 +62,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<UUID, SettlementManagementPayload.Resident> roster = new LinkedHashMap<>();
     private final SettlementViewBrowser browser = new SettlementViewBrowser();
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
+    private final SettlementPanelFade panelFade = new SettlementPanelFade();
     private final SettlementMapMarkers mapMarkers = new SettlementMapMarkers();
     private final SettlementViewEntities frameEntities = new SettlementViewEntities();
     private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
@@ -799,6 +800,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (SettlementViewClient.closing()) return;
         long now = Util.getMillis();
+        this.panelFade.update(buildMode(), now);
+        if (buildMode()) {
+            if (getFocused() != null && panelWidget(getFocused())) setFocused(null);
+            if (this.search != null) this.search.setFocused(false);
+            this.draggingWindow = null;
+            this.resizingWindow = null;
+        }
         updatePeek(mouseX, mouseY);
         this.hovered = !SettlementViewClient.transitioning() && worldContains(mouseX, mouseY) ? pick(mouseX, mouseY) : new Pick(null, null);
         var currentDraft = this.parent.buildingDraft();
@@ -859,6 +867,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             graphics.renderOutline(left, top, rightEdge - left, bottom - top, 0xFF40CCFF);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.panelFade.render(graphics, this.width, this.height, () -> renderWindows(graphics, mouseX, mouseY, partialTick));
+        if (allLines.size() > lines.size() && mouseX < this.panelLeft && mouseY >= this.height - 42) {
+            graphics.renderTooltip(this.font, hint, mouseX, mouseY);
+        }
+        if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
+    }
+
+    private void renderWindows(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         var hoveredWindow = windowAt(mouseX, mouseY);
         int layer = 200;
         for (var window : this.windows) {
@@ -877,10 +893,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             window.renderResizeHandles(graphics, pointerX, pointerY);
             graphics.pose().popPose();
         }
-        if (allLines.size() > lines.size() && mouseX < this.panelLeft && mouseY >= this.height - 42) {
-            graphics.renderTooltip(this.font, hint, mouseX, mouseY);
-        }
-        if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
     void renderPanelBackdrop(GuiGraphics graphics, int width) {
@@ -966,11 +978,29 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         return buttons;
     }
 
+    boolean buildMode() {
+        return this.parent.buildingDraft() != null || this.paths.active() || this.walls.active()
+                || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD;
+    }
+
+    float panelOpacity() { return this.panelFade.opacity(); }
+
+    private boolean panelWidget(net.minecraft.client.gui.components.events.GuiEventListener widget) {
+        return this.sidebarWindow.widgets().contains(widget) || this.mapWindow.widgets().contains(widget);
+    }
+
+    @Override
+    public List<? extends net.minecraft.client.gui.components.events.GuiEventListener> children() {
+        var children = super.children();
+        return buildMode() ? children.stream().filter(child -> !panelWidget(child)).toList() : children;
+    }
+
     private boolean windowVisible(SettlementUiWindow window) {
         return window == this.sidebarWindow ? this.preferences.sidebar : this.preferences.map;
     }
 
     private SettlementUiWindow windowAt(double x, double y) {
+        if (buildMode()) return null;
         for (int index = this.windows.size() - 1; index >= 0; index--) {
             var window = this.windows.get(index);
             if (windowVisible(window) && window.contains(x, y)) return window;
@@ -2035,6 +2065,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (buildMode() && getFocused() != null && panelWidget(getFocused())) setFocused(null);
+        if (buildMode() && this.search != null) this.search.setFocused(false);
         if (SettlementViewClient.transitioning()) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) onClose();
             return true;
@@ -2289,7 +2321,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (clickedWindow == null && super.mouseClicked(x, y, button)) return true;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) finishStoragePick(null);
             else if (button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && worldContains(x, y)) this.panning = true;
-            else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.preferences.map && this.overviewMap.contains(x, y)) {
+            else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && !buildMode() && this.preferences.map && this.overviewMap.contains(x, y)) {
                 focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
             } else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && worldContains(x, y)) {
                 var position = pick(x, y).position();
@@ -2301,7 +2333,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (clickedWindow == null && super.mouseClicked(x, y, button)) {
             return true;
         }
-        if (this.preferences.map && this.overviewMap.contains(x, y)) {
+        if (!buildMode() && this.preferences.map && this.overviewMap.contains(x, y)) {
             if (this.route.draft() != null || this.paths.active() || this.walls.active()) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
                 return true;
@@ -3008,6 +3040,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.commands.clear();
         this.snapshots.clear();
         this.overviewMap.close();
+        this.panelFade.close();
         this.frameEntities.clear();
         this.mapMarkers.update(List.of(), List.of());
         this.assignmentReview = null;

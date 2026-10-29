@@ -90,6 +90,7 @@ final class SettlementWallClientChecks {
             button("Low stone").onPress();
             next();
         } else if (this.phase == 3 && editor.canConfirm() && this.ticks > 5) {
+            SettlementViewPanelClientChecks.verifyBuildPanels(this.view);
             this.capture.accept("wall-tall-stone");
             button("Tall stone").onPress();
             next();

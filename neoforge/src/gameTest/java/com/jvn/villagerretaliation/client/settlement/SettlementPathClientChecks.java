@@ -26,7 +26,7 @@ final class SettlementPathClientChecks {
     }
 
     boolean tick(Minecraft minecraft) {
-        if (this.phase == 8 && this.ticks > 15) return true;
+        if (this.phase == 9) return true;
         if (++this.ticks > 500) throw new IllegalStateException("Path client checks timed out at " + this.phase + ": " + this.view.pathEditor().hint());
         var editor = this.view.pathEditor();
         if (this.phase == 0) {
@@ -42,6 +42,7 @@ final class SettlementPathClientChecks {
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 1 && this.ticks > 15) {
+            SettlementViewPanelClientChecks.verifyBuildPanels(this.view);
             this.capture.accept("build-menu");
             this.view.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
             require(this.view.contextPopup() == null && !editor.active(), "Escape closes Build without starting placement");
@@ -52,6 +53,11 @@ final class SettlementPathClientChecks {
             require(this.view.contextPopup() == null, "clicking Build again closes the submenu");
             chooseBuildTool("Path");
             require(editor.active(), "Build menu starts a path draft");
+            var map = this.view.overviewMap();
+            float height = this.view.viewHeight();
+            this.view.mouseScrolled(map.left + map.width / 2.0, map.top + map.height / 2.0, 0, -1);
+            require(this.view.viewHeight() > height, "scrolling over the hidden map zooms the world");
+            this.view.mouseScrolled(map.left + map.width / 2.0, map.top + map.height / 2.0, 0, 1);
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "ground click creates the first node");
             var point = project(this.start.add(5, 0, 0));
@@ -193,7 +199,14 @@ final class SettlementPathClientChecks {
             this.view.focus(this.cameraX, this.cameraZ);
             this.phase++;
             this.ticks = 0;
-        } else if (this.phase == 8 && this.ticks > 15) return true;
+        } else if (this.phase == 8 && this.ticks > 15) {
+            require(!this.view.buildMode() && this.view.panelOpacity() == 1, "cancel restores the map and info viewer");
+            require(this.view.uiWindows().stream().flatMap(window -> window.widgets().stream())
+                    .allMatch(this.view.children()::contains), "restored panels accept input again");
+            this.capture.accept("build-panels-restored");
+            this.phase++;
+            return true;
+        }
         return false;
     }
 
