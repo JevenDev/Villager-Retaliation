@@ -144,6 +144,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private long commandSequence;
     private SettlementViewBatchPayload assignmentReview;
     private final SettlementPathEditor paths = new SettlementPathEditor();
+    private final SettlementInfrastructureEditor infrastructure = new SettlementInfrastructureEditor();
+    private final List<Button> infrastructureButtons = new ArrayList<>();
     private final SettlementFarmEditor farms = new SettlementFarmEditor();
     private final List<Button> farmButtons = new ArrayList<>();
     private final List<Button> pathButtons = new ArrayList<>();
@@ -429,7 +431,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 }));
         this.buildMenu = addRenderableWidget(tool(Component.literal("Build"),
                 toolTop + (this.layout.railSize + 2) * 3, net.minecraft.world.item.Items.BRICKS, false,
-                () -> this.parent.buildingDraft() != null || this.paths.active() || this.walls.active() || this.farms.active()
+                () -> this.parent.buildingDraft() != null || this.paths.active() || this.walls.active() || this.farms.active() || this.infrastructure.active()
                         || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD,
                 this::openBuildMenu));
         addRenderableWidget(tool(SettlementViewKeyMappings.hint(text("plots"), SettlementViewKeyMappings.PLOTS), toolTop + (this.layout.railSize + 2) * 4,
@@ -457,6 +459,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         initRouteButtons();
         initPathButtons();
         initFarmButtons();
+        initInfrastructureButtons();
         initWallButtons();
         this.transform = addRenderableWidget(new SettlementBuildOverlay.ActionButton(text("gizmo_move"), ignored -> {
             if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.TRANSFORM);
@@ -715,6 +718,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.frameEntities.invalidate();
         var pathPlots = this.plotSnapshot.plots().stream().filter(com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot::owned)
                 .map(com.jvn.villagerretaliation.network.SettlementPlotSnapshot.Plot::chunk).collect(java.util.stream.Collectors.toSet());
+        this.infrastructure.tick(this.minecraft.level, this.session,
+                pos -> this.window.contains(pos) && pathPlots.contains(new net.minecraft.world.level.ChunkPos(pos)), PacketDistributor::sendToServer);
         this.farms.tick(this.minecraft.level, this.session,
                 pos -> this.window.contains(pos) && pathPlots.contains(new net.minecraft.world.level.ChunkPos(pos)), PacketDistributor::sendToServer);
         this.paths.tick(this.minecraft.level, this.session,
@@ -855,7 +860,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.guardMode == SettlementGuardOrder.Mode.PATROL) hint = Component.literal(
                 (this.guardWorksite == null ? "Patrol" : "Shared patrol") + ": " + this.guardPoints.size() + "/"
                         + SettlementGuardOrder.MAX_POINTS + " points. Enter finishes. Right-click cancels.");
-        if (this.farms.active()) hint = Component.literal(this.farms.hint());
+        if (this.infrastructure.active()) hint = Component.literal(this.infrastructure.hint());
+        else if (this.farms.active()) hint = Component.literal(this.farms.hint());
         else if (this.paths.active()) hint = Component.literal(this.paths.hint());
         else if (this.walls.active()) hint = Component.literal(this.walls.hint());
         else if (this.route.draft() != null) hint = routeHint();
@@ -992,7 +998,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     boolean buildMode() {
-        return this.parent.buildingDraft() != null || this.paths.active() || this.walls.active() || this.farms.active()
+        return this.parent.buildingDraft() != null || this.paths.active() || this.walls.active() || this.farms.active() || this.infrastructure.active()
                 || this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.BUILD;
     }
 
@@ -1011,7 +1017,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.hintToggle.setPosition(this.buildOverlay.toggle().left(), this.buildOverlay.toggle().top());
         }
         var widgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
-        if (this.farms.active()) {
+        if (this.infrastructure.active()) {
+            widgets.addAll(this.infrastructureButtons);
+        } else if (this.farms.active()) {
             widgets.addAll(this.farmButtons);
         } else if (this.paths.active()) {
             for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
@@ -1140,10 +1148,15 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private void updateActions() {
         updateInspector();
         updateFarmButtons();
+        for (int i = 0; i < this.infrastructureButtons.size(); i++) {
+            var button = this.infrastructureButtons.get(i);
+            button.visible = this.infrastructure.active();
+            button.active = this.infrastructure.active() && !this.infrastructure.confirming() && (i != 0 || this.infrastructure.canConfirm());
+        }
         updatePathButtons();
         updateWallButtons();
         if (!permits(SettlementPermission.BUILD)) {
-            if (this.farms.active() && !this.farms.confirming() || this.paths.active() && !this.paths.confirming() || this.walls.active() && !this.walls.confirming()) enterMode(Mode.SELECT);
+            if (this.infrastructure.active() && !this.infrastructure.confirming() || this.farms.active() && !this.farms.confirming() || this.paths.active() && !this.paths.confirming() || this.walls.active() && !this.walls.confirming()) enterMode(Mode.SELECT);
             cancelGizmo();
             if (this.interaction.is(Mode.DRAW_AREA)) this.interaction.enter(Mode.SELECT);
             this.dragStart = null;
@@ -1210,7 +1223,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     this.guardMode == SettlementGuardOrder.Mode.PATROL ? "guard_finish_patrol" : "guard_patrol"));
         }
         updateRouteButtons();
-        if (this.route.draft() != null || this.storagePicker != null || this.paths.active() || this.walls.active() || this.farms.active()) {
+        if (this.route.draft() != null || this.storagePicker != null || this.paths.active() || this.walls.active() || this.farms.active() || this.infrastructure.active()) {
             for (var button : this.guardButtons) if (button != null) button.visible = false;
             this.returnToPost.visible = false;
             this.groupActions.visible = false;
@@ -1353,6 +1366,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.parent.submitting()) return "Wait for the current settlement action to finish.";
         if (this.paths.confirming()) return "Wait for the path to finish applying.";
         if (this.walls.confirming()) return "Wait for the wall change to finish applying.";
+        if (this.infrastructure.confirming()) return "Wait for the construction order to finish applying.";
         if (this.farms.confirming()) return "Wait for the farmland order to finish applying.";
         return "";
     }
@@ -1433,7 +1447,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void beginWall() {
-        if (!permits(SettlementPermission.BUILD) || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
+        if (!permits(SettlementPermission.BUILD) || this.infrastructure.confirming() || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
         enterMode(Mode.CREATE_WALL);
         this.selection.select(List.of(), false);
         this.walls.begin();
@@ -1594,9 +1608,39 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         layoutBuildControls();
     }
 
+    private void beginInfrastructure(com.jvn.villagerretaliation.settlement.SettlementInfrastructure.Type type) {
+        if (!buildUnavailableReason(true, false).isEmpty()) return;
+        enterMode(Mode.CREATE_INFRASTRUCTURE);
+        this.infrastructure.begin(type);
+        updateActions();
+        updatePlotActions();
+    }
+
+    void acceptInfrastructure(com.jvn.villagerretaliation.network.SettlementInfrastructureResultPayload payload) {
+        if (this.infrastructure.accept(payload)) {
+            this.guardFeedback = Component.literal(payload.message());
+            enterMode(Mode.SELECT);
+        }
+        updateActions();
+    }
+
+    private BlockPos infrastructurePoint(double x, double y) {
+        var point = farmPoint(x, y);
+        return point == null ? null : com.jvn.villagerretaliation.settlement.SettlementInfrastructureTerrain.ground(
+                this.minecraft.level, point.getX(), point.getZ());
+    }
+
+    private void initInfrastructureButtons() {
+        this.infrastructureButtons.clear();
+        this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Confirm"),
+                ignored -> this.infrastructure.confirm(this.session, PacketDistributor::sendToServer))));
+        this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Refresh"), ignored -> this.infrastructure.refresh())));
+        this.infrastructureButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Cancel"), ignored -> enterMode(Mode.SELECT))));
+    }
+
     void beginFarm() {
         if (!permits(SettlementPermission.BUILD) || !permits(SettlementPermission.STAFF)
-                || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
+                || this.infrastructure.confirming() || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
         enterMode(Mode.CREATE_FARM);
         this.farms.begin();
         updateActions();
@@ -1633,7 +1677,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     void beginPath() {
-        if (!permits(SettlementPermission.BUILD) || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
+        if (!permits(SettlementPermission.BUILD) || this.infrastructure.confirming() || this.farms.confirming() || this.paths.confirming() || this.walls.confirming() || this.parent.submitting() || this.commands.busy()) return;
         enterMode(Mode.CREATE_PATH);
         this.selection.select(List.of(), false);
         this.paths.begin(false);
@@ -1949,7 +1993,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void enterMode(Mode mode) {
-        if (this.farms.confirming() || this.paths.confirming() || this.walls.confirming()) return;
+        if (this.infrastructure.confirming() || this.farms.confirming() || this.paths.confirming() || this.walls.confirming()) return;
+        this.infrastructure.cancel(this.session, PacketDistributor::sendToServer);
         this.farms.cancel(this.session, PacketDistributor::sendToServer);
         this.paths.cancel(this.session, PacketDistributor::sendToServer);
         this.walls.cancel(this.session, PacketDistributor::sendToServer);
@@ -2174,6 +2219,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.peekKey = InputConstants.getKey(keyCode, scanCode);
             return true;
         }
+        if (this.infrastructure.active()) {
+            if (this.infrastructure.confirming()) return true;
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) enterMode(Mode.SELECT);
+            else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)
+                this.infrastructure.confirm(this.session, PacketDistributor::sendToServer);
+            return true;
+        }
         if (this.farms.active()) {
             if (this.farms.confirming()) return true;
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) enterMode(Mode.SELECT);
@@ -2306,6 +2358,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public void mouseMoved(double x, double y) {
         if (this.popup != null) this.popup.hover(x, y);
+        if (this.infrastructure.active() && this.popup == null && worldContains(x, y) && windowAt(x, y) == null
+                && !this.buildOverlay.contains(x, y)) this.infrastructure.hover(infrastructurePoint(x, y));
         if (this.farms.active() && this.popup == null && worldContains(x, y) && windowAt(x, y) == null
                 && !this.buildOverlay.contains(x, y)) this.farms.hover(farmPoint(x, y));
         if (this.walls.active()) {
@@ -2403,7 +2457,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 return true;
             }
             if (clickedWindow == this.sidebarWindow) {
-                if (this.route.draft() == null && !this.paths.active() && !this.walls.active() && !this.farms.active()) this.inspector.click(x, y, button);
+                if (this.route.draft() == null && !this.paths.active() && !this.walls.active() && !this.farms.active() && !this.infrastructure.active()) this.inspector.click(x, y, button);
                 return true;
             }
             if (!this.overviewMap.contains(x, y)) return true;
@@ -2425,7 +2479,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (!buildMode() && this.preferences.map && this.overviewMap.contains(x, y)) {
-            if (this.route.draft() != null || this.paths.active() || this.walls.active() || this.farms.active()) {
+            if (this.route.draft() != null || this.paths.active() || this.walls.active() || this.farms.active() || this.infrastructure.active()) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) focus(this.overviewMap.worldX(x), this.overviewMap.worldZ(y));
                 return true;
             }
@@ -2443,6 +2497,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             return true;
         }
         if (!worldContains(x, y)) return true;
+        if (this.infrastructure.active() && button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            if (this.infrastructure.confirming()) return true;
+            if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) enterMode(Mode.SELECT);
+            else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) this.infrastructure.click(infrastructurePoint(x, y), this::project, x, y);
+            updateActions();
+            return true;
+        }
         if (this.farms.active() && button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
             if (this.farms.confirming()) return true;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) enterMode(Mode.SELECT);
@@ -2578,6 +2639,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseDragged(double x, double y, int button, double deltaX, double deltaY) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.infrastructure.dragging()) {
+            this.infrastructure.drag(infrastructurePoint(x, y));
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.farms.dragging()) {
             this.farms.drag(farmPoint(x, y));
             return true;
@@ -2648,6 +2713,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.infrastructure.dragging()) {
+            this.infrastructure.release();
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.farms.dragging()) {
             this.farms.release();
             return true;
@@ -2827,6 +2896,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.walls.active()) ConstructionBlueprintPreviewRenderer.renderPreview(event, this.walls.ghost(), false);
         if (this.paths.active()) SettlementPathGizmo.renderTerrain(this.paths, event);
         if (this.farms.active()) SettlementFarmGizmo.render(this.farms, event);
+        if (this.infrastructure.active()) {
+            ConstructionBlueprintPreviewRenderer.renderPreview(event, this.infrastructure.ghost(this.minecraft.level), false);
+            SettlementInfrastructureGizmo.render(this.infrastructure, event);
+        }
         if (this.walls.active()) SettlementWallGizmo.renderBlocked(this.walls, event);
         PoseStack pose = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
@@ -2952,6 +3025,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             LevelRenderer.renderLineBox(pose, lines, draftBounds(), 0.62F, 0.72F, 0.78F, 0.65F);
         }
         if (this.farms.active()) SettlementFarmGizmo.renderHandles(this.farms, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
+        if (this.infrastructure.active()) SettlementInfrastructureGizmo.renderHandles(this.infrastructure, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         if (this.paths.active()) SettlementPathGizmo.renderHandles(this.paths, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         if (this.walls.active()) SettlementWallGizmo.renderNodes(this.walls, pose, buffers.getBuffer(SettlementSelectionGizmo.LINES));
         for (var project : this.projects.values()) {
@@ -3455,6 +3529,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                             management().newBuilding();
                         }));
                 actions.add(buildAction(Component.literal("Farmland"), buildUnavailableReason(false, true), this::beginFarm));
+                for (var type : com.jvn.villagerretaliation.settlement.SettlementInfrastructure.Type.values())
+                    actions.add(buildAction(Component.literal(type.label()), buildUnavailableReason(true, false), () -> beginInfrastructure(type)));
                 actions.add(buildAction(Component.literal("Path"), unavailable, this::beginPath));
                 actions.add(buildAction(Component.literal("Wall"), unavailable, this::beginWall));
                 actions.add(buildAction(Component.literal("Upgrade wall"), unavailable, () -> {

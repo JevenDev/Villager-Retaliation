@@ -32,7 +32,7 @@ final class SettlementConstructionRoutes {
             BlockPos target = null;
             if (clearing) {
                 target = clearingTarget(site, clearingTargets, current, actualStance, owner);
-            } else if ((outside || plan.wall()) && com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker
+            } else if ((outside || plan.outdoor()) && com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker
                     .canBuildFromCurrentPosition(owner, targets.getFirst(), plan, project.origin())) {
                 target = targets.getFirst();
             }

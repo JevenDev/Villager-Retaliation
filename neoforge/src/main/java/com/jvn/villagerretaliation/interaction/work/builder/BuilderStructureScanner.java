@@ -721,6 +721,10 @@ public final class BuilderStructureScanner {
             this(entry, rotation, templateSize, localMin, localMax, blocks, materials, price, clearingBlocks, false);
         }
 
+        public boolean outdoor() {
+            return this.wall || !this.blocks.isEmpty() && this.blocks.getFirst().replacedState() != null;
+        }
+
         public int blockLimit() {
             return this.wall ? com.jvn.villagerretaliation.settlement.SettlementWall.MAX_BLOCKS
                     : Math.max(128, com.jvn.villagerretaliation.config.VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get());

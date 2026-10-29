@@ -2324,7 +2324,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             double z,
             BuilderStructureScanner.StructurePlan plan,
             BlockPos origin) {
-        if (plan.wall()) return horizontalDistanceToBuildFootprintSqr(x, z, plan, origin);
+        if (plan.outdoor()) return horizontalDistanceToBuildFootprintSqr(x, z, plan, origin);
         BlockPos min = plan.worldMin(origin);
         BlockPos max = plan.worldMax(origin);
         double minX = Math.min(min.getX(), max.getX());

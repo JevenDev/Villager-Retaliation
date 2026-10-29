@@ -128,6 +128,17 @@ public final class SettlementViewService {
         PacketDistributor.sendToPlayer(player, result);
     }
 
+    public static void infrastructure(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementInfrastructureRequestPayload request) {
+        var session = SESSIONS.get(player.getUUID());
+        if (session == null || !session.id.equals(request.session())
+                || !ServerboundRequestLimiter.tryAcquire(player, request.type().id(), 2L)) return;
+        var result = session.infrastructure.request(player, session.town, session.id,
+                eligible(player, session.town) && session.town.permits(player.getUUID(), SettlementPermission.BUILD),
+                pos -> session.town.contains(pos) && session.window.contains(pos)
+                        && session.sent.contains(new ChunkPos(pos)) && allowed(session, new ChunkPos(pos)), request);
+        PacketDistributor.sendToPlayer(player, result);
+    }
+
     public static void farm(ServerPlayer player, com.jvn.villagerretaliation.network.SettlementFarmRequestPayload request) {
         var session = SESSIONS.get(player.getUUID());
         if (session == null || !session.id.equals(request.session())
@@ -468,6 +479,7 @@ public final class SettlementViewService {
         final SettlementViewCommands commands = new SettlementViewCommands();
         final SettlementViewOverview overview = new SettlementViewOverview();
         final SettlementPathSession paths = new SettlementPathSession();
+        final SettlementInfrastructureSession infrastructure = new SettlementInfrastructureSession();
         final SettlementFarmSession farms = new SettlementFarmSession();
         final SettlementWallSession walls = new SettlementWallSession();
         SettlementViewWindow window;

@@ -1313,6 +1313,8 @@ public final class SettlementRecord {
         if (!permits(actor, SettlementPermission.BUILD) || area == null || area.wall()
                 || !owns(area)
                 || projects().values().stream().anyMatch(project -> project.workplace() != null
+                        && !(project.status() == SettlementProject.Status.COMPLETED && project.order() != null && project.order().registers(area)
+                                && (project.site() == null || !project.site().pending()))
                         && (project.area().equals(area.id()) || project.reservesFootprint() && project.overlaps(area)
                                 && area.type().changesTerrain() && area.type() != SettlementAreaType.CONSTRUCTION))
                 || !this.areas.containsKey(area.id()) && this.areas.size() >= MAX_AREAS

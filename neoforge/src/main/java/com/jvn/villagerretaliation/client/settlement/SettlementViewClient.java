@@ -150,6 +150,10 @@ public final class SettlementViewClient {
         if (active != null && active.session().equals(payload.session())) active.acceptWall(payload);
     }
 
+    public static void acceptInfrastructure(com.jvn.villagerretaliation.network.SettlementInfrastructureResultPayload payload) {
+        if (active != null && active.session().equals(payload.session())) active.acceptInfrastructure(payload);
+    }
+
     public static void acceptFarm(com.jvn.villagerretaliation.network.SettlementFarmResultPayload payload) {
         if (active != null && active.session().equals(payload.session())) active.acceptFarm(payload);
     }

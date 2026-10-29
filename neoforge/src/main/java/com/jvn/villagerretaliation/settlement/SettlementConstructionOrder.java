@@ -55,6 +55,7 @@ final class SettlementConstructionOrder {
     }
 
     boolean wall() { return !this.originals.isEmpty(); }
+    boolean registers(SettlementArea area) { return area.equals(this.completedArea); }
 
     BlockPos origin() {
         return new BlockPos(this.cells.stream().mapToInt(c -> c.position().getX()).min().orElseThrow(),
@@ -82,6 +83,13 @@ final class SettlementConstructionOrder {
 
     boolean protectedSite(ServerLevel level, SettlementRecord town) {
         if (this.originals.stream().anyMatch(entry -> !entry.equals(SettlementWallsSavedData.get(level).get(entry.id())))) return true;
+        if (!wall() && java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
+                .anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED && project.order() == null
+                        && this.cells.stream().anyMatch(cell -> project.wallConstruction() != null
+                                ? project.wallConstruction().overlaps(cell.position(), cell.position())
+                                : cell.position().getX() >= project.min().getX() && cell.position().getX() <= project.max().getX()
+                                        && cell.position().getY() >= project.min().getY() && cell.position().getY() <= project.max().getY()
+                                        && cell.position().getZ() >= project.min().getZ() && cell.position().getZ() <= project.max().getZ()))) return true;
         return this.cells.stream().anyMatch(cell -> level.hasChunkAt(cell.position()) && level.getBlockEntity(cell.position()) != null
                 || town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION && area.contains(cell.position())));
     }
@@ -98,6 +106,9 @@ final class SettlementConstructionOrder {
         var area = SettlementConstructionService.workplace(player.serverLevel(), town, plan, origin, id);
         if (area == null || !town.owns(area)) return "Keep the order inside the settlement construction bounds";
         if (protectedSite(player.serverLevel(), town)) return "The order overlaps a protected worksite or changed wall";
+        if (this.completedArea != null && (town.areas().size() >= SettlementRecord.MAX_AREAS
+                || town.areas().values().stream().anyMatch(existing -> existing.conflictsWith(this.completedArea))))
+            return "Move the pen outside existing work areas or remove an unused area first";
         var check = BuilderSitePlanner.validateSite(player.serverLevel(), player, null,
                 HiredWorkArea.fromBounds(area.min(), area.max(), true), plan, origin);
         if (!check.valid()) return net.minecraft.network.chat.Component.translatable(check.statusKey()).getString();
@@ -136,11 +147,10 @@ final class SettlementConstructionOrder {
                 for (var old : this.originals) {
                     var replacement = this.replacements.stream().filter(entry -> entry.id().equals(old.id())).findFirst().orElse(old);
                     var blocks = new LinkedHashMap<>(old.blocks());
-                    replacement.blocks().forEach(blocks::putIfAbsent);
-                    for (var cell : this.cells) if (blocks.containsKey(cell.position())) {
+                    for (var cell : this.cells) if (blocks.containsKey(cell.position()) || replacement.blocks().containsKey(cell.position())) {
                         var actual = level.getBlockState(cell.position());
-                        if (actual.isAir()) blocks.remove(cell.position());
-                        else if (actual.equals(cell.after())) blocks.put(cell.position(), actual);
+                        if (cell.after().isAir() && !cell.before().isAir() && actual.isAir()) blocks.remove(cell.position());
+                        else if (!cell.after().isAir() && actual.equals(cell.after())) blocks.put(cell.position(), actual);
                     }
                     if (!blocks.isEmpty()) retained.add(new SettlementWallsSavedData.Entry(old.id(), old.group(), old.town(), old.dimension(), replacement.wall(), blocks));
                 }
