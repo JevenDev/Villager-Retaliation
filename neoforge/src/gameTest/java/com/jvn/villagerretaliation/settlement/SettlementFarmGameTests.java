@@ -151,7 +151,7 @@ public final class SettlementFarmGameTests {
         try {
             var review = session.request(owner, town, sessionId, true, pos -> true,
                     new SettlementFarmRequestPayload(sessionId, 1, Action.PREVIEW, sessionId, farm));
-            helper.assertTrue(review.message().contains("water buckets"), "missing materials are visible");
+            helper.assertTrue(review.message().contains("bucket"), "missing materials are visible");
             var missing = session.request(owner, town, sessionId, true, pos -> true,
                     new SettlementFarmRequestPayload(sessionId, 1, Action.CONFIRM, review.token(), null));
             helper.assertValueEqual(missing.status(), Status.PREVIEW, "no water means no work is assigned");
@@ -166,6 +166,9 @@ public final class SettlementFarmGameTests {
             confirm = new SettlementFarmRequestPayload(sessionId, 1, Action.CONFIRM, refreshed.token(), null);
             var applied = session.request(owner, town, sessionId, true, pos -> true, confirm);
             helper.assertValueEqual(applied.status(), Status.APPLIED, applied.message());
+            helper.assertValueEqual(town.areas().size(), 1, "placement reuses the matching legacy farm area");
+            helper.assertValueEqual(town.duties().get(villager.getUUID()), area.id(), "farmer keeps the canonical farm assignment");
+            helper.assertValueEqual(town.areas().get(area.id()).farm(), farm, "legacy area receives the placed geometry");
             helper.assertValueEqual(session.request(owner, town, sessionId, true, pos -> true, confirm), applied, "duplicate confirmation does not queue twice");
             var next = SettlementFarmWork.next(level, state);
             helper.assertTrue(next.water(), "water is placed before tilling");
@@ -194,11 +197,12 @@ public final class SettlementFarmGameTests {
             helper.assertTrue(level.getBlockState(changed).is(Blocks.STONE), "changed stone is skipped");
             long tilled = review.cells().stream().filter(cell -> level.getBlockState(cell.position()).is(Blocks.FARMLAND)).count();
             helper.assertValueEqual(tilled, 14L, "all remaining tillable soil becomes farmland");
-            helper.assertTrue(inventory.hasOutput(stack -> stack.is(Items.BUCKET)), "empty bucket is returned");
+            helper.assertTrue(!inventory.findSupply(stack -> stack.is(Items.BUCKET)).isEmpty(), "empty bucket remains reusable in supplies");
             helper.assertFalse(state.contains(SettlementFarmWork.TAG), "completed job state is cleared");
 
             for (var pos : BlockPos.betweenClosed(base, base.offset(3, 0, 3))) level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 2);
             var fresh = SettlementFarmTerrain.preview(level, farm, pos -> true);
+            for (int slot : inventory.supplySlots()) if (inventory.getItem(slot).is(Items.BUCKET)) inventory.setItem(slot, ItemStack.EMPTY);
             var depot = SettlementWallMaterialsGameTests.supply(level, town, base.east(6));
             depot.clearContent();
             depot.setItem(0, new ItemStack(Items.WATER_BUCKET));
@@ -217,9 +221,13 @@ public final class SettlementFarmGameTests {
             collection.worker().tick(level, villager, owner, collection.context());
             helper.assertTrue(!inventory.findSupply(stack -> stack.is(Items.WATER_BUCKET)).isEmpty(), "farmer collects water at storage");
             helper.assertValueEqual(depot.count(stack -> stack.is(Items.WATER_BUCKET)), 0, "collection removes one real bucket");
+            var suppliedWater = SettlementFarmWork.next(level, state);
+            villager.setPos(suppliedWater.position().above().getBottomCenter());
+            collection.worker().tick(level, villager, owner, collection.context());
+            helper.assertTrue(level.getBlockState(suppliedWater.position()).is(Blocks.WATER), "storage-marked buckets can place water");
             helper.assertTrue(HiredTemporaryWorkService.submit(owner, villager, null, false).isEmpty(), "farmland can be cancelled through the task queue");
             helper.assertFalse(state.contains(SettlementFarmWork.TAG), "cancellation clears the saved plan");
-            helper.assertTrue(!inventory.findSupply(stack -> stack.is(Items.WATER_BUCKET)).isEmpty(), "cancellation retains unused water");
+            helper.assertTrue(!inventory.findSupply(stack -> stack.is(Items.BUCKET)).isEmpty(), "cancellation retains the reusable bucket");
         } finally { villager.discard(); }
         helper.succeed();
     }
@@ -238,6 +246,10 @@ public final class SettlementFarmGameTests {
         helper.assertValueEqual(circle.minX(), base.getX() - 4, "circle extends on both sides of its centre");
         helper.assertTrue(circle.contains(base.getX(), base.getZ() - 4), "circle includes its radius boundary");
         helper.assertFalse(circle.contains(base.getX() + 4, base.getZ() + 4), "circle excludes bounding square corners");
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Shaped farm",
+                base, base.offset(8, 2, 8), 5, true, SettlementCropPlan.NONE, false, polygon);
+        helper.assertFalse(area.contains(base.offset(6, 0, 6)), "ongoing work excludes the polygon notch");
+        helper.assertValueEqual(SettlementArea.load(area.save()), area, "workplace persistence retains the shape");
         var reversed = new SettlementFarm(SettlementFarm.Shape.POLYGON, polygon.nodes().reversed());
         for (int x = polygon.minX(); x <= polygon.maxX(); x++) for (int z = polygon.minZ(); z <= polygon.maxZ(); z++)
             helper.assertValueEqual(polygon.contains(x, z), reversed.contains(x, z), "polygon winding does not change its footprint");

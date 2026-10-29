@@ -49,6 +49,13 @@ final class SettlementBackgroundFarming {
             return;
         }
         var area = town.areas().get(worker.area());
+        if (area != null && area.farm() != null) {
+            worker.settings().put("SettlementFarmShape", area.farm().save());
+            worker.settings().putBoolean("SettlementFarmCropPlan", area.crops().enabled() || area.crops().demand());
+        } else {
+            worker.settings().remove("SettlementFarmShape");
+            worker.settings().remove("SettlementFarmCropPlan");
+        }
         var plots = town.fields().values().stream().filter(plot -> area != null && area.enabled()
                         && area.type() == SettlementAreaType.FARM && SettlementFieldService.serves(area, plot))
                 .sorted(Comparator.comparingInt(SettlementBackgroundFarming::priority)
@@ -64,7 +71,7 @@ final class SettlementBackgroundFarming {
             boolean harvest = plot.harvestable() && HiredFarmingOptions.harvestCrops(worker.settings());
             boolean plant = plot.canPlant() && HiredFarmingOptions.plantCrops(worker.settings());
             boolean till = crop.isAir() && !plot.soil().is(Blocks.FARMLAND) && SettlementFieldPlot.supportedSoil(plot.soil())
-                    && HiredFarmingOptions.tillSoil(worker.settings());
+                    && HiredFarmingOptions.tillSoil(worker.settings()) && (area.farm() == null || plot.irrigated());
             if (!harvest && !plant && !till) {
                 continue;
             }

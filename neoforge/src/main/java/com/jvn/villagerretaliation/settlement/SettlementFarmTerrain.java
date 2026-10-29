@@ -20,7 +20,7 @@ public final class SettlementFarmTerrain {
         public Preview { cells = List.copyOf(cells); }
         public long count(Kind kind) { return cells.stream().filter(cell -> cell.kind() == kind).count(); }
         public String materials() {
-            return "Hoe and " + count(Kind.WATER) + " water buckets in farmer supplies or assigned storage. Empty buckets are returned."
+            return "Hoe and at least 1 bucket in farmer supplies or assigned storage. Refill from accessible infinite water. Bucket allowance: 1 to 4."
                     + (count(Kind.DRY) == 0 ? "" : " Skipping " + count(Kind.DRY) + " dry soil blocks (orange). Expand the selection or add contained water to include them.");
         }
     }
@@ -100,8 +100,6 @@ public final class SettlementFarmTerrain {
         if (planned.stream().noneMatch(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.EXISTING))
             return new Preview(planned, excluded.isEmpty() ? "No tillable farmland remains after irrigation"
                     : "No soil can be irrigated safely. Expand the area or provide contained water nearby. Orange blocks will stay unchanged.");
-        if (planned.stream().noneMatch(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.WATER))
-            return new Preview(planned, "No farmland work is needed");
         var work = planned.stream().filter(cell -> cell.kind() == Kind.TILL || cell.kind() == Kind.WATER).toList();
         int low = work.stream().mapToInt(cell -> cell.position().getY()).min().orElse(0);
         int high = work.stream().mapToInt(cell -> cell.position().getY()).max().orElse(0);

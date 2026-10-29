@@ -90,6 +90,8 @@ public final class SettlementFieldPlot {
         return this.conflict;
     }
 
+    boolean irrigated() { return !this.waterSources.isEmpty(); }
+
     BlockState soil() {
         return this.soil;
     }

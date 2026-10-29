@@ -309,7 +309,7 @@ public final class SettlementWorkerScreen extends VillagerWindowScreen {
                                 ? text("worksite_inherit") : value(setting, this.draft.options().get(setting)));
             }
             ((VillagerUi.OptionButton) button).checkbox(this.filtering || switch (this.settings.get(index)) {
-                case CULL_CAP, MINING_MODE, CRAFTING_MODE, GUARD_MODE, CROP_SELECTION -> false;
+                case CULL_CAP, MINING_MODE, CRAFTING_MODE, GUARD_MODE, CROP_SELECTION, FARM_BUCKETS -> false;
                 default -> true;
             },
                     this.filtering ? selectedFilters().isEmpty() || selectedFilters().contains(visible.get(index))
@@ -335,6 +335,7 @@ public final class SettlementWorkerScreen extends VillagerWindowScreen {
             case MINING_MODE -> SettlementManagementScreen.enumText("worker_mining", HiredMiningMode.values()[value]);
             case CRAFTING_MODE -> SettlementManagementScreen.enumText("worker_crafting", CraftsmanWorker.Mode.values()[value]);
             case GUARD_MODE -> SettlementManagementScreen.enumText("worker_guard", HiredCombatMode.values()[value]);
+            case FARM_BUCKETS -> Component.literal(Integer.toString(value + 1));
             case CROP_SELECTION -> Component.literal(com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions.Crop.values()[value].label());
             case CULL_CAP -> value == 0 ? text("disabled") : Component.literal(Integer.toString(HiredAnimalCullSettings.capOptions()[value - 1]));
             default -> text(value == 0 ? "disabled" : "enabled");

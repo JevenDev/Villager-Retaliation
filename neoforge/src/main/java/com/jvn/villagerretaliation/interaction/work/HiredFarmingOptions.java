@@ -29,7 +29,8 @@ public final class HiredFarmingOptions {
     }
 
     public static boolean plantCrops(CompoundTag state) {
-        return HiredJobSetting.PLANT_CROPS.read(state) != 0;
+        return HiredJobSetting.PLANT_CROPS.read(state) != 0
+                && (!state.contains("SettlementFarmShape") || state.getBoolean("SettlementFarmCropPlan") || crop(state) != Crop.ANY);
     }
 
     public static boolean harvestCrops(CompoundTag state) {

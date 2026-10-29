@@ -1125,6 +1125,10 @@ public final class HiredJobInventory implements Container {
         return transformSupplies(consumed, produced, true, true);
     }
 
+    public boolean canTransformSupplies(Map<Item, Integer> consumed, List<ItemStack> produced) {
+        return transformSupplies(consumed, produced, false, false);
+    }
+
     public boolean canTransformSuppliesToOutputs(Map<Item, Integer> consumed, List<ItemStack> produced) {
         return transformSupplies(consumed, produced, true, false);
     }

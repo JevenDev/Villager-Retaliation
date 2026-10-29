@@ -70,6 +70,8 @@ public final class SettlementFieldService {
                         for (int x = Math.max(area.min().getX(), chunk.getPos().getMinBlockX()); x <= Math.min(area.max().getX(), chunk.getPos().getMaxBlockX()); x++) {
                             for (int z = Math.max(area.min().getZ(), chunk.getPos().getMinBlockZ()); z <= Math.min(area.max().getZ(), chunk.getPos().getMaxBlockZ()); z++) {
                                 BlockPos position = new BlockPos(x, y, z);
+                                var workplace = town.areas().get(area.id());
+                                if (workplace != null && !workplace.contains(position) && !workplace.contains(position.above())) continue;
                                 var soil = chunk.getBlockState(position);
                                 var crop = chunk.getBlockState(position.above());
                                 if (!(area.type() == SettlementAreaType.ANIMAL_PEN

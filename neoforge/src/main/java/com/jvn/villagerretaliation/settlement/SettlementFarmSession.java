@@ -44,7 +44,7 @@ public final class SettlementFarmSession {
             return result(request, Status.REJECTED, List.of(), "The farmland preview is not valid");
         var current = SettlementFarmTerrain.preview(player.serverLevel(), this.farm, allowed);
         if (!this.preview.equals(current)) return refresh(player, town, allowed, request, "Terrain changed. Review the refreshed irrigation and confirm again. ");
-        String error = SettlementFarmWork.start(player, town, current);
+        String error = SettlementFarmWork.start(player, town, current, this.farm);
         if (!error.isEmpty()) return refresh(player, town, allowed, request, error + ". ");
         this.preview = null;
         return this.result = result(request, Status.APPLIED, List.of(), "Farmer assigned to prepare irrigated farmland");

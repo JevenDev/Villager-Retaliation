@@ -34,7 +34,8 @@ public enum HiredJobSetting {
     BREED_ANIMALS(HiredAnimalHandlingOptions.BREED_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
     MILK_ANIMALS(HiredAnimalHandlingOptions.MILK_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
     COLLECT_ANIMAL_DROPS(HiredAnimalHandlingOptions.COLLECT_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
-    CULL_ANIMALS(HiredAnimalHandlingOptions.CULL_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING);
+    CULL_ANIMALS(HiredAnimalHandlingOptions.CULL_TAG, 1, HiredVillagerRole.ANIMAL_HANDLING),
+    FARM_BUCKETS("FarmingBuckets", 0, HiredVillagerRole.FARMING);
 
     private final String tag;
     private final int defaultValue;
@@ -55,6 +56,7 @@ public enum HiredJobSetting {
 
     public int choices() {
         return switch (this) {
+            case FARM_BUCKETS -> 4;
             case CULL_CAP -> HiredAnimalCullSettings.capOptions().length + 1;
             case MINING_MODE -> HiredMiningMode.values().length;
             case CRAFTING_MODE -> CraftsmanWorker.Mode.values().length;
@@ -66,6 +68,7 @@ public enum HiredJobSetting {
 
     public int read(CompoundTag state) {
         return switch (this) {
+            case FARM_BUCKETS -> Math.clamp(state.getInt(this.tag), 0, 3);
             case CULL_CAP -> {
                 int cap = HiredAnimalCullSettings.cap(state);
                 int[] options = HiredAnimalCullSettings.capOptions();
@@ -94,7 +97,7 @@ public enum HiredJobSetting {
 
     public void initializeDefault(CompoundTag state) {
         int type = switch (this) {
-            case CULL_CAP -> Tag.TAG_INT;
+            case CULL_CAP, FARM_BUCKETS -> Tag.TAG_INT;
             case CROP_SELECTION, MINING_MODE, CRAFTING_MODE, GUARD_MODE -> Tag.TAG_STRING;
             default -> Tag.TAG_BYTE;
         };
@@ -111,6 +114,7 @@ public enum HiredJobSetting {
             throw new IllegalArgumentException("Invalid worker option");
         }
         switch (this) {
+            case FARM_BUCKETS -> state.putInt(this.tag, value);
             case CULL_CAP -> HiredAnimalCullSettings.setCap(state, value == 0 ? 0 : HiredAnimalCullSettings.capOptions()[value - 1]);
             case CROP_SELECTION -> state.putString(this.tag, HiredFarmingOptions.Crop.values()[value].name());
             case MINING_MODE -> state.putString(this.tag, HiredMiningMode.values()[value].serializedName());

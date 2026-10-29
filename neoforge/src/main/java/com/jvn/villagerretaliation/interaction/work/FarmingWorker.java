@@ -98,6 +98,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.needs_farmer_job_site");
         }
 
+        if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.PREPARE_FARM))
+            return prepareFarmland(level, villager, context);
+
         var pending = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
         boolean delivering = pending.storageTargetPos() != null
                 && (pending.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
@@ -119,8 +122,6 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return hoeResult;
         }
         if (TutorialWorkService.isTrial(villager)) return tutorialTick(level, villager, context);
-        if (com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.active(context.state(), HiredTemporaryTask.Kind.PREPARE_FARM))
-            return prepareFarmland(level, villager, context);
 
         HiredWorkPlan.clear(context);
         clearActiveBreakingTarget(level, context, villager);
@@ -151,18 +152,17 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         if (!step.error().isEmpty()) return WorkResult.idle(step.error());
         if (step.water() && context.inventory().findSupply(stack -> stack.is(net.minecraft.world.item.Items.WATER_BUCKET)).isEmpty()) {
-            var storage = context.useAssignedStorageForSupplies()
-                    ? com.jvn.villagerretaliation.inventory.AssignedStorageService.nearestAssignedStoragePosContaining(
-                            level, villager, stack -> stack.is(net.minecraft.world.item.Items.WATER_BUCKET)) : null;
-            if (storage == null) return WorkResult.idle("interaction.work.farmland.needs_water");
-            var move = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, storage, 0.45D);
-            if (move == HiredStorageNavigationGoal.Result.MOVING) return WorkResult.progressed("interaction.work.farmland.collecting_water");
-            if (move == HiredStorageNavigationGoal.Result.FAILED) return WorkResult.idle("interaction.work.farmland.water_unreachable");
-            int collected = com.jvn.villagerretaliation.inventory.AssignedStorageService.transferItemsAtAssignedStorage(
-                    villager, storage, stack -> stack.is(net.minecraft.world.item.Items.WATER_BUCKET), 1, context.inventory()::insertSupplyFromStorage);
-            return collected > 0 ? WorkResult.progressed("interaction.work.farmland.collecting_water")
-                    : WorkResult.idle("interaction.work.farmland.needs_water");
+            var waterResult = collectFarmWater(level, villager, context);
+            if (waterResult.progressed()) return waterResult;
+            step = com.jvn.villagerretaliation.settlement.SettlementFarmWork.next(level, context.state(), false);
+            if (step.finished() || !step.error().isEmpty()) return waterResult;
         }
+        if (!step.water()) {
+            var hoeResult = ensureFarmingHoe(level, villager, context);
+            if (hoeResult != null) return hoeResult;
+        }
+        if (!net.neoforged.neoforge.event.EventHooks.canEntityGrief(level, villager))
+            return WorkResult.idle("interaction.work.farming.target_changed");
         var target = step.position();
         if (!isInVanillaFieldWorkRange(villager, target.above()))
             return moveToFieldTarget(level, villager, context, target.above(), target,
@@ -170,7 +170,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         var water = java.util.Map.of(net.minecraft.world.item.Items.WATER_BUCKET, 1);
         var bucket = List.of(new ItemStack(net.minecraft.world.item.Items.BUCKET));
-        if (step.water() && !context.inventory().canTransformSuppliesToOutputs(water, bucket))
+        if (step.water() && !context.inventory().canTransformSupplies(water, bucket))
             return WorkResult.idle("interaction.work.farmland.needs_water");
         var hoe = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
         if (com.jvn.villagerretaliation.settlement.SettlementPathTerrain.grass(level.getBlockState(target.above(2))))
@@ -181,7 +181,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (changed == null) return WorkResult.idle("interaction.work.farming.target_changed");
         if (!step.water() && changed.is(Blocks.FARMLAND)) changed = changed.setValue(FarmBlock.MOISTURE, 7);
         if (!level.setBlock(target, changed, 3)) return WorkResult.idle("interaction.work.farming.target_changed");
-        if (step.water() && !context.inventory().tryTransformSuppliesToOutputs(water, bucket))
+        if (step.water() && !context.inventory().tryTransformSupplies(water, bucket))
             throw new IllegalStateException("Farmland water inventory changed during placement");
         if (step.water() || changed.is(Blocks.FARMLAND)) com.jvn.villagerretaliation.settlement.SettlementFarmWork.advance(context.state());
         else {
@@ -191,12 +191,52 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
         faceBlock(villager, target);
         swingWorkTool(villager);
-        damageTool(context, villager, hoe);
+        if (!step.water()) damageTool(context, villager, hoe);
         level.playSound(null, target, step.water() ? SoundEvents.BUCKET_EMPTY : SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1, 1);
         level.gameEvent(GameEvent.BLOCK_CHANGE, target, GameEvent.Context.of(villager, changed));
         HiredPathMemory.onBlockChanged(level, target);
         setTaskState(context, HiredWorkerTaskState.IDLE, target);
         return WorkResult.progressedWithPractice("interaction.work.farmland.working", HiredWorkPractice.farming("till"));
+    }
+
+    private WorkResult collectFarmWater(ServerLevel level, Villager villager, HiredWorkContext context) {
+        var inventory = context.inventory();
+        int limit = com.jvn.villagerretaliation.interaction.HiredJobSetting.FARM_BUCKETS.read(context.state()) + 1;
+        int carried = inventory.supplySlots().stream().map(inventory::getItem)
+                .filter(stack -> stack.is(net.minecraft.world.item.Items.BUCKET) || stack.is(net.minecraft.world.item.Items.WATER_BUCKET))
+                .mapToInt(ItemStack::getCount).sum();
+        if (carried == 0) {
+            var storage = context.useAssignedStorageForSupplies()
+                    ? com.jvn.villagerretaliation.inventory.AssignedStorageService.nearestAssignedStoragePosContaining(
+                            level, villager, stack -> stack.is(net.minecraft.world.item.Items.BUCKET) || stack.is(net.minecraft.world.item.Items.WATER_BUCKET))
+                    : null;
+            if (storage == null) return WorkResult.idle("interaction.work.farmland.needs_water");
+            var move = HiredStorageNavigationGoal.moveToStorageTarget(level, context, villager, storage, 0.45D);
+            if (move == HiredStorageNavigationGoal.Result.MOVING) return WorkResult.progressed("interaction.work.farmland.collecting_water");
+            if (move == HiredStorageNavigationGoal.Result.FAILED) return WorkResult.idle("interaction.work.farmland.water_unreachable");
+            int collected = com.jvn.villagerretaliation.inventory.AssignedStorageService.transferItemsAtAssignedStorage(
+                    villager, storage, stack -> stack.is(net.minecraft.world.item.Items.BUCKET) || stack.is(net.minecraft.world.item.Items.WATER_BUCKET),
+                    limit, inventory::insertSupplyFromStorage);
+            return collected > 0 ? WorkResult.progressed("interaction.work.farmland.collecting_water")
+                    : WorkResult.idle("interaction.work.farmland.needs_water");
+        }
+        var job = context.state().getCompound(com.jvn.villagerretaliation.settlement.SettlementFarmWork.TAG);
+        var source = com.jvn.villagerretaliation.settlement.SettlementFarmWater.find(level, villager, context.workCenter(), job);
+        if (source == null) return WorkResult.idle("interaction.work.farmland.searching_water");
+        if (!isInVanillaFieldWorkRange(villager, source.approach())
+                || villager.distanceToSqr(source.water().getCenter()) > 9)
+            return moveToFieldTarget(level, villager, context, source.approach(), source.water(),
+                    "interaction.work.farmland.collecting_water", "interaction.work.farmland.water_unreachable");
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        if (!com.jvn.villagerretaliation.settlement.SettlementFarmWater.infinite(level, source.water()))
+            return WorkResult.idle("interaction.work.farmland.searching_water");
+        int filled = 0;
+        while (filled < limit && inventory.tryTransformSupplies(java.util.Map.of(net.minecraft.world.item.Items.BUCKET, 1),
+                List.of(new ItemStack(net.minecraft.world.item.Items.WATER_BUCKET)))) filled++;
+        if (filled == 0) return WorkResult.idle("interaction.work.farmland.bucket_space");
+        level.playSound(null, source.water(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1, 1);
+        swingWorkTool(villager);
+        return WorkResult.progressed("interaction.work.farmland.collecting_water");
     }
 
     private WorkResult guideFieldWork(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -277,7 +317,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
         clearSecondaryJobSite(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishPatch(context.state());
-        return WorkResult.idle("interaction.work.farming.waiting_for_growth");
+        return WorkResult.idle(context.state().contains("SettlementFarmShape") && !HiredFarmingOptions.plantCrops(context.state())
+                ? "interaction.work.farmland.awaiting_crop" : "interaction.work.farming.waiting_for_growth");
     }
 
     private WorkResult tutorialTick(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1147,7 +1188,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
         if (!isInsideFieldWorkArea(context, soilPos) && !isInsideFieldWorkArea(context, cropPos)) {
             return false;
         }
-        return tillModifiedState(level, soilPos, hoe) != null;
+        return (!context.state().contains("SettlementFarmShape")
+                || com.jvn.villagerretaliation.settlement.SettlementFarmTerrain.hydrated(level, soilPos))
+                && tillModifiedState(level, soilPos, hoe) != null;
     }
 
     private static BlockState tillModifiedState(ServerLevel level, BlockPos soilPos, ItemStack hoe) {

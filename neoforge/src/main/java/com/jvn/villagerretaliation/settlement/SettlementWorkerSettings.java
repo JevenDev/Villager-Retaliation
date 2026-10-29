@@ -222,7 +222,7 @@ public final class SettlementWorkerSettings {
 
     private CompoundTag encode() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Version", 4);
+        tag.putInt("Version", 5);
         tag.put("Storage", this.storage.save());
         tag.putString("Role", this.role.name());
         CompoundTag settings = new CompoundTag();
@@ -239,7 +239,7 @@ public final class SettlementWorkerSettings {
         if (tag.contains("Overrides") && !tag.contains("Overrides", Tag.TAG_INT)) {
             throw new IllegalArgumentException("Worker overrides must be an integer");
         }
-        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 2 || tag.getInt("Version") > 4))) {
+        if (tag.contains("Version") && (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 2 || tag.getInt("Version") > 5))) {
             throw new IllegalArgumentException("Unsupported worker settings version");
         }
         var role = HiredVillagerRole.valueOf(tag.getString("Role"));
@@ -251,6 +251,8 @@ public final class SettlementWorkerSettings {
             }
             options.put(SettlementWorkerSetting.valueOf(key), values.getInt(key));
         }
+        if (tag.contains("Version") && tag.getInt("Version") < 5 && role == HiredVillagerRole.FARMING)
+            options.putIfAbsent(SettlementWorkerSetting.FARM_BUCKETS, 0);
         boolean legacyFishing = role == HiredVillagerRole.FISHING && tag.getInt("Version") < 3;
         boolean legacyStorage = tag.getInt("Version") < 4;
         int legacyMask = allOverrides(role) & (legacyFishing ? ~FISHING_SPOTS_OVERRIDE : -1) & (legacyStorage ? ~SettlementStorageLinks.OVERRIDE : -1);

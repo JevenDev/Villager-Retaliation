@@ -7,7 +7,11 @@ import net.minecraft.nbt.CompoundTag;
 
 public record SettlementArea(
         UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
-        int priority, boolean enabled, SettlementCropPlan crops, boolean wall) {
+        int priority, boolean enabled, SettlementCropPlan crops, boolean wall, SettlementFarm farm) {
+    public SettlementArea(UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
+                          int priority, boolean enabled, SettlementCropPlan crops, boolean wall) {
+        this(id, type, name, min, max, priority, enabled, crops, wall, null);
+    }
     public SettlementArea(UUID id, SettlementAreaType type, String name, BlockPos min, BlockPos max,
                           int priority, boolean enabled, SettlementCropPlan crops) {
         this(id, type, name, min, max, priority, enabled, crops, false);
@@ -22,6 +26,8 @@ public record SettlementArea(
 
     public SettlementArea {
         Objects.requireNonNull(crops, "crops");
+        if (farm != null && (type != SettlementAreaType.FARM || farm.minX() != min.getX() || farm.maxX() != max.getX()
+                || farm.minZ() != min.getZ() || farm.maxZ() != max.getZ())) throw new IllegalArgumentException("Farm shape must match its workplace");
         if (type != SettlementAreaType.FARM && (crops.enabled() || crops.demand() || crops.cycles() > 0)) throw new IllegalArgumentException("Crop plans require a farm");
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(type, "type");
@@ -49,7 +55,8 @@ public record SettlementArea(
     public boolean contains(BlockPos pos) {
         return pos.getX() >= min.getX() && pos.getX() <= max.getX()
                 && pos.getY() >= min.getY() && pos.getY() <= max.getY()
-                && pos.getZ() >= min.getZ() && pos.getZ() <= max.getZ();
+                && pos.getZ() >= min.getZ() && pos.getZ() <= max.getZ()
+                && (farm == null || farm.contains(pos.getX(), pos.getZ()));
     }
 
     public boolean intersects(SettlementArea other) {
@@ -87,6 +94,7 @@ public record SettlementArea(
         tag.putBoolean("Enabled", enabled);
         tag.put("Crops", crops.save());
         if (wall) tag.putBoolean("Wall", true);
+        if (farm != null) tag.put("Farm", farm.save());
         return tag;
     }
 
@@ -94,6 +102,7 @@ public record SettlementArea(
         return new SettlementArea(tag.getUUID("Id"), SettlementAreaType.valueOf(tag.getString("Type")),
                 tag.getString("Name"), BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")),
                 tag.getInt("Priority"), tag.getBoolean("Enabled"),
-                tag.contains("Crops") ? SettlementCropPlan.load(tag.getCompound("Crops")) : SettlementCropPlan.NONE, tag.getBoolean("Wall"));
+                tag.contains("Crops") ? SettlementCropPlan.load(tag.getCompound("Crops")) : SettlementCropPlan.NONE, tag.getBoolean("Wall"),
+                tag.contains("Farm") ? SettlementFarm.load(tag.getCompound("Farm")) : null);
     }
 }

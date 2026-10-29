@@ -47,6 +47,18 @@ public record SettlementFarm(Shape shape, List<BlockPos> nodes) {
         }
     }
 
+    public net.minecraft.nbt.CompoundTag save() {
+        var tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("Shape", shape.name());
+        tag.putLongArray("Nodes", nodes.stream().mapToLong(BlockPos::asLong).toArray());
+        return tag;
+    }
+
+    public static SettlementFarm load(net.minecraft.nbt.CompoundTag tag) {
+        return new SettlementFarm(Shape.valueOf(tag.getString("Shape")),
+                java.util.Arrays.stream(tag.getLongArray("Nodes")).mapToObj(BlockPos::of).toList());
+    }
+
     public BlockPos first() { return this.nodes.getFirst(); }
     public BlockPos second() { return this.nodes.get(1); }
     private static double radius(List<BlockPos> nodes) {

@@ -254,7 +254,11 @@ public record HiredWorkContext(
     }
 
     public boolean isInsideWorkArea(BlockPos pos) {
-        return this.assignment.isInsideWorkArea(pos);
+        return this.assignment.isInsideWorkArea(pos)
+                && (!this.state.contains("SettlementFarmColumns")
+                        || this.state.contains(HiredTemporaryQueue.STATE_TAG)
+                        || java.util.Arrays.binarySearch(this.state.getLongArray("SettlementFarmColumns"),
+                                net.minecraft.world.level.ChunkPos.asLong(pos.getX(), pos.getZ())) >= 0);
     }
 
     public boolean permitsStation(BlockPos station) {

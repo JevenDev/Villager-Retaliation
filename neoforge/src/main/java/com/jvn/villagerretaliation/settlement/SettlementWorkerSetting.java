@@ -28,7 +28,8 @@ public enum SettlementWorkerSetting {
     BREED_ANIMALS(HiredJobSetting.BREED_ANIMALS),
     MILK_ANIMALS(HiredJobSetting.MILK_ANIMALS),
     COLLECT_ANIMAL_DROPS(HiredJobSetting.COLLECT_ANIMAL_DROPS),
-    CULL_ANIMALS(HiredJobSetting.CULL_ANIMALS);
+    CULL_ANIMALS(HiredJobSetting.CULL_ANIMALS),
+    FARM_BUCKETS(HiredJobSetting.FARM_BUCKETS);
 
     private final HiredJobSetting definition;
 

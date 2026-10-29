@@ -161,6 +161,12 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                 field("name", x, y, this.panelWidth, 48);
                 cycle("area_type", x, y + 38, half, SettlementManagementScreen.enumText("area", this.areaType), () -> {
                     this.areaType = next(SettlementAreaType.values(), this.areaType);
+                    var farmView = this.view != null ? this.view : SettlementViewClient.view(this.parent);
+                    if (this.original == null && this.areaType == SettlementAreaType.FARM && farmView != null) {
+                        this.minecraft.setScreen(farmView);
+                        farmView.beginFarm();
+                        return;
+                    }
                     rebuildWidgets();
                 });
                 field("priority", x + half + 6, y + 38, 58, 1);

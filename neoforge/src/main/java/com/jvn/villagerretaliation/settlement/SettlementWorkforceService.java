@@ -243,6 +243,12 @@ public final class SettlementWorkforceService {
                 .ifPresent(previous -> previous.removeDuty(villager.getUUID()));
         UUID areaId = town == null ? null : town.duties().get(villager.getUUID());
         SettlementArea area = areaId == null ? null : town.workplace(areaId);
+        if (area == null || area.type() != SettlementAreaType.FARM) {
+            var state = HiredWorkStateStore.state(villager);
+            state.remove("SettlementFarmColumns");
+            state.remove("SettlementFarmShape");
+            state.remove("SettlementFarmCropPlan");
+        }
         if (area == null && before.state() != VillagerAssignmentState.CIVIC) {
             SettlementScheduleService.reconcile(villager);
             return;
@@ -296,6 +302,23 @@ public final class SettlementWorkforceService {
             HiredWorkArea.fromBounds(area.min(), area.max(), true).save(state);
             state.putBoolean("Enabled", area.enabled());
             HiredWorkSession.invalidate(villager);
+        }
+        if (area.farm() != null) {
+            var shape = area.farm();
+            var saved = state.getCompound("SettlementFarmShape");
+            if (!saved.equals(shape.save())) {
+                var columns = new java.util.ArrayList<Long>();
+                for (int x = shape.minX(); x <= shape.maxX(); x++)
+                    for (int z = shape.minZ(); z <= shape.maxZ(); z++)
+                        if (shape.contains(x, z)) columns.add(net.minecraft.world.level.ChunkPos.asLong(x, z));
+                state.putLongArray("SettlementFarmColumns", columns.stream().mapToLong(Long::longValue).sorted().toArray());
+                state.put("SettlementFarmShape", shape.save());
+            }
+            state.putBoolean("SettlementFarmCropPlan", area.crops().enabled() || area.crops().demand());
+        } else {
+            state.remove("SettlementFarmColumns");
+            state.remove("SettlementFarmShape");
+            state.remove("SettlementFarmCropPlan");
         }
         SettlementWorkerConfigurationService.apply(villager, town, area);
         SettlementScheduleService.reconcile(villager);

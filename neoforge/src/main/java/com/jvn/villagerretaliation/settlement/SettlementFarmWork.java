@@ -32,52 +32,125 @@ public final class SettlementFarmWork {
 
     public static Assignment worker(ServerLevel level, SettlementRecord town, SettlementFarmTerrain.Preview preview) {
         boolean farmer = false;
-        for (var id : town.duties().keySet().stream().sorted().toList()) {
+        var candidates = new java.util.TreeSet<UUID>(town.duties().keySet());
+        candidates.addAll(com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level)
+                .residentRoster(town.id(), level.getGameTime()).stream().map(resident -> resident.id()).toList());
+        var ordered = candidates.stream().sorted(Comparator.comparingInt((UUID id) -> {
+            var area = town.workplace(town.duties().get(id));
+            return area == null ? 1 : preview.cells().stream().allMatch(cell -> area.contains(cell.position())
+                    || area.contains(cell.position().above())) ? 0 : 2;
+        }).thenComparing(Comparator.naturalOrder())).toList();
+        for (var id : ordered) {
             if (!(level.getEntity(id) instanceof Villager villager) || !villager.isAlive() || villager.isBaby()
                     || villager.getVillagerData().getProfession() != VillagerProfession.FARMER
                     || com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
                     || com.jvn.villagerretaliation.quest.tutorial.TutorialWorkService.isTrial(villager)) continue;
             var authority = VillagerWorkAuthority.resolve(level, villager);
-            if (!authority.active() || !authority.civic() || authority.role() != HiredVillagerRole.FARMING
-                    || SettlementWorkforceService.duty(villager).filter(duty -> duty.town() == town).isEmpty()) continue;
+            if (SettlementWorkforceService.hasPersonalCommitment(villager)
+                    || SettlementWorkforceService.home(level, villager).filter(home -> home == town).isEmpty()
+                    || town.duties().containsKey(id) && (!authority.active() || !authority.civic()
+                    || authority.role() != HiredVillagerRole.FARMING)) continue;
             var state = HiredWorkStateStore.state(villager);
-            if (!state.getBoolean("Enabled") || state.contains(HiredTemporaryQueue.STATE_TAG) || state.contains(HiredTemporaryQueue.PENDING_TAG)) continue;
+            if (town.duties().containsKey(id) && !state.getBoolean("Enabled") || state.contains(HiredTemporaryQueue.STATE_TAG) || state.contains(HiredTemporaryQueue.PENDING_TAG)) continue;
             farmer = true;
             var inventory = HiredJobInventory.getJobInventory(villager);
-            boolean storage = state.getBoolean("UseAssignedStorageForSupplies");
+            boolean storage = com.jvn.villagerretaliation.interaction.HiredJobSetting.USE_STORAGE.read(state) != 0;
+            boolean unassigned = !town.duties().containsKey(id);
             if (inventory.findTool(FarmerHoeRequirement::isHoe).isEmpty() && (!storage
                     || com.jvn.villagerretaliation.inventory.AssignedStorageService.nearestAssignedToolStoragePosContaining(
-                            level, villager, FarmerHoeRequirement::isHoe) == null)) continue;
-            int water = inventory.supplySlots().stream().map(inventory::getItem).filter(stack -> stack.is(Items.WATER_BUCKET))
+                            level, villager, FarmerHoeRequirement::isHoe) == null
+                    && (!unassigned || !sharedSupply(level, town, villager, FarmerHoeRequirement::isHoe)))) continue;
+            int water = inventory.supplySlots().stream().map(inventory::getItem).filter(stack -> (stack.is(Items.WATER_BUCKET) || stack.is(Items.BUCKET)))
                     .mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();
             if (storage) water += com.jvn.villagerretaliation.inventory.AssignedStorageService.productionSupplies(villager).stream()
-                    .filter(stack -> stack.is(Items.WATER_BUCKET)).mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();
-            if (water >= preview.count(SettlementFarmTerrain.Kind.WATER)) return new Assignment(villager, "");
+                    .filter(stack -> (stack.is(Items.WATER_BUCKET) || stack.is(Items.BUCKET))).mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();
+            if (water >= 1 || storage && unassigned && sharedSupply(level, town, villager,
+                    stack -> stack.is(Items.BUCKET) || stack.is(Items.WATER_BUCKET))) return new Assignment(villager, "");
         }
-        return new Assignment(null, farmer ? preview.materials() : "Assign an available farmer to this settlement first");
+        return new Assignment(null, farmer ? preview.materials() : "An available farmer must belong to this settlement");
+    }
+
+    private static boolean sharedSupply(ServerLevel level, SettlementRecord town, Villager villager,
+                                        java.util.function.Predicate<net.minecraft.world.item.ItemStack> matches) {
+        for (var depot : SettlementStock.supplies(town, HiredVillagerRole.FARMING)) {
+            if (!level.hasChunkAt(depot.position()) || SettlementSupplyStock.contents(level, town, depot.position()) == null) continue;
+            for (int slot = 0; slot < depot.getContainerSize(); slot++) {
+                var stack = depot.getItem(slot);
+                if (stack.isEmpty() || !matches.test(stack)
+                        || !com.jvn.villagerretaliation.util.VillagerEquipmentDurability.isUsable(stack)
+                        || !com.jvn.villagerretaliation.inventory.VillagerItemFilterService.mayWithdraw(villager, stack)) continue;
+                if (SettlementLogisticsService.framedAllowance(level, depot, stack,
+                        com.jvn.villagerretaliation.item.VillagerFilterPolicy.TransferOperation.PROVIDE, false) > 0) return true;
+            }
+        }
+        return false;
     }
 
     public static String start(ServerPlayer player, SettlementRecord town, SettlementFarmTerrain.Preview preview) {
         if (!preview.error().isEmpty() || SettlementSavedData.get(player.serverLevel()).readOnly()
                 || !town.permits(player.getUUID(), SettlementPermission.BUILD)
                 || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return "Farmland work is not permitted";
-        var assignment = worker(player.serverLevel(), town, preview);
+        var cells = preview.cells();
+        if (cells.isEmpty()) return "No farmland was selected";
+        var min = cells.getFirst().position();
+        var max = min;
+        for (var cell : cells) {
+            min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(min, cell.position());
+            max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(max, cell.position());
+        }
+        return start(player, town, preview, new SettlementFarm(min, max));
+    }
+
+    public static String start(ServerPlayer player, SettlementRecord town, SettlementFarmTerrain.Preview preview, SettlementFarm farm) {
+        var level = player.serverLevel();
+        if (!preview.error().isEmpty() || SettlementSavedData.get(level).readOnly()
+                || !town.permits(player.getUUID(), SettlementPermission.BUILD)
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return "Farmland work is not permitted";
+        var assignment = worker(level, town, preview);
         if (assignment.worker() == null) return assignment.error();
         var work = new ArrayList<>(preview.cells().stream()
                 .filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER || cell.kind() == SettlementFarmTerrain.Kind.TILL).toList());
         work.sort(Comparator.comparingInt(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER ? 0 : 1));
-        if (work.isEmpty()) return "No farmland work is needed";
-        var min = work.getFirst().position();
+        var min = preview.cells().getFirst().position();
         var max = min;
-        for (var cell : work) {
+        for (var cell : preview.cells()) {
             min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(min, cell.position());
             max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(max, cell.position());
         }
-        var task = new HiredTemporaryTask(UUID.randomUUID(), HiredTemporaryTask.Kind.PREPARE_FARM, min, max.above(2), 1);
-        String error = HiredTemporaryWorkService.submit(player, assignment.worker(), task, false);
-        if (!error.isEmpty()) return error;
+        min = new BlockPos(farm.minX(), min.getY(), farm.minZ());
+        max = new BlockPos(farm.maxX(), max.getY() + 2, farm.maxZ());
+        var previous = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.FARM
+                && area.min().getX() == farm.minX() && area.max().getX() == farm.maxX()
+                && area.min().getZ() == farm.minZ() && area.max().getZ() == farm.maxZ()
+                && preview.cells().stream().allMatch(cell -> area.contains(cell.position()) || area.contains(cell.position().above())))
+                .findFirst().orElse(null);
+        SettlementArea area;
+        try {
+            area = new SettlementArea(previous == null ? UUID.randomUUID() : previous.id(), SettlementAreaType.FARM,
+                    previous == null ? "Farm plot" : previous.name(), min, max,
+                    previous == null ? 5 : previous.priority(), true,
+                    previous == null ? SettlementCropPlan.NONE : previous.crops(), false, farm);
+        } catch (IllegalArgumentException exception) {
+            return "Farm plot exceeds workplace size or height limits";
+        }
+        if (!town.putArea(player.getUUID(), area)) return "Farm plot overlaps another workplace or leaves settlement land";
+        var villager = assignment.worker();
+        var previousDuty = town.duties().get(villager.getUUID());
+        boolean assigned = SettlementWorkforceService.assign(level, player, town.id(), villager, area.id());
+        var task = new HiredTemporaryTask(UUID.randomUUID(), HiredTemporaryTask.Kind.PREPARE_FARM, min, max, 1);
+        String error = assigned ? HiredTemporaryWorkService.submit(player, villager, task, false) : "Farmer assignment changed";
+        if (!error.isEmpty()) {
+            town.removeDuty(villager.getUUID());
+            if (previous == null) town.removeArea(player.getUUID(), area.id());
+            else town.putArea(player.getUUID(), previous);
+            if (previousDuty != null) town.assignDuty(villager.getUUID(), previousDuty);
+            SettlementWorkforceService.reconcile(level, villager);
+            return error;
+        }
+        SettlementBuildingService.enqueue(level, town, area);
         var job = new CompoundTag();
         job.putUUID("Task", task.id());
+        job.putBoolean("ProgressVersion", true);
         var cells = new ListTag();
         for (var cell : work) {
             var tag = new CompoundTag();
@@ -92,6 +165,10 @@ public final class SettlementFarmWork {
     }
 
     public static Step next(ServerLevel level, CompoundTag state) {
+        return next(level, state, true);
+    }
+
+    public static Step next(ServerLevel level, CompoundTag state, boolean waterAvailable) {
         var queue = HiredTemporaryWorkService.queue(state);
         var job = state.getCompound(TAG);
         if (queue == null || queue.current().kind() != HiredTemporaryTask.Kind.PREPARE_FARM
@@ -99,43 +176,62 @@ public final class SettlementFarmWork {
             return new Step(null, false, "interaction.work.farmland.invalid", false);
         var cells = job.getList("Cells", Tag.TAG_COMPOUND);
         int cursor = job.getInt("Cursor");
-        if (cells.isEmpty() || cells.size() > SettlementFarm.MAX_CELLS || cursor < 0 || cursor > cells.size())
+        if (cells.size() > SettlementFarm.MAX_CELLS || cursor < 0 || cursor > cells.size())
             return new Step(null, false, "interaction.work.farmland.invalid", false);
-        while (cursor < cells.size()) {
-            var cell = cells.getCompound(cursor);
+        if (!job.getBoolean("ProgressVersion")) {
+            for (int i = 0; i < cursor; i++) cells.getCompound(i).putBoolean("Done", true);
+            job.putBoolean("ProgressVersion", true);
+        }
+        Step blocked = null;
+        int waterCount = 0;
+        while (waterCount < cells.size() && cells.getCompound(waterCount).getBoolean("Water")) waterCount++;
+        int tillCount = cells.size() - waterCount;
+        int tillCursor = tillCount == 0 ? 0 : Math.floorMod(job.getInt("TillScanCursor"), tillCount);
+        int inspected = 0;
+        for (int offset = 0; offset < cells.size(); offset++) {
+            int i = offset < waterCount ? offset : waterCount + (tillCursor + offset - waterCount) % tillCount;
+            var cell = cells.getCompound(i);
+            if (cell.getBoolean("Done")) continue;
             var pos = BlockPos.of(cell.getLong("Pos"));
             boolean water = cell.getBoolean("Water");
+            if (!water && inspected++ >= 64) {
+                job.putInt("TillScanCursor", i - waterCount);
+                return blocked == null ? new Step(null, false, "interaction.work.farming.searching_scan", false) : blocked;
+            }
             if (!queue.current().includes(pos)) return new Step(null, water, "interaction.work.farmland.invalid", false);
-            if (!level.hasChunkAt(pos)) return new Step(pos, water, "interaction.work.temporary.unloaded", false);
-            var soil = level.getBlockState(pos);
-            if (water && soil.is(Blocks.WATER) && soil.getFluidState().isSource()
-                    || !water && soil.is(Blocks.FARMLAND)) {
-                job.putInt("Cursor", ++cursor);
+            String error = "";
+            if (!level.hasChunkAt(pos)) error = "interaction.work.temporary.unloaded";
+            else {
+                var soil = level.getBlockState(pos);
+                if (water && soil.is(Blocks.WATER) && soil.getFluidState().isSource()
+                        || !water && soil.is(Blocks.FARMLAND) && SettlementFarmTerrain.hydrated(level, pos)) {
+                    cell.putBoolean("Done", true);
+                    continue;
+                }
+                var original = NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK), cell.getCompound("Soil"));
+                if (!soil.equals(original) || !SettlementFarmTerrain.soil(soil) || !SettlementFarmTerrain.clear(level, pos)) {
+                    if (!water) {
+                        cell.putBoolean("Done", true);
+                        continue;
+                    }
+                    error = "interaction.work.farmland.water_changed";
+                } else if (water && !SettlementFarmTerrain.contained(level, pos)) error = "interaction.work.farmland.water_changed";
+                else if (water && !waterAvailable) error = "interaction.work.farmland.needs_water";
+                else if (!water && !SettlementFarmTerrain.hydrated(level, pos)) error = "interaction.work.farmland.dry";
+            }
+            if (!error.isEmpty()) {
+                if (blocked == null) blocked = new Step(pos, water, error, false);
                 continue;
             }
-            var original = NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK), cell.getCompound("Soil"));
-            if (!soil.equals(original) || !SettlementFarmTerrain.soil(soil) || !SettlementFarmTerrain.clear(level, pos)) {
-                if (water) return new Step(pos, true, "interaction.work.farmland.water_changed", false);
-                job.putInt("Cursor", ++cursor);
-                continue;
-            }
-            if (water && !SettlementFarmTerrain.contained(level, pos))
-                return new Step(pos, true, "interaction.work.farmland.water_changed", false);
-            if (!water && !SettlementFarmTerrain.hydrated(level, pos))
-                return new Step(pos, false, "interaction.work.farmland.dry", false);
+            job.putInt("Cursor", i);
+            if (!water) job.putInt("TillScanCursor", i - waterCount);
             return new Step(pos, water, "", false);
         }
-        for (var raw : cells) {
-            var cell = (CompoundTag) raw;
-            var pos = BlockPos.of(cell.getLong("Pos"));
-            if (!cell.getBoolean("Water") && level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.FARMLAND)
-                    && !SettlementFarmTerrain.hydrated(level, pos)) return new Step(pos, false, "interaction.work.farmland.dry", false);
-        }
-        return new Step(null, false, "", true);
+        return blocked == null ? new Step(null, false, "", true) : blocked;
     }
 
     public static void advance(CompoundTag state) {
         var job = state.getCompound(TAG);
-        job.putInt("Cursor", job.getInt("Cursor") + 1);
+        job.getList("Cells", Tag.TAG_COMPOUND).getCompound(job.getInt("Cursor")).putBoolean("Done", true);
     }
 }
