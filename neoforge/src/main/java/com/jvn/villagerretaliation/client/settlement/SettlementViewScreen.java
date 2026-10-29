@@ -63,6 +63,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final SettlementViewBrowser browser = new SettlementViewBrowser();
     private final SettlementOverviewMap overviewMap = new SettlementOverviewMap();
     private final SettlementPanelFade panelFade = new SettlementPanelFade();
+    private final SettlementBuildOverlay buildOverlay = new SettlementBuildOverlay();
     private final SettlementMapMarkers mapMarkers = new SettlementMapMarkers();
     private final SettlementViewEntities frameEntities = new SettlementViewEntities();
     private final SettlementUiWindow sidebarWindow = new SettlementUiWindow(140, 140);
@@ -452,17 +453,17 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         initRouteButtons();
         initPathButtons();
         initWallButtons();
-        this.transform = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_move"), ignored -> {
+        this.transform = addRenderableWidget(new SettlementBuildOverlay.ActionButton(text("gizmo_move"), ignored -> {
             if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.TRANSFORM);
-        }).bounds(this.layout.worldLeft, this.layout.commandTop, 92, 20).build());
-        this.resize = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_resize"), ignored -> {
+        }));
+        this.resize = addRenderableWidget(new SettlementBuildOverlay.ActionButton(text("gizmo_resize"), ignored -> {
             if (this.gizmo != null) this.gizmo.mode(SettlementSelectionGizmo.Mode.RESIZE);
-        }).bounds(this.layout.worldLeft + 96, this.layout.commandTop, 68, 20).build());
+        }));
         this.transform.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
                 SettlementViewKeyMappings.hint(text("gizmo_move"), SettlementViewKeyMappings.MOVE)));
         this.resize.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
                 SettlementViewKeyMappings.hint(text("gizmo_resize"), SettlementViewKeyMappings.RESIZE)));
-        this.applyGizmo = addRenderableWidget(VillagerUi.buttonBuilder(text("gizmo_area_settings"), ignored -> {
+        this.applyGizmo = addRenderableWidget(new SettlementBuildOverlay.ActionButton(text("gizmo_area_settings"), ignored -> {
             var draft = this.parent.buildingDraft();
             if (draft != null && draft.placed) {
                 this.minecraft.setScreen(new SettlementBuildingScreen(management()));
@@ -473,11 +474,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         this.editingArea.priority(), this.editingArea.enabled(), this.editingArea.beds(), this.editingArea.fixtures(), this.editingArea.workers());
                 editArea(area);
             }
-        }).bounds(this.layout.worldLeft, this.layout.commandTop, 100, 20).build());
-        this.changePrefab = addRenderableWidget(VillagerUi.buttonBuilder(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding())
-                .bounds(this.layout.worldLeft, this.layout.commandTop + 22, 144, 20).build());
-        this.cancelGizmo = addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.cancel"), ignored -> cancelGizmo())
-                .bounds(this.layout.worldLeft, this.layout.commandTop + 22, 76, 20).build());
+        }));
+        this.changePrefab = addRenderableWidget(new SettlementBuildOverlay.ActionButton(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding()));
+        this.cancelGizmo = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.translatable("gui.cancel"), ignored -> cancelGizmo()));
         layoutMap();
         var mapWidgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
         if (this.preferences.map) {
@@ -825,7 +824,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     graphics.drawString(this.font, Integer.toString(index + 1), (int) point[0] + 5, (int) point[1] - 5, index == this.route.draft().selected() ? 0xFFDD55 : 0xFFFFFF);
             }
         }
-        renderChrome(graphics, mouseX, mouseY);
         var draft = this.parent.buildingDraft();
         Component hint = draft != null ? text(draft.placed ? "building_adjust_hint" : "building_place_hint")
                 : this.editingArea != null ? text("gizmo_area_hint")
@@ -850,14 +848,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 this.queuedChunks, this.window.chunks().size());
         else if (!terrainLoaded()) hint = text("loading");
         this.modeHint = hint;
-        var allLines = this.font.split(hint, Math.max(80, this.panelLeft - this.layout.worldLeft - 12));
-        var lines = allLines.subList(0, Math.min(2, allLines.size()));
-        int hintTop = this.height - 8 - lines.size() * (this.font.lineHeight + 1);
-        graphics.fill(this.layout.worldLeft - 2, hintTop - 4, this.panelLeft - 4, this.height - 4, 0xD010151B);
-        for (var line : lines) {
-            graphics.drawString(this.font, line, this.layout.worldLeft + 2, hintTop, 0xFFFFFF);
-            hintTop += this.font.lineHeight + 1;
-        }
+        layoutBuildControls();
+        renderChrome(graphics, mouseX, mouseY);
         if (this.boxDragging) {
             int left = (int) Math.min(this.boxX, this.boxEndX);
             int top = (int) Math.min(this.boxY, this.boxEndY);
@@ -868,9 +860,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         super.render(graphics, mouseX, mouseY, partialTick);
         this.panelFade.render(graphics, this.width, this.height, () -> renderWindows(graphics, mouseX, mouseY, partialTick));
-        if (allLines.size() > lines.size() && mouseX < this.panelLeft && mouseY >= this.height - 42) {
-            graphics.renderTooltip(this.font, hint, mouseX, mouseY);
-        }
+        this.buildOverlay.renderHint(graphics, this.font, hint, mouseX, mouseY);
         if (this.popup != null) this.popup.render(graphics, this.font, mouseX, mouseY, partialTick);
     }
 
@@ -937,8 +927,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         renderHeader(graphics, mouseX, mouseY, this.width);
         TooltipRenderUtil.renderTooltipBackground(graphics, 6, SettlementViewLayout.HEADER_HEIGHT + 6,
                 this.layout.railSize, (this.layout.railSize + 2) * 7 - 2, 0);
-        var commands = contextButtons().stream().filter(button -> button.visible).toList();
+        this.buildOverlay.renderControls(graphics);
+        var commands = contextButtons().stream().filter(button -> button.visible && !(button instanceof SettlementBuildOverlay.ActionButton)).toList();
         if (!commands.isEmpty()) {
+            int offset = Math.min(0, this.buildOverlay.hint().top() - 10 - commands.stream().mapToInt(Button::getBottom).max().orElse(0));
+            for (var button : commands) button.setY(button.getY() + offset);
             int left = commands.stream().mapToInt(Button::getX).min().orElse(0) - 3;
             int top = commands.stream().mapToInt(Button::getY).min().orElse(0) - 3;
             int right = commands.stream().mapToInt(Button::getRight).max().orElse(0) + 3;
@@ -985,6 +978,23 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     float panelOpacity() { return this.panelFade.opacity(); }
 
+    SettlementBuildOverlay buildOverlay() { return this.buildOverlay; }
+
+    private void layoutBuildControls() {
+        this.buildOverlay.hint(this.font, this.modeHint, this.width, this.height);
+        var widgets = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
+        if (this.paths.active()) {
+            for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
+        } else if (this.walls.active()) {
+            for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6})
+                widgets.add(index < 0 ? this.wallSpacing : this.wallButtons.get(index));
+        } else {
+            for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.cancelGizmo})
+                if (button != null) widgets.add(button);
+        }
+        this.buildOverlay.layout(this.font, widgets, this.width, this.height, this.layout.worldLeft);
+    }
+
     private boolean panelWidget(net.minecraft.client.gui.components.events.GuiEventListener widget) {
         return this.sidebarWindow.widgets().contains(widget) || this.mapWindow.widgets().contains(widget);
     }
@@ -1011,7 +1021,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private boolean worldContains(double x, double y) {
         if (x < 0 || x >= this.width || y < SettlementViewLayout.HEADER_HEIGHT + 4 || y >= this.height - 32)
             return false;
-        if (windowAt(x, y) != null) return false;
+        if (windowAt(x, y) != null || this.buildOverlay.contains(x, y)) return false;
         for (var child : children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
                 && x >= widget.getX() - 3 && x < widget.getRight() + 3 && y >= widget.getY() - 3 && y < widget.getBottom() + 3) return false;
         return true;
@@ -1060,22 +1070,6 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.commandResults.setY(this.groupActions.getY());
             this.commandResults.setWidth(third);
         }
-        boolean building = this.parent.buildingDraft() != null;
-        this.transform.setX(left);
-        this.transform.setY(this.layout.commandTop);
-        this.transform.setWidth(building ? half : third);
-        this.resize.setX(left + third + 4);
-        this.resize.setY(this.layout.commandTop);
-        this.resize.setWidth(third);
-        this.applyGizmo.setX(building ? left + half + 4 : left + 2 * (third + 4));
-        this.applyGizmo.setY(this.layout.commandTop);
-        this.applyGizmo.setWidth(building ? half : third);
-        this.changePrefab.setX(left);
-        this.changePrefab.setY(this.layout.commandTop + 22);
-        this.changePrefab.setWidth(half);
-        this.cancelGizmo.setX(building ? left + half + 4 : left);
-        this.cancelGizmo.setY(this.layout.commandTop + 22);
-        this.cancelGizmo.setWidth(half);
     }
 
     private Component selectedName() {
@@ -1190,6 +1184,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.drawArea.active = false;
         }
         layoutContextActions();
+        layoutBuildControls();
     }
 
     private boolean selectedGuard() {
@@ -1444,8 +1439,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         String[] labels = {"Low stone", "Auto towers: off", "Undo", "Redo", "Edit", "Confirm", "Cancel", "Remove", "Close loop", "Extend", "Refresh", "Height -", "Height +", "Height: ground", "Tower: default", "Snap: on"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
-            this.wallButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> wallAction(action))
-                    .bounds(8, 52, 64, 18).build()));
+            this.wallButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> wallAction(action))));
         }
         this.wallSpacing = addRenderableWidget(new SettlementWallSpacingSlider(this.walls));
         this.wallSpacing.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
@@ -1528,21 +1522,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.wallSpacing.visible = this.walls.active() && !this.walls.editingPlaced() && !this.walls.pickingUpgrade();
         this.wallSpacing.active = this.walls.active() && !this.walls.pickingUpgrade() && !this.walls.editingPlaced() && this.walls.draft().automatic() && !this.walls.confirming() && !this.walls.draft().dragging();
         this.wallSpacing.sync();
-        int available = Math.max(80, this.panelLeft - this.layout.worldLeft - 6);
-        int x = 0, row = 0;
-        for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6}) {
-            net.minecraft.client.gui.components.AbstractWidget widget = index < 0 ? this.wallSpacing : this.wallButtons.get(index);
-            if (!widget.visible) continue;
-            int width = Math.min(available, index < 0 ? 118 : Math.max(20, this.font.width(widget.getMessage()) + 12));
-            if (x > 0 && x + width > available) { x = 0; row++; }
-            widget.setWidth(width);
-            widget.setX(this.layout.worldLeft + x);
-            widget.setY(row * 22);
-            x += width + 4;
-        }
-        int top = this.height - 36 - (row + 1) * 22;
-        for (var button : this.wallButtons) if (button.visible) button.setY(button.getY() + top);
-        this.wallSpacing.setY(this.wallSpacing.getY() + top);
+        layoutBuildControls();
     }
 
     void beginPath() {
@@ -1606,8 +1586,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Lines", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
-            this.pathButtons.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(labels[i]), ignored -> pathAction(action))
-                    .bounds(8, 52, 64, 18).build()));
+            this.pathButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> pathAction(action))));
         }
     }
 
@@ -1684,19 +1663,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 default -> button.getMessage().getString();
             })));
         }
-        int available = Math.max(80, this.panelLeft - this.layout.worldLeft - 6);
-        int x = 0, row = 0;
-        for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) {
-            var button = this.pathButtons.get(index);
-            int width = Math.min(available, Math.max(20, this.font.width(button.getMessage()) + 12));
-            if (x > 0 && x + width > available) { x = 0; row++; }
-            button.setWidth(width);
-            button.setX(this.layout.worldLeft + x);
-            button.setY(row * 22);
-            x += width + 4;
-        }
-        int top = this.height - 36 - (row + 1) * 22;
-        for (var button : this.pathButtons) if (button.visible) button.setY(button.getY() + top);
+        layoutBuildControls();
     }
 
     private void initRouteButtons() {

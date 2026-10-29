@@ -11,6 +11,7 @@ public final class SettlementViewPanelClientChecks {
 
     static void verify(SettlementViewScreen view) {
         verifyFade();
+        verifyBuildOverlay();
         verifyPopup();
         SettlementStatusBarClientChecks.verify(view.parent().snapshot().header());
         var minecraft = Minecraft.getInstance();
@@ -63,8 +64,42 @@ public final class SettlementViewPanelClientChecks {
 
     static void verifyBuildPanels(SettlementViewScreen view) {
         require(view.buildMode() && view.panelOpacity() == 0, "build mode fades the map and info viewer out");
+        var controls = view.buildOverlay().controls();
+        var hint = view.buildOverlay().hint();
+        require(hint.left() == 6 && hint.top() + hint.height() == view.height - 6, "help stays pinned to the bottom left");
+        if (controls != null) {
+            require(Math.abs(controls.left() * 2 + controls.width() - view.width) <= 1, "build controls are centered on the screen");
+            require(controls.top() + controls.height() <= hint.top() - 8, "build controls leave the help tooltip unobstructed");
+        }
         require(view.uiWindows().stream().flatMap(window -> window.widgets().stream())
                 .noneMatch(view.children()::contains), "hidden panel controls cannot intercept build input");
+    }
+
+    private static void verifyBuildOverlay() {
+        var font = Minecraft.getInstance().font;
+        for (int width : new int[]{320, 640, 1280}) {
+            int height = width * 9 / 16;
+            var overlay = new SettlementBuildOverlay();
+            var help = net.minecraft.network.chat.Component.literal("Hold to peek inside. Drag selects beds and residents. Shift adds. Ctrl toggles. Ctrl+Shift removes.");
+            overlay.hint(font, help, width, height);
+            var widgets = new java.util.ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
+            for (String label : new String[]{"Width 7 -", "+", "Natural", "Curves", "Undo", "Redo", "Edit", "Confirm", "Cancel"})
+                widgets.add(new SettlementBuildOverlay.ActionButton(net.minecraft.network.chat.Component.literal(label), ignored -> { }));
+            var layout = new SettlementViewLayout(width, height, true, true);
+            overlay.layout(font, widgets, width, height, layout.worldLeft);
+            var bounds = overlay.controls();
+            require(Math.abs(bounds.left() * 2 + bounds.width() - width) <= 1, "wrapped toolbars remain centered");
+            require(bounds.left() >= layout.worldLeft && bounds.left() + bounds.width() <= width - layout.worldLeft,
+                    "toolbar wrapping respects both screen edges");
+            require(bounds.top() > SettlementViewLayout.HEADER_HEIGHT && bounds.top() + bounds.height() < overlay.hint().top() - 4,
+                    "compact screens keep controls between the header and help");
+            require(SettlementViewLayout.HEADER_HEIGHT + 6 + (layout.railSize + 2) * 7 - 2 < overlay.hint().top() - 4,
+                    "the tool rail leaves room for the bottom-left help");
+            require(overlay.contains(bounds.left() - 2, bounds.top()) && overlay.contains(overlay.hint().left(), overlay.hint().top()),
+                    "tooltip padding and help capture world input");
+            for (var widget : widgets) require(widget.getX() >= bounds.left() && widget.getRight() <= bounds.left() + bounds.width()
+                    && widget.getY() >= bounds.top() && widget.getBottom() <= bounds.top() + bounds.height(), "all controls fit their tooltip");
+        }
     }
 
     private static void verifyFade() {
