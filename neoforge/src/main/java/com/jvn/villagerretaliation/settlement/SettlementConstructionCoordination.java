@@ -59,6 +59,7 @@ final class SettlementConstructionCoordination {
 
     private static boolean acquire(SettlementProject project, UUID worker, BuilderStructureScanner.StructurePlan plan,
                                    LevelReader view, int index, long now) {
+        if (project.wallConstruction() != null && !project.wallConstruction().available(index, project.crew())) return false;
         var group = BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().get(index));
         for (var part : group.parts()) {
             if (!view.hasChunkAt(part.worldPos())) return false;

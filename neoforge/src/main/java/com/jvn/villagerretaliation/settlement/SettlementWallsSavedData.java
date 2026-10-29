@@ -40,6 +40,7 @@ public final class SettlementWallsSavedData extends SavedData {
 
     public boolean readOnly() { return this.readOnly; }
     public Entry get(UUID id) { return this.walls.get(id); }
+    boolean hasGroup(UUID id) { return this.walls.values().stream().anyMatch(entry -> entry.group().equals(id)); }
 
     public Entry at(ServerLevel level, VillageAllegianceId town, BlockPos position) {
         var entry = this.walls.get(this.ownership.getOrDefault(level.dimension().location(), Map.of()).get(position));

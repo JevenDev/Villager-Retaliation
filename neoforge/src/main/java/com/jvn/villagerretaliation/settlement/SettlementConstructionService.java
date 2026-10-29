@@ -106,11 +106,28 @@ public final class SettlementConstructionService {
         return entry == null ? null : BuilderStructureScanner.scan(level, entry, rotation).orElse(null);
     }
 
+    static BuilderStructureScanner.StructurePlan scan(ServerLevel level, SettlementProject project) {
+        return project.wallConstruction() == null ? scan(level, project.structure(), project.rotation()) : project.wallConstruction().plan(project.id());
+    }
+
+    public static java.util.Optional<BuilderStructureScanner.StructurePlan> currentPlan(ServerLevel level, CompoundTag state) {
+        var task = BuilderTaskState.task(state);
+        if (task.hasUUID("SettlementTown")) {
+            var town = SettlementSavedData.get(level).get(new VillageAllegianceId(task.getUUID("SettlementTown"))).orElse(null);
+            var project = town == null ? null : BuilderTaskState.jobId(state).map(town.projects()::get).orElse(null);
+            return java.util.Optional.ofNullable(project == null ? null : scan(level, project));
+        }
+        return BuilderTaskState.structureId(state).map(id -> scan(level, id, BuilderTaskState.rotation(state)));
+    }
+
     /** Bounded, ordered dispatch. Waiting never edits the world or consumes partial resources. */
     public static void tickQueue(ServerLevel level, SettlementRecord town) {
         if (SettlementSavedData.get(level).readOnly() || !town.dimension().equals(level.dimension().location())) return;
         if(town.autonomous()!=null && !AutonomousVillageService.loaded(level,town)) return;
         for (var project : town.projects().values()) if (!project.unfinished()) SettlementConstructionMaterials.refund(level, town, project);
+        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
+                .filter(project -> project.wallConstruction() != null)
+                .forEach(project -> project.wallConstruction().record(level, town, project));
         int available = town.stage().projects() - (int) town.projects().values().stream().filter(SettlementProject::active).count();
         if (available <= 0) return;
         for (var project : List.copyOf(town.projects().values())) {
@@ -129,7 +146,7 @@ public final class SettlementConstructionService {
                 reconcile(builder);
                 if (BuilderTaskState.hasTask(HiredWorkStateStore.state(builder))) blocker = "builder";
             }
-            var plan = scan(level, project.structure(), project.rotation());
+            var plan = scan(level, project);
             if (blocker.isEmpty() && (plan == null || plan.blocks().size() != project.total()
                     || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max()))) blocker = "prefab";
             if (blocker.isEmpty() && !project.matchesPlan(plan)) blocker = "template_changed";
@@ -171,6 +188,7 @@ public final class SettlementConstructionService {
     }
 
     private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {
+        if (project.wallConstruction() != null) return project.wallConstruction().protectedSite(level, town);
         if(project.repairOf()!=null) return !AutonomousVillageMaintenance.safe(level,town,project);
         var footprint = new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)));
         if (town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION
@@ -218,8 +236,9 @@ public final class SettlementConstructionService {
         var footprint = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max.offset(1, 1, 1)));
         if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
                 .flatMap(other -> java.util.stream.Stream.concat(other.projects().values().stream(), other.projectHistory().values().stream()).filter(other::owns)).anyMatch(project -> (project.reservesFootprint() || project.status() == SettlementProject.Status.COMPLETED)
-                && new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
-                        .intersects(footprint))) return "overlap";
+                && (project.wallConstruction() != null ? project.wallConstruction().overlaps(min, max)
+                        : new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
+                                .intersects(footprint)))) return "overlap";
         if (town.areas().values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION
                 && new AABB(Vec3.atLowerCornerOf(area.min()), Vec3.atLowerCornerOf(area.max().offset(1, 1, 1)))
                         .intersects(footprint))) return "overlap";
@@ -445,7 +464,7 @@ public final class SettlementConstructionService {
         if (project == null || !project.active() || !project.includes(builder.getUUID())) return;
         var town = town(builder, state);
         if (project.crew() != null) {
-            var plan = scan((ServerLevel) builder.level(), project.structure(), project.rotation());
+            var plan = scan((ServerLevel) builder.level(), project);
             if (plan != null && plan.blocks().size() == project.total() && project.matchesPlan(plan) && (project.site() == null || !project.site().pending())) {
                 SettlementConstructionCoordination.refresh(town, project, plan, (ServerLevel) builder.level());
             }

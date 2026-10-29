@@ -669,7 +669,7 @@ public final class SettlementDemandService {
             var area = this.town.areas().get(project.area());
             if (area == null || !area.enabled()) return;
             var sources = sources(project.area());
-            var plan = SettlementConstructionService.scan(this.level, project.structure(), project.rotation());
+            var plan = SettlementConstructionService.scan(this.level, project);
             if (plan == null) { unknown(project.id(), project.area(), Kind.PROJECT, project.label(), sources, "prefab_unavailable"); return; }
             sources = sources.stream().filter(BuilderWorker.builderMaterialStorageFilter(plan, project.origin())).toList();
             var requirements = new LinkedHashMap<net.minecraft.world.item.Item, Long>();

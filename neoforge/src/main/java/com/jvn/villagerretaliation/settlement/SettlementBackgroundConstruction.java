@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner;
-import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
@@ -53,8 +52,7 @@ final class SettlementBackgroundConstruction {
             worker.status("construction_conflict");
             return;
         }
-        var entry = BuilderStructureCatalog.byId(level.getServer(), project.structure()).orElse(null);
-        var plan = entry == null ? null : BuilderStructureScanner.scan(level, entry, project.rotation()).orElse(null);
+        var plan = SettlementConstructionService.scan(level, project);
         if (plan == null || !project.matchesPlan(plan) || !plan.worldMin(project.origin()).equals(project.min()) || !plan.worldMax(project.origin()).equals(project.max())
                 || plan.blocks().size() != project.total()
                 || plan.blocks().size() > Math.max(128, VillagerRetaliationConfig.HIRED_BUILDER_MAX_BLOCKS.get())) {

@@ -33,6 +33,9 @@ public final class SettlementProject {
     private CompoundTag materialEscrow = new CompoundTag();
     private UUID authority;
     private UUID repairOf;
+    private SettlementWallConstruction wallConstruction;
+    SettlementWallConstruction wallConstruction() { return this.wallConstruction; }
+    void wallConstruction(SettlementWallConstruction construction) { this.wallConstruction = construction; }
     UUID repairOf() {return repairOf;}
     void repairOf(UUID source) {repairOf=source;}
     private boolean paymentReserved;
@@ -56,6 +59,7 @@ public final class SettlementProject {
         this.previousArea = this.workplace == null ? null : town.duties().get(worker);
         this.previousSettings = this.workplace == null ? null : town.workerSettings().get(worker);
         this.status = Status.ACTIVE;
+        if (this.wallConstruction != null) this.crew = new SettlementConstructionCrew(worker, total(), 0);
         this.paymentReserved = true;
         this.task.remove("BlockedReason");
     }
@@ -303,12 +307,15 @@ public final class SettlementProject {
     }
 
     boolean overlaps(SettlementProject other) {
+        if (this.wallConstruction != null) return this.wallConstruction.overlaps(other);
+        if (other.wallConstruction != null) return other.wallConstruction.overlaps(this);
         return this.min.getX() <= other.max.getX() && this.max.getX() >= other.min.getX()
                 && this.min.getY() <= other.max.getY() && this.max.getY() >= other.min.getY()
                 && this.min.getZ() <= other.max.getZ() && this.max.getZ() >= other.min.getZ();
     }
 
     boolean overlaps(SettlementArea other) {
+        if (this.wallConstruction != null) return this.wallConstruction.overlaps(other);
         return this.min.getX() <= other.max().getX() && this.max.getX() >= other.min().getX()
                 && this.min.getY() <= other.max().getY() && this.max.getY() >= other.min().getY()
                 && this.min.getZ() <= other.max().getZ() && this.max.getZ() >= other.min().getZ();
@@ -362,6 +369,7 @@ public final class SettlementProject {
         tag.putLong("Min", this.min.asLong());
         tag.putLong("Max", this.max.asLong());
         tag.put("Task", this.task.copy());
+        if (this.wallConstruction != null) tag.put("WallConstruction", this.wallConstruction.save());
         tag.getCompound("Task").putUUID("RequestedBuilder", this.requestedBuilder);
         if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
@@ -386,6 +394,14 @@ public final class SettlementProject {
         var project = new SettlementProject(tag.getUUID("Id"), tag.getUUID("Area"), tag.getUUID("Builder"),
                 BlockPos.of(tag.getLong("Min")), BlockPos.of(tag.getLong("Max")), tag.getCompound("Task"),
                 Status.valueOf(tag.getString("Status")));
+        if (tag.contains("WallConstruction")) {
+            if (!tag.contains("WallConstruction", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid wall construction");
+            project.wallConstruction = SettlementWallConstruction.load(tag.getCompound("WallConstruction"));
+            var plan = project.wallConstruction.plan(project.id());
+            if (!project.matchesPlan(plan) || !project.structure().equals(plan.entry().id()) || project.total() != plan.blocks().size()
+                    || !project.origin().equals(project.wallConstruction.origin()) || !project.min().equals(plan.worldMin(project.origin()))
+                    || !project.max().equals(plan.worldMax(project.origin()))) throw new IllegalArgumentException("Wall construction plan changed");
+        }
         if (tag.contains("Crew")) {
             if (!tag.contains("Crew", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid construction crew");
             project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));

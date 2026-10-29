@@ -1406,15 +1406,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     private Optional<BuilderStructureScanner.StructurePlan> currentPlan(ServerLevel level, CompoundTag state) {
-        Optional<net.minecraft.resources.ResourceLocation> structureId = BuilderTaskState.structureId(state);
-        if (structureId.isEmpty()) {
-            return Optional.empty();
-        }
-        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(level.getServer(), structureId.get());
-        if (entry.isEmpty()) {
-            return Optional.empty();
-        }
-        return BuilderStructureScanner.scan(level, entry.get(), BuilderTaskState.rotation(state));
+        return SettlementConstructionService.currentPlan(level, state);
     }
 
     private int skipAlreadyPlaced(

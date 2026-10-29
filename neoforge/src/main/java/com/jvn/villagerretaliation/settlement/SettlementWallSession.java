@@ -26,6 +26,12 @@ public final class SettlementWallSession {
 
     public SettlementWallResultPayload request(Level level, UUID session, boolean permitted, Predicate<BlockPos> allowed,
                                                SettlementWallRequestPayload request, com.jvn.villagerretaliation.allegiance.VillageAllegianceId town) {
+        return request(level, session, permitted, allowed, request, town, null);
+    }
+
+    public SettlementWallResultPayload request(Level level, UUID session, boolean permitted, Predicate<BlockPos> allowed,
+                                               SettlementWallRequestPayload request, com.jvn.villagerretaliation.allegiance.VillageAllegianceId town,
+                                               net.minecraft.server.level.ServerPlayer player) {
         if (!session.equals(request.session()) || !permitted)
             return result(request, Status.REJECTED, List.of(), "Wall placement is no longer permitted");
         if (town != null && level instanceof net.minecraft.server.level.ServerLevel server && SettlementWallsSavedData.get(server).readOnly())
@@ -99,6 +105,14 @@ public final class SettlementWallSession {
             return result(request, Status.REJECTED, List.of(), "Another upgrade changed this wall. Select it again");
         var current = terrain(level, allowed);
         if (!this.preview.equals(current)) return refresh(level, allowed, request, "Terrain changed. Review the wall and confirm again", town);
+        if (player != null && town != null && this.upgrade == null && !this.demolishing) {
+            var settlement = SettlementSavedData.get(player.serverLevel()).get(town).orElse(null);
+            String error = SettlementWallConstruction.commission(player, settlement, this.token, this.wall, current);
+            if (!error.isEmpty()) return refresh(level, allowed, request, error, town);
+            this.preview = null;
+            this.wall = null;
+            return this.result = result(request, Status.APPLIED, List.of(), "Wall construction queued. Add builders from the project's Staff panel to work faster");
+        }
         if (!this.demolishing && town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
             var payment = payment(server, town, session);
             if (!payment.pay()) return refresh(level, allowed, request, "", town);
