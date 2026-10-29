@@ -63,6 +63,25 @@ public final class SettlementWallMaterials {
         return new Amount(next.stone() - previous.stone(), next.logs() - previous.logs()).rounded();
     }
 
+    static Cost upgradeCost(Map<SettlementWallsSavedData.Entry, SettlementWall> pieces, SettlementWallTerrain.Preview preview) {
+        double stone = 0, logs = 0;
+        for (var entry : pieces.entrySet()) {
+            var target = new LinkedHashMap<BlockPos, BlockState>();
+            for (var cell : SettlementWallUpgrade.pieceCells(entry.getValue(), preview)) {
+                if (!cell.target().isAir() && (cell.kind() == SettlementWallTerrain.Kind.PLACE
+                        || cell.kind() == SettlementWallTerrain.Kind.EXISTING)) target.put(cell.position(), cell.target());
+            }
+            var credit = new LinkedHashMap<BlockPos, BlockState>();
+            for (var cell : preview.cells()) if (cell.before() != null && cell.before().equals(entry.getKey().blocks().get(cell.position())))
+                credit.put(cell.position(), cell.before());
+            var next = amount(entry.getValue(), target);
+            var previous = amount(entry.getKey().wall(), credit);
+            stone += next.stone() - previous.stone();
+            logs += next.logs() - previous.logs();
+        }
+        return new Amount(stone, logs).rounded();
+    }
+
     private static Amount amount(SettlementWall wall, Map<BlockPos, BlockState> blocks) {
         var remaining = new HashMap<>(blocks);
         double stone = 0, logs = 0;

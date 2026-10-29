@@ -237,6 +237,102 @@ public final class SettlementWallUpgradeGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void woodenSpanUpgradesReplaceEndpointPostsAndReclipSharedJunctions(GameTestHelper helper) {
+        int height = 45;
+        for (var type : List.of(SettlementWall.Type.PALISADE, SettlementWall.Type.PLANK)) {
+            var fixture = placed(helper, height, type, 9);
+            height += 40;
+            var level = helper.getLevel();
+            var data = SettlementWallsSavedData.get(level);
+            var first = data.at(fixture.town(), level.dimension().location(), fixture.base());
+            var junction = data.at(fixture.town(), level.dimension().location(), fixture.base().east(9));
+            var neighbor = data.at(fixture.town(), level.dimension().location(), fixture.base().east(14));
+            var far = data.at(fixture.town(), level.dimension().location(), fixture.base().east(18));
+            var session = new SettlementWallSession();
+            var id = UUID.randomUUID();
+            var selected = session.request(level, id, true, pos -> true,
+                    new SettlementWallRequestPayload(id, 1, Action.SELECT_UPGRADE, UUID.randomUUID(), null,
+                            SettlementWallRequestPayload.NONE, fixture.base().east(4)), fixture.town());
+            helper.assertValueEqual(selected.selected().part(), SettlementWall.Part.SPAN, "middle click selects a span");
+            var draft = com.jvn.villagerretaliation.client.settlement.SettlementWallDraft.edit(selected.selected());
+            draft.type(SettlementWall.Type.LOW_STONE);
+            var preview = session.request(level, id, true, pos -> true,
+                    new SettlementWallRequestPayload(id, 2, Action.PREVIEW, UUID.randomUUID(), draft.wall(), selected.upgrade(), BlockPos.ZERO), fixture.town());
+            helper.assertValueEqual(preview.status(), Status.PREVIEW, "wooden span and posts preview together: " + preview.message());
+            for (var post : List.of(first, junction)) helper.assertTrue(preview.cells().stream().anyMatch(cell ->
+                    cell.position().equals(post.wall().nodes().getFirst()) && !cell.state().is(net.minecraft.tags.BlockTags.LOGS)),
+                    "endpoint replacement is visible before confirmation");
+            var depot = SettlementSavedData.get(level).get(fixture.town()).orElseThrow().depots().values().iterator().next();
+            int stone = depot.count(SettlementWallMaterials::stone);
+            var confirm = new SettlementWallRequestPayload(id, 2, Action.CONFIRM, preview.token(), null);
+            helper.assertValueEqual(session.request(level, id, true, pos -> true, confirm, fixture.town()).status(), Status.APPLIED,
+                    "span and posts upgrade in one confirmation");
+            helper.assertTrue(stone - depot.count(SettlementWallMaterials::stone) >= 2 * SettlementWallMaterials.LOW_TOWER_STONE,
+                    "bill includes both stone towers");
+            for (var cell : preview.cells()) helper.assertValueEqual(level.getBlockState(cell.position()), cell.state(), "world matches complete preview");
+            for (var post : List.of(first, junction)) {
+                helper.assertValueEqual(data.get(post.id()).wall().type(), SettlementWall.Type.LOW_STONE, "post identity has stone design");
+                helper.assertTrue(post.blocks().keySet().stream().noneMatch(pos -> level.getBlockState(pos).is(net.minecraft.tags.BlockTags.LOGS)),
+                        "old log posts and their foundations are removed");
+            }
+            helper.assertValueEqual(data.get(neighbor.id()).wall().type(), type, "neighbor span retains its material");
+            helper.assertValueEqual(data.get(neighbor.id()).wall().towerRadius(fixture.base().east(9)), 2, "neighbor fits the shared stone tower");
+            helper.assertValueEqual(data.get(far.id()), far, "far endpoint is untouched");
+            var restored = SettlementWallsSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+            for (var cell : preview.cells()) if (!cell.state().isAir()) {
+                var owner = restored.at(fixture.town(), level.dimension().location(), cell.position());
+                helper.assertTrue(owner != null && owner.blocks().get(cell.position()).equals(cell.state()), "all upgraded blocks retain ownership after reload");
+            }
+            var destroy = new SettlementWallSession();
+            var destroyId = UUID.randomUUID();
+            var picked = select(helper, fixture, destroy, destroyId);
+            helper.assertValueEqual(picked.upgrade(), first.id(), "upgraded endpoint is still separately selectable");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_wall")
+    public static void spanUpgradeProtectsEndpointEditsAndConcurrentPostUpgrades(GameTestHelper helper) {
+        var fixture = placed(helper, 125, SettlementWall.Type.PALISADE, 0);
+        var level = helper.getLevel();
+        var session = new SettlementWallSession();
+        var id = UUID.randomUUID();
+        var selected = session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 1, Action.SELECT_UPGRADE, UUID.randomUUID(), null,
+                        SettlementWallRequestPayload.NONE, fixture.base().east(8)), fixture.town());
+        var original = selected.selected();
+        var changed = new SettlementWall(SettlementWall.Type.LOW_STONE, original.nodes(), false, 0, original.nodeTowers(), original.part());
+        var preview = session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 2, Action.PREVIEW, UUID.randomUUID(), changed, selected.upgrade(), BlockPos.ZERO), fixture.town());
+        helper.assertValueEqual(preview.status(), Status.PREVIEW, "span upgrade previews");
+        var post = fixture.base().above();
+        var previous = level.getBlockState(post);
+        level.setBlock(post, Blocks.DIAMOND_BLOCK.defaultBlockState(), 2);
+        helper.assertValueEqual(session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 2, Action.CONFIRM, preview.token(), null), fixture.town()).status(), Status.REJECTED,
+                "an edited endpoint blocks the entire upgrade");
+        helper.assertTrue(level.getBlockState(post).is(Blocks.DIAMOND_BLOCK), "manual endpoint replacement is protected");
+        helper.assertValueEqual(SettlementWallsSavedData.get(level).get(selected.upgrade()).wall(), original, "failed upgrade changes no records");
+        level.setBlock(post, previous, 2);
+        preview = session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 3, Action.PREVIEW, UUID.randomUUID(), changed, selected.upgrade(), BlockPos.ZERO), fixture.town());
+        var other = new SettlementWallSession();
+        var otherId = UUID.randomUUID();
+        var picked = select(helper, fixture, other, otherId);
+        var tower = picked.selected();
+        var towerReplacement = new SettlementWall(SettlementWall.Type.PLANK, tower.nodes(), false, 0, tower.nodeTowers(), tower.part());
+        var towerPreview = other.request(level, otherId, true, pos -> true,
+                new SettlementWallRequestPayload(otherId, 2, Action.PREVIEW, UUID.randomUUID(), towerReplacement, picked.upgrade(), BlockPos.ZERO), fixture.town());
+        helper.assertValueEqual(other.request(level, otherId, true, pos -> true,
+                new SettlementWallRequestPayload(otherId, 2, Action.CONFIRM, towerPreview.token(), null), fixture.town()).status(), Status.APPLIED,
+                "independent endpoint edit applies");
+        helper.assertValueEqual(session.request(level, id, true, pos -> true,
+                new SettlementWallRequestPayload(id, 3, Action.CONFIRM, preview.token(), null), fixture.town()).status(), Status.REJECTED,
+                "stale span preview cannot overwrite the changed endpoint record");
+        helper.succeed();
+    }
+
     private static SettlementWallResultPayload select(GameTestHelper helper, Fixture fixture, SettlementWallSession session, UUID id) {
         return session.request(helper.getLevel(), id, true, pos -> true,
                 new SettlementWallRequestPayload(id, 1, Action.SELECT_UPGRADE, UUID.randomUUID(), null,
@@ -244,12 +340,16 @@ public final class SettlementWallUpgradeGameTests {
     }
 
     private static Fixture placed(GameTestHelper helper, int height) {
+        return placed(helper, height, SettlementWall.Type.LOW_STONE, 0);
+    }
+
+    private static Fixture placed(GameTestHelper helper, int height, SettlementWall.Type type, int spacing) {
         var level = helper.getLevel();
         var base = helper.absolutePos(new BlockPos(5, height, 5));
         for (var pos : BlockPos.betweenClosed(base.offset(-4, -4, -6), base.offset(23, 14, 6))) {
             level.setBlock(pos, pos.getY() <= base.getY() - 3 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
         }
-        var wall = new SettlementWall(SettlementWall.Type.LOW_STONE, List.of(base, base.east(18)), false, 0);
+        var wall = new SettlementWall(type, List.of(base, base.east(18)), false, spacing);
         var session = new SettlementWallSession();
         var id = UUID.randomUUID();
         var record = SettlementWallMaterialsGameTests.town(level, base);

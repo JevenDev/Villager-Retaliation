@@ -80,6 +80,17 @@ public final class SettlementWallsSavedData extends SavedData {
         setDirty();
     }
 
+    java.util.List<Entry> sameSettlement(Entry selected) {
+        return this.walls.values().stream().filter(entry -> entry.dimension().equals(selected.dimension())
+                && entry.town().equals(selected.town())).toList();
+    }
+
+    void replace(java.util.List<Entry> entries) {
+        entries.forEach(entry -> remove(entry.id()));
+        entries.forEach(this::put);
+        setDirty();
+    }
+
     public void remove(UUID id) {
         if (this.readOnly) throw new IllegalStateException("Wall records are read-only");
         var old = this.walls.remove(id);

@@ -124,7 +124,6 @@ final class SettlementWallClientChecks {
             require(editor.cells().stream().anyMatch(cell -> cell.state().is(net.minecraft.world.level.block.Blocks.OAK_PLANKS)),
                     "plank preview contains the boarded wall");
             this.capture.accept("wall-plank-fence");
-            button("Plank fence").onPress();
             var original = editor.draft().wall().nodes().getLast();
             drag(Vec3.atBottomCenterOf(original).add(0, 0.15, 0), Vec3.atBottomCenterOf(original.south()).add(0, 0.15, 0));
             require(!editor.draft().wall().nodes().getLast().equals(original), "tower nodes can be dragged");
@@ -161,15 +160,20 @@ final class SettlementWallClientChecks {
             open("Upgrade wall");
             require(editor.pickingUpgrade(), "upgrade action begins wall selection");
             var pick = this.targets.entrySet().stream().filter(entry -> !entry.getValue().isAir()
-                    && entry.getKey().getX() == this.start.getX() && entry.getKey().getZ() == this.start.getZ())
+                    && entry.getKey().getX() == this.start.getX() + 4 && entry.getKey().getZ() == this.start.getZ())
                     .max(java.util.Comparator.comparingInt(entry -> entry.getKey().getY())).orElseThrow().getKey();
             click(pick.getCenter());
             next();
         } else if (this.phase == 7 && editor.upgrading() && editor.canConfirm()) {
             require(editor.draft().wall().nodes().size() == 2, "selecting placed wall restores its route");
-            button("Low stone").onPress();
+            require(editor.draft().wall().part() == com.jvn.villagerretaliation.settlement.SettlementWall.Part.SPAN,
+                    "clicking between posts selects the wooden span");
+            button("Plank fence").onPress();
             next();
         } else if (this.phase == 8 && editor.canConfirm()) {
+            for (var node : editor.draft().wall().nodes()) require(editor.cells().stream().anyMatch(cell ->
+                    cell.position().equals(node) && !cell.state().isAir() && !cell.state().is(net.minecraft.tags.BlockTags.LOGS)),
+                    "stone upgrade preview replaces both wooden endpoint posts");
             this.capture.accept("wall-upgrade-preview");
             var cells = java.util.List.copyOf(editor.cells());
             minecraft.getSingleplayerServer().submit(() -> {

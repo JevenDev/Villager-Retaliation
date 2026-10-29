@@ -14,6 +14,7 @@ public final class SettlementWallSession {
     private UUID token = new UUID(0, 0);
     private SettlementWall wall;
     private SettlementWallsSavedData.Entry upgrade;
+    private SettlementWallUpgrade upgradePlan;
     private boolean demolishing;
     private SettlementWallTerrain.Preview preview;
     private SettlementWallResultPayload result;
@@ -39,7 +40,7 @@ public final class SettlementWallSession {
             this.revision = request.revision();
             this.demolishing = request.action() == SettlementWallRequestPayload.Action.SELECT_DESTROY;
             this.upgrade = SettlementWallsSavedData.get(server).at(server, town, request.pick());
-            this.wall = null; this.preview = null; this.token = UUID.randomUUID();
+            this.wall = null; this.preview = null; this.upgradePlan = null; this.token = UUID.randomUUID();
             if (this.upgrade == null) return this.result = result(request, Status.REJECTED, List.of(), "No recorded wall here. Only walls placed after the upgrade update can be selected");
             return this.result = new SettlementWallResultPayload(request.session(), request.revision(), this.token, Status.SELECTED,
                     this.upgrade.blocks().entrySet().stream().map(entry -> new SettlementWallResultPayload.Cell(entry.getKey(),
@@ -47,7 +48,7 @@ public final class SettlementWallSession {
                     this.demolishing ? "Review this wall piece before destroying it" : "Choose a type for this " + this.upgrade.wall().part().name().toLowerCase(java.util.Locale.ROOT), this.upgrade.id(), this.upgrade.wall());
         }
         if (request.action() == SettlementWallRequestPayload.Action.CANCEL) {
-            this.upgrade = null; this.demolishing = false;
+            this.upgrade = null; this.upgradePlan = null; this.demolishing = false;
             this.revision = request.revision();
             this.wall = null;
             this.preview = null;
@@ -70,7 +71,7 @@ public final class SettlementWallSession {
                     return result(request, Status.REJECTED, List.of(), "Select a wall piece to destroy");
                 if (request.wall().part() != SettlementWall.Part.COMPLETE)
                     return result(request, Status.REJECTED, List.of(), "Select an existing wall before editing a piece");
-                this.upgrade = null; this.demolishing = false;
+                this.upgrade = null; this.upgradePlan = null; this.demolishing = false;
             }
             else if (this.upgrade == null || !this.upgrade.id().equals(request.upgrade())
                     || !(level instanceof net.minecraft.server.level.ServerLevel server)
@@ -80,9 +81,11 @@ public final class SettlementWallSession {
                     || this.upgrade.wall().part() != request.wall().part() || this.upgrade.wall().closed() != request.wall().closed()))
                 return result(request, Status.REJECTED, List.of(), "Upgrades must preserve the placed wall route");
             if (this.upgrade != null && !this.demolishing && this.wallSpanJunctionsChanged(request.wall()))
-                return result(request, Status.REJECTED, List.of(), "Span upgrades must keep the existing junction posts");
+                return result(request, Status.REJECTED, List.of(), "Select the span again before changing its junctions");
             this.revision = request.revision();
             this.wall = this.demolishing ? this.upgrade.wall() : request.wall();
+            this.upgradePlan = this.upgrade != null && !this.demolishing
+                    ? new SettlementWallUpgrade(SettlementWallsSavedData.get((net.minecraft.server.level.ServerLevel) level), this.upgrade, this.wall) : null;
             return refresh(level, allowed, request, "", town);
         }
         if (request.revision() != this.revision || this.result == null || !this.token.equals(request.token()))
@@ -91,7 +94,8 @@ public final class SettlementWallSession {
         if (this.preview == null || !this.preview.error().isEmpty())
             return result(request, Status.REJECTED, List.of(), "The wall preview is not valid");
         if (this.upgrade != null && (!(level instanceof net.minecraft.server.level.ServerLevel server)
-                || !this.upgrade.equals(SettlementWallsSavedData.get(server).get(this.upgrade.id()))))
+                || !this.upgrade.equals(SettlementWallsSavedData.get(server).get(this.upgrade.id()))
+                || this.upgradePlan != null && !this.upgradePlan.current(SettlementWallsSavedData.get(server))))
             return result(request, Status.REJECTED, List.of(), "Another upgrade changed this wall. Select it again");
         var current = terrain(level, allowed);
         if (!this.preview.equals(current)) return refresh(level, allowed, request, "Terrain changed. Review the wall and confirm again", town);
@@ -102,6 +106,7 @@ public final class SettlementWallSession {
         int count = SettlementWallTerrain.apply(level, current);
         if (town != null && level instanceof net.minecraft.server.level.ServerLevel server) {
             if (this.demolishing) SettlementWallsSavedData.get(server).remove(this.upgrade.id());
+            else if (this.upgradePlan != null) this.upgradePlan.record(server, current);
             else SettlementWallsSavedData.get(server).record(this.upgrade == null ? UUID.randomUUID() : this.upgrade.id(), town, server, this.wall, current);
         }
         this.preview = null;
@@ -118,24 +123,14 @@ public final class SettlementWallSession {
 
     private SettlementWallTerrain.Preview terrain(Level level, Predicate<BlockPos> allowed) {
         if (this.demolishing) return SettlementWallTerrain.demolition(level, this.upgrade.blocks(), allowed);
-        if (this.upgrade != null) {
-            var issue = SettlementWallsSavedData.modification(level, this.upgrade, allowed);
-            if (!issue.isEmpty()) return new SettlementWallTerrain.Preview(List.of(), issue);
-        }
-        var preview = SettlementWallTerrain.preview(level, this.wall, allowed, this.upgrade == null ? java.util.Map.of() : this.upgrade.blocks());
-        if (this.upgrade != null && level instanceof net.minecraft.server.level.ServerLevel server) {
-            var data = SettlementWallsSavedData.get(server);
-            if (preview.cells().stream().anyMatch(cell -> cell.kind() == SettlementWallTerrain.Kind.PLACE
-                    && data.ownedByOther(level.dimension().location(), cell.position(), this.upgrade.id())))
-                return new SettlementWallTerrain.Preview(preview.cells(), "The new design overlaps another wall piece");
-        }
-        return preview;
+        if (this.upgradePlan != null) return this.upgradePlan.preview((net.minecraft.server.level.ServerLevel) level, allowed);
+        return SettlementWallTerrain.preview(level, this.wall, allowed);
     }
 
     private SettlementWallMaterials.Payment payment(net.minecraft.server.level.ServerLevel level,
                                                      com.jvn.villagerretaliation.allegiance.VillageAllegianceId town, UUID consumer) {
         return SettlementWallMaterials.prepare(level, SettlementSavedData.get(level).get(town).orElse(null), consumer,
-                SettlementWallMaterials.cost(this.wall, this.preview, this.upgrade));
+                this.upgradePlan == null ? SettlementWallMaterials.cost(this.wall, this.preview, this.upgrade) : this.upgradePlan.cost(this.preview));
     }
 
     private SettlementWallResultPayload refresh(Level level, Predicate<BlockPos> allowed, SettlementWallRequestPayload request, String message,
