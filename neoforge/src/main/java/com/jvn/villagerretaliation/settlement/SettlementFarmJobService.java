@@ -42,6 +42,19 @@ public final class SettlementFarmJobService {
                 .map(town -> town.farmJobs().get(work.getUUID("Task"))).orElse(null);
     }
 
+    public static void reconcile(Villager villager) {
+        var state = HiredWorkStateStore.state(villager);
+        if (!HiredTemporaryWorkService.active(state, HiredTemporaryTask.Kind.PREPARE_FARM)) return;
+        var job = find(villager, state);
+        if (job == null) return;
+        var town = SettlementWorkforceService.home((ServerLevel) villager.level(), villager).orElseThrow();
+        if (job.unfinished() && job.status() == SettlementProject.Status.ACTIVE && job.worker().equals(villager.getUUID())
+                && job.area().equals(town.duties().get(villager.getUUID())) && authorized(town, job)) return;
+        HiredTemporaryWorkService.clearOrders(state);
+        com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        HiredWorkSession.invalidate(villager);
+    }
+
     public static void observe(ServerLevel level, Villager villager, CompoundTag state, WorkResult result) {
         var town = SettlementWorkforceService.home(level, villager).orElse(null);
         var job = find(villager, state);

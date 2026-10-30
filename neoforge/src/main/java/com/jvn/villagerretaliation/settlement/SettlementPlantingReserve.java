@@ -15,11 +15,13 @@ public final class SettlementPlantingReserve {
     static Map<Crop, Integer> targets(SettlementRecord town, SettlementArea area) {
         var targets = new EnumMap<Crop, Integer>(Crop.class);
         if (area == null || !area.enabled() || !town.owns(area) || area.crops().cycles() == 0) return targets;
+        var plantingCells = area.crops().enabled() ? SettlementPlanting.plantingCells(town, area) : List.<net.minecraft.core.BlockPos>of();
         for (var plot : town.fields().values()) {
             if (!SettlementFieldService.serves(area, plot) || plot.conflict()
-                    || !SettlementFieldPlot.supportedSoil(plot.soil())) continue;
+                    || !SettlementFieldPlot.supportedSoil(plot.soil())
+                    || area.crops().enabled() && !plantingCells.contains(plot.position())) continue;
             var planting = plot.planting(area.crops());
-            Crop crop = planting != null ? planting.crop() : area.crops().enabled() ? area.crops().crop(area, plot.position())
+            Crop crop = planting != null ? planting.crop() : area.crops().enabled() ? area.crops().crop(plantingCells, plot.position())
                     : SettlementPlanting.crop(plot.crop());
             if (crop == Crop.ANY) {
                 var plan = town.worksitePlans().get(area.id());

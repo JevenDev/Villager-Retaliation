@@ -66,6 +66,12 @@ final class HiredWorkAreaNavigation {
             MiningWorker.invalidateExcavationReturnTarget(villager);
             return false;
         }
+        if (HiredTemporaryWorkService.active(state, com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.PREPARE_FARM)
+                && com.jvn.villagerretaliation.settlement.SettlementFarmWater.collecting(level, villager,
+                        state.getCompound(com.jvn.villagerretaliation.settlement.SettlementFarmWork.TAG))) {
+            clearWorkAreaReturnState(state);
+            return false;
+        }
         BlockPos excavationEntry = excavationSurfaceEntryTarget(level, session, villager);
         BlockPos excavationCompletionEntry = excavationCompletionEntryTarget(level, session);
         HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());

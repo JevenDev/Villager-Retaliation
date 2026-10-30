@@ -83,17 +83,21 @@ public final class SettlementPlanting {
         return choose(level, duty.town(), duty.area(), plot, soil, HiredWorkStateStore.state(villager));
     }
 
-    static Decision choose(ServerLevel level, SettlementRecord town, SettlementArea area, SettlementFieldPlot plot,
-                           BlockPos soil, CompoundTag state) {
-        var configured = area.crops();
-        Crop restriction = HiredFarmingOptions.crop(state);
-        var plantingCells = configured.enabled() ? town.fields().values().stream()
+    static List<BlockPos> plantingCells(SettlementRecord town, SettlementArea area) {
+        return town.fields().values().stream()
                 .filter(cell -> SettlementFieldService.serves(area, cell) && !cell.conflict()
                         && (cell.soil().is(Blocks.FARMLAND) || SettlementFarmTerrain.soil(cell.soil()))
                         && (cell.crop().isAir() || SettlementFieldPlot.supportedCrop(cell.crop()))
                         && (area.farm() == null || cell.irrigated()))
                 .map(SettlementFieldPlot::position)
-                .sorted(Comparator.<BlockPos>comparingInt(BlockPos::getZ).thenComparingInt(BlockPos::getX).thenComparingInt(BlockPos::getY)).toList() : List.<BlockPos>of();
+                .sorted(Comparator.<BlockPos>comparingInt(BlockPos::getZ).thenComparingInt(BlockPos::getX).thenComparingInt(BlockPos::getY)).toList();
+    }
+
+    static Decision choose(ServerLevel level, SettlementRecord town, SettlementArea area, SettlementFieldPlot plot,
+                           BlockPos soil, CompoundTag state) {
+        var configured = area.crops();
+        Crop restriction = HiredFarmingOptions.crop(state);
+        var plantingCells = configured.enabled() ? plantingCells(town, area) : List.<BlockPos>of();
         var fallback = new Decision(configured.enabled()
                 ? plantingCells.isEmpty() ? configured.crop(area, soil) : configured.crop(plantingCells, soil) : restriction,
                 configured.enabled() ? "mix" : restriction == Crop.ANY ? "available" : "selected");

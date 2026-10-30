@@ -40,12 +40,27 @@ public final class SettlementFarmTerrain {
     }
 
     public static boolean contained(Level level, BlockPos pos) {
-        if (!level.hasChunkAt(pos.below()) || !level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) return false;
-        for (var direction : Direction.Plane.HORIZONTAL) {
-            var neighbor = pos.relative(direction);
-            if (!level.hasChunkAt(neighbor)) return false;
-            var state = level.getBlockState(neighbor);
-            if (!state.is(Blocks.FARMLAND) && !state.isFaceSturdy(level, neighbor, direction.getOpposite())) return false;
+        return contained(level, pos, java.util.Set.of());
+    }
+
+    static boolean contained(Level level, BlockPos pos, java.util.Set<BlockPos> plannedWater) {
+        var pending = new java.util.ArrayDeque<BlockPos>();
+        var visited = new java.util.HashSet<BlockPos>();
+        pending.add(pos);
+        while (!pending.isEmpty()) {
+            var cell = pending.removeFirst();
+            if (!visited.add(cell)) continue;
+            if (visited.size() > SettlementFarm.MAX_CELLS || !level.hasChunkAt(cell.below())
+                    || !level.getBlockState(cell.below()).isFaceSturdy(level, cell.below(), Direction.UP)) return false;
+            for (var direction : Direction.Plane.HORIZONTAL) {
+                var neighbor = cell.relative(direction);
+                if (!level.hasChunkAt(neighbor)) return false;
+                if (visited.contains(neighbor)) continue;
+                var state = level.getBlockState(neighbor);
+                if (state.is(Blocks.FARMLAND) || state.isFaceSturdy(level, neighbor, direction.getOpposite())) continue;
+                if (!plannedWater.contains(neighbor) || !state.is(Blocks.WATER) || !state.getFluidState().isSource()) return false;
+                pending.add(neighbor);
+            }
         }
         return true;
     }

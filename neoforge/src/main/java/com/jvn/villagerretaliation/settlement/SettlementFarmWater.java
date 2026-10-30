@@ -37,6 +37,19 @@ public final class SettlementFarmWater {
         return level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.WATER) && level.getFluidState(pos).isSource();
     }
 
+    public static boolean collecting(ServerLevel level, Villager villager, CompoundTag job) {
+        if (!job.contains("WaterSource", net.minecraft.nbt.Tag.TAG_LONG) || !job.contains("WaterApproach", net.minecraft.nbt.Tag.TAG_LONG)) return false;
+        var town = SettlementWorkforceService.duty(villager).map(SettlementWorkforceService.Duty::town).orElse(null);
+        var inventory = com.jvn.villagerretaliation.inventory.HiredJobInventory.getJobInventory(villager);
+        if (town == null || inventory.findSupply(stack -> stack.is(net.minecraft.world.item.Items.BUCKET)).isEmpty()
+                || !inventory.findSupply(stack -> stack.is(net.minecraft.world.item.Items.WATER_BUCKET)).isEmpty()) return false;
+        var water = BlockPos.of(job.getLong("WaterSource"));
+        var approach = BlockPos.of(job.getLong("WaterApproach"));
+        return town.contains(water) && town.contains(approach) && water.above().distSqr(approach) == 1
+                && infinite(level, water) && standable(level, approach)
+                && !HiredPathMemory.isApproachRecentlyUnreachable(level, villager, approach);
+    }
+
     public static Source find(ServerLevel level, Villager villager, BlockPos origin, CompoundTag job) {
         var town = SettlementWorkforceService.duty(villager).map(SettlementWorkforceService.Duty::town).orElse(null);
         if (town == null) return null;

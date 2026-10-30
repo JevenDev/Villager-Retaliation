@@ -134,6 +134,7 @@ public final class SettlementBackgroundService {
                     SettlementWorkerConfigurationService.apply(villager, town, duty.area()));
         });
         SettlementScheduleService.reconcile(villager);
+        SettlementFarmJobService.reconcile(villager);
         SettlementConstructionService.reconcile(villager);
         SettlementBrewingService.reconcile(villager);
     }
@@ -155,6 +156,7 @@ public final class SettlementBackgroundService {
         if (duty == null) {
             return;
         }
+        SettlementFarmJobService.reconcile(villager);
         SettlementConstructionService.reconcile(villager);
         SettlementConstructionService.observe(villager, com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(villager));
         var worker = duty.town().workers().get(villager.getUUID());

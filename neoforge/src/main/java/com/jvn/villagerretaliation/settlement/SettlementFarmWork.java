@@ -203,6 +203,11 @@ public final class SettlementFarmWork {
             for (int i = 0; i < cursor; i++) cells.getCompound(i).putBoolean("Done", true);
             job.putBoolean("ProgressVersion", true);
         }
+        var plannedWater = new java.util.HashSet<BlockPos>();
+        for (var raw : cells) {
+            var cell = (CompoundTag) raw;
+            if (cell.getBoolean("Water")) plannedWater.add(BlockPos.of(cell.getLong("Pos")));
+        }
         Step blocked = null;
         int waterCount = 0;
         while (waterCount < cells.size() && cells.getCompound(waterCount).getBoolean("Water")) waterCount++;
@@ -236,7 +241,7 @@ public final class SettlementFarmWork {
                         continue;
                     }
                     error = "interaction.work.farmland.water_changed";
-                } else if (water && !SettlementFarmTerrain.contained(level, pos)) error = "interaction.work.farmland.water_changed";
+                } else if (water && !SettlementFarmTerrain.contained(level, pos, plannedWater)) error = "interaction.work.farmland.water_changed";
                 else if (water && !waterAvailable) error = "interaction.work.farmland.needs_water";
                 else if (!water && !SettlementFarmTerrain.hydrated(level, pos)) error = "interaction.work.farmland.dry";
             }
