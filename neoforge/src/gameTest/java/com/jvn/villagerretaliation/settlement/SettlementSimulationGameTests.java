@@ -14,7 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_simulation")
 @PrefixGameTestTemplate(false)
 public final class SettlementSimulationGameTests {
     private SettlementSimulationGameTests() {
@@ -96,7 +96,7 @@ public final class SettlementSimulationGameTests {
         town.recordResident(state);
         var entry = new SettlementSimulationService.Entry(level, town, 200L);
         int cycles = 0;
-        for (int steps = 0; steps < 200 && cycles < 3; steps++) {
+        for (int steps = 0; steps < SettlementSimulationService.MAX_STEPS_PER_TICK && cycles < 3; steps++) {
             if (entry.step()) cycles++;
         }
         helper.assertValueEqual(cycles, 3, "three queued cycles finish with bounded steps");

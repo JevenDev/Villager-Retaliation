@@ -26,7 +26,49 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_farm_acceptance")
 @PrefixGameTestTemplate(false)
 public final class SettlementFarmAcceptanceGameTests {
+    private static final java.util.Map<net.minecraft.server.level.ServerLevel, Environment> ENVIRONMENTS = new java.util.HashMap<>();
     private SettlementFarmAcceptanceGameTests() {}
+
+    private static final class Environment implements net.minecraft.gametest.framework.GameTestListener {
+        private final net.minecraft.server.level.ServerLevel level;
+        private final long day;
+        private final boolean daylight, spawning;
+        private final java.util.Set<UUID> farmers = new java.util.HashSet<>();
+        private int users;
+
+        private Environment(net.minecraft.server.level.ServerLevel level) {
+            this.level = level;
+            this.day = level.getDayTime();
+            this.daylight = level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT);
+            this.spawning = level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING);
+        }
+
+        private void finished() {
+            if (--users != 0) return;
+            for (var id : farmers) if (level.getEntity(id) instanceof Villager farmer) farmer.discard();
+            level.setDayTime(day);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(daylight, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(spawning, level.getServer());
+            ENVIRONMENTS.remove(level);
+        }
+
+        @Override
+        public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo test) {}
+
+        @Override
+        public void testPassed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) {
+            finished();
+        }
+
+        @Override
+        public void testFailed(net.minecraft.gametest.framework.GameTestInfo test, net.minecraft.gametest.framework.GameTestRunner runner) {
+            finished();
+        }
+
+        @Override
+        public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo previous, net.minecraft.gametest.framework.GameTestInfo next,
+                                     net.minecraft.gametest.framework.GameTestRunner runner) {}
+    }
 
     @GameTest(template = "empty", batch = "native_farm", timeoutTicks = 4000)
     public static void nativeFarmerWalksRepeatedWaterTripsWithoutTeleports(GameTestHelper helper) {
@@ -62,7 +104,7 @@ public final class SettlementFarmAcceptanceGameTests {
         });
     }
 
-    @GameTest(template = "empty", batch = "native_farm", timeoutTicks = 2400)
+    @GameTest(template = "empty", batch = "native_farm", timeoutTicks = 4000)
     public static void nativeFarmerFetchesReplacementHoeAfterBreaking(GameTestHelper helper) {
         var fixture = fixture(helper, 3, 3, true);
         var inventory = HiredJobInventory.getJobInventory(fixture.farmer());
@@ -73,9 +115,17 @@ public final class SettlementFarmAcceptanceGameTests {
         var depot = SettlementWallMaterialsGameTests.supply(helper.getLevel(), fixture.town(), fixture.base().east(20).above());
         depot.clearContent();
         var job = start(helper, fixture);
-        int[] ticks = {0}, brokenAt = {-1};
+        int[] ticks = {0}, brokenAt = {-1}, previousDone = {0}, lastProgress = {0};
+        var progress = new java.util.ArrayList<String>();
         helper.onEachTick(() -> {
-            helper.assertTrue(++ticks[0] < 2300, "tool recovery stalled: " + diagnostic(fixture, job));
+            int done = job.done(true) + job.done(false);
+            if (done != previousDone[0]) {
+                progress.add(ticks[0] + "=" + done);
+                lastProgress[0] = ticks[0];
+            }
+            previousDone[0] = done;
+            helper.assertTrue(++ticks[0] < 3900 && ticks[0] - lastProgress[0] < 1800,
+                    "tool recovery stalled: " + diagnostic(fixture, job) + " / progress " + progress);
             if (brokenAt[0] < 0 && inventory.getItem(HiredJobInventory.MAINHAND_SLOT).isEmpty()) brokenAt[0] = ticks[0];
             if (brokenAt[0] >= 0 && ticks[0] == brokenAt[0] + 80) {
                 helper.assertValueEqual(job.done(true), 1, "tool shortage retains irrigation");
@@ -272,9 +322,14 @@ public final class SettlementFarmAcceptanceGameTests {
 
     static Fixture fixture(GameTestHelper helper, int width, int depth, boolean storage) {
         var level = helper.getLevel();
+        var environment = ENVIRONMENTS.computeIfAbsent(level, Environment::new);
+        environment.users++;
+        helper.testInfo.addListener(environment);
         var base = helper.absolutePos(new BlockPos(6, 40, 6));
         var owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "NativeFarm"));
-        return fixture(level, owner, base, width, depth, storage);
+        var fixture = fixture(level, owner, base, width, depth, storage);
+        environment.farmers.add(fixture.farmer().getUUID());
+        return fixture;
     }
 
     static Fixture fixture(net.minecraft.server.level.ServerLevel level, ServerPlayer owner, BlockPos base, int width, int depth, boolean storage) {

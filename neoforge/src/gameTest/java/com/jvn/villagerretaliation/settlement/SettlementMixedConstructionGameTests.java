@@ -57,12 +57,35 @@ public final class SettlementMixedConstructionGameTests {
         var paths = new SettlementPathSession();
         var session = UUID.randomUUID();
         var review = paths.request(level, session, true, f.town()::contains,
-                new SettlementPathRequestPayload(session, 1, SettlementPathRequestPayload.Action.PREVIEW, session, path));
+                new SettlementPathRequestPayload(session, 1, SettlementPathRequestPayload.Action.PREVIEW, session, path), f.town(), f.leader());
         helper.assertValueEqual(review.status(), SettlementPathResultPayload.Status.PREVIEW, "path preview is valid");
         var applied = paths.request(level, session, true, f.town()::contains,
-                new SettlementPathRequestPayload(session, 1, SettlementPathRequestPayload.Action.CONFIRM, review.token(), null));
-        helper.assertValueEqual(applied.status(), SettlementPathResultPayload.Status.APPLIED, "the path uses its existing direct construction flow");
+                new SettlementPathRequestPayload(session, 1, SettlementPathRequestPayload.Action.CONFIRM, review.token(), null), f.town(), f.leader());
+        helper.assertValueEqual(applied.status(), SettlementPathResultPayload.Status.APPLIED, "the path queues through the shared construction flow: " + applied.message());
+        var road = f.town().projects().get(review.token());
+        var roadPlan = SettlementConstructionService.scan(level, road);
+        SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), roadPlan, f.origin(), road.id());
+        var tools = HiredJobInventory.getJobInventory(f.builder());
+        var previousTool = tools.getItem(HiredJobInventory.MAINHAND_SLOT).copy();
+        tools.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SHOVEL));
+        var pathWorker = new BuilderWorker();
+        helper.startSequence().thenWaitUntil(() -> {
+            SettlementConstructionService.reconcile(f.builder());
+            int index = SettlementConstructionCoordination.select(f.town(), road, f.builder().getUUID(), roadPlan, level, level.getGameTime());
+            if (index >= 0 && index < road.total())
+                f.builder().setPos(roadPlan.worldPos(road.origin(), roadPlan.blocks().get(index)).north(2).atY(f.origin().getY()).getBottomCenter());
+            var work = HiredWorkSession.create(level, f.builder(), HiredVillagerRole.BUILDER);
+            pathWorker.tick(level, f.builder(), null, work.context());
+            SettlementConstructionService.observe(f.builder(), HiredWorkStateStore.state(f.builder()));
+            helper.assertValueEqual(road.status(), SettlementProject.Status.COMPLETED, "crew finishes the road: " + road.blocker());
+        }).thenExecute(() -> {
+            tools.setItem(HiredJobInventory.MAINHAND_SLOT, previousTool);
+            houseAndWall(helper, f, assistant, farmer);
+        });
+    }
 
+    private static void houseAndWall(GameTestHelper helper, SettlementConstructionGameTests.Fixture f, Villager assistant, Villager farmer) {
+        var level = helper.getLevel();
         var houseId = UUID.randomUUID();
         var anchor = f.origin().offset(f.plan().localCenter().getX(), f.plan().localMin().getY(), f.plan().localCenter().getZ());
         helper.assertTrue(SettlementConstructionService.commission(f.leader(), f.town(), houseId, f.plan().entry().id(), anchor,
@@ -78,12 +101,13 @@ public final class SettlementMixedConstructionGameTests {
         helper.assertTrue(house.pending() && project.pending(), "both projects retain their queue positions during a supply shortage");
         SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), f.plan(), f.origin(), houseId);
         helper.assertTrue(project.pending(), "Hamlet capacity leaves the wall queued while the house is active");
+        var houseAssistant = house.builder().equals(assistant.getUUID()) ? f.builder().getUUID() : assistant.getUUID();
         helper.assertTrue(SettlementConstructionService.configureCrew(f.leader(), f.town(), houseId, house.crewRevision(), 5,
-                List.of(assistant.getUUID())), "house uses the shared builder crew");
+                List.of(houseAssistant)), "house uses the shared builder crew");
         var restored = SettlementRecord.load(f.town().save(level.registryAccess()), level.registryAccess(), () -> {});
         helper.assertTrue(restored.projects().get(houseId).active() && restored.projects().get(wallId).pending(),
                 "reload preserves the active house and queued wall");
-        helper.assertTrue(restored.projects().get(houseId).assistants().contains(assistant.getUUID()), "reload preserves shared staffing");
+        helper.assertTrue(restored.projects().get(houseId).assistants().contains(houseAssistant), "reload preserves shared staffing");
         helper.assertTrue(SettlementConstructionService.cancel(f.leader(), f.town(), houseId), "cancellation releases the house crew");
         helper.assertFalse(SettlementConstructionMaterials.refundPending(house), "unspent house supplies return to storage");
         helper.assertTrue(project.pending(), "wall still waits for its own material quote");

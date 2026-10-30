@@ -58,6 +58,7 @@ def constructionClientSmokeDirectory = layout.buildDirectory.dir("construction-c
 def settlementTownProfileDirectory = layout.buildDirectory.dir("settlement-town-profile/${System.currentTimeMillis()}")
 def settlementManyVillageProfileDirectory = layout.buildDirectory.dir("settlement-many-village-profile/${System.currentTimeMillis()}")
 def settlementCityAcceptanceDirectory = layout.buildDirectory.dir("settlement-city-acceptance/${System.currentTimeMillis()}")
+def farmRestartDirectory = layout.buildDirectory.dir("farm-restart/" + System.currentTimeMillis())
 def diplomacyRestartDirectory = layout.buildDirectory.dir("diplomacy-restart/${System.currentTimeMillis()}")
 
 def settlementMultiplayerDirectory = layout.buildDirectory.dir("settlement-multiplayer/${System.currentTimeMillis()}")
@@ -285,6 +286,17 @@ neoForge {
                 systemProperty 'villagerretaliation.diplomacyRestart', diplomacyRestartDirectory.get().asFile.absolutePath
                 systemProperty 'villagerretaliation.diplomacyRestartPhase', phase.toString()
                 programArguments.addAll '--quickPlaySingleplayer', 'DiplomacyRestart', '--username', 'RestartHost', '--width', '960', '--height', '640'
+            }
+        }
+
+        (1..4).each { phase ->
+            register("farmRestart" + phase) {
+                client()
+                sourceSet = sourceSets.gameTest
+                gameDirectory.set(farmRestartDirectory)
+                systemProperty 'villagerretaliation.farmRestart', farmRestartDirectory.get().asFile.absolutePath
+                systemProperty 'villagerretaliation.farmRestartPhase', phase.toString()
+                programArguments.addAll '--quickPlaySingleplayer', 'FarmRestart', '--username', 'FarmRestartHost', '--width', '960', '--height', '640'
             }
         }
 
@@ -570,9 +582,12 @@ tasks.named('runSettlementMultiplayerHost') {
             from metadata
             into new File(output, 'host/saves/SettlementMultiplayer')
         }
+        def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+        if (imgui == null) throw new GradleException('Multiplayer acceptance requires the declared ImGuiMC dependency.')
         ['host', 'peer'].each { role ->
             def directory = new File(output, role)
             directory.mkdirs()
+            copy { from imgui; into new File(directory, 'mods') }
             def modsDirectory = providers.gradleProperty('settlementClientSmokeModsDirectory').orNull
             if (modsDirectory != null) copy {
                 from rootProject.file(modsDirectory)
@@ -614,6 +629,29 @@ tasks.named('runSettlementMultiplayerHost') {
             def result = new File(diplomacyRestartDirectory.get().asFile, "phase-${phase}.txt")
             if (!result.isFile() || !result.text.contains("Diplomacy restart phase ${phase} passed"))
                 throw new GradleException("Restart phase ${phase} did not finish. Inspect ${diplomacyRestartDirectory.get().asFile}")
+        }
+    }
+}
+
+(1..4).each { phase ->
+    tasks.named("runFarmRestart" + phase) {
+        dependsOn tasks.named(phase == 1 ? 'runGameTestServer' : "runFarmRestart" + (phase - 1))
+        doFirst {
+            if (phase == 1) {
+                def metadata = layout.buildDirectory.file('gametest-run/world/level.dat').get().asFile
+                if (!metadata.isFile()) throw new GradleException('Farm restart checks require generated GameTest world metadata.')
+                copy { from metadata; into new File(farmRestartDirectory.get().asFile, 'saves/FarmRestart') }
+                def imgui = configurations.compileClasspath.find { it.name.startsWith('imguimc-') }
+                if (imgui == null) throw new GradleException('Farm restart checks require the declared ImGuiMC dependency.')
+                copy { from imgui; into new File(farmRestartDirectory.get().asFile, 'mods') }
+                new File(farmRestartDirectory.get().asFile, 'options.txt').text =
+                        ['onboardAccessibility:false', 'pauseOnLostFocus:false', 'soundCategory_master:0.0', 'tutorialStep:none'].join(System.lineSeparator())
+            }
+        }
+        doLast {
+            def result = new File(farmRestartDirectory.get().asFile, "phase-" + phase + ".txt")
+            if (!result.isFile() || !result.text.contains("Farm restart phase " + phase + " passed"))
+                throw new GradleException("Farm restart checks did not finish. Inspect " + farmRestartDirectory.get().asFile)
         }
     }
 }

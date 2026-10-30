@@ -499,8 +499,11 @@ public final class SettlementConstructionGameTests {
     }
 
     static Fixture fixture(GameTestHelper helper) {
+        return fixture(helper, helper.absolutePos(new BlockPos(12, 2, 12)));
+    }
+
+    static Fixture fixture(GameTestHelper helper, BlockPos origin) {
         var level = helper.getLevel();
-        var origin = helper.absolutePos(new BlockPos(12, 2, 12));
         var leader = player(helper, "ProjectLeader");
         leader.setPos(origin.getCenter());
         var registry = VillageAllegianceRegistrySavedData.get(level);

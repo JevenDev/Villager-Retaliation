@@ -36,7 +36,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder
+@GameTestHolder("settlement_remote_staffing")
 @PrefixGameTestTemplate(false)
 public final class SettlementRemoteStaffingGameTests {
     private SettlementRemoteStaffingGameTests() {
@@ -103,7 +103,7 @@ public final class SettlementRemoteStaffingGameTests {
     public static void remoteStaffingUsesNativeProfessionAndStageEligibility(GameTestHelper helper) {
         var fixture = fixture(helper, 3);
         var construction = area(fixture, SettlementAreaType.CONSTRUCTION, 20);
-        helper.assertFalse(assign(fixture, fixture.leader(), construction), "a camp cannot commission civic construction staff");
+        helper.assertTrue(assign(fixture, fixture.leader(), construction), "a qualified mason can join a camp's construction crew");
         fixture.town().advance();
         helper.assertTrue(assign(fixture, fixture.leader(), construction), "a qualified mason can become a builder at Hamlet");
         var post = area(fixture, SettlementAreaType.TRADING_POST, 30);

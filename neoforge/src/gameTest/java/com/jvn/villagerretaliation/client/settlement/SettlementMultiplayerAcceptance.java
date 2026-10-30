@@ -141,7 +141,7 @@ public final class SettlementMultiplayerAcceptance {
             }
             if (read("host-state.txt").equals("finished")) {
                 require(peerProcess != null && !peerProcess.isAlive(), "the second native client has exited");
-                require(hostAppearanceChecked, "the host received the restored toolsmith's farming outfit");
+                require(hostAppearanceChecked, "the host received the restored toolsmith's construction outfit");
                 write("result.txt", "Settlement multiplayer acceptance passed\n");
                 write("acceptance.json", new Gson().toJson(Map.of(
                         "transport", "Two native clients using a TCP listener bound only to loopback",
@@ -153,7 +153,9 @@ public final class SettlementMultiplayerAcceptance {
                                 "normal close releases chunks", "disconnect releases server tickets",
                                 "competing shared transfer edits reject stale revisions", "finite and recurring orders survive TCP transport",
                                 "replayed append and revoked logistics edits preserve the shared queue",
-                                "both clients receive a restored toolsmith's farming outfit through late tracking"),
+                                "both clients receive a restored toolsmith's construction outfit through late tracking",
+                                "stale farm controls reject competing edits over TCP", "farm reassignment and pause survive TCP transport",
+                                "replayed farm controls are idempotent", "revoked Build rejects farm cancellation over TCP"),
                         "simultaneousTicks", simultaneousTicks,
                         "peakSharedTickets", peakTickets,
                         "peakChunkPacketsPerTick", peakSends,
@@ -175,7 +177,9 @@ public final class SettlementMultiplayerAcceptance {
             LogUtils.getLogger().info("Settlement multiplayer peer phase: {}", phase);
         }
         ticks++;
-        if (VillageRelationsMultiplayerChecks.handles(phase)) {
+        if (SettlementFarmMultiplayerChecks.handles(phase)) {
+            if (SettlementFarmMultiplayerChecks.client(phase, ticks)) write("peer-state.txt", phase + "_done");
+        } else if (VillageRelationsMultiplayerChecks.handles(phase)) {
             if (VillageRelationsMultiplayerChecks.client(minecraft, phase, ticks)) write("peer-state.txt", phase + "_done");
         } else if (phase.equals("outsider")) {
             if (ticks == 10) action(new SettlementManagementActionPayload.View());
@@ -275,6 +279,11 @@ public final class SettlementMultiplayerAcceptance {
         var town = SettlementSavedData.get(server.overworld()).get(new VillageAllegianceId(fixture.town())).orElseThrow();
         String ack = read("peer-state.txt");
         long now = server.overworld().getGameTime();
+        if (SettlementFarmMultiplayerChecks.handles(hostPhase)) {
+            var following = SettlementFarmMultiplayerChecks.server(server.getPlayerList().getPlayer(leader), peer, town, hostPhase, ack);
+            if (following != null) next(following, now);
+            return;
+        }
         if (VillageRelationsMultiplayerChecks.handles(hostPhase)) {
             var following = VillageRelationsMultiplayerChecks.server(server.getPlayerList().getPlayer(leader), peer, town, hostPhase, ack);
             if (following != null) next(following, now);
@@ -340,7 +349,9 @@ public final class SettlementMultiplayerAcceptance {
             var queue = town.transferQueues().get(fixture.courier());
             require(queue.orders().size() == 2 && queue.revision() == 2 && !queue.orders().getFirst().cancelled(),
                     "revoked logistics rejects the peer's current-revision cancellation");
-            next("disconnect", now);
+            var owner = server.getPlayerList().getPlayer(leader);
+            owner.connection.teleport(town.center().getX() + 14, town.center().getY() + 1, town.center().getZ() + 14, 0, 0);
+            next("farm_setup", now);
         } else if (hostPhase.equals("disconnect") && ack.equals("disconnected") && peer == null) {
             next("cleanup", now);
         } else if (hostPhase.equals("cleanup") && now - phaseStarted >= 40 && peerProcess != null && !peerProcess.isAlive()) {
@@ -380,10 +391,10 @@ public final class SettlementMultiplayerAcceptance {
         require(SettlementWorkforceService.assign(level, player, id, resident, post.id()), "the multiplayer resident is a civic guard");
         SettlementCareService.onUnloaded(resident);
         var town = SettlementSavedData.get(level).get(id).orElseThrow();
-        var farm = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Appearance field",
+        var appearanceArea = new SettlementArea(UUID.randomUUID(), SettlementAreaType.CONSTRUCTION, "Appearance site",
                 CENTER.offset(-5, 0, -5), CENTER.offset(-2, 2, -2), 5, true);
-        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, farm.min(), farm.max());
-        require(SettlementBuildingService.register(player, id, farm), "the appearance worksite is registered");
+        com.jvn.villagerretaliation.settlement.SettlementTestPlots.claim(level, town, appearanceArea.min(), appearanceArea.max());
+        require(SettlementBuildingService.register(player, id, appearanceArea), "the appearance worksite is registered");
         var farmer = EntityType.VILLAGER.create(level);
         farmer.setPos(CENTER.offset(-3, 0, -3).getBottomCenter());
         farmer.setNoAi(true);
@@ -391,12 +402,12 @@ public final class SettlementMultiplayerAcceptance {
         farmer.setVillagerXp(27);
         VillageAllegianceApi.assignKnown(level, farmer, id, AllegianceAssignmentSource.EXPLICIT_API);
         require(level.addFreshEntity(farmer), "the appearance resident is loaded");
-        require(SettlementWorkforceService.assign(level, player, id, farmer, farm.id()), "the toolsmith is assigned farming");
+        require(SettlementWorkforceService.assign(level, player, id, farmer, appearanceArea.id()), "the toolsmith is assigned construction");
         var appearanceSave = farmer.saveWithoutId(new net.minecraft.nbt.CompoundTag());
         farmer.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
         farmer = EntityType.VILLAGER.create(level);
         farmer.load(appearanceSave);
-        require(level.addFreshEntity(farmer), "the farmer reloads before either client tracks it");
+        require(level.addFreshEntity(farmer), "the appearance resident reloads before either client tracks it");
         require(farmer.getVillagerData().getProfession() == VillagerProfession.TOOLSMITH && farmer.getVillagerXp() == 27,
                 "reloading the assigned outfit retains the actual profession and trade experience");
         var courier = new SettlementArea(UUID.randomUUID(), SettlementAreaType.DEPOT, "Shared courier",
@@ -470,11 +481,11 @@ public final class SettlementMultiplayerAcceptance {
 
     private static void verifyAppearance(Minecraft minecraft) {
         var farmer = appearanceResident(minecraft);
-        require(farmer != null, "the restored farmer reaches the viewing client");
+        require(farmer != null, "the restored builder reaches the viewing client");
         require(farmer.getVillagerData().getProfession() == VillagerProfession.TOOLSMITH,
                 "tracking preserves the actual toolsmith profession");
-        require(VillagerWorkAppearance.profession(farmer) == VillagerProfession.FARMER,
-                "tracking immediately supplies the farming outfit on both clients");
+        require(VillagerWorkAppearance.profession(farmer) == VillagerProfession.MASON,
+                "tracking immediately supplies the construction outfit on both clients");
     }
 
     private static Villager appearanceResident(Minecraft minecraft) {

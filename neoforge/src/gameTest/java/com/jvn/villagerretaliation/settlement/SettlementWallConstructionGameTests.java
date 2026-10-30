@@ -365,7 +365,9 @@ public final class SettlementWallConstructionGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "wall_limits")
     public static void largeWallUsesItsRouteAndSurvivesReload(GameTestHelper helper) {
-        var fixture = fixture(helper);
+        var origin = helper.absolutePos(new BlockPos(12, 2, 12));
+        var isolatedOrigin = new BlockPos(origin.getX() * 16, origin.getY(), origin.getZ() * 16);
+        var fixture = fixture(helper, isolatedOrigin);
         try {
             var start = fixture.origin().offset(8, 0, -256);
             var wall = new SettlementWall(SettlementWall.Type.LOW_STONE,
@@ -437,7 +439,11 @@ public final class SettlementWallConstructionGameTests {
     }
 
     private static SettlementConstructionGameTests.Fixture fixture(GameTestHelper helper) {
-        var fixture = SettlementConstructionGameTests.fixture(helper);
+        return fixture(helper, helper.absolutePos(new BlockPos(12, 2, 12)));
+    }
+
+    private static SettlementConstructionGameTests.Fixture fixture(GameTestHelper helper, BlockPos origin) {
+        var fixture = SettlementConstructionGameTests.fixture(helper, origin);
         fixture.town().advance();
         for (var pos : BlockPos.betweenClosed(fixture.area().min(), fixture.area().max()))
             helper.getLevel().setBlock(pos, pos.getY() < fixture.origin().getY() ? Blocks.DIRT.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
