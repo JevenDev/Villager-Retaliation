@@ -205,6 +205,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 SettlementManagementActionPayload.writeWorksitePlan(buffer, area.plan());
                 SettlementManagementActionPayload.writeEquipmentPlan(buffer, area.equipment());
                 area.crops().write(buffer);
+                com.jvn.villagerretaliation.settlement.SettlementFarm.writeOptional(buffer, area.farm());
             }
             case Station station -> buffer.writeBlockPos(station.position());
             case Depot depot -> {
@@ -254,6 +255,15 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                 for (var assistant : project.assistants()) {
                     buffer.writeUUID(assistant.id());
                     buffer.writeUtf(assistant.name(), 128);
+                }
+                buffer.writeBoolean(project.farm() != null);
+                if (project.farm() != null) {
+                    buffer.writeVarInt(project.farm().soilDone());
+                    buffer.writeVarInt(project.farm().soilTotal());
+                    buffer.writeVarInt(project.farm().waterDone());
+                    buffer.writeVarInt(project.farm().waterTotal());
+                    buffer.writeBoolean(project.farm().paused());
+                    buffer.writeUUID(project.farm().requested());
                 }
             }
             case Issue issue -> {
@@ -387,7 +397,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
             case AREAS -> new Area(id, name, buffer.readEnum(SettlementAreaType.class), buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                     SettlementManagementActionPayload.readWorksitePlan(buffer), SettlementManagementActionPayload.readEquipmentPlan(buffer),
-                    com.jvn.villagerretaliation.settlement.SettlementCropPlan.read(buffer));
+                    com.jvn.villagerretaliation.settlement.SettlementCropPlan.read(buffer), com.jvn.villagerretaliation.settlement.SettlementFarm.readOptional(buffer));
             case STATIONS -> new Station(id, name, buffer.readBlockPos());
             case DEPOTS -> {
                 UUID area = buffer.readUUID();
@@ -414,7 +424,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512),
-                    buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readUtf(128), readCrew(buffer));
+                    buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readUtf(128), readCrew(buffer), readFarmProgress(buffer));
             case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
                     buffer.readBoolean());
@@ -797,7 +807,16 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                        int priority, boolean enabled, int beds, int fixtures, int workers,
                        com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
                        com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment,
-                       com.jvn.villagerretaliation.settlement.SettlementCropPlan crops) implements Entry {
+                       com.jvn.villagerretaliation.settlement.SettlementCropPlan crops,
+                       com.jvn.villagerretaliation.settlement.SettlementFarm farm) implements Entry {
+        public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
+                    int priority, boolean enabled, int beds, int fixtures, int workers,
+                    com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
+                    com.jvn.villagerretaliation.settlement.SettlementEquipmentPlan equipment,
+                    com.jvn.villagerretaliation.settlement.SettlementCropPlan crops) {
+            this(id, name, kind, min, max, priority, enabled, beds, fixtures, workers, plan, equipment, crops, null);
+        }
+
         public Area(UUID id, String name, SettlementAreaType kind, BlockPos min, BlockPos max,
                     int priority, boolean enabled, int beds, int fixtures, int workers,
                     com.jvn.villagerretaliation.settlement.SettlementWorksitePlan plan,
@@ -850,15 +869,36 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
         }
     }
 
+    private static FarmProgress readFarmProgress(RegistryFriendlyByteBuf buffer) {
+        return buffer.readBoolean() ? new FarmProgress(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readBoolean(), buffer.readUUID()) : null;
+    }
+
+    public record FarmProgress(int soilDone, int soilTotal, int waterDone, int waterTotal, boolean paused, UUID requested) {
+        public FarmProgress {
+            if (soilDone < 0 || soilTotal < soilDone || waterDone < 0 || waterTotal < waterDone
+                    || (long) soilTotal + waterTotal > com.jvn.villagerretaliation.settlement.SettlementFarm.MAX_CELLS || requested == null)
+                throw new IllegalArgumentException("Invalid farm progress");
+        }
+    }
+
     public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
                           int placed, int total, String blocker, String materials,
                           com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
-                          int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants) implements Entry {
+                          int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants, FarmProgress farm) implements Entry {
+        public Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
+                       int placed, int total, String blocker, String materials,
+                       com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
+                       int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants) {
+            this(id, name, area, builder, origin, min, max, status, placed, total, blocker, materials, phase, missingMaterials,
+                    priority, crewRevision, crewAvailable, builderName, assistants, null);
+        }
+
         public Project {
             assistants = List.copyOf(assistants);
             if (id == null || area == null || builder == null || origin == null || status == null || name == null || name.length() > 128
                     || min == null || max == null || min.getX() > max.getX() || min.getY() > max.getY() || min.getZ() > max.getZ()
-                    || placed < 0 || total <= 0 || placed > total || blocker == null || blocker.length() > 128
+                    || placed < 0 || total < 0 || total == 0 && farm == null || placed > total || blocker == null || blocker.length() > 128
                     || materials == null || materials.length() > 512 || phase == null || missingMaterials == null || missingMaterials.length() > 512
                     || priority < 0 || priority > 9 || crewRevision < 0L || builderName == null || builderName.length() > 128 || assistants.size() > 15
                     || assistants.stream().map(CrewMember::id).distinct().count() != assistants.size()

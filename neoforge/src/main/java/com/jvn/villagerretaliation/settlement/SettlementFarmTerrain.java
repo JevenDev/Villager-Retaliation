@@ -21,9 +21,9 @@ public final class SettlementFarmTerrain {
         public long count(Kind kind) { return cells.stream().filter(cell -> cell.kind() == kind).count(); }
         public String materials() {
             return (count(Kind.TILL) > 0 ? "Usable hoe required. " : "")
-                    + (count(Kind.WATER) > 0 ? "At least 1 bucket required. Refill from accessible infinite water. Bucket allowance: 1 to 4."
-                            : "Existing water provides irrigation. No bucket required.")
-                    + (count(Kind.DRY) == 0 ? "" : " Skipping " + count(Kind.DRY) + " dry soil blocks (orange). Expand the selection or add contained water to include them.");
+                    + (count(Kind.WATER) > 0 ? "Bucket required. Refill from accessible infinite water (1 to 4 carried)."
+                            : "Existing irrigation. No bucket required.")
+                    + (count(Kind.DRY) == 0 ? "" : " Dry soil skipped: " + count(Kind.DRY) + " (orange).");
         }
     }
     private SettlementFarmTerrain() {}

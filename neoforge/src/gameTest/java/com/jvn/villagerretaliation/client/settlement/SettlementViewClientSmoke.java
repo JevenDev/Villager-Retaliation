@@ -133,6 +133,10 @@ public final class SettlementViewClientSmoke {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
+        if (farmChecks != null && (minecraft.screen instanceof SettlementFarmPlanScreen || minecraft.screen instanceof SettlementProjectScreen)) {
+            farmChecks.tick(minecraft);
+            return;
+        }
         minecraft.setWindowActive(true);
         minecraft.options.pauseOnLostFocus = false;
         if (started == 0L) {

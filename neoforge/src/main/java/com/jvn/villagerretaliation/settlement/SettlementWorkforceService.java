@@ -60,6 +60,14 @@ public final class SettlementWorkforceService {
         return true;
     }
 
+    static boolean assignFarmJob(ServerLevel level, SettlementRecord town, SettlementFarmJob job, Villager villager) {
+        if (!job.unfinished() || !town.permits(job.issuer(), SettlementPermission.BUILD)
+                || !town.permits(job.issuer(), SettlementPermission.STAFF)
+                || !assign(level, town, villager, job.area())) return false;
+        town.rememberManualDuty(villager.getUUID());
+        return true;
+    }
+
     static boolean fillAssignment(ServerLevel level, SettlementRecord town, Villager villager, UUID areaId) {
         if (villager == null || town.manuallyStaffed(villager.getUUID()) || town.duties().containsKey(villager.getUUID())
                 || !assign(level, town, villager, areaId)) return false;

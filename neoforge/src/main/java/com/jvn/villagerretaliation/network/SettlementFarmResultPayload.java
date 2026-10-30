@@ -10,8 +10,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record SettlementFarmResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message)
+public record SettlementFarmResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message, UUID area)
         implements CustomPacketPayload {
+    public SettlementFarmResultPayload(UUID session, long revision, UUID token, Status status, List<Cell> cells, String message) {
+        this(session, revision, token, status, cells, message, null);
+    }
+
     public enum Status { PREVIEW, APPLIED, REJECTED, CANCELLED }
     public record Cell(BlockPos position, SettlementFarmTerrain.Kind kind) {}
     public static final Type<SettlementFarmResultPayload> TYPE = VillagerPayloads.type("settlement_farm_result");
@@ -20,6 +24,8 @@ public record SettlementFarmResultPayload(UUID session, long revision, UUID toke
         b.writeVarInt(p.cells().size());
         for (var cell : p.cells()) { b.writeBlockPos(cell.position()); b.writeEnum(cell.kind()); }
         b.writeUtf(p.message(), 512);
+        b.writeBoolean(p.area() != null);
+        if (p.area() != null) b.writeUUID(p.area());
     }, b -> {
         var session = b.readUUID();
         long revision = b.readVarLong();
@@ -28,7 +34,7 @@ public record SettlementFarmResultPayload(UUID session, long revision, UUID toke
         int count = VillagerPayloads.readCollectionSize(b, SettlementFarm.MAX_CELLS, "farmland preview cells");
         var cells = new ArrayList<Cell>();
         for (int i = 0; i < count; i++) cells.add(new Cell(b.readBlockPos(), b.readEnum(SettlementFarmTerrain.Kind.class)));
-        return new SettlementFarmResultPayload(session, revision, token, status, cells, b.readUtf(512));
+        return new SettlementFarmResultPayload(session, revision, token, status, cells, b.readUtf(512), b.readBoolean() ? b.readUUID() : null);
     });
     public SettlementFarmResultPayload {
         cells = List.copyOf(cells);

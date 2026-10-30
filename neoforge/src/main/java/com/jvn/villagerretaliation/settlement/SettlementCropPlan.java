@@ -47,7 +47,7 @@ public record SettlementCropPlan(List<Integer> percentages, boolean demand, int 
         return index < 0 ? Crop.ANY : crop(index, plantingCells.size());
     }
 
-    private Crop crop(int index, int size) {
+    Crop crop(int index, int size) {
         int cumulative = 0;
         for (int crop = 0; crop < percentages.size(); crop++) {
             cumulative += percentages.get(crop);

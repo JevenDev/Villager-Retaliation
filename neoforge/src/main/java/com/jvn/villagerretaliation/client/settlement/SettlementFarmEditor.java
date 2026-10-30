@@ -35,6 +35,28 @@ public final class SettlementFarmEditor {
     private SettlementFarmResultPayload result;
     private List<SettlementFarmResultPayload.Cell> cells = List.of();
     private String feedback = "";
+    private UUID area;
+    private SettlementFarm original;
+    private com.jvn.villagerretaliation.settlement.SettlementCropPlan crops = com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE;
+
+    public com.jvn.villagerretaliation.settlement.SettlementCropPlan crops() { return this.crops; }
+    public void crops(com.jvn.villagerretaliation.settlement.SettlementCropPlan crops) {
+        if (!active() || confirming() || this.crops.equals(crops)) return;
+        this.crops = crops;
+        changed();
+    }
+
+    public void begin(com.jvn.villagerretaliation.network.SettlementManagementPayload.Area area) {
+        begin();
+        this.area = area.id();
+        this.original = area.farm();
+        this.crops = area.crops();
+        var farm = area.farm() == null ? new SettlementFarm(area.min(), area.max()) : area.farm();
+        this.shape = farm.shape();
+        this.nodes.addAll(farm.nodes());
+        this.selecting = false;
+        changed();
+    }
 
     public SettlementFarmEditor() { this(Util::getMillis); }
     public SettlementFarmEditor(LongSupplier clock) { this.clock = clock; }
@@ -55,7 +77,7 @@ public final class SettlementFarmEditor {
     public boolean canFinish() { return active() && !confirming() && this.selecting && this.shape == SettlementFarm.Shape.POLYGON && this.nodes.size() >= 3; }
     public void shape(SettlementFarm.Shape shape) {
         if (!active() || confirming() || this.shape == shape) return;
-        begin();
+        resetGeometry();
         this.shape = shape;
     }
     public void finish() {
@@ -75,6 +97,13 @@ public final class SettlementFarmEditor {
     public List<SettlementFarmResultPayload.Cell> cells() { return this.cells; }
 
     public void begin() {
+        this.area = null;
+        this.original = null;
+        this.crops = com.jvn.villagerretaliation.settlement.SettlementCropPlan.NONE;
+        resetGeometry();
+    }
+
+    private void resetGeometry() {
         this.active = true;
         this.selecting = true;
         this.confirming = false;
@@ -196,7 +225,7 @@ public final class SettlementFarmEditor {
                         : !preview.error().isEmpty() ? preview.error() : preview.materials();
             }
             if (!this.selecting && !dragging() && this.result == null && this.pending == null && now - this.changedAt >= 150)
-                send(new SettlementFarmRequestPayload(session, this.revision, SettlementFarmRequestPayload.Action.PREVIEW, EMPTY, farm), send);
+                send(new SettlementFarmRequestPayload(session, this.revision, SettlementFarmRequestPayload.Action.PREVIEW, EMPTY, farm, this.area, this.original, this.crops), send);
         }
         if (this.pending != null && now - this.sentAt >= 2000) send(this.pending, send);
     }
@@ -234,13 +263,13 @@ public final class SettlementFarmEditor {
     }
 
     String requirements() {
-        return this.result != null && this.result.status() == SettlementFarmResultPayload.Status.PREVIEW && !this.result.message().isBlank()
+        return this.result != null && !this.result.message().isBlank()
                 ? this.result.message() : "Awaiting validated requirements";
     }
 
     String placementStatus() {
         if (confirming()) return "Submitting farmland work...";
-        if (canConfirm()) return "Valid terrain: Confirm assigns a farmer";
+        if (canConfirm()) return "Valid plan: Confirm requests farm preparation";
         if (this.result != null && this.result.status() == SettlementFarmResultPayload.Status.REJECTED) return "Cannot place: " + this.result.message();
         if (this.shown == null && !this.feedback.isBlank() && !this.selecting && this.pending == null) return "Cannot place: " + this.feedback;
         return "Finish the draft, then wait for validation";
@@ -261,6 +290,7 @@ public final class SettlementFarmEditor {
                 ? this.selecting ? "Move to resize, then click the radius. " : "Drag the centre or radius handle. "
                 : this.selecting ? "Move to resize, then click the opposite corner. " : "Drag either corner to resize. ";
         return this.shape.label() + " / " + till + " soil / " + water + " water / " + skipped + " skipped / " + dry + " dry\n"
-                + instructions + this.feedback;
+                + instructions + (this.result != null && this.result.status() == SettlementFarmResultPayload.Status.REJECTED || this.shown == null
+                        ? this.feedback : canConfirm() ? "Review requirements, then confirm." : this.selecting ? "" : "Waiting for validation.");
     }
 }

@@ -31,6 +31,11 @@ public final class SettlementFarmWork {
     private SettlementFarmWork() {}
 
     public static Assignment worker(ServerLevel level, SettlementRecord town, SettlementFarmTerrain.Preview preview) {
+        return worker(level, town, preview, false, SettlementFarmJob.AUTOMATIC);
+    }
+
+    public static Assignment worker(ServerLevel level, SettlementRecord town, SettlementFarmTerrain.Preview preview,
+                                    boolean includeBusy, UUID requested) {
         boolean farmer = false;
         boolean hoe = false;
         boolean needsHoe = preview.count(SettlementFarmTerrain.Kind.TILL) > 0;
@@ -44,6 +49,7 @@ public final class SettlementFarmWork {
                     || area.contains(cell.position().above())) ? 0 : 2;
         }).thenComparing(Comparator.naturalOrder())).toList();
         for (var id : ordered) {
+            if (!requested.equals(SettlementFarmJob.AUTOMATIC) && !requested.equals(id)) continue;
             if (!(level.getEntity(id) instanceof Villager villager) || !villager.isAlive() || villager.isBaby()
                     || villager.getVillagerData().getProfession() != VillagerProfession.FARMER
                     || com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(villager)
@@ -54,7 +60,8 @@ public final class SettlementFarmWork {
                     || town.duties().containsKey(id) && (!authority.active() || !authority.civic()
                     || authority.role() != HiredVillagerRole.FARMING)) continue;
             var state = HiredWorkStateStore.state(villager);
-            if (town.duties().containsKey(id) && !state.getBoolean("Enabled") || state.contains(HiredTemporaryQueue.STATE_TAG) || state.contains(HiredTemporaryQueue.PENDING_TAG)) continue;
+            if (town.duties().containsKey(id) && !state.getBoolean("Enabled")
+                    || !includeBusy && (state.contains(HiredTemporaryQueue.STATE_TAG) || state.contains(HiredTemporaryQueue.PENDING_TAG))) continue;
             farmer = true;
             var inventory = HiredJobInventory.getJobInventory(villager);
             boolean storage = com.jvn.villagerretaliation.interaction.HiredJobSetting.USE_STORAGE.read(state) != 0;
@@ -109,51 +116,51 @@ public final class SettlementFarmWork {
     }
 
     public static String start(ServerPlayer player, SettlementRecord town, SettlementFarmTerrain.Preview preview, SettlementFarm farm) {
-        var level = player.serverLevel();
-        if (!preview.error().isEmpty() || SettlementSavedData.get(level).readOnly()
-                || !town.permits(player.getUUID(), SettlementPermission.BUILD)
-                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return "Farmland work is not permitted";
-        var assignment = worker(level, town, preview);
-        if (assignment.worker() == null) return assignment.error();
-        var work = new ArrayList<>(preview.cells().stream()
-                .filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER || cell.kind() == SettlementFarmTerrain.Kind.TILL).toList());
-        work.sort(Comparator.comparingInt(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER ? 0 : 1));
-        var min = preview.cells().getFirst().position();
-        var max = min;
-        for (var cell : preview.cells()) {
-            min = com.jvn.villagerretaliation.interaction.HiredWorkArea.minPos(min, cell.position());
-            max = com.jvn.villagerretaliation.interaction.HiredWorkArea.maxPos(max, cell.position());
-        }
-        min = new BlockPos(farm.minX(), min.getY(), farm.minZ());
-        max = new BlockPos(farm.maxX(), max.getY() + 2, farm.maxZ());
-        var previous = town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.FARM
+        return start(player, town, preview, farm, null, null);
+    }
+
+    static SettlementArea previous(SettlementRecord town, SettlementFarmTerrain.Preview preview, SettlementFarm farm, UUID areaId) {
+        if (areaId != null) return town.areas().get(areaId);
+        return town.areas().values().stream().filter(area -> area.type() == SettlementAreaType.FARM
                 && area.min().getX() == farm.minX() && area.max().getX() == farm.maxX()
                 && area.min().getZ() == farm.minZ() && area.max().getZ() == farm.maxZ()
                 && preview.cells().stream().allMatch(cell -> area.contains(cell.position()) || area.contains(cell.position().above())))
                 .findFirst().orElse(null);
+    }
+
+    static SettlementArea plot(SettlementFarmTerrain.Preview preview, SettlementFarm farm, SettlementArea previous, SettlementCropPlan crops) {
+        int low = preview.cells().stream().mapToInt(cell -> cell.position().getY()).min().orElseThrow();
+        int high = preview.cells().stream().mapToInt(cell -> cell.position().getY()).max().orElseThrow();
+        return new SettlementArea(previous == null ? UUID.randomUUID() : previous.id(), SettlementAreaType.FARM,
+                previous == null ? "Farm plot" : previous.name(), new BlockPos(farm.minX(), low, farm.minZ()),
+                new BlockPos(farm.maxX(), high + 2, farm.maxZ()), previous == null ? 5 : previous.priority(),
+                previous == null || previous.enabled(), crops == null ? previous == null ? SettlementCropPlan.NONE : previous.crops() : crops, false, farm);
+    }
+
+    public static String start(ServerPlayer player, SettlementRecord town, SettlementFarmTerrain.Preview preview, SettlementFarm farm,
+                               UUID areaId, SettlementCropPlan crops) {
+        var level = player.serverLevel();
+        if (preview.cells().isEmpty()) return "No farmland was selected";
+        if (!preview.error().isEmpty() || SettlementSavedData.get(level).readOnly()
+                || !town.permits(player.getUUID(), SettlementPermission.BUILD)
+                || !town.permits(player.getUUID(), SettlementPermission.STAFF)) return "Farmland work is not permitted";
+        var assignment = worker(level, town, preview, true, SettlementFarmJob.AUTOMATIC);
+        if (assignment.worker() == null) return assignment.error();
+        var work = new ArrayList<>(preview.cells().stream()
+                .filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER || cell.kind() == SettlementFarmTerrain.Kind.TILL).toList());
+        work.sort(Comparator.comparingInt(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER ? 0 : 1));
+        var previous = previous(town, preview, farm, areaId);
+        if (areaId != null && (previous == null || previous.type() != SettlementAreaType.FARM)) return "Farm plot is no longer available";
         SettlementArea area;
         try {
-            area = new SettlementArea(previous == null ? UUID.randomUUID() : previous.id(), SettlementAreaType.FARM,
-                    previous == null ? "Farm plot" : previous.name(), min, max,
-                    previous == null ? 5 : previous.priority(), true,
-                    previous == null ? SettlementCropPlan.NONE : previous.crops(), false, farm);
+            area = plot(preview, farm, previous, crops);
         } catch (IllegalArgumentException exception) {
             return "Farm plot exceeds workplace size or height limits";
         }
+        var min = area.min();
+        var max = area.max();
         if (!town.putArea(player.getUUID(), area)) return "Farm plot overlaps another workplace or leaves settlement land";
-        var villager = assignment.worker();
-        var previousDuty = town.duties().get(villager.getUUID());
-        boolean assigned = SettlementWorkforceService.assign(level, player, town.id(), villager, area.id());
         var task = new HiredTemporaryTask(UUID.randomUUID(), HiredTemporaryTask.Kind.PREPARE_FARM, min, max, 1);
-        String error = assigned ? HiredTemporaryWorkService.submit(player, villager, task, false) : "Farmer assignment changed";
-        if (!error.isEmpty()) {
-            town.removeDuty(villager.getUUID());
-            if (previous == null) town.removeArea(player.getUUID(), area.id());
-            else town.putArea(player.getUUID(), previous);
-            if (previousDuty != null) town.assignDuty(villager.getUUID(), previousDuty);
-            SettlementWorkforceService.reconcile(level, villager);
-            return error;
-        }
         SettlementBuildingService.enqueue(level, town, area);
         var job = new CompoundTag();
         job.putUUID("Task", task.id());
@@ -167,7 +174,14 @@ public final class SettlementFarmWork {
             cells.add(tag);
         }
         job.put("Cells", cells);
-        HiredWorkStateStore.state(assignment.worker()).put(TAG, job);
+        var project = new SettlementFarmJob(area.id(), player.getUUID(), min, max, area.priority(), job);
+        if (!town.addFarmJob(project)) {
+            if (previous == null) town.removeArea(player.getUUID(), area.id());
+            else town.putArea(player.getUUID(), previous);
+            return "Farm plot already has preparation work or the farm queue is full";
+        }
+        if (!SettlementFarmJobService.activate(level, town, project, assignment.worker()))
+            project.blocker("Waiting for an available farmer");
         return "";
     }
 

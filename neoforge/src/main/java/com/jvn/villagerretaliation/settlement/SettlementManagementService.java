@@ -100,7 +100,11 @@ public final class SettlementManagementService {
                     project.project(), project.before(), project.revision()), command);
             case SettlementManagementActionPayload.ConfigureProject project -> result(SettlementConstructionService.configureCrew(player, town,
                     project.project(), project.revision(), project.priority(), project.assistants()), command);
-            case SettlementManagementActionPayload.CancelProject cancel -> result(SettlementConstructionService.cancel(player, town, cancel.project()), command);
+            case SettlementManagementActionPayload.ConfigureFarmJob job -> result(SettlementFarmJobService.configure(player, town,
+                    job.job(), job.revision(), job.priority(), job.paused(), job.worker()), command);
+            case SettlementManagementActionPayload.CancelProject cancel -> result(town.farmJobs().containsKey(cancel.project())
+                    ? SettlementFarmJobService.cancel(player, town, cancel.project())
+                    : SettlementConstructionService.cancel(player, town, cancel.project()), command);
             case SettlementManagementActionPayload.Brew brew -> result(SettlementBrewingService.configure(player, town, brew.resident(), brew.area(), brew.order()), command);
             case SettlementManagementActionPayload.SaveEquipment save -> result(save.configuration() == null
                     ? town.removeEquipmentPlan(player.getUUID(), save.area(), save.revision())
@@ -300,6 +304,16 @@ public final class SettlementManagementService {
     }
 
     private static void projects(ServerLevel level, SettlementRecord town, List<Entry> entries) {
+        town.farmJobs().values().stream().sorted(Comparator.comparingInt(SettlementFarmJob::priority).reversed()).forEach(job -> {
+            var area = town.areas().get(job.area());
+            String workerName = job.worker().equals(SettlementFarmJob.AUTOMATIC) ? "Next available farmer" : constructionName(level, job.worker());
+            entries.add(new SettlementManagementPayload.Project(job.id(), area == null ? "Farm preparation" : display(area.name()) + " / Prepare",
+                    job.area(), job.worker(), job.min(), job.min(), job.max(), job.status(),
+                    job.done(false) + job.done(true), job.total(false) + job.total(true), job.blocker(),
+                    "Hoe and buckets as required by remaining work", com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.IDLE, "",
+                    job.priority(), job.revision(), true, workerName, List.of(),
+                    new SettlementManagementPayload.FarmProgress(job.done(false), job.total(false), job.done(true), job.total(true), job.paused(), job.requested())));
+        });
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream()).forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
@@ -424,7 +438,7 @@ public final class SettlementManagementService {
             entries.add(new SettlementManagementPayload.Area(area.id(), display(area.name()), area.type(), area.min(), area.max(),
                     area.priority(), area.enabled(), survey == null ? 0 : survey.beds().size(),
                     survey == null ? 0 : survey.workstations().size(),
-                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id()), town.equipmentPlans().get(area.id()), area.crops()));
+                    (int) town.duties().values().stream().filter(area.id()::equals).count(), town.worksitePlans().get(area.id()), town.equipmentPlans().get(area.id()), area.crops(), area.farm()));
         }
     }
 

@@ -190,7 +190,7 @@ final class SettlementSelectionInspector {
         this.back.visible = this.visible;
         String label = switch (this.section) {
             case OVERVIEW -> this.selected instanceof Issue ? "Resolve issue" : this.selected instanceof Order ? "Edit trade order" : "Focus";
-            case STAFF -> this.selected instanceof Project ? "Crew and priority"
+            case STAFF -> this.selected instanceof Project project ? project.farm() != null ? "Manage preparation" : "Crew and priority"
                     : this.selected instanceof Area && this.worksite != null && this.worksite.plan() != null ? "Fill staffing" : "Staff actions";
             case ORDERS -> this.transfers != null ? "Edit transfers" : this.production != null ? "Edit production" : this.worksite != null && this.worksite.kind() == SettlementAreaType.TRADING_POST
                     ? "Trade orders" : this.worksite != null && this.worksite.kind() == SettlementAreaType.FISHERY ? "Fishing settings"
@@ -265,6 +265,13 @@ final class SettlementSelectionInspector {
             if (!resident.temporary().isEmpty()) line("Temporary: " + resident.temporary());
             if (!resident.diagnostic().isEmpty()) line(resident.diagnostic());
         } else if (this.selected instanceof Project project) {
+            if (project.farm() != null) {
+                line(SettlementManagementScreen.farmProgress(project).getString());
+                line("Farmer: " + project.builderName());
+                line("Priority: " + project.priority());
+                if (!project.blocker().isBlank()) line(Component.translatableWithFallback(project.blocker(), project.blocker()).getString());
+                return;
+            }
             line("Project priority: " + project.priority() + " / crew: " + (project.assistants().size() + 1));
             line("Lead: " + project.builderName());
             line("Materials: " + project.materials());
@@ -277,6 +284,12 @@ final class SettlementSelectionInspector {
 
     private void staffing() {
         if (this.selected instanceof Project project) {
+            if (project.farm() != null) {
+                line("Farmer: " + project.builderName());
+                line("Priority: " + project.priority());
+                line("Manage preparation to pause, resume, cancel or reassign.");
+                return;
+            }
             line("Lead: " + project.builderName() + " / project payment");
             for (var member : project.assistants()) this.lines.add(new Line(Component.literal(member.name() + " / assistant"), member.id()));
             if (project.assistants().isEmpty()) line("No assistants");

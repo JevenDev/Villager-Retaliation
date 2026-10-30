@@ -284,7 +284,7 @@ public final class SettlementFarmGameTests {
         var preview = SettlementFarmTerrain.preview(level, new SettlementFarm(base, base.offset(21, 0, 19)), pos -> true);
         helper.assertTrue(preview.error().isEmpty(), preview.error());
         helper.assertValueEqual(preview.count(SettlementFarmTerrain.Kind.DRY), 20L, "exposed raised ridge is marked dry instead of blocking the field");
-        helper.assertTrue(preview.materials().contains("Skipping 20"), "validated requirements explain dry soil exclusions");
+        helper.assertTrue(preview.materials().contains("Dry soil skipped: 20"), "validated requirements explain dry soil exclusions");
         var water = preview.cells().stream().filter(cell -> cell.kind() == SettlementFarmTerrain.Kind.WATER).map(SettlementFarmTerrain.Cell::position).toList();
         for (var cell : preview.cells()) {
             if (cell.kind() == SettlementFarmTerrain.Kind.WATER)

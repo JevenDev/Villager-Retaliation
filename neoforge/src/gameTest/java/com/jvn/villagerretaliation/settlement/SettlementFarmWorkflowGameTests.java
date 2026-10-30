@@ -268,6 +268,224 @@ public final class SettlementFarmWorkflowGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void farmJobsPauseSaveAndCancelWithoutUndoingTerrain(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+        inventory.setItem(inventory.supplySlots().getFirst(), new ItemStack(Items.WATER_BUCKET));
+        var farm = new SettlementFarm(fixture.base(), fixture.base().offset(8, 0, 8));
+        helper.assertTrue(SettlementFarmWork.start(fixture.owner(), fixture.town(),
+                SettlementFarmTerrain.preview(level, farm, pos -> true), farm).isEmpty(), "job starts");
+        var job = fixture.town().farmJobs().values().iterator().next();
+        var state = HiredWorkStateStore.state(fixture.villager());
+        var water = SettlementFarmWork.next(level, state);
+        tickAt(helper, fixture, water.position());
+        helper.assertValueEqual(job.done(true), 1, "water progress is visible in the persistent job");
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), job.id(), job.revision(), 8, true,
+                SettlementFarmJob.AUTOMATIC), "job pauses");
+        var soil = SettlementFarmWork.next(level, state);
+        tickAt(helper, fixture, soil.position());
+        helper.assertFalse(level.getBlockState(soil.position()).is(Blocks.FARMLAND), "paused job changes no soil");
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), job.id(), job.revision(), 8, false,
+                SettlementFarmJob.AUTOMATIC), "job resumes");
+        tickAt(helper, fixture, soil.position());
+        helper.assertTrue(level.getBlockState(soil.position()).is(Blocks.FARMLAND), "resuming continues the same soil task");
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), job.id(), job.revision(), 8, true,
+                SettlementFarmJob.AUTOMATIC), "resumed progress can be paused again");
+        var saved = SettlementRecord.load(fixture.town().save(level.registryAccess()), level.registryAccess(), () -> {});
+        var restored = saved.farmJobs().get(job.id());
+        helper.assertTrue(restored.paused(), "pause survives town save");
+        helper.assertValueEqual(restored.priority(), 8, "priority survives town save");
+        helper.assertValueEqual(restored.done(true), 1, "completed water survives town save");
+        helper.assertFalse(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), job.id(), job.revision() - 1,
+                1, false, SettlementFarmJob.AUTOMATIC), "stale controls cannot overwrite newer settings");
+        var cancel = new com.jvn.villagerretaliation.network.SettlementManagementActionPayload.CancelProject(job.id());
+        helper.assertTrue(SettlementManagementValidation.selection(fixture.owner(), fixture.town(), cancel).isEmpty(), "project cancellation accepts farm jobs");
+        helper.assertTrue(SettlementFarmJobService.cancel(fixture.owner(), fixture.town(), job.id()), "job cancels");
+        helper.assertTrue(HiredTemporaryWorkService.queue(state) == null, "cancel releases the worker task");
+        helper.assertTrue(level.getBlockState(water.position()).is(Blocks.WATER), "cancel retains placed water");
+        helper.assertTrue(fixture.town().areas().containsKey(job.area()), "cancel retains the farm and its settings");
+        fixture.town().workers().get(fixture.villager().getUUID()).restore(fixture.villager());
+        helper.assertTrue(inventory.findSupply(stack -> stack.is(Items.WATER_BUCKET)).isEmpty(), "worker handoff does not restore a spent water bucket");
+        helper.assertValueEqual(bucketCount(inventory), 1, "cancellation preserves the real remaining bucket");
+        fixture.villager().discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void farmQueueUsesPriorityAndReassignsRemainingWork(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+        inventory.setItem(inventory.supplySlots().getFirst(), new ItemStack(Items.WATER_BUCKET));
+        var farms = List.of(new SettlementFarm(fixture.base(), fixture.base().offset(8, 0, 3)),
+                new SettlementFarm(fixture.base().south(6), fixture.base().offset(8, 0, 9)),
+                new SettlementFarm(fixture.base().east(12), fixture.base().offset(20, 0, 3)));
+        for (var farm : farms)
+            helper.assertTrue(SettlementFarmWork.start(fixture.owner(), fixture.town(),
+                    SettlementFarmTerrain.preview(level, farm, pos -> true), farm).isEmpty(), "busy qualified farmers allow queued plots");
+        var jobs = List.copyOf(fixture.town().farmJobs().values());
+        helper.assertValueEqual(jobs.get(0).status(), SettlementProject.Status.ACTIVE, "first job is active");
+        helper.assertValueEqual(jobs.get(1).status(), SettlementProject.Status.PENDING, "second job waits");
+        var urgent = jobs.get(2);
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), urgent.id(), urgent.revision(), 9,
+                false, SettlementFarmJob.AUTOMATIC), "pending priority changes");
+        helper.assertTrue(SettlementFarmJobService.cancel(fixture.owner(), fixture.town(), jobs.get(0).id()), "first job releases its farmer");
+        SettlementFarmJobService.tick(level, fixture.town());
+        helper.assertValueEqual(urgent.status(), SettlementProject.Status.ACTIVE, "highest priority pending job starts first");
+        helper.assertValueEqual(jobs.get(1).status(), SettlementProject.Status.PENDING, "lower priority job stays queued");
+        var state = HiredWorkStateStore.state(fixture.villager());
+        var water = SettlementFarmWork.next(level, state);
+        tickAt(helper, fixture, water.position());
+        var replacement = EntityType.VILLAGER.create(level);
+        replacement.setPos(fixture.base().above().getBottomCenter());
+        replacement.setNoAi(true);
+        replacement.setVillagerData(replacement.getVillagerData().setProfession(VillagerProfession.FARMER));
+        VillageAllegianceApi.assignKnown(level, replacement, fixture.town().id(), AllegianceAssignmentSource.EXPLICIT_API);
+        level.addFreshEntity(replacement);
+        HiredJobInventory.getJobInventory(replacement).setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), urgent.id(), urgent.revision(), 9,
+                false, replacement.getUUID()), "a replacement farmer can finish already irrigated work without a bucket");
+        helper.assertValueEqual(urgent.worker(), replacement.getUUID(), "replacement owns the active job");
+        helper.assertValueEqual(urgent.done(true), 1, "reassignment retains completed irrigation");
+        helper.assertFalse(SettlementFarmWork.next(level, HiredWorkStateStore.state(replacement)).water(), "replacement resumes soil work");
+        fixture.villager().discard();
+        replacement.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void editingPlotsPreservesIdentitySettingsAndRejectsStaleReviews(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var base = fixture.base();
+        level.setBlock(base.offset(4, 0, 4), Blocks.WATER.defaultBlockState(), 2);
+        var oldShape = new SettlementFarm(SettlementFarm.Shape.CIRCLE, List.of(base.offset(4, 0, 4), base.offset(7, 0, 4)));
+        var mix = new SettlementCropPlan(List.of(50, 50, 0, 0, 0, 0), false, 1);
+        var previous = SettlementFarmWork.plot(SettlementFarmTerrain.preview(level, oldShape, pos -> true), oldShape, null, mix);
+        previous = new SettlementArea(previous.id(), SettlementAreaType.FARM, "River crops", previous.min(), previous.max(), 7, true, mix, false, oldShape);
+        helper.assertTrue(fixture.town().putArea(fixture.owner().getUUID(), previous), "existing shaped plot is saved");
+        var shape = new SettlementFarm(base.offset(1, 0, 1), base.offset(7, 0, 7));
+        var session = new SettlementFarmSession();
+        var id = UUID.randomUUID();
+        var request = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(id, 1,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.PREVIEW, id, shape, previous.id(), oldShape, mix);
+        var review = session.request(fixture.owner(), fixture.town(), id, true, pos -> true, request);
+        helper.assertValueEqual(review.status(), com.jvn.villagerretaliation.network.SettlementFarmResultPayload.Status.PREVIEW, review.message());
+        helper.assertTrue(review.message().contains("planting cells"), "preview includes actual planting capacity");
+        var changed = new SettlementArea(previous.id(), previous.type(), "Renamed crops", previous.min(), previous.max(), previous.priority(),
+                previous.enabled(), mix, false, oldShape);
+        helper.assertTrue(fixture.town().putArea(fixture.owner().getUUID(), changed), "another manager changes plot metadata");
+        var confirm = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(id, 1,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.CONFIRM, review.token(), null);
+        helper.assertValueEqual(session.request(fixture.owner(), fixture.town(), id, true, pos -> true, confirm).status(),
+                com.jvn.villagerretaliation.network.SettlementFarmResultPayload.Status.REJECTED, "stale metadata prevents confirmation");
+        helper.assertTrue(SettlementFarmWork.start(fixture.owner(), fixture.town(),
+                SettlementFarmTerrain.preview(level, shape, pos -> true), shape, previous.id(), mix).isEmpty(), "explicit edit updates the plot");
+        var updated = fixture.town().areas().get(previous.id());
+        helper.assertValueEqual(updated.name(), changed.name(), "editing keeps the current name");
+        helper.assertValueEqual(updated.crops(), mix, "editing keeps crop percentages and reserve cycles");
+        helper.assertValueEqual(updated.priority(), 7, "editing keeps priority");
+        helper.assertValueEqual(updated.farm(), shape, "editing updates geometry using the same plot identity");
+        fixture.villager().discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void farmPacketsCarryCropPlansGeometryAndProgress(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var farm = new SettlementFarm(fixture.base(), fixture.base().offset(8, 0, 8));
+        var plan = new SettlementCropPlan(List.of(0, 100, 0, 0, 0, 0));
+        var request = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(UUID.randomUUID(), 3,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.PREVIEW, UUID.randomUUID(), farm, UUID.randomUUID(), farm, plan);
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), level.registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.STREAM_CODEC.encode(buffer, request);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.STREAM_CODEC.decode(buffer), request,
+                    "crop plan and original plot geometry round trip");
+            inventoryBucket(fixture);
+            helper.assertTrue(SettlementFarmWork.start(fixture.owner(), fixture.town(),
+                    SettlementFarmTerrain.preview(level, farm, pos -> true), farm, null, plan).isEmpty(), "single-crop plan starts");
+            var page = SettlementManagementService.snapshot(fixture.owner(), new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(
+                    fixture.town().id().value(), com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, 0, "", 1, false));
+            com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.encode(buffer, page);
+            var decoded = com.jvn.villagerretaliation.network.SettlementManagementPayload.STREAM_CODEC.decode(buffer);
+            helper.assertValueEqual(decoded, page, "farm progress survives project snapshot transport");
+            var project = (com.jvn.villagerretaliation.network.SettlementManagementPayload.Project) decoded.entries().getFirst();
+            helper.assertTrue(project.farm() != null && project.farm().waterTotal() == 1, "farm projects report irrigation separately");
+        } finally { buffer.release(); }
+        fixture.villager().discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void farmJobsSuspendAfterPermissionLossAndCancelWhileUnloaded(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        inventoryBucket(fixture);
+        var delegate = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "FarmDelegate"));
+        helper.assertTrue(fixture.town().setPermissions(fixture.owner().getUUID(), delegate.getUUID(),
+                java.util.EnumSet.of(SettlementPermission.VIEW, SettlementPermission.BUILD, SettlementPermission.STAFF)), "delegate can request farm work");
+        var farm = new SettlementFarm(fixture.base(), fixture.base().offset(8, 0, 8));
+        helper.assertTrue(SettlementFarmWork.start(delegate, fixture.town(), SettlementFarmTerrain.preview(level, farm, pos -> true), farm).isEmpty(),
+                "authorized delegate starts preparation");
+        var job = fixture.town().farmJobs().values().iterator().next();
+        var state = HiredWorkStateStore.state(fixture.villager());
+        var water = SettlementFarmWork.next(level, state);
+        tickAt(helper, fixture, water.position());
+        helper.assertTrue(fixture.town().setPermissions(fixture.owner().getUUID(), delegate.getUUID(),
+                java.util.EnumSet.of(SettlementPermission.VIEW)), "delegate loses work permissions");
+        helper.assertFalse(SettlementFarmJobService.blocker(fixture.villager(), state).isEmpty(), "permission loss blocks work immediately");
+        SettlementFarmJobService.tick(level, fixture.town());
+        helper.assertValueEqual(job.status(), SettlementProject.Status.PENDING, "unauthorized job suspends without losing progress");
+        helper.assertTrue(HiredTemporaryWorkService.queue(state) == null, "permission loss clears the active task");
+        helper.assertTrue(SettlementFarmJobService.configure(fixture.owner(), fixture.town(), job.id(), job.revision(), 5, false,
+                SettlementFarmJob.AUTOMATIC), "leader can authorize the remaining work");
+        helper.assertValueEqual(job.status(), SettlementProject.Status.ACTIVE, "leader authorization resumes preparation");
+        helper.assertValueEqual(job.done(true), 1, "renewed authorization retains irrigation progress");
+        SettlementBackgroundService.onUnloaded(fixture.villager());
+        fixture.villager().remove(net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK);
+        SettlementFarmJobService.tick(level, fixture.town());
+        helper.assertTrue(job.blocker().contains("unloaded"), "unloaded preparation explains its pause");
+        helper.assertTrue(SettlementFarmJobService.cancel(fixture.owner(), fixture.town(), job.id()), "unloaded job cancels");
+        helper.assertTrue(HiredTemporaryWorkService.queue(fixture.town().workers().get(fixture.villager().getUUID()).settings()) == null,
+                "unloaded worker cannot resume a cancelled task");
+        var saved = fixture.town().save(level.registryAccess());
+        var restored = SettlementRecord.load(saved, level.registryAccess(), () -> {});
+        helper.assertValueEqual(restored.farmJobs().get(job.id()).status(), SettlementProject.Status.CANCELLED, "unloaded cancellation survives saving");
+        saved.remove("FarmJobs");
+        helper.assertTrue(SettlementRecord.load(saved, level.registryAccess(), () -> {}).farmJobs().isEmpty(), "old towns without farm jobs remain loadable");
+        helper.succeed();
+    }
+
+    public static com.jvn.villagerretaliation.network.SettlementManagementPayload prepareClientJob(ServerPlayer owner,
+            SettlementFarm farm, SettlementCropPlan plan) {
+        var town = SettlementSavedData.get(owner.serverLevel()).settlements().stream()
+                .filter(candidate -> candidate.contains(farm.first())).findFirst().orElseThrow();
+        String error = SettlementFarmWork.start(owner, town, SettlementFarmTerrain.preview(owner.serverLevel(), farm, town::contains), farm, null, plan);
+        if (!error.isEmpty()) throw new IllegalStateException(error);
+        return SettlementManagementService.snapshot(owner, new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(
+                town.id().value(), com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, 0, "", 1, false));
+    }
+
+    public static com.jvn.villagerretaliation.network.SettlementManagementPayload.Area cancelClientJob(ServerPlayer owner, UUID id, boolean removePlot) {
+        var town = SettlementSavedData.get(owner.serverLevel()).settlements().stream().filter(candidate -> candidate.farmJobs().containsKey(id)).findFirst().orElseThrow();
+        var job = town.farmJobs().get(id);
+        if (job.unfinished() && !SettlementFarmJobService.cancel(owner, town, id)) throw new IllegalStateException("Client farm job did not cancel");
+        var area = (com.jvn.villagerretaliation.network.SettlementManagementPayload.Area) SettlementManagementService.snapshot(owner,
+                new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(town.id().value(),
+                        com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.AREAS, 0, job.area().toString(), 1, false)).entries().getFirst();
+        if (removePlot && !town.removeArea(owner.getUUID(), area.id())) throw new IllegalStateException("Client farm plot was not removed");
+        return area;
+    }
+
+    private static void inventoryBucket(Fixture fixture) {
+        var inventory = HiredJobInventory.getJobInventory(fixture.villager());
+        inventory.setItem(inventory.supplySlots().getFirst(), new ItemStack(Items.WATER_BUCKET));
+    }
+
     private static void tickAt(GameTestHelper helper, Fixture fixture, BlockPos position) {
         fixture.villager().setPos(position.above().getBottomCenter());
         var session = HiredWorkSession.active(helper.getLevel(), fixture.villager());

@@ -20,10 +20,11 @@ public final class SettlementBuildingService {
         var data = SettlementSavedData.get(level);
         var town = data.get(id).orElse(null);
         var previous = town == null ? null : town.areas().get(area.id());
-        if (previous != null && previous.farm() != null && area.type() == SettlementAreaType.FARM
-                && area.min().equals(previous.min()) && area.max().equals(previous.max()))
+        if (previous != null && previous.farm() != null && area.type() == SettlementAreaType.FARM) {
+            if (!area.min().equals(previous.min()) || !area.max().equals(previous.max())) return false;
             area = new SettlementArea(area.id(), area.type(), area.name(), area.min(), area.max(),
                     area.priority(), area.enabled(), area.crops(), false, previous.farm());
+        }
         if (town == null || !player.isAlive() || player.isSpectator()
                 || !town.dimension().equals(level.dimension().location())
                 || area.min().getY() < level.getMinBuildHeight() || area.max().getY() >= level.getMaxBuildHeight()
@@ -43,6 +44,7 @@ public final class SettlementBuildingService {
                     net.minecraft.core.registries.Registries.DIMENSION, town.dimension()));
             if (level != null && (town.autonomous()==null || AutonomousVillageService.loaded(level,town))) {
                 SettlementConstructionService.tickQueue(level, town);
+                SettlementFarmJobService.tick(level, town);
                 for (var area : town.workplaces()) {
                     if (area.enabled()) enqueue(level, town, area);
                 }

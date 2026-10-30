@@ -171,8 +171,17 @@ public final class SettlementEditScreen extends VillagerWindowScreen {
                 });
                 field("priority", x + half + 6, y + 38, 58, 1);
                 toggle(x + half + 70, y + 50, this.panelWidth - half - 70);
-                positionField("start", y + 76);
-                positionField("end", y + 114);
+                if (this.original instanceof SettlementManagementPayload.Area area && area.farm() != null) {
+                    var farmView = this.view != null ? this.view : SettlementViewClient.view(this.parent);
+                    var boundary = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Edit boundary / Expand"), ignored -> {
+                        this.minecraft.setScreen(farmView);
+                        farmView.editFarm(area);
+                    }).bounds(x, y + 88, this.panelWidth, 20).build());
+                    boundary.active = farmView != null && this.parent.permits(SettlementPermission.STAFF);
+                } else {
+                    positionField("start", y + 76);
+                    positionField("end", y + 114);
+                }
                 if (this.areaType == SettlementAreaType.FARM) {
                     addRenderableWidget(VillagerUi.buttonBuilder(text("crop_settings"), ignored -> {
                         this.cropSettings = true;

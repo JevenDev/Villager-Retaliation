@@ -145,6 +145,13 @@ public final class FarmingWorker extends AbstractBlockWorker {
     }
 
     private WorkResult prepareFarmland(ServerLevel level, Villager villager, HiredWorkContext context) {
+        String blocker = com.jvn.villagerretaliation.settlement.SettlementFarmJobService.blocker(villager, context.state());
+        var result = blocker.isEmpty() ? prepareFarmlandStep(level, villager, context) : WorkResult.idle(blocker);
+        com.jvn.villagerretaliation.settlement.SettlementFarmJobService.observe(level, villager, context.state(), result);
+        return result;
+    }
+
+    private WorkResult prepareFarmlandStep(ServerLevel level, Villager villager, HiredWorkContext context) {
         var step = com.jvn.villagerretaliation.settlement.SettlementFarmWork.next(level, context.state());
         if (step.finished()) {
             com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.finishAction(context.state(), HiredTemporaryTask.Kind.PREPARE_FARM);

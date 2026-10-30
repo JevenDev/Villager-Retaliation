@@ -134,6 +134,14 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeVarInt(project.assistants().size());
                 project.assistants().forEach(buffer::writeUUID);
             }
+            case ConfigureFarmJob job -> {
+                buffer.writeEnum(Kind.CONFIGURE_FARM_JOB);
+                buffer.writeUUID(job.job());
+                buffer.writeVarLong(job.revision());
+                buffer.writeVarInt(job.priority());
+                buffer.writeBoolean(job.paused());
+                buffer.writeUUID(job.worker());
+            }
             case CancelProject cancel -> {
                 buffer.writeEnum(Kind.CANCEL_PROJECT);
                 buffer.writeUUID(cancel.project());
@@ -317,6 +325,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 for (int index = 0; index < count; index++) assistants.add(buffer.readUUID());
                 yield new ConfigureProject(project, revision, priority, assistants);
             }
+            case CONFIGURE_FARM_JOB -> new ConfigureFarmJob(buffer.readUUID(), buffer.readVarLong(), buffer.readVarInt(), buffer.readBoolean(), buffer.readUUID());
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case REORDER_PROJECT -> new ReorderProject(buffer.readUUID(), buffer.readUUID(), buffer.readVarLong());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
@@ -537,11 +546,19 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT, REORDER_PROJECT
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT, REORDER_PROJECT, CONFIGURE_FARM_JOB
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment, ReorderProject {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment, ReorderProject, ConfigureFarmJob {
+    }
+
+    public record ConfigureFarmJob(UUID job, long revision, int priority, boolean paused, UUID worker) implements Command {
+        public ConfigureFarmJob {
+            Objects.requireNonNull(job);
+            Objects.requireNonNull(worker);
+            if (revision < 0 || priority < 0 || priority > 9) throw new IllegalArgumentException("Invalid farm job settings");
+        }
     }
 
     public record SaveRoute(UUID area, UUID resident, SettlementGuardOrder expected, SettlementGuardOrder route) implements Command {

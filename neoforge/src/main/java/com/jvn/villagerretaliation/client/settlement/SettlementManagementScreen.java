@@ -496,10 +496,12 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                         && this.snapshot.header() != null && this.snapshot.header().projectLimit() > 0);
                 action(1, "cancel_project", permits(SettlementPermission.BUILD)
                         && selected instanceof SettlementManagementPayload.Project project && (project.status() == SettlementProject.Status.ACTIVE || project.status() == SettlementProject.Status.PENDING));
-                action(2, "project_builder", selected != null);
-                action(3, "project_crew", selected instanceof SettlementManagementPayload.Project);
-                action(4, "policy.create", selected instanceof SettlementManagementPayload.Project);
-                this.actions[3].setMessage(Component.literal("Construction crew"));
+                action(2, selected instanceof SettlementManagementPayload.Project project && project.farm() != null ? "project_farmer" : "project_builder", selected != null);
+                action(3, selected instanceof SettlementManagementPayload.Project project && project.farm() != null ? "farm_job" : "project_crew",
+                        selected instanceof SettlementManagementPayload.Project);
+                action(4, "policy.create", selected instanceof SettlementManagementPayload.Project project && project.farm() == null);
+                this.actions[3].setMessage(Component.literal(selected instanceof SettlementManagementPayload.Project project && project.farm() != null
+                        ? "Manage preparation" : "Construction crew"));
 
             }
             case TOWNS -> action(0, "open", selected != null);
@@ -956,7 +958,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                     text(applicant.approved() ? "approved" : "awaiting_approval"));
             case SettlementManagementPayload.Order order -> text("order_row", enumText("direction", order.direction()), order.target(),
                     text(order.enabled() ? "enabled" : "disabled"));
-            case SettlementManagementPayload.Project project -> text("project_row",
+            case SettlementManagementPayload.Project project -> project.farm() != null ? farmProgress(project) : text("project_row",
                     project.status() == SettlementProject.Status.ACTIVE ? enumText("project_phase", project.phase())
                             : enumText("project_status", project.status()), project.placed(), project.total());
             case SettlementManagementPayload.History history -> text("history_time", history.gameTime() / 24_000L + 1L);
@@ -1099,6 +1101,15 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 } else if (this.entry instanceof SettlementManagementPayload.Depot depot) {
                     depot.targets().forEach(target -> lines.add(text("target_row", target.name(), target.count())));
                 } else if (this.entry instanceof SettlementManagementPayload.Project project) {
+                    if (project.farm() != null) {
+                        lines.add(farmProgress(project));
+                        lines.add(Component.literal("Farmer: " + project.builderName()));
+                        lines.add(Component.translatableWithFallback(project.blocker(), project.blocker()));
+                        lines.add(Component.literal("Manage preparation to change priority, pause, cancel or choose a farmer."));
+                        lines.add(Component.literal("Cancelling keeps completed soil, water and plot settings."));
+                        setTooltipForNextRenderPass(lines.stream().flatMap(line -> font.split(line, Math.min(300, SettlementManagementScreen.this.width - 24)).stream()).toList());
+                        return;
+                    }
                     lines.add(Component.literal(project.status() == SettlementProject.Status.PENDING
                             ? "Drag onto another pending project to change queue order."
                             : project.status() == SettlementProject.Status.ACTIVE ? "Active construction cannot be moved or paused. Cancel to stop."
@@ -1141,9 +1152,16 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
         return null;
     }
 
+    static Component farmProgress(SettlementManagementPayload.Project project) {
+        var farm = project.farm();
+        return Component.literal((farm.paused() ? "Paused" : project.status().name().toLowerCase(Locale.ROOT))
+                + " / soil " + farm.soilDone() + "/" + farm.soilTotal() + " / water " + farm.waterDone() + "/" + farm.waterTotal());
+    }
+
     static SettlementManagementActionPayload.ReorderProject pendingMove(SettlementManagementPayload.Project source,
                                                                         SettlementManagementPayload.Project target) {
-        if (source.status() != SettlementProject.Status.PENDING || target.status() != SettlementProject.Status.PENDING
+        if (source.farm() != null || target.farm() != null
+                || source.status() != SettlementProject.Status.PENDING || target.status() != SettlementProject.Status.PENDING
                 || source.id().equals(target.id()) || source.crewRevision() != target.crewRevision()) return null;
         return new SettlementManagementActionPayload.ReorderProject(source.id(), target.id(), source.crewRevision());
     }

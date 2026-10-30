@@ -1060,7 +1060,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.infrastructure.active()) {
             widgets.addAll(this.infrastructureButtons);
         } else if (this.farms.active()) {
-            for (int index : new int[]{3, 4, 5, 6, 7, 1, 0, 2}) widgets.add(this.farmButtons.get(index));
+            for (int index : new int[]{3, 4, 5, 6, 7, 8, 1, 0, 2}) widgets.add(this.farmButtons.get(index));
         } else if (this.paths.active()) {
             for (int index : new int[]{14, 0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
         } else if (this.walls.active()) {
@@ -1701,11 +1701,31 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         updatePlotActions();
     }
 
+    void editFarm(SettlementManagementPayload.Area area) {
+        beginFarm();
+        if (this.farms.active()) {
+            this.farms.begin(area);
+            this.popup = null;
+            this.nextPlacementSummary = 0;
+            updateFarmButtons();
+        }
+    }
+
+    void farmCrops(com.jvn.villagerretaliation.settlement.SettlementCropPlan crops) {
+        this.farms.crops(crops);
+        this.nextPlacementSummary = 0;
+        updateFarmButtons();
+    }
+
     void acceptFarm(com.jvn.villagerretaliation.network.SettlementFarmResultPayload payload) {
         this.nextPlacementSummary = 0;
         if (this.farms.accept(payload)) {
             this.guardFeedback = Component.literal(payload.message());
             enterMode(Mode.SELECT);
+            if (payload.area() != null) {
+                this.selectedArea = payload.area();
+                this.snapshots.refresh();
+            }
         }
         updateActions();
     }
@@ -1735,13 +1755,18 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.farms.removeNode();
             updateFarmButtons();
         })));
+        this.farmButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Crop plan"),
+                ignored -> {
+                    SettlementViewClient.openPanels(this);
+                    this.minecraft.setScreen(new SettlementFarmPlanScreen(this, this.farms.crops()));
+                })));
     }
 
     private void updateFarmButtons() {
         for (int i = 0; i < this.farmButtons.size(); i++) {
             var button = this.farmButtons.get(i);
             boolean polygon = this.farms.shape() == com.jvn.villagerretaliation.settlement.SettlementFarm.Shape.POLYGON;
-            button.visible = this.farms.active() && (i < 6 || polygon);
+            button.visible = this.farms.active() && (i < 6 || i == 8 || polygon);
             button.active = this.farms.active() && !this.farms.confirming() && (i != 0 || this.farms.canConfirm());
             if (i >= 3 && i <= 5) {
                 var shape = com.jvn.villagerretaliation.settlement.SettlementFarm.Shape.values()[i - 3];
@@ -3304,6 +3329,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void beginBoundsEdit(SettlementManagementPayload.Area area) {
         if (area == null || !permits(SettlementPermission.BUILD) || this.commands.busy()) return;
+        if (area.kind() == SettlementAreaType.FARM && area.farm() != null) {
+            if (permits(SettlementPermission.STAFF)) editFarm(area);
+            else editArea(area);
+            return;
+        }
         enterMode(Mode.EDIT_BOUNDS);
         this.editingArea = area;
         this.areaBounds = new SettlementViewBounds(area.min(), area.max()).box();
@@ -3487,11 +3517,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private static SettlementManagementPayload.Area projectArea(SettlementManagementPayload.Project project) {
-        return new SettlementManagementPayload.Area(project.id(), project.name(), SettlementAreaType.CONSTRUCTION,
+        return new SettlementManagementPayload.Area(project.id(), project.name(),
+                project.farm() == null ? SettlementAreaType.CONSTRUCTION : SettlementAreaType.FARM,
                 project.min(), project.max(), 5, true, 0, 0, project.status() == SettlementProject.Status.ACTIVE ? 1 : 0);
     }
 
     private static Component projectProgress(SettlementManagementPayload.Project project) {
+        if (project.farm() != null) return SettlementManagementScreen.farmProgress(project);
         return SettlementManagementScreen.text("project_row",
                 project.status() == SettlementProject.Status.ACTIVE ? SettlementManagementScreen.enumText("project_phase", project.phase())
                         : SettlementManagementScreen.enumText("project_status", project.status()), project.placed(), project.total());
@@ -3882,12 +3914,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     details.add(projectProgress(project));
                     details.add(boundsDetails(new SettlementViewBounds(project.min(), project.max())));
                     if (!project.blocker().isBlank()) {
-                        details.add(Component.translatableWithFallback("villagerretaliation.gui.settlement.project_blocker."
+                        if (project.farm() != null) details.add(Component.translatableWithFallback(project.blocker(), project.blocker()));
+                        else details.add(Component.translatableWithFallback("villagerretaliation.gui.settlement.project_blocker."
                                 + project.blocker().replace("interaction.work.builder.", ""), SettlementManagementScreen.text("project_blocked").getString()));
                     }
                     if (!project.missingMaterials().isBlank()) details.add(SettlementManagementScreen.text("project_missing", project.missingMaterials()));
                     actions.add(contextAction("manage_selection", ready, () -> this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this))));
-                    actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text("project_builder"), ready,
+                    actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text(project.farm() == null ? "project_builder" : "project_farmer"), ready,
                             () -> openManagement(Page.RESIDENTS, project.builder().toString())));
                     if (permits(SettlementPermission.BUILD)) {
                         actions.add(contextAction("draw_area", ready, () -> {
@@ -3900,6 +3933,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                     details.add(text("details_unavailable"));
                 } else {
                     details.add(Component.literal(area.name()));
+                    if (area.kind() == SettlementAreaType.FARM && permits(SettlementPermission.BUILD) && permits(SettlementPermission.STAFF)) {
+                        actions.add(new SettlementViewPopup.Action(Component.literal("Edit boundary / Expand"), ready, () -> editFarm(area)));
+                        actions.add(new SettlementViewPopup.Action(Component.literal("Reprepare plot"), ready, () -> editFarm(area)));
+                    }
                     details.add(SettlementManagementScreen.enumText("area", area.kind()));
                     details.add(boundsDetails(new SettlementViewBounds(area.min(), area.max())));
                     details.add(SettlementManagementScreen.text(area.enabled() ? "enabled" : "disabled"));

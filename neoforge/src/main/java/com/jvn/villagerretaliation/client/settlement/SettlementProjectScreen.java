@@ -37,9 +37,15 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
     private Button next;
     private Button save;
     private Component feedback = Component.empty();
+    private boolean farmPaused;
+    private UUID farmWorker;
+    private String farmWorkerName;
+    private Button farmPause;
+    private Button farmCancel;
+    private boolean openingFarmSettings;
 
     public SettlementProjectScreen(SettlementManagementScreen parent, SettlementManagementPayload.Project project, SettlementViewScreen view) {
-        super(Component.literal("Construction crew"));
+        super(Component.literal(project.farm() == null ? "Construction crew" : "Farm preparation"));
         this.parent = parent;
         this.previousSnapshot = parent.snapshot();
         this.project = project;
@@ -53,6 +59,12 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
 
     private void resetDraft() {
         this.priority = this.project.priority();
+        if (this.project.farm() != null) {
+            this.farmPaused = this.project.farm().paused();
+            this.farmWorker = this.project.farm().requested();
+            this.farmWorkerName = this.farmWorker.equals(com.jvn.villagerretaliation.settlement.SettlementFarmJob.AUTOMATIC)
+                    ? "Next available farmer" : this.project.builderName();
+        }
         this.assistants.clear();
         this.project.assistants().forEach(member -> this.assistants.put(member.id(), member.name()));
     }
@@ -65,6 +77,10 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
 
     @Override
     protected void init() {
+        if (this.project.farm() != null) {
+            initFarm();
+            return;
+        }
         initWindow(480, 344);
         this.priorityButton = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
             this.priority = (this.priority + 1) % 10;
@@ -111,6 +127,122 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
                 new SettlementManagementActionPayload.ConfigureProject(this.project.id(), this.project.crewRevision(), this.priority,
                         List.copyOf(this.assistants.keySet())))).bounds(this.left + this.panelWidth - 110, bottom - 20, 110, 20).build());
         updateRows();
+    }
+
+    private void initFarm() {
+        initWindow(480, 344);
+        int half = (this.panelWidth - 6) / 2;
+        int third = (this.panelWidth - 12) / 3;
+        this.priorityButton = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
+            this.priority = (this.priority + 1) % 10;
+            updateFarm();
+        }).bounds(this.left, this.top + 24, half, 20).build());
+        this.farmPause = addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
+            this.farmPaused = !this.farmPaused;
+            updateFarm();
+        }).bounds(this.left + half + 6, this.top + 24, half, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Choose farmer"), ignored -> {
+            this.choosing = true;
+            this.offset = 0;
+            request();
+            updateFarm();
+        }).bounds(this.left, this.top + 54, half, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Next available farmer"), ignored -> {
+            this.farmWorker = com.jvn.villagerretaliation.settlement.SettlementFarmJob.AUTOMATIC;
+            this.farmWorkerName = "Next available farmer";
+            this.choosing = false;
+            request();
+            updateFarm();
+        }).bounds(this.left + half + 6, this.top + 54, half, 20).build());
+        this.search = addRenderableWidget(new EditBox(this.font, this.left, this.top + 82, this.panelWidth - 60, 20, Component.literal("Find farmer")));
+        this.search.setMaxLength(64);
+        this.search.setValue(this.query);
+        this.search.setResponder(value -> { this.query = value; this.offset = 0; request(); });
+        this.rows.clear();
+        int count = Math.clamp((this.panelHeight - 188) / 22, 1, 4);
+        for (int row = 0; row < count; row++) {
+            int index = row;
+            this.rows.add(addRenderableWidget(VillagerUi.buttonBuilder(Component.empty(), ignored -> {
+                var resident = candidate(index);
+                if (!farmEditable() || resident == null || resident.baby() || !resident.roles().contains(HiredVillagerRole.FARMING)) return;
+                this.farmWorker = resident.id();
+                this.farmWorkerName = resident.name();
+                this.choosing = false;
+                request();
+                updateFarm();
+            }).bounds(this.left, this.top + 106 + row * 22, this.panelWidth, 20).build()));
+        }
+        this.previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> move(-this.rows.size()))
+                .bounds(this.left + this.panelWidth - 54, this.top + 82, 24, 20).build());
+        this.next = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(">"), ignored -> move(this.rows.size()))
+                .bounds(this.left + this.panelWidth - 26, this.top + 82, 24, 20).build());
+        this.farmCancel = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Cancel job"), ignored ->
+                this.parent.submit(new SettlementManagementActionPayload.CancelProject(this.project.id())))
+                .bounds(this.left, this.top + this.panelHeight - 76, third, 20).build());
+        this.farmCancel.setTooltip(Tooltip.create(Component.literal("Stops this job. Completed soil, placed water and the farm plot are kept.")));
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Farm settings"), ignored -> {
+            this.openingFarmSettings = true;
+            this.parent.navigate(Page.AREAS, 0, this.project.area().toString());
+        }).bounds(this.left + third + 6, this.top + this.panelHeight - 76, third, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Supplies"), ignored -> {
+            this.parent.navigate(Page.SUPPLIES, 0, "");
+            this.minecraft.setScreen(this.parent);
+        }).bounds(this.left + 2 * (third + 6), this.top + this.panelHeight - 76, third, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
+                .bounds(this.left, this.top + this.panelHeight - 20, 100, 20).build());
+        this.save = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Apply changes"), ignored ->
+                this.parent.submit(new SettlementManagementActionPayload.ConfigureFarmJob(this.project.id(), this.project.crewRevision(),
+                        this.priority, this.farmPaused, this.farmWorker)))
+                .bounds(this.left + this.panelWidth - 140, this.top + this.panelHeight - 20, 140, 20).build());
+        updateFarm();
+    }
+
+    private boolean farmEditable() {
+        return (this.project.status() == SettlementProject.Status.ACTIVE || this.project.status() == SettlementProject.Status.PENDING)
+                && this.parent.permits(SettlementPermission.BUILD) && this.parent.permits(SettlementPermission.STAFF)
+                && !this.parent.submitting() && !this.openingFarmSettings;
+    }
+
+    private void updateFarm() {
+        if (this.save == null) return;
+        var snapshot = this.parent.snapshot();
+        if (this.openingFarmSettings && snapshot.page() == Page.AREAS && snapshot.query().equals(this.project.area().toString())) {
+            var area = snapshot.entries().stream().filter(entry -> entry.id().equals(this.project.area()))
+                    .filter(SettlementManagementPayload.Area.class::isInstance).map(SettlementManagementPayload.Area.class::cast).findFirst().orElse(null);
+            if (area != null) {
+                this.openingFarmSettings = false;
+                this.minecraft.setScreen(new SettlementWorkerScreen(this.parent, area, this.view));
+                return;
+            }
+        }
+        if (snapshot.page() == Page.PROJECTS && snapshot.query().equals(this.project.id().toString())) {
+            var current = snapshot.entries().stream().filter(entry -> entry.id().equals(this.project.id()))
+                    .filter(SettlementManagementPayload.Project.class::isInstance).map(SettlementManagementPayload.Project.class::cast).findFirst().orElse(null);
+            if (current != null) {
+                boolean changed = current.crewRevision() != this.project.crewRevision();
+                this.project = current;
+                if (changed) { resetDraft(); this.feedback = Component.literal("Farm job changed. Review its current settings."); }
+            }
+        }
+        this.priorityButton.setMessage(Component.literal("Priority: " + this.priority));
+        this.priorityButton.active = farmEditable();
+        this.farmPause.setMessage(Component.literal(this.farmPaused ? "Resume on apply" : "Pause on apply"));
+        this.farmPause.active = farmEditable();
+        this.save.active = farmEditable();
+        this.farmCancel.active = farmEditable();
+        this.search.visible = this.choosing;
+        this.search.active = this.choosing && farmEditable();
+        this.previous.visible = this.choosing;
+        this.next.visible = this.choosing;
+        this.previous.active = ready() && this.offset > 0;
+        this.next.active = ready() && this.offset + this.rows.size() < snapshot.total();
+        for (int index = 0; index < this.rows.size(); index++) {
+            var resident = candidate(index);
+            var button = this.rows.get(index);
+            button.visible = this.choosing && resident != null;
+            button.active = farmEditable() && resident != null && !resident.baby() && resident.roles().contains(HiredVillagerRole.FARMING);
+            if (resident != null) button.setMessage(Component.literal((resident.id().equals(this.farmWorker) ? "[x] " : "[ ] ") + resident.name()));
+        }
     }
 
     private void move(int amount) {
@@ -163,6 +295,10 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
     }
 
     private void updateRows() {
+        if (this.project.farm() != null) {
+            updateFarm();
+            return;
+        }
         if (this.save == null) return;
         var snapshot = this.parent.snapshot();
         if (snapshot.page() == Page.PROJECTS && snapshot.query().equals(this.project.id().toString())) {
@@ -232,6 +368,25 @@ public final class SettlementProjectScreen extends VillagerWindowScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawString(this.font, this.title, this.left, this.top, 0xFFFFFF);
+        if (this.project.farm() != null) {
+            if (!this.choosing) {
+                var farm = this.project.farm();
+                graphics.drawString(this.font, "Soil: " + farm.soilDone() + "/" + farm.soilTotal()
+                        + "   Water: " + farm.waterDone() + "/" + farm.waterTotal(), this.left, this.top + 82, 0xCCCCCC);
+                graphics.drawString(this.font, this.font.plainSubstrByWidth("Farmer: " + this.project.builderName(), this.panelWidth),
+                        this.left, this.top + 96, 0xCCCCCC);
+                graphics.drawString(this.font, this.font.plainSubstrByWidth("Requested: " + this.farmWorkerName, this.panelWidth),
+                        this.left, this.top + 110, 0xCCCCCC);
+                var blocker = Component.translatableWithFallback(this.project.blocker(), this.project.blocker());
+                var lines = this.font.split(blocker, this.panelWidth);
+                int limit = Math.max(1, (this.panelHeight - 202) / this.font.lineHeight);
+                for (int line = 0; line < Math.min(limit, lines.size()); line++)
+                    graphics.drawString(this.font, lines.get(line), this.left, this.top + 124 + line * this.font.lineHeight, 0xE7C77A);
+            }
+            SettlementManagementScreen.renderFeedback(graphics, this.font, this.feedback, this.left, this.top + this.panelHeight - 44,
+                    this.panelWidth, mouseX, mouseY);
+            return;
+        }
         graphics.drawString(this.font, "Crew: " + (this.assistants.size() + 1) + " / 16", this.left + 138, this.top + 26, 0xAAAAAA);
         if (!this.choosing) graphics.drawString(this.font,
                 this.font.plainSubstrByWidth("Lead: " + this.project.builderName() + " (project payment)", this.panelWidth), this.left, this.top + 73, 0xCCCCCC);

@@ -32,7 +32,7 @@ final class SettlementConstructionOverlay {
 
     void tick(UUID session, Collection<Project> projects, SettlementViewWindow window, UUID selected, double x, double z, boolean enabled) {
         if (!enabled) { clear(); return; }
-        this.visible = projects.stream().filter(SettlementConstructionOverlay::unfinished)
+        this.visible = projects.stream().filter(project -> project.farm() == null).filter(SettlementConstructionOverlay::unfinished)
                 .filter(project -> window.chunks().stream().anyMatch(chunk -> chunk.getMaxBlockX() >= project.min().getX()
                         && chunk.getMinBlockX() <= project.max().getX() && chunk.getMaxBlockZ() >= project.min().getZ() && chunk.getMinBlockZ() <= project.max().getZ()))
                 .sorted(Comparator.comparing((Project project) -> !project.id().equals(selected)).thenComparingDouble(project ->

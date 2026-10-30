@@ -59,6 +59,24 @@ public record SettlementFarm(Shape shape, List<BlockPos> nodes) {
                 java.util.Arrays.stream(tag.getLongArray("Nodes")).mapToObj(BlockPos::of).toList());
     }
 
+    public static void writeOptional(net.minecraft.network.RegistryFriendlyByteBuf buffer, SettlementFarm farm) {
+        buffer.writeBoolean(farm != null);
+        if (farm == null) return;
+        buffer.writeEnum(farm.shape());
+        buffer.writeVarInt(farm.nodes().size());
+        farm.nodes().forEach(buffer::writeBlockPos);
+    }
+
+    public static SettlementFarm readOptional(net.minecraft.network.RegistryFriendlyByteBuf buffer) {
+        if (!buffer.readBoolean()) return null;
+        var shape = buffer.readEnum(Shape.class);
+        int count = buffer.readVarInt();
+        if (count < 0 || count > MAX_NODES) throw new IllegalArgumentException("Invalid farmland node count");
+        var nodes = new java.util.ArrayList<BlockPos>();
+        for (int i = 0; i < count; i++) nodes.add(buffer.readBlockPos());
+        return new SettlementFarm(shape, nodes);
+    }
+
     public BlockPos first() { return this.nodes.getFirst(); }
     public BlockPos second() { return this.nodes.get(1); }
     private static double radius(List<BlockPos> nodes) {

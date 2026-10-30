@@ -31,6 +31,8 @@ public final class SettlementRecord {
     private final Runnable dirty;
     private final Map<UUID, Set<SettlementPermission>> delegates = new LinkedHashMap<>();
     private final Map<UUID, SettlementArea> areas = new LinkedHashMap<>();
+    private final Map<UUID, SettlementFarmJob> farmJobs = new LinkedHashMap<>();
+
     private final Map<UUID, UUID> duties = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> guardOrders = new LinkedHashMap<>();
     private final Map<UUID, SettlementGuardOrder> temporaryGuardOrders = new LinkedHashMap<>();
@@ -697,6 +699,21 @@ public final class SettlementRecord {
         return true;
     }
 
+    public Map<UUID, SettlementFarmJob> farmJobs() { return Collections.unmodifiableMap(this.farmJobs); }
+
+    boolean addFarmJob(SettlementFarmJob job) {
+        if (this.farmJobs.containsKey(job.id()) || this.farmJobs.values().stream()
+                .anyMatch(existing -> existing.unfinished() && existing.area().equals(job.area()))) return false;
+        if (this.farmJobs.size() >= SettlementFarmJob.MAX_JOBS) {
+            var oldest = this.farmJobs.values().stream().filter(existing -> !existing.unfinished()).findFirst().orElse(null);
+            if (oldest == null) return false;
+            this.farmJobs.remove(oldest.id());
+        }
+        this.farmJobs.put(job.id(), job);
+        changed();
+        return true;
+    }
+
     public Map<UUID, SettlementProject> projects() {
         return this.construction.projects();
     }
@@ -1309,9 +1326,12 @@ public final class SettlementRecord {
     public record LeadershipOffer(UUID id, UUID issuer, UUID successor, long expiresAt) {
     }
 
-    boolean putArea(UUID actor, SettlementArea area) {
+    boolean canPutArea(UUID actor, SettlementArea area) {
         if (!permits(actor, SettlementPermission.BUILD) || area == null || area.wall()
                 || !owns(area)
+                || this.farmJobs.values().stream().anyMatch(job -> job.unfinished() && job.area().equals(area.id())
+                        && (area.type() != SettlementAreaType.FARM || !area.min().equals(this.areas.get(area.id()).min())
+                        || !area.max().equals(this.areas.get(area.id()).max()) || !java.util.Objects.equals(area.farm(), this.areas.get(area.id()).farm())))
                 || projects().values().stream().anyMatch(project -> project.workplace() != null
                         && !(project.status() == SettlementProject.Status.COMPLETED && project.order() != null && project.order().registers(area)
                                 && (project.site() == null || !project.site().pending()))
@@ -1333,6 +1353,11 @@ public final class SettlementRecord {
         var production = this.productionQueues.get(area.id());
         if (production != null && this.areas.get(area.id()) != null && this.areas.get(area.id()).type() != area.type()
                 && production.allocations().stream().anyMatch(com.jvn.villagerretaliation.interaction.work.production.HiredProductionQueue.Allocation::started)) return false;
+        return true;
+    }
+
+    boolean putArea(UUID actor, SettlementArea area) {
+        if (!canPutArea(actor, area)) return false;
         SettlementArea previous = this.areas.put(area.id(), area);
         if (previous != null && previous.type() != area.type()) {
             this.worksitePlans.remove(area.id());
@@ -1353,6 +1378,7 @@ public final class SettlementRecord {
 
     boolean removeArea(UUID actor, UUID area) {
         if (!permits(actor, SettlementPermission.BUILD)
+                || this.farmJobs.values().stream().anyMatch(job -> job.unfinished() && job.area().equals(area))
                 || projects().values().stream().anyMatch(project -> project.active() && project.area().equals(area))
                 || this.depots.values().stream().anyMatch(depot -> depot.area().equals(area))
                 || this.transferQueues.containsKey(area) && this.transferQueues.get(area).allocations().stream()
@@ -1512,6 +1538,9 @@ public final class SettlementRecord {
         });
         tag.put("EquipmentPlans", equipmentTags);
         this.construction.save(tag);
+        var farmJobTags = new ListTag();
+        this.farmJobs.values().forEach(job -> farmJobTags.add(job.save()));
+        tag.put("FarmJobs", farmJobTags);
         ListTag depotTags = new ListTag();
         this.depots.values().forEach(depot -> depotTags.add(depot.save(provider)));
         tag.put("Depots", depotTags);
@@ -1857,6 +1886,17 @@ public final class SettlementRecord {
             record.areas.put(area.id(), area);
         }
         record.construction.load(tag, record, record.radius);
+        if (tag.contains("FarmJobs") && (!(tag.get("FarmJobs") instanceof ListTag list)
+                || list.size() > SettlementFarmJob.MAX_JOBS || !list.isEmpty() && list.getElementType() != Tag.TAG_COMPOUND))
+            throw new IllegalArgumentException("Invalid farm jobs");
+        for (var raw : tag.getList("FarmJobs", Tag.TAG_COMPOUND)) {
+            var job = SettlementFarmJob.load((CompoundTag) raw);
+            var area = record.areas.get(job.area());
+            if (record.farmJobs.containsKey(job.id()) || job.unfinished() && (area == null || area.type() != SettlementAreaType.FARM
+                    || record.farmJobs.values().stream().anyMatch(existing -> existing.unfinished() && existing.area().equals(job.area()))))
+                throw new IllegalArgumentException("Duplicate farm job or missing farm plot");
+            record.farmJobs.put(job.id(), job);
+        }
         for (Tag raw : tag.getList("Duties", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) raw;
             if (!entry.hasUUID("Resident") || !entry.hasUUID("Area")) {

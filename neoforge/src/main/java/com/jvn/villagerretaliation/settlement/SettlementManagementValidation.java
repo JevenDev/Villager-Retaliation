@@ -8,6 +8,7 @@ final class SettlementManagementValidation {
 
     static String permission(ServerPlayer player, SettlementRecord town, Command command) {
         SettlementPermission permission = switch (command) {
+            case ConfigureFarmJob ignored -> SettlementPermission.STAFF;
             case Management ignored -> null;
             case Advance ignored -> null;
             case Release ignored -> null;
@@ -80,7 +81,14 @@ final class SettlementManagementValidation {
                     : player.getMainHandItem().isEmpty() ? "held_item_required" : "";
             case RemoveOrder order -> town.economy().orders().containsKey(order.id()) ? "" : "order_missing";
             case Applicant applicant -> town.applicants().containsKey(applicant.id()) ? "" : "applicant_missing";
-            case CancelProject cancel -> !town.knowsProject(cancel.project()) ? "project_missing"
+            case ConfigureFarmJob job -> !town.permits(player.getUUID(), SettlementPermission.BUILD) ? "permission_build"
+                    : !town.farmJobs().containsKey(job.job()) ? "project_missing"
+                    : !town.farmJobs().get(job.job()).unfinished() ? "project_finished"
+                    : town.farmJobs().get(job.job()).revision() != job.revision() ? "state_changed" : "";
+            case CancelProject cancel -> town.farmJobs().containsKey(cancel.project())
+                    ? !town.permits(player.getUUID(), SettlementPermission.STAFF) ? "permission_staff"
+                            : town.farmJobs().get(cancel.project()).unfinished() ? "" : "project_finished"
+                    : !town.knowsProject(cancel.project()) ? "project_missing"
                     : town.project(cancel.project()) == null || !town.project(cancel.project()).unfinished() ? "project_finished" : "";
             case ReorderProject project -> town.constructionQueueRevision() != project.revision() ? "state_changed"
                     : town.project(project.project()) == null || town.project(project.before()) == null ? "project_missing"
