@@ -408,6 +408,89 @@ public final class SettlementLifecycleGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_farm_lifecycle")
+    public static void mergerPreservesPausedFarmProgressAndReturningTaskAuthority(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var source = fixture.town();
+        var target = neighbor(helper, source, source.center().east(48));
+        var job = farmJob(helper, source, UUID.randomUUID());
+        var farmer = EntityType.VILLAGER.create(level);
+        farmer.setNoAi(true);
+        farmer.setPos(source.center().above().getBottomCenter());
+        farmer.setVillagerData(farmer.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.FARMER));
+        VillageAllegianceApi.assignKnown(level, farmer, source.id(), AllegianceAssignmentSource.EXPLICIT_API);
+        helper.assertTrue(source.assignDuty(farmer.getUUID(), job.area()), "the farmer owns the preparation plot");
+        SettlementWorkforceService.reconcile(level, farmer);
+        var area = source.areas().get(job.area());
+        var state = com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(farmer);
+        new com.jvn.villagerretaliation.interaction.work.HiredTemporaryQueue(source.id().value(), source.leader(), area.id(),
+                com.jvn.villagerretaliation.interaction.HiredVillagerRole.FARMING, area.min(), area.max(),
+                List.of(new com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask(job.id(),
+                        com.jvn.villagerretaliation.interaction.work.HiredTemporaryTask.Kind.PREPARE_FARM, area.min(), area.max(), 1))).store(state);
+        state.put(SettlementFarmWork.TAG, job.work().copy());
+        job.activate(farmer.getUUID());
+        job.configure(source.leader(), 8, true, farmer.getUUID());
+        source.recordWorker(SettlementWorkerState.capture(level, farmer, new SettlementWorkforceService.Duty(source, area), level.getGameTime()));
+        var waiting = farmJob(helper, target, UUID.randomUUID());
+        var preview = preview(fixture, SettlementLifecycleService.Operation.MERGE, target, null);
+        helper.assertTrue(preview.token() != null, "farm jobs permit a settlement merge: " + preview.blockers());
+        helper.assertValueEqual(confirm(fixture, preview), "", "farm jobs merge");
+        var merged = SettlementSavedData.get(level).get(target.id()).orElseThrow();
+        var retained = merged.farmJobs().get(job.id());
+        helper.assertValueEqual(merged.farmJobs().size(), 2, "both towns retain their distinct farm jobs");
+        helper.assertTrue(retained.paused() && retained.status() == SettlementProject.Status.ACTIVE, "paused active work remains paused");
+        helper.assertValueEqual(retained.done(true), 1, "completed irrigation survives the merge");
+        helper.assertValueEqual(retained.done(false), 0, "unfinished soil is not replayed or skipped");
+        helper.assertValueEqual(retained.worker(), farmer.getUUID(), "the active farmer remains assigned");
+        helper.assertValueEqual(merged.farmJobs().get(waiting.id()).status(), SettlementProject.Status.PENDING, "the target queue is retained");
+        SettlementFarmJobService.reconcile(farmer);
+        helper.assertValueEqual(com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(state).owner(), target.id().value(),
+                "returning farm orders use the canonical merged town");
+        SettlementBackgroundService.onUnloaded(farmer);
+        var restored = SettlementSavedData.load(SettlementSavedData.get(level).save(new CompoundTag(), level.registryAccess()), level.registryAccess())
+                .get(target.id()).orElseThrow();
+        helper.assertTrue(restored.farmJobs().get(job.id()).paused(), "merged pause state survives saving");
+        helper.assertValueEqual(com.jvn.villagerretaliation.interaction.HiredTemporaryWorkService.queue(
+                restored.workers().get(farmer.getUUID()).settings()).owner(), target.id().value(), "the canonical task authority is saved");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm_lifecycle")
+    public static void mergerRejectsDuplicatedFarmJobIdentities(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var source = fixture.town();
+        var target = neighbor(helper, source, source.center().east(48));
+        var id = UUID.randomUUID();
+        farmJob(helper, source, id);
+        farmJob(helper, target, id);
+        helper.assertTrue(preview(fixture, SettlementLifecycleService.Operation.MERGE, target, null).token() == null,
+                "a duplicate preparation identity rejects the merge");
+        helper.assertValueEqual(source.farmJobs().size(), 1, "rejected merge retains source work");
+        helper.assertValueEqual(target.farmJobs().size(), 1, "rejected merge retains target work");
+        helper.succeed();
+    }
+
+    private static SettlementFarmJob farmJob(GameTestHelper helper, SettlementRecord town, UUID id) {
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Merge field", town.center(), town.center().offset(2, 2, 2), 5, true);
+        helper.assertTrue(town.putArea(town.leader(), area), "merge fixture registers the farm plot");
+        var work = new CompoundTag();
+        work.putUUID("Task", id);
+        var cells = new net.minecraft.nbt.ListTag();
+        for (int i = 0; i < 2; i++) {
+            var cell = new CompoundTag();
+            cell.putLong("Pos", town.center().east(i).asLong());
+            cell.putBoolean("Water", i == 0);
+            cell.putBoolean("Done", i == 0);
+            cell.put("Soil", net.minecraft.nbt.NbtUtils.writeBlockState(Blocks.DIRT.defaultBlockState()));
+            cells.add(cell);
+        }
+        work.put("Cells", cells);
+        var job = new SettlementFarmJob(area.id(), town.leader(), area.min(), area.max(), 5, work);
+        helper.assertTrue(town.addFarmJob(job), "merge fixture queues farm work");
+        return job;
+    }
+
     private static Fixture fixture(GameTestHelper helper) {
         var level = helper.getLevel();
         var origin = helper.absolutePos(BlockPos.ZERO);

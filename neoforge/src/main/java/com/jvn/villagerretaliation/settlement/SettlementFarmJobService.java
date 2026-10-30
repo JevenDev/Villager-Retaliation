@@ -49,7 +49,17 @@ public final class SettlementFarmJobService {
         if (job == null) return;
         var town = SettlementWorkforceService.home((ServerLevel) villager.level(), villager).orElseThrow();
         if (job.unfinished() && job.status() == SettlementProject.Status.ACTIVE && job.worker().equals(villager.getUUID())
-                && job.area().equals(town.duties().get(villager.getUUID())) && authorized(town, job)) return;
+                && job.area().equals(town.duties().get(villager.getUUID())) && authorized(town, job)) {
+            var queue = HiredTemporaryWorkService.queue(state);
+            if (!queue.owner().equals(town.id().value()) && queue.current().id().equals(job.id())
+                    && com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get((ServerLevel) villager.level())
+                            .canonical(new com.jvn.villagerretaliation.allegiance.VillageAllegianceId(queue.owner())).filter(town.id()::equals).isPresent()) {
+                new HiredTemporaryQueue(town.id().value(), queue.issuer(), queue.worksite(), queue.role(),
+                        queue.homeMin(), queue.homeMax(), queue.tasks()).store(state);
+                HiredWorkSession.invalidate(villager);
+            }
+            return;
+        }
         HiredTemporaryWorkService.clearOrders(state);
         com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredWorkSession.invalidate(villager);

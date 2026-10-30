@@ -42,7 +42,7 @@ final class SettlementLifecycleMerge {
                 case "Arrivals" -> append(list, into, key, entry -> {
                     if (!entry.contains("Origin")) entry.putLong("Origin", source.center().asLong());
                 });
-                case "History", "Areas", "Duties", "GuardOrders", "TemporaryGuardOrders", "WorkerSettings",
+                case "History", "Areas", "FarmJobs", "Duties", "GuardOrders", "TemporaryGuardOrders", "WorkerSettings",
                      "WorksitePlans", "ProductionQueues", "TransferQueues", "SupplyPolicies", "WorkerPools",
                      "WorkerPoolCooldowns", "EquipmentPlans", "Depots", "Surveys", "ManualDuties", "ManualDutyRevisions",
                      "ResidentCare", "Homes", "Courtships", "HomeReleases", "Workers", "Livestock", "HuntingTargets",
