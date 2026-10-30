@@ -89,6 +89,15 @@ final class SettlementPathClientChecks {
             button("Undo").onPress();
             button("Redo").onPress();
             require(editor.draft().path().style() == com.jvn.villagerretaliation.settlement.SettlementPath.Style.NATURAL, "redo restores the natural style");
+            button("Dirt path").onPress();
+            require(editor.draft().path().material() == com.jvn.villagerretaliation.settlement.SettlementPath.Material.GRAVEL, "surface control selects gravel roads");
+            button("Gravel road").onPress();
+            button("Cobblestone road").onPress();
+            require(editor.draft().path().material() == com.jvn.villagerretaliation.settlement.SettlementPath.Material.MIXED, "surface control selects mixed roads");
+            button("Undo").onPress();
+            require(editor.draft().path().material() == com.jvn.villagerretaliation.settlement.SettlementPath.Material.COBBLESTONE, "undo restores road surface");
+            button("Redo").onPress();
+            require(editor.draft().path().material() == com.jvn.villagerretaliation.settlement.SettlementPath.Material.MIXED, "redo restores mixed road");
             this.phase++;
             this.ticks = 0;
         } else if (this.phase == 3 && this.ticks > 3) {
@@ -164,6 +173,7 @@ final class SettlementPathClientChecks {
             chooseBuildTool("Path");
             require(!editor.draft().path().branch(), "the path tool also handles branching");
             require(editor.draft().path().width() == 4, "settings survive confirmation");
+            require(editor.draft().path().material() == com.jvn.villagerretaliation.settlement.SettlementPath.Material.MIXED, "road surface survives confirmation");
             require(editor.draft().smoothMode(), "curve mode survives confirmation");
             click(this.start);
             require(editor.draft().path().nodes().size() == 1, "Path starts on existing path terrain");

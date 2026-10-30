@@ -55,16 +55,19 @@ public final class SettlementPathSession {
             return result(request, Status.REJECTED, List.of(), "Path construction requires a settlement and its builder crew");
         String error = SettlementPathTerrain.order(current).commission(player, town, this.token);
         if (!error.isEmpty()) return refresh(level, allowed, request, error);
+        String message = this.path.material().label() + " construction queued. "
+                + (this.path.material() == SettlementPath.Material.DIRT ? "Builders need shovels. " : "Builders need the quoted road materials. ")
+                + "Cancelling keeps finished work";
         this.preview = null;
         this.path = null;
-        this.result = result(request, Status.APPLIED, List.of(), "Path construction queued. Builders need shovels. Cancelling keeps finished work");
+        this.result = result(request, Status.APPLIED, List.of(), message);
         return this.result;
     }
 
     private SettlementPathResultPayload refresh(Level level, Predicate<BlockPos> allowed, SettlementPathRequestPayload request, String message) {
         this.preview = SettlementPathTerrain.preview(level, this.path, allowed);
         this.token = UUID.randomUUID();
-        if (message.isEmpty()) message = "Confirm queues builder work. Shovels required, no construction materials";
+        if (message.isEmpty()) message = "Confirm queues builder work. " + this.preview.materials();
         this.result = result(request, this.preview.error().isEmpty() ? Status.PREVIEW : Status.REJECTED,
                 this.preview.cells().stream().map(cell -> new SettlementPathResultPayload.Cell(cell.position(), cell.kind())).toList(),
                 this.preview.error().isEmpty() ? message : this.preview.error());

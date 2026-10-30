@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public record HiredEquipmentNeed(Kind kind, BlockState target) implements Predicate<ItemStack> {
@@ -43,12 +44,14 @@ public record HiredEquipmentNeed(Kind kind, BlockState target) implements Predic
     public static HiredEquipmentNeed clearing(BlockState target) { return new HiredEquipmentNeed(Kind.CLEARING, target); }
 
     public static HiredEquipmentNeed placement(BuilderStructureScanner.BuilderToolAction action) {
-        return of(switch (action) {
-            case AXE_STRIP -> Kind.STRIPPING;
-            case SHOVEL_FLATTEN -> Kind.FLATTENING;
-            case HOE_TILL -> Kind.TILLING;
+        return switch (action) {
+            case AXE_STRIP -> of(Kind.STRIPPING);
+            case SHOVEL_FLATTEN -> of(Kind.FLATTENING);
+            case HOE_TILL -> of(Kind.TILLING);
+            case SHOVEL_PAVE -> clearing(Blocks.DIRT.defaultBlockState());
+            case PICKAXE_PAVE -> clearing(Blocks.COBBLESTONE.defaultBlockState());
             case NONE -> throw new IllegalArgumentException("Placement does not need equipment");
-        });
+        };
     }
 
     @Override

@@ -20,6 +20,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +30,7 @@ final class SettlementConstructionOrder {
     private final String label;
     private final List<Cell> cells;
     private final BuilderConstructionCost cost;
+    private final boolean prepareGround;
     private final List<SettlementWallsSavedData.Entry> originals;
     private final List<SettlementWallsSavedData.Entry> replacements;
     private final SettlementArea completedArea;
@@ -38,6 +40,12 @@ final class SettlementConstructionOrder {
     SettlementConstructionOrder(String label, List<Cell> cells, BuilderConstructionCost cost,
                                 List<SettlementWallsSavedData.Entry> originals,
                                 List<SettlementWallsSavedData.Entry> replacements, SettlementArea completedArea) {
+        this(label, cells, cost, originals, replacements, completedArea, false);
+    }
+
+    SettlementConstructionOrder(String label, List<Cell> cells, BuilderConstructionCost cost,
+                                List<SettlementWallsSavedData.Entry> originals,
+                                List<SettlementWallsSavedData.Entry> replacements, SettlementArea completedArea, boolean prepareGround) {
         if (label == null || label.isBlank() || label.length() > 48 || cells.isEmpty() || cells.size() > SettlementWall.MAX_BLOCKS)
             throw new IllegalArgumentException("Invalid construction order");
         var positions = new HashSet<BlockPos>();
@@ -49,6 +57,7 @@ final class SettlementConstructionOrder {
         this.label = label;
         this.cells = List.copyOf(cells);
         this.cost = cost;
+        this.prepareGround = prepareGround;
         this.originals = List.copyOf(originals);
         this.replacements = List.copyOf(replacements);
         this.completedArea = completedArea;
@@ -72,7 +81,7 @@ final class SettlementConstructionOrder {
         if (this.plan != null) return this.plan;
         var origin = origin();
         var blocks = this.cells.stream().map(cell -> new BuilderStructureScanner.BuildBlock(cell.position().subtract(origin),
-                cell.after(), null, new ItemStack(cell.after().getBlock()), BuilderStructureScanner.toolAction(cell.after()), cell.before())).toList();
+                cell.after(), null, new ItemStack(cell.after().getBlock()), toolAction(cell), cell.before())).toList();
         var max = new BlockPos(blocks.stream().mapToInt(c -> c.localPos().getX()).max().orElseThrow(),
                 blocks.stream().mapToInt(c -> c.localPos().getY()).max().orElseThrow(),
                 blocks.stream().mapToInt(c -> c.localPos().getZ()).max().orElseThrow());
@@ -80,6 +89,12 @@ final class SettlementConstructionOrder {
                 "Construction", this.label, 0, this.cost, "");
         return this.plan = new BuilderStructureScanner.StructurePlan(entry, Rotation.NONE, max.offset(1, 1, 1), BlockPos.ZERO, max,
                 blocks, BuilderStructureScanner.materialRequirements(this.cells.stream().map(Cell::after).toList()), 0, List.of(), wall());
+    }
+
+    private BuilderStructureScanner.BuilderToolAction toolAction(Cell cell) {
+        if (!this.prepareGround || cell.after().isAir() || cell.before().isAir()) return BuilderStructureScanner.toolAction(cell.after());
+        return cell.before().is(BlockTags.MINEABLE_WITH_PICKAXE) ? BuilderStructureScanner.BuilderToolAction.PICKAXE_PAVE
+                : BuilderStructureScanner.BuilderToolAction.SHOVEL_PAVE;
     }
 
     boolean available(int index, SettlementConstructionCrew crew) {
@@ -177,6 +192,7 @@ final class SettlementConstructionOrder {
         tag.putInt("Version", 1);
         tag.putString("Label", this.label);
         tag.putBoolean("Recorded", this.recorded);
+        if (this.prepareGround) tag.putBoolean("PrepareGround", true);
         tag.putString("CostMode", this.cost.mode().name());
         var ingredients = new ListTag();
         for (var ingredient : this.cost.ingredients()) {
@@ -221,7 +237,8 @@ final class SettlementConstructionOrder {
         var order = new SettlementConstructionOrder(tag.getString("Label"), cells,
                 new BuilderConstructionCost(BuilderConstructionCost.Mode.valueOf(tag.getString("CostMode")), ingredients),
                 SettlementWallsSavedData.decode(tag.getCompound("Originals")), SettlementWallsSavedData.decode(tag.getCompound("Replacements")),
-                tag.contains("CompletedArea", Tag.TAG_COMPOUND) ? SettlementArea.load(tag.getCompound("CompletedArea")) : null);
+                tag.contains("CompletedArea", Tag.TAG_COMPOUND) ? SettlementArea.load(tag.getCompound("CompletedArea")) : null,
+                tag.getBoolean("PrepareGround"));
         order.recorded = tag.getBoolean("Recorded");
         return order;
     }

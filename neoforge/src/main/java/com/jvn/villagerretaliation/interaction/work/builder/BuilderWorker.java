@@ -2117,7 +2117,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
     private static String toolActionLabel(BuilderStructureScanner.BuilderToolAction action) {
         return switch (action) {
             case AXE_STRIP -> "axe";
-            case SHOVEL_FLATTEN -> "shovel";
+            case SHOVEL_FLATTEN, SHOVEL_PAVE -> "shovel";
+            case PICKAXE_PAVE -> "pickaxe";
             case HOE_TILL -> "hoe";
             case NONE -> "tool";
         };

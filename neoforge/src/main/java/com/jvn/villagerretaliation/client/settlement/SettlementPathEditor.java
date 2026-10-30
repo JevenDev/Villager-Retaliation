@@ -20,6 +20,7 @@ public final class SettlementPathEditor {
     private SettlementPathDraft draft;
     private int width = 3;
     private SettlementPath.Style style = SettlementPath.Style.CLEAN;
+    private SettlementPath.Material material = SettlementPath.Material.DIRT;
     private boolean smooth;
     private long revision;
     private int version = -1;
@@ -58,7 +59,7 @@ public final class SettlementPathEditor {
     public void begin(boolean branch) {
         if (this.confirming) return;
         rememberSettings();
-        this.draft = new SettlementPathDraft(this.width, this.style, UUID.randomUUID().getLeastSignificantBits(), branch, this.smooth);
+        this.draft = new SettlementPathDraft(this.width, this.style, this.material, UUID.randomUUID().getLeastSignificantBits(), branch, this.smooth);
         this.planned = null;
         this.footprint = null;
         this.version = -1;
@@ -70,7 +71,7 @@ public final class SettlementPathEditor {
         this.hover = null;
         this.cells = List.of();
         this.localCells = List.of();
-        this.feedback = branch ? "Select an existing dirt path to branch from" : "Click valid ground to start a path";
+        this.feedback = branch ? "Select an existing path or road to branch from" : "Click valid ground to start a path";
     }
     public void cancel(UUID session, Consumer<SettlementPathRequestPayload> send) {
         if (!active() || this.confirming) return;
@@ -90,6 +91,7 @@ public final class SettlementPathEditor {
         if (!active()) return;
         this.width = this.draft.path().width();
         this.style = this.draft.path().style();
+        this.material = this.draft.path().material();
         this.smooth = this.draft.smoothMode();
     }
     public void stopExtending() {
@@ -232,11 +234,11 @@ public final class SettlementPathEditor {
         long outside = this.cells.stream().filter(cell -> cell.kind() == SettlementPathTerrain.Kind.OUTSIDE).count();
         long unavailable = this.cells.stream().filter(cell -> cell.kind() == SettlementPathTerrain.Kind.UNAVAILABLE).count();
         String state = this.draft.path().nodes().isEmpty()
-                ? this.draft.path().branch() ? "Select an existing dirt path to branch from" : "Click valid ground to start. Click-drag draws a curve."
+                ? this.draft.path().branch() ? "Select an existing path or road to branch from" : "Click valid ground to start. Click-drag draws a curve."
                 : this.feedback.isEmpty() ? this.draft.path().closed() ? "Loop closed. Edit nodes or Confirm. Cancel discards the draft."
                         : !this.draft.extending() ? "Draft kept. Extend resumes drawing. Confirm queues builder work. Cancel discards it."
                         : "Click adds a node. Click the first node to close a loop. Escape stops extending. Cancel discards." : this.feedback;
-        return (this.draft.path().branch() ? "Branch" : "Path") + " / " + this.draft.path().nodes().size() + "/64 nodes / "
+        return (this.draft.path().branch() ? "Branch" : this.draft.path().material().label()) + " / " + this.draft.path().nodes().size() + "/64 nodes / "
                 + converted + " convert / " + skipped + " skipped" + (outside == 0 ? "" : " / " + outside + " outside")
                 + (unavailable == 0 ? "" : " / " + unavailable + " unloaded") + "\n" + state;
     }

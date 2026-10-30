@@ -1062,7 +1062,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         } else if (this.farms.active()) {
             for (int index : new int[]{3, 4, 5, 6, 7, 1, 0, 2}) widgets.add(this.farmButtons.get(index));
         } else if (this.paths.active()) {
-            for (int index : new int[]{0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
+            for (int index : new int[]{14, 0, 1, 2, 5, 3, 4, 13, 8, 9}) widgets.add(this.pathButtons.get(index));
         } else if (this.walls.active()) {
             for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6})
                 widgets.add(index < 0 ? this.wallSpacing : this.wallButtons.get(index));
@@ -1801,9 +1801,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (point == null) { this.paths.feedback("No loaded ground at this position"); return; }
         if (draft.path().nodes().isEmpty()) {
             var state = this.minecraft.level.getBlockState(BlockPos.containing(point));
-            boolean existing = state.is(net.minecraft.world.level.block.Blocks.DIRT_PATH);
-            if (draft.path().branch() ? !existing : !existing && !com.jvn.villagerretaliation.settlement.SettlementPathTerrain.soil(state)) {
-                this.paths.feedback(draft.path().branch() ? "Start the branch on an existing dirt path" : "Start on valid soil");
+            boolean existing = com.jvn.villagerretaliation.settlement.SettlementPathTerrain.road(state);
+            if (draft.path().branch() ? !existing : !com.jvn.villagerretaliation.settlement.SettlementPathTerrain.ground(state, draft.path().material()) && !existing) {
+                this.paths.feedback(draft.path().branch() ? "Start the branch on an existing path or road" : "Start on valid soil");
                 return;
             }
         }
@@ -1813,7 +1813,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void initPathButtons() {
         this.pathButtons.clear();
-        String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Lines", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit"};
+        String[] labels = {"Width -", "+", "Clean", "Undo", "Redo", "Lines", "Insert", "Remove", "Confirm", "Cancel", "Refresh", "Close loop", "Extend", "Edit", "Dirt path"};
         for (int i = 0; i < labels.length; i++) {
             int action = i;
             this.pathButtons.add(addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal(labels[i]), ignored -> pathAction(action)).shortcut(i == 8 ? "Enter" : i == 3 ? "Ctrl+Z" : i == 4 ? "Ctrl+Y" : "")));
@@ -1847,6 +1847,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         edit.getX(), edit.getY() - 96);
                 refreshPopup();
             }
+            case 14 -> {
+                var materials = com.jvn.villagerretaliation.settlement.SettlementPath.Material.values();
+                draft.material(materials[(path.material().ordinal() + 1) % materials.length]);
+            }
             default -> throw new IllegalArgumentException("Unknown path action");
         }
         this.paths.hover(null);
@@ -1865,6 +1869,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             if (i == 0) { button.setMessage(Component.literal("Width " + path.width() + " -")); button.active &= path.width() > 1; }
             if (i == 1) button.active &= path.width() < 7;
             if (i == 2) button.setMessage(Component.literal(path.style() == com.jvn.villagerretaliation.settlement.SettlementPath.Style.CLEAN ? "Clean" : "Natural"));
+            if (i == 14) button.setMessage(Component.literal(path.material().label()));
             if (i == 3) button.active &= draft.canUndo();
             if (i == 4) button.active &= draft.canRedo();
             if (i == 5) button.setMessage(Component.literal(draft.smoothMode() ? "Curves" : "Lines"));
@@ -1886,7 +1891,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 case 1 -> "Increase path width";
                 case 5 -> "Choose lines or curves. In Curves mode, click any node to edit its handles. This choice is remembered.";
                 case 6 -> "Place the next node after the selected node.";
-                case 8 -> "Apply all previewed path blocks. Placement cannot be undone.";
+                case 8 -> "Queue the reviewed path or road for builders. Cancelling keeps finished work.";
+                case 14 -> "Choose dirt path, gravel road, cobblestone road or a mix of gravel, cobblestone and andesite. This choice is remembered.";
                 case 10 -> "Review the latest terrain after loading chunks or changing the view.";
                 case 11 -> "Connect the last node back to the first, or reopen the loop.";
                 case 12 -> "Stop or resume adding nodes while keeping the draft. Escape stops extending.";

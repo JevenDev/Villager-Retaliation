@@ -7,7 +7,7 @@ import java.util.List;
 import net.minecraft.world.phys.Vec3;
 
 public final class SettlementPathDraft {
-    private record State(List<SettlementPath.Node> nodes, int width, SettlementPath.Style style, int selected, boolean smooth, boolean closed) {}
+    private record State(List<SettlementPath.Node> nodes, int width, SettlementPath.Style style, SettlementPath.Material material, int selected, boolean smooth, boolean closed) {}
     private final List<SettlementPath.Node> nodes = new ArrayList<>();
     private final ArrayDeque<State> undo = new ArrayDeque<>();
     private final ArrayDeque<State> redo = new ArrayDeque<>();
@@ -15,6 +15,7 @@ public final class SettlementPathDraft {
     private final boolean branch;
     private int width;
     private SettlementPath.Style style;
+    private SettlementPath.Material material = SettlementPath.Material.DIRT;
     private int selected = -1;
     private int version;
     private State gesture;
@@ -35,7 +36,11 @@ public final class SettlementPathDraft {
         this.seed = seed;
         this.branch = branch;
     }
-    public SettlementPath path() { return new SettlementPath(this.nodes, this.width, this.style, SettlementPath.Material.DIRT, this.seed, this.branch, this.closed); }
+    public SettlementPathDraft(int width, SettlementPath.Style style, SettlementPath.Material material, long seed, boolean branch, boolean smooth) {
+        this(width, style, seed, branch, smooth);
+        this.material = java.util.Objects.requireNonNull(material);
+    }
+    public SettlementPath path() { return new SettlementPath(this.nodes, this.width, this.style, this.material, this.seed, this.branch, this.closed); }
     public int selected() { return this.selected; }
     public int version() { return this.version; }
     public boolean dragging() { return this.gesture != null; }
@@ -56,22 +61,23 @@ public final class SettlementPathDraft {
     }
     public SettlementPath preview(Vec3 point) {
         var preview = appended(point);
-        return new SettlementPath(preview, this.width, this.style, SettlementPath.Material.DIRT, this.seed, this.branch, this.closed);
+        return new SettlementPath(preview, this.width, this.style, this.material, this.seed, this.branch, this.closed);
     }
     public SettlementPath loopPreview() {
-        return new SettlementPath(this.nodes, this.width, this.style, SettlementPath.Material.DIRT, this.seed, this.branch, true);
+        return new SettlementPath(this.nodes, this.width, this.style, this.material, this.seed, this.branch, true);
     }
     public boolean canUndo() { return !this.undo.isEmpty() && !dragging(); }
     public boolean canRedo() { return !this.redo.isEmpty() && !dragging(); }
     public void inserting(boolean value) { this.inserting = value; }
     public void select(int index) { this.selected = index >= 0 && index < this.nodes.size() ? index : -1; }
 
-    private State state() { return new State(List.copyOf(this.nodes), this.width, this.style, this.selected, this.smooth, this.closed); }
+    private State state() { return new State(List.copyOf(this.nodes), this.width, this.style, this.material, this.selected, this.smooth, this.closed); }
     private void restore(State state) {
         this.nodes.clear();
         this.nodes.addAll(state.nodes());
         this.width = state.width();
         this.style = state.style();
+        this.material = state.material();
         this.selected = state.selected();
         this.smooth = state.smooth();
         this.closed = state.closed();
@@ -87,6 +93,12 @@ public final class SettlementPathDraft {
         remember(state());
         this.width = width;
         this.style = style;
+        this.version++;
+    }
+    public void material(SettlementPath.Material material) {
+        if (dragging() || material == null || this.material == material) return;
+        remember(state());
+        this.material = material;
         this.version++;
     }
     public boolean place(Vec3 position) {

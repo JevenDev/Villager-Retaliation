@@ -216,7 +216,8 @@ public final class BuilderStructureScanner {
         }
         return switch (action) {
             case AXE_STRIP -> stack.is(ItemTags.AXES);
-            case SHOVEL_FLATTEN -> stack.is(ItemTags.SHOVELS);
+            case SHOVEL_FLATTEN, SHOVEL_PAVE -> stack.is(ItemTags.SHOVELS);
+            case PICKAXE_PAVE -> stack.is(ItemTags.PICKAXES);
             case HOE_TILL -> stack.is(ItemTags.HOES);
             case NONE -> false;
         };
@@ -665,7 +666,9 @@ public final class BuilderStructureScanner {
         NONE,
         AXE_STRIP,
         SHOVEL_FLATTEN,
-        HOE_TILL
+        HOE_TILL,
+        SHOVEL_PAVE,
+        PICKAXE_PAVE
     }
 
     public record BuildBlock(
@@ -684,6 +687,12 @@ public final class BuilderStructureScanner {
             return this.replacedState != null && !current.hasBlockEntity()
                     && (current.equals(this.replacedState) || current.equals(this.state)
                             || current.isAir() && this.toolAction != BuilderToolAction.SHOVEL_FLATTEN);
+        }
+
+        public boolean canSurvive(LevelReader level, BlockPos pos) {
+            return this.state.canSurvive(level, pos) && (!this.state.is(Blocks.GRAVEL)
+                    || this.toolAction != BuilderToolAction.SHOVEL_PAVE && this.toolAction != BuilderToolAction.PICKAXE_PAVE
+                    || level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), net.minecraft.core.Direction.UP));
         }
 
         public boolean requiresMaterial() {

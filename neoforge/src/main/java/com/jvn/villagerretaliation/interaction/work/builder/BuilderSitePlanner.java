@@ -86,7 +86,7 @@ public final class BuilderSitePlanner {
         if (!level.hasChunkAt(pos)) return PlacementCheck.failed("interaction.work.builder.site_unloaded");
         if (!block.approvedReplacement(level.getBlockState(pos)) || level.getBlockEntity(pos) != null)
             return PlacementCheck.failed("interaction.work.builder.blocked_existing");
-        if (support && !block.state().canSurvive(level, pos))
+        if (support && !block.canSurvive(level, pos))
             return PlacementCheck.failed("interaction.work.builder.blocked_support");
         if (villager != null && !block.state().getCollisionShape(level, pos).isEmpty() && hasBlockingEntity(level, villager, pos))
             return PlacementCheck.failed("interaction.work.builder.blocked_entity");

@@ -2,13 +2,37 @@ package com.jvn.villagerretaliation.settlement;
 
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public record SettlementPath(List<Node> nodes, int width, Style style, Material material, long seed, boolean branch, boolean closed) {
     public static final int MAX_NODES = 64;
     public static final int MAX_COLUMNS = 4096;
     public enum Style { CLEAN, NATURAL }
-    public enum Material { DIRT }
+    public enum Material {
+        DIRT("Dirt path"), GRAVEL("Gravel road"), COBBLESTONE("Cobblestone road"), MIXED("Mixed road");
+        private final String label;
+        Material(String label) { this.label = label; }
+        public String label() { return this.label; }
+        public BlockState state(long seed, BlockPos pos) {
+            return switch (this) {
+                case DIRT -> Blocks.DIRT_PATH.defaultBlockState();
+                case GRAVEL -> Blocks.GRAVEL.defaultBlockState();
+                case COBBLESTONE -> Blocks.COBBLESTONE.defaultBlockState();
+                case MIXED -> {
+                    long value = seed ^ (long) pos.getX() * 341873128712L ^ (long) pos.getZ() * 132897987541L;
+                    value = (value ^ value >>> 30) * 0xbf58476d1ce4e5b9L;
+                    value = (value ^ value >>> 27) * 0x94d049bb133111ebL;
+                    yield switch ((int) Math.floorMod(value ^ value >>> 31, 5)) {
+                        case 0, 1 -> Blocks.GRAVEL.defaultBlockState();
+                        case 2, 3 -> Blocks.COBBLESTONE.defaultBlockState();
+                        default -> Blocks.ANDESITE.defaultBlockState();
+                    };
+                }
+            };
+        }
+    }
     public record Node(Vec3 position, Vec3 incoming, Vec3 outgoing) {
         public Node {
             if (!valid(position, 30_000_000) || !valid(incoming, 256) || !valid(outgoing, 256)

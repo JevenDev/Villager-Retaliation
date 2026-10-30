@@ -162,7 +162,7 @@ final class SettlementBackgroundConstruction {
                         return;
                     }
                     if (part == group.materialPart() && !BuilderStructureScanner.canTransformExisting(current, part.block().state())
-                            && !part.block().state().canSurvive(view, part.worldPos())) {
+                            && !part.block().canSurvive(view, part.worldPos())) {
                         blocked(worker, "construction_blocked_support", "blocked_support");
                         return;
                     }

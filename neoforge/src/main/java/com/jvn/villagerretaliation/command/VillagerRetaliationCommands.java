@@ -975,7 +975,8 @@ public final class VillagerRetaliationCommands {
         for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
             switch (block.toolAction()) {
                 case AXE_STRIP -> tools.putIfAbsent(BuilderToolAction.AXE_STRIP, new ItemStack(Items.IRON_AXE));
-                case SHOVEL_FLATTEN -> tools.putIfAbsent(BuilderToolAction.SHOVEL_FLATTEN, new ItemStack(Items.IRON_SHOVEL));
+                case SHOVEL_FLATTEN, SHOVEL_PAVE -> tools.putIfAbsent(BuilderToolAction.SHOVEL_FLATTEN, new ItemStack(Items.IRON_SHOVEL));
+                case PICKAXE_PAVE -> tools.putIfAbsent(BuilderToolAction.PICKAXE_PAVE, new ItemStack(Items.IRON_PICKAXE));
                 case HOE_TILL -> tools.putIfAbsent(BuilderToolAction.HOE_TILL, new ItemStack(Items.IRON_HOE));
                 case NONE -> {
                 }

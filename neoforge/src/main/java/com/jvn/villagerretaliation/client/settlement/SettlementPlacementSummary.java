@@ -28,7 +28,7 @@ final class SettlementPlacementSummary {
             materials = walls.requirements();
             positions = walls.cells().isEmpty() ? walls.draft().wall().nodes() : walls.cells().stream().map(cell -> cell.position()).toList();
         } else if (paths.active()) {
-            title = "Path / width " + paths.draft().path().width();
+            title = paths.draft().path().material().label() + " / width " + paths.draft().path().width();
             status = paths.placementStatus();
             materials = paths.requirements();
             positions = paths.cells().stream().map(cell -> cell.position()).toList();
