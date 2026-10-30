@@ -38,6 +38,7 @@ import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugTraceService;
 import com.jvn.villagerretaliation.quest.debug.QuestDiagnostic;
 import com.jvn.villagerretaliation.quest.QuestExecutionContext;
+import com.jvn.villagerretaliation.quest.inventory.QuestInventoryService;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveDebugState;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEvaluationContext;
@@ -76,6 +77,7 @@ import com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
+import com.jvn.villagerretaliation.quest.runtime.QuestProgressionService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import com.jvn.villagerretaliation.quest.persistence.QuestDefinitionMigration;
@@ -1628,7 +1630,7 @@ public final class VillagerQuestGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, templateNamespace = "quest_tracker", timeoutTicks = 100)
     public static void activeTrackerEntryListsMobKillObjectiveSteps(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -1742,7 +1744,8 @@ public final class VillagerQuestGameTests {
                 QuestDefinition.Dialogue.EMPTY,
                 null,
                 QuestDefinition.Links.EMPTY);
-        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        var data = new VillagerQuestSavedData();
+        var progress = data.getOrCreate(player.getUUID(), quest.id());
         progress.start(villager.getUUID(), Level.OVERWORLD, null, level.getGameTime());
         progress.setIssuer(
                 villager.getUUID(),
@@ -1778,23 +1781,43 @@ public final class VillagerQuestGameTests {
                 "active tracker quest item count did not update: " + entry.questItems());
 
         progress.addObjectiveCounter("defeat_zombie", 1);
-        progress.markObjectiveComplete("defeat_zombie");
-        progress.setCurrentStage("return");
+        player.getInventory().add(new ItemStack(Items.BONE));
+        player.getInventory().setChanged();
+        var objectiveContext = new QuestObjectiveEvaluationContext(
+                player, context, level, quest, progress,
+                objective -> QuestInventoryService.itemCount(player, objective.item(), objective.itemRequirements()),
+                (objective, stack) -> QuestInventoryService.matchesObjectiveItemStack(objective, stack, objective.item()),
+                objective -> 0, objective -> false, objective -> false, objective -> QuestObjectiveDebugState.EMPTY);
+        helper.assertTrue(QuestProgressionService.advanceSaved(quest, progress, level.getGameTime(),
+                objective -> QuestObjectiveRegistry.evaluate(objectiveContext, objective).orElseThrow().complete(),
+                conditions -> DialogueCondition.matchesAll(context, conditions)), "completed objectives advance to the return stage");
+        helper.assertValueEqual(progress.currentStage(), "return", "the real transition reaches the return stage");
+        helper.assertTrue(progress.objectiveComplete("bring_bones"), "stage completion retains the item requirement");
+        var readyEntry = VillagerQuestService.debugTrackerEntryForTests(player, context, quest, progress, true);
+        helper.assertValueEqual(readyEntry.status(), "Ready to turn in", "all required items make the tracker ready");
+
+        var restored = VillagerQuestSavedData.load(data.save(new CompoundTag(), level.registryAccess()), level.registryAccess())
+                .get(player.getUUID(), quest.id());
         player.getInventory().clearContent();
         player.getInventory().setChanged();
+        for (var observed : List.of(progress, restored)) {
+            var droppedEntry = VillagerQuestService.debugTrackerEntryForTests(player, context, quest, observed, true);
+            helper.assertValueEqual(droppedEntry.status(), "Active", "dropped item objective still looked ready");
+            helper.assertTrue(
+                    droppedEntry.questItems().stream().anyMatch(item -> item.itemId().equals("minecraft:bone")
+                            && item.count() == 3
+                            && item.currentCount() == 0),
+                    "dropped required item disappeared from tracker counts: " + droppedEntry.questItems());
+        }
 
-        QuestTrackerSyncPayload.Entry droppedEntry = VillagerQuestService.debugTrackerEntryForTests(
-                player,
-                context,
-                quest,
-                progress,
-                true);
-        helper.assertValueEqual(droppedEntry.status(), "Active", "dropped item objective still looked ready");
-        helper.assertTrue(
-                droppedEntry.questItems().stream().anyMatch(item -> item.itemId().equals("minecraft:bone")
-                        && item.count() == 3
-                        && item.currentCount() == 0),
-                "dropped required item disappeared from tracker counts: " + droppedEntry.questItems());
+        player.getInventory().add(new ItemStack(Items.BONE, 2));
+        player.getInventory().setChanged();
+        var partialEntry = VillagerQuestService.debugTrackerEntryForTests(player, context, quest, restored, true);
+        helper.assertValueEqual(partialEntry.status(), "Active", "partial replacement cannot make the tracker ready");
+        player.getInventory().add(new ItemStack(Items.BONE));
+        player.getInventory().setChanged();
+        var replenishedEntry = VillagerQuestService.debugTrackerEntryForTests(player, context, quest, restored, true);
+        helper.assertValueEqual(replenishedEntry.status(), "Ready to turn in", "replacing every required item restores readiness");
 
         helper.succeed();
     }
