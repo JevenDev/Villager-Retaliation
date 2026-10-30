@@ -20,7 +20,9 @@ public final class SettlementFarmTerrain {
         public Preview { cells = List.copyOf(cells); }
         public long count(Kind kind) { return cells.stream().filter(cell -> cell.kind() == kind).count(); }
         public String materials() {
-            return "Hoe and at least 1 bucket in farmer supplies or assigned storage. Refill from accessible infinite water. Bucket allowance: 1 to 4."
+            return (count(Kind.TILL) > 0 ? "Usable hoe required. " : "")
+                    + (count(Kind.WATER) > 0 ? "At least 1 bucket required. Refill from accessible infinite water. Bucket allowance: 1 to 4."
+                            : "Existing water provides irrigation. No bucket required.")
                     + (count(Kind.DRY) == 0 ? "" : " Skipping " + count(Kind.DRY) + " dry soil blocks (orange). Expand the selection or add contained water to include them.");
         }
     }

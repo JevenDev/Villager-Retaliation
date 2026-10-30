@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class SettlementPlanting {
@@ -86,7 +87,15 @@ public final class SettlementPlanting {
                            BlockPos soil, CompoundTag state) {
         var configured = area.crops();
         Crop restriction = HiredFarmingOptions.crop(state);
-        var fallback = new Decision(configured.enabled() ? configured.crop(area, soil) : restriction,
+        var plantingCells = configured.enabled() ? town.fields().values().stream()
+                .filter(cell -> SettlementFieldService.serves(area, cell) && !cell.conflict()
+                        && (cell.soil().is(Blocks.FARMLAND) || SettlementFarmTerrain.soil(cell.soil()))
+                        && (cell.crop().isAir() || SettlementFieldPlot.supportedCrop(cell.crop()))
+                        && (area.farm() == null || cell.irrigated()))
+                .map(SettlementFieldPlot::position)
+                .sorted(Comparator.<BlockPos>comparingInt(BlockPos::getZ).thenComparingInt(BlockPos::getX).thenComparingInt(BlockPos::getY)).toList() : List.<BlockPos>of();
+        var fallback = new Decision(configured.enabled()
+                ? plantingCells.isEmpty() ? configured.crop(area, soil) : configured.crop(plantingCells, soil) : restriction,
                 configured.enabled() ? "mix" : restriction == Crop.ANY ? "available" : "selected");
         if (!configured.demand() || plot == null || !HiredFarmingOptions.plantCrops(state)) return fallback;
         var previous = plot.planting(configured);

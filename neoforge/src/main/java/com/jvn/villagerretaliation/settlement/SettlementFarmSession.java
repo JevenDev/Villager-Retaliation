@@ -58,7 +58,7 @@ public final class SettlementFarmSession {
         String detail = !this.preview.error().isEmpty() ? this.preview.error()
                 : assignment.worker() == null ? assignment.error() : "Farmer: " + assignment.worker().getName().getString() + ". " + this.preview.materials();
         String feedback = message + detail;
-        this.result = result(request, this.preview.error().isEmpty() ? Status.PREVIEW : Status.REJECTED,
+        this.result = result(request, this.preview.error().isEmpty() && assignment.worker() != null ? Status.PREVIEW : Status.REJECTED,
                 this.preview.cells().stream().map(cell -> new SettlementFarmResultPayload.Cell(cell.position(), cell.kind())).toList(),
                 feedback.substring(0, Math.min(512, feedback.length())));
         return this.result;

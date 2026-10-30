@@ -206,6 +206,68 @@ public final class SettlementFarmWorkflowGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void previewRequiresReadyWorkerAndIrrigatedSoilNeedsNoBucket(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var farm = new SettlementFarm(fixture.base(), fixture.base().offset(8, 0, 8));
+        var session = new SettlementFarmSession();
+        var id = UUID.randomUUID();
+        var empty = new UUID(0, 0);
+        var request = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(id, 1,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.PREVIEW, empty, farm);
+        var rejected = session.request(fixture.owner(), fixture.town(), id, true, pos -> true, request);
+        helper.assertValueEqual(rejected.status(), com.jvn.villagerretaliation.network.SettlementFarmResultPayload.Status.REJECTED,
+                "missing bucket prevents confirmation");
+        helper.assertTrue(rejected.message().contains("bucket"), "preview identifies the missing supply");
+        level.setBlock(fixture.base().offset(4, 0, 4), Blocks.WATER.defaultBlockState(), 2);
+        request = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(id, 2,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.PREVIEW, empty, farm);
+        var ready = session.request(fixture.owner(), fixture.town(), id, true, pos -> true, request);
+        helper.assertValueEqual(ready.status(), com.jvn.villagerretaliation.network.SettlementFarmResultPayload.Status.PREVIEW,
+                "already irrigated soil needs no bucket");
+        HiredJobInventory.getJobInventory(fixture.villager()).setItem(HiredJobInventory.MAINHAND_SLOT, ItemStack.EMPTY);
+        request = new com.jvn.villagerretaliation.network.SettlementFarmRequestPayload(id, 2,
+                com.jvn.villagerretaliation.network.SettlementFarmRequestPayload.Action.CONFIRM, ready.token(), null);
+        var changed = session.request(fixture.owner(), fixture.town(), id, true, pos -> true, request);
+        helper.assertValueEqual(changed.status(), com.jvn.villagerretaliation.network.SettlementFarmResultPayload.Status.REJECTED,
+                "confirmation rechecks tool availability");
+        helper.assertTrue(changed.message().contains("hoe"), "changed readiness reports the missing hoe");
+        fixture.villager().discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "settlement_farm")
+    public static void cropMixUsesPlantableCellsInsideTheShape(GameTestHelper helper) {
+        var fixture = fixture(helper);
+        var level = helper.getLevel();
+        var base = fixture.base();
+        var shape = new SettlementFarm(SettlementFarm.Shape.POLYGON, List.of(base, base.east(8),
+                base.offset(8, 0, 2), base.offset(2, 0, 2), base.offset(2, 0, 8), base.south(8)));
+        var plan = new SettlementCropPlan(List.of(50, 50, 0, 0, 0, 0));
+        var area = new SettlementArea(UUID.randomUUID(), SettlementAreaType.FARM, "Mixed plot", base, base.offset(8, 2, 8),
+                5, true, plan, false, shape);
+        helper.assertTrue(fixture.town().putArea(fixture.owner().getUUID(), area), "shaped farm is registered");
+        pool(helper, base.offset(3, 0, 3));
+        var positions = List.of(base.offset(0, 0, 1), base.offset(1, 0, 1), base.offset(2, 0, 1),
+                base.offset(3, 0, 1), base.offset(0, 0, 2), base.offset(1, 0, 2));
+        for (var pos : positions) {
+            level.setBlock(pos, Blocks.FARMLAND.defaultBlockState(), 2);
+            fixture.town().recordField(SettlementFieldPlot.capture(level, area.id(), pos, level.getChunkAt(pos), level.getGameTime()));
+        }
+        var outside = base.offset(6, 0, 6);
+        level.setBlock(outside, Blocks.FARMLAND.defaultBlockState(), 2);
+        fixture.town().recordField(SettlementFieldPlot.capture(level, area.id(), outside, level.getChunkAt(outside), level.getGameTime()));
+        var crops = positions.stream().map(pos -> SettlementPlanting.choose(level, fixture.town(), area,
+                fixture.town().fields().get(pos), pos, new CompoundTag()).crop()).toList();
+        helper.assertValueEqual(crops.stream().filter(crop -> crop == HiredFarmingOptions.Crop.WHEAT).count(), 3L,
+                "half of actual planting cells are wheat");
+        helper.assertValueEqual(crops.stream().filter(crop -> crop == HiredFarmingOptions.Crop.CARROT).count(), 3L,
+                "half of actual planting cells are carrots despite empty bounding-box space");
+        fixture.villager().discard();
+        helper.succeed();
+    }
+
     private static void tickAt(GameTestHelper helper, Fixture fixture, BlockPos position) {
         fixture.villager().setPos(position.above().getBottomCenter());
         var session = HiredWorkSession.active(helper.getLevel(), fixture.villager());

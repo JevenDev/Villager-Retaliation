@@ -154,7 +154,7 @@ public final class SettlementFarmGameTests {
             helper.assertTrue(review.message().contains("bucket"), "missing materials are visible");
             var missing = session.request(owner, town, sessionId, true, pos -> true,
                     new SettlementFarmRequestPayload(sessionId, 1, Action.CONFIRM, review.token(), null));
-            helper.assertValueEqual(missing.status(), Status.PREVIEW, "no water means no work is assigned");
+            helper.assertValueEqual(missing.status(), Status.REJECTED, "no water prevents confirmation and assignment");
             helper.assertTrue(HiredTemporaryWorkService.queue(state) == null, "shortage never starts partial work");
             inventory.setItem(inventory.supplySlots().getFirst(), new ItemStack(Items.WATER_BUCKET));
             var confirm = new SettlementFarmRequestPayload(sessionId, 1, Action.CONFIRM, missing.token(), null);

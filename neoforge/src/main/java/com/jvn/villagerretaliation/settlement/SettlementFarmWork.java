@@ -32,6 +32,9 @@ public final class SettlementFarmWork {
 
     public static Assignment worker(ServerLevel level, SettlementRecord town, SettlementFarmTerrain.Preview preview) {
         boolean farmer = false;
+        boolean hoe = false;
+        boolean needsHoe = preview.count(SettlementFarmTerrain.Kind.TILL) > 0;
+        boolean needsWater = preview.count(SettlementFarmTerrain.Kind.WATER) > 0;
         var candidates = new java.util.TreeSet<UUID>(town.duties().keySet());
         candidates.addAll(com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData.get(level)
                 .residentRoster(town.id(), level.getGameTime()).stream().map(resident -> resident.id()).toList());
@@ -56,10 +59,12 @@ public final class SettlementFarmWork {
             var inventory = HiredJobInventory.getJobInventory(villager);
             boolean storage = com.jvn.villagerretaliation.interaction.HiredJobSetting.USE_STORAGE.read(state) != 0;
             boolean unassigned = !town.duties().containsKey(id);
-            if (inventory.findTool(FarmerHoeRequirement::isHoe).isEmpty() && (!storage
+            if (needsHoe && inventory.findTool(FarmerHoeRequirement::isHoe).isEmpty() && (!storage
                     || com.jvn.villagerretaliation.inventory.AssignedStorageService.nearestAssignedToolStoragePosContaining(
                             level, villager, FarmerHoeRequirement::isHoe) == null
                     && (!unassigned || !sharedSupply(level, town, villager, FarmerHoeRequirement::isHoe)))) continue;
+            hoe = true;
+            if (!needsWater) return new Assignment(villager, "");
             int water = inventory.supplySlots().stream().map(inventory::getItem).filter(stack -> (stack.is(Items.WATER_BUCKET) || stack.is(Items.BUCKET)))
                     .mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();
             if (storage) water += com.jvn.villagerretaliation.inventory.AssignedStorageService.productionSupplies(villager).stream()
@@ -67,7 +72,9 @@ public final class SettlementFarmWork {
             if (water >= 1 || storage && unassigned && sharedSupply(level, town, villager,
                     stack -> stack.is(Items.BUCKET) || stack.is(Items.WATER_BUCKET))) return new Assignment(villager, "");
         }
-        return new Assignment(null, farmer ? preview.materials() : "An available farmer must belong to this settlement");
+        return new Assignment(null, !farmer ? "An available farmer must belong to this settlement"
+                : !hoe ? "Needs a usable hoe in farmer tools or accessible supply storage"
+                : "Needs a bucket in farmer supplies or accessible supply storage");
     }
 
     private static boolean sharedSupply(ServerLevel level, SettlementRecord town, Villager villager,

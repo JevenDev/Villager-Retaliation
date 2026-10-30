@@ -31,6 +31,23 @@ public record SettlementCropPlan(List<Integer> percentages, boolean demand, int 
         int width = area.max().getX() - area.min().getX() + 1;
         int size = width * (area.max().getZ() - area.min().getZ() + 1);
         int index = Math.floorMod((soil.getZ() - area.min().getZ()) * width + soil.getX() - area.min().getX(), size);
+        if (area.farm() != null) {
+            var columns = new java.util.ArrayList<BlockPos>();
+            for (int z = area.min().getZ(); z <= area.max().getZ(); z++)
+                for (int x = area.min().getX(); x <= area.max().getX(); x++)
+                    if (area.farm().contains(x, z)) columns.add(new BlockPos(x, soil.getY(), z));
+            return crop(columns, soil);
+        }
+        return crop(index, size);
+    }
+
+    public Crop crop(List<BlockPos> plantingCells, BlockPos soil) {
+        if (!enabled()) return Crop.ANY;
+        int index = plantingCells.indexOf(soil);
+        return index < 0 ? Crop.ANY : crop(index, plantingCells.size());
+    }
+
+    private Crop crop(int index, int size) {
         int cumulative = 0;
         for (int crop = 0; crop < percentages.size(); crop++) {
             cumulative += percentages.get(crop);
