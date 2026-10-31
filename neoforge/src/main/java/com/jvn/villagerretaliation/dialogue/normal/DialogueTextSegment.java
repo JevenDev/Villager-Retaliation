@@ -407,52 +407,22 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects, List
     }
 
     private static boolean isKnownClosingTag(String tag) {
-        return switch (tag) {
-            case "i", "italic", "italics", "b", "bold", "u", "underline", "underlined",
-                    "s", "strike", "strikethrough", "obfuscated", "obfuscate", "magic",
-                    "wave", "wavy", "shake", "shaky", "pulse", "pulsing", "jump", "jumping",
-                    "bounce", "bouncy", "rainbow", "color", "gradient" -> true;
-            default -> DialogueTextEffects.fromTag(tag).active();
-        };
+        return com.jvn.toucanlib.text.ToucanTextMarkup.isKnownClosingTag(tag);
     }
 
-    private static boolean hasClosingTag(String lowerText, int start, String tag) {
-        for (String alias : aliasesFor(tag)) {
-            if (lowerText.indexOf("</" + alias + ">", start) >= 0) {
-                return true;
-            }
-        }
-        return false;
+    private static boolean hasClosingTag(String text, int start, String tag) {
+        return com.jvn.toucanlib.text.ToucanTextMarkup.hasClosingTag(text, start, tag);
     }
 
     private static List<String> aliasesFor(String tag) {
-        return switch (tag) {
-            case "i", "italic", "italics" -> List.of("i", "italic", "italics");
-            case "b", "bold" -> List.of("b", "bold");
-            case "u", "underline", "underlined" -> List.of("u", "underline", "underlined");
-            case "s", "strike", "strikethrough" -> List.of("s", "strike", "strikethrough");
-            case "obfuscated", "obfuscate", "magic" -> List.of("obfuscated", "obfuscate", "magic");
-            case "wave", "wavy" -> List.of("wave", "wavy");
-            case "shake", "shaky" -> List.of("shake", "shaky");
-            case "pulse", "pulsing" -> List.of("pulse", "pulsing");
-            case "jump", "jumping", "bounce", "bouncy" -> List.of("jump", "jumping", "bounce", "bouncy");
-            case "rainbow" -> List.of("rainbow");
-            case "color" -> List.of("color");
-            case "gradient" -> List.of("gradient");
-            default -> List.of(tag);
-        };
+        return com.jvn.toucanlib.text.ToucanTextMarkup.aliasesFor(tag);
     }
 
     private static String normalizeTag(String tag) {
-        return tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT);
+        return com.jvn.toucanlib.text.ToucanTextMarkup.normalizeTag(tag);
     }
 
-    private static String tagName(String rawTag) {
-        if (rawTag == null) {
-            return "";
-        }
-        String tag = rawTag.trim();
-        int separator = tag.indexOf(':');
-        return separator < 0 ? tag : tag.substring(0, separator);
+    private static String tagName(String tag) {
+        return com.jvn.toucanlib.text.ToucanTextMarkup.tagName(tag);
     }
 }

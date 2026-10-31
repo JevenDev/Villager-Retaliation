@@ -1,14 +1,7 @@
 package com.jvn.villagerretaliation.util;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -49,13 +42,8 @@ public final class DatapackResourceLoader {
                     .filter(stack -> !stack.layersLowToHigh().isEmpty())
                     .map(stack -> stack.layersLowToHigh().getLast()).toList();
         }
-        return server.getResourceManager()
-                .listResources(root, location -> location.getPath().endsWith(".json") && locationFilter.test(location))
-                .entrySet()
-                .stream()
-                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .map(entry -> new JsonResource(entry.getKey(), entry.getValue()))
-                .toList();
+        return com.jvn.toucanlib.util.ToucanJsonResources.resources(server.getResourceManager(), root, locationFilter)
+                .stream().map(entry -> new JsonResource(entry.location(), entry.resource())).toList();
     }
 
     /**
@@ -66,19 +54,9 @@ public final class DatapackResourceLoader {
         if (com.jvn.villagerretaliation.campaign.selection.WorldCampaignResources.supports(root)) {
             return com.jvn.villagerretaliation.campaign.selection.WorldCampaignResources.stacks(server, root);
         }
-        Map<ResourceLocation, List<Resource>> stacks = server.getResourceManager()
-                .listResourceStacks(root, location -> location.getPath().endsWith(".json"));
-        List<JsonResourceStack> result = new ArrayList<>();
-        stacks.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> {
-                    List<JsonResource> layers = new ArrayList<>();
-                    for (Resource resource : entry.getValue()) {
-                        layers.add(new JsonResource(entry.getKey(), resource));
-                    }
-                    result.add(new JsonResourceStack(entry.getKey(), List.copyOf(layers)));
-                });
-        return List.copyOf(result);
+        return com.jvn.toucanlib.util.ToucanJsonResources.stacks(server.getResourceManager(), root).stream()
+                .map(stack -> new JsonResourceStack(stack.location(), stack.layersLowToHigh().stream()
+                        .map(entry -> new JsonResource(entry.location(), entry.resource())).toList())).toList();
     }
 
     public record JsonResourceStack(ResourceLocation location, List<JsonResource> layersLowToHigh) {
@@ -88,12 +66,8 @@ public final class DatapackResourceLoader {
             ResourceLocation location,
             String systemName,
             Resource resource) {
-        try (Reader reader = resource.openAsReader()) {
-            return Optional.of(JsonParser.parseReader(reader).getAsJsonObject());
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            DatapackDiagnostics.warnSkippedFile(location, systemName, exception);
-            return Optional.empty();
-        }
+        return com.jvn.toucanlib.util.ToucanJsonResources.readObject(location, resource,
+                (id, exception) -> DatapackDiagnostics.warnSkippedFile(id, systemName, exception));
     }
 
     public record JsonResource(ResourceLocation location, Resource resource, int priority) {

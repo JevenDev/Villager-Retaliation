@@ -13,9 +13,7 @@ public abstract class VillagerWindowScreen extends Screen {
     protected int panelWidth;
     protected int panelHeight;
     private boolean positioned;
-    private boolean draggingWindow;
-    private double grabX;
-    private double grabY;
+    private final com.jvn.toucanlib.client.ToucanWindowDrag drag = new com.jvn.toucanlib.client.ToucanWindowDrag();
 
     protected VillagerWindowScreen(Component title) { super(title); }
 
@@ -28,10 +26,13 @@ public abstract class VillagerWindowScreen extends Screen {
                 Math.min(preferredWidth, this.width - 24), Math.min(preferredHeight, this.height - 24), compact);
         this.panelWidth = layout.width();
         this.panelHeight = layout.height();
-        this.left = Math.clamp(this.positioned ? this.left : layout.left(), 8, Math.max(8, this.width - this.panelWidth - 8));
-        this.top = Math.clamp(this.positioned ? this.top : layout.top(), minimumTop(), Math.max(minimumTop(), this.height - this.panelHeight - 8));
+        var position = com.jvn.toucanlib.client.ToucanWindowDrag.clamp(
+                this.positioned ? this.left : layout.left(), this.positioned ? this.top : layout.top(),
+                8, minimumTop(), this.width - this.panelWidth - 8, this.height - this.panelHeight - 8);
+        this.left = position.x();
+        this.top = position.y();
         this.positioned = true;
-        this.draggingWindow = false;
+        this.drag.end();
     }
 
     public ScreenRectangle windowBounds() {
@@ -47,9 +48,7 @@ public abstract class VillagerWindowScreen extends Screen {
         if (super.mouseClicked(x, y, button)) return true;
         if (button == 0 && x >= this.left - 4 && x < this.left + this.panelWidth + 4
                 && y >= this.top - 4 && y < this.top + 16) {
-            this.draggingWindow = true;
-            this.grabX = x - this.left;
-            this.grabY = y - this.top;
+            this.drag.begin(x, y, this.left, this.top);
             setFocused(null);
             return true;
         }
@@ -58,9 +57,9 @@ public abstract class VillagerWindowScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
-        if (button != 0 || !this.draggingWindow) return super.mouseDragged(x, y, button, dx, dy);
-        int nextLeft = Math.clamp((int) Math.round(x - this.grabX), 8, Math.max(8, this.width - this.panelWidth - 8));
-        int nextTop = Math.clamp((int) Math.round(y - this.grabY), minimumTop(), Math.max(minimumTop(), this.height - this.panelHeight - 8));
+        if (button != 0 || !this.drag.dragging()) return super.mouseDragged(x, y, button, dx, dy);
+        var position = this.drag.move(x, y, 8, minimumTop(), this.width - this.panelWidth - 8, this.height - this.panelHeight - 8);
+        int nextLeft = position.x(), nextTop = position.y();
         int moveX = nextLeft - this.left, moveY = nextTop - this.top;
         for (var child : children()) if (child instanceof AbstractWidget widget)
             widget.setPosition(widget.getX() + moveX, widget.getY() + moveY);
@@ -74,8 +73,8 @@ public abstract class VillagerWindowScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double x, double y, int button) {
-        if (button == 0 && this.draggingWindow) {
-            this.draggingWindow = false;
+        if (button == 0 && this.drag.dragging()) {
+            this.drag.end();
             setDragging(false);
             return true;
         }

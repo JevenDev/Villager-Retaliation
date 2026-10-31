@@ -1,11 +1,9 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.toucanlib.client.ToucanTextAnimation;
 import com.jvn.toucanlib.client.ToucanTextEffects;
 import com.jvn.toucanlib.client.ToucanTextRenderer;
 import com.jvn.toucanlib.client.ToucanTextSpan;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTextAnimation;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.List;
@@ -18,6 +16,18 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 
 public final class VillagerStyledTextRenderer {
+    private static final com.jvn.toucanlib.client.ToucanTextLayout.Cache LAYOUTS =
+            new com.jvn.toucanlib.client.ToucanTextLayout.Cache(32);
+
+    public static void registerReloadListener(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> LAYOUTS.clear());
+    }
+
+    static com.jvn.toucanlib.client.ToucanTextLayout layout(Font font, List<DialogueTextSegment> segments,
+            Integer color, List<Integer> widths) {
+        return LAYOUTS.get(font, spans(segments), Style.EMPTY, color, EFFECTS_ENABLED, widths);
+    }
+
     private static final BooleanSupplier EFFECTS_ENABLED = () -> !VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get();
 
     private VillagerStyledTextRenderer() { }
@@ -31,13 +41,15 @@ public final class VillagerStyledTextRenderer {
 
     public static int measureWrapped(Font font, String text, int width) {
         var segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
-        return font.split(component(segments, Style.EMPTY, 0xE3E7EC), width).size() * (font.lineHeight + 3) + 3;
+        return layout(font, segments, 0xE3E7EC, List.of(Math.max(1, width))).lines().size() * (font.lineHeight + 3) + 3;
     }
 
     public static int renderWrapped(GuiGraphics graphics, Font font, String text, int width, int height, int scroll, int color, int tickCount) {
         List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
         int y = 3 - scroll;
-        for (FormattedCharSequence line : font.split(component(segments, Style.EMPTY, color), width)) {
+        var prepared = layout(font, segments, color, List.of(Math.max(1, width)));
+        for (int index = 0; index < prepared.lines().size(); index++) {
+            FormattedCharSequence line = prepared.visibleLine(index, Integer.MAX_VALUE);
             if (y + font.lineHeight >= 0 && y < height)
                 ToucanTextRenderer.renderLine(graphics, font, line, 3, y, color, 255, tickCount);
             y += font.lineHeight + 3;
@@ -79,14 +91,6 @@ public final class VillagerStyledTextRenderer {
     }
 
     static ToucanTextEffects effects(DialogueTextEffects effects) {
-        return new ToucanTextEffects(effects.italic(), effects.bold(), effects.underlined(), effects.strikethrough(),
-                effects.obfuscated(), effects.wavy(), effects.shake(), effects.pulse(), effects.jump(), effects.rainbow(),
-                effects.color(), effects.gradientStartColor(), effects.gradientEndColor(),
-                animation(effects.waveAnimation()), animation(effects.shakeAnimation()),
-                animation(effects.pulseAnimation()), animation(effects.jumpAnimation()));
-    }
-
-    private static ToucanTextAnimation animation(DialogueTextAnimation animation) {
-        return new ToucanTextAnimation(animation.strength(), animation.speed());
+        return ToucanTextEffects.fromStyle(effects.toStyle());
     }
 }

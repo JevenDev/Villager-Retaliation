@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
-import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 
@@ -26,30 +24,21 @@ public final class VillagerChatTextFormatter {
     }
 
     static Component format(Component message) {
-        String text = message.getString();
-        if (text.isBlank() || text.indexOf('<') < 0 || text.indexOf('>') < 0) {
-            return message;
-        }
-
-        List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
-        if (segments.stream().noneMatch(segment -> segment.effects().active())) {
-            return message;
-        }
-
-        Component formatted = VillagerStyledTextRenderer.component(segments, message.getStyle(), null);
-        return formatted;
+        return formatMarkup(message, false);
     }
 
     private static Component stripEffectMarkup(Component message) {
-        String text = message.getString();
-        if (text.isBlank() || text.indexOf('<') < 0 || text.indexOf('>') < 0) {
-            return message;
-        }
+        return formatMarkup(message, true);
+    }
 
-        String plainText = DialogueTextSegment.plainText(
-                DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
-        return plainText.equals(text)
-                ? message
-                : Component.literal(plainText).withStyle(message.getStyle());
+    private static Component formatMarkup(Component message, boolean stripOnly) {
+        var styles = com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.current();
+        int[] cues = {0};
+        return com.jvn.toucanlib.client.ToucanComponentMarkup.format(message,
+                VillagerChatEffectRenderer::animatedChatEffectsEnabled, stripOnly, tag -> {
+                    var preset = styles.get(tag);
+                    return preset == null ? null : base -> preset.apply(DialogueTextEffects.fromStyle(base)).toStyle();
+                }, tag -> com.jvn.villagerretaliation.dialogue.DialogueCue.parse(tag) != null
+                        && cues[0]++ < com.jvn.villagerretaliation.dialogue.DialogueCue.MAX_CUES);
     }
 }

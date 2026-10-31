@@ -356,7 +356,7 @@ public final class DialogueCameraController {
         Vec3 position = shot.position() != null ? shot.position()
                 : DialogueCameraTransforms.position(offset, pivot, forward);
         if (shot.placement() == Placement.FIXED) {
-            if (fixed == null) fixed = position;
+            if (fixed == null) fixed = DialogueCamera.clamp(position, player.getPosition(partialTick));
             position = fixed;
         }
         position = DialogueCamera.clamp(position, player.getPosition(partialTick));

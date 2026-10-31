@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
+import com.jvn.toucanlib.text.ToucanRevealTimeline;
+import com.jvn.toucanlib.util.ToucanPlaybackClock;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,34 +10,29 @@ public final class DialoguePlayback {
     private static final double LOOK_TRANSITION_MILLIS = 180;
     private static final long PREVIEW_EFFECT_TAIL_MILLIS = 4000;
     private final long startedAt;
-    private final List<Double> revealTimes;
+    private final ToucanRevealTimeline revealTimeline;
     private final List<TimedCue> cues;
     private final List<GestureChange> gestureCues;
-    private final List<Pause> pauses;
     private final double duration;
     private final boolean instant;
     private boolean skipped;
     private int nextParticle;
     private int nextSound;
-    private boolean playbackPaused;
-    private double pausedPosition;
-    private double timeOffset;
+    private ToucanPlaybackClock clock;
     private final List<TimedCue> sounds;
     private final List<TimedCue> particles;
 
     public record TimedCue(double time, DialogueCue cue) { }
-    private record Pause(double start, double end) { }
     private record GestureChange(double time, TimedCue gesture) { }
     public record Pose(float yaw, float pitch) { }
 
     public DialoguePlayback(List<DialogueTextSegment> segments, long startedAt, long millisPerCharacter) {
         this.startedAt = startedAt;
         this.instant = millisPerCharacter <= 0;
-        var reveal = new ArrayList<Double>();
+        clock = new ToucanPlaybackClock(startedAt);
+        var reveal = ToucanRevealTimeline.builder(Math.max(0, millisPerCharacter), true);
         var events = new ArrayList<TimedCue>();
-        var waits = new ArrayList<Pause>();
         double time = 0;
-        double speed = 1;
         double end = 0;
         double gazeEnd = 0;
         boolean customGaze = false;
@@ -49,12 +46,11 @@ public final class DialoguePlayback {
                     events.add(new TimedCue(time, cue));
                     switch (cue.kind()) {
                         case PAUSE -> {
-                            double until = time + (instant ? 0 : cue.value());
-                            waits.add(new Pause(time, until));
-                            time = until;
+                            reveal.pause(instant ? 0 : cue.value());
+                            time = reveal.timeMillis();
                             end = Math.max(end, time);
                         }
-                        case SPEED -> speed = cue.value();
+                        case SPEED -> reveal.speed(cue.value());
                         case LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, LOOK_PLAYER, LOOK_TARGET -> {
                             gazeEnd = time + LOOK_TRANSITION_MILLIS;
                             customGaze = true;
@@ -75,10 +71,11 @@ public final class DialoguePlayback {
                     }
                 }
                 if (offset == segment.text().length()) break;
-                reveal.add(time);
+                int codePoint = segment.text().codePointAt(offset);
+                reveal.appendCodePoint(codePoint);
                 end = Math.max(end, time);
-                offset += Character.charCount(segment.text().codePointAt(offset));
-                time += instant ? 0 : millisPerCharacter / speed;
+                offset += Character.charCount(codePoint);
+                time = reveal.timeMillis();
             }
         }
         var gestures = new ArrayList<GestureChange>();
@@ -109,20 +106,18 @@ public final class DialoguePlayback {
             gestureEnd = Math.max(gestureEnd, until);
         }
         this.gestureCues = List.copyOf(gestures);
-        this.revealTimes = List.copyOf(reveal);
+        this.revealTimeline = reveal.build();
         this.cues = List.copyOf(events);
         this.particles = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.PARTICLE).toList();
         this.sounds = events.stream().filter(event -> event.cue().kind() == DialogueCue.Kind.SOUND).toList();
-        this.pauses = List.copyOf(waits);
         this.duration = Math.max(Math.max(end, Math.max(gestureEnd, gazeEnd)), events.isEmpty() ? 0 : events.getLast().time());
     }
 
     private DialoguePlayback(DialoguePlayback source) {
         startedAt = source.startedAt;
-        revealTimes = source.revealTimes;
+        revealTimeline = source.revealTimeline;
         cues = source.cues;
         gestureCues = source.gestureCues;
-        pauses = source.pauses;
         duration = source.duration;
         instant = source.instant;
         skipped = source.skipped;
@@ -130,9 +125,7 @@ public final class DialoguePlayback {
         nextParticle = source.nextParticle;
         sounds = source.sounds;
         nextSound = source.nextSound;
-        playbackPaused = source.playbackPaused;
-        pausedPosition = source.pausedPosition;
-        timeOffset = source.timeOffset;
+        clock = source.clock.copy(Double.POSITIVE_INFINITY);
     }
 
     public DialoguePlayback copy() { return new DialoguePlayback(this); }
@@ -143,9 +136,7 @@ public final class DialoguePlayback {
         result.skipped = skipped;
         result.nextParticle = Math.min(nextParticle, result.particles.size());
         result.nextSound = Math.min(nextSound, result.sounds.size());
-        result.playbackPaused = playbackPaused;
-        result.pausedPosition = Math.min(pausedPosition, result.previewDurationMillis());
-        result.timeOffset = timeOffset;
+        result.clock = clock.copy(result.previewDurationMillis());
         return result;
     }
 
@@ -158,7 +149,7 @@ public final class DialoguePlayback {
     }
 
     public List<DialogueCue> pollSounds(long now) {
-        if (playbackPaused || skipped) return List.of();
+        if (clock.paused() || skipped) return List.of();
         var due = new ArrayList<DialogueCue>();
         double elapsed = elapsed(now);
         while (nextSound < sounds.size() && sounds.get(nextSound).time() <= elapsed)
@@ -167,16 +158,7 @@ public final class DialoguePlayback {
     }
 
     public int visibleCharacters(long now) {
-        if (skipped || instant) return revealTimes.size();
-        double elapsed = elapsed(now);
-        int start = 0;
-        int end = revealTimes.size();
-        while (start < end) {
-            int middle = (start + end) >>> 1;
-            if (revealTimes.get(middle) <= elapsed) start = middle + 1;
-            else end = middle;
-        }
-        return start;
+        return skipped || instant ? revealTimeline.length() : revealTimeline.visibleCharacters(elapsed(now));
     }
 
     public boolean complete(long now) { return skipped || instant || elapsed(now) >= duration; }
@@ -184,11 +166,11 @@ public final class DialoguePlayback {
     public boolean paused(long now) {
         if (skipped || instant) return false;
         double elapsed = elapsed(now);
-        return pauses.stream().anyMatch(pause -> elapsed >= pause.start() && elapsed < pause.end());
+        return revealTimeline.paused(elapsed);
     }
 
     public boolean talking(long now) {
-        return !playbackPaused && !paused(now) && visibleCharacters(now) < revealTimes.size();
+        return !clock.paused() && !paused(now) && visibleCharacters(now) < revealTimeline.length();
     }
 
     public Pose pose(long now, float neutralYaw, float neutralPitch, float playerYaw, float playerPitch) {
@@ -272,26 +254,22 @@ public final class DialoguePlayback {
     }
 
     public long positionMillis(long now) { return (long) Math.min(previewDurationMillis(), skipped ? duration : elapsed(now)); }
-    public boolean playbackPaused() { return playbackPaused; }
+    public boolean playbackPaused() { return clock.paused(); }
     public boolean skipped() { return skipped; }
     public List<TimedCue> timelineCues() { return cues; }
 
     public void pause(long now) {
-        pausedPosition = Math.min(previewDurationMillis(), skipped ? duration : elapsed(now));
-        playbackPaused = true;
+        clock.pauseAt(Math.min(previewDurationMillis(), skipped ? duration : elapsed(now)), now);
     }
 
     public void play(long now) {
-        if (!playbackPaused) return;
-        timeOffset = pausedPosition - (now - startedAt);
-        playbackPaused = false;
+        clock.play(now);
     }
 
     public void seek(long position, long now) {
         skipped = false;
-        pausedPosition = Math.clamp((double) position, 0, previewDurationMillis());
-        timeOffset = pausedPosition - (now - startedAt);
-        playbackPaused = true;
+        double pausedPosition = Math.clamp((double) position, 0, previewDurationMillis());
+        clock.pauseAt(pausedPosition, now);
         nextParticle = 0;
         while (nextParticle < particles.size() && particles.get(nextParticle).time() <= pausedPosition) nextParticle++;
         nextSound = 0;
@@ -306,7 +284,7 @@ public final class DialoguePlayback {
     }
 
     private double elapsed(long now) {
-        return playbackPaused ? pausedPosition : Math.max(0, now - startedAt + timeOffset);
+        return clock.position(now);
     }
 
     private static double gestureDuration(DialogueCue.Kind kind) {

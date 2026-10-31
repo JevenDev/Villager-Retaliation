@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.toucanlib.util.ToucanInventoryItems;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicate;
 import com.jvn.villagerretaliation.util.item.ItemStackPredicateParser;
 import java.util.ArrayList;
@@ -71,17 +72,7 @@ public record VillagerInventoryItemRemoval(
     }
 
     public int matchingCount(Player player) {
-        if (player == null || this.isEmpty()) {
-            return 0;
-        }
-
-        int total = 0;
-        for (ItemStack stack : removableStacks(player)) {
-            if (!stack.isEmpty() && matches(stack)) {
-                total += stack.getCount();
-            }
-        }
-        return total;
+        return this.isEmpty() ? 0 : ToucanInventoryItems.count(player, this::matches);
     }
 
     public boolean remove(Player player) {
@@ -89,49 +80,15 @@ public record VillagerInventoryItemRemoval(
     }
 
     public Optional<List<ItemStack>> removeStacks(Player player) {
-        if (!canRemove(player)) {
-            return Optional.empty();
+        if (this.count <= 0) {
+            player.getInventory().setChanged();
+            return Optional.of(List.of());
         }
-
-        List<ItemStack> removedStacks = new ArrayList<>();
-        int remaining = this.count;
-        for (ItemStack stack : removableStacks(player)) {
-            if (remaining <= 0) {
-                break;
-            }
-            if (stack.isEmpty() || !matches(stack)) {
-                continue;
-            }
-
-            int removed = Math.min(remaining, stack.getCount());
-            removedStacks.add(stack.copyWithCount(removed));
-            stack.shrink(removed);
-            remaining -= removed;
-        }
-        player.getInventory().setChanged();
-        return Optional.of(List.copyOf(removedStacks));
+        return ToucanInventoryItems.remove(player, this::matches, this.count);
     }
 
     public List<ItemStack> previewRemovedStacks(Player player) {
-        if (!canRemove(player)) {
-            return List.of();
-        }
-
-        List<ItemStack> removedStacks = new ArrayList<>();
-        int remaining = this.count;
-        for (ItemStack stack : removableStacks(player)) {
-            if (remaining <= 0) {
-                break;
-            }
-            if (stack.isEmpty() || !matches(stack)) {
-                continue;
-            }
-
-            int removed = Math.min(remaining, stack.getCount());
-            removedStacks.add(stack.copyWithCount(removed));
-            remaining -= removed;
-        }
-        return List.copyOf(removedStacks);
+        return ToucanInventoryItems.previewRemove(player, this::matches, this.count);
     }
 
     public Map<String, String> replacements() {
@@ -151,12 +108,6 @@ public record VillagerInventoryItemRemoval(
                 .map(ItemSelector::description)
                 .reduce((left, right) -> left + " or " + right)
                 .orElse("items");
-    }
-
-    private static Iterable<ItemStack> removableStacks(Player player) {
-        List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
-        stacks.addAll(player.getInventory().offhand);
-        return stacks;
     }
 
     private static List<ItemSelector> readItemSelectors(JsonObject entry) {

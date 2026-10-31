@@ -1,10 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.jvn.villagerretaliation.util.DatapackJsonReader;
-import java.util.Locale;
-import java.util.Map;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public record DialogueTextEffects(
@@ -42,97 +38,31 @@ public record DialogueTextEffects(
     public static final DialogueTextEffects NONE = new DialogueTextEffects(
             false, false, false, false, false, false, false, false, false, false, null, null, null);
 
-    private static final Map<String, Integer> NAMED_COLORS = Map.ofEntries(
-            Map.entry("black", 0x000000),
-            Map.entry("dark_blue", 0x0000AA),
-            Map.entry("dark_green", 0x00AA00),
-            Map.entry("dark_aqua", 0x00AAAA),
-            Map.entry("dark_red", 0xAA0000),
-            Map.entry("dark_purple", 0xAA00AA),
-            Map.entry("gold", 0xFFAA00),
-            Map.entry("gray", 0xAAAAAA),
-            Map.entry("dark_gray", 0x555555),
-            Map.entry("blue", 0x5555FF),
-            Map.entry("green", 0x55FF55),
-            Map.entry("aqua", 0x55FFFF),
-            Map.entry("red", 0xFF5555),
-            Map.entry("light_purple", 0xFF55FF),
-            Map.entry("purple", 0xFF55FF),
-            Map.entry("magenta", 0xFF55FF),
-            Map.entry("yellow", 0xFFFF55),
-            Map.entry("white", 0xFFFFFF),
-            Map.entry("grey", 0xAAAAAA),
-            Map.entry("dark_grey", 0x555555)
-    );
-
-    public boolean active() {
-        return this.italic
-                || this.bold
-                || this.underlined
-                || this.strikethrough
-                || this.obfuscated
-                || this.wavy
-                || this.shake
-                || this.pulse
-                || this.jump
-                || this.rainbow
-                || this.color != null
-                || this.gradientStartColor != null
-                || this.gradientEndColor != null;
+    public com.jvn.toucanlib.text.ToucanTextStyle toStyle() {
+        return new com.jvn.toucanlib.text.ToucanTextStyle(
+                italic, bold, underlined, strikethrough, obfuscated, wavy, shake, pulse, jump, rainbow, color, gradientStartColor, gradientEndColor,
+                new com.jvn.toucanlib.text.ToucanTextMotion(waveAnimation.strength(), waveAnimation.speed()),
+                new com.jvn.toucanlib.text.ToucanTextMotion(shakeAnimation.strength(), shakeAnimation.speed()),
+                new com.jvn.toucanlib.text.ToucanTextMotion(pulseAnimation.strength(), pulseAnimation.speed()),
+                new com.jvn.toucanlib.text.ToucanTextMotion(jumpAnimation.strength(), jumpAnimation.speed()));
     }
 
-    public boolean hasGradient() {
-        return this.gradientStartColor != null && this.gradientEndColor != null;
+    public static DialogueTextEffects fromStyle(com.jvn.toucanlib.text.ToucanTextStyle style) {
+        return new DialogueTextEffects(
+                style.italic(), style.bold(), style.underlined(), style.strikethrough(), style.obfuscated(), style.wavy(), style.shake(), style.pulse(), style.jump(), style.rainbow(), style.color(), style.gradientStartColor(), style.gradientEndColor(),
+                new DialogueTextAnimation(style.waveAnimation().strength(), style.waveAnimation().speed()),
+                new DialogueTextAnimation(style.shakeAnimation().strength(), style.shakeAnimation().speed()),
+                new DialogueTextAnimation(style.pulseAnimation().strength(), style.pulseAnimation().speed()),
+                new DialogueTextAnimation(style.jumpAnimation().strength(), style.jumpAnimation().speed()));
     }
 
+    public boolean active() { return toStyle().active(); }
+    public boolean hasGradient() { return gradientStartColor != null && gradientEndColor != null; }
     public DialogueTextEffects merge(DialogueTextEffects other) {
-        if (other == null || !other.active()) {
-            return this;
-        }
-        return new DialogueTextEffects(
-                this.italic || other.italic(),
-                this.bold || other.bold(),
-                this.underlined || other.underlined(),
-                this.strikethrough || other.strikethrough(),
-                this.obfuscated || other.obfuscated(),
-                this.wavy || other.wavy(),
-                this.shake || other.shake(),
-                this.pulse || other.pulse(),
-                this.jump || other.jump(),
-                this.rainbow || other.rainbow(),
-                other.color() == null ? this.color : other.color(),
-                other.gradientStartColor() == null ? this.gradientStartColor : other.gradientStartColor(),
-                other.gradientEndColor() == null ? this.gradientEndColor : other.gradientEndColor(),
-                other.wavy() ? other.waveAnimation() : this.waveAnimation,
-                other.shake() ? other.shakeAnimation() : this.shakeAnimation,
-                other.pulse() ? other.pulseAnimation() : this.pulseAnimation,
-                other.jump() ? other.jumpAnimation() : this.jumpAnimation
-        );
+        return other == null || !other.active() ? this : fromStyle(toStyle().merge(other.toStyle()));
     }
-
     public static DialogueTextEffects read(JsonObject entry) {
-        JsonObject effects = DatapackJsonReader.readObject(entry, "text_effects");
-        Integer gradientStart = readColor(entry, effects, "gradient_start", "gradientStart");
-        Integer gradientEnd = readColor(entry, effects, "gradient_end", "gradientEnd");
-        return new DialogueTextEffects(
-                readEffectBoolean(entry, effects, "italic", "italics"),
-                readEffectBoolean(entry, effects, "bold", "bolded"),
-                readEffectBoolean(entry, effects, "underlined", "underline"),
-                readEffectBoolean(entry, effects, "strikethrough", "strikethrough"),
-                readEffectBoolean(entry, effects, "obfuscated", "obfuscate"),
-                readAnimatedBoolean(entry, effects, "wavy", "wave"),
-                readAnimatedBoolean(entry, effects, "shake", "shaky"),
-                readAnimatedBoolean(entry, effects, "pulse", "pulsing"),
-                readAnimatedBoolean(entry, effects, "jump", "jumping"),
-                readEffectBoolean(entry, effects, "rainbow", "rainbow_text"),
-                readColor(entry, effects, "color", "text_color"),
-                gradientStart,
-                gradientEnd,
-                readAnimation(entry, effects, "wavy", "wave"),
-                readAnimation(entry, effects, "shake", "shaky"),
-                readAnimation(entry, effects, "pulse", "pulsing"),
-                readAnimation(entry, effects, "jump", "jumping")
-        );
+        return fromStyle(com.jvn.toucanlib.text.ToucanTextStyle.read(entry));
     }
 
     public static void write(RegistryFriendlyByteBuf buffer, DialogueTextEffects effects) {
@@ -177,83 +107,15 @@ public record DialogueTextEffects(
     }
 
     public static DialogueTextEffects fromToken(String token) {
-        if (token == null || token.isBlank()) {
-            return NONE;
-        }
-        DialogueTextEffects effects = NONE;
-        for (String part : token.split(",")) {
-            effects = effects.merge(fromTag(part.trim()));
-        }
-        return effects;
+        return fromStyle(com.jvn.toucanlib.text.ToucanTextStyle.fromToken(token));
     }
 
     public static DialogueTextEffects fromTag(String tag) {
-        if (tag == null || tag.isBlank()) {
-            return NONE;
-        }
-        String normalized = tag.trim().toLowerCase(Locale.ROOT);
-        if (normalized.startsWith("color:")) {
-            return color(parseColor(normalized.substring("color:".length())));
-        }
-        if (normalized.startsWith("gradient:")) {
-            String[] colors = normalized.substring("gradient:".length()).split(":", 2);
-            if (colors.length == 2) {
-                return gradient(parseColor(colors[0]), parseColor(colors[1]));
-            }
-            return NONE;
-        }
-        Integer namedColor = parseColor(normalized);
-        if (namedColor != null) {
-            return color(namedColor);
-        }
-        return switch (normalized) {
-            case "i", "italic", "italics" -> new DialogueTextEffects(true, false, false, false, false, false, false, false, false, false, null, null, null);
-            case "b", "bold" -> new DialogueTextEffects(false, true, false, false, false, false, false, false, false, false, null, null, null);
-            case "u", "underline", "underlined" -> new DialogueTextEffects(false, false, true, false, false, false, false, false, false, false, null, null, null);
-            case "s", "strike", "strikethrough" -> new DialogueTextEffects(false, false, false, true, false, false, false, false, false, false, null, null, null);
-            case "obfuscated", "obfuscate", "magic" -> new DialogueTextEffects(false, false, false, false, true, false, false, false, false, false, null, null, null);
-            case "wave", "wavy" -> new DialogueTextEffects(false, false, false, false, false, true, false, false, false, false, null, null, null);
-            case "shake", "shaky" -> new DialogueTextEffects(false, false, false, false, false, false, true, false, false, false, null, null, null);
-            case "pulse", "pulsing" -> new DialogueTextEffects(false, false, false, false, false, false, false, true, false, false, null, null, null);
-            case "jump", "jumping", "bounce", "bouncy" -> new DialogueTextEffects(false, false, false, false, false, false, false, false, true, false, null, null, null);
-            case "rainbow" -> new DialogueTextEffects(false, false, false, false, false, false, false, false, false, true, null, null, null);
-            default -> NONE;
-        };
+        return fromStyle(com.jvn.toucanlib.text.ToucanTextStyle.fromTag(tag));
     }
 
     public static Integer parseColor(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        String normalized = value.trim().toLowerCase(Locale.ROOT);
-        Integer named = NAMED_COLORS.get(normalized);
-        if (named != null) {
-            return named;
-        }
-        if (normalized.startsWith("#")) {
-            normalized = normalized.substring(1);
-        } else if (normalized.startsWith("0x")) {
-            normalized = normalized.substring(2);
-        }
-        if (normalized.length() != 6) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(normalized, 16) & 0xFFFFFF;
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
-    }
-
-    private static DialogueTextEffects color(Integer color) {
-        return new DialogueTextEffects(false, false, false, false, false, false, false, false, false, false, color, null, null);
-    }
-
-    private static DialogueTextEffects gradient(Integer start, Integer end) {
-        if (start == null || end == null) {
-            return NONE;
-        }
-        return new DialogueTextEffects(false, false, false, false, false, false, false, false, false, false, null, start, end);
+        return com.jvn.toucanlib.text.ToucanTextStyle.parseColor(value);
     }
 
     private static void writeNullableColor(RegistryFriendlyByteBuf buffer, Integer color) {
@@ -267,54 +129,4 @@ public record DialogueTextEffects(
         return buffer.readBoolean() ? buffer.readInt() : null;
     }
 
-    private static JsonObject animationObject(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
-        for (var owner : effects == null ? java.util.List.of(entry) : java.util.List.of(entry, effects))
-            for (String key : java.util.List.of(primaryKey, aliasKey))
-                if (owner.has(key) && owner.get(key).isJsonObject()) return owner.getAsJsonObject(key);
-        return null;
-    }
-
-    private static boolean readAnimatedBoolean(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
-        return animationObject(entry, effects, primaryKey, aliasKey) != null || readEffectBoolean(entry, effects, primaryKey, aliasKey);
-    }
-
-    private static DialogueTextAnimation readAnimation(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
-        var object = animationObject(entry, effects, primaryKey, aliasKey);
-        return object == null ? DialogueTextAnimation.DEFAULT : DialogueTextAnimation.read(object);
-    }
-
-    private static boolean readEffectBoolean(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
-        return DatapackJsonReader.readBoolean(entry, primaryKey)
-                || DatapackJsonReader.readBoolean(entry, aliasKey)
-                || (effects != null && (DatapackJsonReader.readBoolean(effects, primaryKey)
-                || DatapackJsonReader.readBoolean(effects, aliasKey)));
-    }
-
-    private static Integer readColor(JsonObject entry, JsonObject effects, String primaryKey, String aliasKey) {
-        Integer color = readColor(entry, primaryKey);
-        if (color != null) {
-            return color;
-        }
-        color = readColor(entry, aliasKey);
-        if (color != null || effects == null) {
-            return color;
-        }
-        color = readColor(effects, primaryKey);
-        return color == null ? readColor(effects, aliasKey) : color;
-    }
-
-    private static Integer readColor(JsonObject object, String key) {
-        JsonElement element = object.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return null;
-        }
-        if (element.getAsJsonPrimitive().isNumber()) {
-            try {
-                return element.getAsInt() & 0xFFFFFF;
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return parseColor(element.getAsString());
-    }
 }

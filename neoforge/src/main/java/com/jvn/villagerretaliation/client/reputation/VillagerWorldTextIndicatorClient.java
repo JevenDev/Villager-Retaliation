@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.toucanlib.client.ToucanWorldTextIndicators;
 import com.jvn.toucanlib.client.ToucanWorldTextStyle;
+import com.jvn.toucanlib.client.ToucanWorldTextEmitter;
+import com.jvn.toucanlib.client.ToucanWorldTextEmitter.MotionProfile;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorPayload;
 import net.minecraft.client.Minecraft;
@@ -30,8 +32,8 @@ public final class VillagerWorldTextIndicatorClient {
     private static final MotionProfile POSITIVE_TRADE_MOTION = new MotionProfile(0.06D, 0.06D, 0.14D, 0.12D, 0.07D, 0.06D, 7.0F);
     private static final MotionProfile DIALOGUE_MOTION = new MotionProfile(0.05D, 0.06D, 0.11D, 0.09D, 0.055D, 0.045D, 6.0F);
     private static final MotionProfile DEFAULT_MOTION = new MotionProfile(0.04D, 0.06D, 0.08D, 0.07D, 0.04D, 0.035D, 5.0F);
-    private static long pausedAtMillis = -1L;
-    private static long pausedDurationMillis;
+    private static final ToucanWorldTextEmitter EMITTER = new ToucanWorldTextEmitter(new java.util.Random());
+    private static final com.jvn.toucanlib.util.ToucanPlaybackClock CLOCK = new com.jvn.toucanlib.util.ToucanPlaybackClock(0);
 
     private VillagerWorldTextIndicatorClient() {
     }
@@ -39,6 +41,10 @@ public final class VillagerWorldTextIndicatorClient {
     public static void accept(VillagerWorldTextIndicatorPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.execute(() -> add(payload));
+    }
+
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        WORLD_TEXT.update(Minecraft.getInstance().level, now());
     }
 
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -52,13 +58,18 @@ public final class VillagerWorldTextIndicatorClient {
             return;
         }
 
-        WORLD_TEXT.render(
+        int rendered = WORLD_TEXT.render(
                 minecraft,
                 event.getPoseStack(),
                 event.getCamera().getPosition(),
                 event.getPartialTick().getGameTimeDeltaPartialTick(true),
-                now()
+                now(),
+                minecraft.renderBuffers().bufferSource(),
+                event.getFrustum()::isVisible
         );
+        if (rendered > 0) {
+            minecraft.renderBuffers().bufferSource().endBatch();
+        }
     }
 
     private static void add(VillagerWorldTextIndicatorPayload payload) {
@@ -128,56 +139,10 @@ public final class VillagerWorldTextIndicatorClient {
     }
 
     private static void addSleepZSequence(AbstractVillager villager) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Vec3 center = villager.position().add(0.0D, villager.getBbHeight() * 0.78D, 0.0D);
-        Vec3 horizontalToCamera = new Vec3(1.0D, 0.0D, 0.0D);
-        if (minecraft.level != null) {
-            Vec3 toCamera = minecraft.gameRenderer.getMainCamera().getPosition().subtract(center);
-            horizontalToCamera = new Vec3(toCamera.x, 0.0D, toCamera.z);
-            if (horizontalToCamera.lengthSqr() < 1.0E-4D) {
-                horizontalToCamera = new Vec3(1.0D, 0.0D, 0.0D);
-            }
-        }
-
-        Vec3 side = new Vec3(0.0D, 1.0D, 0.0D).cross(horizontalToCamera).normalize();
-        Vec3 away = horizontalToCamera.normalize().scale(-1.0D);
-        double sideSign = (villager.getId() & 1) == 0 ? 1.0D : -1.0D;
-        Vec3 angled = side.scale((0.28D + Math.random() * 0.08D) * sideSign)
-                .add(away.scale(0.08D + Math.random() * 0.06D))
-                .add(0.0D, 0.78D + Math.random() * 0.08D, 0.0D)
-                .normalize();
-        Vec3 horizontalNormal = new Vec3(angled.z, 0.0D, -angled.x);
-        if (horizontalNormal.lengthSqr() < 1.0E-4D) {
-            horizontalNormal = side;
-        } else {
-            horizontalNormal = horizontalNormal.normalize();
-        }
-
-        double pathOffset = villager.getBbWidth() * 0.40D + 0.08D;
-        double lateralOffset = (Math.random() - 0.5D) * 0.035D;
-        Vec3 offset = angled.scale(pathOffset).add(horizontalNormal.scale(lateralOffset));
-        Vec3 drift = angled.scale(0.86D + pathOffset * 0.08D).add(0.0D, 0.12D + pathOffset * 0.04D, 0.0D);
-        float tilt = (float) ((5.0D + Math.random() * 2.0D) * -sideSign);
-        float direction = tilt < 0.0F ? 1.0F : -1.0F;
-        float phase = (float) (Math.random() * Mth.TWO_PI);
-        double arcHeight = 0.18D + Math.random() * 0.04D;
-        for (int index = 0; index < 3; index++) {
-            ToucanWorldTextStyle zStyle = new ToucanWorldTextStyle(
-                    "Z",
-                    SLEEP_COLOR,
-                    true,
-                    3200,
-                    BASE_SCALE * 0.58F,
-                    0.0D,
-                    0.0D,
-                    0.0D,
-                    1.0F,
-                    0.022F,
-                    0.012F,
-                    Math.abs(tilt)
-            );
-            addSleepText(villager, zStyle, index * 720L, offset, drift, direction, phase, arcHeight);
-        }
+        var style = new ToucanWorldTextStyle("Z", SLEEP_COLOR, true, 3200,
+                BASE_SCALE * 0.58F, 0, 0, 0, 1, 0.022F, 0.012F, 0);
+        EMITTER.risingSequence(WORLD_TEXT, villager, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(),
+                style, 3, 720, 0.96, now());
     }
 
     private static void spawnSnoreBubblePop(AbstractVillager villager) {
@@ -264,56 +229,8 @@ public final class VillagerWorldTextIndicatorClient {
             ToucanWorldTextStyle style,
             VillagerWorldTextIndicatorKind kind,
             double sideBias) {
-        MotionProfile motion = motionProfile(kind);
-        Vec3 center = villager.position().add(0.0D, villager.getBbHeight() * 0.66D, 0.0D);
-        Vec3 toCamera = minecraft.gameRenderer.getMainCamera().getPosition().subtract(center);
-        Vec3 horizontalToCamera = new Vec3(toCamera.x, 0.0D, toCamera.z);
-        if (horizontalToCamera.lengthSqr() < 1.0E-4D) {
-            horizontalToCamera = new Vec3(1.0D, 0.0D, 0.0D);
-        }
-
-        Vec3 side = new Vec3(0.0D, 1.0D, 0.0D).cross(horizontalToCamera).normalize();
-        Vec3 away = horizontalToCamera.normalize().scale(-1.0D);
-        double randomSide = Math.random() < 0.5D ? -1.0D : 1.0D;
-        double sideSign = sideBias * randomSide;
-        double sideOffset = villager.getBbWidth() * 0.50D + sideOffset(style.label(), motion) + Math.random() * 0.035D;
-        double awayOffset = motion.awayAmount() + Math.random() * 0.04D;
-        double verticalOffset = motion.verticalOffset() + (Math.random() - 0.5D) * 0.04D;
-        Vec3 offset = side.scale(sideOffset * sideSign).add(away.scale(awayOffset)).add(0.0D, verticalOffset, 0.0D);
-        Vec3 drift = side.scale((motion.driftDistance() + Math.random() * 0.04D) * sideSign).add(0.0D, motion.driftRise(), 0.0D);
-        double arcHeight = motion.arcHeight() + Math.random() * 0.08D;
-        float tilt = (float) ((motion.tiltDegrees() + Math.random() * 3.0D) * -sideSign);
-
-        WORLD_TEXT.addAnchoredDirected(
-                villager,
-                offset,
-                drift,
-                new ToucanWorldTextStyle(
-                        style.label(),
-                        style.color(),
-                        style.italic(),
-                        style.lifetimeMillis(),
-                        style.scale(),
-                        style.scatterRadius(),
-                        style.driftRadius(),
-                        style.riseDistance(),
-                        style.popStrength(),
-                        style.hoverAmplitude(),
-                        style.swayAmplitude(),
-                        Math.abs(tilt)
-                ),
-                tilt < 0.0F ? 1.0F : -1.0F,
-                (float) (Math.random() * Mth.TWO_PI),
-                arcHeight,
-                0.90D,
-                now()
-        );
-    }
-
-    private static double sideOffset(String text, MotionProfile motion) {
-        int length = text == null ? 1 : Math.max(1, text.strip().length());
-        double textWidth = Mth.clamp(length, 1, 14) * 0.035D;
-        return textWidth + motion.kindPadding();
+        EMITTER.flow(WORLD_TEXT, minecraft.gameRenderer.getMainCamera().getPosition(), villager,
+                style, motionProfile(kind), sideBias, now());
     }
 
     private static MotionProfile motionProfile(VillagerWorldTextIndicatorKind kind) {
@@ -365,33 +282,10 @@ public final class VillagerWorldTextIndicatorClient {
     }
 
     private static long now() {
-        Minecraft minecraft = Minecraft.getInstance();
-        long wallNow = System.currentTimeMillis();
-        if (minecraft == null) {
-            return wallNow;
-        }
-
-        if (minecraft.isPaused()) {
-            if (pausedAtMillis < 0L) {
-                pausedAtMillis = wallNow;
-            }
-        } else if (pausedAtMillis >= 0L) {
-            pausedDurationMillis += wallNow - pausedAtMillis;
-            pausedAtMillis = -1L;
-        }
-
-        long activePauseMillis = pausedAtMillis >= 0L ? wallNow - pausedAtMillis : 0L;
-        return wallNow - pausedDurationMillis - activePauseMillis;
+        long now = net.minecraft.Util.getMillis();
+        if (Minecraft.getInstance().isPaused()) {
+            if (!CLOCK.paused()) CLOCK.pauseAt(CLOCK.position(now), now);
+        } else CLOCK.play(now);
+        return (long) CLOCK.position(now);
     }
-
-    private record MotionProfile(
-            double kindPadding,
-            double awayAmount,
-            double verticalOffset,
-            double driftDistance,
-            double driftRise,
-            double arcHeight,
-            float tiltDegrees) {
-    }
-
 }

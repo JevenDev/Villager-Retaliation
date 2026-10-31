@@ -2,16 +2,10 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import java.io.IOException;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
-import org.joml.Matrix4f;
 
 public final class VillagerInteractionScreenShaderRenderer {
     private static ShaderInstance dialogueCinematicBarsShader;
@@ -26,18 +20,9 @@ public final class VillagerInteractionScreenShaderRenderer {
     }
 
     public static void registerShaders(RegisterShadersEvent event) {
-        try {
-            event.registerShader(
-                    new ShaderInstance(
-                            event.getResourceProvider(),
-                            VillagerRetaliationClientAssets.DIALOGUE_CINEMATIC_BARS_SHADER,
-                            DefaultVertexFormat.POSITION
-                    ),
-                    shader -> dialogueCinematicBarsShader = shader
-            );
-        } catch (IOException exception) {
-            throw new IllegalStateException("Failed to register interaction screen shaders", exception);
-        }
+        com.jvn.toucanlib.neoforge.client.ToucanShaders.register(event,
+                VillagerRetaliationClientAssets.DIALOGUE_CINEMATIC_BARS_SHADER,
+                DefaultVertexFormat.POSITION, shader -> dialogueCinematicBarsShader = shader);
     }
 
     public static boolean renderDialogueCinematicBars(
@@ -70,26 +55,17 @@ public final class VillagerInteractionScreenShaderRenderer {
     }
 
     private static void drawQuad(GuiGraphics graphics, ShaderInstance shader, ShaderRect rect) {
-        Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(() -> shader);
-
-        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferBuilder.addVertex(pose, rect.left(), rect.bottom(), 0.0F);
-        bufferBuilder.addVertex(pose, rect.right(), rect.bottom(), 0.0F);
-        bufferBuilder.addVertex(pose, rect.right(), rect.top(), 0.0F);
-        bufferBuilder.addVertex(pose, rect.left(), rect.top(), 0.0F);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-
-        RenderSystem.disableBlend();
-    }
-
-    private static void setUniform(ShaderInstance shader, String name, float value) {
-        var uniform = shader.getUniform(name);
-        if (uniform != null) {
-            uniform.set(value);
+        try {
+            com.jvn.toucanlib.neoforge.client.ToucanShaderQuads.drawRect(graphics, shader,
+                    rect.left(), rect.top(), rect.right(), rect.bottom());
+        } finally {
+            RenderSystem.disableBlend();
         }
     }
 
+    private static void setUniform(ShaderInstance shader, String name, float value) {
+        com.jvn.toucanlib.neoforge.client.ToucanShaders.setUniform(shader, name, value);
+    }
 }

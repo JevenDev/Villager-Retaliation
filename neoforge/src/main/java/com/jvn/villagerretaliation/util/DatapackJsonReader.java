@@ -2,11 +2,9 @@ package com.jvn.villagerretaliation.util;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.jvn.toucanlib.util.ToucanDatapackJson;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -16,24 +14,15 @@ public final class DatapackJsonReader {
     }
 
     public static JsonObject readObject(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonObject() ? null : element.getAsJsonObject();
+        return ToucanDatapackJson.readObject(entry, key);
     }
 
     public static String readString(JsonObject entry, String... keys) {
-        for (String key : keys) {
-            JsonElement element = entry.get(key);
-            if (element != null && element.isJsonPrimitive()) {
-                return element.getAsString().trim();
-            }
-        }
-        return "";
+        return ToucanDatapackJson.readString(entry, keys);
     }
 
     public static List<String> readStringList(JsonObject entry, String... keys) {
-        List<String> values = new ArrayList<>();
-        for (String key : keys) values.addAll(readStringValues(entry.get(key)));
-        return List.copyOf(values);
+        return ToucanDatapackJson.readStringList(entry, keys);
     }
 
     public static List<String> readStringValues(JsonElement element) {
@@ -53,12 +42,7 @@ public final class DatapackJsonReader {
     }
 
     public static List<String> readLines(JsonObject entry) {
-        List<String> lines = readStringList(entry, "lines");
-        if (!lines.isEmpty()) {
-            return lines;
-        }
-        String text = readString(entry, "text");
-        return text.isBlank() ? List.of() : List.of(text);
+        return ToucanDatapackJson.readLines(entry);
     }
 
     public static int readInt(JsonObject entry, String key, int fallback) {
@@ -71,18 +55,11 @@ public final class DatapackJsonReader {
     }
 
     public static int readInt(JsonElement element, int fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return ToucanDatapackJson.readInt(element, fallback);
     }
 
     public static Integer readNullableInt(JsonObject entry, String key) {
-        return readNullableInt(entry.get(key));
+        return ToucanDatapackJson.readNullableInt(entry, key);
     }
 
     public static Integer readNullableInt(JsonElement element) {
@@ -101,31 +78,11 @@ public final class DatapackJsonReader {
     }
 
     public static long readDurationTicks(JsonObject entry, String baseName, long fallback) {
-        Long ticks = readNullableLong(entry, baseName + "_ticks");
-        if (ticks != null) {
-            return Math.max(0L, ticks);
-        }
-        Long days = readNullableLong(entry, baseName + "_days");
-        if (days != null) {
-            return Math.max(0L, days * 24000L);
-        }
-        Long seconds = readNullableLong(entry, baseName + "_seconds");
-        if (seconds != null) {
-            return Math.max(0L, seconds * 20L);
-        }
-        return fallback;
+        return ToucanDatapackJson.readDurationTicks(entry, baseName, fallback, true);
     }
 
     public static Long readNullableLong(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return element.getAsLong();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return null;
-        }
+        return ToucanDatapackJson.readNullableLong(entry, key);
     }
 
     public static double readDouble(JsonObject entry, String key, double fallback) {
@@ -138,14 +95,7 @@ public final class DatapackJsonReader {
     }
 
     public static double readDouble(JsonElement element, double fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsDouble();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return ToucanDatapackJson.readDouble(element, fallback);
     }
 
     public static boolean readBoolean(JsonObject entry, String key) {
@@ -162,22 +112,11 @@ public final class DatapackJsonReader {
     }
 
     public static boolean readBoolean(JsonElement element, boolean fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        JsonPrimitive primitive = element.getAsJsonPrimitive();
-        if (primitive.isBoolean()) {
-            return primitive.getAsBoolean();
-        }
-        if (primitive.isString()) {
-            return Boolean.parseBoolean(primitive.getAsString());
-        }
-        return fallback;
+        return ToucanDatapackJson.readBoolean(element, fallback);
     }
 
     public static boolean hasPrimitive(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element != null && element.isJsonPrimitive();
+        return ToucanDatapackJson.hasPrimitive(entry, key);
     }
 
     public static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
@@ -185,22 +124,11 @@ public final class DatapackJsonReader {
     }
 
     public static <E extends Enum<E>> Optional<E> readEnum(String value, Class<E> enumClass) {
-        if (value == null || value.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Enum.valueOf(enumClass, value.trim().toUpperCase(Locale.ROOT)));
-        } catch (IllegalArgumentException ignored) {
-            return Optional.empty();
-        }
+        return ToucanDatapackJson.readEnum(value, enumClass);
     }
 
     public static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {
-        Set<E> values = new LinkedHashSet<>();
-        for (String value : readStringList(entry, key)) {
-            readEnum(value, enumClass).ifPresent(values::add);
-        }
-        return values;
+        return ToucanDatapackJson.readEnumSet(entry, key, enumClass);
     }
 
     public static Optional<ResourceLocation> readResourceLocation(JsonObject entry, String key) {
@@ -208,20 +136,10 @@ public final class DatapackJsonReader {
     }
 
     public static Optional<ResourceLocation> parseResourceLocation(String value) {
-        String normalized = value == null ? "" : value.trim();
-        if (normalized.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(ResourceLocation.tryParse(normalized));
+        return ToucanDatapackJson.parseResourceLocation(value);
     }
 
     public static Set<ResourceLocation> readResourceLocations(JsonObject entry, String... keys) {
-        Set<ResourceLocation> locations = new LinkedHashSet<>();
-        for (String key : keys) {
-            for (String value : readStringList(entry, key)) {
-                parseResourceLocation(value).ifPresent(locations::add);
-            }
-        }
-        return locations;
+        return ToucanDatapackJson.readResourceLocations(entry, keys);
     }
 }

@@ -3,44 +3,18 @@ package com.jvn.villagerretaliation.client.exploration;
 import java.util.function.LongSupplier;
 
 final class MapScreenTransition {
-    private enum State { NEW, OPENING, OPEN, CLOSING }
-    private final LongSupplier clock;
-    private State state = State.NEW;
-    private long startedAt;
-    private float closingFrom;
+    private final com.jvn.toucanlib.client.ToucanScreenTransition transition;
 
     MapScreenTransition() { this(System::nanoTime); }
-    MapScreenTransition(LongSupplier clock) { this.clock = clock; }
-
-    void open() {
-        if (this.state != State.NEW) return;
-        this.startedAt = this.clock.getAsLong();
-        this.state = State.OPENING;
+    MapScreenTransition(LongSupplier clock) {
+        transition = new com.jvn.toucanlib.client.ToucanScreenTransition(1250, 600, clock);
     }
-
-    boolean closing() { return this.state == State.CLOSING; }
-
-    boolean close(boolean animate) {
-        if (closing() || !animate) return true;
-        this.closingFrom = progress(animate);
-        this.startedAt = this.clock.getAsLong();
-        this.state = State.CLOSING;
-        return false;
-    }
-
-    void finishOpening() {
-        if (!closing()) this.state = State.OPEN;
-    }
-
-    void suspend() {
-        this.state = State.OPEN;
-    }
-
-    float progress(boolean animate) {
-        if (closing()) return (float) Math.max(0, this.closingFrom - (this.clock.getAsLong() - this.startedAt) / 600_000_000.0);
-        if (!animate || this.state == State.OPEN) return 1;
-        return this.state == State.NEW ? 0 : (float) Math.clamp((this.clock.getAsLong() - this.startedAt) / 1_250_000_000.0, 0, 1);
-    }
+    void open() { transition.open(); }
+    boolean closing() { return transition.closing(); }
+    boolean close(boolean animate) { return transition.close(animate); }
+    void finishOpening() { transition.finishOpening(); }
+    void suspend() { transition.suspend(); }
+    float progress(boolean animate) { return transition.progress(animate); }
 
     float pitch(float pitch, boolean animate) {
         float progress = progress(animate);

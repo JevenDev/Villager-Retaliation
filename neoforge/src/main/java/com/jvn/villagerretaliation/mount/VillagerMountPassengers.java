@@ -73,7 +73,7 @@ public final class VillagerMountPassengers {
     }
 
     public static boolean tryTakeDriverSeat(AbstractHorse horse, Entity rider) {
-        return ToucanPassengerApi.tryTakeDriverSeat(LAYOUT_ID, horse, rider);
+        return ToucanPassengerApi.takeDriverSeat(LAYOUT_ID, horse, rider) == ToucanPassengerApi.SeatChangeResult.SUCCESS;
     }
 
     public static Entity occupant(AbstractHorse horse, boolean passengerSeat) {

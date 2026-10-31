@@ -18,7 +18,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import com.jvn.toucanlib.client.model.ToucanModelPartAnchors;
 
 public final class DialogueCameraFocusPoints {
     private static final Map<LivingEntity, Sample> samples = new WeakHashMap<>();
@@ -56,7 +56,7 @@ public final class DialogueCameraFocusPoints {
         if (entry == null || VillagerModelPreviewRenderContext.isRendering(entity) || !DialogueCameraController.capturesFocus(entity)) return;
         var points = new EnumMap<Focus, Vec3>(Focus.class);
         // remove the renderer's incoming view transform, retaining the animated model transform
-        var transform = new Matrix4f(entry).invert().mul(poses.last().pose());
+        var transform = ToucanModelPartAnchors.modelTransform(entry, poses.last().pose());
         if (model instanceof HumanoidModel<?> humanoid) {
             part(points, Focus.HEAD, transform, humanoid.head, 0, -.25f, 0, model.young);
             part(points, Focus.CHEST, transform, humanoid.body, 0, .35f, 0, model.young);
@@ -105,8 +105,7 @@ public final class DialogueCameraFocusPoints {
             if (focus == Focus.HEAD) { stack.scale(.75f, .75f, .75f); stack.translate(0, 1, 0); }
             else { stack.scale(.5f, .5f, .5f); stack.translate(0, 1.5, 0); }
         }
-        part.translateAndRotate(stack);
-        points.put(focus, transform(stack, x, y, z));
+        points.put(focus, ToucanModelPartAnchors.pointOnPart(stack, part, x, y, z));
     }
 
     private static PoseStack stack(Matrix4f transform) {
@@ -116,7 +115,6 @@ public final class DialogueCameraFocusPoints {
     }
 
     private static Vec3 transform(PoseStack stack, float x, float y, float z) {
-        var point = stack.last().pose().transformPosition(new Vector3f(x, y, z));
-        return new Vec3(point.x, point.y, point.z);
+        return ToucanModelPartAnchors.point(stack, x, y, z);
     }
 }

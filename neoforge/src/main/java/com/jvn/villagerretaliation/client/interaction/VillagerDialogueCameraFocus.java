@@ -215,12 +215,12 @@ public final class VillagerDialogueCameraFocus {
                 event.getPitch());
         int transitionTicks = Math.max(1, VillagerRetaliationConfig.DIALOGUE_CAMERA_TRANSITION_TICKS.get());
         float turnStrength = cameraTurnStrength();
-        ToucanCameraBasis.Rotation rotation = turnSmoother.update(
+        ToucanCameraBasis.Rotation rotation = turnSmoother.updateAtTime(
                 event.getYaw(),
                 event.getPitch(),
                 targetRotation.yaw(),
                 targetRotation.pitch(),
-                event.getPartialTick(),
+                minecraft.level.getGameTime() + event.getPartialTick(),
                 adjustedCameraTurnTransitionTicks(transitionTicks),
                 CAMERA_TURN_MIN_TICK_LERP * turnStrength,
                 CAMERA_TURN_MAX_TICK_LERP * turnStrength);

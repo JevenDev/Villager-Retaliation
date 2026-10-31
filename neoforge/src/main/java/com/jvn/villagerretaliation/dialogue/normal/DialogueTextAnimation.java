@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.dialogue.normal;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public record DialogueTextAnimation(float strength, float speed) {
@@ -15,19 +13,12 @@ public record DialogueTextAnimation(float strength, float speed) {
     }
 
     public static DialogueTextAnimation read(JsonObject value) {
-        var issues = QuestJsonSchema.validate(value, schema());
-        if (!issues.isEmpty()) throw new IllegalArgumentException("Invalid dialogue animation: " + issues);
-        return new DialogueTextAnimation(value.has("strength") ? value.get("strength").getAsFloat() : 1,
-                value.has("speed") ? value.get("speed").getAsFloat() : 1);
+        var motion = com.jvn.toucanlib.text.ToucanTextMotion.read(value);
+        return new DialogueTextAnimation(motion.strength(), motion.speed());
     }
 
     public static JsonObject schema() {
-        return JsonParser.parseString("""
-                {"type":"object","additionalProperties":false,"properties":{
-                  "strength":{"type":"number","minimum":0,"maximum":4},
-                  "speed":{"type":"number","minimum":0,"maximum":10}
-                }}
-                """).getAsJsonObject();
+        return com.jvn.toucanlib.text.ToucanTextMotion.schema();
     }
 
     public void write(RegistryFriendlyByteBuf buffer) { buffer.writeFloat(strength); buffer.writeFloat(speed); }
