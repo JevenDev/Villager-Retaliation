@@ -409,7 +409,7 @@ public final class WorldCampaignChecks {
 
     private static int migrationReceipts() throws Exception {
         var root = java.nio.file.Path.of(WorldCampaignChecks.class.getResource("/data/villagerretaliation/quests").toURI());
-        int count = 0;
+        var fingerprints = new LinkedHashMap<ResourceLocation, String>();
         List<java.nio.file.Path> quests;
         try (var files = Files.walk(root)) {
             quests = files.filter(path -> path.getFileName().toString().equals("quest.json")).toList();
@@ -430,20 +430,47 @@ public final class WorldCampaignChecks {
                     definitions.getAsJsonObject(kind).add(value.get("id").getAsString(), value);
                 }
             }
-            String name = questId.getPath();
-            var file = root.resolveSibling("quest_migrations").resolve(name + ".json");
-            JsonObject receipt = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
             String current = com.jvn.villagerretaliation.quest.content.bundle.QuestBundleFingerprints.definition(definitions);
-            String previous = receipt.get("from_fingerprint").getAsString();
-            check(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, questId, previous, current),
-                    "migration receipt matches the runtime fingerprint: " + questId);
-            check(!com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, questId, current, current),
-                    "migration receipt cannot authorize an unrelated pending reward");
-            count++;
+            check(fingerprints.put(questId, current) == null, "built-in quest IDs are unique: " + questId);
         }
-        check(count == 99, "every built-in quest has a verified migration receipt");
-        System.out.println("PASS " + count + " built-in V3 bundles and reward migration fingerprints");
-        return count;
+        var receipts = new LinkedHashMap<ResourceLocation, List<JsonObject>>();
+        var transitions = new HashSet<List<String>>();
+        try (var files = Files.walk(root.resolveSibling("quest_migrations"))) {
+            for (var file : files.filter(path -> path.toString().endsWith(".json")).toList()) {
+                JsonObject receipt = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
+                ResourceLocation questId = id(receipt.get("quest").getAsString());
+                String previous = receipt.get("from_fingerprint").getAsString();
+                String target = receipt.get("to_fingerprint").getAsString();
+                check(fingerprints.containsKey(questId), "migration receipt belongs to an existing quest: " + file);
+                check(previous.matches("[a-f0-9]{64}") && target.matches("[a-f0-9]{64}") && !previous.equals(target),
+                        "migration receipt describes distinct valid fingerprints: " + file);
+                check(com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, questId, previous, target),
+                        "migration receipt uses the runtime schema: " + file);
+                check(transitions.add(List.of(questId.toString(), previous, target)), "migration transitions are unique: " + file);
+                receipts.computeIfAbsent(questId, ignored -> new ArrayList<>()).add(receipt);
+            }
+        }
+        // these quests were authored in v3 and have no older reward fingerprint to migrate
+        var nativeV3 = Set.of(id("villagerretaliation:last_light"), id("villagerretaliation:second_dispatch"),
+                id("villagerretaliation:urgent_dispatch"));
+        check(fingerprints.keySet().containsAll(nativeV3), "native V3 migration exceptions refer to existing quests");
+        for (var entry : fingerprints.entrySet()) {
+            ResourceLocation questId = entry.getKey();
+            String current = entry.getValue();
+            var migrations = receipts.getOrDefault(questId, List.of());
+            check(!migrations.isEmpty() || nativeV3.contains(questId), "migrated quest retains its receipts: " + questId);
+            for (var receipt : migrations) {
+                String previous = receipt.get("from_fingerprint").getAsString();
+                check(migrations.stream().anyMatch(candidate ->
+                                com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(candidate, questId, previous, current)),
+                        "historical rewards have a direct receipt to the current definition: " + questId + " from " + previous);
+                check(!com.jvn.villagerretaliation.quest.content.bundle.QuestBundleMigrations.matches(receipt, questId, current, current),
+                        "migration receipt cannot authorize an unrelated pending reward");
+            }
+        }
+        check(!receipts.isEmpty(), "built-in migration receipts are present");
+        System.out.println("PASS " + fingerprints.size() + " built-in V3 bundles and " + transitions.size() + " reward migration receipts");
+        return fingerprints.size();
     }
 
     private static int migrationFingerprintFixtures() throws Exception {
