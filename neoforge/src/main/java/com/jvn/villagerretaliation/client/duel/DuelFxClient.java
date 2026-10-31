@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.duel;
 
+import com.jvn.toucanlib.client.render.ToucanPostChain;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.DuelFxStatePayload;
 import com.mojang.logging.LogUtils;
@@ -255,8 +256,7 @@ public final class DuelFxClient {
             exitPostChain.setUniform("PulseStrength", pulse);
             exitPostChain.setUniform("WinPulse", resultKind == DuelFxStatePayload.RESULT_WIN ? pulse : 0.0F);
             exitPostChain.setUniform("LossPulse", resultKind == DuelFxStatePayload.RESULT_LOSS ? pulse : 0.0F);
-            exitPostChain.process(partialTick);
-            minecraft.getMainRenderTarget().bindWrite(false);
+            ToucanPostChain.processAndRestore(minecraft, exitPostChain, partialTick);
             loggedPostError = false;
         } catch (RuntimeException | IOException exception) {
             if (!loggedPostError) {

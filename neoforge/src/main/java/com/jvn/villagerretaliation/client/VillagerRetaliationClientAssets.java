@@ -291,7 +291,7 @@ public final class VillagerRetaliationClientAssets {
             ResourceLocation.withDefaultNamespace("optifine/cem/" + VillagerRetaliation.MOD_ID + "/villager.jem");
 
     public static final ResourceLocation DIALOGUE_CINEMATIC_BARS_SHADER =
-            VillagerRetaliation.id("dialogue_cinematic_bars");
+            com.jvn.toucanlib.neoforge.client.ToucanCinematicBars.DEFAULT_SHADER;
 
     public static ResourceLocation reputationIcon(VillagerReputationLevel level) {
         return switch (level) {

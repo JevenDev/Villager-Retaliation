@@ -1,14 +1,12 @@
 package com.jvn.villagerretaliation.client.ui;
 
 import com.jvn.toucanlib.client.ToucanColors;
+import com.jvn.toucanlib.client.ToucanEasing;
 import com.jvn.toucanlib.client.ToucanGuiText;
 import com.jvn.toucanlib.client.ToucanScreenRects;
-import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.Mth;
 
 public final class VillagerClientUiUtil {
     private static final float SCREEN_LAYER_Z = 320.0F;
@@ -45,9 +43,7 @@ public final class VillagerClientUiUtil {
     }
 
     public static int withAlphaFloor(int color, float alphaFactor) {
-        int alpha = color >>> 24;
-        int adjustedAlpha = Mth.clamp(Mth.floor(alpha * alphaFactor), 0, 255);
-        return adjustedAlpha << 24 | color & 0x00FFFFFF;
+        return ToucanColors.multiplyAlphaFloor(color, alphaFactor);
     }
 
     public static int withAlphaRound(int color, float alphaFactor) {
@@ -55,18 +51,15 @@ public final class VillagerClientUiUtil {
     }
 
     public static float smoothstep(float value) {
-        float progress = Mth.clamp(value, 0.0F, 1.0F);
-        return progress * progress * (3.0F - 2.0F * progress);
+        return ToucanEasing.smoothstep(value);
     }
 
     public static float easeOutCubic(float value) {
-        float progress = Mth.clamp(value, 0.0F, 1.0F);
-        float inverse = 1.0F - progress;
-        return 1.0F - inverse * inverse * inverse;
+        return ToucanEasing.easeOutCubic(value);
     }
 
     public static boolean containsInclusive(double x, double y, int left, int top, int right, int bottom) {
-        return x >= left && x <= right && y >= top && y <= bottom;
+        return ToucanScreenRects.containsInclusive(x, y, left, top, right - left, bottom - top);
     }
 
     public static boolean containsExclusive(double x, double y, int left, int top, int right, int bottom) {
@@ -74,7 +67,7 @@ public final class VillagerClientUiUtil {
     }
 
     public static int scaledTextWidth(Font font, String text, float scale) {
-        return Math.round(font.width(text) * scale);
+        return ToucanGuiText.scaledTextWidth(font, text, scale);
     }
 
     public static int scaledWrapWidth(int width, float scale) {
@@ -94,13 +87,7 @@ public final class VillagerClientUiUtil {
             int color,
             boolean shadow,
             float z) {
-        if (text == null || text.isBlank()) {
-            return;
-        }
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, z);
-        graphics.drawString(font, text, x, y, color, shadow);
-        graphics.pose().popPose();
+        ToucanGuiText.drawStringAtZ(graphics, font, text, x, y, color, shadow, z);
     }
 
     public static void drawScaledStringAtZ(
@@ -113,14 +100,7 @@ public final class VillagerClientUiUtil {
             boolean shadow,
             float scale,
             float z) {
-        if (text == null || text.isBlank()) {
-            return;
-        }
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, z);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, text, 0, 0, color, shadow);
-        graphics.pose().popPose();
+        ToucanGuiText.drawScaledStringAtZ(graphics, font, text, x, y, color, shadow, scale, z);
     }
 
     public static void drawStringAtZ(
@@ -132,10 +112,7 @@ public final class VillagerClientUiUtil {
             int color,
             boolean shadow,
             float z) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, z);
-        graphics.drawString(font, text, x, y, color, shadow);
-        graphics.pose().popPose();
+        ToucanGuiText.drawStringAtZ(graphics, font, text, x, y, color, shadow, z);
     }
 
     public static void drawScaledStringAtZ(
@@ -148,11 +125,7 @@ public final class VillagerClientUiUtil {
             boolean shadow,
             float scale,
             float z) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, z);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, text, 0, 0, color, shadow);
-        graphics.pose().popPose();
+        ToucanGuiText.drawScaledStringAtZ(graphics, font, text, x, y, color, shadow, scale, z);
     }
 
     public static void drawClippedStringAtZ(
@@ -166,12 +139,7 @@ public final class VillagerClientUiUtil {
             int color,
             boolean shadow,
             float z) {
-        if (text == null || text.isBlank() || width <= 0 || lineStep <= 0) {
-            return;
-        }
-        graphics.enableScissor(x, y, x + width, y + lineStep);
-        drawStringAtZ(graphics, font, text, x, y, color, shadow, z);
-        graphics.disableScissor();
+        ToucanGuiText.drawClippedStringAtZ(graphics, font, text, x, y, width, lineStep, color, shadow, z);
     }
 
     public static void drawClippedScaledStringAtZ(
@@ -186,12 +154,7 @@ public final class VillagerClientUiUtil {
             boolean shadow,
             float scale,
             float z) {
-        if (text == null || text.isBlank() || width <= 0 || lineStep <= 0) {
-            return;
-        }
-        graphics.enableScissor(x, y, x + width, y + lineStep);
-        drawScaledStringAtZ(graphics, font, text, x, y, color, shadow, scale, z);
-        graphics.disableScissor();
+        ToucanGuiText.drawClippedScaledStringAtZ(graphics, font, text, x, y, width, lineStep, color, shadow, scale, z);
     }
 
     public static int drawWrappedLinesAtZ(
@@ -206,16 +169,7 @@ public final class VillagerClientUiUtil {
             int color,
             boolean shadow,
             float z) {
-        if (text == null || text.isBlank() || width <= 0 || maxLines <= 0 || lineStep <= 0) {
-            return y;
-        }
-
-        List<FormattedCharSequence> lines = font.split(Component.literal(text), width);
-        int visibleLines = Math.min(maxLines, lines.size());
-        for (int index = 0; index < visibleLines; index++) {
-            drawStringAtZ(graphics, font, lines.get(index), x, y + index * lineStep, color, shadow, z);
-        }
-        return y + visibleLines * lineStep;
+        return ToucanGuiText.drawWrappedLinesAtZ(graphics, font, text, x, y, width, maxLines, lineStep, color, shadow, z);
     }
 
     public static int drawWrappedScaledLinesAtZ(
@@ -231,15 +185,6 @@ public final class VillagerClientUiUtil {
             boolean shadow,
             float scale,
             float z) {
-        if (text == null || text.isBlank() || width <= 0 || maxLines <= 0 || lineStep <= 0) {
-            return y;
-        }
-
-        List<FormattedCharSequence> lines = font.split(Component.literal(text), scaledWrapWidth(width, scale));
-        int visibleLines = Math.min(maxLines, lines.size());
-        for (int index = 0; index < visibleLines; index++) {
-            drawScaledStringAtZ(graphics, font, lines.get(index), x, y + index * lineStep, color, shadow, scale, z);
-        }
-        return y + visibleLines * lineStep;
+        return ToucanGuiText.drawWrappedScaledLinesAtZ(graphics, font, text, x, y, width, maxLines, lineStep, color, shadow, scale, z);
     }
 }

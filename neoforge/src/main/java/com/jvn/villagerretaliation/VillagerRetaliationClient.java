@@ -142,7 +142,6 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.DialogueCameraController::onRenderHand);
         modEventBus.addListener(VillagerRetaliationClient::registerTooltipComponents);
         modEventBus.addListener(VillagerRetaliationClient::registerMenuScreens);
-        modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer::registerShaders);
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::registerReloadListener);
     }
 

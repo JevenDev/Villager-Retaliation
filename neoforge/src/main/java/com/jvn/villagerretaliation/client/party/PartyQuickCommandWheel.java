@@ -1,16 +1,12 @@
 package com.jvn.villagerretaliation.client.party;
 
+import com.jvn.toucanlib.client.ui.ToucanRadialMenu;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
 import com.jvn.villagerretaliation.party.PartyQuickCommand;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
@@ -20,7 +16,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -264,14 +259,7 @@ public final class PartyQuickCommandWheel {
         double centerY = minecraft.getWindow().getGuiScaledHeight() / 2.0D;
         double dx = mouseX - centerX;
         double dy = mouseY - centerY;
-        if (Math.hypot(dx, dy) < INNER_DEADZONE) {
-            setHighlightedIndex(-1);
-            return;
-        }
-        double angle = normalizeAngle(Math.atan2(dy, dx) + Math.PI / 2.0D);
-        List<WheelEntry> entries = entries();
-        int index = (int) Math.floor(angle / (FULL_CIRCLE / entries.size()));
-        setHighlightedIndex(Math.min(index, entries.size() - 1));
+        setHighlightedIndex(ToucanRadialMenu.segmentAt(dx, dy, INNER_DEADZONE, entries().size()));
     }
 
     private static void setHighlightedIndex(int nextIndex) {
@@ -313,9 +301,8 @@ public final class PartyQuickCommandWheel {
         RenderSystem.disableBlend();
 
         for (int index = 0; index < entries.size(); index++) {
-            double angle = -Math.PI / 2.0D + (index + 0.5D) * slice;
-            int iconX = centerX + (int) Math.round(Math.cos(angle) * ICON_RADIUS) - 8;
-            int iconY = centerY + (int) Math.round(Math.sin(angle) * ICON_RADIUS) - 8;
+            var position = ToucanRadialMenu.iconPosition(centerX, centerY, index, entries.size(), ICON_RADIUS, SLOT_ITEM_SIZE);
+            int iconX = position.x(), iconY = position.y();
             renderSlotBackground(graphics, iconX - SLOT_FRAME_SIZE, iconY - SLOT_FRAME_SIZE, entranceAlpha);
             ItemStack stack = entries.get(index).icon();
             graphics.setColor(1.0F, 1.0F, 1.0F, entranceAlpha);
@@ -333,85 +320,25 @@ public final class PartyQuickCommandWheel {
     }
 
     private static float entranceAlpha(long now) {
-        if (openedAtMillis < 0L) {
-            return 1.0F;
-        }
-        float progress = (now - openedAtMillis) / OPEN_FADE_DURATION_MILLIS;
-        return VillagerClientUiUtil.easeOutCubic(progress);
+        return ToucanRadialMenu.entranceAlpha(now, openedAtMillis, OPEN_FADE_DURATION_MILLIS);
     }
 
     private static float highlightAlpha(int index, long now) {
-        if (highlightChangedAtMillis < 0L) {
-            return index == highlightedIndex ? 1.0F : 0.0F;
-        }
-        float progress = VillagerClientUiUtil.smoothstep(
-                (now - highlightChangedAtMillis) / HIGHLIGHT_CROSSFADE_DURATION_MILLIS);
-        if (index == highlightedIndex) {
-            return progress;
-        }
-        if (index == previousHighlightedIndex) {
-            return 1.0F - progress;
-        }
-        return 0.0F;
+        return ToucanRadialMenu.highlightAlpha(index, highlightedIndex, previousHighlightedIndex,
+                now, highlightChangedAtMillis, HIGHLIGHT_CROSSFADE_DURATION_MILLIS);
     }
 
     private static void renderSlotBackground(GuiGraphics graphics, int x, int y, float alpha) {
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        graphics.setColor(1.0F, 1.0F, 1.0F, SLOT_BACKGROUND_ALPHA * alpha);
-        graphics.blit(SLOT_TEXTURE, x, y, 0.0F, 0.0F,
-                SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
-        graphics.blit(SLOT_TEXTURE, x, y, SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE,
-                0.0F, 0.0F, SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        graphics.blit(SLOT_TEXTURE, x, y + SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE,
-                SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE, 0.0F, SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE,
-                SLOT_TEXTURE_SIZE, SLOT_FRAME_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        graphics.blit(SLOT_TEXTURE, x, y + SLOT_FRAME_SIZE, SLOT_FRAME_SIZE, SLOT_ITEM_SIZE,
-                0.0F, SLOT_FRAME_SIZE, SLOT_FRAME_SIZE, SLOT_ITEM_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        graphics.blit(SLOT_TEXTURE, x + SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE, y + SLOT_FRAME_SIZE,
-                SLOT_FRAME_SIZE, SLOT_ITEM_SIZE, SLOT_TEXTURE_SIZE - SLOT_FRAME_SIZE, SLOT_FRAME_SIZE,
-                SLOT_FRAME_SIZE, SLOT_ITEM_SIZE, SLOT_TEXTURE_SIZE, SLOT_TEXTURE_SIZE);
-        RenderSystem.disableBlend();
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        ToucanRadialMenu.renderSlotBackground(graphics, SLOT_TEXTURE, x, y,
+                SLOT_TEXTURE_SIZE, SLOT_ITEM_SIZE, SLOT_BACKGROUND_ALPHA, alpha);
     }
 
     private static void drawCircle(double centerX, double centerY, double radius, int segments, int color) {
-        drawWedge(centerX, centerY, radius, 0.0D, FULL_CIRCLE, color, segments);
+        ToucanRadialMenu.drawCircle(centerX, centerY, radius, segments, color);
     }
 
-    private static void drawWedge(
-            double centerX,
-            double centerY,
-            double radius,
-            double startAngle,
-            double endAngle,
-            int color) {
-        int segments = Math.max(4, (int) Math.ceil((endAngle - startAngle) / FULL_CIRCLE * 96.0D));
-        drawWedge(centerX, centerY, radius, startAngle, endAngle, color, segments);
-    }
-
-    private static void drawWedge(
-            double centerX,
-            double centerY,
-            double radius,
-            double startAngle,
-            double endAngle,
-            int color,
-            int segments) {
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder buffer = Tesselator.getInstance().begin(
-                VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        buffer.addVertex((float) centerX, (float) centerY, 0.0F).setColor(color);
-        for (int step = 0; step <= segments; step++) {
-            double progress = (double) step / segments;
-            double angle = startAngle + (endAngle - startAngle) * progress;
-            buffer.addVertex(
-                    (float) (centerX + Math.cos(angle) * radius),
-                    (float) (centerY + Math.sin(angle) * radius),
-                    0.0F).setColor(color);
-        }
-        BufferUploader.drawWithShader(buffer.buildOrThrow());
+    private static void drawWedge(double centerX, double centerY, double radius, double startAngle, double endAngle, int color) {
+        ToucanRadialMenu.drawWedge(centerX, centerY, radius, startAngle, endAngle, color);
     }
 
     private static WheelEntry entry(PartyQuickCommand command, net.minecraft.world.item.Item item) {
@@ -511,11 +438,6 @@ public final class PartyQuickCommandWheel {
         }
         String suffix = "...";
         return font.plainSubstrByWidth(text, Math.max(0, maxWidth - font.width(suffix))) + suffix;
-    }
-
-    private static double normalizeAngle(double angle) {
-        double normalized = angle % FULL_CIRCLE;
-        return normalized < 0.0D ? normalized + FULL_CIRCLE : normalized;
     }
 
     private record WheelEntry(PartyQuickCommand command, ItemStack icon, Component label) {
