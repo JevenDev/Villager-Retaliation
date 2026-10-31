@@ -101,7 +101,7 @@ final class ClericHealingClientChecks {
             require(minecraft.screen == healingScreen, "paid healing keeps the same screen open");
             preparing = verifyPayment(61);
             phase = 41;
-        } else if (phase == 41) {
+        } else if (phase == 41 && ready(ClericHealingService.Source.PAID)) {
             healingScreen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
             shownAt = Util.getMillis();
             phase = 5;
@@ -132,7 +132,8 @@ final class ClericHealingClientChecks {
         var playerId = minecraft.player.getUUID();
         return minecraft.getSingleplayerServer().submit(() -> {
             var player = minecraft.getSingleplayerServer().getPlayerList().getPlayer(playerId);
-            require(VillagerCurrencyPayment.count(player) == expected, "paid healing removes exactly three emeralds");
+            int actual = VillagerCurrencyPayment.count(player);
+            require(actual == expected, "paid healing removes exactly three emeralds: expected " + expected + ", got " + actual);
             require(VillagerConversationService.validate(player, (Villager) player.serverLevel().getEntity(entityId)), "paid healing preserves the server conversation");
             return entityId;
         });
@@ -140,7 +141,8 @@ final class ClericHealingClientChecks {
 
     private static boolean ready(ClericHealingService.Source source) {
         var state = state();
-        return !pending() && state != null && state.offer().available() && state.offer().source() == source;
+        return !pending() && state != null && state.offer().available() && state.offer().source() == source
+                && (float) invoke(healingScreen, "dialogueOptionsTransitionProgress") >= 1.0F;
     }
 
     private static boolean pending() {
