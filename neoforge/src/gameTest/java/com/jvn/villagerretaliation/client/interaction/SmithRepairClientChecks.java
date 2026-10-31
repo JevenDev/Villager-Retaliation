@@ -103,6 +103,7 @@ final class SmithRepairClientChecks {
             require(screen.getMenu().getSlot(1).y == 47, "material slot follows old smithing texture");
             require(button(screen).getY() == screen.getGuiTop() + 68, "repair button sits below the smithing slots");
             VillagerCameraEntityClientChecks.verify(screen, entityId);
+            verifyButtonTicks(screen);
             capture("repair-empty");
             var playerId = minecraft.player.getUUID();
             preparing = minecraft.getSingleplayerServer().submit(() -> {
@@ -175,6 +176,21 @@ final class SmithRepairClientChecks {
             return true;
         }
         return false;
+    }
+
+    private static void verifyButtonTicks(SmithRepairScreen screen) {
+        var original = screen.getMenu().status();
+        try {
+            for (var status : SmithRepairMenu.Status.values()) {
+                screen.getMenu().setData(2, status.ordinal());
+                screen.tick();
+                require(button(screen).active == (status == SmithRepairMenu.Status.READY),
+                        "repair button follows synchronized " + status + " before rendering");
+            }
+        } finally {
+            screen.getMenu().setData(2, original.ordinal());
+            screen.tick();
+        }
     }
 
     private static void verifyPose(Villager villager) {

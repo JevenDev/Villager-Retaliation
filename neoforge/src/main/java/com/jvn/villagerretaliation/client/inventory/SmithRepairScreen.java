@@ -51,6 +51,7 @@ public final class SmithRepairScreen extends AbstractContainerScreen<SmithRepair
     protected void containerTick() {
         super.containerTick();
         materialIcon.tick(MATERIAL_ICONS);
+        updateButton();
     }
 
     private void updateButton() {
