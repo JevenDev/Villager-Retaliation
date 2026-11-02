@@ -21,6 +21,11 @@ public final class PreviewConditions {
     private VillagerReputationLevel reputationLevel = VillagerReputationLevel.NEUTRAL;
     private String profession = "minecraft:none";
     private int variant;
+    private com.jvn.villagerretaliation.mood.VillagerMood mood = com.jvn.villagerretaliation.mood.VillagerMood.NEUTRAL;
+    private int moodIntensity = 50;
+    private String speakingStyle = "";
+    private java.util.function.Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.Rule> contexts =
+            com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources::rule;
     private Long dayTime, worldTime;
     private boolean checkSuccess = true;
     private final Map<String, Boolean> checks = new LinkedHashMap<>();
@@ -49,6 +54,29 @@ public final class PreviewConditions {
     public Long dayTime() { return dayTime; }
     public long resolveDayTime(long worldTime) { return dayTime == null ? worldTime : dayTime; }
 
+    public void contexts(java.util.function.Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.Rule> value) { contexts = value; }
+    public com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.Rule contextRule(ResourceLocation id) { return contexts.apply(id); }
+    public void mood(com.jvn.villagerretaliation.mood.VillagerMood value, int intensity) {
+        mood = java.util.Objects.requireNonNull(value);
+        moodIntensity = Math.clamp(intensity, 0, 100);
+    }
+    public com.jvn.villagerretaliation.mood.VillagerMood mood() { return mood; }
+    public int moodIntensity() { return moodIntensity; }
+    public void speakingStyle(String value) {
+        if (!value.isEmpty() && !com.jvn.villagerretaliation.dialogue.SpeakingStyle.STYLES.contains(value))
+            throw new IllegalArgumentException("Unknown speaking style: " + value);
+        speakingStyle = value;
+    }
+    public String speakingStyle() { return speakingStyle; }
+    public PreviewConditions copy() {
+        var copy = new PreviewConditions();
+        copy.restore(snapshot());
+        copy.contexts(contexts);
+        copy.defaultQuest(defaultQuest);
+        copy.worldTime = worldTime;
+        return copy;
+    }
+
     public void defaultQuest(ResourceLocation value) { defaultQuest = value; }
     public void reputation(int value) {
         reputation(value, VillagerReputationLevel.fromReputation(value));
@@ -71,6 +99,12 @@ public final class PreviewConditions {
         return new ConditionContext(null, null, null, null, null, Set.of(), (condition, trigger) -> {
             String type = DialogueCondition.canonicalTypeId(condition);
             if (overrides.containsKey(type)) return overrides.get(type);
+            if (condition instanceof DialogueCondition.Mood test)
+                return outcome((test.moods().isEmpty() || test.moods().contains(mood))
+                        && (test.minIntensity() == null || moodIntensity >= test.minIntensity())
+                        && (test.maxIntensity() == null || moodIntensity <= test.maxIntensity()));
+            if (condition instanceof com.jvn.villagerretaliation.dialogue.SpeakingStyle.Condition test)
+                return speakingStyle.isEmpty() ? ConditionOutcome.UNKNOWN : outcome(test.style().equals(speakingStyle));
             if (condition instanceof DialogueCondition.Reputation test)
                 return outcome((test.levels().isEmpty() || test.levels().contains(reputationLevel))
                         && (test.minReputation() == null || reputation >= test.minReputation())
@@ -89,12 +123,50 @@ public final class PreviewConditions {
     }
 
     public ConditionOutcome evaluate(java.util.List<DialogueCondition> values) {
-        return ConditionEvaluator.all(context(), null, values);
+        return evaluateRules(values, new java.util.HashSet<>());
+    }
+
+    private ConditionOutcome evaluateRules(java.util.List<DialogueCondition> values, java.util.Set<ResourceLocation> active) {
+        boolean unknown = false;
+        for (var condition : values) {
+            var result = evaluateRule(condition, active);
+            if (result == ConditionOutcome.UNMET) return result;
+            unknown |= result == ConditionOutcome.UNKNOWN;
+        }
+        return unknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.MATCHED;
+    }
+
+    private ConditionOutcome evaluateRule(DialogueCondition condition, java.util.Set<ResourceLocation> active) {
+        if (condition instanceof DialogueCondition.ContextRule reference) {
+            if (active.size() >= 64 || !active.add(reference.id())) return ConditionOutcome.UNKNOWN;
+            var rule = contexts.apply(reference.id());
+            var result = rule == null ? ConditionOutcome.UNKNOWN : evaluateRules(rule.conditions(), active);
+            active.remove(reference.id());
+            return result;
+        }
+        if (condition instanceof DialogueCondition.AllOf all) return evaluateRules(all.conditions(), active);
+        if (condition instanceof DialogueCondition.AnyOf any) {
+            boolean unknown = false;
+            for (var child : any.conditions()) {
+                var result = evaluateRule(child, active);
+                if (result == ConditionOutcome.MATCHED) return result;
+                unknown |= result == ConditionOutcome.UNKNOWN;
+            }
+            return unknown ? ConditionOutcome.UNKNOWN : ConditionOutcome.UNMET;
+        }
+        if (condition instanceof DialogueCondition.Not not) {
+            if (not.condition() instanceof DialogueCondition.Invalid) return ConditionOutcome.UNMET;
+            return switch (evaluateRule(not.condition(), active)) {
+                case MATCHED -> ConditionOutcome.UNMET;
+                case UNMET -> ConditionOutcome.MATCHED;
+                case UNKNOWN -> ConditionOutcome.UNKNOWN;
+            };
+        }
+        return ConditionEvaluator.evaluate(context(), null, condition);
     }
 
     public ConditionOutcome evaluate(ResourceLocation id, JsonObject object) {
-        ConditionOutcome result = ConditionEvaluator.all(context(), null,
-                DialogueCondition.readList(id, "authoring preview", object, defaultQuest));
+        ConditionOutcome result = evaluate(DialogueCondition.readList(id, "authoring preview", object, defaultQuest));
         if (!com.jvn.villagerretaliation.util.VillagerReputationCondition.read(object).matches(reputation, reputationLevel))
             return ConditionOutcome.UNMET;
         for (String field : new String[] {"professions", "witness_professions"}) {
@@ -125,6 +197,9 @@ public final class PreviewConditions {
         root.addProperty("tier", reputationLevel.name());
         root.addProperty("profession", profession);
         root.addProperty("variant", variant);
+        root.addProperty("mood", mood.serializedName());
+        root.addProperty("mood_intensity", moodIntensity);
+        root.addProperty("speaking_style", speakingStyle);
         root.addProperty("check_success", checkSuccess);
         if (dayTime != null) root.addProperty("day_time", dayTime);
         JsonObject outcomes = new JsonObject();
@@ -150,6 +225,9 @@ public final class PreviewConditions {
         parsed.reputation(root.get("reputation").getAsInt(), VillagerReputationLevel.valueOf(root.get("tier").getAsString()));
         parsed.profession(root.get("profession").getAsString());
         parsed.variant(root.get("variant").getAsInt());
+        if (root.has("mood")) parsed.mood(com.jvn.villagerretaliation.mood.VillagerMood.bySerializedName(root.get("mood").getAsString()),
+                root.has("mood_intensity") ? root.get("mood_intensity").getAsInt() : 50);
+        if (root.has("speaking_style")) parsed.speakingStyle(root.get("speaking_style").getAsString());
         parsed.checkSuccess(root.get("check_success").getAsBoolean());
         parsed.dayTime(root.has("day_time") ? root.get("day_time").getAsLong() : null);
         root.getAsJsonObject("overrides").entrySet().forEach(entry -> parsed.override(entry.getKey(), ConditionOutcome.valueOf(entry.getValue().getAsString())));
@@ -162,6 +240,9 @@ public final class PreviewConditions {
         reputationLevel = parsed.reputationLevel;
         profession = parsed.profession;
         variant = parsed.variant;
+        mood = parsed.mood;
+        moodIntensity = parsed.moodIntensity;
+        speakingStyle = parsed.speakingStyle;
         dayTime = parsed.dayTime;
         checkSuccess = parsed.checkSuccess;
         overrides.clear(); overrides.putAll(parsed.overrides);

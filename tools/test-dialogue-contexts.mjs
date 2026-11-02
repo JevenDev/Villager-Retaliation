@@ -29,5 +29,9 @@ for (const condition of [
   { type: "reputation_tier", tiers: ["test:Invalid Tier"] },
   { type: "reputation_tier" }
 ]) assert(validateContextDocuments(tierRule(condition), schema).length);
+const wordFile = "/data/test/dialogue_words/en_us/thanks.json";
+const contextualPool = { values: ["Thanks.", { text: "You helped.", conditions: [{ type: "context", id: "test:help" }] }] };
+assert.deepEqual(validateContextDocuments([...rules, [wordFile, contextualPool]], schema), []);
+assert(validateContextDocuments([[wordFile, contextualPool]], schema).some(error => error.includes("missing dialogue context test:help")));
 assert.deepEqual(await validateContextDirectory(), []);
 console.log("Dialogue context checks passed: composition, references, cycles, bounds, state schemas, and built-in content.");

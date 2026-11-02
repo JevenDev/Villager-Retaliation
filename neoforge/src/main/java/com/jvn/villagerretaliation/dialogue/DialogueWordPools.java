@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -16,6 +15,10 @@ public final class DialogueWordPools {
     private static final Pattern REFERENCE = Pattern.compile("\\{word:([a-z0-9_.-]+:[a-z0-9/._-]+)}");
 
     private DialogueWordPools() { }
+
+    public static List<ResourceLocation> references(String text) {
+        return REFERENCE.matcher(text).results().map(match -> ResourceLocation.parse(match.group(1))).distinct().toList();
+    }
 
     public static UnaryOperator<String> resolver(Function<ResourceLocation, List<String>> pools,
             RandomSource random, Consumer<String> diagnostic) {
@@ -31,6 +34,7 @@ public final class DialogueWordPools {
             if (!text.contains("{word")) return text;
             var matcher = TOKEN.matcher(text);
             var result = new StringBuilder();
+            int cursor = 0;
             while (matcher.find()) {
                 String token = matcher.group();
                 String value = choices.computeIfAbsent(token, key -> {
@@ -47,9 +51,15 @@ public final class DialogueWordPools {
                     }
                     return selected;
                 });
-                matcher.appendReplacement(result, Matcher.quoteReplacement(value));
+                result.append(text, cursor, matcher.start());
+                cursor = matcher.end();
+                if (value.isEmpty()) {
+                    if (cursor == text.length() || cursor < text.length() && Character.isWhitespace(text.charAt(cursor)))
+                        while (!result.isEmpty() && (result.charAt(result.length() - 1) == ' ' || result.charAt(result.length() - 1) == '\t')) result.setLength(result.length() - 1);
+                    if (result.isEmpty()) while (cursor < text.length() && (text.charAt(cursor) == ' ' || text.charAt(cursor) == '\t')) cursor++;
+                } else result.append(value);
             }
-            matcher.appendTail(result);
+            result.append(text, cursor, text.length());
             return result.toString();
         };
     }
@@ -58,24 +68,36 @@ public final class DialogueWordPools {
         if (!template.contains("{word")) return template.equals(text);
         var matcher = REFERENCE.matcher(template);
         var pattern = new StringBuilder();
-        Map<String, Integer> groups = new HashMap<>();
+        Map<String, Integer> groups = new java.util.LinkedHashMap<>();
         int cursor = 0;
+        boolean previousOptional = false, optional = false;
         while (matcher.find()) {
-            pattern.append(Pattern.quote(template.substring(cursor, matcher.start())));
             String key = matcher.group(1);
-            if (groups.containsKey(key)) {
-                pattern.append("\\").append(groups.get(key));
-            } else {
+            List<String> values = pools.apply(ResourceLocation.parse(key));
+            if (values == null || values.isEmpty()) values = List.of(matcher.group());
+            boolean empty = values.contains("");
+            optional |= empty;
+            pattern.append(literalPattern(template.substring(cursor, matcher.start()), previousOptional, empty));
+            if (groups.containsKey(key)) pattern.append("\\").append(groups.get(key));
+            else {
                 groups.put(key, groups.size() + 1);
-                List<String> values = pools.apply(ResourceLocation.parse(key));
-                if (values == null || values.isEmpty()) values = List.of(matcher.group());
-                pattern.append('(').append(values.stream().map(Pattern::quote)
-                        .collect(java.util.stream.Collectors.joining("|"))).append(')');
+                pattern.append('(').append(values.stream().map(Pattern::quote).collect(java.util.stream.Collectors.joining("|"))).append(')');
             }
+            previousOptional = empty;
             cursor = matcher.end();
         }
-        pattern.append(Pattern.quote(template.substring(cursor)));
-        return Pattern.compile(pattern.toString()).matcher(text).matches();
+        pattern.append(literalPattern(template.substring(cursor), previousOptional, false));
+        var match = Pattern.compile(pattern.toString()).matcher(text);
+        if (!match.matches()) return false;
+        if (!optional) return true;
+        return selectingResolver(id -> match.group(groups.get(id.toString())), issue -> { }).apply(template).equals(text);
+    }
+
+    private static String literalPattern(String literal, boolean leadingOptional, boolean trailingOptional) {
+        int start = 0, end = literal.length();
+        if (leadingOptional) while (start < end && (literal.charAt(start) == ' ' || literal.charAt(start) == '\t')) start++;
+        if (trailingOptional) while (end > start && (literal.charAt(end - 1) == ' ' || literal.charAt(end - 1) == '\t')) end--;
+        return (start > 0 ? "[ \t]*" : "") + Pattern.quote(literal.substring(start, end)) + (end < literal.length() ? "[ \t]*" : "");
     }
 
     public static String templateLiterals(String text) {

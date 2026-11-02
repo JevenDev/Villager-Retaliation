@@ -1,0 +1,19 @@
+{
+  "role": "sentence",
+  "optional": true,
+  "chance": 0.6,
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "values": [
+        "That is one less thing to worry about",
+        "I can breathe a little easier now"
+      ]
+    }
+  ]
+}

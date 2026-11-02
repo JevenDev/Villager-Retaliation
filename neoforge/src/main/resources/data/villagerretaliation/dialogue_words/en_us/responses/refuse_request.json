@@ -1,0 +1,36 @@
+{
+  "avoid_recent": 2,
+  "values": [
+    "I cannot help with that right now.",
+    {
+      "text": "I wish I could help, but I cannot right now.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ]
+    },
+    {
+      "text": "I have enough to worry about already.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10
+    },
+    {
+      "text": "Find someone else to ask.",
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "angry"
+        }
+      ],
+      "priority": 10
+    }
+  ],
+  "role": "sentence"
+}

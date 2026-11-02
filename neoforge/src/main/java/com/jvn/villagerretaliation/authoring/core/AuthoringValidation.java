@@ -38,6 +38,7 @@ public final class AuthoringValidation {
         }
         List<AuthoringDiagnostic> result = new ArrayList<>();
         result.addAll(AuthoringFeatureValidation.validate(documents, registries));
+        validateWordLibraries(documents, result);
         var items = new LinkedHashMap<ResourceLocation, JsonObject>();
         for (var document : documents) if (document.resourcePath().matches("data/[^/]+/quest_items/.+\\.json"))
             items.put(AuthoringFeatureValidation.id(document), document.json());
@@ -45,6 +46,38 @@ public final class AuthoringValidation {
             scopes.values().forEach(scope -> result.addAll(validateScope(scope, registries)));
         }
         return List.copyOf(result);
+    }
+
+    private static void validateWordLibraries(List<AuthoringDocument> documents, List<AuthoringDiagnostic> issues) {
+        var paths = new LinkedHashMap<String, AuthoringDocument>();
+        documents.forEach(document -> paths.put(document.resourcePath(), document));
+        for (var owner : documents) {
+            String path = DefinitionKind.unscopedPath(owner.resourcePath());
+            if (!path.matches("data/[^/]+/dialogue_words/[^/]+/.+[.]json") || !owner.json().has("extends")) continue;
+            String[] parts = path.split("/", 5);
+            String locale = com.jvn.villagerretaliation.util.VillagerLocale.normalize(parts[3]);
+            String scope = DefinitionKind.contentRoot(owner.resourcePath());
+            var library = new com.jvn.villagerretaliation.dialogue.DialogueWordPoolLibrary(id -> {
+                for (String language : List.of(locale, "en_us")) {
+                    String root = "data/" + id.getNamespace() + "/";
+                    String suffix = "dialogue_words/" + language + "/" + id.getPath() + ".json";
+                    var document = scope.startsWith(root) ? paths.get(scope + suffix) : null;
+                    if (document == null) document = paths.get(root + suffix);
+                    if (document != null) return document.json();
+                    var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+                    if (server != null) {
+                        var installed = server.getResourceManager().getResource(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), suffix));
+                        if (installed.isPresent()) try (var reader = installed.get().openAsReader()) { return com.google.gson.JsonParser.parseReader(reader).getAsJsonObject(); }
+                        catch (java.io.IOException | com.google.gson.JsonParseException | IllegalStateException exception) { throw new IllegalArgumentException("Cannot read parent pool " + id, exception); }
+                    }
+                    var bundled = com.jvn.villagerretaliation.dialogue.DialogueWordPoolLibrary.bundledDefinition(id, language);
+                    if (bundled != null) return bundled;
+                }
+                return null;
+            }, id -> com.jvn.villagerretaliation.dialogue.DialogueWordPool.EMPTY);
+            try { library.apply(ResourceLocation.fromNamespaceAndPath(parts[1], parts[4].substring(0, parts[4].length() - 5))); }
+            catch (IllegalArgumentException exception) { error(issues, owner, "/extends", exception.getMessage()); }
+        }
     }
 
     private static List<AuthoringDiagnostic> validateScope(List<AuthoringDocument> documents, net.minecraft.core.HolderLookup.Provider registries) {
@@ -166,6 +199,13 @@ public final class AuthoringValidation {
                         else com.jvn.villagerretaliation.campaign.selection.WorldCampaignAddon.read(root);
                     }
                     case RESOURCE -> {
+                        if (resource.getPath().startsWith("dialogue_contexts/"))
+                            com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.readRule(resource, root);
+                        if (resource.getPath().startsWith("dialogue_words/")) {
+                            if (!resource.getPath().matches("dialogue_words/[^/]+/.+[.]json"))
+                                error(result, document, "", "Word pools require dialogue_words/<locale>/<pool>.json");
+                            com.jvn.villagerretaliation.dialogue.DialogueWordPool.read(root);
+                        }
                         if (resource.getPath().startsWith("dialogue_styles/")) {
                             if (!document.resourcePath().matches("data/[^/]+/dialogue_styles/.+\\.json"))
                                 error(result, document, "", "Dialogue styles belong at data/<namespace>/dialogue_styles/<file>.json");

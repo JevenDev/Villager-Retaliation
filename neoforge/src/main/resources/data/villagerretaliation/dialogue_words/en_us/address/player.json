@@ -1,0 +1,50 @@
+{
+  "avoid_recent": 2,
+  "values": [
+    "traveller",
+    {
+      "text": "my friend",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "text": "friend",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "text": "traveller",
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "angry"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded"
+    },
+    {
+      "text": "traveller",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded"
+    }
+  ],
+  "selection_group": "villagerretaliation:interaction_tone",
+  "role": "address"
+}

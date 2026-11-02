@@ -130,6 +130,7 @@ final class ImGuiAuthoringEditor {
     private final EditorDialoguePool dialoguePool = new EditorDialoguePool();
     private final EditorResourceView resourceView = new EditorResourceView();
     private final EditorSceneView sceneView = new EditorSceneView();
+    private final EditorWordPoolPreview wordPreview = new EditorWordPoolPreview();
     private final EditorSupportingView supportingView = new EditorSupportingView();
     private final EditorLocalizationView localization = new EditorLocalizationView();
     private final EditorCampaignOverview campaignOverview = new EditorCampaignOverview();
@@ -2809,7 +2810,8 @@ final class ImGuiAuthoringEditor {
         }
         if (MC.level != null) values.putAll(com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(conditions.resolveDayTime(MC.level.getDayTime())));
         if (view == 3) values.putAll(EditorLiveQuestTest.snapshot().replacements());
-        textFields.context(new EditorTextCompletion.Context(document.kind(), document.resourcePath() + path, types, values));
+        textFields.context(new EditorTextCompletion.Context(document.kind(), document.resourcePath() + path, types, values,
+                EditorWordPoolPreview.poolIds(workspace, document, locale.get())));
     }
 
     private void localizedField(JsonObject reference, String label, String path) {
@@ -3723,6 +3725,7 @@ final class ImGuiAuthoringEditor {
             ImGui.end();
             return;
         }
+        wordPreview.render(workspace, document, locale.get());
         ImGui.textWrapped("Choose a villager, then play your dialogue. Actions and rewards are shown in the log.");
         if (ImGui.button("Use crosshair target") && MC.hitResult instanceof EntityHitResult hit) target = hit.getEntity();
         EditorWidgets.sameLineFor("Nearest villager");
@@ -3883,6 +3886,7 @@ final class ImGuiAuthoringEditor {
                     ? net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview") : authoredId;
             if (guideStep == 3) guideStep = 4;
             conditions.worldTime(MC.level.getDayTime());
+            conditions.contexts(com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.contexts(workspace, document));
             AuthoringDialoguePreview.start(document, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
                 JsonObject reference = new JsonObject();
                 reference.addProperty("key", key);

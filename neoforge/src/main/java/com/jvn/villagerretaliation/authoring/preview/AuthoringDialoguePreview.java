@@ -41,6 +41,7 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     private boolean disposed;
     private Function<ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool> wordPools;
     private final java.util.Map<String, String> resolvedWords = new java.util.HashMap<>();
+    private final com.jvn.villagerretaliation.dialogue.DialogueWordHistory wordHistory = new com.jvn.villagerretaliation.dialogue.DialogueWordHistory();
     private final RandomSource wordRandom = RandomSource.create();
     private java.util.Map<String, com.jvn.villagerretaliation.dialogue.DialogueStyle> styles;
 
@@ -252,10 +253,10 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
         com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders.time(conditions.resolveDayTime(minecraft.level.getDayTime()))
                 .forEach(replacements::putIfAbsent);
         String resolved = com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources.resolveTemplate(text, replacements);
-        return resolvedWords.computeIfAbsent(resolved, value -> com.jvn.villagerretaliation.dialogue.DialogueWordPools
-                .selectingResolver(id -> wordPools.apply(id).selectMatching(rules -> conditions.evaluate(rules)
-                                == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED, wordRandom), issue -> com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedEntry(
-                        ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview"), "dialogue words", "preview", issue))
+        return resolvedWords.computeIfAbsent(resolved, value -> new com.jvn.villagerretaliation.dialogue.DialogueWordSelection(
+                wordPools, rules -> conditions.evaluate(rules) == com.jvn.villagerretaliation.dialogue.DialogueCondition.ConditionOutcome.MATCHED,
+                wordRandom, wordHistory, "preview", issue -> com.jvn.villagerretaliation.util.DatapackDiagnostics.warnSkippedEntry(
+                        ResourceLocation.fromNamespaceAndPath("villagerretaliation", "authoring_preview"), "dialogue words", "preview", issue), selection -> { })
                 .apply(value));
     }
 

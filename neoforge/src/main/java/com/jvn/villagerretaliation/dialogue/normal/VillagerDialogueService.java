@@ -209,7 +209,8 @@ public final class VillagerDialogueService {
     private static com.jvn.villagerretaliation.dialogue.DialogueSpeech resolveSpeech(DialogueContext context,
             com.jvn.villagerretaliation.dialogue.DialogueSpeech speech) {
         var words = com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
-                .resolver(context.level().getServer(), context.locale(), context.random());
+                .resolver(context.level().getServer(), context.locale(), context.random(), context);
+        if (words instanceof com.jvn.villagerretaliation.dialogue.DialogueWordSelection selection) selection.prepare(speech.text());
         return com.jvn.villagerretaliation.dialogue.DialogueSpeech.npc(context.villager(),
                 speech.segments().stream().map(segment -> segment.mapText(text -> resolveText(text, context, words))).toList(), speech.camera());
     }
@@ -910,7 +911,7 @@ public final class VillagerDialogueService {
 
     private static String resolveText(String text, DialogueContext context) {
         return resolveText(text, context, com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources
-                .resolver(context.level().getServer(), context.locale(), context.random()));
+                .resolver(context.level().getServer(), context.locale(), context.random(), context));
     }
 
     private static String resolveText(String text, DialogueContext context, java.util.function.UnaryOperator<String> words) {

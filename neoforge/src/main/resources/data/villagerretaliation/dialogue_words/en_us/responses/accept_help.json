@@ -1,0 +1,26 @@
+{
+  "avoid_recent": 2,
+  "values": [
+    "I could use a hand.",
+    {
+      "text": "I would be glad to have your help.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ]
+    },
+    {
+      "text": "Yes, please. I could really use the help.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10
+    }
+  ],
+  "role": "sentence"
+}

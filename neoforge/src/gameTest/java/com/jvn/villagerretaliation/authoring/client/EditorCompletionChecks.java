@@ -17,7 +17,8 @@ final class EditorCompletionChecks {
         customVariablesAndStylesKeepTheirIdentity();
         cuesExplainParametersAndStayUnpaired();
         warningsExplainMistakesWithoutRejectingCustomContent();
-        return 7;
+        phrasePoolReferencesCompleteAndExplainTheirSelection();
+        return 8;
     }
 
     private static EditorTextCompletion.Token token(String text) {
@@ -105,6 +106,16 @@ final class EditorCompletionChecks {
         check(messages.stream().anyMatch(message -> message.contains("my_pack:score") && message.contains("custom or unknown")), "unknown names remain legal custom variables");
         var info = EditorTextCompletion.inspect("{player}", new EditorTextCompletion.Context(DefinitionKind.TREE, "", Set.of(), Map.of("player", "Alex")), Map.of(), true);
         check(info.getFirst().help().contains("Preview value: Alex"), "token help includes the actual supplied preview value");
+    }
+
+    private static void phrasePoolReferencesCompleteAndExplainTheirSelection() {
+        var context = new EditorTextCompletion.Context(DefinitionKind.TREE, "", Set.of(), Map.of(), Set.of("test:greetings/friendly"));
+        String text = "{word:test:greetings/fr";
+        var choices = EditorTextCompletion.suggestions(text, token(text), context, Set.of());
+        check(choices.size() == 1 && choices.getFirst().token().equals("{word:test:greetings/friendly}"), "nested phrase pool references complete as variables");
+        check(EditorTextCompletion.warnings("{word:test:greetings/friendly}", context, Map.of(), true).isEmpty(), "phrase references do not produce custom-variable warnings");
+        check(EditorTextCompletion.warnings("{word:bad}", context, Map.of(), true).getFirst().contains("malformed phrase pool"), "malformed references still produce useful diagnostics");
+        check(EditorTextCompletion.inspect("{word:test:greetings/friendly}", context, Map.of(), true).getFirst().help().contains("priority"), "phrase token help explains contextual selection");
     }
 
     private static void check(boolean passed, String message) { if (!passed) throw new AssertionError(message); }

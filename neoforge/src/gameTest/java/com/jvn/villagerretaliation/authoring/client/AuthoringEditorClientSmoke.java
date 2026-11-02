@@ -2677,7 +2677,7 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); set("showResources", true); });
         for (var kind : List.of(EditorResourceRecipes.Kind.QUEST_ITEM, EditorResourceRecipes.Kind.ADVANCEMENT, EditorResourceRecipes.Kind.TRADE, EditorResourceRecipes.Kind.SELL_PRICE,
                 EditorResourceRecipes.Kind.DUEL_KIT, EditorResourceRecipes.Kind.RAID_LOADOUT,
-                EditorResourceRecipes.Kind.WORD_POOL, EditorResourceRecipes.Kind.STYLE)) {
+                EditorResourceRecipes.Kind.WORD_POOL, EditorResourceRecipes.Kind.CONTEXT, EditorResourceRecipes.Kind.STYLE)) {
             STEPS.add(() -> {
                 set("createRecipe", kind); set("createKind", DefinitionKind.RESOURCE);
                 ((imgui.type.ImString) field(editor, "newId")).set((kind == EditorResourceRecipes.Kind.RAID_LOADOUT ? "villagerretaliation:" : "test:") + "recipe_" + kind.name().toLowerCase(java.util.Locale.ROOT));
@@ -2718,6 +2718,53 @@ public final class AuthoringEditorClientSmoke {
             });
         }
         STEPS.add(() -> {
+            var phrases = new AuthoringDocument(DefinitionKind.TREE, "data/test/dialogue_trees/en_us/phrase_preview.json", JsonParser.parseString("""
+                    {"id":"test:phrase_preview","entries":[{"id":"hello","label":"Hello","start":"hello"}],
+                     "nodes":{"hello":{"text":"{word:villagerretaliation:greetings/contextual}, {word:villagerretaliation:address/player}. Have you come to trade?","end":true}}}
+                    """).getAsJsonObject());
+            workspace.add(phrases);
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, phrases);
+            set("view", 1); set("resetLayout", true);
+            panelSections.add(new PanelSection("Work area###VR_Work", "Phrase pool inspector", true));
+        });
+        pause(400);
+        STEPS.add(() -> {
+            var inspector = field(editor, "wordPreview");
+            var selected = (AuthoringDocument) field(editor, "document");
+            require(field(inspector, "owner") == selected, "The phrase inspector opens in the native preview panel.");
+            var conditions = (com.jvn.villagerretaliation.authoring.preview.PreviewConditions) field(inspector, "conditions");
+            conditions.mood(com.jvn.villagerretaliation.mood.VillagerMood.ANGRY, 50);
+            conditions.reputationLevel(com.jvn.villagerretaliation.reputation.VillagerReputationLevel.TRUSTED);
+        });
+        pause(250);
+        STEPS.add(() -> {
+            var inspector = field(editor, "wordPreview");
+            var selected = (AuthoringDocument) field(editor, "document");
+            var conditions = (com.jvn.villagerretaliation.authoring.preview.PreviewConditions) field(inspector, "conditions");
+            var pools = com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.lookupDefinitions(workspace, selected, "en_us", AuthoringDialoguePreview::defaultWordPool);
+            var rows = com.jvn.villagerretaliation.authoring.preview.WordPoolPreview.matrix(((imgui.type.ImString) field(inspector, "template")).get(), pools, conditions, 42);
+            require(rows.size() == 432, "The native inspector displays every mood, reputation tier, and speaking style combination.");
+            setField(inspector, "rows", rows);
+            setField(inspector, "result", rows.stream().filter(row -> row.mood() == com.jvn.villagerretaliation.mood.VillagerMood.ANGRY
+                    && row.reputation() == com.jvn.villagerretaliation.reputation.VillagerReputationLevel.TRUSTED).findFirst().orElseThrow().result());
+        });
+        pause(500);
+        STEPS.add(() -> capture("phrase-pool-matrix"));
+        STEPS.add(() -> {
+            var inspector = field(editor, "wordPreview");
+            var selected = (AuthoringDocument) field(editor, "document");
+            var conditions = (com.jvn.villagerretaliation.authoring.preview.PreviewConditions) field(inspector, "conditions");
+            var definitions = com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.lookupDefinitions(workspace, selected, "en_us", AuthoringDialoguePreview::defaultWordPool);
+            var cache = new java.util.HashMap<net.minecraft.resources.ResourceLocation, com.jvn.villagerretaliation.dialogue.DialogueWordPool>();
+            var report = com.jvn.villagerretaliation.authoring.preview.WordPoolPreview.coverage(((imgui.type.ImString) field(inspector, "template")).get(),
+                    key -> cache.computeIfAbsent(key, definitions), conditions, 42);
+            require(report.rows().size() > 432 && !report.findings().isEmpty(), "Coverage includes boundaries and actionable diagnostics.");
+            setField(inspector, "rows", report.rows()); setField(inspector, "findings", report.findings());
+            panelSections.add(new PanelSection("Work area###VR_Work", "Coverage findings (" + report.findings().size() + ")", true));
+        });
+        pause(500);
+        STEPS.add(() -> capture("phrase-pool-coverage"));
+        STEPS.add(() -> {
             require(workspace.validate().stream().noneMatch(issue -> issue.severity() == com.jvn.villagerretaliation.authoring.core.AuthoringDiagnostic.Severity.ERROR),
                     "The resource recipes validate before export: " + workspace.validate());
             try { reloadCheck = EditorTestWorld.prepareCurrent(workspace); }
@@ -2752,6 +2799,8 @@ public final class AuthoringEditorClientSmoke {
                 require(com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.values(server, "en_us",
                         net.minecraft.resources.ResourceLocation.parse("test:recipe_word_pool")).contains("Hello."), "The word pool recipe loads.");
                 require(com.jvn.villagerretaliation.dialogue.resources.DialogueStyleResources.server().containsKey("recipe_style"), "The custom style loads and is available to text markup.");
+                require(!com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.values(server, "en_us", net.minecraft.resources.ResourceLocation.parse("villagerretaliation:greetings/farmer")).isEmpty(), "Inherited phrase libraries load after applying the pack.");
+                require(com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.values(server, "en_us", net.minecraft.resources.ResourceLocation.parse("villagerretaliation:clauses/relationship_acknowledgment")).contains(""), "Optional clauses retain their omitted alternative after reload.");
             });
         });
         waitUntil(() -> liveCheck.isDone());

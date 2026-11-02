@@ -127,6 +127,19 @@ final class EditorPreviewConditions {
             }
             ImGui.endCombo();
         }
+        if (ImGui.beginCombo(EditorWidgets.field("Mood"), conditions.mood().serializedName())) {
+            for (var mood : com.jvn.villagerretaliation.mood.VillagerMood.values())
+                if (ImGui.selectable(mood.serializedName(), mood == conditions.mood())) conditions.mood(mood, conditions.moodIntensity());
+            ImGui.endCombo();
+        }
+        var intensity = new ImInt(conditions.moodIntensity());
+        if (ImGui.sliderInt(EditorWidgets.field("Mood intensity"), intensity.getData(), 0, 100)) conditions.mood(conditions.mood(), intensity.get());
+        if (ImGui.beginCombo(EditorWidgets.field("Speaking style"), conditions.speakingStyle().isEmpty() ? "Unknown" : conditions.speakingStyle())) {
+            if (ImGui.selectable("Unknown", conditions.speakingStyle().isEmpty())) conditions.speakingStyle("");
+            for (String style : com.jvn.villagerretaliation.dialogue.SpeakingStyle.STYLES)
+                if (ImGui.selectable(style, style.equals(conditions.speakingStyle()))) conditions.speakingStyle(style);
+            ImGui.endCombo();
+        }
         if (ImGui.inputInt(EditorWidgets.field("Variant index"), VARIANT)) conditions.variant(VARIANT.get());
         if (ImGui.inputText(EditorWidgets.field("Profession"), PROFESSION)) conditions.profession(PROFESSION.get());
         if (ImGui.checkbox("Successful checks", conditions.checkSuccess())) conditions.checkSuccess(!conditions.checkSuccess());

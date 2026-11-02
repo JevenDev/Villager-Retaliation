@@ -1,0 +1,14 @@
+{
+  "id": "villagerretaliation:mood/distressed",
+  "conditions": [
+    {
+      "type": "mood",
+      "moods": [
+        "afraid",
+        "grieving",
+        "stressed"
+      ],
+      "min_intensity": 25
+    }
+  ]
+}

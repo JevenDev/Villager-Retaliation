@@ -14,7 +14,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 final class EditorTextCompletion {
-    record Context(DefinitionKind kind, String path, Set<String> conditions, Map<String, String> values) {
+    record Context(DefinitionKind kind, String path, Set<String> conditions, Map<String, String> values, Set<String> wordPools) {
+        Context(DefinitionKind kind, String path, Set<String> conditions, Map<String, String> values) { this(kind, path, conditions, values, Set.of()); }
         static Context empty(DefinitionKind kind) { return new Context(kind, "", Set.of(), Map.of()); }
 
         int priority(String group) {
@@ -32,7 +33,7 @@ final class EditorTextCompletion {
 
     record Token(int start, int end, int caret, char delimiter, String query) { }
     record Suggestion(String label, String value, String closing, String category, String help, int priority) {
-        String token() { return category.equals("Variable") ? "{" + value + "}" : "<" + value + ">"; }
+        String token() { return (category.equals("Variable") || category.equals("Phrase pool")) ? "{" + value + "}" : "<" + value + ">"; }
     }
     record Inspection(String token, String help) { }
     private static final Pattern TOKENS = Pattern.compile("\\{([^{}\\n]+)}|<([^<>\\n]+)>");
@@ -49,7 +50,7 @@ final class EditorTextCompletion {
                 start--;
                 if (c == '<' && !formatting) return null;
                 String query = text.substring(start + 1, caret);
-                if (query.indexOf('\n') >= 0 || c == '{' && !query.matches("[A-Za-z0-9_:.]*")
+                if (query.indexOf('\n') >= 0 || c == '{' && !query.matches("[A-Za-z0-9_:./-]*")
                         || c == '<' && !query.isEmpty() && !query.matches("[A-Za-z/].*")) return null;
                 int end = caret;
                 char close = c == '{' ? '}' : '>';
@@ -80,6 +81,11 @@ final class EditorTextCompletion {
             }
             for (var entry : context.values().entrySet()) if (!known.contains(entry.getKey()) && entry.getKey().toLowerCase(Locale.ROOT).contains(query))
                 choices.add(new Suggestion(entry.getKey(), entry.getKey(), "", "Variable", "Supplied by the preview context.\nPreview value: " + entry.getValue(), 0));
+            for (String pool : context.wordPools()) {
+                String value = "word:" + pool;
+                if (value.contains(query)) choices.add(new Suggestion(pool, value, "", "Phrase pool",
+                        "Contextual wording selected by conditions, priority, and weight. Inspect combinations in the phrase pool inspector.", 1));
+            }
             choices.sort(Comparator.comparingInt((Suggestion entry) -> entry.value().equals(query) ? -1
                             : query.isBlank() || entry.value().startsWith(query) ? 0 : entry.value().contains(query) ? 1 : 2)
                     .thenComparingInt(Suggestion::priority).thenComparing(Suggestion::value));
@@ -201,7 +207,9 @@ final class EditorTextCompletion {
             String variable = matcher.group(1), tag = matcher.group(2), token = matcher.group();
             if (result.containsKey(token)) continue;
             String help = "";
-            if (variable != null) {
+            if (variable != null && variable.startsWith("word:")) {
+                help = "Phrase pool. Wording is selected by conditions, priority, and weight. Use the phrase pool inspector to preview variations.";
+            } else if (variable != null) {
                 help = CUSTOM;
                 for (var group : EditorVariables.groups()) for (var entry : group.variables()) if (entry.key().equals(variable))
                     help = entry.label() + ". " + group.availability();
@@ -225,6 +233,10 @@ final class EditorTextCompletion {
                 .collect(java.util.stream.Collectors.toSet());
         while (matcher.find()) if (matcher.group(1) != null && !known.contains(matcher.group(1)) && !context.values().containsKey(matcher.group(1))) {
             String key = matcher.group(1);
+            if (key.equals("word") || key.startsWith("word:")) {
+                if (!key.matches("word:[a-z0-9_.-]+:[a-z0-9/._-]+")) result.add("{" + key + "}: malformed phrase pool reference. Use {word:namespace:pool}.");
+                continue;
+            }
             String similar = known.stream().filter(name -> distance(key, name) <= 2).min(Comparator.comparingInt(name -> distance(key, name))).orElse("");
             result.add("{" + key + "}: custom or unknown variable. Supply it in your pack." + (similar.isEmpty() ? "" : " Did you mean {" + similar + "}?"));
         }

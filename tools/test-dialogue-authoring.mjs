@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { markupWarnings } from "./dialogue-markup-validation.mjs";
 import { styleIssues, compileStyleDocuments, loadDialogueStyles } from "./dialogue-style-validation.mjs";
-import { wordPoolIssues, wordReferences, validateWordDocuments, validateWordDirectory } from "./dialogue-word-validation.mjs";
+import { wordPoolIssues, compileWordPool, wordReferences, validateWordDocuments, validateWordDirectory } from "./dialogue-word-validation.mjs";
 import { validateConversationSchema } from "./conversation-validation.mjs";
 
 const cases = JSON.parse(await readFile(new URL("../neoforge/src/gameTest/resources/dialogue_markup/cases.json", import.meta.url), "utf8"));
@@ -57,12 +57,36 @@ assert.deepEqual(validateConversationSchema(response, { $defs: schema.$defs, $re
 response.unavailable_behavior = "invented";
 assert(validateConversationSchema(response, { $defs: schema.$defs, $ref: "#/$defs/response" }).length);
 assert.deepEqual(await validateContextDirectory(fileURLToPath(new URL("../example-packs/dialogue-choices-and-contexts/data", import.meta.url))), []);
+const basePool = { role: "opening_clause", values: [{ id: "fallback", text: "Hello" }, { id: "old", text: "Old" }] };
+const extendedPool = { extends: "test:base", remove: ["old"], groups: [{ priority: 20, conditions: [{ type: "mood", mood: "angry" }], values: ["Keep it brief", { text: "I will listen", weight: 3 }] }] };
+assert.deepEqual(wordPoolIssues(extendedPool), []);
+const compiledPool = compileWordPool("test:child", id => id === "test:child" ? extendedPool : basePool);
+assert.equal(compiledPool.values.length, 3);
+assert.equal(compiledPool.values[2].priority, 20);
+assert.equal(compiledPool.role, "opening_clause");
+assert.equal(basePool.values.length, 2);
+assert.throws(() => compileWordPool("test:child", () => ({ extends: "test:child" })), /cyclic/);
+assert.throws(() => compileWordPool("test:child", id => id === "test:child" ? { extends: "test:base", remove: ["unknown"] } : basePool), /unknown inherited/);
+assert.deepEqual(wordPoolIssues({ optional: true, chance: 0.5, role: "sentence", groups: [{ conditions: [{ type: "mood", mood: "grateful" }], values: ["You helped."] }] }), []);
+for (const invalid of [{ values: [""] }, { optional: true, chance: 2, values: ["Thanks"] }, { values: ["Hi"], role: "invented" }, { values: [{ id: "same", text: "one" }, { id: "same", text: "two" }] }]) assert(wordPoolIssues(invalid).length);
 const wordFile = "/pack/data/custom/dialogue_words/en_us/greetings/friendly.json";
 const wordLine = "/pack/data/custom/dialogue/fr_fr/lines/greeting.json";
 const words = { values: ["happy", "in good spirits"] };
 assert.deepEqual(wordPoolIssues(words), []);
 assert.deepEqual(wordPoolIssues({ values: ["fine", { text: "splendid", weight: 3,
   conditions: [{ type: "speaking_style", style: "formal" }] }] }), []);
+assert.deepEqual(wordPoolIssues({ selection_group: "custom:tone", avoid_recent: 2, values: ["Hello.",
+  { text: "Welcome.", priority: 20, variant: "warm", conditions: [{ type: "mood", mood: "content" }] }] }), []);
+for (const invalid of [
+  { values: ["Hi"], selection_group: "unqualified" },
+  { values: ["Hi"], avoid_recent: 17 },
+  { values: ["Hi"], avoid_recent: 1.5 },
+  { values: [{ text: "Hi", priority: 1.5 }] },
+  { values: [{ text: "Hi", priority: 2147483648 }] },
+  { values: ["Hi", { text: "Welcome", variant: "warm" }] },
+  { selection_group: "custom:tone", values: [{ text: "Welcome", variant: "warm" }] },
+  { selection_group: "custom:tone", values: ["Hi", { text: "Welcome", variant: "Bad Tone" }] }
+]) assert(wordPoolIssues(invalid).length, JSON.stringify(invalid));
 for (const entry of [{ text: "fine", weight: 0 }, { text: "fine", weight: 1.5 }, { text: "fine", extra: true },
   { text: "fine", conditions: [{ type: "speaking_style", style: "unknown" }] }, { text: "fine", conditions: null }])
   assert(wordPoolIssues({ values: ["fallback", entry] }).length);
@@ -88,4 +112,10 @@ for (const line of pilot) {
   assert(line.conditions.some(condition => condition.type === "reputation"));
 }
 assert(pilot.find(line => line.id.includes("trusted")).text.includes("<aqua>{word:villagerretaliation:mood/content}</aqua>"));
+for (const purpose of ["greetings/contextual", "address/player", "farewells/contextual", "thanks/help", "responses/accept_help", "responses/refuse_request"]) {
+  const definition = JSON.parse(await readFile(new URL(`../neoforge/src/main/resources/data/villagerretaliation/dialogue_words/en_us/${purpose}.json`, import.meta.url), "utf8"));
+  assert.deepEqual(wordPoolIssues(definition), []);
+  assert.equal(definition.avoid_recent, 2);
+}
+assert.deepEqual(await validateWordDirectory(fileURLToPath(new URL("../example-packs/dialogue-choices-and-contexts/data", import.meta.url))), []);
 console.log("Dialogue authoring checks passed: choice policy, markup, contexts, word pools, and farmer pilot.");

@@ -34,7 +34,7 @@ public final class DialogueContextResources {
             }
         }
         var compiled = compile(documents);
-        for (String root : List.of("dialogue", "dialogue_trees", "forced_dialogue", "quests")) {
+        for (String root : List.of("dialogue", "dialogue_trees", "forced_dialogue", "quests", "dialogue_words")) {
             for (var entry : manager.listResources(root, id -> id.getPath().endsWith(".json")).entrySet()) {
                 try (var reader = entry.getValue().openAsReader()) {
                     var value = JsonParser.parseReader(reader);
@@ -52,18 +52,24 @@ public final class DialogueContextResources {
         var parsed = new LinkedHashMap<ResourceLocation, Rule>();
         for (var entry : documents.entrySet()) {
             var value = entry.getValue();
-            if (!value.keySet().equals(Set.of("id", "conditions")) || !value.get("id").isJsonPrimitive()
-                    || !value.get("id").getAsString().contains(":") || !value.get("conditions").isJsonArray())
-                throw new IllegalArgumentException(entry.getKey() + ": expected explicit id and conditions array");
+            var rule = readRule(entry.getKey(), value);
             var id = ResourceLocation.parse(value.get("id").getAsString());
-            var conditions = DialogueCondition.readList(entry.getKey(), "/conditions", value);
-            validateConditions(conditions, entry.getKey().toString());
-            if (parsed.putIfAbsent(id, new Rule(entry.getKey(), conditions)) != null)
+            if (parsed.putIfAbsent(id, rule) != null)
                 throw new IllegalArgumentException(entry.getKey() + ": duplicate dialogue context " + id);
         }
         for (var entry : documents.entrySet()) validateReferences(entry.getValue(), parsed, entry.getKey().toString());
         for (var id : parsed.keySet()) visit(id, parsed, new java.util.LinkedHashSet<>(), new java.util.HashSet<>());
         return Map.copyOf(parsed);
+    }
+
+    public static Rule readRule(ResourceLocation source, JsonObject value) {
+        if (!value.keySet().equals(Set.of("id", "conditions")) || !value.get("id").isJsonPrimitive()
+                || !value.get("id").getAsJsonPrimitive().isString() || !value.get("id").getAsString().contains(":")
+                || ResourceLocation.tryParse(value.get("id").getAsString()) == null || !value.get("conditions").isJsonArray())
+            throw new IllegalArgumentException(source + ": expected explicit id and conditions array");
+        var conditions = DialogueCondition.readList(source, "/conditions", value);
+        validateConditions(conditions, source.toString());
+        return new Rule(source, conditions);
     }
 
     private static void validateConditions(List<DialogueCondition> conditions, String source) {

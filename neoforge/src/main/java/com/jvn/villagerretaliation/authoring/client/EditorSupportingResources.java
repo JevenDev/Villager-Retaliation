@@ -41,6 +41,10 @@ final class EditorSupportingResources {
                 var root = json("{\"replace\":false,\"loadouts\":[]}");
                 root.getAsJsonArray("loadouts").add(loadout(id)); yield root;
             }
+            case CONTEXT -> {
+                var root = json("{\"conditions\":[{\"type\":\"reputation\",\"levels\":[\"trusted\",\"respected\",\"revered\",\"royalty\"]}]}");
+                root.addProperty("id", id); yield root;
+            }
             case WORD_POOL -> json("{\"values\":[\"Hello.\",\"Good to see you.\"]}");
             case STYLE -> {
                 var root = json("{\"tag\":\"custom_style\",\"text_effects\":{\"italic\":true},\"speed\":1}");
@@ -106,8 +110,18 @@ final class EditorSupportingResources {
         return "/values/" + index;
     }
 
+    static void addPhraseGroup(AuthoringDocument document) {
+        requireArray(document.json(), "groups");
+        if (DialogueGraph.array(document.json(), "groups").size() >= 256) throw new IllegalArgumentException("Use at most 256 phrase groups");
+        document.edit("Add phrase group", root -> {
+            var groups = DialogueGraph.array(root, "groups");
+            groups.add(json("{\"conditions\":[],\"priority\":0,\"values\":[\"Hello.\"]}"));
+            root.add("groups", groups);
+        });
+    }
+
     static boolean literalWording(AuthoringDocument document, String pointer) {
-        return kind(document) == EditorResourceRecipes.Kind.WORD_POOL && pointer.matches("/values/[0-9]+(/text)?");
+        return kind(document) == EditorResourceRecipes.Kind.WORD_POOL && pointer.matches("(/groups/[0-9]+)?/values/[0-9]+(/text)?");
     }
 
     static void addRate(AuthoringDocument document) {
@@ -242,16 +256,25 @@ final class EditorSupportingResources {
                 yield object("replace", json("{\"type\":\"boolean\"}"), "loadouts", array(object("id", resource,
                         "professions", array(resource), "excluded_professions", array(resource), "difficulty_pools", pools)));
             }
+            case CONTEXT -> object("id", resource, "conditions", json("{\"type\":\"array\",\"items\":{\"$ref\":\"#/$defs/condition\"}}"));
             case WORD_POOL -> {
-                var text = json("{\"type\":\"string\",\"minLength\":1,\"maxLength\":512,\"default\":\"Hello.\"}");
+                var text = json("{\"type\":\"string\",\"minLength\":0,\"maxLength\":512,\"default\":\"Hello.\"}");
                 text.addProperty("pattern", "^[^{}<>§\\p{Cntrl}]+$");
-                var entry = object("text", text, "weight", json("{\"type\":\"integer\",\"minimum\":1,\"maximum\":1000}"),
+                var entry = object("text", text, "id", json("{\"type\":\"string\",\"pattern\":\"^[a-z0-9_.-]{1,64}$\"}"), "weight", json("{\"type\":\"integer\",\"minimum\":1,\"maximum\":1000}"),
+                        "priority", json("{\"type\":\"integer\",\"minimum\":-1000000,\"maximum\":1000000,\"default\":0}"),
+                        "variant", json("{\"type\":\"string\",\"pattern\":\"^[a-z0-9_.-]{1,64}$\"}"),
                         "conditions", json("{\"type\":\"array\",\"items\":{\"$ref\":\"#/$defs/condition\"}}"));
                 entry.add("required", JsonParser.parseString("[\"text\"]"));
                 var choices = new JsonArray(); choices.add(text); choices.add(entry);
                 var value = new JsonObject(); value.add("anyOf", choices);
-                var values = array(value); values.addProperty("minItems", 1); values.addProperty("maxItems", 256);
-                yield object("values", values);
+                var values = array(value); values.addProperty("minItems", 0); values.addProperty("maxItems", 256);
+                var group = object("values", values.deepCopy(), "conditions", json("{\"type\":\"array\",\"items\":{\"$ref\":\"#/$defs/condition\"}}"),
+                        "priority", json("{\"type\":\"integer\",\"minimum\":-1000000,\"maximum\":1000000}"), "variant", json("{\"type\":\"string\",\"pattern\":\"^[a-z0-9_.-]{1,64}$\"}"));
+                var groups = array(group); groups.addProperty("maxItems", 256);
+                yield object("values", values, "groups", groups, "extends", resource.deepCopy(), "remove", array(json("{\"type\":\"string\",\"pattern\":\"^[a-z0-9_.-]{1,64}$\"}")),
+                        "role", json("{\"enum\":[\"literal\",\"sentence\",\"opening_clause\",\"address\",\"adjective_phrase\"]}"),
+                        "optional", json("{\"type\":\"boolean\",\"default\":false}"), "chance", json("{\"type\":\"number\",\"minimum\":0,\"maximum\":1,\"default\":1}"), "selection_group", json("{\"type\":\"string\",\"pattern\":\"^[a-z0-9_.-]+:[a-z0-9/._-]+$\",\"maxLength\":256}"),
+                        "avoid_recent", json("{\"type\":\"integer\",\"minimum\":0,\"maximum\":16,\"default\":0}"));
             }
             default -> new JsonObject();
         };

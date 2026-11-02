@@ -1,0 +1,45 @@
+{
+  "avoid_recent": 2,
+  "values": [
+    "Thank you.",
+    {
+      "text": "You always come through for me.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ]
+    },
+    {
+      "text": "I knew I could count on you.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ]
+    },
+    {
+      "text": "Thank you. That is one less thing to worry about.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10
+    },
+    {
+      "text": "Thank you. I can breathe a little easier now.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10
+    }
+  ],
+  "role": "sentence"
+}

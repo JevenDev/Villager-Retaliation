@@ -1,0 +1,52 @@
+{
+  "id": "dialogue_example:contextual_phrases",
+  "entries": [
+    {
+      "id": "trade",
+      "label": "Ask about trade",
+      "start": "trade"
+    },
+    {
+      "id": "help",
+      "label": "Offer a hand",
+      "start": "help"
+    },
+    {
+      "id": "leave",
+      "label": "Say goodbye",
+      "start": "leave"
+    },
+    {
+      "id": "farmer",
+      "label": "Farmer greeting",
+      "start": "farmer"
+    },
+    {
+      "id": "thanks",
+      "label": "Give thanks",
+      "start": "thanks"
+    }
+  ],
+  "nodes": {
+    "trade": {
+      "text": "{word:villagerretaliation:greetings/contextual}, {word:villagerretaliation:address/player}. Have you come to trade?",
+      "end": true
+    },
+    "help": {
+      "text": "{word:villagerretaliation:responses/accept_help} {word:villagerretaliation:thanks/help}",
+      "end": true
+    },
+    "leave": {
+      "text": "{word:villagerretaliation:farewells/contextual}",
+      "end": true
+    },
+    "farmer": {
+      "text": "{word:villagerretaliation:greetings/farmer}, {word:villagerretaliation:address/player}. Have you come to trade?",
+      "end": true
+    },
+    "thanks": {
+      "text": "Thank you. {word:villagerretaliation:clauses/relationship_acknowledgment} {word:villagerretaliation:clauses/situational_relief}",
+      "end": true
+    }
+  }
+}

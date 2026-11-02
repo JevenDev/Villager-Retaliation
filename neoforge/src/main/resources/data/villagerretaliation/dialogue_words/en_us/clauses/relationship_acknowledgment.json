@@ -1,0 +1,19 @@
+{
+  "role": "sentence",
+  "optional": true,
+  "chance": 0.45,
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "values": [
+        "I knew I could count on you",
+        "You always come through for me"
+      ]
+    }
+  ]
+}

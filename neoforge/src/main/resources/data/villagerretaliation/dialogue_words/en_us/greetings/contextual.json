@@ -1,0 +1,88 @@
+{
+  "selection_group": "villagerretaliation:interaction_tone",
+  "avoid_recent": 2,
+  "role": "opening_clause",
+  "values": [
+    {
+      "id": "neutral",
+      "text": "Hello"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "variant": "warm",
+      "values": [
+        {
+          "text": "Good to see you",
+          "id": "friendly"
+        },
+        {
+          "text": "Always a pleasure",
+          "id": "pleasure"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "angry"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded",
+      "values": [
+        {
+          "text": "Oh. It is you",
+          "id": "angry"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded",
+      "values": [
+        {
+          "text": "I need a quiet moment",
+          "id": "quiet"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        },
+        {
+          "type": "mood",
+          "mood": "angry"
+        }
+      ],
+      "priority": 20,
+      "variant": "guarded",
+      "values": [
+        {
+          "text": "I am still upset, but I will hear you out",
+          "id": "upset_friend"
+        },
+        {
+          "text": "You are a friend. Just give me a moment",
+          "id": "moment"
+        }
+      ]
+    }
+  ]
+}

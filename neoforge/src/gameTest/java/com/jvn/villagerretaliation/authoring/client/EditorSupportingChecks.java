@@ -18,7 +18,9 @@ final class EditorSupportingChecks {
         kitSlotsPreserveStacksAndUndo();
         schemasDescribeEditableValues();
         wordingAndStylesMatchRuntimeRules();
-        return 7;
+        phraseSchemasAndTemplateDiscovery();
+        phraseGroupsExposeRolesAndUndoAsOneEdit();
+        return 9;
     }
 
     private static AuthoringWorkspace workspace() throws IOException { return AuthoringWorkspace.create(Files.createTempDirectory("supporting-editor-check")); }
@@ -128,6 +130,33 @@ final class EditorSupportingChecks {
         check(style.json().get("tag").getAsString().equals("style_123_fancy"), "style tags use supported characters");
         com.jvn.villagerretaliation.dialogue.DialogueStyle.read(style.json());
         rejects(() -> EditorResourceRecipes.create(workspace, EditorResourceRecipes.Kind.STYLE, "other:123-fancy", null));
+    }
+
+    private static void phraseSchemasAndTemplateDiscovery() throws IOException {
+        var words = create(workspace(), EditorResourceRecipes.Kind.WORD_POOL, "greetings/contextual");
+        String variant = EditorSupportingResources.addWording(words, true);
+        var schema = EditorSchema.forDocument(words);
+        check(!schema.at(words.json(), variant + "/priority").isEmpty(), "priority has an editable schema");
+        check(!schema.scalarIssues(words.json(), variant + "/priority", new JsonPrimitive(1.5)).isEmpty(), "priority rejects fractional values");
+        check(!schema.scalarIssues(words.json(), "/avoid_recent", new JsonPrimitive(17)).isEmpty(), "history uses runtime bounds");
+        check(EditorWordPoolPreview.templates(words).equals(java.util.List.of("{word:test:greetings/contextual}")), "pool inspector constructs namespaced references");
+        var tree = new AuthoringDocument(DefinitionKind.TREE, "data/test/dialogue_trees/en_us/test.json", JsonParser.parseString("""
+                {"nodes":{"hello":{"text":"{word:test:greetings/contextual} Hello."},"again":{"text":"{word:test:greetings/contextual} Hello."}}}
+                """).getAsJsonObject());
+        check(EditorWordPoolPreview.templates(tree).size() == 1, "dialogue inspector discovers wording without duplicate templates");
+    }
+
+    private static void phraseGroupsExposeRolesAndUndoAsOneEdit() throws IOException {
+        var words = create(workspace(), EditorResourceRecipes.Kind.WORD_POOL, "groups");
+        var before = words.json();
+        EditorSupportingResources.addPhraseGroup(words);
+        check(com.jvn.villagerretaliation.dialogue.DialogueWordPool.read(words.json()).entries().size() == 3, "guided phrase groups expand through the runtime parser");
+        check(EditorSupportingResources.literalWording(words, "/groups/0/values/0"), "grouped phrases retain literal text controls");
+        var schema = EditorSchema.forDocument(words);
+        check(!schema.at(words.json(), "/groups/0/priority").isEmpty(), "group defaults have editable schemas");
+        check(!schema.scalarIssues(words.json(), "/role", new JsonPrimitive("invented")).isEmpty(), "unknown grammatical roles are rejected");
+        check(!schema.scalarIssues(words.json(), "/chance", new JsonPrimitive(2)).isEmpty(), "optional clause chance uses runtime bounds");
+        words.undo(); check(words.json().equals(before), "adding a phrase group undoes atomically");
     }
 
     private static void rejects(Runnable operation) {

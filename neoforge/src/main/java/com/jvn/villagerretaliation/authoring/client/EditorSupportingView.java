@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 final class EditorSupportingView {
+    private final EditorWordPoolPreview wordPreview = new EditorWordPoolPreview();
     private final EditorResourcePreview preview = new EditorResourcePreview();
     private String participant = "player", slot = "head";
     private boolean settings;
@@ -86,6 +87,14 @@ final class EditorSupportingView {
                 if (ImGui.button("Add wording")) run.accept(() -> select.accept(EditorSupportingResources.addWording(document, false)));
                 EditorWidgets.sameLineFor("Add conditional variant");
                 if (ImGui.button("Add conditional variant")) run.accept(() -> select.accept(EditorSupportingResources.addWording(document, true)));
+                EditorWidgets.sameLineFor("Add phrase group");
+                if (ImGui.button("Add phrase group")) run.accept(() -> EditorSupportingResources.addPhraseGroup(document));
+                resource.run();
+                String language = com.jvn.villagerretaliation.authoring.core.DefinitionKind.unscopedPath(document.resourcePath()).split("/")[3];
+                wordPreview.render(workspace, document, language);
+            }
+            case CONTEXT -> {
+                ImGui.textWrapped("Define shared conditions once, then reference this ID with a context condition in any phrase pool or dialogue. Conditions in this list must all match.");
                 resource.run();
             }
             case STYLE -> {

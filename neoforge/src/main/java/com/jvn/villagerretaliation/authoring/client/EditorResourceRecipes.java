@@ -18,6 +18,7 @@ final class EditorResourceRecipes {
         DUEL_KIT("Duel kit", "duel_kits", "Player and villager equipment for a duel. Loaded globally."),
         RAID_LOADOUT("Raid loadouts", "player_raid_loadouts", "Militia equipment by profession and difficulty. Use the villagerretaliation namespace."),
         WORD_POOL("Word pool", "dialogue_words/en_us", "Reusable wording and conditional variants for text completion."),
+        CONTEXT("Dialogue context", "dialogue_contexts", "Named conditions shared by dialogue and phrase pools. Loaded globally."),
         STYLE("Dialogue style", "dialogue_styles", "A reusable text tag with effects and speech speed. Loaded globally.");
         final String label, directory, description;
         Kind(String label, String directory, String description) { this.label = label; this.directory = directory; this.description = description; }
@@ -27,7 +28,10 @@ final class EditorResourceRecipes {
 
     static AuthoringDocument create(AuthoringWorkspace workspace, Kind kind, String id, AuthoringDocument scope) {
         var key = net.minecraft.resources.ResourceLocation.tryParse(id);
-        if (key == null || key.getPath().contains("/")) throw new IllegalArgumentException("Use a single-segment resource ID such as mypack:opening");
+        if (key == null || kind != Kind.WORD_POOL && key.getPath().contains("/"))
+            throw new IllegalArgumentException("Use a single-segment resource ID such as mypack:opening");
+        if (java.util.Arrays.stream(key.getPath().split("/", -1)).anyMatch(part -> part.isEmpty() || part.equals(".") || part.equals("..")))
+            throw new IllegalArgumentException("Use a safe resource path such as mypack:greetings/friendly");
         String root = "data/" + key.getNamespace() + "/";
         if (scope != null) {
             if (!kind.scoped()) throw new IllegalArgumentException(kind.label + " load globally. Choose Default content.");

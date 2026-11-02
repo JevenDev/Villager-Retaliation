@@ -1,0 +1,50 @@
+{
+  "avoid_recent": 2,
+  "values": [
+    "Goodbye.",
+    {
+      "text": "Take care, and come back soon.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "text": "Safe travels, my friend.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:relationship/friendly"
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "text": "Give me some space for now.",
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "angry"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded"
+    },
+    {
+      "text": "Stay safe out there.",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        }
+      ],
+      "priority": 10,
+      "variant": "guarded"
+    }
+  ],
+  "selection_group": "villagerretaliation:interaction_tone",
+  "role": "sentence"
+}

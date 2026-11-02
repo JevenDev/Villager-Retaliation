@@ -1,0 +1,14 @@
+{
+  "id": "villagerretaliation:relationship/friendly",
+  "conditions": [
+    {
+      "type": "reputation",
+      "levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    }
+  ]
+}
