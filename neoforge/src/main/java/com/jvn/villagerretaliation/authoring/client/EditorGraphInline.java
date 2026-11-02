@@ -14,7 +14,7 @@ final class EditorGraphInline {
         Field(AuthoringDocument document, String pointer, String label, JsonElement value, boolean multiline, boolean editable) {
             this(document, pointer, label, value, multiline, editable, List.of());
         }
-        float height() { return multiline ? 104 : 54; }
+        float height() { return multiline ? 168 : 54; }
         String bufferId(AuthoringDocument selected) {
             return document == selected ? pointer : document.resourcePath() + pointer;
         }
@@ -27,7 +27,7 @@ final class EditorGraphInline {
         var fields = new ArrayList<Field>();
         JsonElement value = JsonPointers.get(root, block.pointer());
         if (List.of("Say", "Say one of", "Conversation").contains(block.title())) {
-            text(fields, workspace, document, block.pointer(), value, "Dialogue text", true, locale, 0);
+            text(fields, workspace, document, block.pointer(), value, "Villager says", true, locale, 0);
         } else if (block.title().equals("Dialogue") && value.isJsonObject()) {
             for (var slot : value.getAsJsonObject().entrySet())
                 text(fields, workspace, document, block.pointer() + "/" + JsonPointers.escape(slot.getKey()), slot.getValue(), label(slot.getKey()), true, locale, 0);
@@ -35,7 +35,7 @@ final class EditorGraphInline {
             text(fields, workspace, document, block.pointer(), value, "Scene text", true, locale, 0);
         } else if (List.of("Choice", "End choice").contains(block.title()) && value.isJsonObject()) {
             JsonElement label = value.getAsJsonObject().get("label");
-            if (label != null) text(fields, workspace, document, block.pointer() + "/label", label, "Player response", true, locale, 0);
+            if (label != null) text(fields, workspace, document, block.pointer() + "/label", label, "Player chooses", true, locale, 0);
         } else if (List.of("Do", "On entry", "On exit", "Only if", "Choice only if", "Choice does", "Objectives").contains(block.title())
                 && value.isJsonObject()) {
             String path = block.pointer();
@@ -75,6 +75,10 @@ final class EditorGraphInline {
                         array.size() == 1 ? label : label + " " + (i + 1), editable, locale, depth + 1);
         } else if (value.isJsonObject()) {
             JsonObject object = value.getAsJsonObject();
+            if (workspace != null && object.has("template")) {
+                fields.add(new Field(document, path, "Villager says", new JsonPrimitive(workspace.resolveText(document, object, locale)), true, false));
+                return;
+            }
             for (String field : List.of("text", "line", "lines", "variants")) {
                 if (!object.has(field)) continue;
                 text(fields, workspace, document, path + "/" + field, object.get(field), label, editable, locale, depth + 1);

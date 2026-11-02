@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 final class EditorGraph {
-    static final float WIDTH = 340;
+    static final float WIDTH = 400;
     static final float HEADER = 38;
     static final float ROW = 34;
 

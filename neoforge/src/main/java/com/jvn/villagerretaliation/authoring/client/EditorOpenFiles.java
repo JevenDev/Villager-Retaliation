@@ -12,6 +12,17 @@ final class EditorOpenFiles {
         String currentPath() { return document == null ? path : document.resourcePath(); }
     }
 
+    static String label(Entry entry) {
+        String path = entry.currentPath();
+        String name = path.substring(path.lastIndexOf('/') + 1);
+        if (entry.document() == null) return name;
+        String profession = EditorDialogueLinks.profession(entry.document());
+        if (path.contains("/dialogue/")) return (profession.isEmpty() ? "Shared" : EditorContentBrowser.humanize(profession)) + " / " + name;
+        if (path.contains("/dialogue_words/")) return "Pool / " + name;
+        if (path.contains("/dialogue_templates/")) return "Presentation / " + name;
+        return name;
+    }
+
     private AuthoringWorkspace workspace;
     private final List<Entry> files = new ArrayList<>();
 

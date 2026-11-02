@@ -17,7 +17,11 @@ final class EditorCampaignGraph {
     record Node(EditorContentBrowser.Entry content, String category, boolean supporting) {
         AuthoringDocument document() { return content.document(); }
         String path() { return content.path(); }
-        String title() { return content.title(); }
+        String title() {
+            if (document().kind() != DefinitionKind.RESOURCE || !EditorDialogueLinks.supports(document())) return content.title();
+            String label = EditorDialogueLinks.label(new EditorReferences.Location(document(), ""));
+            return DefinitionKind.unscopedPath(path()).contains("/dialogue/") ? label + " / " + content.title() : label;
+        }
         String scope() { return content.groups().getFirst().key(); }
         boolean coverable() { return document().kind() != DefinitionKind.RESOURCE && !document().kind().campaignManifest(); }
     }

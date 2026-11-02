@@ -14,6 +14,8 @@ final class EditorCampaignOverview {
     private final EditorCampaignGraph model = new EditorCampaignGraph();
     private final ImString search = new ImString(256);
     private AuthoringWorkspace owner;
+    private AuthoringDocument requested;
+    private boolean dialogue;
     private EditorCampaignGraph.Snapshot graph;
     private EditorCampaignGraph.Node selected;
     private List<EditorCampaignGraph.Node> visible = List.of();
@@ -22,11 +24,14 @@ final class EditorCampaignOverview {
     private boolean supporting, orphaned, untested, nearby, fit = true, focus, panning;
     private float panX = 25, panY = 25, zoom = 1, canvasX, canvasY, textScale = 1;
 
+    void focusOn(AuthoringDocument document) { requested = document; dialogue = true; }
+    void overview() { dialogue = false; requested = null; }
+
     void render(AuthoringWorkspace workspace, EditorContentBrowser browser, String locale, float scale, EditorCoverage coverage,
                 AuthoringDocument current, Consumer<EditorReferences.Location> open) {
         if (textScale != scale) fit = true;
         textScale = scale;
-        ImGui.textUnformatted("Campaign overview");
+        ImGui.textUnformatted(dialogue ? "Dialogue map" : "Campaign overview");
         if (workspace == null) { ImGui.textWrapped("Open a workspace to explore its content and references."); return; }
         if (owner != workspace) {
             owner = workspace; selected = null; scope = ""; search.set(""); nearby = false; fit = true; visible = List.of();
@@ -50,6 +55,11 @@ final class EditorCampaignOverview {
             if (ImGui.selectable("All content", scope.isEmpty())) scope = "";
             for (var group : groups) if (ImGui.selectable(group.label(), group.key().equals(scope))) scope = group.key();
             ImGui.endCombo();
+        }
+        if (requested != null) {
+            selected = graph.nodes().stream().filter(node -> node.document() == requested).findFirst().orElse(null);
+            requested = null; search.set(""); scope = ""; supporting = true; nearby = true;
+            orphaned = false; untested = false; fit = true;
         }
         if (ImGui.checkbox("Supporting files", supporting)) supporting = !supporting;
         EditorWidgets.sameLineFor("No incoming references");

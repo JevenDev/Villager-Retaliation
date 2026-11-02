@@ -22,7 +22,7 @@ final class EditorVariablePicker {
     };
 
     String render(DefinitionKind kind, float textScale) {
-        if (ImGui.smallButton("Insert variable")) ImGui.openPopup("variables");
+        if (ImGui.button("Insert variable", 0, 28)) ImGui.openPopup("variables");
         if (!EditorWidgets.beginPopup("variables", 660, 580, textScale)) return null;
         if (ImGui.isKeyPressed(ImGuiKey.Escape, false)) {
             ImGui.closeCurrentPopup();

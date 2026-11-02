@@ -261,7 +261,8 @@ public final class AuthoringDialoguePreview implements VillagerInteractionScreen
     }
 
     public static com.jvn.villagerretaliation.dialogue.DialogueWordPool defaultWordPool(ResourceLocation id, String locale) {
-        var server = Minecraft.getInstance().getSingleplayerServer();
+        var minecraft = Minecraft.getInstance();
+        var server = minecraft == null ? null : minecraft.getSingleplayerServer();
         if (server != null) return com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedPool(server, locale, id);
         return PreviewWordPools.bundled(id, locale);
     }

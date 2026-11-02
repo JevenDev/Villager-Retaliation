@@ -121,7 +121,7 @@ final class EditorSupportingResources {
     }
 
     static boolean literalWording(AuthoringDocument document, String pointer) {
-        return kind(document) == EditorResourceRecipes.Kind.WORD_POOL && pointer.matches("(/groups/[0-9]+)?/values/[0-9]+(/text)?");
+        return kind(document) == EditorResourceRecipes.Kind.WORD_POOL && (pointer.matches("(/groups/[0-9]+)?/values/[0-9]+(/text)?") || pointer.startsWith("/text_overrides/"));
     }
 
     static void addRate(AuthoringDocument document) {

@@ -1020,6 +1020,11 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildSteps() {
+        if (Boolean.getBoolean("villagerretaliation.authoringEditorDialogueSmokeOnly")) {
+            buildDialogueNavigationSteps();
+            finishSteps("Dialogue beat links, shared wording, presentation templates, back navigation and linked flow graphs passed.");
+            return;
+        }
         if (Boolean.getBoolean("villagerretaliation.authoringEditorSupportingSmokeOnly")) {
             buildSupportingResourceSteps();
             finishSteps("Guided supporting resources render and load through the game runtime.");
@@ -1056,6 +1061,12 @@ public final class AuthoringEditorClientSmoke {
             STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
             buildWorkflowSteps(); buildFeatureSteps(); buildProductivitySteps();
             finishSteps("Editor workflow, navigation, recovery and productivity controls passed.");
+            return;
+        }
+        if ("writing".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
+            STEPS.add(() -> { set("guideStep", -1); set("resetLayout", true); });
+            buildWritingWorkflowSteps();
+            finishSteps("Create, graph writing, styling, player choice, native preview, save and export passed.");
             return;
         }
         if ("setup".equals(System.getProperty("villagerretaliation.authoringEditorBufferSmokeOnly"))) {
@@ -1233,6 +1244,107 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> require(!EditorPlaytestViewport.active()
                 && Minecraft.getInstance().screen.width == Minecraft.getInstance().getWindow().getGuiScaledWidth(),
                 "Leaving Playtest restores native screen dimensions."));
+    }
+
+    private static void buildWritingWorkflowSteps() {
+        click(() -> toolbar("Workspace"));
+        click(() -> screenPoint(120, 153));
+        replaceText(() -> screenPoint(120, 297), () -> output().resolve("writing-drafts").toString());
+        click(() -> screenPoint(200, 337));
+        STEPS.add(() -> {
+            workspace = (AuthoringWorkspace) field(editor, "workspace");
+            require(workspace.documents().isEmpty(), "The creator starts with an empty workspace.");
+            capture("writing-01-create");
+        });
+        replaceText(() -> screenPoint(120, 220), () -> "Village welcome");
+        click(() -> screenPoint(120, 440));
+        STEPS.add(() -> {
+            document = (AuthoringDocument) field(editor, "document");
+            require(document != null && DialogueGraph.nodes(document).size() == 1, "A plain conversation name creates a starter turn.");
+            require(document.value("/display/title").getAsString().equals("Village welcome"), "The conversation keeps its display name.");
+            set("zoom", 1f); set("panX", 35f); set("panY", 30f); set("fitGraph", false);
+            locateCanvas(); capture("writing-02-starter");
+        });
+        editLine("start", "Welcome, {player}.");
+        click(() -> inlinePoint("start", "/nodes/start/lines/0"));
+        chord(ImGuiKey.ImGuiMod_Ctrl, ImGuiKey.A);
+        click(() -> inlineTool("B"));
+        STEPS.add(() -> {
+            require(inlineText().equals("<b>Welcome, {player}.</b>"), "The larger formatting button styles the graph writing selection.");
+            require(invoke("editingStatus", new Class<?>[0]).toString().startsWith("Unsaved input."), "Pending writing replaces the saved status.");
+            capture("writing-03-style");
+        });
+        click(() -> toolbar("Save"));
+        workflowCommand("Add node or stage");
+        STEPS.add(() -> {
+            require(DialogueGraph.nodes(document).size() == 2, "Add villager turn creates a follow-up.");
+            set("zoom", 1f); set("panX", 35f); set("panY", 30f); set("fitGraph", false);
+            locateCanvas();
+        });
+        editLine("node_2", FOLLOW_UP);
+        click(() -> point("start", 80, 18));
+        workflowCommand("Add response or connection");
+        STEPS.add(() -> capture("writing-04-choice-editor"));
+        replaceText(() -> viewportPoint(600, 430), () -> RESPONSE);
+        STEPS.add(() -> {
+            require(invoke("editingStatus", new Class<?>[0]).toString().startsWith("Player choice draft."), "Uncreated player choices have their own draft status.");
+            capture("writing-04b-typed-choice");
+        });
+        click(() -> viewportPoint(1450, 581));
+        STEPS.add(() -> capture("writing-04c-destinations"));
+        click(() -> viewportPoint(500, 677));
+        STEPS.add(() -> require(((imgui.type.ImString) field(editor, "nextStage")).get().equals("node_2"), "The destination picker chooses the existing follow-up."));
+        click(() -> viewportPoint(480, 621));
+        STEPS.add(() -> {
+            require(DialogueGraph.edges(document).size() == 1, "A player choice connects the turns.");
+            require(DialogueGraph.edges(document).getFirst().to().equals("node_2"), "The player choice uses the selected destination.");
+            require(document.value("/nodes/start/responses/0/label").getAsString().equals(RESPONSE), "The player choice retains its words.");
+            capture("writing-05-connected");
+        });
+        click(() -> toolbar("Save"));
+        click(() -> toolbar("Preview"));
+        click(() -> viewportPoint(693, 289));
+        STEPS.add(() -> {
+            require(field(editor, "target") instanceof net.minecraft.world.entity.npc.Villager, "The preview selects a real villager.");
+            capture("writing-06-preview-controls");
+        });
+        click(() -> viewportPoint(480, 465));
+        pause(1000);
+        STEPS.add(() -> require(AuthoringDialoguePreview.active(), "Play from entry opens native dialogue."));
+        choosePreview("Talk");
+        pause(2500);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals("Welcome, " + Minecraft.getInstance().player.getName().getString() + "."),
+                    "Native preview resolves the authored player variable.");
+            var segments = (List<?>) field(Minecraft.getInstance().screen, "villagerDialogueTextSegments");
+            require(((com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment) segments.getFirst()).effects().bold(), "Native preview retains bold styling.");
+            capture("writing-07-native-greeting");
+        });
+        choosePreview(() -> "Where should we meet, " + Minecraft.getInstance().player.getName().getString() + "?");
+        pause(2500);
+        STEPS.add(() -> {
+            require(field(Minecraft.getInstance().screen, "villagerDialogueText").equals(FOLLOW_UP), "The authored player choice reaches the next villager turn.");
+            capture("writing-08-native-follow-up");
+        });
+        choosePreview("Return to editor");
+        click(() -> toolbar("Edit"));
+        click(() -> toolbar("Save"));
+        STEPS.add(() -> {
+            require(!document.dirty() && !((EditorDocumentBuffers) field(editor, "documentBuffers")).pending(), "Save persists all current writing.");
+            ((imgui.type.ImString) field(editor, "exportPath")).set(output().resolve("writing-export").toString());
+        });
+        click(() -> toolbar("Build pack"));
+        STEPS.add(() -> invoke("buildPackage", new Class<?>[0]));
+        STEPS.add(() -> {
+            require(field(editor, "status").toString().startsWith("Built pack at "), "The authored dialogue exports successfully.");
+            try {
+                var exported = JsonParser.parseString(Files.readString(output().resolve("writing-export").resolve(document.resourcePath()))).getAsJsonObject();
+                require(exported.equals(document.json()), "The exported dialogue retains all writing, styling and connections.");
+                var reopened = AuthoringWorkspace.open(workspace.directory());
+                require(reopened.documents().stream().anyMatch(value -> value.json().equals(document.json())), "The saved conversation survives reopening.");
+            } catch (IOException exception) { throw new UncheckedIOException(exception); }
+            capture("writing-09-exported");
+        });
     }
 
     private static void buildSetupSteps() {
@@ -2859,6 +2971,138 @@ public final class AuthoringEditorClientSmoke {
         });
     }
 
+    private static void buildDialogueNavigationSteps() {
+        var tree = new AuthoringDocument[1];
+        var wording = new AuthoringDocument[1];
+        var template = new AuthoringDocument[1];
+        var destination = new AuthoringDocument[1];
+        var baseline = new java.util.IdentityHashMap<AuthoringDocument, JsonObject>();
+        STEPS.add(() -> {
+            try { workspace = AuthoringWorkspace.create(output().resolve("dialogue-navigation-drafts")); }
+            catch (IOException exception) { throw new UncheckedIOException(exception); }
+            set("workspace", workspace);
+            tree[0] = workspace.createDocument(DefinitionKind.TREE, "test:dialogue_navigation");
+            destination[0] = workspace.createDocument(DefinitionKind.TREE, "test:dialogue_destination");
+            tree[0].edit("Use shared wording", root -> {
+                root.addProperty("tree", destination[0].id());
+                root.getAsJsonObject("nodes").getAsJsonObject("start").add("lines",
+                        JsonParser.parseString("[{\"key\":\"greeting.hello\"}]"));
+            });
+            wording[0] = dialogueResource("dialogue/en_us/global/messages/hello.json", """
+                    {"messages":[{"key":"greeting.hello","template":"test:greeting","arguments":{"body":"{word:test:hello}"}}]}
+                    """);
+            dialogueResource("dialogue/en_us/professions/farmer/messages/hello.json", """
+                    {"messages":[{"key":"greeting.hello","template":"test:greeting","arguments":{"body":"{word:test:farmer}"}}]}
+                    """);
+            template[0] = dialogueResource("dialogue_templates/en_us/greeting.json", """
+                    {"parameters":["body"],"text":"<warm>{body}</warm>"}
+                    """);
+            dialogueResource("dialogue_words/en_us/hello.json", "{\"values\":[{\"id\":\"hello\",\"text\":\"Hello. Good to see you.\"}]}");
+            dialogueResource("dialogue_words/en_us/farmer.json", "{\"extends\":\"test:hello\",\"text_overrides\":{\"hello\":\"Hello, come for a chat?\"}}");
+            dialogueResource("dialogue_styles/warm.json", "{\"tag\":\"warm\",\"text_effects\":{\"color\":\"gold\"}}");
+            workspace.documents().forEach(value -> baseline.put(value, value.json()));
+            document = tree[0];
+            invoke("select", new Class<?>[] {AuthoringDocument.class}, document);
+            set("view", 0); set("guideStep", -1); set("resetLayout", true); set("showGraphTools", false);
+            set("selectedNode", "start"); invoke("setPointer", new Class<?>[] {String.class}, "/nodes/start/lines");
+            set("panX", 35f); set("panY", 30f); set("zoom", 1f); set("fitGraph", false);
+        });
+        pause(300);
+        STEPS.add(() -> { locateCanvas(); capture("dialogue-01-flow-inspector"); });
+        click(() -> screenPoint(1700, 301));
+        key(ImGuiKey.End); key(ImGuiKey.Enter);
+        STEPS.add(() -> {
+            require(field(field(editor, "dialogueLinks"), "profession").equals("farmer"), "The profession selector exposes the farmer override.");
+            String example = ((EditorWordingView) field(editor, "wordingView")).graphExample(workspace, tree[0], tree[0].value("/nodes/start/lines"), "en_us", "farmer");
+            require(example.contains("Hello, come for a chat?") && !example.startsWith("{") && !example.contains("{word:"),
+                    "Graph examples assemble the selected profession voice: " + example);
+            capture("dialogue-01b-profession-links");
+        });
+        click(() -> screenPoint(1700, 430));
+        STEPS.add(() -> {
+            require(((AuthoringDocument) field(editor, "document")).resourcePath().contains("/professions/farmer/messages/"),
+                    "Clicking a profession wording link opens its inspector.");
+            capture("dialogue-01c-profession-inspector");
+            invoke("navigateHistory", new Class<?>[] {int.class}, -1);
+        });
+        pause(100);
+        STEPS.add(() -> require(field(editor, "document") == tree[0], "Back returns from the profession inspector to the shared graph."));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, true));
+        click(() -> point("start", 100, 48));
+        STEPS.add(() -> ImGui.getIO().addKeyEvent(ImGuiKey.ImGuiMod_Ctrl, false));
+        STEPS.add(() -> {
+            var references = (List<?>) field(editor, "referenceResults");
+            require(references.contains(new EditorReferences.Location(wording[0], "/messages/0/arguments")),
+                    "Ctrl-click on a dialogue beat offers its shared wording inspector.");
+            capture("dialogue-02-linked-wording");
+        });
+        key(ImGuiKey.Escape);
+        STEPS.add(() -> invoke("navigateReference", new Class<?>[] {EditorReferences.Location.class},
+                new EditorReferences.Location(wording[0], "/messages/0/arguments")));
+        pause(200);
+        STEPS.add(() -> {
+            require(field(editor, "document") == wording[0], "The wording link opens its resource inspector.");
+            capture("dialogue-03-wording-inspector");
+            invoke("navigateReference", new Class<?>[] {EditorReferences.Location.class}, new EditorReferences.Location(template[0], ""));
+        });
+        pause(200);
+        STEPS.add(() -> {
+            require(field(editor, "document") == template[0], "The template link opens its shared presentation inspector.");
+            capture("dialogue-04-template-inspector");
+            invoke("navigateHistory", new Class<?>[] {int.class}, -1);
+        });
+        pause(100);
+        STEPS.add(() -> {
+            require(field(editor, "document") == wording[0]
+                    && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/messages/0/arguments"),
+                    "Back restores the wording inspector selection.");
+            invoke("navigateHistory", new Class<?>[] {int.class}, -1);
+        });
+        pause(100);
+        STEPS.add(() -> {
+            require(field(editor, "document") == tree[0]
+                    && ((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/start/lines"),
+                    "Back restores the original conversation beat.");
+            require((float) field(editor, "panX") == 35f && (float) field(editor, "zoom") == 1f, "Back preserves graph pan and zoom.");
+            invoke("showDialogueMap", new Class<?>[0]);
+        });
+        pause(200);
+        STEPS.add(() -> {
+            var overview = field(editor, "campaignOverview");
+            require((boolean) field(overview, "dialogue") && (boolean) field(overview, "nearby")
+                    && (boolean) field(overview, "supporting"), "The dialogue map opens with shared content and immediate connections visible.");
+            capture("dialogue-05-connections-map");
+        });
+        move(() -> dialogueMapPoint(destination[0]), false);
+        STEPS.add(() -> { mouseDown = true; mouseDoubleClicked = true; });
+        STEPS.add(() -> { mouseDown = false; mouseDoubleClicked = false; });
+        pause(150);
+        STEPS.add(() -> {
+            require(field(editor, "document") == destination[0] && (int) field(editor, "view") == 0,
+                    "Double-clicking a linked flow opens its graph.");
+            for (var entry : baseline.entrySet()) require(entry.getKey().json().equals(entry.getValue()), "Graph navigation leaves dialogue content intact.");
+            capture("dialogue-06-linked-flow");
+        });
+    }
+
+    private static AuthoringDocument dialogueResource(String suffix, String json) {
+        var value = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/" + suffix, JsonParser.parseString(json).getAsJsonObject());
+        workspace.add(value);
+        return value;
+    }
+
+    private static float[] dialogueMapPoint(AuthoringDocument document) {
+        var view = field(editor, "campaignOverview");
+        var graph = (EditorCampaignGraph.Snapshot) field(view, "graph");
+        var node = graph.nodes().stream().filter(value -> value.document() == document).findFirst().orElseThrow();
+        @SuppressWarnings("unchecked")
+        var positions = (Map<EditorCampaignGraph.Node, EditorCampaignGraph.Position>) field(view, "positions");
+        var position = positions.get(node);
+        float zoom = (float) field(view, "zoom") * ((EditorPreferences) field(editor, "preferences")).textScale();
+        return new float[] {(float) field(view, "canvasX") + (float) field(view, "panX") + (position.x() + 130) * zoom,
+                (float) field(view, "canvasY") + (float) field(view, "panY") + (position.y() + 40) * zoom};
+    }
+
     private static void buildCampaignOverviewSteps() {
         STEPS.add(() -> {
             set("guideStep", -1); set("resetLayout", true);
@@ -4317,8 +4561,8 @@ public final class AuthoringEditorClientSmoke {
 
     private static Object greetingSelection() {
         var selections = (Map<?, ?>) field(field(editor, "textFields"), "selections");
-        Object selection = selections.get("/nodes/start/lines/0");
-        require(selection != null, "The Details panel has the greeting field.");
+        Object selection = selections.get("graph:start:/nodes/start/lines:/nodes/start/lines/0");
+        require(selection != null, "The graph has the greeting writing field.");
         return selection;
     }
 
@@ -4475,8 +4719,11 @@ public final class AuthoringEditorClientSmoke {
         float[] input = inlinePoint("start", "/nodes/start/lines/0");
         float x = point("start", 12, 0)[0];
         for (String label : new String[] {"B", "I", "U", "Insert variable", "Style"}) {
-            float width = ImGui.calcTextSize(label).x + 8;
-            if (label.equals(target)) return new float[] {x + width / 2, input[1] - 15 + ImGui.getTextLineHeight() / 2};
+            float width = List.of("B", "I", "U").contains(label) ? 30 : ImGui.calcTextSize(label).x + 8;
+            if (label.equals(target)) {
+                var card = EditorGraph.cards(workspace, document, "en_us").stream().filter(value -> value.node().id().equals("start")).findFirst().orElseThrow();
+                return point("start", x - point("start", 0, 0)[0] + width / 2, card.blockY(0) + 62);
+            }
             x += width + ImGui.getStyle().getItemSpacingX();
         }
         throw new IllegalArgumentException(target);
@@ -4487,7 +4734,7 @@ public final class AuthoringEditorClientSmoke {
         for (int i = 0; i < card.blocks().size(); i++) {
             float y = card.blockY(i) + 28;
             for (var field : card.blocks().get(i).fields()) {
-                if (field.pointer().equals(path)) return point(node, 90, y + 35);
+                if (field.pointer().equals(path)) return point(node, 90, y + (field.multiline() ? 85 : 35));
                 y += field.height() + (field.multiline() ? card.fieldGrowth() : 0);
             }
         }
@@ -4518,7 +4765,7 @@ public final class AuthoringEditorClientSmoke {
         click(() -> point(node, 80, EditorGraph.HEADER + 12));
         STEPS.add(() -> require(((imgui.type.ImString) field(editor, "pointer")).get().equals("/nodes/" + node + "/lines"),
                 "Say selects the line editor for " + node));
-        replaceText(() -> screenPoint(1700, 350), () -> text);
+        replaceText(() -> inlinePoint(node, "/nodes/" + node + "/lines/0"), () -> text);
         click(() -> toolbar("Save"));
         STEPS.add(() -> require(document.json().getAsJsonObject("nodes").getAsJsonObject(node).getAsJsonArray("lines")
                 .get(0).getAsString().equals(text), "Save applies typed dialogue text for " + node));
@@ -4576,6 +4823,10 @@ public final class AuthoringEditorClientSmoke {
 
     private static float[] clearSearchPoint() {
         return new float[] {ImGui.getMainViewport().getPosX() + contentColumnWidth() - 34, ImGui.getMainViewport().getPosY() + 193};
+    }
+
+    private static float[] viewportPoint(float x, float y) {
+        return new float[] {ImGui.getMainViewport().getPosX() + x, ImGui.getMainViewport().getPosY() + y};
     }
 
     private static float[] screenPoint(float x, float y) {

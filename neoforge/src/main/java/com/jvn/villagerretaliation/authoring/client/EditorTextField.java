@@ -124,7 +124,7 @@ final class EditorTextField {
             styleMenu(selection);
         }
         ImGui.popStyleVar();
-        float defaultHeight = formatting ? 112 : 64;
+        float defaultHeight = formatting ? 176 : 96;
         Size size = sizes.computeIfAbsent(id, ignored -> new Size(defaultHeight));
         float available = Math.max(1, ImGui.getContentRegionAvailX());
         float width = size.width == 0 ? available : clampWidth(size.width, available);
@@ -253,7 +253,7 @@ final class EditorTextField {
         for (int i = 0; i < 3; i++) {
             if (i > 0) ImGui.sameLine();
             var style = EditorTextStyles.STYLES.get(i);
-            if (ImGui.smallButton(style.tag().toUpperCase(Locale.ROOT))) selection.command = new Command(style.tag(), true);
+            if (ImGui.button(style.tag().toUpperCase(Locale.ROOT), 30, 28)) selection.command = new Command(style.tag(), true);
             toolbarItem(selection);
             if (ImGui.isItemHovered()) {
                 String shortcut = EditorShortcuts.binding(style.command(), overrides);
@@ -264,7 +264,7 @@ final class EditorTextField {
     }
 
     private void styleMenu(Selection selection) {
-        if (ImGui.smallButton("Style")) ImGui.openPopup("styles");
+        if (ImGui.button("Style", 0, 28)) ImGui.openPopup("styles");
         toolbarItem(selection);
         if (ImGui.isItemHovered()) ImGui.setTooltip("Colors, gradients and text effects. Select text to apply or remove a style.");
         if (!ImGui.beginPopup("styles")) return;

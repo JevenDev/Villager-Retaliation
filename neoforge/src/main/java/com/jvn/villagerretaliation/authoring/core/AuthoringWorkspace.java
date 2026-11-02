@@ -1558,6 +1558,7 @@ public final class AuthoringWorkspace {
     }
 
     private static TextLocation messageLocation(AuthoringDocument document, JsonObject message, String pointer) {
+        if (message.has("template")) return new TextLocation(document, pointer);
         for (String field : List.of("variants", "lines", "line", "text"))
             if (message.has(field)) return new TextLocation(document, pointer + "/" + field);
         return new TextLocation(document, pointer + "/key");
