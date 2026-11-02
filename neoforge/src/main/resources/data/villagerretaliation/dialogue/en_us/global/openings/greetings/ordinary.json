@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.openings"
+    ],
+    "topic": "global.openings"
+  },
+  "openings": [
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "global_friendly_opening",
+      "show_for_babies": false,
+      "variants": [
+        {
+          "id": "ordinary",
+          "text": "<greeting_warm>{word:villagerretaliation:greetings/npc/openings/warm}</greeting_warm>"
+        }
+      ]
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "id": "global_neutral_opening",
+      "show_for_babies": false,
+      "variants": [
+        {
+          "id": "ordinary",
+          "text": "{word:villagerretaliation:greetings/npc/openings/neutral}"
+        }
+      ]
+    },
+    {
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "id": "global_hostile_opening",
+      "show_for_babies": false,
+      "variants": [
+        {
+          "id": "ordinary",
+          "text": "<greeting_guarded>{word:villagerretaliation:greetings/npc/openings/guarded}</greeting_guarded>"
+        }
+      ]
+    },
+    {
+      "dispositions": [
+        "fearful"
+      ],
+      "id": "global_feared_opening",
+      "show_for_babies": false,
+      "variants": [
+        {
+          "id": "ordinary",
+          "text": "<greeting_quiet>{word:villagerretaliation:greetings/npc/openings/fearful}</greeting_quiet>"
+        }
+      ]
+    }
+  ]
+}

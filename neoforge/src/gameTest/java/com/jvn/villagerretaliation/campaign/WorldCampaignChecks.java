@@ -36,6 +36,12 @@ public final class WorldCampaignChecks {
         reject(() -> catalog.require(id("test:beta"), true));
         reject(() -> catalog.require(id("test:missing"), false));
         var selected = new WorldCampaignSelection.Selection(alpha.id(), false);
+        resources.add("test:world_campaigns/alpha/dialogue_templates/en_us/greeting.json", "{\"text\":\"Welcome.\"}");
+        resources.add("test:world_campaigns/beta/dialogue_templates/en_us/greeting.json", "{\"text\":\"Other greeting.\"}");
+        check(WorldCampaignResources.supports("dialogue_templates/en_us"), "presentation templates follow campaign selection");
+        var templates = WorldCampaignResources.stacks(resources, selected, "dialogue_templates/en_us");
+        check(templates.size() == 1 && templates.getFirst().location().toString().equals("test:dialogue_templates/en_us/greeting.json"),
+                "only the selected campaign's presentation templates are exposed");
         var stacks = WorldCampaignResources.stacks(resources, selected, "dialogue/en_us");
         check(stacks.size() == 3, "only selected, shared, and matching mixed entries are exposed");
         var mixed = stacks.stream().filter(stack -> stack.location().getPath().endsWith("mixed.json")).findFirst().orElseThrow();

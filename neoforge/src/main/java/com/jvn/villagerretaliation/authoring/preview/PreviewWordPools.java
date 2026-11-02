@@ -78,7 +78,7 @@ public final class PreviewWordPools {
         return id -> definitions.containsKey(id) ? definitions.get(id) : bundledContext(id);
     }
 
-    private static com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.Rule bundledContext(ResourceLocation id) {
+    public static com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.Rule bundledContext(ResourceLocation id) {
         var loaded = com.jvn.villagerretaliation.dialogue.resources.DialogueContextResources.rule(id);
         if (loaded != null) return loaded;
         String path = "/data/" + id.getNamespace() + "/dialogue_contexts/" + id.getPath() + ".json";

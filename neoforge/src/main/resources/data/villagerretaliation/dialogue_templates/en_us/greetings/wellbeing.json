@@ -1,0 +1,9 @@
+{
+  "extends": "villagerretaliation:greetings/styled",
+  "parameters": [
+    "answer"
+  ],
+  "arguments": {
+    "body": "{answer} {word:villagerretaliation:greetings/npc/ask_back}"
+  }
+}

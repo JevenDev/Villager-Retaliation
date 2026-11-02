@@ -3406,7 +3406,7 @@ final class ImGuiAuthoringEditor {
         playtestLocale = locale.get();
         playtestReplacements = Map.copyOf(replacements);
         EditorPlaytestPresentation.update(workspace, document, EditorTestWorld.appliedContent(workspace), replacements, locale.get(), conditions.speakers());
-        if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(documentCache.json(document)));
+        if (AuthoringDialoguePreview.active()) attempt(() -> AuthoringDialoguePreview.refreshPresentation(com.jvn.villagerretaliation.authoring.core.AuthoringPresentationTemplates.expand(document, workspace.documents())));
     }
 
     private String playtestRestartReason() {
@@ -3875,7 +3875,7 @@ final class ImGuiAuthoringEditor {
             if (document.kind() == DefinitionKind.RESOURCE) {
                 JsonElement selected = JsonPointers.get(documentCache.json(document), node);
                 if (!selected.isJsonObject() || java.util.Collections.disjoint(selected.getAsJsonObject().keySet(),
-                        List.of("text", "line", "lines", "variants", "text_key", "line_key", "exchanges", "options", "responses", "entries"))) {
+                        List.of("text", "line", "lines", "variants", "text_key", "line_key", "exchanges", "options", "responses", "entries", "template"))) {
                     throw new IllegalArgumentException("Select a dialogue-bearing object in Properties, then play selected object.");
                 }
             }
@@ -3887,7 +3887,9 @@ final class ImGuiAuthoringEditor {
             if (guideStep == 3) guideStep = 4;
             conditions.worldTime(MC.level.getDayTime());
             conditions.contexts(com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.contexts(workspace, document));
-            AuthoringDialoguePreview.start(document, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
+            var previewDocument = new AuthoringDocument(document.kind(), document.resourcePath(),
+                    com.jvn.villagerretaliation.authoring.core.AuthoringPresentationTemplates.expand(document, workspace.documents()));
+            AuthoringDialoguePreview.start(previewDocument, node, target, conditions, () -> MC.setScreen(MC.level != null && MC.player != null ? screen : null), key -> {
                 JsonObject reference = new JsonObject();
                 reference.addProperty("key", key);
                 String resolved = workspace.resolveText(document, reference, locale.get(),

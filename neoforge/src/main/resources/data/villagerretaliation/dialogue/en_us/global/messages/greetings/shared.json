@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.greetings.shared"
+  },
+  "messages": [
+    {
+      "id": "greeting.shared.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/voice} {word:villagerretaliation:greetings/npc/welcome}"
+      }
+    },
+    {
+      "id": "greeting.shared.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/npc/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.shared.return_greeting",
+      "key": "greeting.shared.return_greeting",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/return_greeting}"
+      }
+    },
+    {
+      "id": "greeting.shared.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.shared.player_well",
+      "key": "greeting.shared.player_well",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/player_well}"
+      }
+    },
+    {
+      "id": "greeting.shared.player_steady",
+      "key": "greeting.shared.player_steady",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/player_steady}"
+      }
+    },
+    {
+      "id": "greeting.shared.player_struggling",
+      "key": "greeting.shared.player_struggling",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/player_struggling}"
+      }
+    },
+    {
+      "id": "greeting.shared.player_private",
+      "key": "greeting.shared.player_private",
+      "show_for_babies": false,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/npc/player_private}"
+      }
+    },
+    {
+      "id": "greeting.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "text": "Good to see you."
+    },
+    {
+      "id": "greeting.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "text": "How are you doing?"
+    },
+    {
+      "id": "greeting.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "text": "Just saying hello."
+    },
+    {
+      "id": "greeting.player.player_well",
+      "key": "greeting.player.player_well",
+      "show_for_babies": false,
+      "text": "I'm doing well."
+    },
+    {
+      "id": "greeting.player.player_steady",
+      "key": "greeting.player.player_steady",
+      "show_for_babies": false,
+      "text": "Taking things as they come."
+    },
+    {
+      "id": "greeting.player.player_struggling",
+      "key": "greeting.player.player_struggling",
+      "show_for_babies": false,
+      "text": "I've had better days."
+    },
+    {
+      "id": "greeting.player.player_private",
+      "key": "greeting.player.player_private",
+      "show_for_babies": false,
+      "text": "I'd rather not get into it."
+    }
+  ]
+}

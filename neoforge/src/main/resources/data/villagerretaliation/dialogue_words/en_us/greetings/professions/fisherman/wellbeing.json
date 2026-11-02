@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Not too bad. I'm in no hurry.",
+    "ordinary_2": "Not too bad. I like the quiet when I'm fishing.",
+    "ordinary_3": "Can't complain. Nice having someone to talk to.",
+    "content_1": "I'm in a good mood, actually.",
+    "content_2": "Feeling good. I'm always happy with a fishing rod in hand.",
+    "content_3": "Well, thank you. Nothing much troubling me.",
+    "stressed_1": "I've got a lot on my mind.",
+    "stressed_2": "A bit restless, honestly.",
+    "stressed_3": "Finding it hard to relax."
+  }
+}

@@ -1674,6 +1674,9 @@ public final class AuthoringWorkspace {
             return choices.isEmpty() ? "" : resolveText(owner, choices.get(Math.floorMod(variant, choices.size())), locale, variant, eligible, visited);
         }
         JsonObject reference = value.getAsJsonObject();
+        if (reference.has("template")) return resolveText(owner,
+                com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expand(reference, AuthoringPresentationTemplates.library(documents, owner)),
+                locale, variant, eligible, visited);
         for (String field : List.of("text", "line", "lines", "variants")) {
             if (reference.has(field)) return resolveText(owner, reference.get(field), locale, variant, eligible, visited);
         }
@@ -1700,7 +1703,7 @@ public final class AuthoringWorkspace {
                     JsonElement payload = QuestLocaleCatalog.read(document.json()).messages().get(key);
                     if (payload != null) return resolveText(owner, payload, language, variant, eligible, visited);
                 } else if (document.resourcePath().contains("/dialogue/" + language + "/")) {
-                    JsonObject root = document.json();
+                    JsonObject root = AuthoringPresentationTemplates.expand(document, documents);
                     List<JsonObject> messages = new ArrayList<>();
                     for (JsonElement message : DialogueGraph.array(root, "messages")) {
                         if (!message.isJsonObject()) continue;

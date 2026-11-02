@@ -10,14 +10,6 @@
   },
   "options": [
     {
-      "id": "baby_greeting",
-      "label": "Say hello",
-      "type": "dialogue_option",
-      "request": "greeting",
-      "order": 0,
-      "show_for_adults": false
-    },
-    {
       "id": "baby_today_question",
       "label": "Ask about today",
       "type": "dialogue_option",

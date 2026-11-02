@@ -1,0 +1,7 @@
+{
+  "tag": "greeting_guarded",
+  "text_effects": {
+    "color": "gray"
+  },
+  "speed": 0.95
+}

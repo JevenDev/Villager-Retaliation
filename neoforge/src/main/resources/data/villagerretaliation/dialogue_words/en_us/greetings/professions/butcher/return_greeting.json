@@ -1,0 +1,15 @@
+{
+  "extends": "villagerretaliation:greetings/npc/return_greeting",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "warm_1",
+    "warm_2",
+    "warm_3"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Likewise. Hospitality needn't come with a bill.",
+    "ordinary_2": "It's good to have a word without weighing anything.",
+    "ordinary_3": "You're welcome to stop for a chat."
+  }
+}

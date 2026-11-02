@@ -1,0 +1,158 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "I'm glad to hear it."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "That's good. I hope it lasts."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Good. Enjoy it while you've got it."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "I'm pleased for you."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hope the rest of your day goes well."
+    },
+    {
+      "id": "shared_good_to_hear",
+      "text": "Good to hear."
+    },
+    {
+      "id": "shared_i_m_glad_to_hear_it_keep_looking_after_yourself",
+      "text": "I'm glad to hear it. Keep looking after yourself."
+    },
+    {
+      "id": "shared_then_i_hope_things_keep_going_your_way",
+      "text": "Then I hope things keep going your way."
+    },
+    {
+      "id": "shared_good_glad_to_hear_it",
+      "text": "Good. Glad to hear it."
+    },
+    {
+      "id": "shared_i_m_pleased_for_you_i_hope_it_stays_that_way",
+      "text": "I'm pleased for you. I hope it stays that way."
+    },
+    {
+      "id": "shared_that_s_good_then",
+      "text": "That's good, then."
+    },
+    {
+      "id": "shared_good_hope_it_stays_that_way",
+      "text": "Good. Hope it stays that way."
+    },
+    {
+      "id": "shared_that_s_good_to_hear",
+      "text": "That's good to hear."
+    },
+    {
+      "id": "shared_then_i_hope_the_rest_of_your_day_goes_well",
+      "text": "Then I hope the rest of your day goes well."
+    },
+    {
+      "id": "shared_i_m_glad_hope_it_stays_that_way",
+      "text": "I'm glad. Hope it stays that way."
+    },
+    {
+      "id": "shared_that_s_good_look_after_yourself",
+      "text": "That's good. Look after yourself."
+    },
+    {
+      "id": "shared_glad_to_hear_it",
+      "text": "Glad to hear it."
+    },
+    {
+      "id": "shared_that_s_nice_to_hear",
+      "text": "That's nice to hear."
+    },
+    {
+      "id": "shared_i_m_pleased_to_hear_it",
+      "text": "I'm pleased to hear it."
+    },
+    {
+      "id": "shared_then_i_hope_things_keep_going_well_for_you",
+      "text": "Then I hope things keep going well for you."
+    },
+    {
+      "id": "shared_then_i_hope_things_stay_steady_for_you",
+      "text": "Then I hope things stay steady for you."
+    },
+    {
+      "id": "shared_good_glad_to_hear_it_2",
+      "text": "Good! Glad to hear it."
+    },
+    {
+      "id": "shared_then_enjoy_it_that_s_what_i_d_do",
+      "text": "Then enjoy it. That's what I'd do."
+    },
+    {
+      "id": "shared_that_s_lovely_to_hear",
+      "text": "That's lovely to hear."
+    },
+    {
+      "id": "shared_good_hope_things_keep_going_your_way",
+      "text": "Good. Hope things keep going your way."
+    },
+    {
+      "id": "shared_then_i_hope_it_stays_that_way",
+      "text": "Then I hope it stays that way."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "That's good. I'm glad things are all right for you."
+        },
+        {
+          "id": "quiet_2",
+          "text": "Good. Glad to hear it."
+        },
+        {
+          "id": "quiet_3",
+          "text": "I'm glad one of us is feeling well."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Good. Then let's leave it there."
+        },
+        {
+          "id": "guarded_2",
+          "text": "All right, then."
+        },
+        {
+          "id": "guarded_3",
+          "text": "Fine. I hope it stays that way."
+        }
+      ]
+    }
+  ]
+}

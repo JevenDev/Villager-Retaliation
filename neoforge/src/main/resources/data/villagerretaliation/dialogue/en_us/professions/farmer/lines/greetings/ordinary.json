@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "farmer_new_greeting_rows",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.farmer",
+      "section.lines"
+    ],
+    "topic": "professions.farmer.greetings"
+  }
+}

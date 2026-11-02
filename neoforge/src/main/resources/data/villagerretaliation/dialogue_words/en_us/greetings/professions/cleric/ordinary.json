@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "what's on your mind?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "did you want a quiet word?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "it's good to have someone to talk to."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "I'm glad you've made room for a little company."
+        },
+        {
+          "id": "warm_2",
+          "text": "it's good to have some company."
+        },
+        {
+          "id": "warm_3",
+          "text": "it's a pleasure to have a word without anything weighing on it."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I could use a little quiet myself."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I'm listening, though I haven't many words to offer."
+        },
+        {
+          "id": "quiet_3",
+          "text": "let's take this slowly."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "we can speak without pretending to agree on everything."
+        },
+        {
+          "id": "guarded_2",
+          "text": "I'll listen, provided we keep respect between us."
+        },
+        {
+          "id": "guarded_3",
+          "text": "keep it civil, please."
+        }
+      ]
+    }
+  ]
+}

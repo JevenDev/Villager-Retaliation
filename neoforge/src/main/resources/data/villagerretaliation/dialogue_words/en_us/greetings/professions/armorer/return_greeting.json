@@ -1,0 +1,15 @@
+{
+  "extends": "villagerretaliation:greetings/npc/return_greeting",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "warm_1",
+    "warm_2",
+    "warm_3"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Likewise. Good to see you.",
+    "ordinary_2": "I'm glad you stopped for a word.",
+    "ordinary_3": "Good company is a welcome change from talk of sizes."
+  }
+}

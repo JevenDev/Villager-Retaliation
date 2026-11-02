@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.greetings.ordinary"
+  },
+  "lines": [
+    {
+      "id": "greeting.shared.ordinary",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 42,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "How about you?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "And you?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "What about you?"
+    }
+  ]
+}

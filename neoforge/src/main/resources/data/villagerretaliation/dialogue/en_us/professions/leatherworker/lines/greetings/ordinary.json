@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "leatherworker_new_greeting_tannery",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.leatherworker",
+      "section.lines"
+    ],
+    "topic": "professions.leatherworker.greetings"
+  }
+}

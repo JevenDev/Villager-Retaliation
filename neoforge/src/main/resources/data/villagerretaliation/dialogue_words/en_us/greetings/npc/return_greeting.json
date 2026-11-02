@@ -1,0 +1,225 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "That's kind of you to say."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Likewise. It's nice to have a word."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "A friendly word is always welcome."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Well, I'm glad you said hello."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Thank you. Take care of yourself."
+    },
+    {
+      "id": "shared_likewise_a_conversation_needn_t_have_a_destination",
+      "text": "Likewise. A conversation needn't have a destination."
+    },
+    {
+      "id": "shared_i_m_glad_our_paths_crossed_in_conversation",
+      "text": "I'm glad our paths crossed in conversation."
+    },
+    {
+      "id": "shared_good_to_have_a_chat_with_you",
+      "text": "Good to have a chat with you."
+    },
+    {
+      "id": "shared_and_it_s_good_to_talk_to_you",
+      "text": "And it's good to talk to you."
+    },
+    {
+      "id": "shared_i_m_glad_we_could_share_a_peaceful_word",
+      "text": "I'm glad we could share a peaceful word."
+    },
+    {
+      "id": "shared_thank_you_small_kindnesses_still_matter",
+      "text": "Thank you. Small kindnesses still matter."
+    },
+    {
+      "id": "shared_likewise_we_needn_t_make_a_big_occasion_of_it",
+      "text": "Likewise. We needn't make a big occasion of it."
+    },
+    {
+      "id": "shared_a_friendly_word_is_worth_stopping_for",
+      "text": "A friendly word is worth stopping for."
+    },
+    {
+      "id": "shared_good_of_you_to_stop_by",
+      "text": "Good of you to stop by."
+    },
+    {
+      "id": "shared_likewise_good_to_see_you",
+      "text": "Likewise. Good to see you."
+    },
+    {
+      "id": "shared_i_m_glad_you_took_a_moment",
+      "text": "I'm glad you took a moment."
+    },
+    {
+      "id": "shared_a_simple_greeting_can_land_perfectly_well",
+      "text": "A simple greeting can land perfectly well."
+    },
+    {
+      "id": "shared_likewise_good_company_doesn_t_need_adjusting",
+      "text": "Likewise. Good company doesn't need adjusting."
+    },
+    {
+      "id": "shared_i_m_glad_you_made_time_for_a_word",
+      "text": "I'm glad you made time for a word."
+    },
+    {
+      "id": "shared_a_kind_greeting_is_something_worth_keeping",
+      "text": "A kind greeting is something worth keeping."
+    },
+    {
+      "id": "shared_likewise_good_company_needs_no_introduction",
+      "text": "Likewise. Good company needs no introduction."
+    },
+    {
+      "id": "shared_i_m_glad_we_could_have_a_chat",
+      "text": "I'm glad we could have a chat."
+    },
+    {
+      "id": "shared_a_friendly_word_is_worth_remembering",
+      "text": "A friendly word is worth remembering."
+    },
+    {
+      "id": "shared_likewise_a_well_meant_word_has_some_weight",
+      "text": "Likewise. A well-meant word has some weight."
+    },
+    {
+      "id": "shared_i_m_glad_you_ve_made_time_for_a_conversation",
+      "text": "I'm glad you've made time for a conversation."
+    },
+    {
+      "id": "shared_good_to_have_a_chat",
+      "text": "Good to have a chat."
+    },
+    {
+      "id": "shared_likewise_there_s_warmth_in_being_greeted_kindly",
+      "text": "Likewise. There's warmth in being greeted kindly."
+    },
+    {
+      "id": "shared_i_m_glad_you_took_a_moment_for_me",
+      "text": "I'm glad you took a moment for me."
+    },
+    {
+      "id": "shared_a_friendly_word_is_a_comfort_of_its_own",
+      "text": "A friendly word is a comfort of its own."
+    },
+    {
+      "id": "shared_likewise_a_greeting_doesn_t_need_a_practical_purpose",
+      "text": "Likewise. A greeting doesn't need a practical purpose."
+    },
+    {
+      "id": "shared_i_m_glad_you_ve_made_time_for_a_word",
+      "text": "I'm glad you've made time for a word."
+    },
+    {
+      "id": "shared_good_to_have_some_company",
+      "text": "Good to have some company."
+    },
+    {
+      "id": "shared_likewise_it_s_nice_to_have_some_company",
+      "text": "Likewise. It's nice to have some company."
+    },
+    {
+      "id": "shared_i_m_glad_you_stopped_by",
+      "text": "I'm glad you stopped by."
+    },
+    {
+      "id": "shared_a_friendly_word_means_something_to_me",
+      "text": "A friendly word means something to me."
+    },
+    {
+      "id": "shared_likewise_it_s_good_to_be_greeted_without_a_demand",
+      "text": "Likewise. It's good to be greeted without a demand."
+    },
+    {
+      "id": "shared_i_m_glad_you_made_time_for_a_civil_word",
+      "text": "I'm glad you made time for a civil word."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "That goes both ways."
+        },
+        {
+          "id": "warm_2",
+          "text": "I'm glad you stopped to say so."
+        },
+        {
+          "id": "warm_3",
+          "text": "You made time for a hello. I appreciate that."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "Thank you. A kind word helps."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I'm glad you took a moment."
+        },
+        {
+          "id": "quiet_3",
+          "text": "Thanks. I needed a gentle word."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "I've heard you. Let's leave it there."
+        },
+        {
+          "id": "guarded_2",
+          "text": "All right. You've said your piece."
+        },
+        {
+          "id": "guarded_3",
+          "text": "A civil word will do."
+        }
+      ]
+    }
+  ]
+}

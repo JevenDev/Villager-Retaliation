@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.openings"
+    ],
+    "topic": "professions.cleric.openings"
+  },
+  "openings": [
+    {
+      "id": "cleric_opening",
+      "show_for_babies": false,
+      "priority": 10,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/cleric/opening}"
+      }
+    }
+  ]
+}

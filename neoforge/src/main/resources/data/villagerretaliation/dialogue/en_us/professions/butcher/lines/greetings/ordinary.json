@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "butcher_new_greeting_smoke",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.butcher",
+      "section.lines"
+    ],
+    "topic": "professions.butcher.greetings"
+  }
+}

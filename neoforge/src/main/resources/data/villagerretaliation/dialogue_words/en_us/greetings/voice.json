@@ -1,77 +1,237 @@
 {
+  "role": "sentence",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
   "values": [
-    "Hello.",
     {
-      "text": "There you are.",
+      "id": "ordinary_1",
+      "text": "Hello."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Hello there."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Good day."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Oh, hello."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hi there."
+    },
+    {
+      "id": "ordinary_6",
+      "text": "Yes? Hello."
+    }
+  ],
+  "groups": [
+    {
       "conditions": [
         {
           "type": "speaking_style",
           "style": "blunt"
         }
-      ]
-    },
-    {
-      "text": "All right. What do you need?",
-      "conditions": [
+      ],
+      "priority": 0,
+      "values": [
         {
-          "type": "speaking_style",
-          "style": "blunt"
+          "id": "blunt_1",
+          "text": "Hello. What is it?"
+        },
+        {
+          "id": "blunt_2",
+          "text": "Yes?"
+        },
+        {
+          "id": "blunt_3",
+          "text": "All right. Hello."
         }
       ]
     },
     {
-      "text": "Good to see you safe.",
-      "conditions": [
-        {
-          "type": "speaking_style",
-          "style": "cautious"
-        }
-      ]
-    },
-    {
-      "text": "Everything all right out there?",
-      "conditions": [
-        {
-          "type": "speaking_style",
-          "style": "cautious"
-        }
-      ]
-    },
-    {
-      "text": "Now there is a welcome face!",
-      "conditions": [
-        {
-          "type": "speaking_style",
-          "style": "cheerful"
-        }
-      ]
-    },
-    {
-      "text": "Good to see you! How have you been?",
-      "conditions": [
-        {
-          "type": "speaking_style",
-          "style": "cheerful"
-        }
-      ]
-    },
-    {
-      "text": "A pleasure to see you again.",
       "conditions": [
         {
           "type": "speaking_style",
           "style": "formal"
         }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "formal_1",
+          "text": "Good day to you."
+        },
+        {
+          "id": "formal_2",
+          "text": "Hello. A pleasure."
+        },
+        {
+          "id": "formal_3",
+          "text": "Good day. I'm listening."
+        },
+        {
+          "id": "formal_4",
+          "text": "Hello. You have my attention."
+        }
       ]
     },
     {
-      "text": "Good day. How may I help?",
       "conditions": [
         {
           "type": "speaking_style",
-          "style": "formal"
+          "style": "cheerful"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "cheerful_1",
+          "text": "Well, hello!"
+        },
+        {
+          "id": "cheerful_2",
+          "text": "Oh, hi there!"
+        },
+        {
+          "id": "cheerful_3",
+          "text": "Hello to you!"
+        },
+        {
+          "id": "cheerful_4",
+          "text": "Hi! Lovely to have a word."
         }
       ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cautious"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "cautious_1",
+          "text": "Oh. Hello there."
+        },
+        {
+          "id": "cautious_2",
+          "text": "Hello. Everything all right?"
+        },
+        {
+          "id": "cautious_3",
+          "text": "Yes? Did you want a word?"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "It's good to see you."
+        },
+        {
+          "id": "warm_2",
+          "text": "Well, hello to you."
+        },
+        {
+          "id": "warm_3",
+          "text": "Oh, hello. I'm glad you stopped."
+        },
+        {
+          "id": "warm_4",
+          "text": "Hello. You're a welcome face."
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "Oh. Hello."
+        },
+        {
+          "id": "quiet_2",
+          "text": "Hello. I'm listening."
+        },
+        {
+          "id": "quiet_3",
+          "text": "Hello. Give me a moment."
+        }
+      ],
+      "variant": "quiet"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Hello. Keep it civil."
+        },
+        {
+          "id": "guarded_2",
+          "text": "Yes? I'm listening."
+        },
+        {
+          "id": "guarded_3",
+          "text": "All right. You've said hello."
+        },
+        {
+          "id": "guarded_4",
+          "text": "Hello. Let's keep this brief."
+        }
+      ],
+      "variant": "guarded"
+    },
+    {
+      "conditions": [
+        {
+          "type": "reputation",
+          "level": "feared"
+        }
+      ],
+      "priority": 40,
+      "values": [
+        {
+          "id": "fearful_1",
+          "text": "Hello. Please speak gently."
+        },
+        {
+          "id": "fearful_2",
+          "text": "Yes? Please stay calm."
+        },
+        {
+          "id": "fearful_3",
+          "text": "Hello. I can hear you from there."
+        }
+      ],
+      "variant": "guarded"
     }
   ]
 }

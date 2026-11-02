@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/brief_hello",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Then we won't turn it into a lecture.",
+    "ordinary_2": "A hello needs no further explanation.",
+    "ordinary_3": "Hello to you, too. No questions required."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/cleric/ordinary",
+  "text_overrides": {
+    "ordinary_1": "what would you like to talk about? I'm listening.",
+    "ordinary_2": "a quiet word is welcome.",
+    "ordinary_3": "did you need something?"
+  }
+}

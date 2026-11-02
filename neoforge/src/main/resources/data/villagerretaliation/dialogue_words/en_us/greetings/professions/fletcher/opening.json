@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/fletcher/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for a fletcher?",
+    "ordinary_2": "did you need arrows, or just a word?",
+    "ordinary_3": "what did you want to ask?"
+  }
+}

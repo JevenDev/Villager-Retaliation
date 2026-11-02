@@ -57,6 +57,7 @@ public final class DialogueTreeResources {
                 .filter(tree -> !isSuppressedBuiltInLegacyQuestTree(context, tree, loaded.sources().get(tree.id())))
                 .filter(tree -> tree.matches(context))
                 .flatMap(tree -> tree.entries().stream()
+                        .filter(entry -> entry.lineIds().isEmpty())
                         .filter(entry -> entry.matches(context, disposition))
                         .map(entry -> new RankedOption(entry.toOption(context, tree.id(), tree.metadata()), entry.priority())))
                 .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
@@ -70,11 +71,45 @@ public final class DialogueTreeResources {
             java.util.Set<ResourceLocation> treeIds) {
         return treeIds.stream().map(id -> tree(context.level().getServer(), context.locale(), id)).flatMap(Optional::stream)
                 .filter(tree -> tree.matches(context))
-                .flatMap(tree -> tree.entries().stream().filter(entry -> entry.matches(context, disposition))
+                .flatMap(tree -> tree.entries().stream().filter(entry -> entry.lineIds().isEmpty())
+                        .filter(entry -> entry.matches(context, disposition))
                         .map(entry -> new RankedOption(entry.toOption(context, tree.id(), tree.metadata()), entry.priority())))
                 .sorted(Comparator.comparingInt(RankedOption::priority).reversed()
                         .thenComparingInt(value -> value.option().order()).thenComparing(value -> value.option().id()))
                 .map(RankedOption::option).toList();
+    }
+
+    private record LineEntry(DialogueTreeDefinition tree, DialogueTreeDefinition.Entry entry) { }
+
+    private static Optional<LineEntry> lineEntry(DialogueContext context, String lineId) {
+        String owner = lineId.contains("#") ? lineId.substring(0, lineId.indexOf('#')) : lineId;
+        var disposition = com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.moodFor(context);
+        LoadedTrees loaded = load(context.level().getServer(), context.locale());
+        return loaded.trees().values().stream()
+                .filter(tree -> !isSuppressedBuiltInLegacyQuestTree(context, tree, loaded.sources().get(tree.id())))
+                .filter(tree -> tree.matches(context))
+                .flatMap(tree -> tree.entries().stream()
+                        .filter(entry -> entry.lineIds().contains(owner) && entry.matches(context, disposition))
+                        .map(entry -> new LineEntry(tree, entry)))
+                .sorted(Comparator.comparingInt((LineEntry value) -> value.entry().priority()).reversed()
+                        .thenComparing(value -> value.tree().id()).thenComparing(value -> value.entry().id()))
+                .findFirst();
+    }
+
+    public static Optional<com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService.DialogueResult> startLineEntry(
+            DialogueContext context, String lineId) {
+        return lineEntry(context, lineId).flatMap(value ->
+                DialogueTreeService.startEntry(context, value.tree().id(), value.entry().id()));
+    }
+
+    public static boolean hasLineEntry(DialogueContext context, String lineId) {
+        return lineEntry(context, lineId).isPresent();
+    }
+
+    public static boolean isLineResponse(DialogueContext context, DialogueOptionDefinition option) {
+        var reference = option.treeReference();
+        return reference.isResponse() && tree(context.level().getServer(), context.locale(), reference.treeId())
+                .map(tree -> tree.entries().stream().anyMatch(entry -> !entry.lineIds().isEmpty())).orElse(false);
     }
 
     public static Optional<DialogueTreeDefinition> tree(MinecraftServer server, String locale, ResourceLocation id) {
@@ -309,7 +344,8 @@ public final class DialogueTreeResources {
                         DialogueCondition.readList(location, context, entry, entryQuestId),
                         DatapackJsonReader.readBoolean(entry, "force_camera_towards_villager"),
                         DatapackJsonReader.readInt(entry, "order", index),
-                        DatapackJsonReader.readInt(entry, "priority", 0)
+                        DatapackJsonReader.readInt(entry, "priority", 0),
+                        Set.copyOf(DatapackJsonReader.readStringList(entry, "line_ids"))
                 ));
             }
             index++;

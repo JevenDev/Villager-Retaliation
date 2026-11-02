@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "I'm all right. Nice to have a chat.",
+    "ordinary_2": "Fairly well. I'm in no hurry.",
+    "ordinary_3": "I'm doing fine, thanks.",
+    "content_1": "I'm in a good mood, actually.",
+    "content_2": "Feeling good. Glad you came over.",
+    "content_3": "Well, thank you. Nice to have some company.",
+    "stressed_1": "I can't seem to stop worrying.",
+    "stressed_2": "A bit overwhelmed, honestly.",
+    "stressed_3": "I've got too much on my mind."
+  }
+}

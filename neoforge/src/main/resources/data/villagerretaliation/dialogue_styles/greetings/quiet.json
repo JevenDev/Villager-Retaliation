@@ -1,0 +1,7 @@
+{
+  "tag": "greeting_quiet",
+  "text_effects": {
+    "italic": true
+  },
+  "speed": 0.9
+}

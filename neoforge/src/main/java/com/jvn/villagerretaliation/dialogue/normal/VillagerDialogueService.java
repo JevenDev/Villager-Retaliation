@@ -990,6 +990,12 @@ public final class VillagerDialogueService {
 
     private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
         DialogueLine.SelectedText selected = line.selectText(context, recentDialogueIds);
+        var tree = com.jvn.villagerretaliation.dialogue.DialogueTreeResources.startLineEntry(context, line.id());
+        if (tree.isPresent()) {
+            var result = tree.orElseThrow();
+            return new DialogueResult(selected.id(), result.text(), result.textEffects(),
+                    result.textSegments(), result.exchanges(), result.outcomes());
+        }
         return DialogueResult.fromText(selected.id(), resolveSelectedText(selected, line, context), line.textEffects()).withCamera(selected.camera(), context);
     }
 

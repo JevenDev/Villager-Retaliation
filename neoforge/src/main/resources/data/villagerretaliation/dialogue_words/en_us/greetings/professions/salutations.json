@@ -1,0 +1,237 @@
+{
+  "role": "opening_clause",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Hello"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Hello there"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Good day"
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Oh, hello"
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hi there"
+    },
+    {
+      "id": "ordinary_6",
+      "text": "Well, hello"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "blunt"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "blunt_1",
+          "text": "Hello"
+        },
+        {
+          "id": "blunt_2",
+          "text": "All right"
+        },
+        {
+          "id": "blunt_3",
+          "text": "Well, hello"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "formal"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "formal_1",
+          "text": "Good day"
+        },
+        {
+          "id": "formal_2",
+          "text": "Good day to you"
+        },
+        {
+          "id": "formal_3",
+          "text": "Hello"
+        },
+        {
+          "id": "formal_4",
+          "text": "Hello there"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cheerful"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "cheerful_1",
+          "text": "Well, hello"
+        },
+        {
+          "id": "cheerful_2",
+          "text": "Oh, hi there"
+        },
+        {
+          "id": "cheerful_3",
+          "text": "Hello there"
+        },
+        {
+          "id": "cheerful_4",
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "speaking_style",
+          "style": "cautious"
+        }
+      ],
+      "priority": 0,
+      "values": [
+        {
+          "id": "cautious_1",
+          "text": "Oh, hello"
+        },
+        {
+          "id": "cautious_2",
+          "text": "Ah, hello"
+        },
+        {
+          "id": "cautious_3",
+          "text": "Hello there"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "Well, hello"
+        },
+        {
+          "id": "warm_2",
+          "text": "Hello there"
+        },
+        {
+          "id": "warm_3",
+          "text": "Oh, hello"
+        },
+        {
+          "id": "warm_4",
+          "text": "Hi there"
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "Oh, hello"
+        },
+        {
+          "id": "quiet_2",
+          "text": "Hello"
+        },
+        {
+          "id": "quiet_3",
+          "text": "Hello there"
+        }
+      ],
+      "variant": "quiet"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Hello"
+        },
+        {
+          "id": "guarded_2",
+          "text": "All right"
+        },
+        {
+          "id": "guarded_3",
+          "text": "Well, hello"
+        },
+        {
+          "id": "guarded_4",
+          "text": "Good day"
+        }
+      ],
+      "variant": "guarded"
+    },
+    {
+      "conditions": [
+        {
+          "type": "reputation",
+          "level": "feared"
+        }
+      ],
+      "priority": 40,
+      "values": [
+        {
+          "id": "fearful_1",
+          "text": "Hello"
+        },
+        {
+          "id": "fearful_2",
+          "text": "Oh, hello"
+        },
+        {
+          "id": "fearful_3",
+          "text": "Good day"
+        }
+      ],
+      "variant": "guarded"
+    }
+  ]
+}

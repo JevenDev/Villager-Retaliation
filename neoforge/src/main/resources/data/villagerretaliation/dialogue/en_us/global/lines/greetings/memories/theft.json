@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.reputation"
+  },
+  "lines": [
+    {
+      "id": "container_theft_memory_village_greeting_1",
+      "request": "greeting",
+      "lines": [
+        "I know what happened at the {stolen_container}. <aqua>{theft_witness_possessive}</aqua> story reached me.",
+        "The {stolen_container} has been part of more conversations since you touched it.",
+        "<aqua>{theft_witness}</aqua> saw enough at the {stolen_container} for the village to remember.",
+        "Word travels quickly when someone reaches where they should not.",
+        "I have heard about the {stolen_stack}. That makes this greeting colder than it might have been.",
+        "The village is small. A hand in the wrong {stolen_container} does not stay secret.",
+        "You arrive with a story already attached to you.",
+        "I know enough about the theft to keep my distance.",
+        "A greeting is all I am offering while that {stolen_container} is still in memory.",
+        "People are still talking about what happened. I am one of them.",
+        "I heard <aqua>{theft_witness_possessive}</aqua> account of the {stolen_container}.",
+        "You should know the village is talking about what went missing.",
+        "This is a difficult place to ask for welcome after opening someone else's container.",
+        "The owner has counted the loss and named what you took.",
+        "People who once left their doors open are locking them now.",
+        "You may want to return the goods before starting any other conversation.",
+        "The guards have heard the same story I did.",
+        "A greeting feels dishonest when theft is standing between us.",
+        "I am willing to listen, but not to pretend nothing happened.",
+        "Settle the matter at the {stolen_container}, then come back."
+      ],
+      "conditions": [
+        {
+          "source": "other_villager",
+          "tag": "player_container_theft",
+          "type": "memory"
+        }
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Hello. Please speak quietly."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "I'm listening. Can we keep this calm?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Yes? Please stay where you are."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "We can talk from here."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "All right. Just tell me what you need."
+    },
+    {
+      "id": "ordinary_6",
+      "text": "I'd like this to stay peaceful."
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Sometimes that's all anyone can do."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "One thing at a time, then."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Fair enough. No need to rush."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Sounds sensible to me."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hope things go well for you."
+    },
+    {
+      "id": "shared_fair_enough_one_thing_at_a_time",
+      "text": "Fair enough. One thing at a time."
+    },
+    {
+      "id": "shared_no_sense_rushing_everything",
+      "text": "No sense rushing everything."
+    },
+    {
+      "id": "shared_one_thing_at_a_time_sounds_sensible_to_me",
+      "text": "One thing at a time sounds sensible to me."
+    },
+    {
+      "id": "shared_a_day_at_a_time_eh_fair_enough",
+      "text": "A day at a time, eh? Fair enough."
+    },
+    {
+      "id": "shared_fair_enough_no_need_to_take_on_everything_at_once",
+      "text": "Fair enough. No need to take on everything at once."
+    },
+    {
+      "id": "shared_can_t_do_much_more_than_that_sometimes",
+      "text": "Can't do much more than that, sometimes."
+    },
+    {
+      "id": "shared_fair_enough_no_hurry",
+      "text": "Fair enough. No hurry."
+    },
+    {
+      "id": "shared_one_day_at_a_time_then",
+      "text": "One day at a time, then."
+    },
+    {
+      "id": "shared_i_m_glad_you_re_managing",
+      "text": "I'm glad you're managing."
+    },
+    {
+      "id": "shared_fair_enough_no_need_to_do_everything_at_once",
+      "text": "Fair enough. No need to do everything at once."
+    },
+    {
+      "id": "shared_no_sense_rushing_things",
+      "text": "No sense rushing things."
+    },
+    {
+      "id": "shared_nothing_wrong_with_that",
+      "text": "Nothing wrong with that."
+    },
+    {
+      "id": "shared_no_hurry_then",
+      "text": "No hurry, then."
+    },
+    {
+      "id": "shared_can_t_do_much_more_than_that_some_days",
+      "text": "Can't do much more than that, some days."
+    },
+    {
+      "id": "shared_fair_enough_a_bit_at_a_time",
+      "text": "Fair enough. A bit at a time."
+    },
+    {
+      "id": "shared_no_need_to_rush_everything",
+      "text": "No need to rush everything."
+    },
+    {
+      "id": "shared_that_sounds_sensible",
+      "text": "That sounds sensible."
+    },
+    {
+      "id": "shared_that_sounds_reasonable",
+      "text": "That sounds reasonable."
+    },
+    {
+      "id": "shared_one_thing_at_a_time_fair_enough",
+      "text": "One thing at a time. Fair enough."
+    },
+    {
+      "id": "shared_no_need_to_hurry",
+      "text": "No need to hurry."
+    },
+    {
+      "id": "shared_nothing_wrong_with_taking_your_time",
+      "text": "Nothing wrong with taking your time."
+    },
+    {
+      "id": "shared_no_need_to_do_it_all_at_once",
+      "text": "No need to do it all at once."
+    },
+    {
+      "id": "shared_sounds_sensible",
+      "text": "Sounds sensible."
+    },
+    {
+      "id": "shared_that_s_about_all_you_can_do_some_days",
+      "text": "That's about all you can do, some days."
+    },
+    {
+      "id": "shared_a_day_at_a_time_then",
+      "text": "A day at a time, then."
+    },
+    {
+      "id": "shared_fair_enough_keep_at_it",
+      "text": "Fair enough. Keep at it."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Fair enough."
+        },
+        {
+          "id": "guarded_2",
+          "text": "All right. One thing at a time."
+        },
+        {
+          "id": "guarded_3",
+          "text": "Then we can leave it at that."
+        }
+      ]
+    }
+  ]
+}

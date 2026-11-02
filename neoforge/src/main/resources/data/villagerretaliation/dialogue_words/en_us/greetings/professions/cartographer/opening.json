@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/cartographer/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for directions?",
+    "ordinary_2": "need a map, or just a word?",
+    "ordinary_3": "anything you wanted to ask?"
+  }
+}

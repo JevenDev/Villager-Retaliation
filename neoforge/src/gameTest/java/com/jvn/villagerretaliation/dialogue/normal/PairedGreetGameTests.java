@@ -138,28 +138,25 @@ public final class PairedGreetGameTests {
     }
 
     @GameTest(template = "empty", batch = "paired_greet")
-    public static void conditionalActionPromptsRemainOriginalNpcOnlyFallbacks(GameTestHelper helper) {
+    public static void retiredProfessionActionPromptsNoLongerEnterGreetingExchanges(GameTestHelper helper) {
         var context = context(helper);
         var pairs = com.jvn.villagerretaliation.dialogue.resources.PairedGreetingResources.pairs(context);
-        var omitted = List.of("fletcher_new_greeting_table#line_11", "librarian_new_greeting_lectern#line_5",
+        var retired = List.of("fletcher_new_greeting_table#line_11", "librarian_new_greeting_lectern#line_5",
                 "toolsmith_new_greeting_table#line_11", "toolsmith_new_greeting_table#line_20", "weaponsmith_new_greeting_grindstone#line_20");
-        for (String variantId : omitted) {
+        for (String variantId : retired) {
             String ownerId = variantId.substring(0, variantId.indexOf('#'));
             String professionName = ownerId.substring(0, ownerId.indexOf('_'));
             context.villager().setVillagerData(context.villager().getVillagerData().setProfession(
                     net.minecraft.core.registries.BuiltInRegistries.VILLAGER_PROFESSION.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace(professionName))));
             var actual = VillagerInteractionService.createDialogueContext(context.level(), context.player(), context.villager());
             var owner = VillagerDialogueResources.lines(actual).stream().filter(line -> line.id().equals(ownerId)).findFirst().orElseThrow();
-            var variant = owner.textVariants().stream().filter(candidate -> candidate.id().equals(variantId)).findFirst().orElseThrow();
-            helper.assertTrue(variant.matches(actual), "omitted conditional-action prompt is preserved and remains an original eligible NPC candidate");
+            helper.assertTrue(owner.textVariants().stream().noneMatch(candidate -> candidate.id().equals(variantId)),
+                    "retired conditional-action prompts cannot appear in the new greeting");
             helper.assertTrue(pairs.stream().noneMatch(pair -> pair.npcVariantId().equals(variantId)),
-                    "conditional item/action premise is not silently turned into a player greeting");
-            var original = VillagerDialogueService.DialogueResult.fromText(variant.id(), variant.text(), owner.textEffects());
-            helper.assertTrue(PairedGreetingService.attach(actual, greet(actual), original, false) == original,
-                    "omitted prompt keeps the exact original NPC-only fallback");
+                    "retired prompts have no legacy paired binding");
+            helper.assertTrue(com.jvn.villagerretaliation.dialogue.DialogueTreeResources.hasLineEntry(actual, ownerId),
+                    "the profession greeting uses the shared flow");
         }
-        helper.assertTrue(pairs.stream().noneMatch(pair -> pair.ownerId().startsWith("fletcher_") || pair.ownerId().startsWith("weaponsmith_")),
-                "Fletcher and Weaponsmith remain entirely original NPC-only in this bounded group");
         helper.succeed();
     }
 
@@ -185,17 +182,21 @@ public final class PairedGreetGameTests {
     }
 
     @GameTest(template = "empty", batch = "paired_greet")
-    public static void bundledPairedResourcesMatchExpectedContent(GameTestHelper helper) throws Exception {
-        var expected = java.util.Map.of(
-                "00_greet_pairs.json", "a40127098e2bb01bd73aef5749da68f2bbc9f38364213dada295c6ed7b46ccac",
-                "01_ordinary_greet_extension.json", "37debf9c3c1750a6e3484b90c1353023fafcb282d0785ad73d0e887e6d22e78a");
-        for (var entry : expected.entrySet()) {
-            var resource = helper.getLevel().getServer().getResourceManager().getResource(
-                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", "paired_greetings/en_us/" + entry.getKey())).orElseThrow();
-            try (var stream = resource.open()) {
-                String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(stream.readAllBytes()));
-                helper.assertValueEqual(hash, entry.getValue(), "bundled pair resource matches expected content: " + entry.getKey());
-            }
+    public static void bundledPairedResourcesKeepTheirBindings(GameTestHelper helper) {
+        var context = context(helper);
+        var pairs = com.jvn.villagerretaliation.dialogue.resources.PairedGreetingResources.pairs(context);
+        helper.assertValueEqual(pairs.size(), 240, "existing reputation question bindings remain loaded");
+        helper.assertValueEqual(pairs.stream().map(PairedGreetingService.Pair::id).distinct().count(), 240L,
+                "pair IDs remain unique");
+        var owners = VillagerDialogueResources.lines(context).stream()
+                .collect(java.util.stream.Collectors.toMap(DialogueLine::id, line -> line));
+        for (var pair : pairs) {
+            var owner = owners.get(pair.ownerId());
+            helper.assertTrue(owner != null, "bound dialogue owner exists: " + pair.id());
+            var variant = owner.textVariants().stream()
+                    .filter(value -> value.id().equals(pair.npcVariantId())).findFirst().orElseThrow();
+            String text = DialogueTextSegment.plainText(DialogueTextSegment.parse(variant.text(), DialogueTextEffects.NONE));
+            helper.assertValueEqual(text, pair.npcText(), "NPC guard matches its source variant: " + pair.id());
         }
         helper.succeed();
     }
@@ -342,11 +343,11 @@ public final class PairedGreetGameTests {
         try {
         var sample = context(helper);
         var pairs = com.jvn.villagerretaliation.dialogue.resources.PairedGreetingResources.pairs(sample);
-        helper.assertValueEqual(pairs.size(), 3899, "all four frozen paired resource files load without skipped records");
-        helper.assertValueEqual(pairs.stream().filter(pair -> pair.optionId().equals("adult_greeting")).count(), 3659L, "all Greet bindings retain their original option identity");
+        helper.assertValueEqual(pairs.size(), 240, "reputation question bindings load without skipped records");
+        helper.assertValueEqual(pairs.stream().filter(pair -> pair.optionId().equals("adult_greeting")).count(), 0L, "legacy Greet pairs are replaced by shared response trees");
         helper.assertValueEqual(pairs.stream().filter(pair -> pair.optionId().equals("adult_question")).count(), 240L, "bounded social-regard bindings target only Ask a question");
         var owners = pairs.stream().map(PairedGreetingService.Pair::ownerId).collect(java.util.stream.Collectors.toSet());
-        helper.assertValueEqual(owners.size(), 16, "all sixteen existing owners load");
+        helper.assertValueEqual(owners.size(), 3, "all three reputation question owners load");
         var reached = new java.util.HashSet<String>();
         for (String ownerId : owners) {
             String professionName = ownerId.substring(0, ownerId.indexOf('_'));
@@ -399,7 +400,7 @@ public final class PairedGreetGameTests {
             }
             villager.discard();
         }
-        helper.assertValueEqual(reached.size(), pairs.size(), "all 3899 bundled pair records exercised under their actual owner/option/tier/contact state");
+        helper.assertValueEqual(reached.size(), pairs.size(), "all 240 bundled pair records exercised under their actual owner/option/tier/contact state");
         helper.succeed();
 
         } catch (RuntimeException error) { com.mojang.logging.LogUtils.getLogger().error("allBundledOwnersTiersAndContactStatesRespectRealNpcGates failed", error); throw error; }
@@ -409,7 +410,7 @@ public final class PairedGreetGameTests {
     public static void actualGreetRequestSendsOneOrderedPayloadAndRecordsOneInteraction(GameTestHelper helper) {
         var level = helper.getLevel();
         var server = level.getServer();
-        var profile = new GameProfile(UUID.randomUUID(), "PairNetwork");
+        var profile = new GameProfile(UUID.randomUUID(), "ProfessionNetwork");
         var cookie = net.minecraft.server.network.CommonListenerCookie.createInitial(profile, false);
         var player = new net.minecraft.server.level.ServerPlayer(server, level, profile, cookie.clientInformation());
         var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
@@ -422,117 +423,104 @@ public final class PairedGreetGameTests {
             net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
             player.setPos(villager.getX() + 1, villager.getY(), villager.getZ());
             helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, villager), "real normal conversation begins");
-            var context = VillagerInteractionService.createDialogueContext(level, player, villager);
-            var bindings = com.jvn.villagerretaliation.dialogue.resources.PairedGreetingResources.pairs(context);
-            long chosenSeed = -1;
-            String expectedNpc = "";
-            for (long seed = 0; seed < 2048; seed++) {
-                context.random().setSeed(seed);
-                var selected = VillagerDialogueService.select(context, greet(context), List.of());
-                boolean bound = bindings.stream().anyMatch(pair -> pair.npcVariantId().equals(selected.lineId())
-                        && DialogueTextSegment.plainText(DialogueTextSegment.parse(pair.npcText(), DialogueTextEffects.NONE)).equals(selected.text())
-                        && pair.reputationLevel() == context.reputationLevel() && pair.firstConversation() == context.firstConversation()
-                        && PairedGreetingService.renderPlayer(pair.player(), context).isPresent());
-                if (bound) { chosenSeed = seed; expectedNpc = selected.text(); break; }
-            }
-            helper.assertTrue(chosenSeed >= 0, "bundled paired Greet is reachable through the real NPC selector");
             while (channel.readOutbound() != null) { }
-            context.random().setSeed(chosenSeed);
             UUID requestId = UUID.randomUUID();
             com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), "adult_greeting", requestId);
             channel.runPendingTasks();
-            var notices = new java.util.ArrayList<com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload>();
-            Object outgoing;
-            while ((outgoing = channel.readOutbound()) != null) {
-                if (outgoing instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket packet
-                        && packet.payload() instanceof com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload notice) notices.add(notice);
-            }
-            helper.assertValueEqual(notices.size(), 1, "one actual request emits exactly one dialogue notice to its player");
-            helper.assertTrue(notices.getFirst().autoAdvance(), "actual paired Greet handler opts into automatic client playback");
-            helper.assertValueEqual(notices.getFirst().greetingRequestId(), requestId, "actual handler preserves this request's correlation token");
-            var speech = notices.getFirst().exchanges();
-            helper.assertValueEqual(speech.size(), 2, "actual dispatched notice carries exactly the paired speeches");
-            helper.assertValueEqual(speech.stream().map(line -> line.speaker()).toList(), List.of(player.getUUID(), villager.getUUID()),
-                    "sent payload orders player before NPC exactly once");
-            helper.assertValueEqual(speech.getLast().text(), expectedNpc, "handler dispatch preserves the originally selected NPC reply");
-            helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 1,
-                    "actual paired request counts exactly one greeting interaction");
-            helper.assertFalse(VillagerInteractionTracker.getState(level, villager, player).firstConversation(),
-                    "only completed dispatch establishes the actual contact history");
-            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player,villager.getId(),"adult_greeting",requestId);
+            var notices = drainNotices(channel);
+            helper.assertValueEqual(notices.size(), 1, "one Greet request sends one notice");
+            helper.assertTrue(notices.getFirst().autoAdvance(), "profession greetings retain automatic playback");
+            helper.assertValueEqual(notices.getFirst().greetingRequestId(), requestId, "the greeting retains its request token");
+            helper.assertValueEqual(notices.getFirst().exchanges().stream().map(line -> line.speaker()).toList(),
+                    List.of(player.getUUID(), villager.getUUID()), "the player speaks before the villager");
+            var words = com.jvn.villagerretaliation.dialogue.resources.DialogueWordPoolResources.localizedValues(server, "en_us",
+                    net.minecraft.resources.ResourceLocation.parse("villagerretaliation:greetings/professions/farmer/ordinary"));
+            helper.assertTrue(words.stream().anyMatch(notices.getFirst().exchanges().getLast().text()::endsWith),
+                    "the real notice uses farmer wording");
+            helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 1, "one greeting interaction");
+            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), "adult_greeting", requestId);
             channel.runPendingTasks();
-            helper.assertTrue(channel.readOutbound()==null,"replayed token cannot send or execute the action twice");
-            helper.assertValueEqual(VillagerInteractionTracker.getState(level,villager,player).greetingUseCount(),1,"replay preserves exact interaction count");
-            var fallbackContext = VillagerInteractionService.createDialogueContext(level, player, villager);
-            var recent = VillagerInteractionTracker.getState(level, villager, player).recentDialogueIds();
-            long fallbackSeed = -1;
-            for (long seed = 0; seed < 2048; seed++) {
-                fallbackContext.random().setSeed(seed);
-                var selected = VillagerDialogueService.select(fallbackContext, greet(fallbackContext), recent);
-                if (bindings.stream().noneMatch(pair -> pair.npcVariantId().equals(selected.lineId())
-                        && pair.reputationLevel() == fallbackContext.reputationLevel()
-                        && pair.firstConversation() == fallbackContext.firstConversation())) {
-                    fallbackSeed = seed; break;
-                }
+            helper.assertTrue(drainNotices(channel).isEmpty(), "a replay cannot send or execute the greeting again");
+            int reputation = VillagerInteractionService.createDialogueContext(level, player, villager).reputation();
+            for (String responseId : List.of("ask_wellbeing", "player_private")) {
+                var context = VillagerInteractionService.createDialogueContext(level, player, villager);
+                var choice = DialogueTreeService.activeOptions(context).orElseThrow().stream()
+                        .filter(option -> option.treeReference().responseId().equals(responseId)).findFirst().orElseThrow();
+                com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), choice.id());
+                channel.runPendingTasks();
+                notices = drainNotices(channel);
+                helper.assertValueEqual(notices.size(), 1, "a selected response sends one notice");
+                helper.assertValueEqual(notices.getFirst().exchanges().size(), 2, "both response speakers arrive");
+                helper.assertValueEqual(notices.getFirst().exchanges().getFirst().text(), choice.label(), "the selected label is spoken exactly");
+                helper.assertValueEqual(VillagerInteractionService.createDialogueContext(level, player, villager).reputation(), reputation,
+                        "wellbeing replies cannot multiply greeting reputation");
+                helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 1,
+                        "wellbeing replies remain part of the original greeting");
             }
-            helper.assertTrue(fallbackSeed >= 0, "an intentionally unbound original NPC fallback remains selectable");
-            UUID fallbackRequestId = UUID.randomUUID();
-            fallbackContext.random().setSeed(fallbackSeed);
-            com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), "adult_greeting", fallbackRequestId);
-            channel.runPendingTasks(); notices.clear();
-            while ((outgoing = channel.readOutbound()) != null) {
-                if (outgoing instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket packet
-                        && packet.payload() instanceof com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload notice) notices.add(notice);
-            }
-            helper.assertValueEqual(notices.size(), 1, "unbound original fallback also emits one notice");
-            helper.assertFalse(notices.getFirst().autoAdvance(), "unbound original NPC fallback keeps manual/legacy presentation");
-            helper.assertValueEqual(notices.getFirst().greetingRequestId(), fallbackRequestId,
-                    "manual fallback still carries its exact request token so stale delivery can be rejected");
-            helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 2,
-                    "one paired request and one ordinary fallback count as exactly two interactions");
-            var questionContext = VillagerInteractionService.createDialogueContext(level, player, villager);
-            var questionOption = VillagerDialogueResources.dialogueOption(questionContext, "adult_question").orElseThrow();
-            var questionRecent = VillagerInteractionTracker.getState(level, villager, player).recentDialogueIds();
-            long questionSeed = -1;
-            for (long seed = 0; seed < 4096; seed++) {
-                questionContext.random().setSeed(seed);
-                var selected = VillagerDialogueService.select(questionContext, questionOption, questionRecent);
-                if (bindings.stream().anyMatch(pair -> pair.optionId().equals("adult_question") && pair.npcVariantId().equals(selected.lineId())
-                        && pair.reputationLevel() == questionContext.reputationLevel() && pair.firstConversation() == questionContext.firstConversation())) {
-                    questionSeed = seed; break;
-                }
-            }
-            helper.assertTrue(questionSeed >= 0, "bounded social-regard pairing is reachable through existing Ask a question selection");
-            UUID questionRequestId = null;
-            int questionAttempts=0;
-            // Menu construction evaluates live quest offers too; do not assume it consumes no RNG.
-            for (int attempt=0;attempt<64;attempt++) {
-                questionRequestId=UUID.randomUUID();
-                questionContext.random().setSeed(questionSeed+attempt);
-                com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player,villager.getId(),"adult_question",questionRequestId);
+            var context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            helper.assertTrue(DialogueTreeService.activeOptions(context).isEmpty(), "the normal menu returns");
+            UUID questionRequest = null;
+            int questionAttempts = 0;
+            for (int attempt = 0; attempt < 128; attempt++) {
+                questionRequest = UUID.randomUUID();
+                context.random().setSeed(1000 + attempt);
+                com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, villager.getId(), "adult_question", questionRequest);
                 questionAttempts++;
-                channel.runPendingTasks();notices.clear();
-                while ((outgoing=channel.readOutbound())!=null) {
-                    if (outgoing instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket packet
-                            && packet.payload() instanceof com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload notice) notices.add(notice);
-                }
-                helper.assertValueEqual(notices.size(),1,"each actual question request sends one response");
+                channel.runPendingTasks();
+                notices = drainNotices(channel);
+                helper.assertValueEqual(notices.size(), 1, "each question request sends one response");
                 if (notices.getFirst().autoAdvance()) break;
             }
-            helper.assertTrue(notices.getFirst().autoAdvance(), "exact paired question receives automatic player-to-NPC delivery");
-            helper.assertValueEqual(notices.getFirst().greetingRequestId(), questionRequestId, "question response echoes its own token");
-            helper.assertValueEqual(notices.getFirst().exchanges().stream().map(line -> line.speaker()).toList(), List.of(player.getUUID(), villager.getUUID()),
-                    "actual question response preserves exact ordered speakers");
+            helper.assertTrue(notices.getFirst().autoAdvance(), "existing reputation question pairing still works");
+            helper.assertValueEqual(notices.getFirst().greetingRequestId(), questionRequest, "question correlation remains intact");
             helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).questionUseCount(), questionAttempts,
-                    "each request records exactly one QUESTION interaction");
-            helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 2,
-                    "question pairing cannot increment the Greet request counter");
+                    "question interactions are recorded once");
+            helper.assertValueEqual(VillagerInteractionTracker.getState(level, villager, player).greetingUseCount(), 1,
+                    "question pairing does not count as another greeting");
+            com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(player, false);
+            var wary = helper.spawn(EntityType.VILLAGER, 2, 1, 1);
+            wary.setNoAi(true);
+            com.jvn.villagerretaliation.reputation.VillagerReputationManager.setReputation(level, wary, player.getUUID(),
+                    reputationFor(VillagerReputationLevel.SUSPICIOUS));
+            player.setPos(wary.getX() + 1, wary.getY(), wary.getZ());
+            helper.assertTrue(com.jvn.villagerretaliation.interaction.VillagerConversationService.start(player, wary), "contextual greeting conversation begins");
+            channel.runPendingTasks();
+            drainNotices(channel);
+            boolean manual = false;
+            for (int attempt = 0; attempt < 128; attempt++) {
+                var waryContext = VillagerInteractionService.createDialogueContext(level, player, wary);
+                waryContext.random().setSeed(6000 + attempt);
+                UUID token = UUID.randomUUID();
+                com.jvn.villagerretaliation.interaction.VillagerDialogueRequestHandler.handle(player, wary.getId(), "adult_greeting", token);
+                channel.runPendingTasks();
+                notices = drainNotices(channel);
+                helper.assertValueEqual(notices.size(), 1, "contextual greetings send one notice");
+                if (!notices.getFirst().autoAdvance()) {
+                    helper.assertValueEqual(notices.getFirst().greetingRequestId(), token, "manual contextual greetings retain correlation");
+                    helper.assertTrue(notices.getFirst().exchanges().isEmpty(), "contextual reactions keep NPC-only presentation");
+                    manual = true;
+                    break;
+                }
+                DialogueTreeService.leaveActiveSession(waryContext);
+            }
+            helper.assertTrue(manual, "unconverted contextual greetings remain reachable");
         } finally {
             com.jvn.villagerretaliation.interaction.VillagerConversationService.endForPlayer(player, false);
             server.getPlayerList().remove(player);
             channel.finishAndReleaseAll();
         }
         helper.succeed();
+    }
+
+    private static List<com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload> drainNotices(
+            io.netty.channel.embedded.EmbeddedChannel channel) {
+        var notices = new java.util.ArrayList<com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload>();
+        Object outgoing;
+        while ((outgoing = channel.readOutbound()) != null) {
+            if (outgoing instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket packet
+                    && packet.payload() instanceof com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload notice) notices.add(notice);
+        }
+        return notices;
     }
 
     @GameTest(template = "empty", batch = "paired_greet")

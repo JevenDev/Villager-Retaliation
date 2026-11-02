@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Not too bad, thanks.",
+    "ordinary_2": "All right. Fitting armor keeps me busy.",
+    "ordinary_3": "Doing fine. A little tired, that's all.",
+    "content_1": "I'm in a good mood, actually.",
+    "content_2": "Pretty good. The forge is hard work, but I like it.",
+    "content_3": "Pretty good. Can't complain.",
+    "stressed_1": "A bit strained. Too much to think about.",
+    "stressed_2": "I've got a lot on my mind.",
+    "stressed_3": "Worn out, honestly. I could do with a rest."
+  }
+}

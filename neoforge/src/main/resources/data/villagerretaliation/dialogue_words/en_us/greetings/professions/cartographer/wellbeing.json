@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "I'm doing all right, thanks.",
+    "ordinary_2": "Not too bad. There's always another map to work on.",
+    "ordinary_3": "Fairly well. Always something new to learn.",
+    "content_1": "Quite well, actually.",
+    "content_2": "I'm well. I never get tired of making maps.",
+    "content_3": "I'm well, thanks for asking.",
+    "stressed_1": "A bit distracted, honestly.",
+    "stressed_2": "Too much on my mind just now.",
+    "stressed_3": "Not my best day. I'm having trouble concentrating."
+  }
+}

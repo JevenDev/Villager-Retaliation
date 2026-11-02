@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.openings"
+    ],
+    "topic": "global.openings"
+  },
+  "openings": [
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "id": "global_new_village_opening",
+      "lines": [
+        "You must be new here. What brings you to our <pulse>village</pulse>?",
+        "I do not know your face yet. What brings you here?",
+        "New footsteps in the village. What do you need?",
+        "I have not seen you around these paths before.",
+        "You are new to this village, aren't you? Looking for someone?",
+        "Fresh face at the square. Are you passing through?",
+        "The village notices new arrivals. What brings you to us?",
+        "You do not look familiar. Are you here for trade, shelter, or trouble?",
+        "Welcome, if you mean well. What do you need?",
+        "New faces make people curious. Yours has done that already.",
+        "Welcome. Is this your first time inside our walls?",
+        "You look unfamiliar with the paths. What brought you to the village?",
+        "New arrival? The square is ahead if you need your bearings.",
+        "I do not recognize you. Are you passing through or looking to stay?",
+        "Travelers usually come for trade, shelter, or news. Which is it for you?",
+        "You found us. What did you hear before coming here?",
+        "Mind the bell and respect the houses. Now, what do you need?",
+        "The guards let you through, so I suppose we can start with your name.",
+        "Long road behind you? You can catch your breath while we talk.",
+        "Our village notices every new face. Tell me what brings yours here."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "id": "global_new_villager_opening",
+      "lines": [
+        "I have not seen you before. What brings you here?",
+        "I recognize you from the paths, though we have never spoken.",
+        "We have shared a village without sharing a conversation. What do you need?",
+        "I do not think we have spoken before.",
+        "You are new to me. What can I do for you?",
+        "First time talking, is it? Then speak plainly.",
+        "I remember most faces. Yours is not one of them yet.",
+        "You have my attention. Let us see what kind of first impression this is.",
+        "I do not know you yet, but I can listen.",
+        "New voice, new face. What brings you to my door?",
+        "We have crossed paths before, but I do not think we have spoken.",
+        "You know the village, though you do not know me yet. What can I do for you?",
+        "I have seen you near the square. I am glad we finally meet.",
+        "Another familiar face with an unfamiliar name. Hello.",
+        "You must live on the other side of the village. What brings you over?",
+        "I recognize your work clothes, but not your voice.",
+        "We share these paths, so introductions are overdue.",
+        "I have heard your name from neighbors. What did you want to ask?",
+        "Funny that it took this long for us to speak.",
+        "Hello. I suppose we should stop being strangers now."
+      ],
+      "show_for_babies": false
+    }
+  ]
+}

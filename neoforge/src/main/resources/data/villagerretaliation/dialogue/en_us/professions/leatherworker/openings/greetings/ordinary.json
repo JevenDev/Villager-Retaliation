@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.leatherworker",
+      "section.openings"
+    ],
+    "topic": "professions.leatherworker.openings"
+  },
+  "openings": [
+    {
+      "id": "leatherworker_opening",
+      "show_for_babies": false,
+      "priority": 10,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/leatherworker/opening}"
+      }
+    }
+  ]
+}

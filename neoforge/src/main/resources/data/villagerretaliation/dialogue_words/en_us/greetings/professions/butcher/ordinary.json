@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "you don't need to be hungry to stop for a chat."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "what can I get you?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "hungry, or just stopping for a chat?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "I'm pleased you've stopped for more than a price."
+        },
+        {
+          "id": "warm_2",
+          "text": "it's good to have a bit of company."
+        },
+        {
+          "id": "warm_3",
+          "text": "a friendly word makes a welcome change from counting portions."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I could do with a gentle conversation."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I've little appetite for a long talk, but I'm listening."
+        },
+        {
+          "id": "quiet_3",
+          "text": "let's keep things quiet for a moment."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "speak plainly. I don't care for sharp words."
+        },
+        {
+          "id": "guarded_2",
+          "text": "a civil greeting will do. Let's leave the rest alone."
+        },
+        {
+          "id": "guarded_3",
+          "text": "we can talk without making a meal of it."
+        }
+      ]
+    }
+  ]
+}

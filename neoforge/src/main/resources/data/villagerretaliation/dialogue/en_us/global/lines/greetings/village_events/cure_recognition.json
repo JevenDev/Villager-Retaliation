@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.cure_recognition"
+  },
+  "lines": [
+    {
+      "id": "village_cure_acknowledgement_respectful_1",
+      "request": "greeting",
+      "lines": [
+        "Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
+        "It is good to see <aqua>{cured_villager}</aqua> walking these paths again.",
+        "You gave <aqua>{cured_villager}</aqua> a way back, and the village will remember that.",
+        "Not everyone would have stayed long enough to help <aqua>{cured_villager}</aqua>.",
+        "The village feels a little more whole with <aqua>{cured_villager}</aqua> returned.",
+        "You did more than cure an illness. You returned someone to their people.",
+        "<aqua>{cured_villager}</aqua> is home again. That matters here.",
+        "When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why.",
+        "You brought <aqua>{cured_villager}</aqua> back to a family that had nearly stopped hoping.",
+        "I saw them cross the square again because you refused to give up.",
+        "The village will remember who gathered the medicine.",
+        "Helping <aqua>{cured_villager}</aqua> took courage and careful hands.",
+        "Their workstation is no longer standing empty.",
+        "You stayed through the dangerous part when many people would have fled.",
+        "One household has its familiar voice back because of you.",
+        "We prepared for mourning and received a neighbor instead.",
+        "That cure earned more respect than any speech could.",
+        "Thank you for seeing a sick villager where others saw only a monster."
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_1",
+      "request": "greeting",
+      "lines": [
+        "I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing.",
+        "<aqua>{cured_villager_possessive}</aqua> cure has changed how people speak about you.",
+        "What happened with <aqua>{cured_villager}</aqua> has improved how the village sees you.",
+        "<aqua>{cured_villager}</aqua> is back among us. People have noticed.",
+        "Whatever else is said, helping <aqua>{cured_villager}</aqua> mattered.",
+        "A cure like that is hard for a village to ignore.",
+        "You did right by <aqua>{cured_villager}</aqua>, from what I hear.",
+        "Seeing <aqua>{cured_villager}</aqua> well again has eased more than one worry.",
+        "The village has room to remember good deeds too.",
+        "You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts.",
+        "I heard you cured <aqua>{cured_villager}</aqua>. The result speaks well for you.",
+        "They are back among their neighbors, which is what matters most.",
+        "Not everyone would risk getting close enough to administer the cure.",
+        "Their family has been helping them regain a normal routine.",
+        "The village noticed your part in bringing them home.",
+        "I do not know you well, but I know what you did for them.",
+        "They still need time, though the worst is behind them.",
+        "One less empty bed is good news for all of us.",
+        "You made a difficult choice and followed it through.",
+        "People will judge you partly by the neighbor walking these paths again."
+      ],
+      "dispositions": [
+        "neutral"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "village_cure_acknowledgement_wary_1",
+      "request": "greeting",
+      "lines": [
+        "I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing.",
+        "You stayed for <aqua>{cured_villager}</aqua> when leaving would have been easier. I noticed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure gives me one good reason to reconsider you.",
+        "I have my doubts about you, but helping <aqua>{cured_villager}</aqua> counts for something.",
+        "<aqua>{cured_villager}</aqua> is back, and even I can respect the hand that helped.",
+        "Do not expect all doors to open at once, but that cure was noticed.",
+        "You did a good thing for <aqua>{cured_villager}</aqua>. I can say that much.",
+        "I am cautious, not blind. Bringing <aqua>{cured_villager}</aqua> back mattered.",
+        "The village is still measuring you, but that cure weighs in your favor.",
+        "I will not call you trusted, but I will call that deed worthy.",
+        "I know you saved <aqua>{cured_villager}</aqua>. I am still deciding what that tells me about you.",
+        "Your help mattered, even if it does not settle every concern.",
+        "They trust you after the cure. I need more time.",
+        "I will not deny the good you did for their family.",
+        "One brave act can begin repairing a reputation, not finish it.",
+        "Seeing them home again makes it easier to hear you out.",
+        "I thanked you for their sake. Do not mistake that for complete trust.",
+        "You treated them with mercy when they were vulnerable. I noticed.",
+        "The village is safer because they were cured instead of killed.",
+        "Keep making choices like that, and perhaps my caution will ease."
+      ],
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    }
+  ]
+}

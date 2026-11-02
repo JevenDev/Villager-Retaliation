@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/weaponsmith/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for a weaponsmith?",
+    "ordinary_2": "need something sharpened?",
+    "ordinary_3": "what are you after?"
+  }
+}

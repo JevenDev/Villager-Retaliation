@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.toucanlib.text.ToucanPlaceholders;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,19 +37,8 @@ public final class DialogueTemplates {
     }
 
     private static String replaceTemplateToken(String text, String token, String replacement, boolean capitalizeAtSentenceStart) {
-        StringBuilder builder = new StringBuilder(text.length());
-        int cursor = 0;
-        int index = text.indexOf(token);
-        while (index >= 0) {
-            builder.append(text, cursor, index);
-            builder.append(capitalizeAtSentenceStart && isSentenceStart(text, index)
-                    ? capitalizeFirstLetter(replacement)
-                    : replacement);
-            cursor = index + token.length();
-            index = text.indexOf(token, cursor);
-        }
-        builder.append(text, cursor, text.length());
-        return builder.toString();
+        return ToucanPlaceholders.replaceToken(text, token, index ->
+                capitalizeAtSentenceStart && isSentenceStart(text, index) ? capitalizeFirstLetter(replacement) : replacement);
     }
 
     private static boolean isSentenceStart(String text, int index) {

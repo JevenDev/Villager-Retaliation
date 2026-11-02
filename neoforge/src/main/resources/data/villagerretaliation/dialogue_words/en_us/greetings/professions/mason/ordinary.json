@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "need a mason?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "what can I help you with?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "got time for a word?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "good to see you. What do you need?"
+        },
+        {
+          "id": "warm_2",
+          "text": "I'm glad you've stopped to talk to me."
+        },
+        {
+          "id": "warm_3",
+          "text": "a friendly word is worth making room for."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I haven't much strength for a long conversation."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I could do with a quiet moment."
+        },
+        {
+          "id": "quiet_3",
+          "text": "I'm listening. Let's take it a little at a time."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "keep it civil, all right?"
+        },
+        {
+          "id": "guarded_2",
+          "text": "plain words are enough. Leave the posturing out."
+        },
+        {
+          "id": "guarded_3",
+          "text": "we can talk without trying to wear each other down."
+        }
+      ]
+    }
+  ]
+}

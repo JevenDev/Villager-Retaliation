@@ -39,6 +39,7 @@ public final class AuthoringValidation {
         List<AuthoringDiagnostic> result = new ArrayList<>();
         result.addAll(AuthoringFeatureValidation.validate(documents, registries));
         validateWordLibraries(documents, result);
+        result.addAll(AuthoringPresentationTemplates.validate(documents));
         var items = new LinkedHashMap<ResourceLocation, JsonObject>();
         for (var document : documents) if (document.resourcePath().matches("data/[^/]+/quest_items/.+\\.json"))
             items.put(AuthoringFeatureValidation.id(document), document.json());

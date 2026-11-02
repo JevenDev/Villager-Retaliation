@@ -1,0 +1,9 @@
+{
+  "extends": "villagerretaliation:greetings/styled",
+  "parameters": [
+    "greeting"
+  ],
+  "arguments": {
+    "body": "{word:villagerretaliation:greetings/professions/salutations}, {greeting}"
+  }
+}

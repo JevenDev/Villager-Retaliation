@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.event_followups"
+  },
+  "lines": [
+    {
+      "id": "baby_reputation_high_greeting_1",
+      "request": "greeting",
+      "lines": [
+        "Hi! They said you help when bad things come.",
+        "Hi! They said you make monsters go away.",
+        "You are the helper everyone talks about, right?",
+        "Hello! The grown-ups smile when they say your name.",
+        "Hi! Are you here to help again?",
+        "I heard you are brave. Are you tired from being brave?",
+        "People say the village is safer when you are nearby.",
+        "Hi! I am allowed to say hello to you.",
+        "They said you stood in front of danger. That sounds scary and cool.",
+        "<jump>Hi!</jump> I know you. You are the good kind of familiar.",
+        "The grown-ups smile when they see you coming.",
+        "People tell me you help when scary things happen.",
+        "I know your name from good stories.",
+        "The guards let you walk near the bell without watching.",
+        "Someone said you are almost part of the village.",
+        "I would ask you for help if I got lost.",
+        "People save you a place during celebrations.",
+        "The little kids try to wave first.",
+        "I am not supposed to bother you while you work.",
+        "The grown-ups trust you with important things."
+      ],
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ],
+      "show_for_adults": false,
+      "weight": 24
+    }
+  ]
+}

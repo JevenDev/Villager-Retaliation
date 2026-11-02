@@ -1,0 +1,295 @@
+{
+  "id": "villagerretaliation:greetings/shared",
+  "display": {
+    "title": "A Few Words"
+  },
+  "metadata": {
+    "topic": "global.greetings.shared",
+    "tags": [
+      "content.dialogue",
+      "dialogue.greeting",
+      "scope.global"
+    ]
+  },
+  "conditions": [
+    {
+      "type": "villager_age",
+      "adult": true
+    }
+  ],
+  "entries": [
+    {
+      "id": "ordinary",
+      "label": "Greet",
+      "request": "greeting",
+      "show_for_babies": false,
+      "line_ids": [
+        "greeting.shared.ordinary",
+        "armorer_new_greeting_heat",
+        "butcher_new_greeting_smoke",
+        "cartographer_new_greeting_table",
+        "cleric_new_greeting_bottles",
+        "farmer_new_greeting_rows",
+        "fisherman_new_greeting_dock",
+        "fletcher_new_greeting_table",
+        "leatherworker_new_greeting_tannery",
+        "librarian_new_greeting_lectern",
+        "mason_new_greeting_stonecutter",
+        "nitwit_new_greeting_corner",
+        "shepherd_new_greeting_loom",
+        "toolsmith_new_greeting_table",
+        "unemployed_new_greeting_site",
+        "weaponsmith_new_greeting_grindstone"
+      ],
+      "start": "hello"
+    }
+  ],
+  "nodes": {
+    "hello": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "player"
+          },
+          "text": "{word:villagerretaliation:greetings/player/salutations}"
+        },
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.ordinary"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "return_greeting",
+          "label": "Good to see you.",
+          "request": "greeting",
+          "order": 0,
+          "next": "return_greeting",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.return_greeting"
+              }
+            }
+          ],
+          "label_key": "greeting.player.return_greeting"
+        },
+        {
+          "id": "ask_wellbeing",
+          "label": "How are you doing?",
+          "request": "greeting",
+          "order": 1,
+          "next": "wellbeing",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.ask_wellbeing"
+              }
+            }
+          ],
+          "label_key": "greeting.player.ask_wellbeing"
+        },
+        {
+          "id": "brief_hello",
+          "label": "Just saying hello.",
+          "request": "greeting",
+          "order": 2,
+          "next": "brief_hello",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.brief_hello"
+              }
+            }
+          ],
+          "label_key": "greeting.player.brief_hello"
+        }
+      ]
+    },
+    "wellbeing": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.wellbeing"
+          }
+        }
+      ],
+      "responses": [
+        {
+          "id": "player_well",
+          "label": "I'm doing well.",
+          "request": "greeting",
+          "order": 0,
+          "next": "player_well",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.player_well"
+              }
+            }
+          ],
+          "label_key": "greeting.player.player_well"
+        },
+        {
+          "id": "player_steady",
+          "label": "Taking things as they come.",
+          "request": "greeting",
+          "order": 1,
+          "next": "player_steady",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.player_steady"
+              }
+            }
+          ],
+          "label_key": "greeting.player.player_steady"
+        },
+        {
+          "id": "player_struggling",
+          "label": "I've had better days.",
+          "request": "greeting",
+          "order": 2,
+          "next": "player_struggling",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.player_struggling"
+              }
+            }
+          ],
+          "label_key": "greeting.player.player_struggling"
+        },
+        {
+          "id": "player_private",
+          "label": "I'd rather not get into it.",
+          "request": "greeting",
+          "order": 3,
+          "next": "player_private",
+          "exchanges": [
+            {
+              "speaker": {
+                "type": "player"
+              },
+              "text": {
+                "key": "greeting.player.player_private"
+              }
+            }
+          ],
+          "label_key": "greeting.player.player_private"
+        }
+      ]
+    },
+    "return_greeting": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.return_greeting"
+          }
+        }
+      ],
+      "end": true
+    },
+    "brief_hello": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.brief_hello"
+          }
+        }
+      ],
+      "end": true
+    },
+    "player_well": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.player_well"
+          }
+        }
+      ],
+      "end": true
+    },
+    "player_steady": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.player_steady"
+          }
+        }
+      ],
+      "end": true
+    },
+    "player_struggling": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.player_struggling"
+          }
+        }
+      ],
+      "end": true
+    },
+    "player_private": {
+      "exchanges": [
+        {
+          "speaker": {
+            "type": "role",
+            "role": "provider"
+          },
+          "text": {
+            "key": "greeting.shared.player_private"
+          }
+        }
+      ],
+      "end": true
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Not too bad.",
+    "ordinary_2": "I'm all right. Stonework keeps me busy.",
+    "ordinary_3": "Doing fairly well, thanks.",
+    "content_1": "Good, actually. Can't complain.",
+    "content_2": "Good, thanks. Stonework suits me.",
+    "content_3": "Well enough. Nothing much troubling me.",
+    "stressed_1": "I've got too much on my mind.",
+    "stressed_2": "A bit worn down, honestly.",
+    "stressed_3": "Can't seem to stop worrying."
+  }
+}

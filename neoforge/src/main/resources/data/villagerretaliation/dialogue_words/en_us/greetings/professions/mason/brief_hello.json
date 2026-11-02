@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/brief_hello",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Then hello. Simple and well meant.",
+    "ordinary_2": "A plain greeting will do nicely.",
+    "ordinary_3": "You needn't bring a project to deserve a word."
+  }
+}

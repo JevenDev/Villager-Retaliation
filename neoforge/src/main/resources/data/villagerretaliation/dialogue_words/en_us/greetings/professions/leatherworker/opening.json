@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/leatherworker/ordinary",
+  "text_overrides": {
+    "ordinary_1": "did you need something made, or just a word?",
+    "ordinary_2": "got something that needs mending?",
+    "ordinary_3": "what are you after?"
+  }
+}

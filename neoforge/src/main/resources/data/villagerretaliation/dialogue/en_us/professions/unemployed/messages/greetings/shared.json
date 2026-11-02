@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "topic": "professions.unemployed.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.unemployed.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/unemployed/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.unemployed.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/unemployed/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.unemployed.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How are you getting on?"
+    },
+    {
+      "id": "greeting.unemployed.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just stopping to say hello."
+    }
+  ]
+}

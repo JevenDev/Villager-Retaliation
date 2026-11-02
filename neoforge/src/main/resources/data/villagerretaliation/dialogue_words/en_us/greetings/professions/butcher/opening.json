@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/butcher/ordinary",
+  "text_overrides": {
+    "ordinary_1": "after something for supper?",
+    "ordinary_2": "what are you after?",
+    "ordinary_3": "did you need something, or just a word?"
+  }
+}

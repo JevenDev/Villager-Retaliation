@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "need a blade looked at?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "what can I do for you?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "come for a chat?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "good to see you. What can I do for you?"
+        },
+        {
+          "id": "warm_2",
+          "text": "I'm glad you've stopped without needing an edge put right."
+        },
+        {
+          "id": "warm_3",
+          "text": "a friendly word is worth taking seriously."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I've little energy for anything but a quiet conversation."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I'm listening. Let's keep this quiet."
+        },
+        {
+          "id": "quiet_3",
+          "text": "I could do with a gentle word myself."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "we can talk without making threats."
+        },
+        {
+          "id": "guarded_2",
+          "text": "keep your words civil. That's all I'm asking."
+        },
+        {
+          "id": "guarded_3",
+          "text": "say what you came to say."
+        }
+      ]
+    }
+  ]
+}

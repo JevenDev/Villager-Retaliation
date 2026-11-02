@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "looking for a map?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "where are you headed?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "what brings you my way?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "I'm glad you stopped by."
+        },
+        {
+          "id": "warm_2",
+          "text": "got a moment to spare?"
+        },
+        {
+          "id": "warm_3",
+          "text": "I always enjoy hearing what someone else notices."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I'm having trouble keeping my thoughts straight."
+        },
+        {
+          "id": "quiet_2",
+          "text": "give me a moment to collect my thoughts."
+        },
+        {
+          "id": "quiet_3",
+          "text": "I'm listening, though my thoughts feel a little scattered."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "let's keep our intentions clear."
+        },
+        {
+          "id": "guarded_2",
+          "text": "just tell me what you need."
+        },
+        {
+          "id": "guarded_3",
+          "text": "a straightforward greeting is enough for now."
+        }
+      ]
+    }
+  ]
+}

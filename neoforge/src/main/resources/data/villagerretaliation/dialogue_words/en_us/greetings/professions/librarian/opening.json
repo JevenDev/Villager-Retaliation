@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/librarian/ordinary",
+  "text_overrides": {
+    "ordinary_1": "can I help you find something?",
+    "ordinary_2": "have you got a question for me?",
+    "ordinary_3": "what can I help you with?"
+  }
+}

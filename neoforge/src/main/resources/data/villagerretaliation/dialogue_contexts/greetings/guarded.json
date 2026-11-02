@@ -1,0 +1,29 @@
+{
+  "id": "villagerretaliation:greetings/guarded",
+  "conditions": [
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "reputation",
+          "levels": [
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ]
+        },
+        {
+          "type": "mood",
+          "mood": "angry",
+          "min_intensity": 25
+        },
+        {
+          "type": "mood",
+          "mood": "suspicious",
+          "min_intensity": 25
+        }
+      ]
+    }
+  ]
+}

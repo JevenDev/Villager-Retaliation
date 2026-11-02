@@ -96,7 +96,7 @@ export async function validateContextDirectory(dataDirectory = builtInData, sele
   } else {
     for (const file of await jsonFiles(dataDirectory)) {
       const relative = path.relative(dataDirectory, file).replaceAll("\\", "/");
-      if (/^[^/]+\/(dialogue|dialogue_trees|forced_dialogue|quests|dialogue_words)\//.test(relative))
+      if (/^[^/]+\/(dialogue|dialogue_templates|dialogue_trees|forced_dialogue|quests|dialogue_words)\//.test(relative))
         await load(dataDirectory, file);
     }
   }

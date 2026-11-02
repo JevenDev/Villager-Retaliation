@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "topic": "professions.mason.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.mason",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.mason.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/mason/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.mason.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/mason/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.mason.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/mason/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.mason.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How are you holding up?"
+    },
+    {
+      "id": "greeting.mason.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. No building questions."
+    }
+  ]
+}

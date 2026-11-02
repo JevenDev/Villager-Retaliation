@@ -127,6 +127,12 @@ public final class DialogueWordExtensionGameTests {
         var sentence = DialogueWordPool.read(json("{\"role\":\"sentence\",\"values\":[\"things are going well\"]}"));
         helper.assertValueEqual(sentence.selectMatching(rules -> true, RandomSource.create(1)), "Things are going well.", "sentence slots supply capitalization and punctuation");
         helper.assertTrue(!com.jvn.villagerretaliation.dialogue.DialogueWordGrammar.warnings("I am feeling {word:test:a}.", key -> sentence).isEmpty(), "complete sentences inside adjective slots are flagged");
+        helper.assertTrue(com.jvn.villagerretaliation.dialogue.DialogueWordGrammar.warnings(
+                "<gray>{word:test:a}</gray> {word:test:b}", key -> sentence).isEmpty(), "adjacent sentence pools form separate sentences");
+        var optional = new DialogueWordPool(sentence.entries(), "", 0, "sentence", true, 1);
+        helper.assertTrue(!com.jvn.villagerretaliation.dialogue.DialogueWordGrammar.warnings(
+                "I feel {word:test:a} {word:test:b}", key -> key.getPath().equals("a") ? optional : sentence).isEmpty(),
+                "optional sentences cannot guarantee a boundary");
         var address = DialogueWordPool.read(json("{\"role\":\"address\",\"values\":[\"my friend.\"]}"));
         helper.assertTrue(!com.jvn.villagerretaliation.dialogue.DialogueWordGrammar.warnings(address).isEmpty(), "fragment punctuation is flagged");
         var literal = DialogueWordPool.read(json("{\"values\":[\"hello\"]}"));

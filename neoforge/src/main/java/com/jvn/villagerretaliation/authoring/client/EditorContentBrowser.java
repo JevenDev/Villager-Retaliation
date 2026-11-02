@@ -167,7 +167,7 @@ final class EditorContentBrowser {
             case FORCED -> "Triggered dialogue";
             default -> path.contains("/locales/") ? "Translations" : path.contains("/scenes/") ? "Scenes"
                     : path.contains("/encounters/") ? "Encounters" : path.contains("/dialogue_words/") ? "Word pools"
-                    : path.contains("/dialogue_contexts/") ? "Dialogue contexts" : path.contains("/dialogue/") ? "Dialogue pools" : path.contains("/campaign_scenarios/") ? "Scenarios"
+                    : path.contains("/dialogue_templates/") ? "Dialogue templates" : path.contains("/dialogue_contexts/") ? "Dialogue contexts" : path.contains("/dialogue/") ? "Dialogue pools" : path.contains("/campaign_scenarios/") ? "Scenarios"
                     : path.contains("/campaigns/") ? "Story arcs" : path.contains("/skill_trades/") ? "Trades"
                     : path.contains("/sell_prices/") ? "Sell prices" : path.contains("/duel_kits/") ? "Duel kits"
                     : path.contains("/player_raid_loadouts/") ? "Raid loadouts" : path.contains("/dialogue_styles/") ? "Dialogue styles" : "Supporting files";

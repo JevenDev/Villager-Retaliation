@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "topic": "professions.cleric.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.cleric.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/cleric/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.cleric.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/cleric/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.cleric.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "It's good to have a quiet word with you."
+    },
+    {
+      "id": "greeting.cleric.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "And how are you?"
+    },
+    {
+      "id": "greeting.cleric.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. I don't need advice."
+    }
+  ]
+}

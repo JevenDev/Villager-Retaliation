@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueWordSelection;
 import com.jvn.villagerretaliation.dialogue.SpeakingStyle;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.runtime.ReputationProfile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -54,11 +55,16 @@ public final class WordPoolPreview {
 
     public static List<Row> matrix(String template, Function<ResourceLocation, DialogueWordPool> pools,
             PreviewConditions base, long seed) {
+        return matrix(template, pools, base, seed, VillagerReputationLevel.PROFILE);
+    }
+
+    public static List<Row> matrix(String template, Function<ResourceLocation, DialogueWordPool> pools,
+            PreviewConditions base, long seed, ReputationProfile<VillagerReputationLevel> profile) {
         var rows = new ArrayList<Row>();
         for (var mood : VillagerMood.values()) for (var reputation : VillagerReputationLevel.values()) for (String style : SpeakingStyle.STYLES) {
             var conditions = base.copy();
             conditions.mood(mood, base.moodIntensity());
-            int score = reputation == VillagerReputationLevel.NEUTRAL ? 0 : VillagerReputationLevel.PROFILE.tiers().stream()
+            int score = reputation == VillagerReputationLevel.NEUTRAL ? 0 : profile.tiers().stream()
                     .filter(tier -> tier.value() == reputation).findFirst().orElseThrow().threshold().getAsInt();
             conditions.reputation(score, reputation);
             conditions.speakingStyle(style);
@@ -67,23 +73,28 @@ public final class WordPoolPreview {
         return List.copyOf(rows);
     }
     public static Coverage coverage(String template, Function<ResourceLocation, DialogueWordPool> pools, PreviewConditions base, long seed) {
+        return coverage(template, pools, base, seed, VillagerReputationLevel.PROFILE);
+    }
+
+    public static Coverage coverage(String template, Function<ResourceLocation, DialogueWordPool> pools,
+            PreviewConditions base, long seed, ReputationProfile<VillagerReputationLevel> profile) {
         var intensities = new java.util.TreeSet<Integer>();
         var scores = new java.util.TreeSet<Integer>();
-        for (var tier : VillagerReputationLevel.PROFILE.tiers()) boundary(scores, tier.threshold().getAsInt(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+        for (var tier : profile.tiers()) boundary(scores, tier.threshold().getAsInt(), Integer.MIN_VALUE, Integer.MAX_VALUE);
         for (var id : com.jvn.villagerretaliation.dialogue.DialogueWordPools.references(template))
             for (var entry : pools.apply(id).entries()) boundaries(entry.conditions(), base, intensities, scores, new java.util.HashSet<>());
-        var rows = new ArrayList<>(matrix(template, pools, base, seed));
+        var rows = new ArrayList<>(matrix(template, pools, base, seed, profile));
         var findings = new ArrayList<Finding>();
         for (int intensity : intensities) {
             if (intensity == base.moodIntensity()) continue;
             var simulated = base.copy(); simulated.mood(base.mood(), intensity);
             if (rows.size() + 432 > 8192) { findings.add(new Finding("sampling_limit", "Coverage reached its 8192-scenario budget. Some boundary combinations were not sampled.")); break; }
-            rows.addAll(matrix(template, pools, simulated, seed));
+            rows.addAll(matrix(template, pools, simulated, seed, profile));
         }
         for (int score : scores) for (var mood : VillagerMood.values()) for (String style : SpeakingStyle.STYLES) {
             if (rows.size() >= 8192) break;
-            var conditions = base.copy(); conditions.reputation(score); conditions.mood(mood, base.moodIntensity()); conditions.speakingStyle(style);
-            rows.add(new Row(mood, VillagerReputationLevel.fromReputation(score), style, inspect(template, pools, conditions, seed, null, ""), score, base.moodIntensity()));
+            var conditions = base.copy(); conditions.reputation(score, profile.tier(score)); conditions.mood(mood, base.moodIntensity()); conditions.speakingStyle(style);
+            rows.add(new Row(mood, profile.tier(score), style, inspect(template, pools, conditions, seed, null, ""), score, base.moodIntensity()));
         }
         if (rows.size() >= 8192 && findings.stream().noneMatch(finding -> finding.kind().equals("sampling_limit")))
             findings.add(new Finding("sampling_limit", "Coverage reached its 8192-scenario budget. Some boundaries were not sampled."));

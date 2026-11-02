@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "topic": "professions.cartographer.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cartographer",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.cartographer.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/cartographer/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.cartographer.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/cartographer/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.cartographer.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/cartographer/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.cartographer.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Good to have a word with you."
+    },
+    {
+      "id": "greeting.cartographer.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "All well with you?"
+    },
+    {
+      "id": "greeting.cartographer.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. I'm not asking for directions."
+    }
+  ]
+}

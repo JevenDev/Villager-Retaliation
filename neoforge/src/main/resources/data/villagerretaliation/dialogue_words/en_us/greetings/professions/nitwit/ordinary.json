@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "got time for a chat?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "what's on your mind?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "come to keep me company?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "it's nice to have someone to chat to."
+        },
+        {
+          "id": "warm_2",
+          "text": "I'm glad you've stopped. People are interesting."
+        },
+        {
+          "id": "warm_3",
+          "text": "got a bit of time to spare?"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I'm not much for talking just now."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I haven't many words just now, but I can listen."
+        },
+        {
+          "id": "quiet_3",
+          "text": "let's keep the conversation gentle for a moment."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "I can tell the difference between a greeting and a sneer."
+        },
+        {
+          "id": "guarded_2",
+          "text": "we can talk if you mean to be civil."
+        },
+        {
+          "id": "guarded_3",
+          "text": "a hello will do. You needn't make anything of it."
+        }
+      ]
+    }
+  ]
+}

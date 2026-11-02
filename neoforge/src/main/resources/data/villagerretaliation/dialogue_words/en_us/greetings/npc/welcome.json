@@ -1,0 +1,95 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "optional": true,
+  "chance": 0.45,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Did you want a word?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "What's on your mind?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "I'm listening."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "It's nice to stop for a word."
+        },
+        {
+          "id": "warm_2",
+          "text": "A little conversation would be welcome."
+        },
+        {
+          "id": "warm_3",
+          "text": "Nice of you to say hello."
+        }
+      ],
+      "variant": "warm"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I haven't much to say right now."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I could use a quiet conversation."
+        },
+        {
+          "id": "quiet_3",
+          "text": "Let's take this slowly."
+        }
+      ],
+      "variant": "quiet"
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Keep it brief, please."
+        },
+        {
+          "id": "guarded_2",
+          "text": "A few words will do."
+        },
+        {
+          "id": "guarded_3",
+          "text": "Say what you need to say."
+        }
+      ],
+      "variant": "guarded"
+    }
+  ]
+}

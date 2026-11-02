@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/fisherman/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for some fish?",
+    "ordinary_2": "what did you want to ask?",
+    "ordinary_3": "I'm in no hurry. What is it?"
+  }
+}

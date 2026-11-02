@@ -1,0 +1,44 @@
+{
+  "parameters": [
+    "body"
+  ],
+  "variants": [
+    {
+      "id": "ordinary",
+      "text": "{body}"
+    },
+    {
+      "id": "warm",
+      "priority": 10,
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "text": "<greeting_warm>{body}</greeting_warm>"
+    },
+    {
+      "id": "quiet",
+      "priority": 20,
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "text": "<greeting_quiet>{body}</greeting_quiet>"
+    },
+    {
+      "id": "guarded",
+      "priority": 30,
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "text": "<greeting_guarded>{body}</greeting_guarded>"
+    }
+  ]
+}

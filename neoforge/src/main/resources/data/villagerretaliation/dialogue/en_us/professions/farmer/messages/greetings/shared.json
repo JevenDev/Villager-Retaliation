@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "topic": "professions.farmer.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.farmer",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.farmer.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/farmer/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.farmer.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/farmer/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.farmer.return_greeting",
+      "key": "greeting.shared.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/farmer/return_greeting}"
+      }
+    },
+    {
+      "id": "greeting.farmer.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/farmer/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.farmer.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Good to have a chat."
+    },
+    {
+      "id": "greeting.farmer.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How are things with you?"
+    },
+    {
+      "id": "greeting.farmer.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. No farming questions."
+    }
+  ]
+}

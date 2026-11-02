@@ -1,9 +1,12 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.schema.QuestJsonSchema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.resources.ResourceLocation;
@@ -11,7 +14,7 @@ import net.minecraft.util.RandomSource;
 
 public record DialogueWordPool(List<Entry> entries, String selectionGroup, int avoidRecent, String role, boolean optional, double chance) {
     public static final DialogueWordPool EMPTY = new DialogueWordPool(List.of());
-    public static final Set<String> FIELDS = Set.of("values", "groups", "selection_group", "avoid_recent", "extends", "remove", "role", "optional", "chance");
+    public static final Set<String> FIELDS = Set.of("values", "groups", "selection_group", "avoid_recent", "extends", "remove", "role", "optional", "chance", "text_overrides");
     private static final ResourceLocation SOURCE = ResourceLocation.parse("villagerretaliation:dialogue_words");
 
     public DialogueWordPool { entries = List.copyOf(entries); }
@@ -110,6 +113,29 @@ public record DialogueWordPool(List<Entry> entries, String selectionGroup, int a
         return value.getAsString();
     }
 
+    private static String literalText(JsonElement literal, boolean allowEmpty) {
+        if (!literal.isJsonPrimitive() || !literal.getAsJsonPrimitive().isString())
+            throw new IllegalArgumentException("word pool text must be a string");
+        String text = literal.getAsString();
+        if (text.isBlank() && !(allowEmpty && text.isEmpty()) || text.length() > 512
+                || text.chars().anyMatch(c -> "{}<>\u00a7".indexOf(c) >= 0 || Character.isISOControl(c)))
+            throw new IllegalArgumentException("word pool text must be nonblank literal text without placeholders, markup, or control characters, at most 512 characters");
+        return text;
+    }
+
+    public static Map<String, String> textOverrides(JsonObject root) {
+        if (!root.has("text_overrides")) return Map.of();
+        if (!root.has("extends") || !root.get("text_overrides").isJsonObject() || root.getAsJsonObject("text_overrides").size() > 256)
+            throw new IllegalArgumentException("text_overrides requires a parent and an object of at most 256 entry IDs");
+        var result = new LinkedHashMap<String, String>();
+        for (var entry : root.getAsJsonObject("text_overrides").entrySet()) {
+            if (!entry.getKey().matches("[a-z0-9_.-]{1,64}"))
+                throw new IllegalArgumentException("text_overrides requires lowercase entry IDs");
+            result.put(entry.getKey(), literalText(entry.getValue(), true));
+        }
+        return Map.copyOf(result);
+    }
+
     private static List<DialogueCondition> conditions(JsonObject object) {
         if (!object.has("conditions")) return List.of();
         if (!object.get("conditions").isJsonArray()) throw new IllegalArgumentException("word conditions must be an array");
@@ -145,6 +171,7 @@ public record DialogueWordPool(List<Entry> entries, String selectionGroup, int a
         if (root.keySet().stream().anyMatch(key -> !FIELDS.contains(key))) throw new IllegalArgumentException("unknown word pool field");
         boolean inherited = root.has("extends");
         if (inherited) resourceId(root, "extends");
+        var overrides = textOverrides(root);
         if (root.has("remove")) {
             if (!inherited || !root.get("remove").isJsonArray() || root.getAsJsonArray("remove").size() > 256)
                 throw new IllegalArgumentException("remove requires a parent and at most 256 entry IDs");
@@ -204,11 +231,7 @@ public record DialogueWordPool(List<Entry> entries, String selectionGroup, int a
             if (object != null && (object.keySet().stream().anyMatch(key -> !Set.of("text", "weight", "conditions", "priority", "variant", "id").contains(key))
                     || !object.has("text"))) throw new IllegalArgumentException("word entry requires text and accepts only weight, conditions, priority, and variant");
             var literal = object == null ? value : object.get("text");
-            if (!literal.isJsonPrimitive() || !literal.getAsJsonPrimitive().isString())
-                throw new IllegalArgumentException("word pool text must be a string");
-            String text = literal.getAsString();
-            if ((text.isBlank() && !((optional || inherited) && text.isEmpty())) || text.length() > 512 || text.chars().anyMatch(c -> "{}<>\u00a7".indexOf(c) >= 0 || Character.isISOControl(c)))
-                throw new IllegalArgumentException("word pool text must be nonblank literal text without placeholders, markup, or control characters, at most 512 characters");
+            String text = literalText(literal, optional || inherited);
             int weight = object == null ? 1 : integer(object, "weight", 1, 1, 1000);
             int priority = object == null ? 0 : integer(object, "priority", 0, -1000000, 1000000);
             String variant = "";
@@ -227,6 +250,7 @@ public record DialogueWordPool(List<Entry> entries, String selectionGroup, int a
                     throw new IllegalArgumentException("entry IDs must be unique lowercase names, at most 64 characters");
                 id = name.getAsString();
             }
+            if (overrides.containsKey(id)) throw new IllegalArgumentException("entry has both a full replacement and a text override: " + id);
             entries.add(new Entry(text, weight, conditions, priority, variant, id, sources.get(entryIndex++)));
         }
         var pool = new DialogueWordPool(entries, group, avoidRecent, role, optional, chance);

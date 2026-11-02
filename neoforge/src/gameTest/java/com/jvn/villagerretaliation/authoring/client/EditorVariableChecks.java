@@ -46,8 +46,15 @@ final class EditorVariableChecks {
             var resource = resources.nextElement();
             try (var paths = Files.walk(Path.of(java.net.URI.create(resource.toExternalForm())))) {
                 for (var path : paths.filter(path -> path.toString().endsWith(".json")).toList()) {
+                    String relative = Path.of(java.net.URI.create(resource.toExternalForm())).relativize(path).toString().replace('\\', '/');
+                    Set<String> parameters = Set.of();
+                    if (relative.startsWith("dialogue_templates/")) {
+                        String[] parts = relative.split("/", 3);
+                        var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("villagerretaliation", parts[2].substring(0, parts[2].length() - 5));
+                        parameters = com.jvn.villagerretaliation.dialogue.resources.DialogueTextTemplateResources.library(null, parts[1]).apply(id).parameters();
+                    }
                     var matcher = pattern.matcher(Files.readString(path));
-                    while (matcher.find()) used.add(matcher.group(1));
+                    while (matcher.find()) if (!parameters.contains(matcher.group(1))) used.add(matcher.group(1));
                 }
             }
         }

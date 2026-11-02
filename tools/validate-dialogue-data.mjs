@@ -7,6 +7,7 @@ import { validateContextDirectory } from "./dialogue-context-validation.mjs";
 import { inspectDialogueMarkup } from "./dialogue-markup-validation.mjs";
 import { builtInStyleData, loadDialogueStyles } from "./dialogue-style-validation.mjs";
 import { validateWordDirectory } from "./dialogue-word-validation.mjs";
+import { loadPresentationDocuments, presentationTemplates, expandPresentationDocument } from "./dialogue-template-validation.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateConversation, validateConversationSchema, materializeConversationAction } from "./conversation-validation.mjs";
@@ -18,6 +19,7 @@ const questV3Format = createRequire(import.meta.url)("./quest-v3-format.js");
 const questV3Schema = JSON.parse(await readFile(new URL("./schemas/quest-v3.schema.json", import.meta.url), "utf8"));
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const presentationCatalog = presentationTemplates(await loadPresentationDocuments(path.join(root, "neoforge/src/main/resources/data")));
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
 const metadataTagPattern = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/;
 const dialogueOptionIdMaxLength = 128;
@@ -540,6 +542,7 @@ const dialogueTreeActionKeys = new Set([
 const dialogueTreeRootKeys = new Set(["id", "replace", "remove", "display", "metadata", "conditions", "entries", "nodes"]);
 const dialogueTreeDisplayKeys = new Set(["title", "description"]);
 const dialogueTreeEntryKeys = new Set([
+  "line_ids",
   "label_key",
   "id",
   "label",
@@ -1725,6 +1728,7 @@ function dialogueTreeQuestModule(file) {
 }
 
 function checkDialogue(file, data) {
+  data = expandPresentationDocument(data, presentationCatalog.lookup(file), issue => errors.push(relative(file) + ": " + issue));
   checkDialogueMetadata(file, data, "root");
   const sections = dialogueSectionsFor(file, data);
   checkDialogueIds(file, sections.options, "dialogue option", dialogueIdScopes.options);
@@ -3705,6 +3709,7 @@ function checkDialogueTree(file, data) {
 }
 
 function checkDialogueTreeEntryFields(file, entry, location) {
+  checkStringList(file, entry, location, ["line_ids"], "dialogue owner id");
   checkOptionalString(file, entry, location, "id");
   checkOptionalString(file, entry, location, "label");
   checkOptionalString(file, entry, location, "start");

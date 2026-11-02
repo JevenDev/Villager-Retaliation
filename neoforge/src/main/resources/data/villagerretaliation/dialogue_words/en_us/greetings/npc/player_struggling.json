@@ -1,0 +1,182 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "I'm sorry to hear that."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "You don't have to explain. I hope things get easier."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "I hope things ease up soon."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "That's rough. Take care of yourself."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "I'm glad you stopped for a word, even so."
+    },
+    {
+      "id": "shared_sorry_to_hear_it",
+      "text": "Sorry to hear it."
+    },
+    {
+      "id": "shared_that_s_rough_hope_things_ease_up",
+      "text": "That's rough. Hope things ease up."
+    },
+    {
+      "id": "shared_i_hope_things_pick_up_for_you",
+      "text": "I hope things pick up for you."
+    },
+    {
+      "id": "shared_oh_i_m_sorry_to_hear_that",
+      "text": "Oh, I'm sorry to hear that."
+    },
+    {
+      "id": "shared_hope_things_get_better_for_you",
+      "text": "Hope things get better for you."
+    },
+    {
+      "id": "shared_that_s_rough_look_after_yourself",
+      "text": "That's rough. Look after yourself."
+    },
+    {
+      "id": "shared_i_hope_things_become_a_little_clearer_for_you",
+      "text": "I hope things become a little clearer for you."
+    },
+    {
+      "id": "shared_i_hope_things_get_easier",
+      "text": "I hope things get easier."
+    },
+    {
+      "id": "shared_i_hope_you_feel_a_little_better_soon",
+      "text": "I hope you feel a little better soon."
+    },
+    {
+      "id": "shared_that_s_hard_take_care_of_yourself",
+      "text": "That's hard. Take care of yourself."
+    },
+    {
+      "id": "shared_you_don_t_have_to_pretend_you_re_all_right",
+      "text": "You don't have to pretend you're all right."
+    },
+    {
+      "id": "shared_hope_things_ease_up_for_you",
+      "text": "Hope things ease up for you."
+    },
+    {
+      "id": "shared_hope_things_ease_up_soon",
+      "text": "Hope things ease up soon."
+    },
+    {
+      "id": "shared_hope_things_settle_down_for_you",
+      "text": "Hope things settle down for you."
+    },
+    {
+      "id": "shared_that_s_rough_take_care",
+      "text": "That's rough. Take care."
+    },
+    {
+      "id": "shared_take_care_of_yourself_all_right",
+      "text": "Take care of yourself, all right?"
+    },
+    {
+      "id": "shared_i_hope_things_get_a_bit_easier_for_you",
+      "text": "I hope things get a bit easier for you."
+    },
+    {
+      "id": "shared_that_s_rough_hope_things_pick_up",
+      "text": "That's rough. Hope things pick up."
+    },
+    {
+      "id": "shared_take_care_of_yourself",
+      "text": "Take care of yourself."
+    },
+    {
+      "id": "shared_oh_i_m_sorry_to_hear_that_2",
+      "text": "Oh. I'm sorry to hear that."
+    },
+    {
+      "id": "shared_i_wish_i_knew_what_to_say",
+      "text": "I wish I knew what to say."
+    },
+    {
+      "id": "shared_you_don_t_need_to_put_a_cheerful_face_on_it_for_me",
+      "text": "You don't need to put a cheerful face on it for me."
+    },
+    {
+      "id": "shared_i_hope_things_get_a_bit_easier",
+      "text": "I hope things get a bit easier."
+    },
+    {
+      "id": "shared_i_m_sorry_to_hear_that_hope_things_ease_up_for_you",
+      "text": "I'm sorry to hear that. Hope things ease up for you."
+    },
+    {
+      "id": "shared_i_hope_things_pick_up_soon",
+      "text": "I hope things pick up soon."
+    },
+    {
+      "id": "shared_that_s_rough_i_hope_things_pick_up_for_you",
+      "text": "That's rough. I hope things pick up for you."
+    },
+    {
+      "id": "shared_that_s_rough_hope_things_settle_down",
+      "text": "That's rough. Hope things settle down."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I'm sorry. I wish I knew what to say."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I hope things ease up for both of us."
+        },
+        {
+          "id": "quiet_3",
+          "text": "Some days take more out of us than others."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "I hope things improve for you."
+        },
+        {
+          "id": "guarded_2",
+          "text": "Sorry to hear it."
+        },
+        {
+          "id": "guarded_3",
+          "text": "Then I hope the next day is better."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Then hello to you, too."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "A hello is enough."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Nothing wrong with a simple hello."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Well, you've made me stop and smile."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "I'll take a hello. Take care."
+    },
+    {
+      "id": "shared_a_hello_can_be_enough_it_needn_t_become_a_lesson",
+      "text": "A hello can be enough. It needn't become a lesson."
+    },
+    {
+      "id": "shared_then_hello_and_take_care_of_yourself",
+      "text": "Then hello, and take care of yourself."
+    },
+    {
+      "id": "shared_you_needn_t_bring_a_worry_to_deserve_my_time",
+      "text": "You needn't bring a worry to deserve my time."
+    },
+    {
+      "id": "shared_then_hello_nice_of_you_to_stop",
+      "text": "Then hello! Nice of you to stop."
+    },
+    {
+      "id": "shared_a_hello_can_stand_on_its_own",
+      "text": "A hello can stand on its own."
+    },
+    {
+      "id": "shared_that_s_a_perfectly_good_reason_to_stop",
+      "text": "That's a perfectly good reason to stop."
+    },
+    {
+      "id": "shared_then_hello_to_you_too_nothing_more_needed",
+      "text": "Then hello to you, too. Nothing more needed."
+    },
+    {
+      "id": "shared_a_simple_hello_is_a_nice_little_comfort",
+      "text": "A simple hello is a nice little comfort."
+    },
+    {
+      "id": "shared_that_s_enough_to_make_a_conversation_worthwhile",
+      "text": "That's enough to make a conversation worthwhile."
+    },
+    {
+      "id": "shared_well_hello_to_you_too",
+      "text": "Well, hello to you, too."
+    },
+    {
+      "id": "shared_a_hello_is_a_good_enough_reason_to_talk",
+      "text": "A hello is a good enough reason to talk."
+    },
+    {
+      "id": "shared_thanks_for_keeping_it_simple",
+      "text": "Thanks for keeping it simple."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "A hello is plenty. Thank you."
+        },
+        {
+          "id": "quiet_2",
+          "text": "A short word suits me just now."
+        },
+        {
+          "id": "quiet_3",
+          "text": "Thanks for keeping it simple."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "Then we're done here."
+        },
+        {
+          "id": "guarded_2",
+          "text": "All right. A hello it is."
+        },
+        {
+          "id": "guarded_3",
+          "text": "You've said it. All right."
+        }
+      ]
+    }
+  ]
+}

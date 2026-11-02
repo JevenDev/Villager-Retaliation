@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.options"
+    ],
+    "topic": "global.menu_options.adult"
+  },
+  "options": [
+    {
+      "id": "adult_greeting",
+      "label": "Greet",
+      "type": "dialogue_option",
+      "request": "greeting",
+      "order": 0,
+      "show_for_babies": false
+    }
+  ]
+}

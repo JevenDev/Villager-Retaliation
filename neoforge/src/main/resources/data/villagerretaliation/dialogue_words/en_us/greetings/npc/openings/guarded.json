@@ -1,0 +1,30 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Yes? Let's keep this civil."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "I'm listening. Choose your words carefully."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "We can talk. That is all."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Say what you came to say."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "All right. You have my attention."
+    },
+    {
+      "id": "ordinary_6",
+      "text": "I'll listen, but keep it brief."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Oh, hello. Come and have a word."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "It's nice to have someone to talk to."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Hello there. You've got my attention."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Good to see you. What's on your mind?"
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hello. Shall we talk for a moment?"
+    },
+    {
+      "id": "ordinary_6",
+      "text": "A little conversation would be welcome."
+    }
+  ]
+}

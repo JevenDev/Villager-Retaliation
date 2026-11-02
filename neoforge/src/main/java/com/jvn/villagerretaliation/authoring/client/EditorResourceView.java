@@ -72,6 +72,7 @@ final class EditorResourceView {
         if (path.contains("/locales/")) return "Translations";
         if (path.contains("/dialogue_styles/")) return "Dialogue style";
         if (path.contains("/dialogue_words/")) return "Word pool";
+        if (path.contains("/dialogue_templates/")) return "Dialogue template";
         if (path.contains("/dialogue/")) return "Dialogue resource";
         if (path.contains("/campaign_scenarios/")) return "Scenario";
         var kind = EditorSupportingResources.kind(document);

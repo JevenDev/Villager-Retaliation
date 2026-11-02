@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.core"
+  },
+  "messages": [
+    {
+      "key": "opening.return_after_absence",
+      "lines": [
+        "There you are. It has been {days_since_seen_phrase}.",
+        "I was wondering when you would come back.",
+        "You have been away for {days_since_seen} {day_or_days}. How was the road?",
+        "The village has not seen you since {days_since_seen_phrase}.",
+        "Back at last. I hope the journey treated you well.",
+        "I remember your face, even after {days_since_seen} {day_or_days}.",
+        "A few people asked whether you were coming back.",
+        "You picked a fine day to return.",
+        "The paths finally brought you home again.",
+        "I nearly stopped expecting to see you at my door.",
+        "It feels longer than {days_since_seen_phrase} since we spoke.",
+        "Welcome back. What kept you away?",
+        "Life carried on here, but we noticed your absence.",
+        "You look like the road gave you a story or two.",
+        "I hope you found what you went looking for.",
+        "Things have changed since your last visit.",
+        "I kept thinking I saw you in the distance.",
+        "You were missed more than you might think.",
+        "Come in from the road. You have been gone long enough.",
+        "After {days_since_seen} {day_or_days}, you finally found your way <pulse>back</pulse>."
+      ],
+      "show_for_babies": false,
+      "weight": 34,
+      "id": "global.messages.00_interaction.messages.opening.return_after_absence.003"
+    },
+    {
+      "key": "opening.return_after_absence",
+      "lines": [
+        "You are back! Did you bring any stories?",
+        "I counted {days_since_seen} {day_or_days}. I think.",
+        "Where did you go for {days_since_seen_phrase}?",
+        "Did you see anything strange out there?",
+        "I wondered if you had found a different village.",
+        "You missed a lot while you were gone.",
+        "Was the road scary, or just muddy?",
+        "I knew you would come back eventually.",
+        "Did anything chase you on the way home?",
+        "You have been gone for so many sleeps.",
+        "I saved a hundred questions for when you returned.",
+        "Were there mountains where you went?",
+        "Everyone said you were traveling. I wanted to come too.",
+        "I almost forgot how your voice sounded.",
+        "Tell me the best thing you saw first.",
+        "You came back on the exact day I stopped counting.",
+        "Did you find treasure, or only sore feet?",
+        "The village felt quieter without you around.",
+        "I hope you remembered where we live.",
+        "Hey, you are <jump>back</jump> after {days_since_seen_phrase}!"
+      ],
+      "show_for_adults": false,
+      "weight": 34,
+      "id": "global.messages.00_interaction.messages.opening.return_after_absence.004"
+    }
+  ]
+}

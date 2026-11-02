@@ -228,6 +228,7 @@ public final class VillagerDialogueResources {
 
     public static void clearCache() {
         cachedDialoguePools = CachedDialoguePools.empty();
+        DialogueTextTemplateResources.clearCache();
         cachedBundleMessages = CachedBundleMessages.empty();
         PairedGreetingResources.clearCache();
         PairedDialogueResources.clearCache();
@@ -389,7 +390,7 @@ public final class VillagerDialogueResources {
             if (messages.containsKey(cacheKey)) {
                 return messages.get(cacheKey);
             }
-            List<KeyedMessageLine> parsed = readBundleMessageLines(catalog, cacheKey);
+            List<KeyedMessageLine> parsed = readBundleMessageLines(server, catalog, cacheKey);
             messages.put(cacheKey, parsed);
             cachedBundleMessages = new CachedBundleMessages(server, catalog, Map.copyOf(messages));
             return parsed;
@@ -397,6 +398,7 @@ public final class VillagerDialogueResources {
     }
 
     private static List<KeyedMessageLine> readBundleMessageLines(
+            MinecraftServer server,
             QuestContentCatalog catalog,
             BundleMessageKey cacheKey) {
         JsonElement payload = catalog.localization()
@@ -425,6 +427,10 @@ public final class VillagerDialogueResources {
         entries.add(entry);
         JsonObject root = new JsonObject();
         root.add("messages", entries);
+        root = com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expandDocument(root,
+                DialogueTextTemplateResources.library(server, cacheKey.locale()),
+                (pointer, issue) -> DatapackDiagnostics.warnSkippedEntry(
+                        ResourceLocation.parse("villagerretaliation:quest_bundle_messages"), "dialogue template", pointer, issue));
         Map<String, KeyedMessageLine> messages = new LinkedHashMap<>();
         readKeyedMessages(
                 ResourceLocation.fromNamespaceAndPath(
@@ -590,6 +596,7 @@ public final class VillagerDialogueResources {
                 server,
                 root,
                 (location, resource) -> readFile(
+                        server,
                         location,
                         resource,
                         locale,
@@ -608,6 +615,7 @@ public final class VillagerDialogueResources {
     }
 
     private static void readFile(
+            MinecraftServer server,
             ResourceLocation location,
             Resource resource,
             String locale,
@@ -623,7 +631,10 @@ public final class VillagerDialogueResources {
             Map<String, ResourceLocation> pacifySources,
             Map<String, ResourceLocation> optionSources,
             Map<String, ResourceLocation> messageSources) {
-        DatapackResourceLoader.readObject(location, "dialogue", resource).ifPresent(root -> {
+        DatapackResourceLoader.readObject(location, "dialogue", resource).ifPresent(authored -> {
+            JsonObject root = com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expandDocument(authored,
+                    DialogueTextTemplateResources.library(server, locale),
+                    (pointer, issue) -> DatapackDiagnostics.warnSkippedEntry(location, "dialogue template", pointer, issue));
             DialogueEntryMetadata rootMetadata = DialogueEntryMetadata.read(location, "dialogue", "file root", root);
             if (readBoolean(root, "replace", false)) {
                 clearAllSections(

@@ -15,7 +15,9 @@ final class EditorDialoguePoolChecks {
         copyingPreservesSelectionRulesAndKeepsIdsUnique();
         variationsKeepTheirRepresentationAndHistory();
         removingEntriesAndLinesRebasesCameraMetadata();
-        return 4;
+        inheritedWordingEditsPreserveRulesAndUndo();
+        templatePreviewsFollowUnsavedScopedDefinitions();
+        return 6;
     }
 
     private static AuthoringDocument document(String json) {
@@ -97,6 +99,52 @@ final class EditorDialoguePoolChecks {
         check(document.metadata().getAsJsonObject("camera_thumbnails").has("/lines/0/lines/0"), "line removal rebases nested previews");
         document.undo(); document.undo();
         check(document.metadata().equals(original), "undo restores camera metadata with the removed content");
+    }
+
+    private static void inheritedWordingEditsPreserveRulesAndUndo() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("editor-inherited-wording"));
+        var parent = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue_words/en_us/base.json", JsonParser.parseString("""
+                {"role":"sentence","selection_group":"test:tone","values":[{"id":"plain","text":"I am all right."},{"id":"quiet","text":"Taking it slowly today.",
+                "priority":10,"weight":3,"variant":"quiet","conditions":[{"type":"mood","moods":["stressed"]}]}]}
+                """).getAsJsonObject());
+        var child = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue_words/en_us/child.json",
+                JsonParser.parseString("{\"extends\":\"test:base\"}").getAsJsonObject());
+        workspace.add(parent); workspace.add(child);
+        var original = child.json();
+        EditorWordPoolPreview.overrideWording(workspace, child, "quiet", "Could do with a rest.");
+        var pools = com.jvn.villagerretaliation.authoring.preview.PreviewWordPools.lookupDefinitions(workspace, child, "en_us",
+                (id, locale) -> com.jvn.villagerretaliation.dialogue.DialogueWordPool.EMPTY);
+        var entry = pools.apply(net.minecraft.resources.ResourceLocation.parse("test:child")).entries().stream().filter(value -> value.id().equals("quiet")).findFirst().orElseThrow();
+        check(entry.text().equals("Could do with a rest.") && entry.priority() == 10 && entry.weight() == 3
+                && entry.variant().equals("quiet") && entry.conditions().size() == 1, "wording edits keep inherited selection rules");
+        check(!child.json().has("values"), "wording edits do not create full replacement entries");
+        child.undo(); check(child.json().equals(original), "wording edits undo as one change");
+        child.redo();
+        var before = child.json();
+        try { EditorWordPoolPreview.overrideWording(workspace, child, "missing", "Hello."); throw new AssertionError("accepted missing inherited entry"); }
+        catch (IllegalArgumentException expected) { check(child.json().equals(before), "invalid inherited edits leave the draft intact"); }
+    }
+
+    private static void templatePreviewsFollowUnsavedScopedDefinitions() throws IOException {
+        var workspace = AuthoringWorkspace.create(Files.createTempDirectory("editor-template-preview"));
+        var template = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue_templates/en_us/greeting.json",
+                JsonParser.parseString("{\"parameters\":[\"body\"],\"text\":\"{body}\"}").getAsJsonObject());
+        var scoped = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/world_campaigns/story/dialogue_templates/en_us/greeting.json",
+                JsonParser.parseString("{\"parameters\":[\"body\"],\"text\":\"Welcome, {body}\"}").getAsJsonObject());
+        var owner = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/world_campaigns/story/dialogue/en_us/messages.json",
+                JsonParser.parseString("{\"messages\":[{\"key\":\"hello\",\"template\":\"test:greeting\",\"arguments\":{\"body\":\"{word:test:hello}\"}}]}").getAsJsonObject());
+        workspace.add(template); workspace.add(scoped); workspace.add(owner);
+        var reference = JsonParser.parseString("{\"key\":\"hello\"}");
+        check(workspace.resolveText(owner, reference, "en_us").equals("Welcome, {word:test:hello}"),
+                "keyed messages expand unsaved presentation templates");
+        check(EditorWordPoolPreview.templates(workspace, owner).equals(java.util.List.of("Welcome, {word:test:hello}")),
+                "phrase previews expand the owning campaign's unsaved templates");
+        scoped.edit("Change template", root -> root.addProperty("text", "Hello, {body}"));
+        check(EditorWordPoolPreview.templates(workspace, owner).equals(java.util.List.of("Hello, {word:test:hello}")),
+                "parent template edits update previews without saving");
+        scoped.undo();
+        check(EditorWordPoolPreview.templates(workspace, owner).equals(java.util.List.of("Welcome, {word:test:hello}")),
+                "template undo restores the preview");
     }
 
     private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

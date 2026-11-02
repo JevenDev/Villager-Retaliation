@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "I'm all right, thank you.",
+    "ordinary_2": "Not too bad. There's always something to brew.",
+    "ordinary_3": "Fairly well. It's nice to have someone to talk to.",
+    "content_1": "I'm well, thank you for asking.",
+    "content_2": "I'm well. A bit of brewing usually cheers me up.",
+    "content_3": "I'm in a good mood. Glad you stopped by.",
+    "stressed_1": "I've had a lot on my mind.",
+    "stressed_2": "A little overwhelmed, to be honest.",
+    "stressed_3": "I could use a moment to myself."
+  }
+}

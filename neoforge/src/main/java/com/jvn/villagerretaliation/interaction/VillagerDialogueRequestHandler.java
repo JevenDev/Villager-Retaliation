@@ -129,7 +129,10 @@ public final class VillagerDialogueRequestHandler {
         // Commit the required payment before allowing any of those side effects.
         VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
 
-        var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption)
+        boolean lineResponse = com.jvn.villagerretaliation.dialogue.DialogueTreeResources.isLineResponse(context, dialogueOption);
+        boolean lineExchange = lineResponse || !result.exchanges().isEmpty()
+                && com.jvn.villagerretaliation.dialogue.DialogueTreeResources.hasLineEntry(context, result.lineId());
+        var reputationEffect = VillagerQuestService.isQuestDialogueOption(dialogueOption) || lineResponse
                 ? com.jvn.villagerretaliation.dialogue.normal.DialogueReputationEffect.none(requestType)
                 : com.jvn.villagerretaliation.dialogue.normal.DialogueReputationService.apply(context, requestType, interactionState);
         VillagerMoodService.recordDialogueEffect(context, requestType, reputationEffect);
@@ -145,7 +148,7 @@ public final class VillagerDialogueRequestHandler {
                 responseTextReplaced = true;
             }
         }
-        if (reputationEffect.responseOverride() != null) {
+        if (!lineExchange && reputationEffect.responseOverride() != null) {
             responseText = reputationEffect.responseOverride();
             responseTextReplaced = true;
         }
@@ -163,14 +166,16 @@ public final class VillagerDialogueRequestHandler {
                 context, dialogueOption, result, reputationEffect, responseTextReplaced);
         var pairedResult = greetingRequestId == null ? result : ordinaryResult != result ? ordinaryResult : com.jvn.villagerretaliation.dialogue.normal.PairedGreetingService.attach(
                 context, dialogueOption, result, responseTextReplaced);
-        boolean automaticGreeting = pairedResult != result;
+        boolean pairedGreeting = pairedResult != result;
+        boolean automaticGreeting = pairedGreeting
+                || greetingRequestId != null && lineExchange && !result.exchanges().isEmpty() && !responseTextReplaced;
         result = pairedResult;
-        if (automaticGreeting) {
+        if (pairedGreeting) {
             responseTextReplaced = false;
             responseText = result.text();
             responseSegments = result.textSegments();
         }
-        VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
+        if (!lineResponse) VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         claimTrackerReports(level, villager, player, requestType);
         if (forcedTree) VillagerInteractionService.sendForcedDialogueReputation(player, villager,
                 DialogueTreeService.activeOptions(context).orElse(List.of()), dialogueOption.forceCameraTowardsVillager());

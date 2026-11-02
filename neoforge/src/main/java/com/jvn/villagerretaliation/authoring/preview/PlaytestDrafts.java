@@ -9,7 +9,7 @@ import java.util.Set;
 
 public final class PlaytestDrafts {
     private static final Set<String> PRESENTATION = Set.of("text", "text_key", "text_keys", "line", "line_key", "line_keys",
-            "label", "label_key", "title", "title_key", "description", "description_key", "text_effects", "camera", "voices", "speaker", "response", "response_key", "response_keys");
+            "label", "label_key", "title", "title_key", "description", "description_key", "text_effects", "camera", "voices", "speaker", "response", "response_key", "response_keys", "template", "arguments");
 
     private PlaytestDrafts() { }
 

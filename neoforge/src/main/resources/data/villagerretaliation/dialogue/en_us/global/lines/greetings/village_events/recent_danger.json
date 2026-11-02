@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.event_dialogue"
+  },
+  "lines": [
+    {
+      "id": "default_opening_profession_recent_danger",
+      "request": "greeting",
+      "lines": [
+        "Hello. Keep your voice easy. The village has had enough sharp sounds.",
+        "Good to see someone walking calmly. We have had our fill of running.",
+        "If you are here to help, start by closing gates behind you.",
+        "Careful where you step. Everyone is still a little quick to turn their head.",
+        "The village is standing, but it has not settled yet.",
+        "Speak softly today. Even the walls feel tired.",
+        "If you came with steady hands, they are welcome.",
+        "We are counting people, checking doors, and trying to breathe again.",
+        "The danger passed, but it left its shadow behind.",
+        "Stay alert. Peace feels thin after a day like that.",
+        "The shop is open again, though I still look up at every sudden sound.",
+        "We put the tools back in place after checking the doors twice.",
+        "Work feels strange when the alarm is still fresh in your ears.",
+        "I am here, but part of me is still watching the road.",
+        "The village is safe enough to work and tense enough to notice everything.",
+        "I lost time to the danger, so today's chores have piled up.",
+        "A quiet customer is welcome after all that noise.",
+        "The damage is repaired. My nerves are taking longer.",
+        "I kept the door unlatched today in case the bell rings again.",
+        "Tell me what you need while I still have a calm moment."
+      ],
+      "event_tags": [
+        "raid",
+        "night_attack",
+        "villager_attacked",
+        "golem_killed"
+      ],
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "attribute_guts_protective_greeting",
+      "request": "greeting",
+      "lines": [
+        "I am watching the roads today. Talk if you need to, but keep one eye open.",
+        "If trouble comes back, I would rather meet it standing.",
+        "The village is still here. That means we still have something worth guarding.",
+        "I do not plan to be caught unready twice.",
+        "There is <dark_gray><wavy>fear</wavy></dark_gray> in the village, yes. There is also backbone.",
+        "If something comes through that gate, it will find us awake.",
+        "I have no interest in hiding while others stand in front.",
+        "The quiet feels thin today. I am listening through it.",
+        "Stay close to the paths and do not ignore the bell.",
+        "We are not helpless just because we were frightened.",
+        "The alarm rope is clear, and I moved the spare shields closer to the square.",
+        "I checked every gate hinge before breakfast. None of them will catch if we need to close up fast.",
+        "I checked the outer paths before coming back to the square.",
+        "The village is calm because someone stayed awake last night.",
+        "I keep my tools close when the road has been too quiet.",
+        "If the bell rings, I know which door I am guarding first.",
+        "Courage is useful. Knowing when to call for help is better.",
+        "I have already made sure the children know where to run.",
+        "We can talk while I keep an eye on the gate.",
+        "Nothing looks wrong yet, and I intend to keep it that way."
+      ],
+      "min_mood_intensity": 25,
+      "mood": "protective",
+      "requires_high_guts": true,
+      "show_for_babies": false,
+      "weight": 40
+    }
+  ]
+}

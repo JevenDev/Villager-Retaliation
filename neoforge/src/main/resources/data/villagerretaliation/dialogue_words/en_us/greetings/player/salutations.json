@@ -1,0 +1,51 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Hello."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Hi there."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Good day."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "Hello there."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hi. Have you got a moment?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "formal_1",
+          "text": "Good day to you."
+        },
+        {
+          "id": "formal_2",
+          "text": "Hello. May I have a moment?"
+        },
+        {
+          "id": "formal_3",
+          "text": "Hello there."
+        }
+      ]
+    }
+  ]
+}

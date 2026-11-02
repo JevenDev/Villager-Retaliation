@@ -24,6 +24,12 @@ public final class DialogueTreeValidation {
         }
         var entryIds = new java.util.HashSet<String>();
         for (var entry : tree.entries()) {
+            if (entry.lineIds().stream().anyMatch(id -> id.isBlank() || id.length() > 256
+                    || id.codePoints().anyMatch(Character::isISOControl))) {
+                DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree",
+                        "line_ids must contain nonblank dialogue owner IDs of at most 256 characters");
+                return null;
+            }
             if (!entryIds.add(entry.id())) {
                 DatapackDiagnostics.warnInvalidDialogueCondition(location, "dialogue tree", "duplicate entry id: " + entry.id());
                 return null;

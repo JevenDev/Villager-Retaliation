@@ -21,6 +21,13 @@ public final class DialogueWordGrammar {
         return List.copyOf(result);
     }
 
+    private static boolean endsWithSentencePool(String before, Function<ResourceLocation, DialogueWordPool> pools) {
+        var matcher = java.util.regex.Pattern.compile("\\{word:([a-z0-9_.-]+:[a-z0-9/._-]+)}$").matcher(before);
+        if (!matcher.find()) return false;
+        var previous = pools.apply(ResourceLocation.parse(matcher.group(1)));
+        return previous.role().equals("sentence") && !previous.optional();
+    }
+
     public static List<String> warnings(String template, Function<ResourceLocation, DialogueWordPool> pools) {
         var result = new ArrayList<String>();
         for (var id : DialogueWordPools.references(template)) {
@@ -31,7 +38,7 @@ public final class DialogueWordGrammar {
             while (position >= 0) {
                 String before = template.substring(0, position).replaceAll("<[^>]+>", "").stripTrailing();
                 String after = template.substring(position + token.length()).replaceAll("^(?:<[^>]+>)+", "");
-                if (pool.role().equals("sentence") && !before.isEmpty() && !before.matches("(?s).*[.!?]$"))
+                if (pool.role().equals("sentence") && !before.isEmpty() && !before.matches("(?s).*[.!?]$") && !endsWithSentencePool(before, pools))
                     result.add(id + ": sentence pool appears inside a sentence. Choose a clause, address, or adjective phrase for this slot.");
                 if (pool.role().equals("sentence") && after.matches("(?s)^[.!?,;:].*")) result.add(id + ": template adds punctuation immediately after a complete sentence");
                 position = template.indexOf(token, position + token.length());

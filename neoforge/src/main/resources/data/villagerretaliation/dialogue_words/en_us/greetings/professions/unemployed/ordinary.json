@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "what brings you over?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "got a moment to spare?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "anything I can help you with?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "I'm glad you've stopped just to see me."
+        },
+        {
+          "id": "warm_2",
+          "text": "it's good to have some company."
+        },
+        {
+          "id": "warm_3",
+          "text": "got a bit of time to spare?"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I'm finding it hard to put things into words just now."
+        },
+        {
+          "id": "quiet_2",
+          "text": "a quiet conversation is about what I can manage."
+        },
+        {
+          "id": "quiet_3",
+          "text": "I'm listening. I could use a little patience."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "say what you need to say."
+        },
+        {
+          "id": "guarded_2",
+          "text": "let's keep it civil."
+        },
+        {
+          "id": "guarded_3",
+          "text": "I'm willing to have a word, if you mean it kindly."
+        }
+      ]
+    }
+  ]
+}

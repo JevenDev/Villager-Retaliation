@@ -1,0 +1,30 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "Hello there. Did you want a word?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Yes? I'm listening."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Hello. What's on your mind?"
+    },
+    {
+      "id": "ordinary_4",
+      "text": "All right. What would you like to discuss?"
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Hello. Take your time."
+    },
+    {
+      "id": "ordinary_6",
+      "text": "Go ahead. What did you want to say?"
+    }
+  ]
+}

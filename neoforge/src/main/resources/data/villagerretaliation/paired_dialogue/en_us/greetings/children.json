@@ -1,0 +1,923 @@
+{
+  "version": 1,
+  "pairs": [
+    {
+      "id": "social_child.baby_greeting.royalty.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. I wanted to say a proper hello to you.",
+      "npc": "Hello! I like a hello that sounds pleased to be here.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.royalty.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi there. It's good to meet you.",
+      "npc": "Hi! A new hello can be a good hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.royalty.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. May I introduce myself?",
+      "npc": "Hello! You can. I like knowing who I'm talking to.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.royalty.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Good to see you.",
+      "npc": "Hi again! I'm glad we can say that now.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.royalty.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi, it's nice to talk again.",
+      "npc": "Hello again! This is a very nice sort of hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.royalty.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "royalty",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. I wanted to say hi.",
+      "npc": "Hi! I like being someone you say hello to.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello there. Nice to meet you.",
+      "npc": "Hi! I'm glad you said hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. May I say hello?",
+      "npc": "Hello! You just did, and I liked it.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. I'm pleased to meet you.",
+      "npc": "Hello! That's a kind way to start.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. Nice to see you.",
+      "npc": "Hello again! I like hearing that from you.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. How about a friendly hello?",
+      "npc": "Hi again! That one was friendly.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.revered.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "revered",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Good to see you again. Hello.",
+      "npc": "Hello! It's nice to say it again.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Nice to meet you.",
+      "npc": "Hello. It's good to have a proper hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi there. May I introduce myself?",
+      "npc": "Hi. You can tell me who you're.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. I wanted to greet you.",
+      "npc": "Hello. Thank you for saying it to me.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Nice to see you.",
+      "npc": "Hello again. I'm glad you said hi.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. A hello for you.",
+      "npc": "Hello again! I can give one back.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.respected.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "respected",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello. Good to talk again.",
+      "npc": "Hello again. That's a nice way to begin.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello there. Good to meet you.",
+      "npc": "Hi! Hello is a good beginning.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. I wanted to say hello.",
+      "npc": "Hello! Now we've both said it.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Can I introduce myself?",
+      "npc": "Hi. You can, if you like.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again.",
+      "npc": "Hi again! Easy to remember that bit.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Good to see you.",
+      "npc": "Hello again! It's good to get a hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.trusted.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "trusted",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi. Nice to talk again.",
+      "npc": "Hello again. I'm happy to say hi.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello.",
+      "npc": "Hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi there.",
+      "npc": "Hi.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. May I introduce myself?",
+      "npc": "Hello. You can say your name.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again.",
+      "npc": "Hi again.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi. We've talked before.",
+      "npc": "Hello again, then.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.neutral.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "neutral",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello. Nice to speak again.",
+      "npc": "Hi. A hello is all right.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Is a greeting all right?",
+      "npc": "Hello. I'm keeping this short.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. No need for a long conversation.",
+      "npc": "Hi. I'd rather not have one.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. You can just say hello back.",
+      "npc": "Hello. That's enough for me.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Is this a bad time to talk?",
+      "npc": "Hi again. I don't want much talking.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. Just a greeting.",
+      "npc": "Hello. Just a greeting suits me.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.suspicious.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "suspicious",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. We can keep this brief.",
+      "npc": "Yes. Hello, and that's enough.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Would you rather not talk?",
+      "npc": "I'd rather not talk to you.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. Is a hello welcome?",
+      "npc": "No. Please leave me alone.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. May I say a word?",
+      "npc": "I don't want a conversation.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Do you want to talk?",
+      "npc": "No. I still get to say no.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. Just saying hello.",
+      "npc": "I don't want your hello.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.hostile.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "hostile",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Shall we leave it at that?",
+      "npc": "Yes. Leave it there.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Do you want to leave it there?",
+      "npc": "Yes. I don't want to talk to you.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. May I greet you?",
+      "npc": "I don't want you talking to me.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Would quiet be better?",
+      "npc": "Yes. I don't want this conversation.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again.",
+      "npc": "I don't want to talk again.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. Is a brief hello all right?",
+      "npc": "No. I don't want that from you.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.despised.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "despised",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. Would you prefer no conversation?",
+      "npc": "I'd. Leave me alone.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.first1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. You don't have to answer.",
+      "npc": "I heard you. I'd rather stop.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.first2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hi. Would you rather not talk?",
+      "npc": "Yes, please.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.first3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "first",
+      "branch": "",
+      "player": "Hello. Is it all right to say hello?",
+      "npc": "I don't want more talking, please.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.familiar1",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. You don't have to talk.",
+      "npc": "Then I'd rather not.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.familiar2",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hi again. Would you prefer quiet?",
+      "npc": "Yes. Quiet, please.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    },
+    {
+      "id": "social_child.baby_greeting.feared.familiar3",
+      "option": "baby_greeting",
+      "request": "greeting",
+      "audience": "child",
+      "reputation": "feared",
+      "familiarity": "familiar",
+      "branch": "",
+      "player": "Hello again. We can leave it there.",
+      "npc": "Please do.",
+      "owners": [
+        "baby_greeting_hi_again",
+        "baby_greeting_from_here"
+      ],
+      "tokens": [],
+      "group": "social-child"
+    }
+  ]
+}

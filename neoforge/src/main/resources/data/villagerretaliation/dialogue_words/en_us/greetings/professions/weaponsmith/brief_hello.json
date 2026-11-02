@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/brief_hello",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Then hello. No blade needs discussing.",
+    "ordinary_2": "A simple greeting suits me well.",
+    "ordinary_3": "That will do. Take care of yourself."
+  }
+}

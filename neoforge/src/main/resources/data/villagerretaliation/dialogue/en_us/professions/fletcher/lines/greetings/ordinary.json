@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "fletcher_new_greeting_table",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.fletcher",
+      "section.lines"
+    ],
+    "topic": "professions.fletcher.greetings"
+  }
+}

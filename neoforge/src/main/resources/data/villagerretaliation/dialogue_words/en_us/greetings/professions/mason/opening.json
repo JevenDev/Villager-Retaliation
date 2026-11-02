@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/mason/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for a mason?",
+    "ordinary_2": "did you need something built?",
+    "ordinary_3": "what did you want to ask?"
+  }
+}

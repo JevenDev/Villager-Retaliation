@@ -1,37 +1,6 @@
 {
   "lines": [
     {
-      "id": "reputation_feared_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "I see you. Everyone sees you. Please keep walking peacefully.",
-        "I am watching your hands first and your words second.",
-        "Speak softly. The village is already tense enough around you.",
-        "Hello. I would rather this stay a greeting and nothing more.",
-        "People step aside when you pass. I hope you understand what that means.",
-        "I can speak with you, but I will not stand too close.",
-        "The square gets quieter when you arrive.",
-        "I am trying not to sound afraid. Help me by giving me no reason.",
-        "Keep your hands calm, and maybe everyone else can breathe.",
-        "You are welcome to speak, but not to frighten anyone further.",
-        "Stop there and say what you want.",
-        "People go quiet when they see you.",
-        "Fear reaches the square before you do.",
-        "Villagers plan escape routes during conversations with you.",
-        "No one should have to wonder whether a wrong word will bring violence.",
-        "The guards stay close when you enter the village.",
-        "Your strength does not make frightened people respect you.",
-        "Every calm choice helps, though fear fades slowly.",
-        "Keep your distance from anyone who asks for it.",
-        "People need proof that you can hear no without anger."
-      ],
-      "reputation_levels": [
-        "feared"
-      ],
-      "show_for_babies": false,
-      "weight": 32
-    },
-    {
       "id": "baby_reputation_low_question_1",
       "request": "question",
       "lines": [
@@ -60,40 +29,6 @@
         "hostile",
         "despised",
         "feared"
-      ],
-      "show_for_adults": false,
-      "weight": 24
-    },
-    {
-      "id": "baby_reputation_high_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "Hi! They said you help when bad things come.",
-        "Hi! They said you make monsters go away.",
-        "You are the helper everyone talks about, right?",
-        "Hello! The grown-ups smile when they say your name.",
-        "Hi! Are you here to help again?",
-        "I heard you are brave. Are you tired from being brave?",
-        "People say the village is safer when you are nearby.",
-        "Hi! I am allowed to say hello to you.",
-        "They said you stood in front of danger. That sounds scary and cool.",
-        "<jump>Hi!</jump> I know you. You are the good kind of familiar.",
-        "The grown-ups smile when they see you coming.",
-        "People tell me you help when scary things happen.",
-        "I know your name from good stories.",
-        "The guards let you walk near the bell without watching.",
-        "Someone said you are almost part of the village.",
-        "I would ask you for help if I got lost.",
-        "People save you a place during celebrations.",
-        "The little kids try to wave first.",
-        "I am not supposed to bother you while you work.",
-        "The grown-ups trust you with important things."
-      ],
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
       ],
       "show_for_adults": false,
       "weight": 24

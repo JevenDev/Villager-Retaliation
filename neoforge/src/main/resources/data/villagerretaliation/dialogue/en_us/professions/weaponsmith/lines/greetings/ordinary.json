@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "weaponsmith_new_greeting_grindstone",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.weaponsmith",
+      "section.lines"
+    ],
+    "topic": "professions.weaponsmith.greetings"
+  }
+}

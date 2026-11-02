@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/brief_hello",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Then we won't stretch it into a fishing story.",
+    "ordinary_2": "A hello is plenty. Take care.",
+    "ordinary_3": "Simple enough. Hello to you, too."
+  }
+}

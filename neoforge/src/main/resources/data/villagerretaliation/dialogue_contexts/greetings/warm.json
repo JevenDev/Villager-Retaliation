@@ -1,0 +1,23 @@
+{
+  "id": "villagerretaliation:greetings/warm",
+  "conditions": [
+    {
+      "type": "context",
+      "id": "villagerretaliation:relationship/friendly"
+    },
+    {
+      "type": "not",
+      "condition": {
+        "type": "context",
+        "id": "villagerretaliation:greetings/quiet"
+      }
+    },
+    {
+      "type": "not",
+      "condition": {
+        "type": "context",
+        "id": "villagerretaliation:greetings/guarded"
+      }
+    }
+  ]
+}

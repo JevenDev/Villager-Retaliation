@@ -45,6 +45,8 @@ public final class AuthoringChecks {
         count += 8;
         count += com.jvn.villagerretaliation.campaign.WorldCampaignChecks.run();
         count += com.jvn.villagerretaliation.client.interaction.CameraAuthoringChecks.run();
+        count += com.jvn.villagerretaliation.authoring.preview.GreetingReviewChecks.run(java.nio.file.Path.of(
+                System.getProperty("villagerretaliation.greetingReviewDirectory", "build/greeting-review")));
         count += com.jvn.villagerretaliation.authoring.client.EditorClientChecks.run();
         count += com.jvn.villagerretaliation.quest.tutorial.TutorialRunChecks.run();
         count += com.jvn.villagerretaliation.quest.tutorial.TutorialPersistenceChecks.run();

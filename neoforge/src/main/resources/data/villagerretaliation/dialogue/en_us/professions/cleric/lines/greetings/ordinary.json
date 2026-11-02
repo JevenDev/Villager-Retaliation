@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "cleric_new_greeting_bottles",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.cleric",
+      "section.lines"
+    ],
+    "topic": "professions.cleric.greetings"
+  }
+}

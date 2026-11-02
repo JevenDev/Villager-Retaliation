@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/unemployed/ordinary",
+  "text_overrides": {
+    "ordinary_1": "did you want a word?",
+    "ordinary_2": "what can I do for you?",
+    "ordinary_3": "got time for a chat?"
+  }
+}

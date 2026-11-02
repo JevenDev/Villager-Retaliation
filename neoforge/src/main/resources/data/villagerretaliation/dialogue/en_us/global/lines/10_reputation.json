@@ -115,78 +115,6 @@
       "weight": 32
     },
     {
-      "id": "container_theft_memory_village_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "I know what happened at the {stolen_container}. <aqua>{theft_witness_possessive}</aqua> story reached me.",
-        "The {stolen_container} has been part of more conversations since you touched it.",
-        "<aqua>{theft_witness}</aqua> saw enough at the {stolen_container} for the village to remember.",
-        "Word travels quickly when someone reaches where they should not.",
-        "I have heard about the {stolen_stack}. That makes this greeting colder than it might have been.",
-        "The village is small. A hand in the wrong {stolen_container} does not stay secret.",
-        "You arrive with a story already attached to you.",
-        "I know enough about the theft to keep my distance.",
-        "A greeting is all I am offering while that {stolen_container} is still in memory.",
-        "People are still talking about what happened. I am one of them.",
-        "I heard <aqua>{theft_witness_possessive}</aqua> account of the {stolen_container}.",
-        "You should know the village is talking about what went missing.",
-        "This is a difficult place to ask for welcome after opening someone else's container.",
-        "The owner has counted the loss and named what you took.",
-        "People who once left their doors open are locking them now.",
-        "You may want to return the goods before starting any other conversation.",
-        "The guards have heard the same story I did.",
-        "A greeting feels dishonest when theft is standing between us.",
-        "I am willing to listen, but not to pretend nothing happened.",
-        "Settle the matter at the {stolen_container}, then come back."
-      ],
-      "conditions": [
-        {
-          "source": "other_villager",
-          "tag": "player_container_theft",
-          "type": "memory"
-        }
-      ],
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "show_for_babies": false,
-      "weight": 30
-    },
-    {
-      "id": "reputation_royalty_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "When you arrive, people stand a little straighter. That is not fear. That is what trust looks like after it has survived trouble.",
-        "Your name opens doors here because people believe it should.",
-        "People relax when you arrive. That is rare power. Carry it gently.",
-        "The village knows your footsteps like a good omen now.",
-        "You have become the sort of name people speak when they need hope to sound practical.",
-        "There is respect here for you, and more than a little gratitude.",
-        "When trouble comes, people look to the paths and hope you are on them.",
-        "You are welcome here in a way few outsiders ever become.",
-        "The village does not bow easily, but it does remember who earned its trust.",
-        "Walk kindly with the weight of that respect. You earned it, and it can still be spent.",
-        "People straighten up when you enter the square.",
-        "Your choices carry farther than ordinary gossip now.",
-        "The village expects leadership from you, even when you did not ask for it.",
-        "Children know your face from stories told at home.",
-        "The guards treat your word as something worth acting on.",
-        "Every public favor becomes part of your reputation.",
-        "People notice who receives your time and attention.",
-        "You can calm an argument simply by showing up.",
-        "That kind of respect brings responsibility with it.",
-        "The village sees you as one of its strongest protectors."
-      ],
-      "reputation_levels": [
-        "royalty"
-      ],
-      "show_for_babies": false,
-      "weight": 28
-    },
-    {
       "id": "reputation_revered_question_1",
       "request": "question",
       "lines": [
@@ -252,40 +180,6 @@
       "weight": 24
     },
     {
-      "id": "reputation_trusted_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "Good to see you. The village keeps its doors easier when your footsteps are nearby.",
-        "Good to have you nearby. The village breathes easier.",
-        "Your footsteps sound familiar in a good way now.",
-        "There you are. The square feels steadier with you in it.",
-        "I am glad it is you coming down the path.",
-        "You have made yourself a welcome sight here.",
-        "People do not tense when they see you anymore. That says plenty.",
-        "It is good when familiar footsteps belong to someone helpful.",
-        "Welcome back. The village knows your shape in the doorway now.",
-        "You are easy to greet these days. That is a good thing.",
-        "Good to see you. I saved you a place near the fire.",
-        "I was hoping you would pass through today.",
-        "The village relaxes when a familiar friend walks the paths.",
-        "Come in. I do not need to count the shelves first.",
-        "You have kept your word often enough that I remember it.",
-        "I can speak plainly with you, which is a rare comfort.",
-        "People here know you will help when the bell rings.",
-        "Your visits feel less like company and more like a neighbor returning.",
-        "I heard you were nearby and expected you would stop.",
-        "There are few travelers I would trust with an unlocked door."
-      ],
-      "reputation_levels": [
-        "trusted",
-        "respected",
-        "revered",
-        "royalty"
-      ],
-      "show_for_babies": false,
-      "weight": 28
-    },
-    {
       "id": "reputation_neutral_question_1",
       "request": "question",
       "lines": [
@@ -315,37 +209,6 @@
       ],
       "show_for_babies": false,
       "weight": 22
-    },
-    {
-      "id": "reputation_suspicious_greeting_1",
-      "request": "greeting",
-      "lines": [
-        "Hello. That is all I am ready to offer for now.",
-        "Hello. I am listening, but not leaning closer.",
-        "You may speak. I am keeping my caution where I can reach it.",
-        "Hello. I will hear you out, but I am watching the edges.",
-        "You have not given me enough reason to relax yet.",
-        "Speak if you need to. I will decide how much of it to trust.",
-        "The village is not closed to you, but it is not open wide either.",
-        "I know your face. I am still learning what it means when it arrives.",
-        "Careful words would serve you well right now.",
-        "I can greet you without pretending I am comfortable.",
-        "People check their doors after you pass.",
-        "Your name comes up whenever something goes missing.",
-        "The guards notice where you stand and what you touch.",
-        "Trust will not return through words alone.",
-        "You still have time to prove the rumors wrong.",
-        "Villagers keep conversations short until they understand your intentions.",
-        "A careless move from you looks worse than it would from someone trusted.",
-        "People remember the warning signs even when no new trouble happens.",
-        "You will need patience if you want a fair chance again.",
-        "Give the village reasons to relax instead of asking it to pretend."
-      ],
-      "reputation_levels": [
-        "suspicious"
-      ],
-      "show_for_babies": false,
-      "weight": 26
     },
     {
       "id": "reputation_hostile_question_1",

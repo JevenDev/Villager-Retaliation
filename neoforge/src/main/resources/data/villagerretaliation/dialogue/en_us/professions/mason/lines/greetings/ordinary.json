@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "mason_new_greeting_stonecutter",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.mason",
+      "section.lines"
+    ],
+    "topic": "professions.mason.greetings"
+  }
+}

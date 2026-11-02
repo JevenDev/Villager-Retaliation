@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_new_greeting_site",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.unemployed",
+      "section.lines"
+    ],
+    "topic": "professions.unemployed.greetings"
+  }
+}

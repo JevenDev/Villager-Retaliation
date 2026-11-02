@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "topic": "professions.nitwit.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.nitwit",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.nitwit.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/nitwit/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.nitwit.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/nitwit/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.nitwit.return_greeting",
+      "key": "greeting.shared.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/nitwit/return_greeting}"
+      }
+    },
+    {
+      "id": "greeting.nitwit.player_steady",
+      "key": "greeting.shared.player_steady",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/nitwit/player_steady}"
+      }
+    },
+    {
+      "id": "greeting.nitwit.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Nice to have someone to chat to."
+    },
+    {
+      "id": "greeting.nitwit.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How has life been treating you?"
+    },
+    {
+      "id": "greeting.nitwit.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just felt like saying hello."
+    }
+  ]
+}

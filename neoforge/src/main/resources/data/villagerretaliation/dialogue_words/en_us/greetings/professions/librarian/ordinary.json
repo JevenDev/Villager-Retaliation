@@ -1,0 +1,93 @@
+{
+  "role": "literal",
+  "avoid_recent": 2,
+  "selection_group": "villagerretaliation:greeting_tone",
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "looking for a book?"
+    },
+    {
+      "id": "ordinary_2",
+      "text": "what would you like to know?"
+    },
+    {
+      "id": "ordinary_3",
+      "text": "did you want a word?"
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/warm"
+        }
+      ],
+      "priority": 10,
+      "variant": "warm",
+      "values": [
+        {
+          "id": "warm_1",
+          "text": "good to see you. What can I help with?"
+        },
+        {
+          "id": "warm_2",
+          "text": "I'm glad you've stopped for a conversation."
+        },
+        {
+          "id": "warm_3",
+          "text": "anything interesting on your mind?"
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/quiet"
+        }
+      ],
+      "priority": 20,
+      "variant": "quiet",
+      "values": [
+        {
+          "id": "quiet_1",
+          "text": "I could do with a little quiet thought."
+        },
+        {
+          "id": "quiet_2",
+          "text": "I'm listening, though finding words is taking some effort."
+        },
+        {
+          "id": "quiet_3",
+          "text": "give me a moment to collect my thoughts."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 30,
+      "variant": "guarded",
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "say what you mean. We needn't argue over every word."
+        },
+        {
+          "id": "guarded_2",
+          "text": "I can listen without inviting a debate."
+        },
+        {
+          "id": "guarded_3",
+          "text": "keep it brief, please."
+        }
+      ]
+    }
+  ]
+}

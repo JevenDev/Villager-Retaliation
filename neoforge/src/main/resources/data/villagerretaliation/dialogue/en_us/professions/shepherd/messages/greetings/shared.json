@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "topic": "professions.shepherd.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.shepherd.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/shepherd/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.shepherd.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/shepherd/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.shepherd.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Good to talk to you."
+    },
+    {
+      "id": "greeting.shepherd.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. No questions about wool."
+    }
+  ]
+}

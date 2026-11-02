@@ -1,0 +1,15 @@
+{
+  "extends": "villagerretaliation:greetings/npc/return_greeting",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "warm_1",
+    "warm_2",
+    "warm_3"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Likewise. I was hoping the hello was for me.",
+    "ordinary_2": "I'm glad you've stopped without needing anything.",
+    "ordinary_3": "It's nice having someone to talk to."
+  }
+}

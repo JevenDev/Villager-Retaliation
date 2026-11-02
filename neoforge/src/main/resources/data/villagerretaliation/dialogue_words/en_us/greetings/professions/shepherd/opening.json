@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/shepherd/ordinary",
+  "text_overrides": {
+    "ordinary_1": "did you want to ask about the sheep?",
+    "ordinary_2": "looking for wool?",
+    "ordinary_3": "what can I do for you?"
+  }
+}

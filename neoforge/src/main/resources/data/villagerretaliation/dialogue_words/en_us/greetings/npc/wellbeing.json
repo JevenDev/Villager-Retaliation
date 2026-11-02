@@ -1,0 +1,341 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "I'm all right, thank you."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Nothing much to complain about."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "Not too bad, thanks."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "I'm doing all right."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Somewhere between good and tired."
+    },
+    {
+      "id": "ordinary_6",
+      "text": "I'm all right. Nothing much to complain about."
+    }
+  ],
+  "groups": [
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "content",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "content_1",
+          "text": "I'm quite content, actually."
+        },
+        {
+          "id": "content_2",
+          "text": "I'm feeling good. It's nice to be asked."
+        },
+        {
+          "id": "content_3",
+          "text": "Doing well, thank you for asking."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "grateful",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "grateful_1",
+          "text": "Feeling grateful, more than anything."
+        },
+        {
+          "id": "grateful_2",
+          "text": "I've got a lot to be thankful for."
+        },
+        {
+          "id": "grateful_3",
+          "text": "I'm doing well. Feeling lucky, really."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "hopeful",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "hopeful_1",
+          "text": "I'm feeling hopeful."
+        },
+        {
+          "id": "hopeful_2",
+          "text": "A little more hopeful than I was."
+        },
+        {
+          "id": "hopeful_3",
+          "text": "I'm hoping things will turn out all right."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "proud",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 10,
+      "values": [
+        {
+          "id": "proud_1",
+          "text": "Rather pleased with myself, if I'm honest."
+        },
+        {
+          "id": "proud_2",
+          "text": "I'm feeling proud of myself."
+        },
+        {
+          "id": "proud_3",
+          "text": "Doing well. Rather pleased with myself."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "lonely",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 20,
+      "values": [
+        {
+          "id": "lonely_1",
+          "text": "A little lonely, to tell the truth."
+        },
+        {
+          "id": "lonely_2",
+          "text": "I could do with some company."
+        },
+        {
+          "id": "lonely_3",
+          "text": "I'm glad to have someone to talk to."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "stressed",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "stressed_1",
+          "text": "A bit overwhelmed, honestly."
+        },
+        {
+          "id": "stressed_2",
+          "text": "I've got a lot on my mind."
+        },
+        {
+          "id": "stressed_3",
+          "text": "I can't seem to stop worrying."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "angry",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "angry_1",
+          "text": "Still trying to cool my temper."
+        },
+        {
+          "id": "angry_2",
+          "text": "I'm in a foul mood. Best to say so."
+        },
+        {
+          "id": "angry_3",
+          "text": "I'm too worked up to talk much."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "suspicious",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 30,
+      "values": [
+        {
+          "id": "suspicious_1",
+          "text": "Keeping my thoughts to myself for now."
+        },
+        {
+          "id": "suspicious_2",
+          "text": "Not quite at ease."
+        },
+        {
+          "id": "suspicious_3",
+          "text": "I'm managing. Let's leave it at that."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "grieving",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 35,
+      "values": [
+        {
+          "id": "grieving_1",
+          "text": "Not very well. I'm grieving."
+        },
+        {
+          "id": "grieving_2",
+          "text": "Not well. I don't really feel like talking about it."
+        },
+        {
+          "id": "grieving_3",
+          "text": "It's hard. I'm just taking it a day at a time."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "mood",
+          "mood": "afraid",
+          "min_intensity": 25
+        }
+      ],
+      "priority": 40,
+      "values": [
+        {
+          "id": "afraid_1",
+          "text": "I'm frightened, if I'm honest."
+        },
+        {
+          "id": "afraid_2",
+          "text": "Trying to get my nerves under control."
+        },
+        {
+          "id": "afraid_3",
+          "text": "I could do with a little reassurance."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:greetings/guarded"
+        }
+      ],
+      "priority": 15,
+      "values": [
+        {
+          "id": "guarded_1",
+          "text": "I'm managing. That's enough detail."
+        },
+        {
+          "id": "guarded_2",
+          "text": "I'm all right. That's all."
+        },
+        {
+          "id": "guarded_3",
+          "text": "I'm fine. I'd rather leave it there."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "reputation",
+          "level": "feared"
+        }
+      ],
+      "priority": 45,
+      "values": [
+        {
+          "id": "fearful_1",
+          "text": "I'm nervous. I'd like this to stay calm."
+        },
+        {
+          "id": "fearful_2",
+          "text": "I'd feel better with a little space."
+        },
+        {
+          "id": "fearful_3",
+          "text": "I'm trying to stay calm."
+        }
+      ]
+    },
+    {
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:injured_speaker"
+        }
+      ],
+      "priority": 50,
+      "values": [
+        {
+          "id": "injured_1",
+          "text": "I'm not feeling very strong right now."
+        },
+        {
+          "id": "injured_2",
+          "text": "I've been better. I'm still hurting."
+        },
+        {
+          "id": "injured_3",
+          "text": "A bit sore, to be honest."
+        }
+      ]
+    }
+  ]
+}

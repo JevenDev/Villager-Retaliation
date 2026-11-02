@@ -14,6 +14,104 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class DialoguePreviewGameTests {
     private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("test", "preview");
 
+
+
+    @GameTest(template = "empty", batch = "authoring_preview")
+    public static void presentationTemplatesShareStylesAndKeepInstancesIndependent(GameTestHelper helper) {
+        var styled = json("""
+                {"parameters":["body"],"variants":[{"id":"ordinary","text":"{body}"},
+                  {"id":"quiet","priority":20,"conditions":[{"type":"mood","mood":"stressed"}],"text":"<gray>{body}</gray>"}]}
+                """);
+        var greeting = json("""
+                {"extends":"test:styled","parameters":["greeting"],"arguments":{"body":"Hello, {greeting}"}}
+                """);
+        var library = new com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.Library(id ->
+                id.getPath().equals("styled") ? styled : id.getPath().equals("greeting") ? greeting : null);
+        var source = json("""
+                {"id":"farmer","template":"test:greeting","arguments":{"greeting":"need a hand?"}}
+                """);
+        String before = source.toString();
+        var expanded = com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expand(source, library);
+        helper.assertValueEqual(expanded.getAsJsonArray("variants").get(0).getAsJsonObject().get("text").getAsString(),
+                "Hello, need a hand?", "template arguments compose the full line");
+        var quiet = expanded.getAsJsonArray("variants").get(1).getAsJsonObject();
+        helper.assertValueEqual(quiet.get("text").getAsString(), "<gray>Hello, need a hand?</gray>", "shared presentation wraps the assembled line");
+        helper.assertValueEqual(quiet.get("priority").getAsInt(), 20, "template priority survives");
+        helper.assertTrue(quiet.getAsJsonArray("conditions").size() == 1, "template conditions survive");
+        helper.assertValueEqual(source.toString(), before, "authored instance remains unchanged");
+        var second = com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expand(json("""
+                {"template":"test:greeting","arguments":{"greeting":"looking for a book?"}}
+                """), library);
+        helper.assertTrue(second.toString().contains("looking for a book?") && !second.toString().contains("need a hand?"),
+                "one profession cannot change another template instance");
+        for (String invalid : java.util.List.of(
+                "{\"template\":\"test:missing\"}",
+                "{\"template\":\"test:greeting\"}",
+                "{\"template\":\"test:greeting\",\"arguments\":{\"greeting\":\"hello\",\"unknown\":\"x\"}}",
+                "{\"template\":\"test:greeting\",\"arguments\":{\"greeting\":\"{body}\"}}",
+                "{\"template\":\"test:greeting\",\"arguments\":{\"greeting\":\"hello\"},\"text\":\"override\"}")) {
+            boolean rejected = false;
+            try { com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.expand(json(invalid), library); }
+            catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected, "invalid presentation template references and arguments are rejected");
+        }
+        var cyclic = new com.jvn.villagerretaliation.dialogue.DialoguePresentationTemplates.Library(id -> json("""
+                {"extends":"test:cycle"}
+                """));
+        boolean rejected = false;
+        try { cyclic.apply(ResourceLocation.parse("test:cycle")); }
+        catch (IllegalArgumentException expected) { rejected = true; }
+        helper.assertTrue(rejected, "template inheritance cycles are rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "authoring_preview")
+    public static void wordingOverridesPreserveInheritedSelectionRules(GameTestHelper helper) {
+        var base = json("""
+                {"role":"sentence","selection_group":"test:tone","avoid_recent":2,"values":[{"id":"plain","text":"Hello."}],
+                 "groups":[{"conditions":[{"type":"mood","mood":"stressed","min_intensity":25}],"priority":30,"variant":"quiet",
+                   "values":[{"id":"stressed","text":"Tired.","weight":3}]}]}
+                """);
+        var child = json("""
+                {"extends":"test:base","text_overrides":{"stressed":"A bit tired."}}
+                """);
+        var baseId = ResourceLocation.parse("test:base");
+        var childId = ResourceLocation.parse("test:child");
+        var library = new com.jvn.villagerretaliation.dialogue.DialogueWordPoolLibrary(
+                id -> id.equals(childId) ? child : base, id -> com.jvn.villagerretaliation.dialogue.DialogueWordPool.EMPTY);
+        var original = library.apply(baseId).entries().get(1);
+        var replacement = library.apply(childId).entries().get(1);
+        helper.assertValueEqual(replacement.text(), "A bit tired.", "wording changes");
+        helper.assertValueEqual(replacement.conditions(), original.conditions(), "mood restrictions survive");
+        helper.assertValueEqual(replacement.priority(), original.priority(), "priority survives");
+        helper.assertValueEqual(replacement.weight(), original.weight(), "weight survives");
+        helper.assertValueEqual(replacement.variant(), original.variant(), "shared tone survives");
+        helper.assertTrue(replacement.source().endsWith("/text_overrides/stressed"), "trace points to the wording override");
+        var conditions = new PreviewConditions();
+        var neutral = WordPoolPreview.inspect("{word:test:child}", library, conditions, 1, null, "");
+        helper.assertValueEqual(neutral.text(), "Hello.", "stress wording does not leak into neutral speech");
+        conditions.mood(com.jvn.villagerretaliation.mood.VillagerMood.STRESSED, 50);
+        helper.assertValueEqual(WordPoolPreview.inspect("{word:test:child}", library, conditions, 1, null, "").text(),
+                "A bit tired.", "stress wording plays in its inherited context");
+        for (String source : java.util.List.of(
+                "{\"extends\":\"test:base\",\"text_overrides\":{\"missing\":\"No.\"}}",
+                "{\"extends\":\"test:base\",\"text_overrides\":{\"plain\":\"\"}}",
+                "{\"extends\":\"test:base\",\"remove\":[\"stressed\"],\"text_overrides\":{\"stressed\":\"No.\"}}")) {
+            var invalid = new com.jvn.villagerretaliation.dialogue.DialogueWordPoolLibrary(
+                    id -> id.equals(childId) ? json(source) : base, id -> com.jvn.villagerretaliation.dialogue.DialogueWordPool.EMPTY);
+            boolean rejected = false;
+            try { invalid.apply(childId); }
+            catch (IllegalArgumentException expected) { rejected = true; }
+            helper.assertTrue(rejected, "invalid wording overrides fail validation");
+        }
+        var legacy = new com.jvn.villagerretaliation.dialogue.DialogueWordPoolLibrary(
+                id -> id.equals(childId) ? json("""
+                        {"extends":"test:base","values":[{"id":"stressed","text":"Replacement."}]}
+                        """) : base, id -> com.jvn.villagerretaliation.dialogue.DialogueWordPool.EMPTY);
+        helper.assertTrue(legacy.apply(childId).entries().get(1).conditions().isEmpty(), "legacy full replacements keep their semantics");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", batch = "authoring_preview")
     public static void followsExchangesChoicesAndResponseLinesWithoutChangingSource(GameTestHelper helper) {
         JsonObject source = json("""

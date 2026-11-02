@@ -54,6 +54,14 @@ public final class DialogueWordPoolLibrary implements Function<ResourceLocation,
                 if (!entry.id().isEmpty()) for (int i = 0; i < entries.size(); i++) if (entry.id().equals(entries.get(i).id())) { index = i; break; }
                 if (index < 0) entries.add(sourced); else entries.set(index, sourced);
             }
+            for (var override : DialogueWordPool.textOverrides(json).entrySet()) {
+                int index = -1;
+                for (int i = 0; i < entries.size(); i++) if (entries.get(i).id().equals(override.getKey())) { index = i; break; }
+                if (index < 0) throw new IllegalArgumentException("unknown inherited entry ID in text_overrides: " + override.getKey());
+                var entry = entries.get(index);
+                entries.set(index, new DialogueWordPool.Entry(override.getValue(), entry.weight(), entry.conditions(),
+                        entry.priority(), entry.variant(), entry.id(), id + "/text_overrides/" + entry.id()));
+            }
             var result = new DialogueWordPool(entries,
                     json.has("selection_group") ? local.selectionGroup() : parent.selectionGroup(),
                     json.has("avoid_recent") ? local.avoidRecent() : parent.avoidRecent(),

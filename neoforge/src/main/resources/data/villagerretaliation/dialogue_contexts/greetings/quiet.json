@@ -1,0 +1,18 @@
+{
+  "id": "villagerretaliation:greetings/quiet",
+  "conditions": [
+    {
+      "type": "any",
+      "conditions": [
+        {
+          "type": "context",
+          "id": "villagerretaliation:mood/distressed"
+        },
+        {
+          "type": "context",
+          "id": "villagerretaliation:injured_speaker"
+        }
+      ]
+    }
+  ]
+}

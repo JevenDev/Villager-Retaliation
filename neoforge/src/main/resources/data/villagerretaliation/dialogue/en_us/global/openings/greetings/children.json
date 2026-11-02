@@ -1,0 +1,170 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.openings"
+    ],
+    "topic": "global.openings"
+  },
+  "openings": [
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "id": "baby_new_village_opening",
+      "lines": [
+        "<jump>You must be new here.</jump> Are you visiting?",
+        "I do not know your face yet. Are you new?",
+        "New footsteps in the village! Did you come from far away?",
+        "I have not seen you before. I would remember, probably.",
+        "Are you visiting our village, or did you get lost?",
+        "You are new! I can tell because I stared first.",
+        "Did the road bring you here on purpose?",
+        "Are you here to meet people? I am people.",
+        "You look like someone the grown-ups have not explained yet.",
+        "<jump>Hi!</jump> Are you new to our village?",
+        "Are you visiting our village for the first time?",
+        "You look lost. The well is in the middle, so I use that to find things.",
+        "Did you come from very far away?",
+        "I have never seen your clothes around here before.",
+        "Are you staying for dinner or leaving before dark?",
+        "The bell is over there. Grown-ups say new people should know that.",
+        "Did you find the village by following the path?",
+        "You can ask me where things are, but I only know some things.",
+        "Are there children where you came from?",
+        "Welcome! Do not step in the puddle behind you."
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "id": "baby_new_villager_opening",
+      "lines": [
+        "I have not seen you before. Are you <jump>new</jump>?",
+        "I do not know your face yet. What are you doing here?",
+        "New footsteps! Are you here to talk?",
+        "I think this is the first time I talked to you.",
+        "You are new to me. Do you know games?",
+        "I would remember you if we talked before. I think.",
+        "Hello! Are you a visitor?",
+        "Did you come here from somewhere exciting?",
+        "You have a new face. Not a bad one, just new.",
+        "<jump>Hi!</jump> I am saying hello first this time.",
+        "I see you around, but I do not know your name.",
+        "Do you live near the farms or near the bell?",
+        "You are the villager everybody said moved in, right?",
+        "I think we use the same path in the morning.",
+        "Are you old enough to have a job already?",
+        "Which house is yours? You do not have to point if it is secret.",
+        "I was going to say hello yesterday, but you looked busy.",
+        "Do you know any good games from your part of the village?",
+        "You are not new here, just new to me.",
+        "Hello! Now we are not strangers anymore."
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "id": "baby_friendly_opening",
+      "lines": [
+        "<jump>Hi!</jump> Did you come to visit?",
+        "Hi! Are you here to say hello?",
+        "Hello! Did you come to visit me?",
+        "Hi again! I was not doing anything suspicious.",
+        "<jump>Hello!</jump> Do you want to talk?",
+        "Hi! I saw you coming and remembered to wave.",
+        "Are you here because I am interesting?",
+        "Hello! I can talk for a little bit.",
+        "Hi! Did you bring a story?",
+        "<jump>Hi!</jump> I was just about to be very busy.",
+        "Hi! I was hoping you would come back.",
+        "You are here! Did anything fun happen?",
+        "Hello! I saved a question for you.",
+        "Hi again. Do you have time before the grown-ups find a chore?",
+        "I know you! Come talk to me.",
+        "You came at a good time. I was getting bored.",
+        "Hello! Did you bring a story?",
+        "I saw you from across the square and waved. Did you see?",
+        "Hi! We can talk until someone calls me.",
+        "There you are. What are we doing?"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "id": "baby_cautious_opening",
+      "lines": [
+        "<wavy>Um.</wavy> Are you here to talk?",
+        "Um. I can listen if you are nice.",
+        "Are we talking safely?",
+        "I can talk, but I am staying right here.",
+        "Hello. I think.",
+        "You can say something, but not too loud.",
+        "I am listening from this spot.",
+        "Are you going to be nice this time?",
+        "I can answer if it is not scary.",
+        "<wavy>Um...</wavy> what do you need?",
+        "Hello. You can stay over there while we talk.",
+        "I know your face, but I am still being careful.",
+        "What did you want? I have to go home soon.",
+        "I can listen from beside this door.",
+        "Please do not come closer without asking.",
+        "Are you here to ask something or just looking around?",
+        "I am not supposed to wander off with anyone.",
+        "Talk quietly and I will stay.",
+        "The golem is nearby, so I am allowed to speak to you.",
+        "All right. What do you need?"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "id": "baby_afraid_opening",
+      "lines": [
+        "I can listen, but then I am going back inside.",
+        "I can talk for a little bit, but I am staying near the door.",
+        "You can say something, but I am keeping <shake>space</shake>.",
+        "I am staying where the grown-ups can see me.",
+        "You can talk from there.",
+        "I do not want to come closer.",
+        "Say it quickly, please.",
+        "I am listening, but my feet want to leave.",
+        "I will answer if you do not sound scary.",
+        "<shake>Okay...</shake> but I am going inside after this.",
+        "I am going inside if you shout.",
+        "Please stay where I can see you.",
+        "I do not want to talk alone.",
+        "You can say it before I call a grown-up.",
+        "Do not come between me and the door.",
+        "I know who to call if you get closer.",
+        "My family said I should not speak to you.",
+        "I will listen, but only for a little bit.",
+        "The golem is right over there.",
+        "What do you want from me?"
+      ],
+      "show_for_adults": false
+    }
+  ]
+}

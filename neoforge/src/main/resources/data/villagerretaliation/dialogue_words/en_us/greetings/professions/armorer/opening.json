@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/armorer/ordinary",
+  "text_overrides": {
+    "ordinary_1": "looking for an armorer?",
+    "ordinary_2": "need a fitting, or just a word?",
+    "ordinary_3": "is there something I can help with?"
+  }
+}

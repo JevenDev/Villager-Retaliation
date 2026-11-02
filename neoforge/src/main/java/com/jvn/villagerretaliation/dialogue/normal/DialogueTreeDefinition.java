@@ -65,7 +65,8 @@ public record DialogueTreeDefinition(
             List<DialogueCondition> conditions,
             boolean forceCameraTowardsVillager,
             int order,
-            int priority
+            int priority,
+            Set<String> lineIds
     ) {
         public Entry {
             id = id == null || id.isBlank() ? "default" : id;
@@ -77,6 +78,15 @@ public record DialogueTreeDefinition(
             professions = professions == null ? Set.of() : Set.copyOf(professions);
             dispositions = dispositions == null ? Set.of() : Set.copyOf(dispositions);
             conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            lineIds = lineIds == null ? Set.of() : Set.copyOf(lineIds);
+        }
+
+        public Entry(String id, String label, String labelKey, DialogueEntryMetadata metadata, String start,
+                DialogueRequestType requestType, boolean showForAdults, boolean showForBabies,
+                Set<VillagerProfession> professions, Set<DialogueDisposition> dispositions,
+                List<DialogueCondition> conditions, boolean forceCameraTowardsVillager, int order, int priority) {
+            this(id, label, labelKey, metadata, start, requestType, showForAdults, showForBabies,
+                    professions, dispositions, conditions, forceCameraTowardsVillager, order, priority, Set.of());
         }
 
         public Entry(

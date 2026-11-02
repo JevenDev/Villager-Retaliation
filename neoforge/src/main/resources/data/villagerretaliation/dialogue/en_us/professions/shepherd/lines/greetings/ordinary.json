@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "shepherd_new_greeting_loom",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.shepherd",
+      "section.lines"
+    ],
+    "topic": "professions.shepherd.greetings"
+  }
+}

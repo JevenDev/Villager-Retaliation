@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "topic": "professions.armorer.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.armorer",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.armorer.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/armorer/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.armorer.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/armorer/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.armorer.return_greeting",
+      "key": "greeting.shared.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/armorer/return_greeting}"
+      }
+    },
+    {
+      "id": "greeting.armorer.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/armorer/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.armorer.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How's the work treating you?"
+    },
+    {
+      "id": "greeting.armorer.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. No fitting needed."
+    }
+  ]
+}

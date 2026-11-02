@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "topic": "professions.toolsmith.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.toolsmith",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.toolsmith.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/toolsmith/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.toolsmith.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/toolsmith/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.toolsmith.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/toolsmith/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.toolsmith.player.return_greeting",
+      "key": "greeting.player.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Good to have a word."
+    },
+    {
+      "id": "greeting.toolsmith.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "How's everything going?"
+    },
+    {
+      "id": "greeting.toolsmith.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just a hello. Nothing broken to show you."
+    }
+  ]
+}

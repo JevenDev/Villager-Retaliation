@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "topic": "professions.butcher.greetings",
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.butcher",
+      "section.messages"
+    ]
+  },
+  "messages": [
+    {
+      "id": "greeting.butcher.ordinary",
+      "key": "greeting.shared.ordinary",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/ordinary",
+      "arguments": {
+        "greeting": "{word:villagerretaliation:greetings/professions/butcher/ordinary}"
+      }
+    },
+    {
+      "id": "greeting.butcher.wellbeing",
+      "key": "greeting.shared.wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/wellbeing",
+      "arguments": {
+        "answer": "{word:villagerretaliation:greetings/professions/butcher/wellbeing}"
+      }
+    },
+    {
+      "id": "greeting.butcher.return_greeting",
+      "key": "greeting.shared.return_greeting",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/butcher/return_greeting}"
+      }
+    },
+    {
+      "id": "greeting.butcher.brief_hello",
+      "key": "greeting.shared.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "template": "villagerretaliation:greetings/styled",
+      "arguments": {
+        "body": "{word:villagerretaliation:greetings/professions/butcher/brief_hello}"
+      }
+    },
+    {
+      "id": "greeting.butcher.player.ask_wellbeing",
+      "key": "greeting.player.ask_wellbeing",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Keeping well?"
+    },
+    {
+      "id": "greeting.butcher.player.brief_hello",
+      "key": "greeting.player.brief_hello",
+      "show_for_babies": false,
+      "priority": 10,
+      "text": "Just saying hello, not ordering supper."
+    }
+  ]
+}

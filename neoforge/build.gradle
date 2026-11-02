@@ -796,6 +796,7 @@ tasks.register('verifyAuthoring', JavaExec) {
     dependsOn tasks.named('gameTestClasses')
     classpath = sourceSets.gameTest.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.authoring.AuthoringChecks'
+    systemProperty 'villagerretaliation.greetingReviewDirectory', layout.buildDirectory.dir('greeting-review').get().asFile.absolutePath
 }
 
 tasks.register('generateQuestRegistryMetadata', JavaExec) {

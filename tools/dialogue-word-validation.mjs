@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { validateConversationSchema } from "./conversation-validation.mjs";
+import { presentationTemplates, expandPresentationDocument } from "./dialogue-template-validation.mjs";
 
 const conditionSchema = JSON.parse(readFileSync(new URL("./schemas/quest-v2.schema.json", import.meta.url), "utf8"));
 import { fileURLToPath } from "node:url";
@@ -12,7 +13,7 @@ const token = /\{word(?=[:}\s]|$)[^{}]*(?:}|(?=\{|$))/g;
 const poolPath = /(?:^|\/)data\/([^/]+)\/(?:(world_campaigns|campaign_addons)\/([^/]+)\/)?dialogue_words\/([^/]+)\/(.+)\.json$/;
 const normalizeLocale = value => value.toLowerCase().replaceAll("-", "_");
 
-const poolFields = ["values", "groups", "selection_group", "avoid_recent", "extends", "remove", "role", "optional", "chance"];
+const poolFields = ["values", "groups", "selection_group", "avoid_recent", "extends", "remove", "role", "optional", "chance", "text_overrides"];
 export const wordPoolRoles = ["literal", "sentence", "opening_clause", "address", "adjective_phrase"];
 const entryId = /^[a-z0-9_.-]{1,64}$/;
 const resourceId = /^[a-z0-9_.-]+:[a-z0-9/._-]+$/;
@@ -61,6 +62,15 @@ export function wordPoolIssues(value) {
   if ("role" in value && !wordPoolRoles.includes(value.role)) errors.push("unknown grammatical role");
   if ("optional" in value && typeof value.optional !== "boolean") errors.push("optional must be a boolean");
   if ("chance" in value && (typeof value.chance !== "number" || !Number.isFinite(value.chance) || value.chance < 0 || value.chance > 1 || !value.optional && !inherited)) errors.push("chance requires an optional pool and a number from 0 to 1");
+  if ("text_overrides" in value) {
+    if (!inherited || !value.text_overrides || typeof value.text_overrides !== "object" || Array.isArray(value.text_overrides)
+        || Object.keys(value.text_overrides).length > 256) errors.push("text_overrides requires a parent and an object of at most 256 entry IDs");
+    else for (const [id, text] of Object.entries(value.text_overrides)) {
+      if (!entryId.test(id)) errors.push("text_overrides requires lowercase entry IDs");
+      if (typeof text !== "string" || !text.trim() && text !== "" || text.length > 512 || /[{}<>\u00a7\u0000-\u001f\u007f-\u009f]/.test(text))
+        errors.push("text_overrides/" + id + ": expected literal text");
+    }
+  }
   const entries = flattenWordEntries(value);
   if (entries.length > 256 || !entries.length && !inherited) errors.push("word pools require 1 to 256 values");
   const ids = new Set();
@@ -76,6 +86,7 @@ export function wordPoolIssues(value) {
     if ("id" in entry) {
       if (typeof entry.id !== "string" || !entryId.test(entry.id) || ids.has(entry.id)) errors.push(`values/${index}: entry IDs must be unique lowercase names`);
       ids.add(entry.id);
+      if (Object.hasOwn(value.text_overrides ?? {}, entry.id)) errors.push("entry has both a full replacement and a text override: " + entry.id);
     }
     if ("weight" in entry && (!Number.isInteger(entry.weight) || entry.weight < 1 || entry.weight > 1000)) errors.push(`values/${index}: weight must be an integer from 1 to 1000`);
     if ("priority" in entry && (!Number.isInteger(entry.priority) || Math.abs(entry.priority) > 1000000)) errors.push(`values/${index}: invalid priority`);
@@ -106,8 +117,13 @@ export function compileWordPool(id, lookup, active = new Set(), cache = new Map(
       const index = entry.id ? entries.findIndex(inherited => inherited.id === entry.id) : -1;
       if (index < 0) entries.push(entry); else entries[index] = entry;
     }
+    for (const [entryId, text] of Object.entries(raw.text_overrides ?? {})) {
+      const index = entries.findIndex(entry => entry.id === entryId);
+      if (index < 0) throw new Error("unknown inherited entry ID in text_overrides: " + entryId);
+      entries[index] = { ...entries[index], text };
+    }
     const result = { ...parent, ...raw, values: entries };
-    delete result.extends; delete result.remove; delete result.groups;
+    delete result.extends; delete result.remove; delete result.groups; delete result.text_overrides;
     const effectiveIssues = wordPoolIssues(result);
     if (effectiveIssues.length) throw new Error(effectiveIssues.join(", "));
     cache.set(id, result);
@@ -120,7 +136,8 @@ export function wordReferences(text) {
 }
 
 export function validateWordDocuments(documents) {
-  const errors = [];
+  const templates = presentationTemplates(documents);
+  const errors = [...templates.errors];
   const pools = new Set();
   const definitions = new Map();
   const owners = [];
@@ -169,7 +186,9 @@ export function validateWordDocuments(documents) {
       } else if (Array.isArray(child)) child.forEach((entry, index) => walk(entry, pointer + "/" + index));
       else if (child && typeof child === "object") Object.entries(child).forEach(([key, entry]) => walk(entry, pointer + "/" + key));
     }
-    walk(value, "");
+    const expanded = /\/dialogue\//.test(normalized)
+      ? expandPresentationDocument(value, templates.lookup(file), issue => errors.push(file + ": " + issue)) : value;
+    walk(expanded, "");
   }
   return errors;
 }
@@ -189,8 +208,11 @@ export async function validateWordDirectory(dataDirectory = builtInData, selecte
   for (const directory of dataDirectory === builtInData ? [builtInData] : [builtInData, dataDirectory]) {
     for (const file of await jsonFiles(directory)) {
       const text = (await readFile(file, "utf8")).replace(/^\uFEFF/, "");
-      const isPool = file.replaceAll("\\", "/").includes("/dialogue_words/");
-      if (!isPool && (directory !== dataDirectory || selectedFiles && !selectedFiles.includes(file) || !text.includes("{word"))) continue;
+      const normalized = file.replaceAll("\\", "/");
+      const isPool = normalized.includes("/dialogue_words/");
+      const isTemplate = normalized.includes("/dialogue_templates/");
+      if (!isPool && !isTemplate && (directory !== dataDirectory || selectedFiles && !selectedFiles.includes(file)
+          || !text.includes("{word") && !text.includes('"template"'))) continue;
       try {
         effective.set(path.relative(directory, file).replaceAll("\\", "/"), [file, JSON.parse(text)]);
       } catch (error) {

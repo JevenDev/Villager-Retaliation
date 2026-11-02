@@ -1,0 +1,8 @@
+{
+  "extends": "villagerretaliation:greetings/professions/nitwit/ordinary",
+  "text_overrides": {
+    "ordinary_1": "I've got time to hear what you have to say.",
+    "ordinary_2": "did you want a word?",
+    "ordinary_3": "what brings you over?"
+  }
+}

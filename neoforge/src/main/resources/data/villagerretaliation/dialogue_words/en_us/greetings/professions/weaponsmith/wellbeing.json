@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Not too bad, thanks.",
+    "ordinary_2": "I'm all right. There's always a blade that needs sharpening.",
+    "ordinary_3": "Doing fairly well. Nice to have a quiet moment.",
+    "content_1": "I'm in a good mood, actually.",
+    "content_2": "Feeling good. I like working on a blade until it's right.",
+    "content_3": "Well, thank you. Nice to stop for a word.",
+    "stressed_1": "Can't seem to stop worrying.",
+    "stressed_2": "A bit tense. Best to keep the conversation short.",
+    "stressed_3": "I've got too much on my mind."
+  }
+}

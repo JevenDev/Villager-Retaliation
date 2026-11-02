@@ -34,15 +34,22 @@ final class EditorWordPoolPreview {
     private long templateRevision = -1;
     private List<String> availableTemplates = List.of();
     private String fingerprint = "";
+    private String templateFingerprint = "", templateProblem = "", wordingId = "", wordingProblem = "";
+    private final ImString wording = new ImString(4096);
 
     static List<String> templates(AuthoringDocument document) {
+        return templates(null, document);
+    }
+
+    static List<String> templates(AuthoringWorkspace workspace, AuthoringDocument document) {
         String path = DefinitionKind.unscopedPath(document.resourcePath());
         if (path.matches("data/[^/]+/dialogue_words/[^/]+/.+[.]json")) {
             String[] parts = path.split("/", 5);
             return List.of("{word:" + parts[1] + ":" + parts[4].substring(0, parts[4].length() - 5) + "}");
         }
         var values = new java.util.LinkedHashSet<String>();
-        collect(document.json(), values);
+        var documents = workspace == null ? List.of(document) : workspace.documents();
+        collect(com.jvn.villagerretaliation.authoring.core.AuthoringPresentationTemplates.expand(document, documents), values);
         return List.copyOf(values);
     }
 
@@ -70,13 +77,24 @@ final class EditorWordPoolPreview {
 
     void render(AuthoringWorkspace workspace, AuthoringDocument document, String locale) {
         if (!EditorWidgets.section("Phrase pool inspector")) return;
-        if (owner != document || templateRevision != document.revision()) {
-            availableTemplates = templates(document);
+        String presentationFingerprint = workspace.documents().stream().filter(value -> value.resourcePath().contains("/dialogue_templates/"))
+                .map(value -> value.resourcePath() + value.revision()).collect(java.util.stream.Collectors.joining());
+        if (owner != document || templateRevision != document.revision() || !templateFingerprint.equals(presentationFingerprint)) {
+            int previousTemplate = availableTemplates.indexOf(template.get());
+            try {
+                availableTemplates = templates(workspace, document); templateProblem = "";
+                if (owner == document && previousTemplate >= 0 && previousTemplate < availableTemplates.size())
+                    template.set(availableTemplates.get(previousTemplate));
+            }
+            catch (IllegalArgumentException exception) { availableTemplates = List.of(); templateProblem = exception.getMessage(); }
             templateRevision = document.revision();
+            templateFingerprint = presentationFingerprint;
         }
+        if (!templateProblem.isEmpty()) ImGui.textWrapped(templateProblem);
         var templates = availableTemplates;
         if (owner != document) {
             owner = document;
+            wordingId = ""; wordingProblem = "";
             template.set(templates.isEmpty() ? "" : templates.getFirst());
             result = null; rows = List.of(); findings = List.of(); matchingPools = List.of(); history = new DialogueWordHistory(); fingerprint = "";
         }
@@ -169,10 +187,30 @@ final class EditorWordPoolPreview {
                 ImGui.endTable();
             }
         }
-        if (result != null) details(result);
+        if (result != null) details(workspace, document, result);
     }
 
-    private static void details(WordPoolPreview.Result result) {
+    static void overrideWording(AuthoringWorkspace workspace, AuthoringDocument document, String id, String text) {
+        var changed = document.json();
+        if (!changed.has("extends") || !id.matches("[a-z0-9_.-]{1,64}"))
+            throw new IllegalArgumentException("Select a named entry in an inherited pool");
+        var overrides = changed.has("text_overrides") ? changed.getAsJsonObject("text_overrides") : new com.google.gson.JsonObject();
+        overrides.addProperty(id, text);
+        changed.add("text_overrides", overrides);
+        EditorMutation.validate(workspace, document, changed);
+        document.edit("Override wording", root -> root.add("text_overrides", overrides.deepCopy()));
+    }
+
+    private static boolean canOverride(AuthoringDocument document, WordPoolPreview.EntryResult entry) {
+        String path = DefinitionKind.unscopedPath(document.resourcePath());
+        if (!path.matches("data/[^/]+/dialogue_words/[^/]+/.+[.]json") || !document.json().has("extends") || entry.entry().id().isEmpty()) return false;
+        String[] parts = path.split("/", 5);
+        String id = parts[1] + ":" + parts[4].substring(0, parts[4].length() - 5);
+        return entry.pool().toString().equals(id) && !entry.entry().source().startsWith(id + "/values/")
+                && !entry.entry().source().startsWith(id + "/groups/");
+    }
+
+    private void details(AuthoringWorkspace workspace, AuthoringDocument document, WordPoolPreview.Result result) {
         ImGui.separator();
         ImGui.textWrapped(result.text());
         for (String issue : result.diagnostics()) ImGui.textWrapped(issue);
@@ -187,6 +225,20 @@ final class EditorWordPoolPreview {
                 ImGui.textWrapped(entry.entry().text());
                 ImGui.textWrapped("Conditions: " + entry.conditions() + ", priority " + entry.entry().priority() + ", weight " + entry.entry().weight());
                 for (var condition : entry.entry().conditions()) ImGui.textWrapped(condition.toString());
+                if (canOverride(document, entry)) {
+                    if (ImGui.smallButton("Edit inherited wording")) {
+                        wordingId = entry.entry().id(); wording.set(entry.entry().text()); wordingProblem = "";
+                    }
+                    if (wordingId.equals(entry.entry().id())) {
+                        ImGui.inputTextMultiline("Wording##inherited", wording, -1, 70);
+                        ImGui.textWrapped("Conditions, priority, weight and tone stay inherited.");
+                        if (ImGui.button("Apply wording override")) {
+                            try { overrideWording(workspace, document, wordingId, wording.get()); wordingId = ""; wordingProblem = ""; }
+                            catch (IllegalArgumentException | IllegalStateException exception) { wordingProblem = exception.getMessage(); }
+                        }
+                        if (!wordingProblem.isEmpty()) ImGui.textWrapped(wordingProblem);
+                    }
+                }
                 ImGui.treePop();
             }
         }

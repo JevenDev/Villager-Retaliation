@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/brief_hello",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Then we needn't turn it into an expedition.",
+    "ordinary_2": "A simple hello is a perfectly good starting point.",
+    "ordinary_3": "Hello to you, too. No directions required."
+  }
+}

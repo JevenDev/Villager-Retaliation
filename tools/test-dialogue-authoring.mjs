@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { templateLibrary, expandPresentationEntry, expandPresentationDocument, presentationTemplates } from "./dialogue-template-validation.mjs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { validateContextDirectory } from "./dialogue-context-validation.mjs";
@@ -102,20 +103,74 @@ assert(validateWordDocuments([[wordLine, wordText]])[0].includes("missing word p
 for (const malformed of ["{word}", "{word:}", "{word:custom:greetings/friendly", "{word:Bad:pool}", "{word:custom:pool:extra}"])
   assert(validateWordDocuments([[wordLine, { text: malformed }]])[0].includes("malformed"), malformed);
 assert.deepEqual(await validateWordDirectory(), []);
-const farmer = JSON.parse(await readFile(new URL("../neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us/professions/farmer/lines/02_greetings.json", import.meta.url), "utf8"));
-const pilot = farmer.lines.flatMap(line => line.variants ?? []).filter(line => line.id.startsWith("paired_greet.wellbeing.") && line.id.endsWith(".content"));
-assert.equal(pilot.length, 4);
-for (const line of pilot) {
-  assert(line.text.includes("{word:villagerretaliation:mood/content}"));
-  assert(line.conditions.some(condition => condition.type === "mood" && condition.mood === "content"));
-  assert(line.conditions.some(condition => condition.type === "villager_age" && condition.adult === true));
-  assert(line.conditions.some(condition => condition.type === "reputation"));
-}
-assert(pilot.find(line => line.id.includes("trusted")).text.includes("<aqua>{word:villagerretaliation:mood/content}</aqua>"));
+
+
+const templateDefinitions = {
+  "test:styled": { parameters: ["body"], variants: [{ id: "ordinary", text: "{body}" },
+    { id: "quiet", priority: 20, conditions: [{ type: "mood", mood: "stressed" }], text: "<gray>{body}</gray>" }] },
+  "test:greeting": { extends: "test:styled", parameters: ["greeting"], arguments: { body: "Hello, {greeting}" } }
+};
+const presentations = templateLibrary(id => templateDefinitions[id]);
+const presentationSource = { id: "farmer", template: "test:greeting", arguments: { greeting: "need a hand?" } };
+const presentationBaseline = structuredClone(presentationSource);
+const presentation = expandPresentationEntry(presentationSource, presentations);
+assert.equal(presentation.variants[0].text, "Hello, need a hand?");
+assert.equal(presentation.variants[1].text, "<gray>Hello, need a hand?</gray>");
+assert.deepEqual(presentation.variants[1].conditions, templateDefinitions["test:styled"].variants[1].conditions);
+assert.deepEqual(presentationSource, presentationBaseline);
+for (const source of [
+  { template: "test:missing" },
+  { template: "test:greeting" },
+  { template: "test:greeting", arguments: { greeting: "hello", unknown: "x" } },
+  { template: "test:greeting", arguments: { greeting: "{body}" } },
+  { template: "test:greeting", arguments: { greeting: "hello" }, text: "override" }
+]) assert.throws(() => expandPresentationEntry(source, presentations));
+assert.throws(() => templateLibrary(() => ({ extends: "test:cycle" }))("test:cycle"));
+assert.equal(expandPresentationDocument(null, presentations), null);
+assert.throws(() => expandPresentationDocument({ messages: [{ arguments: {} }] }, presentations));
+const bounded = templateLibrary(() => ({ parameters: ["body"], text: "{body}{body}" }));
+assert.throws(() => expandPresentationEntry({ template: "test:bounded", arguments: { body: "x".repeat(16384) } }, bounded), /too long/);
+const localizedTemplates = presentationTemplates([
+  ["/pack/data/test/dialogue_templates/en_us/hello.json", { text: "Hello." }],
+  ["/pack/data/test/dialogue_templates/fr_fr/hello.json", { text: "Bonjour." }],
+  ["/pack/data/test/world_campaigns/story/dialogue_templates/en_us/hello.json", { text: "Welcome." }]
+]);
+assert.deepEqual(localizedTemplates.errors, []);
+assert.equal(expandPresentationEntry({ template: "test:hello" },
+  localizedTemplates.lookup("/pack/data/test/world_campaigns/story/dialogue/fr_fr/messages.json")).text, "Bonjour.");
+assert.equal(expandPresentationEntry({ template: "test:hello" },
+  localizedTemplates.lookup("/pack/data/test/world_campaigns/story/dialogue/en_us/messages.json")).text, "Welcome.");
+
+const guardedBase = { role: "sentence", selection_group: "test:tone", avoid_recent: 2, values: [{ id: "plain", text: "Hello." }],
+  groups: [{ conditions: [{ type: "mood", mood: "stressed", min_intensity: 25 }], priority: 30, variant: "quiet",
+    values: [{ id: "stressed", text: "Tired.", weight: 3 }] }] };
+const wordingChild = { extends: "test:base", text_overrides: { stressed: "A bit tired." } };
+const wordingPool = compileWordPool("test:child", id => id === "test:child" ? wordingChild : guardedBase);
+const originalStressed = compileWordPool("test:base", () => guardedBase).values.find(entry => entry.id === "stressed");
+assert.deepEqual(wordingPool.values.find(entry => entry.id === "stressed"), { ...originalStressed, text: "A bit tired." });
+const legacyReplacement = compileWordPool("test:child", id => id === "test:child"
+  ? { extends: "test:base", values: [{ id: "stressed", text: "Replacement." }] } : guardedBase);
+assert.equal(legacyReplacement.values.find(entry => entry.id === "stressed").conditions, undefined);
+for (const child of [
+  { extends: "test:base", text_overrides: { missing: "No." } },
+  { extends: "test:base", remove: ["stressed"], text_overrides: { stressed: "No." } },
+  { extends: "test:base", text_overrides: { plain: "" } }
+]) assert.throws(() => compileWordPool("test:child", id => id === "test:child" ? child : guardedBase));
+for (const invalid of [
+  { values: ["Hello"], text_overrides: { plain: "No." } },
+  { extends: "test:base", text_overrides: [] },
+  { extends: "test:base", text_overrides: { stressed: "{word:test:bad}" } },
+  { extends: "test:base", values: [{ id: "plain", text: "Full." }], text_overrides: { plain: "Text." } }
+]) assert(wordPoolIssues(invalid).length);
+
+const farmerPool = JSON.parse(await readFile(new URL("../neoforge/src/main/resources/data/villagerretaliation/dialogue_words/en_us/greetings/professions/farmer/wellbeing.json", import.meta.url), "utf8"));
+assert.deepEqual(wordPoolIssues(farmerPool), []);
+assert.equal(farmerPool.extends, "villagerretaliation:greetings/npc/wellbeing");
+assert.equal(typeof farmerPool.text_overrides.content_1, "string");
 for (const purpose of ["greetings/contextual", "address/player", "farewells/contextual", "thanks/help", "responses/accept_help", "responses/refuse_request"]) {
   const definition = JSON.parse(await readFile(new URL(`../neoforge/src/main/resources/data/villagerretaliation/dialogue_words/en_us/${purpose}.json`, import.meta.url), "utf8"));
   assert.deepEqual(wordPoolIssues(definition), []);
   assert.equal(definition.avoid_recent, 2);
 }
 assert.deepEqual(await validateWordDirectory(fileURLToPath(new URL("../example-packs/dialogue-choices-and-contexts/data", import.meta.url))), []);
-console.log("Dialogue authoring checks passed: choice policy, markup, contexts, word pools, and farmer pilot.");
+console.log("Dialogue authoring checks passed: choice policy, markup, contexts, word pools, and inherited profession pools.");

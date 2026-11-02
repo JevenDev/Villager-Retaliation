@@ -1,0 +1,19 @@
+{
+  "extends": "villagerretaliation:greetings/npc/wellbeing",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5",
+    "ordinary_6"
+  ],
+  "text_overrides": {
+    "ordinary_1": "I'm all right, thanks.",
+    "ordinary_2": "Can't complain. There's always meat to prepare.",
+    "ordinary_3": "Doing well enough. How kind of you to ask.",
+    "content_1": "Pretty good, actually.",
+    "content_2": "Feeling good. Cooking's the part of the job I like best.",
+    "content_3": "Well enough. Nice to stop for a chat.",
+    "stressed_1": "A bit tired of it all, honestly.",
+    "stressed_2": "I've more on my mind than I'd like.",
+    "stressed_3": "Stretched thin. Could do with a breather."
+  }
+}

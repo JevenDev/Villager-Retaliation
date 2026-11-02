@@ -1,29 +1,4 @@
 {
-  "extends": "villagerretaliation:greetings/contextual",
-  "remove": [
-    "pleasure"
-  ],
-  "values": [
-    {
-      "id": "friendly",
-      "text": "Back from the fields",
-      "variant": "warm",
-      "conditions": [
-        {
-          "type": "context",
-          "id": "villagerretaliation:relationship/friendly"
-        }
-      ]
-    },
-    {
-      "text": "Come to see what is fresh",
-      "variant": "warm",
-      "conditions": [
-        {
-          "type": "context",
-          "id": "villagerretaliation:relationship/friendly"
-        }
-      ]
-    }
-  ]
+  "extends": "villagerretaliation:greetings/professions/farmer/ordinary",
+  "role": "sentence"
 }

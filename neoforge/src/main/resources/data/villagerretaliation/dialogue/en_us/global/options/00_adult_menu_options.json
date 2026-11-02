@@ -18,14 +18,6 @@
       "show_for_babies": false
     },
     {
-      "id": "adult_greeting",
-      "label": "Greet",
-      "type": "dialogue_option",
-      "request": "greeting",
-      "order": 0,
-      "show_for_babies": false
-    },
-    {
       "id": "adult_question",
       "label": "Ask a question",
       "type": "dialogue_option",

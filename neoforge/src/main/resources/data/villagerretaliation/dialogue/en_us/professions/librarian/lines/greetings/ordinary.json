@@ -1,0 +1,20 @@
+{
+  "lines": [
+    {
+      "id": "librarian_new_greeting_lectern",
+      "request": "greeting",
+      "show_for_babies": false,
+      "weight": 26,
+      "text_key": "greeting.shared.ordinary"
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.profession.librarian",
+      "section.lines"
+    ],
+    "topic": "professions.librarian.greetings"
+  }
+}

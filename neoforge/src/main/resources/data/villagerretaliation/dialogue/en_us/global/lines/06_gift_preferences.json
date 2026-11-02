@@ -40,33 +40,6 @@
       "weight": 96
     },
     {
-      "id": "global_new_greeting_bell",
-      "request": "greeting",
-      "lines": [
-        "The bell has been quiet today. I would like to keep it that way.",
-        "Quiet bells are good bells. Let us not give this one a reason.",
-        "Today has been calm so far. I am protective of that.",
-        "A quiet morning is worth guarding.",
-        "No alarms yet today. I am hoping it stays that simple.",
-        "The square feels steady today. That is a welcome thing.",
-        "If the bell stays silent, I will call that a good day.",
-        "Peace has been keeping its voice down. I appreciate that.",
-        "The village is breathing easy for now.",
-        "A calm day can be rare enough to treat kindly.",
-        "The bell is quiet, so I have time to talk.",
-        "Hello. Let us hope the bell stays silent while we speak.",
-        "Good day. Everything is calm enough for conversation.",
-        "You caught me during a peaceful stretch. What do you need?",
-        "Hello. The paths have been quiet since morning.",
-        "No alarm today, thankfully. How can I help?",
-        "The village is settled for once. What brings you here?",
-        "Good to see a visitor when nobody is running for shelter.",
-        "Hello. I was just enjoying how ordinary the day feels.",
-        "Speak freely. The only bell today has been for the hour."
-      ],
-      "weight": 22
-    },
-    {
       "id": "global_new_joke_emerald",
       "request": "joke",
       "lines": [

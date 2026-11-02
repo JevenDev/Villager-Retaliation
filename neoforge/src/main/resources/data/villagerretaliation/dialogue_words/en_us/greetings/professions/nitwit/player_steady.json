@@ -1,0 +1,12 @@
+{
+  "extends": "villagerretaliation:greetings/npc/player_steady",
+  "remove": [
+    "ordinary_4",
+    "ordinary_5"
+  ],
+  "text_overrides": {
+    "ordinary_1": "Fair enough. No hurry.",
+    "ordinary_2": "That's more or less what I do.",
+    "ordinary_3": "Sounds all right to me."
+  }
+}

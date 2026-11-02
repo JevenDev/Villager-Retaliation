@@ -1,0 +1,170 @@
+{
+  "role": "sentence",
+  "avoid_recent": 2,
+  "values": [
+    {
+      "id": "ordinary_1",
+      "text": "That's all right. You don't owe me an explanation."
+    },
+    {
+      "id": "ordinary_2",
+      "text": "Fair enough. We can leave it there."
+    },
+    {
+      "id": "ordinary_3",
+      "text": "I won't press you."
+    },
+    {
+      "id": "ordinary_4",
+      "text": "You don't have to explain."
+    },
+    {
+      "id": "ordinary_5",
+      "text": "Then we'll leave it there."
+    },
+    {
+      "id": "shared_understood_i_won_t_ask",
+      "text": "Understood. I won't ask."
+    },
+    {
+      "id": "shared_you_can_keep_that_to_yourself",
+      "text": "You can keep that to yourself."
+    },
+    {
+      "id": "shared_all_right_i_won_t_pry",
+      "text": "All right. I won't pry."
+    },
+    {
+      "id": "shared_fair_enough_i_won_t_pry",
+      "text": "Fair enough. I won't pry."
+    },
+    {
+      "id": "shared_then_we_ll_leave_that_alone",
+      "text": "Then we'll leave that alone."
+    },
+    {
+      "id": "shared_no_need_to_tell_me",
+      "text": "No need to tell me."
+    },
+    {
+      "id": "shared_fair_enough_i_ll_leave_that_alone",
+      "text": "Fair enough. I'll leave that alone."
+    },
+    {
+      "id": "shared_i_won_t_ask_any_more",
+      "text": "I won't ask any more."
+    },
+    {
+      "id": "shared_understood_you_don_t_have_to_explain",
+      "text": "Understood. You don't have to explain."
+    },
+    {
+      "id": "shared_of_course_i_won_t_press_you",
+      "text": "Of course. I won't press you."
+    },
+    {
+      "id": "shared_that_s_all_right_you_don_t_have_to_explain",
+      "text": "That's all right. You don't have to explain."
+    },
+    {
+      "id": "shared_we_can_leave_it_there",
+      "text": "We can leave it there."
+    },
+    {
+      "id": "shared_then_we_ll_leave_it_at_that",
+      "text": "Then we'll leave it at that."
+    },
+    {
+      "id": "shared_no_need_to_tell_me_if_you_don_t_want_to",
+      "text": "No need to tell me if you don't want to."
+    },
+    {
+      "id": "shared_fair_enough_i_won_t_ask",
+      "text": "Fair enough. I won't ask."
+    },
+    {
+      "id": "shared_then_that_stays_with_you",
+      "text": "Then that stays with you."
+    },
+    {
+      "id": "shared_no_need_to_say_any_more",
+      "text": "No need to say any more."
+    },
+    {
+      "id": "shared_then_we_needn_t_pursue_it",
+      "text": "Then we needn't pursue it."
+    },
+    {
+      "id": "shared_you_don_t_owe_me_an_explanation",
+      "text": "You don't owe me an explanation."
+    },
+    {
+      "id": "shared_fair_enough_i_ll_leave_it_alone",
+      "text": "Fair enough. I'll leave it alone."
+    },
+    {
+      "id": "shared_you_don_t_have_to_tell_me",
+      "text": "You don't have to tell me."
+    },
+    {
+      "id": "shared_understood_i_won_t_pry",
+      "text": "Understood. I won't pry."
+    },
+    {
+      "id": "shared_i_won_t_keep_asking",
+      "text": "I won't keep asking."
+    },
+    {
+      "id": "shared_of_course_you_don_t_have_to_explain",
+      "text": "Of course. You don't have to explain."
+    },
+    {
+      "id": "shared_then_i_ll_leave_it_alone",
+      "text": "Then I'll leave it alone."
+    },
+    {
+      "id": "shared_you_can_keep_that_part_to_yourself",
+      "text": "You can keep that part to yourself."
+    },
+    {
+      "id": "shared_all_right_you_don_t_have_to_say",
+      "text": "All right. You don't have to say."
+    },
+    {
+      "id": "shared_fair_enough_nice_to_have_a_chat_anyway",
+      "text": "Fair enough. Nice to have a chat anyway."
+    },
+    {
+      "id": "shared_of_course_i_won_t_ask",
+      "text": "Of course. I won't ask."
+    },
+    {
+      "id": "shared_you_can_keep_it_to_yourself",
+      "text": "You can keep it to yourself."
+    },
+    {
+      "id": "shared_no_need_to_explain",
+      "text": "No need to explain."
+    },
+    {
+      "id": "shared_then_we_can_leave_it_alone",
+      "text": "Then we can leave it alone."
+    },
+    {
+      "id": "shared_we_can_leave_it_at_that",
+      "text": "We can leave it at that."
+    },
+    {
+      "id": "shared_then_i_won_t_pry",
+      "text": "Then I won't pry."
+    },
+    {
+      "id": "shared_you_can_keep_that_answer_to_yourself",
+      "text": "You can keep that answer to yourself."
+    },
+    {
+      "id": "shared_understood_we_ll_leave_it_there",
+      "text": "Understood. We'll leave it there."
+    }
+  ]
+}
