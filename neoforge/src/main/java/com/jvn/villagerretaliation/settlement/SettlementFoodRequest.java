@@ -25,7 +25,7 @@ public final class SettlementFoodRequest {
     long revision;
     String blocker = "";
     SettlementFoodOffer offer;
-    long deliveredNutrition;
+    long deliveredNutrition, lostNutrition;
     int creditedStanding;
     UUID donorAuthority;
     boolean automaticApproval;
@@ -63,7 +63,7 @@ public final class SettlementFoodRequest {
     public long incomingNutrition() {
         if (this.purpose != Purpose.SUPPLY) return 0;
         if (terminal() || this.journey != null && this.journey.presence == SettlementCourierJourney.Presence.DEAD || this.offer != null && this.offer.custody() == SettlementFoodOffer.Custody.RECOVERABLE) return 0;
-        return this.offer == null ? this.nutrition : Math.max(0, this.offer.nutrition() - this.deliveredNutrition);
+        return this.offer == null ? this.nutrition : Math.max(0, this.offer.nutrition() - this.deliveredNutrition - this.lostNutrition);
     }
     CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
@@ -79,6 +79,7 @@ public final class SettlementFoodRequest {
         tag.putLong("Arrives", this.arrives); tag.putLong("Expires", this.expires); tag.putLong("Revision", this.revision);
         tag.putString("State", this.state.name()); tag.putString("Blocker", this.blocker);
         tag.putLong("DeliveredNutrition", this.deliveredNutrition); tag.putInt("CreditedStanding", this.creditedStanding);
+        tag.putLong("LostNutrition", this.lostNutrition);
         if (this.donorAuthority != null) tag.putUUID("DonorAuthority", this.donorAuthority);
         tag.putInt("MaximumItems", this.maximumItems); tag.putBoolean("AutomaticApproval", this.automaticApproval);
         if (this.preparation != null) tag.put("Preparation", this.preparation.save());
@@ -101,6 +102,8 @@ public final class SettlementFoodRequest {
         result.state = State.valueOf(tag.getString("State")); result.blocker = tag.getString("Blocker");
         result.revision = tag.getLong("Revision"); result.deliveredNutrition = tag.getLong("DeliveredNutrition");
         result.creditedStanding = tag.getInt("CreditedStanding");
+        result.lostNutrition = tag.getLong("LostNutrition");
+        if (result.lostNutrition < 0 || result.lostNutrition > result.nutrition) throw new IllegalArgumentException("Invalid lost shipment nutrition");
         if (!tag.contains("MaximumItems", Tag.TAG_INT)) throw new IllegalArgumentException("Missing food offer limit");
         if (!tag.contains("AutomaticApproval", Tag.TAG_BYTE)) throw new IllegalArgumentException("Missing food approval mode");
         result.automaticApproval = tag.getBoolean("AutomaticApproval");
@@ -154,13 +157,13 @@ public final class SettlementFoodRequest {
                 || result.offer == null && (result.deliveredNutrition != 0 || result.state == State.OFFER_SENT || result.state == State.AWAITING_ACCEPTANCE
                 || result.state == State.ACCEPTANCE_SENT || result.state == State.PREPARING || result.state == State.TRAVELLING
                 || result.state == State.RETURNING || result.state == State.COMPLETED)) throw new IllegalArgumentException("Invalid food request state");
-        if (result.offer != null && (result.deliveredNutrition + result.offer.remaining().stream()
+        if (result.offer != null && (result.deliveredNutrition + result.lostNutrition + result.offer.remaining().stream()
                 .mapToLong(parcel -> SettlementAidStock.nutrition(parcel.item())).sum() > result.offer.nutrition()
                 || result.creditedStanding > (result.deliveredNutrition * 3 + result.nutrition - 1) / result.nutrition))
             throw new IllegalArgumentException("Aid credit exceeds delivered food");
         if (result.journey != null) SettlementCourierRecovery.validate(result);
         if (result.terminal() && result.offer != null && !result.offer.empty()
-                || result.state == State.COMPLETED && result.deliveredNutrition != result.offer.nutrition())
+                || result.state == State.COMPLETED && result.deliveredNutrition + result.lostNutrition != result.offer.nutrition())
             throw new IllegalArgumentException("Finished aid request has unresolved cargo");
         return result;
     }

@@ -44,6 +44,13 @@ public final class SettlementCourierMapNetworking {
                     && villager.getPersistentData().hasUUID(SettlementCourierService.JOURNEY)
                     && request.id().equals(villager.getPersistentData().getUUID(SettlementCourierService.JOURNEY))
                     && !villager.isRemoved() && player.distanceToSqr(villager) <= 64 * 64 && player.hasLineOfSight(villager);
+            if (permitted && journey != null) {
+                for (var remains : journey.remains) if (remains.pending()
+                        && markers.stream().noneMatch(marker -> marker.id().equals(remains.encounter)))
+                    markers.add(new SettlementCourierMapPayload.Courier(remains.encounter, "", remains.center,
+                            Stage.RECOVERY, false, true, "encounter_recovery"));
+                if (journey.presence == SettlementCourierJourney.Presence.DEAD && !journey.remains.isEmpty()) continue;
+            }
             if (permitted) {
                 var name = registry.canonicalRecord(other.id()).map(value -> value.displayName()).orElse("");
                 var position = journey != null ? observed ? entity.blockPosition() : journey.position : town.center();
@@ -70,6 +77,9 @@ public final class SettlementCourierMapNetworking {
     }
     private static Stage stage(SettlementFoodRequest request) {
         var journey = request.journey;
+        if (journey.blocker.equals("encounter_resting")) return Stage.RESTING;
+        if (journey.blocker.equals("encounter_active")) return Stage.ENCOUNTER;
+        if (journey.blocker.equals("encounter_delayed")) return Stage.DELAYED;
         if (journey.repair != null) return Stage.PREPARING;
         if (!request.blocker().isEmpty() || journey.presence == SettlementCourierJourney.Presence.DEAD || journey.presence == SettlementCourierJourney.Presence.STRANDED) return Stage.BLOCKED;
         boolean delivery = request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;

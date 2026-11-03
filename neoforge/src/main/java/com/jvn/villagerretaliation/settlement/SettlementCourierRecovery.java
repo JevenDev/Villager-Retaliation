@@ -37,9 +37,10 @@ public final class SettlementCourierRecovery {
     static ListTag save(List<Drop> drops, HolderLookup.Provider provider) {
         var tag = new ListTag(); drops.forEach(drop -> tag.add(drop.save(provider))); return tag;
     }
-    static List<Drop> load(CompoundTag tag, HolderLookup.Provider provider) {
+    static List<Drop> load(CompoundTag tag, HolderLookup.Provider provider) { return load(tag, provider, 28); }
+    static List<Drop> load(CompoundTag tag, HolderLookup.Provider provider, int limit) {
         var list = tag.getList("Recovery", Tag.TAG_COMPOUND);
-        if (!list.equals(tag.get("Recovery")) || list.size() > 28) throw new IllegalArgumentException("Invalid courier recovery list");
+        if (!list.equals(tag.get("Recovery")) || list.size() > limit) throw new IllegalArgumentException("Invalid courier recovery list");
         var result = new ArrayList<Drop>(); var ids = new java.util.HashSet<UUID>();
         for (var raw : list) {
             var entry = (CompoundTag) raw;
@@ -82,6 +83,7 @@ public final class SettlementCourierRecovery {
         if (!(event.getEntity() instanceof Villager courier) || !(courier.level() instanceof ServerLevel level) || !SettlementCourierService.owns(courier)) return;
         var request = SettlementCourierService.request(courier); var journey = request.journey;
         if (journey.presence == SettlementCourierJourney.Presence.DEAD) return;
+        if (SettlementEncounterRecovery.died(level, request, courier)) return;
         SettlementCourierService.capture(journey, courier); journey.position = courier.blockPosition().immutable();
         journey.presence = SettlementCourierJourney.Presence.DEAD; journey.obstructed = true;
         if (request.offer != null && request.offer.custody() == SettlementFoodOffer.Custody.COURIER) {

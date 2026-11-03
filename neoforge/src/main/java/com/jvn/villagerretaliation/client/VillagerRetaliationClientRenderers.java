@@ -21,6 +21,7 @@ public final class VillagerRetaliationClientRenderers {
 
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(EntityType.VILLAGER, VillagerRetaliationVillagerRenderer::new);
+        event.registerEntityRenderer(VillagerRetaliationEntityTypes.FALLEN_VILLAGER.get(), com.jvn.villagerretaliation.client.renderer.SettlementFallenVillagerRenderer::new);
         event.registerEntityRenderer(EntityType.WANDERING_TRADER, VillagerRetaliationWanderingTraderRenderer::new);
         event.registerEntityRenderer(VillagerRetaliationEntityTypes.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
         event.registerBlockEntityRenderer(VillagerRetaliationBlockEntityTypes.PAYMENT_BOX.get(), PaymentBoxRenderer::new);

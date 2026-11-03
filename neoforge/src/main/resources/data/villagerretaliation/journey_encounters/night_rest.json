@@ -1,0 +1,17 @@
+{
+  "type": "rest",
+  "weight": 4,
+  "chance": 1,
+  "interval_ticks": 200,
+  "distance_blocks": 16,
+  "cooldown_ticks": 24000,
+  "duration_ticks": 6000,
+  "delay_ticks": 0,
+  "status": "villagerretaliation.encounter.rest",
+  "conditions": [
+    {
+      "type": "time",
+      "time": "night"
+    }
+  ]
+}

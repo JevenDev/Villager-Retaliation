@@ -126,6 +126,7 @@ public final class SettlementCaravanService {
         if (leader == null || group.size() != leader.participants.size() + 1) reason = "caravan_member_missing";
         for (var other : group) {
             if (other == member) continue; var companion = other.journey;
+            if (companion.presence == SettlementCourierJourney.Presence.DEAD && !companion.remains.isEmpty()) continue;
             if (companion.presence == SettlementCourierJourney.Presence.DEAD || companion.presence == SettlementCourierJourney.Presence.STRANDED
                     || !companion.blocker.isEmpty() && !companion.blocker.startsWith("caravan_")) { reason = "caravan_member_blocked"; break; }
             if (companion.leg.ordinal() < journey.leg.ordinal() || (journey.leg == SettlementCourierJourney.Leg.OUTBOUND || journey.leg == SettlementCourierJourney.Leg.HOMEBOUND)
@@ -143,6 +144,7 @@ public final class SettlementCaravanService {
         var journey = member.journey;
         for (var other : group(level, member)) {
             if (other == member) continue;
+            if (other.journey.presence == SettlementCourierJourney.Presence.DEAD && !other.journey.remains.isEmpty()) continue;
             if (other.journey.presence == SettlementCourierJourney.Presence.DEAD || other.journey.presence == SettlementCourierJourney.Presence.STRANDED) {
                 SettlementCourierService.block(level, member, "caravan_member_blocked"); return false;
             }

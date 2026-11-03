@@ -25,6 +25,10 @@ public final class SettlementCourierJourney {
     boolean reversedRoute;
     double[] travelFactors;
     double travelRemainder;
+    long encounterDistance, encounterChecks, encounterCooldown;
+    final java.util.Map<String, Long> encounterClocks = new java.util.LinkedHashMap<>();
+    SettlementEncounterState encounter;
+    final java.util.List<SettlementEncounterRemains> remains = new java.util.ArrayList<>();
     Leg leg = Leg.APPROACH;
     Presence presence = Presence.CLAIMING;
     BoatCustody boatCustody;
@@ -34,7 +38,7 @@ public final class SettlementCourierJourney {
     CompoundTag residentContext, boatContext = new CompoundTag();
     BlockPos position;
     String blocker = "";
-    boolean obstructed;
+    boolean obstructed, downed;
     UUID repair;
     BlockPos repairOrigin;
     DiplomaticRoute detour;
@@ -102,7 +106,7 @@ public final class SettlementCourierJourney {
         this.customRoute = route.id; this.routeRevision = route.revision; this.reversedRoute = reverse; this.travelFactors = route.factors(reverse);
     }
     void advance(long now) {
-        if (this.presence != Presence.STORED || this.obstructed || !this.blocker.isEmpty() || finished() || atEnd()) return;
+        if (this.presence != Presence.STORED || this.obstructed || this.downed || !this.blocker.isEmpty() || finished() || atEnd()) return;
         var target = route().steps().get(this.step + 1);
         int ticks = target.mode() == DiplomaticRoute.Mode.LAUNCH || target.mode() == DiplomaticRoute.Mode.LAND ? 40 : 8;
         double duration = ticks * timeFactor() + this.travelRemainder;
@@ -134,7 +138,12 @@ public final class SettlementCourierJourney {
         if (this.detour != null) tag.put("Detour", this.detour.save());
         tag.put("Interference", SettlementCourierInterference.save(this.interference));
         tag.put("Recovery", SettlementCourierRecovery.save(this.recovery, provider));
-        tag.putString("Blocker", this.blocker); tag.putBoolean("Obstructed", this.obstructed);
+        tag.putLong("EncounterDistance", this.encounterDistance); tag.putLong("EncounterChecks", this.encounterChecks);
+        tag.putLong("EncounterCooldown", this.encounterCooldown);
+        var clocks = new CompoundTag(); this.encounterClocks.forEach(clocks::putLong); tag.put("EncounterClocks", clocks);
+        if (this.encounter != null) tag.put("Encounter", this.encounter.save());
+        var remains = new net.minecraft.nbt.ListTag(); this.remains.forEach(value -> remains.add(value.save(provider))); tag.put("Remains", remains);
+        tag.putString("Blocker", this.blocker); tag.putBoolean("Obstructed", this.obstructed); tag.putBoolean("Downed", this.downed);
         return tag;
     }
     static SettlementCourierJourney load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -184,7 +193,26 @@ public final class SettlementCourierJourney {
         if (tag.contains("Detour")) result.detour = DiplomaticRoute.load(tag.getCompound("Detour"));
         result.interference.putAll(SettlementCourierInterference.load(tag, result.revision));
         result.recovery.addAll(SettlementCourierRecovery.load(tag, provider));
-        result.blocker = tag.getString("Blocker"); result.obstructed = tag.getBoolean("Obstructed");
+        result.encounterDistance = tag.getLong("EncounterDistance"); result.encounterChecks = tag.getLong("EncounterChecks");
+        result.encounterCooldown = tag.getLong("EncounterCooldown");
+        if (result.encounterDistance < 0 || result.encounterChecks < 0 || result.encounterCooldown < 0)
+            throw new IllegalArgumentException("Invalid journey encounter clock");
+        var clocks = tag.getCompound("EncounterClocks");
+        for (String key : clocks.getAllKeys()) {
+            if (!clocks.contains(key, Tag.TAG_LONG) || clocks.getLong(key) < 0) throw new IllegalArgumentException("Invalid encounter clock");
+            result.encounterClocks.put(key, clocks.getLong(key));
+        }
+        if (tag.contains("Encounter")) {
+            result.encounter = SettlementEncounterState.load(tag.getCompound("Encounter"));
+            if (result.encounter.checkpointRevision > result.revision || !result.encounter.participants.contains(result.id))
+                throw new IllegalArgumentException("Encounter checkpoint does not belong to its journey");
+        }
+        if (tag.contains("Remains")) {
+            var remains = tag.getList("Remains", Tag.TAG_COMPOUND);
+            if (!remains.equals(tag.get("Remains")) || remains.size() > 64) throw new IllegalArgumentException("Invalid remains list");
+            for (var raw : remains) result.remains.add(SettlementEncounterRemains.load((CompoundTag) raw, provider));
+        }
+        result.blocker = tag.getString("Blocker"); result.obstructed = tag.getBoolean("Obstructed"); result.downed = tag.getBoolean("Downed");
         if (result.boatIncarnation < 0 || result.step < 0 || result.step >= result.route().steps().size() || result.revision < 0 || result.lastProgress < 0
                 || result.blocker.length() > 80 || result.boat.isEmpty() != (result.boatCustody == BoatCustody.NONE)
                 || !result.boatContext.isEmpty() && (!result.boatContext.hasUUID("UUID") || !result.boatId.equals(result.boatContext.getUUID("UUID")))

@@ -1,0 +1,37 @@
+{
+  "type": "attack",
+  "weight": 1,
+  "chance": 0.03,
+  "interval_ticks": 200,
+  "distance_blocks": 64,
+  "cooldown_ticks": 2400,
+  "duration_ticks": 600,
+  "round_ticks": 40,
+  "developed_road_risk": 0.4,
+  "guard_risk": 0.85,
+  "recovery_chance": 0.4,
+  "cargo_loss": 0.25,
+  "delay_ticks": 200,
+  "status": "villagerretaliation.encounter.pillagers",
+  "outcomes": [{"type": "lose_items", "fraction": 0.1}],
+  "conditions": [
+    {
+      "type": "dimension",
+      "dimension": "minecraft:overworld"
+    }
+  ],
+  "attackers": [
+    {
+      "entity": "minecraft:pillager",
+      "count": 2,
+      "health": 24,
+      "damage": 4,
+      "equipment": {
+        "mainhand": {
+          "id": "minecraft:crossbow",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

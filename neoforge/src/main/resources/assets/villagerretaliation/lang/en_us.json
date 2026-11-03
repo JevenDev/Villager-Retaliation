@@ -4095,5 +4095,20 @@
   "villagerretaliation.gui.aid.blocker.caravan_member_blocked": "A caravan member is blocked or incapacitated. Resolve the obstruction, retry, or recall the survivors.",
   "villagerretaliation.gui.aid.blocker.caravan_member_missing": "A caravan member is missing. Travelers and cargo remain reserved. Recall survivors to return home.",
   "villagerretaliation.gui.aid.blocker.caravan_return_blocked": "The return path is blocked. Resolve the obstruction and retry the journey.",
-  "villagerretaliation.gui.aid.blocker.route_settlement_unavailable": "A route endpoint is unavailable. Travelers and cargo remain reserved. Restore access or recall the caravan."
+  "villagerretaliation.gui.aid.blocker.route_settlement_unavailable": "A route endpoint is unavailable. Travelers and cargo remain reserved. Restore access or recall the caravan.",
+  "entity.villagerretaliation.fallen_villager": "Fallen villager",
+  "villagerretaliation.encounter.attack": "A settlement journey is under attack.",
+  "villagerretaliation.encounter.wildlife": "Wildlife is attacking a settlement journey.",
+  "villagerretaliation.encounter.pillagers": "Pillagers have ambushed a settlement journey.",
+  "villagerretaliation.encounter.rest": "A settlement journey is resting for the night.",
+  "villagerretaliation.encounter.resolved": "A journey encounter has ended. Surviving travelers will continue after any delay.",
+  "villagerretaliation.encounter.fallen": "%s has fallen during a journey. Recoverable belongings are marked as a search area on the map.",
+  "villagerretaliation.gui.aid.blocker.encounter_active": "An encounter is underway.",
+  "villagerretaliation.gui.aid.blocker.encounter_resting": "Resting for the night.",
+  "villagerretaliation.gui.aid.blocker.encounter_delayed": "Preparing to resume travel after an encounter.",
+  "villagerretaliation.gui.aid.blocker.encounter_fallen": "A traveler has died. Search the marked area for recoverable belongings.",
+  "villagerretaliation.gui.aid.blocker.encounter_recovery": "Search within this 24-block radius. The marker remains until all recoverable belongings are claimed.",
+  "villagerretaliation.gui.courier.stage.resting": "Resting",
+  "villagerretaliation.gui.courier.stage.delayed": "Delayed",
+  "villagerretaliation.gui.courier.stage.recovery": "Recoverable remains"
 }

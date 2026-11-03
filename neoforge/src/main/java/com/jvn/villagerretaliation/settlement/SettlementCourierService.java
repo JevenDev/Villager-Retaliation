@@ -171,6 +171,8 @@ public final class SettlementCourierService {
             var request = data.aid().request(id); if (request == null || request.journey == null) continue;
             var level = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, request.journey.dimension));
             if (level == null) { block(root, request, "settlement_unavailable"); continue; }
+            SettlementJourneyEncounters.tick(level, request, now);
+            SettlementEncounterRecovery.tick(level, request, now);
             step(level, request, now, runtime);
             if (now % 20 == 0) {
                 SettlementCourierInterference.update(level, request);
@@ -204,7 +206,8 @@ public final class SettlementCourierService {
         }
         if (journey.presence == SettlementCourierJourney.Presence.RETIRING) {
             if (!SettlementAidCheckpoint.urgent(level, journey.revision)) return;
-            if (live != null && (nearby(level, live.blockPosition(), 96) || danger(live) || journey.obstructed)) {
+            if (live != null && (nearby(level, live.blockPosition(), 96)
+                    || !SettlementJourneyEncounters.holds(level, request) && (danger(live) || journey.obstructed))) {
                 live.getPersistentData().putLong(INCARNATION, journey.incarnation);
                 if (live.getVehicle() instanceof net.minecraft.world.entity.vehicle.Boat boat && boat.getUUID().equals(journey.boatId))
                     boat.getPersistentData().putLong(INCARNATION, journey.boatIncarnation);
@@ -212,6 +215,10 @@ public final class SettlementCourierService {
             }
             if (live != null) retire(level, journey, live);
             journey.presence = SettlementCourierJourney.Presence.STORED; journey.lastTick = now; changed(level, request); return;
+        }
+        if (SettlementJourneyEncounters.holds(level, request)
+                && (journey.presence != SettlementCourierJourney.Presence.MATERIALIZING || live == null)) {
+            SettlementJourneyEncounters.hold(level, request, live, now); return;
         }
         if (live != null) {
             if (live.getPersistentData().getLong(INCARNATION) != journey.incarnation) { block(level, request, "courier_identity_mismatch"); return; }
@@ -222,7 +229,9 @@ public final class SettlementCourierService {
             if (journey.presence == SettlementCourierJourney.Presence.STRANDED) {
                 journey.presence = SettlementCourierJourney.Presence.PHYSICAL; changed(level, request);
             }
-            physical(level, request, live, now); return;
+            if (SettlementJourneyEncounters.holds(level, request)) SettlementJourneyEncounters.hold(level, request, live, now);
+            else physical(level, request, live, now);
+            return;
         }
         if (journey.presence == SettlementCourierJourney.Presence.PHYSICAL) {
             block(level, request, "awaiting_native_courier"); return;
@@ -235,6 +244,17 @@ public final class SettlementCourierService {
         }
         if (journey.presence == SettlementCourierJourney.Presence.STRANDED) return;
         if (journey.blocker.equals("physical_courier_queue") || journey.blocker.equals("waiting_for_ticking_terrain")) block(level, request, "");
+        if (journey.downed) {
+            if (now % 20 != 0) return;
+            var context = SettlementJourneyEncounters.context(level, journey);
+            if (context == null) return;
+            com.jvn.villagerretaliation.combat.downed.VillagerDownedService.onVillagerTickPre(context);
+            capture(journey, context); changed(level, request);
+            if (com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(context)) {
+                block(level, request, "courier_in_danger"); return;
+            }
+            journey.obstructed = false; block(level, request, "");
+        }
         if (journey.atEnd()) { arrived(level, request, null, now); return; }
         if (journey.boatCustody == SettlementCourierJourney.BoatCustody.LOST) { block(level, request, "boat_lost"); return; }
         var next = journey.route().steps().get(journey.step + 1);
@@ -254,6 +274,7 @@ public final class SettlementCourierService {
         if (journey.step != before) { travelled(level, request); changed(level, request); }
     }
     static void travelled(ServerLevel level, SettlementFoodRequest request) {
+        request.journey.encounterDistance++;
         SettlementRouteService.travelled(level, request.journey);
         var data = SettlementSavedData.get(level); var map = com.jvn.villagerretaliation.diplomacy.route.DiplomaticTravelMapData.get(level);
         var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
@@ -378,6 +399,7 @@ public final class SettlementCourierService {
     }
     static void capture(SettlementCourierJourney journey, Villager courier) {
         journey.residentContext = courier.saveWithoutId(new CompoundTag());
+        journey.downed = com.jvn.villagerretaliation.combat.downed.VillagerDownedService.isDowned(courier);
         if (courier.getVehicle() instanceof net.minecraft.world.entity.vehicle.Boat boat && boat.getUUID().equals(journey.boatId))
             journey.boatContext = boat.saveWithoutId(new CompoundTag());
     }
@@ -410,7 +432,10 @@ public final class SettlementCourierService {
         journey.incarnation++;
         if (journey.boatCustody == SettlementCourierJourney.BoatCustody.LAUNCHED) journey.boatIncarnation++;
         capture(journey, courier); journey.position = courier.blockPosition().immutable();
-        journey.obstructed |= danger(courier);
+        if (SettlementJourneyEncounters.holds((ServerLevel) courier.level(), request)) {
+            SettlementJourneyEncounters.clearTarget(courier, SettlementJourneyEncounters.active((ServerLevel) courier.level(), request));
+            capture(journey, courier); journey.obstructed = false;
+        } else journey.obstructed |= danger(courier);
         journey.presence = journey.obstructed ? SettlementCourierJourney.Presence.STRANDED : SettlementCourierJourney.Presence.RETIRING;
         changed((ServerLevel) courier.level(), request);
     }

@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.entity.EntityEvent;
 
 public final class VillagerDownedClientCache {
     private static final Map<Integer, VillagerDownedPose> DOWNED_POSES = new HashMap<>();
+    private static final Map<Entity, VillagerDownedPose> PRESENTATIONS = new java.util.WeakHashMap<>();
 
     private VillagerDownedClientCache() {
     }
@@ -39,13 +40,15 @@ public final class VillagerDownedClientCache {
         }
     }
 
+    public static void presentation(Entity entity, VillagerDownedPose pose) { PRESENTATIONS.put(entity, pose); }
+
     public static boolean isDowned(Entity entity) {
-        return entity != null && DOWNED_POSES.containsKey(entity.getId());
+        return entity != null && (PRESENTATIONS.containsKey(entity) || DOWNED_POSES.containsKey(entity.getId()));
     }
 
     public static VillagerDownedPose pose(Entity entity) {
         if (entity == null) return VillagerDownedPose.SITTING;
-        return DOWNED_POSES.getOrDefault(entity.getId(), VillagerDownedPose.forVillager(entity.getUUID()));
+        return PRESENTATIONS.getOrDefault(entity, DOWNED_POSES.getOrDefault(entity.getId(), VillagerDownedPose.forVillager(entity.getUUID())));
     }
 
     public static void onEntitySize(EntityEvent.Size event) {
@@ -55,7 +58,7 @@ public final class VillagerDownedClientCache {
     }
 
     public static void clear() {
-        DOWNED_POSES.clear();
+        DOWNED_POSES.clear(); PRESENTATIONS.clear();
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

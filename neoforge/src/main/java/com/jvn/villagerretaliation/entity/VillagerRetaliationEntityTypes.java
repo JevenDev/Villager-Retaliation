@@ -20,6 +20,11 @@ public final class VillagerRetaliationEntityTypes {
                     .updateInterval(5)
                     .build("villager_fishing_hook"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.jvn.villagerretaliation.settlement.SettlementFallenVillager>> FALLEN_VILLAGER =
+            ENTITY_TYPES.register("fallen_villager", () -> EntityType.Builder
+                    .<com.jvn.villagerretaliation.settlement.SettlementFallenVillager>of(com.jvn.villagerretaliation.settlement.SettlementFallenVillager::new, MobCategory.MISC)
+                    .sized(1.5F, .65F).clientTrackingRange(8).updateInterval(20).build("fallen_villager"));
+
     private VillagerRetaliationEntityTypes() {
     }
 

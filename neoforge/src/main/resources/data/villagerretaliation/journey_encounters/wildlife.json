@@ -1,0 +1,30 @@
+{
+  "type": "attack",
+  "weight": 3,
+  "chance": 0.08,
+  "interval_ticks": 200,
+  "distance_blocks": 64,
+  "cooldown_ticks": 2400,
+  "duration_ticks": 400,
+  "round_ticks": 40,
+  "developed_road_risk": 0.4,
+  "guard_risk": 0.85,
+  "recovery_chance": 0.25,
+  "cargo_loss": 0.1,
+  "delay_ticks": 100,
+  "status": "villagerretaliation.encounter.wildlife",
+  "conditions": [
+    {
+      "type": "dimension",
+      "dimension": "minecraft:overworld"
+    }
+  ],
+  "attackers": [
+    {
+      "entity": "minecraft:wolf",
+      "count": 2,
+      "health": 8,
+      "damage": 3
+    }
+  ]
+}

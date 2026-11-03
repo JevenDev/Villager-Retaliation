@@ -87,7 +87,15 @@ public final class SettlementCourierMap {
             int x = (int) view.screenX(courier.position().getX() + 0.5), y = (int) view.screenY(courier.position().getZ() + 0.5);
             if (x < -12 || y < -12 || x > view.width() + 12 || y > view.height() + 12) continue;
             int color = courier.stage() == SettlementCourierMapPayload.Stage.BLOCKED ? 0xffd28473 : courier.observed() ? 0xfff0d8a0 : 0xffb6bcc6;
-            graphics.drawCenteredString(font, courier.observed() ? "◆" : "◇", x, y - 4, color);
+            if (courier.stage() == SettlementCourierMapPayload.Stage.RECOVERY) {
+                double radius = 24 * view.scale();
+                for (int segment = 0; segment < 48; segment++) {
+                    double a = segment * Math.PI / 24, b = (segment + 1) * Math.PI / 24;
+                    VillageRelationsMap.line(graphics, view, x + Math.cos(a) * radius, y + Math.sin(a) * radius,
+                            x + Math.cos(b) * radius, y + Math.sin(b) * radius, 0xffd28473);
+                }
+                graphics.drawCenteredString(font, "?", x, y - 4, 0xffd28473);
+            } else graphics.drawCenteredString(font, courier.observed() ? "◆" : "◇", x, y - 4, color);
             if (courier.id().equals(selected)) graphics.drawCenteredString(font, "[ ]", x, y - 14, color);
         }
         var selectedCourier = couriers.get(selected);

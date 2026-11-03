@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record SettlementCourierMapPayload(int requestId, UUID village, int page, boolean moreJourneys, boolean terrainAllowed,
                                           long epoch, long next, boolean moreTerrain, List<Cell> cells, List<Courier> couriers,
                                           UUID routeJourney, int routeKey, int routeOffset, boolean moreRoute, List<BlockPos> route) implements CustomPacketPayload {
-    public enum Stage { PREPARING, OUTBOUND, COLLECTION, DELIVERY, RETURNING, BLOCKED, COMPLETE, ENCOUNTER }
+    public enum Stage { PREPARING, OUTBOUND, COLLECTION, DELIVERY, RETURNING, BLOCKED, COMPLETE, ENCOUNTER, RESTING, DELAYED, RECOVERY }
     public record Cell(BlockPos position, int color) {
         public Cell { if (position == null || color <= 0 || color > 0xffffff) throw new IllegalArgumentException("Invalid observed courier terrain"); }
     }
