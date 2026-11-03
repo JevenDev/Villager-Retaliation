@@ -790,6 +790,8 @@ public final class VillagerRetaliationConfigModel {
     public static final class DebugOverlay {
         public boolean animateExploredMapOpening = true;
 
+        public boolean parchmentMapColors = true;
+
         public boolean showExploredMapMinimap = false;
 
         @ExcludeFromScreen

@@ -1,13 +1,17 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.jvn.villagerretaliation.exploration.*;
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.Minecraft;
+import org.lwjgl.opengl.GL11;
 
 final class MapTileView implements AutoCloseable {
     private DynamicTexture pages;
+    private TextureTarget fogMask, fogBlur;
     private final int[] originsX = new int[4], originsZ = new int[4];
     private final ArrayList<MapSnapshot.Marker> markers = new ArrayList<>();
     private final HashSet<String> markerIds = new HashSet<>();
@@ -16,6 +20,22 @@ final class MapTileView implements AutoCloseable {
     private boolean missing;
     private List<MapSnapshot.Marker> resolved = List.of();
     int pageId() { return pages.getId(); }
+    TextureTarget fogMask(int width, int height) {
+        fogMask = resizeFogTarget(fogMask, width, height);
+        return fogMask;
+    }
+    TextureTarget fogBlur(int width, int height) {
+        fogBlur = resizeFogTarget(fogBlur, width, height);
+        return fogBlur;
+    }
+    private static TextureTarget resizeFogTarget(TextureTarget target, int width, int height) {
+        int maskWidth = Math.max(1, (width + 3) / 4), maskHeight = Math.max(1, (height + 3) / 4);
+        if (target == null) target = new TextureTarget(maskWidth, maskHeight, false, Minecraft.ON_OSX);
+        else if (target.width != maskWidth || target.height != maskHeight) target.resize(maskWidth, maskHeight, Minecraft.ON_OSX);
+        target.setFilterMode(GL11.GL_LINEAR);
+        return target;
+    }
+
     int originX(int level) { return originsX[level] * (8 << level); }
     int originZ(int level) { return originsZ[level] * (8 << level); }
     List<MapSnapshot.Marker> markers() { return resolved; }
@@ -72,6 +92,9 @@ final class MapTileView implements AutoCloseable {
     }
     @Override public void close() {
         if (pages != null) pages.close();
+        if (fogMask != null) fogMask.destroyBuffers();
+        if (fogBlur != null) fogBlur.destroyBuffers();
+        fogMask = null; fogBlur = null;
         pages = null; previous = null; markers.clear(); markerIds.clear(); resolved = List.of();
         nextUpdate = 0; observed = -1; cached = -1;
     }

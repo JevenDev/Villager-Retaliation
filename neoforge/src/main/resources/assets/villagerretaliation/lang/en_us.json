@@ -837,6 +837,8 @@
   "text.config.villagerretaliation.option.debugOverlay.reputationDebugOverlayShowTier.tooltip": "Shows the reputation tier in the debug overlay.",
   "text.config.villagerretaliation.option.debugOverlay.showExploredMapMinimap": "Show Explored Map Minimap",
   "text.config.villagerretaliation.option.debugOverlay.showExploredMapMinimap.tooltip": "Shows a live explored-terrain minimap in the top-right corner while testing. Disabled by default.",
+  "text.config.villagerretaliation.option.debugOverlay.parchmentMapColors": "Parchment Map Colors",
+  "text.config.villagerretaliation.option.debugOverlay.parchmentMapColors.tooltip": "Gives the fullscreen map and minimap warm parchment colors, subtle paper texture, and drifting clouds at the edge of explored terrain. Disable to restore the original colors and vanilla cloud silhouettes. Applies immediately. Default: enabled.",
   "text.config.villagerretaliation.option.debugOverlay.animateExploredMapOpening": "Animate Map Transitions",
   "text.config.villagerretaliation.option.debugOverlay.animateExploredMapOpening.tooltip": "Tilt the camera upward as cloud layers rise to reveal the fullscreen map, then reverse the transition when closing. Disable to open and close instantly. Default: enabled.",
   "text.config.villagerretaliation.option.debugOverlay.exploredMapMinimapSize": "Explored Map Minimap Size",

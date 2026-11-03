@@ -1,10 +1,12 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.exploration.MapCloudRegions;
 import com.jvn.villagerretaliation.exploration.MapLighting;
 import com.jvn.villagerretaliation.exploration.MapView;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -16,6 +18,8 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 public final class MapFogRenderer {
     private static final ResourceLocation CLOUDS = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
@@ -52,6 +56,9 @@ public final class MapFogRenderer {
         if (shader == null) return;
         graphics.flush();
         shader.safeGetUniform("OpeningProgress").set(-1f);
+        shader.safeGetUniform("DiscoveryPass").set(0f);
+        RenderSystem.setShaderTexture(5, clouds.getId());
+        shader.safeGetUniform("ParchmentColors").set(VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.get() ? 1f : 0f);
         shader.safeGetUniform("Viewport").set((float)view.width(), (float)view.height());
         shader.safeGetUniform("WorldSpan").set((float)(view.width() / view.scale()), (float)(view.height() / view.scale()));
         if (pages != null) {
@@ -62,6 +69,7 @@ public final class MapFogRenderer {
                     (float)(pages.originZ(2) - view.z()), (float)(pages.originZ(3) - view.z()));
         }
         shader.safeGetUniform("FirstLevel").set(pages == null ? 4f : (float)view.level());
+        shader.safeGetUniform("TerrainTexelSize").set((float)(1 << view.level()));
         double period = 3072;
         shader.safeGetUniform("CloudPeriod").set((float)period);
         shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), period * 4), wrap(view.z(), period * 4));
@@ -76,20 +84,76 @@ public final class MapFogRenderer {
         } else {
             RenderSystem.setShaderTexture(0, cache.terrainId()); RenderSystem.setShaderTexture(2, cache.maskId()); RenderSystem.setShaderTexture(3, pages.pageId());
         }
+        if (pages != null && VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.get())
+            renderMask(pages, view.width(), view.height());
         RenderSystem.disableBlend();
         draw(graphics, view.width(), view.height());
     }
+    static void renderMask(MapTileView pages, int width, int height) {
+        int drawTarget = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        int readTarget = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        int[] viewport = new int[4], scissor = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+        GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor);
+        boolean clipping = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+        boolean depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
+        int maskTexture;
+        try {
+            var mask = pages.fogMask(width, height);
+            var temporary = pages.fogBlur(width, height);
+            RenderSystem.disableScissor();
+            RenderSystem.disableDepthTest();
+            RenderSystem.disableBlend();
+            RenderSystem.setShaderTexture(5, clouds.getId());
+            shader.safeGetUniform("DiscoveryPass").set(1f);
+            mask.bindWrite(true);
+            drawMask(width, height);
+            shader.safeGetUniform("DiscoveryPass").set(2f);
+            temporary.bindWrite(true);
+            RenderSystem.setShaderTexture(5, mask.getColorTextureId());
+            drawMask(width, height);
+            shader.safeGetUniform("DiscoveryPass").set(3f);
+            mask.bindWrite(true);
+            RenderSystem.setShaderTexture(5, temporary.getColorTextureId());
+            drawMask(width, height);
+            maskTexture = mask.getColorTextureId();
+        } finally {
+            shader.safeGetUniform("DiscoveryPass").set(0f);
+            GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawTarget);
+            GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readTarget);
+            RenderSystem.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            if (clipping) RenderSystem.enableScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+            else RenderSystem.disableScissor();
+            if (depth) RenderSystem.enableDepthTest();
+            else RenderSystem.disableDepthTest();
+            if (blend) RenderSystem.enableBlend();
+            else RenderSystem.disableBlend();
+        }
+        RenderSystem.setShaderTexture(5, maskTexture);
+    }
+
     static void renderOpening(GuiGraphics graphics, int width, int height, MapLighting lighting, float progress) {
         if (shader == null) return;
         graphics.flush();
         shader.safeGetUniform("Viewport").set((float)width, (float)height);
         shader.safeGetUniform("OpeningProgress").set(progress);
+        shader.safeGetUniform("DiscoveryPass").set(0f);
         shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
-        for (int sampler = 0; sampler < 5; sampler++) RenderSystem.setShaderTexture(sampler, clouds.getId());
+        for (int sampler = 0; sampler < 6; sampler++) RenderSystem.setShaderTexture(sampler, clouds.getId());
         RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc(); RenderSystem.disableDepthTest();
         draw(graphics, width, height);
         RenderSystem.enableDepthTest(); RenderSystem.disableBlend();
     }
+    private static void drawMask(int width, int height) {
+        RenderSystem.setShader(() -> shader);
+        shader.safeGetUniform("CanvasOrigin").set(0f, 0f);
+        var vertices = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        vertices.addVertex(0, height, 0); vertices.addVertex(width, height, 0);
+        vertices.addVertex(width, 0, 0); vertices.addVertex(0, 0, 0);
+        BufferUploader.drawWithShader(vertices.buildOrThrow());
+    }
+
     private static void draw(GuiGraphics graphics, int width, int height) {
         RenderSystem.setShader(() -> shader);
         var pose = graphics.pose().last().pose();

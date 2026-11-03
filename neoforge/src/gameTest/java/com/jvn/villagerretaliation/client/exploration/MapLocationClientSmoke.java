@@ -47,6 +47,7 @@ public final class MapLocationClientSmoke {
         if (System.getProperty(OUTPUT) != null && !compassChecked && event.getScreen() instanceof ExploredMapScreen screen
                 && screen.transitionProgress() == 1) {
             MapCompassClientChecks.verify(screen);
+            MapParchmentClientChecks.verify(screen);
             compassChecked = true;
         }
         if (backgroundLocations == null || !(event.getScreen() instanceof MapLocationEditScreen)) return;
@@ -175,6 +176,7 @@ public final class MapLocationClientSmoke {
             case 8 -> {
                 if (!MapFeatureClientChecks.tick(map)) return;
                 if (!SettlementRouteMapClientChecks.tick(map)) return;
+                if (!MapRecordedTerrainClientChecks.tick(map)) return;
                 require(compassChecked, "the compass rendering checks ran on an open map");
                 map.onClose();
                 require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
