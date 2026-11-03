@@ -4085,5 +4085,15 @@
   "villagerretaliation.gui.aid.blocker.terrain_timeout": "Terrain surveying timed out.",
   "villagerretaliation.gui.aid.blocker.malformed_terrain": "Terrain data could not be safely read.",
   "villagerretaliation.gui.aid.cancel": "Cancel",
-  "villagerretaliation.gui.aid.cancelling": "Cancellation sent"
+  "villagerretaliation.gui.aid.cancelling": "Cancellation sent",
+  "villagerretaliation.gui.aid.blocker.custom_route_unavailable": "The selected custom route is unavailable. Choose another route before departure.",
+  "villagerretaliation.gui.aid.blocker.custom_route_depot_changed": "A depot moved away from the route. Adjust the route before departure.",
+  "villagerretaliation.gui.aid.blocker.caravan_land_route_required": "Caravans need a land route. Solo couriers can still use boats.",
+  "villagerretaliation.gui.aid.blocker.caravan_member_unavailable": "A caravan member is unavailable or a selected guard needs a weapon.",
+  "villagerretaliation.gui.aid.blocker.preparing_caravan": "Preparing the caravan's paths to the departure depot.",
+  "villagerretaliation.gui.aid.blocker.caravan_waiting": "Waiting for the rest of the caravan.",
+  "villagerretaliation.gui.aid.blocker.caravan_member_blocked": "A caravan member is blocked or incapacitated. Resolve the obstruction, retry, or recall the survivors.",
+  "villagerretaliation.gui.aid.blocker.caravan_member_missing": "A caravan member is missing. Travelers and cargo remain reserved. Recall survivors to return home.",
+  "villagerretaliation.gui.aid.blocker.caravan_return_blocked": "The return path is blocked. Resolve the obstruction and retry the journey.",
+  "villagerretaliation.gui.aid.blocker.route_settlement_unavailable": "A route endpoint is unavailable. Travelers and cargo remain reserved. Restore access or recall the caravan."
 }

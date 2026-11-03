@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "135";
+    private static final String PROTOCOL_VERSION = "136";
 
     private VillagerReputationNetworking() {
     }
@@ -41,6 +41,11 @@ public final class VillagerReputationNetworking {
         network.playToServer(SettlementCourierMapRequest.TYPE, SettlementCourierMapRequest.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
                         player -> com.jvn.villagerretaliation.settlement.SettlementCourierMapNetworking.handle(player, payload))));
+        network.safePlayToClientThreaded(SettlementRoutesPayload.TYPE, SettlementRoutesPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.exploration.SettlementRoutesScreen", "receive");
+        network.playToServer(SettlementRouteRequest.TYPE, SettlementRouteRequest.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () -> ToucanNetwork.withServerPlayer(context,
+                        player -> com.jvn.villagerretaliation.settlement.SettlementRouteNetworking.handle(player, payload))));
         network.safePlayToClientThreaded(SettlementAidPayload.TYPE, SettlementAidPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.settlement.SettlementAidScreen", "receive");
         network.playToServer(SettlementAidRequestPayload.TYPE, SettlementAidRequestPayload.STREAM_CODEC,

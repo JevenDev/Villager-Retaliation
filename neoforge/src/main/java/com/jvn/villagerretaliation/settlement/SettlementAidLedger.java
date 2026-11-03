@@ -19,6 +19,7 @@ public final class SettlementAidLedger {
     long durableRevision;
     final Map<VillageAllegianceId, Town> towns = new LinkedHashMap<>();
     final Map<UUID, SettlementFoodRequest> requests = new LinkedHashMap<>();
+    final Map<UUID, SettlementRoute> routes = new LinkedHashMap<>();
     final Map<UUID, UUID> couriers = new LinkedHashMap<>();
     final TreeMap<Long, Receipt> receipts = new TreeMap<>();
 
@@ -40,7 +41,7 @@ public final class SettlementAidLedger {
     boolean courierAvailable(UUID resident) {
         var previous = courier(resident);
         return previous == null || previous.journey != null && previous.journey.finished()
-                && previous.state() == SettlementFoodRequest.State.COMPLETED
+                && previous.terminal()
                 && previous.journey.presence == SettlementCourierJourney.Presence.STORED
                 && previous.journey.interference.values().stream().allMatch(incident -> incident.applied);
     }
@@ -81,10 +82,14 @@ public final class SettlementAidLedger {
         if (this.requests.size() < REQUEST_LIMIT) return true;
         var obsolete = this.requests.values().stream().filter(SettlementFoodRequest::terminal)
                 .filter(request -> request.journey == null || request.journey.released() && request.journey.interference.values().stream().allMatch(incident -> incident.applied))
+                .filter(request -> request.caravan == null && this.requests.values().stream().filter(member -> request.id().equals(member.caravan))
+                        .allMatch(member -> member.terminal() && member.journey != null && member.journey.released()
+                                && member.journey.interference.values().stream().allMatch(incident -> incident.applied)))
                 .filter(request -> request.offer() == null || request.offer().empty())
                 .filter(request -> this.receipts.values().stream().noneMatch(receipt -> receipt.request().equals(request.id())))
                 .min(java.util.Comparator.comparingLong(SettlementFoodRequest::created)).orElse(null);
         if (obsolete == null) return false;
+        this.requests.values().removeIf(member -> obsolete.id().equals(member.caravan));
         this.requests.remove(obsolete.id()); changed();
         return true;
     }
@@ -96,7 +101,7 @@ public final class SettlementAidLedger {
     }
     CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.putInt("Version", 3); tag.putUUID("Stream", this.stream); tag.putLong("Sequence", this.sequence); tag.putLong("Revision", this.revision);
+        tag.putInt("Version", 4); tag.putUUID("Stream", this.stream); tag.putLong("Sequence", this.sequence); tag.putLong("Revision", this.revision);
         var towns = new ListTag();
         this.towns.forEach((id, state) -> {
             var entry = new CompoundTag(); entry.putUUID("Village", id.value()); entry.put("Policy", state.policy.save());
@@ -113,15 +118,21 @@ public final class SettlementAidLedger {
             entry.putInt("Standing", receipt.standing()); entry.putLong("Date", receipt.date()); entry.putLong("Revision", receipt.revision()); receipts.add(entry);
         });
         tag.put("Receipts", receipts);
+        var routes = new ListTag(); this.routes.values().forEach(route -> routes.add(route.save())); tag.put("Routes", routes);
         return tag;
     }
     static SettlementAidLedger load(CompoundTag tag, HolderLookup.Provider provider) {
-        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 3) || !tag.hasUUID("Stream")
+        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 4) || !tag.hasUUID("Stream")
                 || !tag.contains("Sequence", Tag.TAG_LONG) || tag.getLong("Sequence") < 0
                 || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0) throw new IllegalArgumentException("Unsupported food aid ledger");
         var result = new SettlementAidLedger();
         result.stream = tag.getUUID("Stream"); result.sequence = tag.getLong("Sequence"); result.revision = tag.getLong("Revision");
         result.durableRevision = result.revision;
+        if (tag.contains("Routes")) for (var raw : list(tag, "Routes", 128)) {
+            var route = SettlementRoute.load((CompoundTag) raw);
+            if (route.revision > result.revision || result.routes.put(route.id, route) != null)
+                throw new IllegalArgumentException("Invalid route identity or revision");
+        }
         for (var raw : list(tag, "Towns", TOWN_LIMIT)) {
             var entry = (CompoundTag) raw;
             if (!entry.hasUUID("Village") || !entry.contains("Policy", Tag.TAG_COMPOUND) || !entry.contains("ShortageSince", Tag.TAG_LONG)
@@ -141,6 +152,14 @@ public final class SettlementAidLedger {
             if (request.journey != null && (!request.journey.released() || request.journey.interference.values().stream().anyMatch(incident -> !incident.applied))
                     && result.couriers.put(request.journey.resident(), request.id()) != null) throw new IllegalArgumentException("Resident belongs to multiple courier journeys");
             if (request.revision() > result.revision || result.requests.put(request.id(), request) != null) throw new IllegalArgumentException("Invalid aid request identity or revision");
+        }
+        for (var request : result.requests.values()) if (request.caravan != null) {
+            var leader = result.requests.get(request.caravan);
+            if (leader == null || leader.purpose != SettlementFoodRequest.Purpose.SUPPLY || leader.journey == null
+                    || !leader.participants.containsKey(request.journey.resident) || !leader.journey.home.equals(request.journey.home)
+                    || !leader.donor().equals(request.donor()) || !leader.requester().equals(request.requester())
+                    || leader.participants.get(request.journey.resident) != (request.purpose == SettlementFoodRequest.Purpose.GUARD))
+                throw new IllegalArgumentException("Caravan member does not match its mission");
         }
         for (var raw : list(tag, "Receipts", RECEIPT_LIMIT)) {
             var entry = (CompoundTag) raw;

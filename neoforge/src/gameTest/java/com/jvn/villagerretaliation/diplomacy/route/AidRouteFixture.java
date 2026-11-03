@@ -17,6 +17,12 @@ public final class AidRouteFixture {
             RouteSavedData.get(level).observe(level.dimension().location(), new RouteTerrain(new ChunkPos(x, z), heights, kinds, level.getGameTime()));
         }
     }
+    public static void naturalGround(ServerLevel level, BlockPos position) {
+        level.setBlock(position, net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+        level.setBlock(position.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+        level.setBlock(position.above(2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+        level.getChunkAt(position).removeData(RouteGroundService.RECEIPTS.get());
+    }
     public static void flat(ServerLevel level, BlockPos from, BlockPos to) {
         for (int x = (Math.min(from.getX(), to.getX()) >> 4) - 2; x <= (Math.max(from.getX(), to.getX()) >> 4) + 2; x++) {
             for (int z = (Math.min(from.getZ(), to.getZ()) >> 4) - 2; z <= (Math.max(from.getZ(), to.getZ()) >> 4) + 2; z++) {

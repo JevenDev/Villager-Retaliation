@@ -84,7 +84,7 @@ public final class SettlementCourierRecovery {
         if (journey.presence == SettlementCourierJourney.Presence.DEAD) return;
         SettlementCourierService.capture(journey, courier); journey.position = courier.blockPosition().immutable();
         journey.presence = SettlementCourierJourney.Presence.DEAD; journey.obstructed = true;
-        if (request.offer.custody() == SettlementFoodOffer.Custody.COURIER) {
+        if (request.offer != null && request.offer.custody() == SettlementFoodOffer.Custody.COURIER) {
             for (var parcel : request.offer.remaining()) journey.recovery.add(new Drop(UUID.randomUUID(), parcel.item()));
             request.offer.custody = SettlementFoodOffer.Custody.RECOVERABLE;
         }
@@ -98,7 +98,7 @@ public final class SettlementCourierRecovery {
     }
     static void update(ServerLevel level, SettlementFoodRequest request, long now, SettlementCourierService.Runtime runtime) {
         var journey = request.journey; var data = SettlementSavedData.get(level);
-        if (request.offer.custody() == SettlementFoodOffer.Custody.RESERVED) {
+        if (request.offer != null && request.offer.custody() == SettlementFoodOffer.Custody.RESERVED) {
             var donor = data.get(request.donor()).orElse(null);
             if (donor == null || !SettlementAidStock.refund(level, donor, request)) SettlementCourierService.block(level, request, "refund_storage_full");
         }

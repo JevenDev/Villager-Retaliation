@@ -117,6 +117,9 @@ public final class SettlementResidentState {
         this.courierJourney = journey; this.courierIncarnation = incarnation; this.courierAway = away;
     }
 
+    boolean eligibleCaravanMember() {
+        return availableForWork() && !needsRecovery() && !this.familyUnsafe && !this.entityContext.isEmpty() && this.food >= 6;
+    }
     boolean eligibleDiplomaticCourier() {
         if (!availableForWork() || needsRecovery() || this.familyUnsafe || this.entityContext.isEmpty() || this.food < 6) return false;
         var profession = this.entityContext.getCompound("VillagerData").getString("profession");

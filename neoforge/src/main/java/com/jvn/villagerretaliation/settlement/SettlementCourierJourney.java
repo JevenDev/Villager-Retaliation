@@ -20,6 +20,11 @@ public final class SettlementCourierJourney {
     final DiplomaticRoute approach, crossing, returnApproach, returnCrossing;
     final UUID boatId;
     final ItemStack boat;
+    UUID customRoute;
+    long routeRevision;
+    boolean reversedRoute;
+    double[] travelFactors;
+    double travelRemainder;
     Leg leg = Leg.APPROACH;
     Presence presence = Presence.CLAIMING;
     BoatCustody boatCustody;
@@ -87,12 +92,24 @@ public final class SettlementCourierJourney {
         if (finished()) this.step = route().steps().size() - 1;
         this.position = route().steps().get(this.step).position(); this.lastTick = now; this.lastProgress = now;
     }
+    double timeFactor() {
+        if (this.travelFactors == null || this.detour != null || this.leg != Leg.OUTBOUND && this.leg != Leg.HOMEBOUND || atEnd()) return 1;
+        int index = this.leg == Leg.HOMEBOUND ? this.travelFactors.length - 1 - this.step : this.step + 1;
+        return this.travelFactors[index];
+    }
+    void select(SettlementRoute route, boolean reverse) {
+        if (!this.crossing.equals(reverse ? route.path.reversed() : route.path)) throw new IllegalArgumentException("Journey route differs");
+        this.customRoute = route.id; this.routeRevision = route.revision; this.reversedRoute = reverse; this.travelFactors = route.factors(reverse);
+    }
     void advance(long now) {
         if (this.presence != Presence.STORED || this.obstructed || !this.blocker.isEmpty() || finished() || atEnd()) return;
         var target = route().steps().get(this.step + 1);
         int ticks = target.mode() == DiplomaticRoute.Mode.LAUNCH || target.mode() == DiplomaticRoute.Mode.LAND ? 40 : 8;
-        if (now < this.lastTick || now - this.lastTick < ticks) return;
+        double duration = ticks * timeFactor() + this.travelRemainder;
+        int elapsed = (int) Math.floor(duration);
+        if (now < this.lastTick || now - this.lastTick < elapsed) return;
         if (target.mode() == DiplomaticRoute.Mode.LAUNCH && this.boatIncarnation == Long.MAX_VALUE) return;
+        this.travelRemainder = duration - elapsed;
         this.position = target.position(); this.step++; this.lastTick = now; this.lastProgress = now;
         if (target.mode() == DiplomaticRoute.Mode.LAUNCH) { this.boatCustody = BoatCustody.LAUNCHED; this.boatIncarnation++; }
         if (target.mode() == DiplomaticRoute.Mode.LAND) this.boatCustody = BoatCustody.PACKED;
@@ -107,6 +124,11 @@ public final class SettlementCourierJourney {
         tag.putInt("Step", this.step); tag.putLong("Incarnation", this.incarnation); tag.putLong("Revision", this.revision);
         tag.putLong("LastTick", this.lastTick); tag.putLong("LastProgress", this.lastProgress);
         tag.putLong("Position", this.position.asLong()); tag.put("ResidentContext", this.residentContext.copy());
+        if (this.customRoute != null) {
+            tag.putUUID("CustomRoute", this.customRoute); tag.putLong("RouteRevision", this.routeRevision); tag.putBoolean("ReversedRoute", this.reversedRoute);
+            var factors = new net.minecraft.nbt.ListTag(); for (double factor : this.travelFactors) factors.add(net.minecraft.nbt.DoubleTag.valueOf(factor));
+            tag.put("TravelFactors", factors); tag.putDouble("TravelRemainder", this.travelRemainder);
+        }
         tag.putInt("Repairs", this.repairs);
         if (this.repair != null) { tag.putUUID("Repair", this.repair); tag.putLong("RepairOrigin", this.repairOrigin.asLong()); }
         if (this.detour != null) tag.put("Detour", this.detour.save());
@@ -131,6 +153,23 @@ public final class SettlementCourierJourney {
                 DiplomaticRoute.load(tag.getCompound("Approach")), DiplomaticRoute.load(tag.getCompound("Crossing")),
                 tag.getCompound("ResidentContext"), tag.getLong("Incarnation"), boat, tag.getLong("LastTick"));
         var result = new SettlementCourierJourney(original, tag.getUUID("BoatId"));
+        if (tag.contains("CustomRoute")) {
+            if (!tag.hasUUID("CustomRoute") || !tag.contains("RouteRevision", Tag.TAG_LONG) || tag.getLong("RouteRevision") < 0
+                    || !tag.contains("ReversedRoute", Tag.TAG_BYTE) || !tag.contains("TravelRemainder", Tag.TAG_DOUBLE))
+                throw new IllegalArgumentException("Invalid custom journey route");
+            result.customRoute = tag.getUUID("CustomRoute"); result.routeRevision = tag.getLong("RouteRevision"); result.reversedRoute = tag.getBoolean("ReversedRoute");
+            var factors = tag.getList("TravelFactors", Tag.TAG_DOUBLE);
+            if (!factors.equals(tag.get("TravelFactors")) || factors.size() != result.crossing.steps().size()) throw new IllegalArgumentException("Invalid travel factors");
+            result.travelFactors = new double[factors.size()];
+            for (int i = 0; i < factors.size(); i++) {
+                double factor = factors.getDouble(i);
+                if (!Double.isFinite(factor) || factor < .5 || factor > 1) throw new IllegalArgumentException("Invalid travel benefit");
+                result.travelFactors[i] = factor;
+            }
+            result.travelRemainder = tag.getDouble("TravelRemainder");
+            if (!Double.isFinite(result.travelRemainder) || result.travelRemainder < 0 || result.travelRemainder >= 1)
+                throw new IllegalArgumentException("Invalid travel remainder");
+        }
         result.leg = Leg.valueOf(tag.getString("Leg")); result.presence = Presence.valueOf(tag.getString("Presence"));
         result.boatCustody = BoatCustody.valueOf(tag.getString("BoatCustody")); result.boatContext = tag.getCompound("BoatContext").copy();
         result.boatIncarnation = tag.getLong("BoatIncarnation"); result.step = tag.getInt("Step"); result.revision = tag.getLong("Revision"); result.lastTick = tag.getLong("LastTick");

@@ -36,6 +36,7 @@ final class SettlementConstructionOrder {
     private final SettlementArea completedArea;
     private BuilderStructureScanner.StructurePlan plan;
     private boolean recorded;
+    private UUID route;
 
     SettlementConstructionOrder(String label, List<Cell> cells, BuilderConstructionCost cost,
                                 List<SettlementWallsSavedData.Entry> originals,
@@ -63,6 +64,12 @@ final class SettlementConstructionOrder {
         this.completedArea = completedArea;
     }
 
+    void route(UUID id) { this.route = id; }
+    boolean routeWork(SettlementRecord town) {
+        return this.route != null && this.cells.size() <= SettlementRoute.SECTION_LENGTH
+                && this.cells.stream().allMatch(cell -> cell.after().is(net.minecraft.world.level.block.Blocks.COBBLESTONE)
+                        && SettlementPathTerrain.ground(cell.before(), SettlementPath.Material.COBBLESTONE));
+    }
     boolean wall() { return !this.originals.isEmpty(); }
     boolean campAvailable() {
         return wall() && java.util.stream.Stream.concat(this.originals.stream(), this.replacements.stream()).map(SettlementWallsSavedData.Entry::wall)
@@ -102,6 +109,11 @@ final class SettlementConstructionOrder {
     }
 
     boolean protectedSite(ServerLevel level, SettlementRecord town) {
+        if (this.route != null && this.cells.stream().anyMatch(cell ->
+                SettlementSavedData.get(level).at(town.dimension(), cell.position()).filter(other -> other != town).isPresent()
+                || level.hasChunkAt(cell.position()) && !level.getBlockState(cell.position()).equals(cell.after())
+                    && (com.jvn.villagerretaliation.diplomacy.route.RouteGroundService.customGroundChanged(level, cell.position())
+                        || !level.getBlockState(cell.position().above()).isAir() || !level.getBlockState(cell.position().above(2)).isAir()))) return true;
         if (this.originals.stream().anyMatch(entry -> !entry.equals(SettlementWallsSavedData.get(level).get(entry.id())))) return true;
         if (!wall() && java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
                 .anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED && project.order() == null
@@ -124,7 +136,16 @@ final class SettlementConstructionOrder {
         var plan = plan(id);
         var origin = origin();
         var area = SettlementConstructionService.workplace(player.serverLevel(), town, plan, origin, id);
-        if (area == null || !town.owns(area)) return "Keep the order inside the settlement construction bounds";
+        if (this.route != null) {
+            var data = SettlementSavedData.get(player.serverLevel()); var selected = data.aid().routes.get(this.route);
+            if (selected == null || !selected.origin.equals(town.id()) || !routeWork(town)
+                    || this.cells.stream().anyMatch(cell -> selected.path.steps().stream().noneMatch(step -> step.position().below().equals(cell.position()))
+                            || data.at(town.dimension(), cell.position()).filter(other -> other != town).isPresent()
+                            || !com.jvn.villagerretaliation.diplomacy.route.RouteGroundService.customGroundProblem(player.serverLevel(), cell.position(), town.id()).isEmpty()))
+                return "Route construction crosses protected or changed ground";
+            area = new SettlementArea(id, SettlementAreaType.CONSTRUCTION, this.label, plan.worldMin(origin).offset(-2, -1, -2), plan.worldMax(origin).offset(2, 3, 2), 5, true);
+        }
+        if (area == null || this.route == null && !town.owns(area)) return "Keep the order inside the settlement construction bounds";
         if (protectedSite(player.serverLevel(), town)) return "The order overlaps a protected worksite or changed wall";
         if (this.completedArea != null && (town.areas().size() >= SettlementRecord.MAX_AREAS
                 || town.areas().values().stream().anyMatch(existing -> existing.conflictsWith(this.completedArea))))
@@ -191,6 +212,7 @@ final class SettlementConstructionOrder {
         var tag = new CompoundTag();
         tag.putInt("Version", 1);
         tag.putString("Label", this.label);
+        if (this.route != null) tag.putUUID("Route", this.route);
         tag.putBoolean("Recorded", this.recorded);
         if (this.prepareGround) tag.putBoolean("PrepareGround", true);
         tag.putString("CostMode", this.cost.mode().name());
@@ -240,6 +262,11 @@ final class SettlementConstructionOrder {
                 tag.contains("CompletedArea", Tag.TAG_COMPOUND) ? SettlementArea.load(tag.getCompound("CompletedArea")) : null,
                 tag.getBoolean("PrepareGround"));
         order.recorded = tag.getBoolean("Recorded");
+        if (tag.contains("Route")) {
+            if (!tag.hasUUID("Route")) throw new IllegalArgumentException("Invalid construction route");
+            order.route = tag.getUUID("Route");
+            if (!order.routeWork(null)) throw new IllegalArgumentException("Invalid road construction order");
+        }
         return order;
     }
 }

@@ -24,6 +24,7 @@ final class VillageRelationsClientChecks {
     private VillageRelationsScreen relations;
     private ExploredMapScreen map;
     private int phase, ticks;
+    private UUID journey;
 
     VillageRelationsClientChecks(VillageAllegianceId town, SettlementManagementScreen management, Consumer<String> capture) {
         this.town = town; this.management = management; this.capture = capture;
@@ -46,7 +47,7 @@ final class VillageRelationsClientChecks {
                     VillageDiplomacyApi.set(level, oakvale, hidden, VillageRelation.NEUTRAL);
                     VillageDiplomacyService.standingEvent(level, town, oakvale, UUID.randomUUID(), 1, 45, "agreement");
                     VillageDiplomacyService.standingEvent(level, town, stoneford, UUID.randomUUID(), 1, -35, "interference");
-                    com.jvn.villagerretaliation.settlement.SettlementCourierClientFixture.seed(level, town, oakvale);
+                    journey = com.jvn.villagerretaliation.settlement.SettlementCourierClientFixture.seed(level, town, oakvale);
                 });
                 if (!preparation.isDone()) return false;
                 preparation.join();
@@ -132,6 +133,35 @@ final class VillageRelationsClientChecks {
                 minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
                 minecraft.screen.onClose(); require(minecraft.screen == relations, "aid returns to relations");
                 relations.onClose(); require(minecraft.screen == management, "relations returns to settlement management");
+                minecraft.setScreen(new com.jvn.villagerretaliation.client.exploration.SettlementRoutesScreen(management)); next();
+            }
+            case 12 -> {
+                if (ticks < 30) return false;
+                bounds(minecraft.screen); capture.accept("settlement-routes");
+                var choose = minecraft.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                        .filter(button -> button.getMessage().getString().equals("Choose saved route")).findFirst().orElseThrow();
+                require(choose.active, "route server response reached the screen"); choose.onPress(); next();
+            }
+            case 13 -> {
+                if (ticks < 30) return false;
+                bounds(minecraft.screen); capture.accept("settlement-route-sections");
+                minecraft.options.guiScale().set(3); minecraft.resizeDisplay(); next();
+            }
+            case 14 -> {
+                if (ticks < 5) return false;
+                bounds(minecraft.screen); capture.accept("settlement-routes-small");
+                minecraft.screen.mouseScrolled(minecraft.screen.width - 20, 100, 0, -10); next();
+            }
+            case 15 -> {
+                if (ticks < 5) return false;
+                bounds(minecraft.screen); capture.accept("settlement-route-sections-small");
+                minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
+                minecraft.setScreen(new com.jvn.villagerretaliation.client.exploration.SettlementRoutesScreen(management, journey)); next();
+            }
+            case 16 -> {
+                if (ticks < 30) return false;
+                bounds(minecraft.screen); capture.accept("settlement-caravan");
+                minecraft.screen.onClose(); require(minecraft.screen == management, "caravan screen returns to management");
                 return true;
             }
         }

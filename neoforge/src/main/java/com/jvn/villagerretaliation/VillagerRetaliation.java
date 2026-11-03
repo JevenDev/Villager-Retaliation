@@ -64,6 +64,7 @@ public class VillagerRetaliation {
         VillagerRetaliationConfig.init();
         com.jvn.villagerretaliation.campaign.selection.WorldCampaignConfig.register(modContainer);
         com.jvn.villagerretaliation.settlement.SettlementChunkReceipts.register(modEventBus);
+        com.jvn.villagerretaliation.diplomacy.route.RouteGroundService.register(modEventBus);
         com.jvn.villagerretaliation.interaction.work.mining.OreNodes.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignBlockOwnership.register(modEventBus);
         com.jvn.villagerretaliation.campaign.CampaignGeneratedBlocks.register(modEventBus);

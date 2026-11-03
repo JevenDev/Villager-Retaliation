@@ -9,6 +9,11 @@ import net.minecraft.nbt.Tag;
 public final class SettlementFoodRequest {
     public enum State { REQUEST_SENT, AWAITING_OFFER, OFFER_PREPARING, OFFER_SENT, AWAITING_ACCEPTANCE, ACCEPTANCE_SENT, DECLINE_SENT, CANCELLING,
         PREPARING, TRAVELLING, RETURNING, COMPLETED, DECLINED, CANCELLED, EXPIRED, BLOCKED }
+    public enum Purpose { SUPPLY, COMPANION, GUARD }
+    Purpose purpose = Purpose.SUPPLY;
+    UUID caravan, selectedRoute;
+    boolean recalled;
+    final java.util.Map<UUID, Boolean> participants = new java.util.LinkedHashMap<>();
     private final UUID id;
     private final VillageAllegianceId requester, donor;
     private final long nutrition;
@@ -37,6 +42,7 @@ public final class SettlementFoodRequest {
         this.messageSender = requester;
         this.created = created; this.arrives = arrives; this.expires = expires; this.authority = authority;
     }
+    public Purpose purpose() { return this.purpose; }
     public UUID id() { return this.id; }
     public VillageAllegianceId requester() { return this.requester; }
     public VillageAllegianceId donor() { return this.donor; }
@@ -55,11 +61,18 @@ public final class SettlementFoodRequest {
         return this.state == State.COMPLETED || this.state == State.DECLINED || this.state == State.CANCELLED || this.state == State.EXPIRED;
     }
     public long incomingNutrition() {
+        if (this.purpose != Purpose.SUPPLY) return 0;
         if (terminal() || this.journey != null && this.journey.presence == SettlementCourierJourney.Presence.DEAD || this.offer != null && this.offer.custody() == SettlementFoodOffer.Custody.RECOVERABLE) return 0;
         return this.offer == null ? this.nutrition : Math.max(0, this.offer.nutrition() - this.deliveredNutrition);
     }
     CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
+        if (this.purpose != Purpose.SUPPLY) { tag.putString("Purpose", this.purpose.name()); tag.putUUID("Caravan", this.caravan); }
+        if (this.recalled) tag.putBoolean("Recalled", true);
+        if (this.selectedRoute != null) tag.putUUID("SelectedRoute", this.selectedRoute);
+        var members = new net.minecraft.nbt.ListTag();
+        this.participants.forEach((id, guard) -> { var member = new CompoundTag(); member.putUUID("Resident", id); member.putBoolean("Guard", guard); members.add(member); });
+        tag.put("Participants", members);
         tag.putUUID("Id", this.id); tag.putUUID("Requester", this.requester.value()); tag.putUUID("Donor", this.donor.value());
         tag.putUUID("MessageSender", this.messageSender.value());
         tag.putUUID("Authority", this.authority); tag.putLong("Nutrition", this.nutrition); tag.putLong("Created", this.created);
@@ -96,6 +109,34 @@ public final class SettlementFoodRequest {
         if (tag.contains("DonorAuthority")) {
             if (!tag.hasUUID("DonorAuthority")) throw new IllegalArgumentException("Invalid food approval authority");
             result.donorAuthority = tag.getUUID("DonorAuthority");
+        }
+        result.recalled = tag.getBoolean("Recalled");
+        if (tag.contains("SelectedRoute")) {
+            if (!tag.hasUUID("SelectedRoute")) throw new IllegalArgumentException("Invalid selected route");
+            result.selectedRoute = tag.getUUID("SelectedRoute");
+        }
+        if (tag.contains("Participants")) {
+            var members = tag.getList("Participants", Tag.TAG_COMPOUND);
+            if (!members.equals(tag.get("Participants")) || members.size() > 7) throw new IllegalArgumentException("Invalid caravan roster");
+            for (var raw : members) {
+                var member = (CompoundTag) raw;
+                if (!member.hasUUID("Resident") || !member.contains("Guard", Tag.TAG_BYTE)
+                        || result.participants.put(member.getUUID("Resident"), member.getBoolean("Guard")) != null)
+                    throw new IllegalArgumentException("Invalid caravan member");
+            }
+        }
+        if (tag.contains("Purpose")) {
+            result.purpose = Purpose.valueOf(tag.getString("Purpose"));
+            if (result.purpose == Purpose.SUPPLY || !tag.hasUUID("Caravan") || tag.getUUID("Caravan").equals(result.id)
+                    || !tag.contains("Journey") || tag.contains("Offer") || tag.contains("Preparation") || !result.participants.isEmpty())
+                throw new IllegalArgumentException("Invalid caravan mission");
+            result.caravan = tag.getUUID("Caravan"); result.journey = SettlementCourierJourney.load(tag.getCompound("Journey"), provider);
+            if (!result.journey.id.equals(result.id) || result.journey.revision > result.revision || result.revision < 0
+                    || result.deliveredNutrition != 0 || result.creditedStanding != 0 || result.blocker.length() > 80
+                    || !result.journey.boat.isEmpty() || !result.journey.recovery.isEmpty()
+                    || result.state != State.TRAVELLING && result.state != State.RETURNING && result.state != State.COMPLETED && result.state != State.BLOCKED && !(result.recalled && result.state == State.CANCELLED))
+                throw new IllegalArgumentException("Invalid caravan custody");
+            return result;
         }
         if (tag.contains("Preparation")) result.preparation = SettlementAidPreparation.load(tag.getCompound("Preparation"));
         if (tag.contains("Offer")) result.offer = SettlementFoodOffer.load(tag.getCompound("Offer"), provider);

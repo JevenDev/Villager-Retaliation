@@ -72,7 +72,7 @@ public final class SettlementCourierMapNetworking {
         var journey = request.journey;
         if (journey.repair != null) return Stage.PREPARING;
         if (!request.blocker().isEmpty() || journey.presence == SettlementCourierJourney.Presence.DEAD || journey.presence == SettlementCourierJourney.Presence.STRANDED) return Stage.BLOCKED;
-        boolean delivery = request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
+        boolean delivery = request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
         return switch (journey.leg) {
             case APPROACH -> Stage.OUTBOUND;
             case OUTBOUND -> delivery ? Stage.DELIVERY : Stage.COLLECTION;

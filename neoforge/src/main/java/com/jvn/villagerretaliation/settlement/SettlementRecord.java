@@ -210,16 +210,30 @@ public final class SettlementRecord {
 
     public boolean contains(BlockPos position) { return this.territory.contains(position) && (autonomous == null || autonomous.contains(position)); }
 
+    public boolean protectsRouteGround(BlockPos position) {
+        return this.areas.values().stream().anyMatch(area -> area.type() != SettlementAreaType.CONSTRUCTION && roadColumnWithin(position, area.min(), area.max()))
+                || java.util.stream.Stream.concat(projects().values().stream(), projectHistory().values().stream())
+                    .anyMatch(project -> (project.unfinished() || project.order() == null) && roadColumnWithin(position, project.min(), project.max()));
+    }
+    private static boolean roadColumnWithin(BlockPos position, BlockPos min, BlockPos max) {
+        return position.getX() >= min.getX() && position.getX() <= max.getX()
+                && position.getZ() >= min.getZ() && position.getZ() <= max.getZ();
+    }
+
     public boolean contains(BlockPos min, BlockPos max) { return this.territory.contains(min, max) && (autonomous == null || autonomous.contains(min,max)); }
 
     public boolean owns(SettlementArea area) {
         if (area == null) return false;
-        if (!area.wall()) return contains(area.min(), area.max());
+        if (!area.wall()) {
+            var road = projects().get(area.id());
+            return contains(area.min(), area.max()) || road != null && road.order() != null && road.order().routeWork(this) && road.within(area);
+        }
         var project = projects().get(area.id());
         return project != null && project.wallConstruction() != null && project.within(area) && project.wallConstruction().owned(this);
     }
 
     boolean owns(SettlementProject project) {
+        if (project.order() != null && project.order().routeWork(this)) return project.town().equals(this.id.value()) && project.within(project.workplace());
         if (project.wallConstruction() != null) return project.wallConstruction().owned(this);
         return contains(project.min(), project.max())
                 && (project.workplace() == null || owns(project.workplace()))

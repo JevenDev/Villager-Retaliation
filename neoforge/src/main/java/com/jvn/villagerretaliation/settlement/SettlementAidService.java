@@ -119,7 +119,11 @@ public final class SettlementAidService {
         if (request.revision() != expected) return Result.STALE;
         if (request.journey != null) {
             var journeyLevel = player.server.getLevel(ResourceKey.create(Registries.DIMENSION, request.journey.dimension));
-            return journeyLevel != null && SettlementCourierService.retry(journeyLevel, request) ? Result.APPLIED : Result.UNAVAILABLE;
+            if (journeyLevel == null) return Result.UNAVAILABLE;
+            boolean retried = false;
+            for (var member : SettlementCaravanService.group(journeyLevel, request))
+                if (member.journey.ownsResident() && (member == request || !member.journey.blocker.isEmpty())) retried |= SettlementCourierService.retry(journeyLevel, member);
+            return retried ? Result.APPLIED : Result.UNAVAILABLE;
         }
         if (request.state() != SettlementFoodRequest.State.OFFER_PREPARING || request.preparation == null) return Result.UNAVAILABLE;
         var level = dimension(player.server, town); if (level == null) return Result.UNAVAILABLE;
@@ -204,14 +208,18 @@ public final class SettlementAidService {
                 .min(Comparator.comparingDouble(resident -> resident.position().distSqr(depot))).orElse(null);
     }
     static boolean eligible(ServerLevel level, SettlementRecord town, SettlementResidentState resident, UUID request) {
+        return eligible(level, town, resident, request, false);
+    }
+    static boolean eligible(ServerLevel level, SettlementRecord town, SettlementResidentState resident, UUID request, boolean companion) {
         if (resident == null || !SettlementSavedData.get(level).aid().courierAvailable(resident.id())
                 || !VillageAllegianceRegistrySavedData.get(level).canonicalRecord(town.id())
-                .map(record -> record.residents().containsKey(resident.id())).orElse(false) || !resident.eligibleDiplomaticCourier() || town.leader().equals(resident.id())
+                .map(record -> record.residents().containsKey(resident.id())).orElse(false) || !(companion ? resident.eligibleCaravanMember() : resident.eligibleDiplomaticCourier()) || town.leader().equals(resident.id())
                 || town.autonomous() != null && resident.id().equals(town.autonomous().ruler()) || town.duties().containsKey(resident.id())
                 || town.workerPoolFor(resident.id()) != null || town.workers().containsKey(resident.id()) || town.activeProject(resident.id()) != null
                 || town.arrivals().containsKey(resident.id()) || town.departures().containsKey(resident.id())) return false;
         for (var other : SettlementSavedData.get(level).aid().requests.values()) {
             if (other.id().equals(request) || other.terminal()) continue;
+            if (other.participants.containsKey(resident.id())) return false;
             if (other.offer != null) { if (other.offer.courier().equals(resident.id())) return false; continue; }
             if (other.preparation != null && (other.preparation.delivery != null && other.preparation.delivery.resident.equals(resident.id())
                     || other.preparation.collection != null && other.preparation.collection.resident.equals(resident.id()))) return false;
@@ -311,6 +319,7 @@ public final class SettlementAidService {
         }
 
         void step(ServerLevel root, SettlementFoodRequest request, long now) {
+            if (request.purpose != SettlementFoodRequest.Purpose.SUPPLY) return;
             var data = SettlementSavedData.get(root); var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
             var level = dimension(root.getServer(), donor);
             if (level == null || recipient == null || !donor.territory().active() || !recipient.territory().active() || donor.id().equals(recipient.id())) {

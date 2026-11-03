@@ -105,19 +105,36 @@ public final class SettlementCourierService {
         if (candidate == null || candidate.access == null || candidate.approach == null) {
             SettlementAidService.transition(data, request, request.state(), "courier_plan_unavailable"); return;
         }
-        if (!candidate.origin.equals(context.blockPosition())) {
+        var selectedRoute = request.selectedRoute == null ? null : data.aid().routes.get(request.selectedRoute);
+        if (request.selectedRoute != null && (selectedRoute == null || !SettlementCaravanService.matches(selectedRoute, request)
+                || !selectedRoute.dimension.equals(level.dimension().location()))) {
+            SettlementAidService.transition(data, request, request.state(), "custom_route_unavailable"); return;
+        }
+        var access = selectedRoute == null ? candidate.access : (selectedRoute.origin.equals(home.id()) ? selectedRoute.path.steps().getFirst() : selectedRoute.path.steps().getLast()).position();
+        if (!candidate.origin.equals(context.blockPosition()) || !candidate.access.equals(access)) {
             if (candidate.approach != null) DiplomaticRouteService.forget(level, candidate.approach);
-            candidate.origin = context.blockPosition().immutable(); candidate.approach = UUID.randomUUID();
+            candidate.origin = context.blockPosition().immutable(); candidate.access = access; candidate.approach = UUID.randomUUID();
             data.aid().changed(request); data.setDirty();
         }
         try {
             var prepared = DiplomaticRouteService.prepare(level, candidate.approach, candidate.origin, candidate.access, false);
             var approach = DiplomaticRouteService.ready(level, candidate.approach);
-            var crossing = DiplomaticRouteService.ready(level, plan.crossing);
+            var crossing = selectedRoute == null ? DiplomaticRouteService.ready(level, plan.crossing)
+                    : selectedRoute.origin.equals(request.donor()) ? selectedRoute.path : selectedRoute.path.reversed();
             if (approach == null || crossing == null) {
                 SettlementAidService.transition(data, request, request.state(), prepared.blocker().isEmpty() ? "preparing_route" : prepared.blocker()); return;
             }
+            if (selectedRoute != null) {
+                var source = donor.depots().get(plan.donorDepot); var target = recipient.depots().get(plan.recipientDepot);
+                if (source == null || target == null || source.position().distSqr(crossing.steps().getFirst().position()) > 12
+                        || target.position().distSqr(crossing.steps().getLast().position()) > 12) {
+                    SettlementAidService.transition(data, request, request.state(), "custom_route_depot_changed"); return;
+                }
+                SettlementRouteService.refresh(level, selectedRoute);
+            }
             if (!delivery) crossing = crossing.reversed();
+            var companions = SettlementCaravanService.prepare(level, request, home, crossing, now);
+            if (companions == null) return;
             var depot = home.depots().get(delivery ? plan.donorDepot : plan.recipientDepot);
             var boat = crossing.needsBoat() ? SettlementAidService.boat(level, home, depot) : ItemStack.EMPTY;
             if (crossing.needsBoat() && boat.isEmpty()) { SettlementAidService.transition(data, request, request.state(), "boat_unavailable"); return; }
@@ -126,10 +143,12 @@ public final class SettlementCourierService {
             context.getPersistentData().putUUID(JOURNEY, request.id()); context.getPersistentData().putLong(INCARNATION, incarnation);
             var journey = new SettlementCourierJourney(request.id(), resident.id(), delivery ? request.donor() : request.requester(), level.dimension().location(), approach, crossing,
                     context.saveWithoutId(new CompoundTag()), incarnation, boat, now);
+            if (selectedRoute != null) journey.select(selectedRoute, !selectedRoute.origin.equals(journey.home));
             if (!boat.isEmpty()) depot.withdraw(item -> ItemStack.isSameItemSameComponents(item, boat), 1);
             resident.courier(request.id(), incarnation, true); home.changed(); data.aid().journey(request, journey);
             SettlementAidService.transition(data, request, SettlementFoodRequest.State.TRAVELLING, "");
             changed(level, request); WAITING.remove(context);
+            SettlementCaravanService.claim(level, request, home, companions);
         } catch (IllegalStateException failure) {
             if (!"route_queue_full".equals(failure.getMessage()) && !"route_data_read_only".equals(failure.getMessage())) throw failure;
             SettlementAidService.transition(data, request, request.state(), failure.getMessage());
@@ -168,6 +187,11 @@ public final class SettlementCourierService {
             SettlementCourierRecovery.update(level, request, now, runtime); SettlementCourierRecovery.unlock(level, request); return;
         }
         if (journey.released()) return;
+        if (!request.recalled && (journey.customRoute != null || request.caravan != null || !request.participants.isEmpty())) {
+            var data = SettlementSavedData.get(level); var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
+            if (!SettlementAidService.available(level, donor, recipient)) { block(level, request, "route_settlement_unavailable"); return; }
+            if (journey.blocker.equals("route_settlement_unavailable")) block(level, request, "");
+        }
         if (journey.repair != null) {
             if (live != null && danger(live)) { block(level, request, "courier_in_danger"); return; }
             if (now % 20 == 0) repairRoute(level, request, live);
@@ -225,10 +249,12 @@ public final class SettlementCourierService {
         if (next.mode() == DiplomaticRoute.Mode.LAUNCH && journey.boatIncarnation == Long.MAX_VALUE) {
             block(level, request, "boat_identity_exhausted"); return;
         }
+        if (!SettlementCaravanService.ready(level, request)) return;
         int before = journey.step; journey.advance(now);
         if (journey.step != before) { travelled(level, request); changed(level, request); }
     }
     static void travelled(ServerLevel level, SettlementFoodRequest request) {
+        SettlementRouteService.travelled(level, request.journey);
         var data = SettlementSavedData.get(level); var map = com.jvn.villagerretaliation.diplomacy.route.DiplomaticTravelMapData.get(level);
         var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
         if (donor != null) map.observe(level, donor.id(), request.journey.position);
@@ -328,6 +354,7 @@ public final class SettlementCourierService {
         if (journey.blocker.equals("courier_in_danger")) { journey.obstructed = false; block(level, request, ""); }
         if (journey.finished()) { arrived(level, request, courier, now); return; }
         if (journey.atEnd()) { arrived(level, request, courier, now); return; }
+        if (!SettlementCaravanService.ready(level, request)) { courier.getNavigation().stop(); return; }
         var target = journey.route().steps().get(journey.step + 1);
         if (!level.isPositionEntityTicking(target.position())) {
             if (!nearby(level, courier.blockPosition(), 96) && !journey.obstructed) beginRetirement(level, request, courier, now);
@@ -342,7 +369,7 @@ public final class SettlementCourierService {
             journey.step++; journey.position = target.position(); journey.lastProgress = now; journey.obstructed = false;
             block(level, request, ""); capture(journey, courier); travelled(level, request); changed(level, request);
         } else if (navigationDue(level, journey, now)) {
-            if (!courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5)
+            if (!courier.getNavigation().moveTo(courier.getNavigation().createPath(target.position(), 0), 0.5 / journey.timeFactor())
                     || now - journey.lastProgress > 200) {
                 journey.obstructed = true; block(level, request, "courier_path_obstructed");
             }

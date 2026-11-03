@@ -84,6 +84,9 @@ public final class SettlementAidScreen extends VillagerWindowScreen {
             send = addRenderableWidget(VillagerUi.buttonBuilder(text("save"), ignored -> request(Action.POLICY))
                     .bounds(left + panelWidth - 110, top + panelHeight - 20, 110, 20).build());
         } else {
+            addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Caravan / route"), ignored -> {
+                if (selected != null) minecraft.setScreen(new com.jvn.villagerretaliation.client.exploration.SettlementRoutesScreen(this, selected.id()));
+            }).bounds(left + 120, top + 25, 110, 20).build());
             rows = addRenderableWidget(new Rows(left, top + 54, panelWidth, Math.max(36, panelHeight - 158)));
             if (snapshot != null) snapshot.entries().forEach(rows::add);
             previous = addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("<"), ignored -> { page = Math.max(0, page - 1); request(Action.VIEW); })

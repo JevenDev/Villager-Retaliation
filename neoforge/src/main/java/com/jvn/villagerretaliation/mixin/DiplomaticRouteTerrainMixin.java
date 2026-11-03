@@ -15,7 +15,9 @@ public abstract class DiplomaticRouteTerrainMixin {
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void villagerretaliation$invalidateRoute(BlockPos position, BlockState state, boolean moving,
                                                     CallbackInfoReturnable<BlockState> callback) {
-        if (callback.getReturnValue() != null && ((LevelChunk) (Object) this).getLevel() instanceof ServerLevel level)
+        if (callback.getReturnValue() != null && ((LevelChunk) (Object) this).getLevel() instanceof ServerLevel level) {
             DiplomaticRouteService.terrainChanged(level, position);
+            com.jvn.villagerretaliation.diplomacy.route.RouteGroundService.changed((LevelChunk) (Object) this, position);
+        }
     }
 }

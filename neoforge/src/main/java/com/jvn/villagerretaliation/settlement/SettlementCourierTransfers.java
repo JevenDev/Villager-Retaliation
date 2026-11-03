@@ -13,12 +13,12 @@ final class SettlementCourierTransfers {
         if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
         if (courier != null && !journey.finished() && !SettlementCourierService.nativeDurable(level, journey, courier,
                 SettlementCourierService.runtime(level.getServer()), now)) return;
-        boolean delivery = request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
+        boolean delivery = request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
         boolean pickup = delivery && journey.leg == SettlementCourierJourney.Leg.APPROACH
                 || !delivery && journey.leg == SettlementCourierJourney.Leg.OUTBOUND;
         boolean unload = delivery && journey.leg == SettlementCourierJourney.Leg.OUTBOUND
                 || !delivery && journey.leg == SettlementCourierJourney.Leg.HOMEBOUND;
-        if (pickup && request.offer.custody() == SettlementFoodOffer.Custody.RESERVED) {
+        if (request.offer != null && pickup && request.offer.custody() == SettlementFoodOffer.Custody.RESERVED) {
             var donor = data.get(request.donor()).orElse(null);
             if (donor == null || !donor.territory().active() || donor.depots().get(request.preparation.donorDepot) == null
                     || donor.depots().get(request.preparation.donorDepot).position().distSqr(journey.position) > 12) {
@@ -26,7 +26,15 @@ final class SettlementCourierTransfers {
             }
             request.offer.custody = SettlementFoodOffer.Custody.COURIER; SettlementCourierService.changed(level, request); return;
         }
-        if (unload && !request.offer.empty()) {
+        if (request.recalled && request.offer != null && !request.offer.empty() && journey.leg == SettlementCourierJourney.Leg.HOMEBOUND
+                && (delivery || request.offer.custody() == SettlementFoodOffer.Custody.RESERVED)) {
+            var donor = data.get(request.donor()).orElse(null);
+            if (donor == null) { SettlementCourierService.block(level, request, "settlement_unavailable"); return; }
+            request.offer.custody = SettlementFoodOffer.Custody.RESERVED;
+            if (!SettlementAidStock.refund(level, donor, request)) { SettlementCourierService.block(level, request, "refund_storage_full"); return; }
+            SettlementCourierService.changed(level, request); return;
+        }
+        if (request.offer != null && unload && !request.offer.empty()) {
             var recipient = data.get(request.requester()).orElse(null);
             if (recipient == null || !recipient.territory().active()) { SettlementCourierService.block(level, request, "settlement_unavailable"); return; }
             var depot = recipient.depots().get(request.preparation.recipientDepot);
@@ -46,11 +54,12 @@ final class SettlementCourierTransfers {
             }
             journey.boatCustody = SettlementCourierJourney.BoatCustody.RETURNED; SettlementCourierService.changed(level, request); return;
         }
+        var completed = request.recalled ? SettlementFoodRequest.State.CANCELLED : SettlementFoodRequest.State.COMPLETED;
         if (journey.finished()) {
             var resident = home.residents().get(journey.resident);
             if (resident == null) { SettlementCourierService.block(level, request, "resident_context_unavailable"); return; }
             if (courier == null) {
-                if (request.state() == SettlementFoodRequest.State.COMPLETED) return;
+                if (request.state() == completed) return;
                 var context = resident.context(level); if (context == null) return;
                 context.load(journey.residentContext.copy());
                 context.moveTo(journey.position.getX() + 0.5, journey.position.getY(), journey.position.getZ() + 0.5, context.getYRot(), context.getXRot());
@@ -58,8 +67,8 @@ final class SettlementCourierTransfers {
                 context.getPersistentData().putLong(SettlementCourierService.INCARNATION, journey.incarnation);
                 resident.courier(journey.id, journey.incarnation, false); resident.observe(context, home, now); home.changed();
                 journey.residentContext = context.saveWithoutId(new CompoundTag());
-                if (request.state() != SettlementFoodRequest.State.COMPLETED) {
-                    SettlementAidService.transition(data, request, SettlementFoodRequest.State.COMPLETED, "");
+                if (request.state() != completed) {
+                    SettlementAidService.transition(data, request, completed, "");
                     SettlementCourierService.changed(level, request); SettlementAidService.releaseRoutes(level, request);
                 }
                 return;
@@ -70,9 +79,10 @@ final class SettlementCourierTransfers {
             journey.presence = SettlementCourierJourney.Presence.RELEASED;
             if (journey.interference.values().stream().allMatch(incident -> incident.applied)) data.aid().couriers.remove(journey.resident);
             SettlementCourierService.changed(level, request);
-            SettlementAidService.transition(data, request, SettlementFoodRequest.State.COMPLETED, "");
+            SettlementAidService.transition(data, request, completed, "");
             SettlementAidService.releaseRoutes(level, request); return;
         }
+        if (!SettlementCaravanService.readyForNextLeg(level, request)) return;
         journey.nextLeg(now); SettlementCourierService.block(level, request, ""); SettlementCourierService.changed(level, request);
         if (journey.leg == SettlementCourierJourney.Leg.HOMEBOUND || journey.leg == SettlementCourierJourney.Leg.RETURN_APPROACH)
             SettlementAidService.transition(data, request, SettlementFoodRequest.State.RETURNING, "");

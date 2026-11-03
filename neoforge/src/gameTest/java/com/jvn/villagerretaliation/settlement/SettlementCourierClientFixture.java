@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
 
 public final class SettlementCourierClientFixture {
     private SettlementCourierClientFixture() { }
-    public static void seed(ServerLevel level, VillageAllegianceId source, VillageAllegianceId target) {
+    public static UUID seed(ServerLevel level, VillageAllegianceId source, VillageAllegianceId target) {
         var data = SettlementSavedData.get(level); var registry = VillageAllegianceRegistrySavedData.get(level);
         var home = data.get(source).orElseThrow(); var destination = registry.canonicalRecord(target).orElseThrow();
         var recipient = data.establish(registry, target, UUID.randomUUID(), destination.center(), level.getGameTime()).orElseThrow();
@@ -37,6 +37,10 @@ public final class SettlementCourierClientFixture {
         journey.leg = SettlementCourierJourney.Leg.OUTBOUND; journey.step = 56; journey.position = journey.route().steps().get(journey.step).position();
         journey.presence = SettlementCourierJourney.Presence.STRANDED; journey.obstructed = true; journey.blocker = "courier_path_obstructed";
         request.blocker = journey.blocker; data.aid().requests.put(request.id(), request); data.aid().journey(request, journey);
-        home.residents().get(courier.getUUID()).courier(request.id(), 1, true); data.setDirty();
+        home.residents().get(courier.getUUID()).courier(request.id(), 1, true);
+        var route = new SettlementRoute(UUID.randomUUID(), source, target, level.dimension().location(), "Oakvale supply road", journey.crossing, data.aid().revision());
+        java.util.Arrays.fill(route.wear, (byte) 4); route.points = List.of(from.east(48));
+        data.aid().routes.put(route.id, route); request.selectedRoute = route.id; journey.select(route, false); data.setDirty();
+        return request.id();
     }
 }
