@@ -45,7 +45,7 @@ public final class SettlementAidNetworking {
         var visible = VillageDiplomacyService.visible(player, town.id()); var registry = VillageAllegianceRegistrySavedData.get(level);
         var rows = new ArrayList<SettlementAidPayload.Entry>();
         for (var value : aid.requests.values()) {
-            if (value.purpose != SettlementFoodRequest.Purpose.SUPPLY) continue;
+            if (value.purpose != SettlementFoodRequest.Purpose.SUPPLY || value.trade != null) continue;
             boolean donating = data.get(value.donor()).orElse(null) == town;
             if (!donating && data.get(value.requester()).orElse(null) != town || donating && value.state() == SettlementFoodRequest.State.REQUEST_SENT) continue;
             var other = registry.canonicalRecord(donating ? value.requester() : value.donor()).orElse(null);

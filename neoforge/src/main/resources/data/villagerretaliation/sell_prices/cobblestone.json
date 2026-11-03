@@ -1,0 +1,7 @@
+{
+    "item": "#c:cobblestones",
+    "item_count": 32,
+    "currency_count": 1,
+    "market_group": "villagerretaliation:stone",
+    "priority": -100
+}

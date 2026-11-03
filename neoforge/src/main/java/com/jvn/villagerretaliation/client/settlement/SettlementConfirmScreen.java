@@ -6,12 +6,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-final class SettlementConfirmScreen extends VillagerWindowScreen implements SettlementPolicyClient.Child {
+public final class SettlementConfirmScreen extends VillagerWindowScreen implements SettlementPolicyClient.Child {
     private final Screen parent;
     private final Component confirmationMessage;
     private final Runnable accepted;
 
-    SettlementConfirmScreen(Screen parent, Component title, Component message, Runnable accepted) {
+    public SettlementConfirmScreen(Screen parent, Component title, Component message, Runnable accepted) {
         super(title);
         this.parent = parent;
         this.confirmationMessage = message;

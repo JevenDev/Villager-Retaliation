@@ -181,6 +181,12 @@ public final class SettlementViewClientSmoke {
                 relationsChecks = new VillageRelationsClientChecks(fixture.town(), screen, SettlementViewClientSmoke::capture);
             }
             if (!relationsChecks.tick(minecraft)) return;
+            if (Boolean.getBoolean("villagerretaliation.settlementTradeClientSmokeOnly")) {
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement client smoke checks passed\n");
+                } catch (IOException exception) { throw new UncheckedIOException(exception); }
+                minecraft.stop(); phase = 999; return;
+            }
             var screen = (SettlementManagementScreen) minecraft.screen;
             button(screen, "villagerretaliation.gui.settlement.world_view").onPress();
             ticks = 0;

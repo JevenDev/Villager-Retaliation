@@ -185,6 +185,7 @@ neoForge {
             client()
             sourceSet = sourceSets.gameTest
             gameDirectory.set(settlementClientSmokeDirectory)
+            systemProperty 'villagerretaliation.settlementTradeClientSmokeOnly', providers.gradleProperty('settlementTradeClientSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.settlementHousingClientSmoke', providers.gradleProperty('settlementHousingClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementWorldViewClientSmoke', providers.gradleProperty('settlementWorldViewClientSmoke').orElse('false').get()
             systemProperty 'villagerretaliation.settlementEditorClientSmokeOnly', providers.gradleProperty('settlementEditorClientSmokeOnly').orElse('false').get()

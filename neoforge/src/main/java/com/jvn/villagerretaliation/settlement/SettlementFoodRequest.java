@@ -25,6 +25,10 @@ public final class SettlementFoodRequest {
     long revision;
     String blocker = "";
     SettlementFoodOffer offer;
+    SettlementNegotiatedTrade trade;
+    public SettlementNegotiatedTrade trade() { return trade; }
+    SettlementFoodOffer.Arrangement arrangement() { return trade != null ? trade.arrangement() : offer.arrangement(); }
+    UUID courierId() { return trade != null ? trade.courier : offer.courier(); }
     long deliveredNutrition, lostNutrition;
     int creditedStanding;
     UUID donorAuthority;
@@ -61,7 +65,7 @@ public final class SettlementFoodRequest {
         return this.state == State.COMPLETED || this.state == State.DECLINED || this.state == State.CANCELLED || this.state == State.EXPIRED;
     }
     public long incomingNutrition() {
-        if (this.purpose != Purpose.SUPPLY) return 0;
+        if (this.purpose != Purpose.SUPPLY || this.trade != null) return 0;
         if (terminal() || this.journey != null && this.journey.presence == SettlementCourierJourney.Presence.DEAD || this.offer != null && this.offer.custody() == SettlementFoodOffer.Custody.RECOVERABLE) return 0;
         return this.offer == null ? this.nutrition : Math.max(0, this.offer.nutrition() - this.deliveredNutrition - this.lostNutrition);
     }
@@ -82,6 +86,7 @@ public final class SettlementFoodRequest {
         tag.putLong("LostNutrition", this.lostNutrition);
         if (this.donorAuthority != null) tag.putUUID("DonorAuthority", this.donorAuthority);
         tag.putInt("MaximumItems", this.maximumItems); tag.putBoolean("AutomaticApproval", this.automaticApproval);
+        if (this.trade != null) tag.put("Trade", this.trade.save(provider));
         if (this.preparation != null) tag.put("Preparation", this.preparation.save());
         if (this.offer != null) tag.put("Offer", this.offer.save(provider));
         if (this.journey != null) tag.put("Journey", this.journey.save(provider));
@@ -142,6 +147,13 @@ public final class SettlementFoodRequest {
             return result;
         }
         if (tag.contains("Preparation")) result.preparation = SettlementAidPreparation.load(tag.getCompound("Preparation"));
+        if (tag.contains("Trade")) {
+            if (tag.contains("Offer") || result.revision < 0 || result.blocker.length() > 80 || result.deliveredNutrition != 0 || result.creditedStanding != 0)
+                throw new IllegalArgumentException("Invalid trade mission");
+            if (tag.contains("Journey")) result.journey = SettlementCourierJourney.load(tag.getCompound("Journey"), provider);
+            result.trade = SettlementNegotiatedTrade.load(tag.getCompound("Trade"), provider, result);
+            return result;
+        }
         if (tag.contains("Offer")) result.offer = SettlementFoodOffer.load(tag.getCompound("Offer"), provider);
         if (tag.contains("Journey")) {
             result.journey = SettlementCourierJourney.load(tag.getCompound("Journey"), provider);

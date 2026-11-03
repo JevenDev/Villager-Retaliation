@@ -160,6 +160,11 @@ public final class VillageSellMarket {
                 .flatMap(registry::canonical);
     }
 
+    public static CurrencyAmount sharedBasePrice(MinecraftServer server, SellPriceDefinition definition) {
+        return selectBasePrice(server.overworld().getSeed(), currentDay(server), null, definition,
+                SellPriceResources.candidatePrices(server, definition));
+    }
+
     public static long currentDay(MinecraftServer server) {
         return Math.floorDiv(server.overworld().getDayTime(), VillageMarketPolicy.DAY_TICKS);
     }

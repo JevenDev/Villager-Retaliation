@@ -41,6 +41,16 @@ public final class SettlementCourierClientFixture {
         var route = new SettlementRoute(UUID.randomUUID(), source, target, level.dimension().location(), "Oakvale supply road", journey.crossing, data.aid().revision());
         java.util.Arrays.fill(route.wear, (byte) 4); route.points = List.of(from.east(48));
         data.aid().routes.put(route.id, route); request.selectedRoute = route.id; journey.select(route, false); data.setDirty();
+        var trade = new SettlementFoodRequest(UUID.randomUUID(), target, source, 1, now, now, now + 24000, recipient.leader());
+        trade.trade = new SettlementNegotiatedTrade(new SettlementExchangeTerms(
+                new SettlementExchangeTerms.Bundle(List.of(new ItemStack(Items.OAK_LOG, 24), new ItemStack(Items.COBBLESTONE, 32),
+                        new ItemStack(Items.BREAD, 8)), com.jvn.villagerretaliation.sell.CurrencyAmount.of(1, 4)),
+                new SettlementExchangeTerms.Bundle(List.of(new ItemStack(Items.IRON_INGOT, 6)),
+                        com.jvn.villagerretaliation.sell.CurrencyAmount.of(2, 1)), true), target);
+        trade.trade.firstAuthority = home.leader(); trade.trade.secondAuthority = recipient.leader();
+        trade.trade.explanation = "offer_received"; trade.state = SettlementFoodRequest.State.OFFER_SENT;
+        trade.messageSender = target; trade.selectedRoute = route.id;
+        data.aid().requests.put(trade.id(), trade);
         return request.id();
     }
 }

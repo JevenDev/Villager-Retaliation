@@ -340,7 +340,7 @@ public final class SettlementAidGameTests {
         helper.startSequence().thenWaitUntil(() -> { work.run(); helper.assertTrue(ready[0] != null, "allocation planning completes"); })
                 .thenExecute(() -> {
                     var quote = SettlementAidStock.quote(level, donor.town, data.aid().policy(donor.town), ready[0], revision, 100, 20);
-                    helper.assertTrue(SettlementAidStock.reserve(level, donor.town, request, quote, SettlementFoodOffer.Arrangement.DONOR_DELIVERY, UUID.randomUUID()), "food reserved before cancellation");
+                    helper.assertTrue(SettlementAidStock.reserve(level, donor.town, request, quote, SettlementFoodOffer.Arrangement.DONOR_DELIVERY, UUID.randomUUID()), "food reserved before cancellation: " + quote.blocker() + ", captured=" + revision + ", current=" + donor.town.revision());
                     fillBread(donor.depot);
                     helper.assertValueEqual(SettlementAidService.cancel(player, request.id(), request.revision()), SettlementAidService.Result.APPLIED, "authorized cancellation is sent");
                     var schedule = new SettlementAidService.Schedule(); schedule.step(level, request, request.arrives());

@@ -25,7 +25,7 @@ public final class SettlementAidLedger {
 
     static final class Town {
         SettlementAidPolicy policy;
-        long shortageSince = -1, lastObserved, nextRequest, nextAid, policyRevision;
+        long shortageSince = -1, lastObserved, nextRequest, nextAid, policyRevision, nextTrade;
         Town(SettlementAidPolicy policy) { this.policy = policy; }
     }
     record Receipt(long sequence, UUID request, VillageAllegianceId donor, VillageAllegianceId recipient, int standing, long date, long revision) {
@@ -85,6 +85,7 @@ public final class SettlementAidLedger {
                 .filter(request -> request.caravan == null && this.requests.values().stream().filter(member -> request.id().equals(member.caravan))
                         .allMatch(member -> member.terminal() && member.journey != null && member.journey.released()
                                 && member.journey.interference.values().stream().allMatch(incident -> incident.applied)))
+                .filter(request -> request.trade == null || !request.trade.unresolved())
                 .filter(request -> request.offer() == null || request.offer().empty())
                 .filter(request -> this.receipts.values().stream().noneMatch(receipt -> receipt.request().equals(request.id())))
                 .min(java.util.Comparator.comparingLong(SettlementFoodRequest::created)).orElse(null);
@@ -101,12 +102,13 @@ public final class SettlementAidLedger {
     }
     CompoundTag save(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
-        tag.putInt("Version", 4); tag.putUUID("Stream", this.stream); tag.putLong("Sequence", this.sequence); tag.putLong("Revision", this.revision);
+        tag.putInt("Version", 5); tag.putUUID("Stream", this.stream); tag.putLong("Sequence", this.sequence); tag.putLong("Revision", this.revision);
         var towns = new ListTag();
         this.towns.forEach((id, state) -> {
             var entry = new CompoundTag(); entry.putUUID("Village", id.value()); entry.put("Policy", state.policy.save());
             entry.putLong("PolicyRevision", state.policyRevision);
             entry.putLong("ShortageSince", state.shortageSince); entry.putLong("LastObserved", state.lastObserved);
+            entry.putLong("NextTrade", state.nextTrade);
             entry.putLong("NextRequest", state.nextRequest); entry.putLong("NextAid", state.nextAid); towns.add(entry);
         });
         tag.put("Towns", towns);
@@ -122,7 +124,7 @@ public final class SettlementAidLedger {
         return tag;
     }
     static SettlementAidLedger load(CompoundTag tag, HolderLookup.Provider provider) {
-        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 4) || !tag.hasUUID("Stream")
+        if (!tag.contains("Version", Tag.TAG_INT) || (tag.getInt("Version") < 1 || tag.getInt("Version") > 5) || !tag.hasUUID("Stream")
                 || !tag.contains("Sequence", Tag.TAG_LONG) || tag.getLong("Sequence") < 0
                 || !tag.contains("Revision", Tag.TAG_LONG) || tag.getLong("Revision") < 0) throw new IllegalArgumentException("Unsupported food aid ledger");
         var result = new SettlementAidLedger();
@@ -143,8 +145,9 @@ public final class SettlementAidLedger {
                 throw new IllegalArgumentException("Invalid aid policy revision");
             town.policyRevision = entry.getLong("PolicyRevision");
             town.shortageSince = entry.getLong("ShortageSince"); town.lastObserved = entry.getLong("LastObserved");
+            town.nextTrade = entry.getLong("NextTrade");
             town.nextRequest = entry.getLong("NextRequest"); town.nextAid = entry.getLong("NextAid");
-            if (town.shortageSince < -1 || town.lastObserved < 0 || town.shortageSince > town.lastObserved || town.nextRequest < 0 || town.nextAid < 0
+            if (town.nextTrade < 0 || town.shortageSince < -1 || town.lastObserved < 0 || town.shortageSince > town.lastObserved || town.nextRequest < 0 || town.nextAid < 0
                     || result.towns.put(new VillageAllegianceId(entry.getUUID("Village")), town) != null) throw new IllegalArgumentException("Invalid aid village state");
         }
         for (var raw : list(tag, "Requests", REQUEST_LIMIT)) {

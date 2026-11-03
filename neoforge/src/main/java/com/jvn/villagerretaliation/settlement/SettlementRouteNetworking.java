@@ -79,19 +79,34 @@ public final class SettlementRouteNetworking {
         }
         response.put("Routes", routes);
         var request = query.journey() == null ? null : data.aid().request(query.journey());
-        if (request == null || request.purpose != SettlementFoodRequest.Purpose.SUPPLY || request.offer == null) return;
-        var home = data.get(request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY ? request.donor() : request.requester()).orElse(null);
+        if (request == null || request.purpose != SettlementFoodRequest.Purpose.SUPPLY || request.offer == null && request.trade == null) return;
+        var home = data.get(request.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY ? request.donor() : request.requester()).orElse(null);
         if (home == null || !home.permits(player.getUUID(), SettlementPermission.VIEW)) return;
         response.putLong("JourneyRevision", request.revision()); response.putUUID("Home", home.id().value());
         response.putUUID("Other", (home.id().equals(request.donor()) ? request.requester() : request.donor()).value());
         if (request.selectedRoute != null) response.putUUID("SelectedRoute", request.selectedRoute);
         response.putString("JourneyStatus", request.state() + (request.blocker().isEmpty() ? "" : ": " + request.blocker()));
-        response.putString("Cargo", request.offer.remaining().stream().map(parcel -> parcel.item().getCount() + " " + parcel.item().getHoverName().getString()).collect(java.util.stream.Collectors.joining(", ")));
+        response.putString("Cargo", request.trade != null ? "One-time exchange: " + request.trade.state
+                : request.offer.remaining().stream().map(parcel -> parcel.item().getCount() + " " + parcel.item().getHoverName().getString()).collect(java.util.stream.Collectors.joining(", ")));
         response.putBoolean("Departed", request.journey != null);
+        if (request.journey != null) {
+            response.putLongArray("Path", request.journey.crossing.steps().stream().mapToLong(step -> step.position().asLong()).toArray());
+            response.remove("Sections");
+            response.putLong("CaravanPosition", request.journey.position().asLong());
+            response.putString("Leg", request.journey.leg().name());
+        }
+        boolean manages = home.permits(player.getUUID(), SettlementPermission.DIPLOMACY);
+        boolean offered = request.trade != null ? request.trade.state == SettlementNegotiatedTrade.State.OFFERED
+                : request.state() == SettlementFoodRequest.State.AWAITING_ACCEPTANCE || request.state() == SettlementFoodRequest.State.OFFER_SENT;
+        response.putBoolean("CanConfigure", SettlementAidService.enabled(level) && !data.readOnly() && manages
+                && home.permits(player.getUUID(), SettlementPermission.STAFF) && request.journey == null && offered
+                && (request.trade == null || SettlementExchangeService.represents(player, home)
+                    && (request.trade.proposer.equals(home.id()) || request.trade.countersRemaining() > 0)));
+        response.putBoolean("CanRecall", manages && !data.readOnly() && request.journey != null);
         var members = new ListTag();
         for (var resident : home.residents().values()) {
             if (members.size() >= 128) break;
-            boolean leader = resident.id().equals(request.offer.courier());
+            boolean leader = resident.id().equals(request.courierId());
             if (!leader && !request.participants.containsKey(resident.id()) && !SettlementAidService.eligible(level, home, resident, request.id(), true)) continue;
             var context = resident.context(level); if (context == null) continue;
             var row = new CompoundTag(); row.putUUID("Id", resident.id()); row.putString("Name", context.getName().getString());

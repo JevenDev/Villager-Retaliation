@@ -82,7 +82,7 @@ public final class SettlementCourierMapNetworking {
         if (journey.blocker.equals("encounter_delayed")) return Stage.DELAYED;
         if (journey.repair != null) return Stage.PREPARING;
         if (!request.blocker().isEmpty() || journey.presence == SettlementCourierJourney.Presence.DEAD || journey.presence == SettlementCourierJourney.Presence.STRANDED) return Stage.BLOCKED;
-        boolean delivery = request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
+        boolean delivery = request.trade != null ? request.trade.terms.firstSends() : request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
         return switch (journey.leg) {
             case APPROACH -> Stage.OUTBOUND;
             case OUTBOUND -> delivery ? Stage.DELIVERY : Stage.COLLECTION;

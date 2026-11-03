@@ -30,6 +30,32 @@ public final class SettlementRouteGameTests {
                 helper.getLevel().dimension().location(), "Test route", path(helper.absolutePos(new BlockPos(1, 24, 1)), length), 1);
     }
     @GameTest(template = "empty", batch = "route_unit")
+    public static void departureSnapshotKeepsItsLockedPathAndPosition(GameTestHelper helper) {
+        var f = SettlementCourierGameTests.fixture(helper, false);
+        var request = f.request();
+        var journey = request.journey;
+        var data = SettlementSavedData.get(helper.getLevel());
+        var edited = new SettlementRoute(UUID.randomUUID(), request.donor(), request.requester(), helper.getLevel().dimension().location(),
+                "Edited after departure", path(journey.crossing.steps().getFirst().position().north(16), 16), 1);
+        data.aid().routes.put(edited.id, edited);
+        request.selectedRoute = edited.id;
+        var player = helper.makeMockServerPlayerInLevel();
+        player.setUUID(f.home().leader());
+        var query = new com.jvn.villagerretaliation.network.SettlementRouteRequest(1,
+                com.jvn.villagerretaliation.network.SettlementRouteRequest.Action.VIEW, request.donor().value(), request.requester().value(),
+                edited.id, request.id(), request.revision(), edited.name, List.of(), java.util.Map.of(), 0);
+        var response = new CompoundTag();
+        SettlementRouteNetworking.snapshot(player, query, response);
+        helper.assertTrue(java.util.Arrays.equals(response.getLongArray("Path"),
+                journey.crossing.steps().stream().mapToLong(step -> step.position().asLong()).toArray()), "display follows the departure path, not subsequent saved edits");
+        helper.assertValueEqual(response.getLong("CaravanPosition"), journey.position().asLong(), "map receives the actual caravan position");
+        helper.assertFalse(response.getBoolean("CanConfigure"), "departed caravans cannot change route or crew");
+        helper.assertTrue(response.getBoolean("CanRecall"), "owner can recall a departed caravan");
+        helper.assertFalse(response.contains("Sections"), "later road section changes do not recolor a locked departure");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "route_unit")
     public static void mixedSectionsProduceTwelveAndHalfMinutesAndNeverStack(GameTestHelper helper) {
         var route = route(helper, 32);
         java.util.Arrays.fill(route.wear, 0, 16, (byte) 8); java.util.Arrays.fill(route.built, 16, 32, (byte) 1);

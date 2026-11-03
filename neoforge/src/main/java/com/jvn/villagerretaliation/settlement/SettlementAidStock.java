@@ -149,7 +149,7 @@ final class SettlementAidStock {
         var rest = depot.deposit(item.copyWithCount(count));
         return item.copyWithCount(item.getCount() - count + rest.getCount());
     }
-    private static ItemStack deposit(ServerLevel level, SettlementRecord town, ItemStack item, UUID preferred) {
+    static ItemStack deposit(ServerLevel level, SettlementRecord town, ItemStack item, UUID preferred) {
         var remaining = item.copy();
         var depots = new ArrayList<>(depots(town, true));
         depots.sort(java.util.Comparator.comparing(depot -> !depot.id().equals(preferred)));

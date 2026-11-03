@@ -77,6 +77,7 @@ public final class SettlementAidService {
         if (!VillageDiplomacyService.represents(player, town)) return Result.FORBIDDEN;
         if (!enabled(player.serverLevel())) return Result.SUSPENDED;
         if (request.revision() != expected) return Result.STALE;
+        if (request.trade != null) return Result.UNAVAILABLE;
         if (request.state() != SettlementFoodRequest.State.AWAITING_ACCEPTANCE) return Result.UNAVAILABLE;
         return accept(player.serverLevel(), request) ? Result.APPLIED : Result.UNAVAILABLE;
     }
@@ -84,6 +85,7 @@ public final class SettlementAidService {
     public static Result decline(ServerPlayer player, UUID id, long expected) {
         var data = SettlementSavedData.get(player.serverLevel()); var request = data.aid().request(id);
         if (request == null) return Result.FORBIDDEN;
+        if (request.trade != null) return Result.UNAVAILABLE;
         boolean donorTurn = request.state() == SettlementFoodRequest.State.AWAITING_OFFER || request.state() == SettlementFoodRequest.State.OFFER_PREPARING;
         boolean requesterTurn = request.state() == SettlementFoodRequest.State.AWAITING_ACCEPTANCE;
         var town = data.get(donorTurn ? request.donor() : request.requester()).orElse(null);
@@ -103,6 +105,7 @@ public final class SettlementAidService {
         if (!VillageDiplomacyService.represents(player, sender)) return Result.FORBIDDEN;
         if (!enabled(player.serverLevel())) return Result.SUSPENDED;
         if (request.revision() != expected) return Result.STALE;
+        if (request.trade != null) return Result.UNAVAILABLE;
         if (!beforeDeparture(request) || request.state() == SettlementFoodRequest.State.CANCELLING) return Result.UNAVAILABLE;
         request.messageSender = sender == donor ? request.donor() : request.requester(); request.arrives = now(player.server) + delay(player.serverLevel(), request);
         releaseRoutes(player.serverLevel(), request); transition(data, request, SettlementFoodRequest.State.CANCELLING, "");
@@ -138,7 +141,7 @@ public final class SettlementAidService {
         if (donor == null || requester.id().equals(donor.id()) || VillageDiplomacySavedData.get(level).contact(requester.id(), donor.id()) == null)
             return Result.UNKNOWN_VILLAGE;
         if (!available(level, requester, donor) || nutrition <= 0 || nutrition > 10000000) return Result.UNAVAILABLE;
-        if (aid.requests.values().stream().anyMatch(request -> !request.terminal() && data.get(request.requester()).orElse(null) == requester
+        if (aid.requests.values().stream().anyMatch(request -> request.trade == null && !request.terminal() && data.get(request.requester()).orElse(null) == requester
                 && data.get(request.donor()).orElse(null) == donor)) return Result.OUTSTANDING;
         var state = aid.town(requester);
         if (now < state.nextRequest) return Result.COOLDOWN;
@@ -306,6 +309,7 @@ public final class SettlementAidService {
             if (now - state.lastObserved < rules.cadence()) return;
             long daily = (long) VillageAllegianceRegistrySavedData.get(level).residentCount(town.id(), level.getGameTime()) * SettlementFoodService.dailyNutrition();
             boolean shortage = daily > 0 && SettlementAidStock.nutrition(town) < daily && need(level, town) > 0;
+            SettlementExchangeService.observe(level, town, now);
             state.lastObserved = now;
             if (!shortage) state.shortageSince = -1;
             else if (state.shortageSince < 0) state.shortageSince = now;
@@ -319,6 +323,11 @@ public final class SettlementAidService {
         }
 
         void step(ServerLevel root, SettlementFoodRequest request, long now) {
+            if (request.trade != null) {
+                var level = dimension(root.getServer(), SettlementSavedData.get(root).get(request.donor()).orElse(null));
+                if (level != null) SettlementExchangeService.step(level, request, now);
+                return;
+            }
             if (request.purpose != SettlementFoodRequest.Purpose.SUPPLY) return;
             var data = SettlementSavedData.get(root); var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
             var level = dimension(root.getServer(), donor);

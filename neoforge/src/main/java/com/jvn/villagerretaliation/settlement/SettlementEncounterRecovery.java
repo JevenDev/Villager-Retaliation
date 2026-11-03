@@ -62,6 +62,7 @@ public final class SettlementEncounterRecovery {
         return true;
     }
     static void loseCargo(ServerLevel level, SettlementFoodRequest request, SettlementEncounterState state, boolean death) {
+        if (request.trade != null) { SettlementExchangeTravel.lose(level, request, state, death); return; }
         if (request.offer == null || request.offer.custody() != SettlementFoodOffer.Custody.COURIER) return;
         var remaining = new ArrayList<SettlementFoodOffer.Parcel>();
         var random = new java.util.Random(state.id.getLeastSignificantBits() ^ request.id().getMostSignificantBits());

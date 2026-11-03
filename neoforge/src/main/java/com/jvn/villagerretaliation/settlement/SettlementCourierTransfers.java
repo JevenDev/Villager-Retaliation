@@ -13,7 +13,9 @@ final class SettlementCourierTransfers {
         if (!SettlementAidCheckpoint.durable(level, journey.revision)) return;
         if (courier != null && !journey.finished() && !SettlementCourierService.nativeDurable(level, journey, courier,
                 SettlementCourierService.runtime(level.getServer()), now)) return;
-        boolean delivery = request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
+        if (request.trade != null && SettlementExchangeTravel.arrived(level, request)) return;
+        boolean delivery = request.trade != null ? request.trade.terms.firstSends()
+                : request.offer == null || request.offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
         boolean pickup = delivery && journey.leg == SettlementCourierJourney.Leg.APPROACH
                 || !delivery && journey.leg == SettlementCourierJourney.Leg.OUTBOUND;
         boolean unload = delivery && journey.leg == SettlementCourierJourney.Leg.OUTBOUND

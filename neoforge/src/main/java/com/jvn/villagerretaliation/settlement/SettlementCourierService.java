@@ -78,16 +78,19 @@ public final class SettlementCourierService {
     }
     static void begin(ServerLevel level, SettlementFoodRequest request, long now) {
         var data = SettlementSavedData.get(level); var offer = request.offer; var plan = request.preparation;
-        if (request.journey != null || offer == null || plan == null || offer.custody() != SettlementFoodOffer.Custody.RESERVED) return;
+        if (request.journey != null || plan == null || (request.trade == null
+                ? offer == null || offer.custody() != SettlementFoodOffer.Custody.RESERVED
+                : request.trade.state != SettlementNegotiatedTrade.State.ACCEPTED)) return;
         if (data.aid().couriers.values().stream().map(data.aid()::request).filter(value -> value != null && value.journey != null && value.journey.ownsResident()).count() >= VillageDiplomacyRules.get(level.getServer()).activeJourneys()) {
             SettlementAidService.transition(data, request, request.state(), "journey_queue_full"); return;
         }
-        boolean delivery = offer.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
+        boolean delivery = request.arrangement() == SettlementFoodOffer.Arrangement.DONOR_DELIVERY;
         var home = data.get(delivery ? request.donor() : request.requester()).orElse(null);
         var donor = data.get(request.donor()).orElse(null); var recipient = data.get(request.requester()).orElse(null);
-        var resident = home == null ? null : home.residents().get(offer.courier());
-        if (!SettlementAidService.available(level, donor, recipient) || !donor.permits(request.donorAuthority, SettlementPermission.DIPLOMACY)
-                || !recipient.permits(request.authority(), SettlementPermission.DIPLOMACY)
+        var resident = home == null ? null : home.residents().get(request.courierId());
+        if (!SettlementAidService.available(level, donor, recipient) || (request.trade == null
+                ? !donor.permits(request.donorAuthority, SettlementPermission.DIPLOMACY) || !recipient.permits(request.authority(), SettlementPermission.DIPLOMACY)
+                : !SettlementExchangeService.authority(donor, request.trade.firstAuthority) || !SettlementExchangeService.authority(recipient, request.trade.secondAuthority))
                 || !SettlementAidService.eligible(level, home, resident, request.id())) {
             SettlementAidService.transition(data, request, request.state(), "courier_unavailable"); return;
         }
@@ -95,13 +98,13 @@ public final class SettlementCourierService {
         if (live != null && physicalCount(data) >= VillageDiplomacyRules.get(level.getServer()).physicalCouriers()) {
             SettlementAidService.transition(data, request, request.state(), "physical_courier_queue"); return;
         }
-        if (SettlementAidStock.nutrition(donor) < SettlementAidStock.reserve(level, donor, data.aid().policy(donor))) {
+        if (request.trade == null && SettlementAidStock.nutrition(donor) < SettlementAidStock.reserve(level, donor, data.aid().policy(donor))) {
             SettlementAidService.transition(data, request, request.state(), "protected_food_reserve"); return;
         }
         var context = live instanceof Villager villager ? villager : resident.context(level);
         if (context == null || context.level() != level) { SettlementAidService.transition(data, request, request.state(), "resident_context_unavailable"); return; }
         if (live instanceof Villager villager) { WAITING.put(villager, request); villager.getNavigation().stop(); }
-        var candidate = plan.candidate(offer.arrangement());
+        var candidate = plan.candidate(request.arrangement());
         if (candidate == null || candidate.access == null || candidate.approach == null) {
             SettlementAidService.transition(data, request, request.state(), "courier_plan_unavailable"); return;
         }

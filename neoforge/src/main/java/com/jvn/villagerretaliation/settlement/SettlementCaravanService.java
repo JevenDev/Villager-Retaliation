@@ -25,6 +25,7 @@ public final class SettlementCaravanService {
     }
     static String configure(ServerPlayer player, UUID id, long revision, UUID routeId, Map<UUID, Boolean> members) {
         var level = player.serverLevel(); var data = SettlementSavedData.get(level); var request = data.aid().request(id);
+        if (request != null && request.trade != null) return configureTrade(player, request, revision, routeId, members);
         if (request == null || request.purpose != SettlementFoodRequest.Purpose.SUPPLY || request.journey != null || request.offer == null
                 || request.state() != SettlementFoodRequest.State.AWAITING_ACCEPTANCE && request.state() != SettlementFoodRequest.State.OFFER_SENT
                 || request.revision() != revision || members.size() > 7 || data.readOnly()) return "Refresh the offer before configuring departure";
@@ -40,6 +41,29 @@ public final class SettlementCaravanService {
         }
         request.selectedRoute = routeId; request.participants.clear(); request.participants.putAll(members);
         data.aid().changed(request); data.setDirty(); return "Departure configured. Accept the food offer to send the journey";
+    }
+    private static String configureTrade(ServerPlayer player, SettlementFoodRequest request, long revision, UUID routeId, Map<UUID, Boolean> members) {
+        var level = player.serverLevel(); var data = SettlementSavedData.get(level); var trade = request.trade;
+        if (!SettlementAidService.enabled(level) || request.revision() != revision || trade.state != SettlementNegotiatedTrade.State.OFFERED
+                || request.journey != null || members.size() > 7) return "Trade terms are locked or changed. Refresh first";
+        var home = data.get(trade.terms.firstSends() ? request.donor() : request.requester()).orElse(null);
+        if (!SettlementExchangeService.represents(player, home) || !home.permits(player.getUUID(), SettlementPermission.STAFF))
+            return "Only the sending settlement can assign travelers";
+        var route = routeId == null ? null : data.aid().routes.get(routeId);
+        if (routeId != null && (route == null || !matches(route, request) || !SettlementRouteService.manages(player, route)))
+            return "Choose an available route between these settlements";
+        for (var member : members.entrySet()) {
+            var resident = home.residents().get(member.getKey());
+            if (!SettlementAidService.eligible(level, home, resident, request.id(), true)) return "A selected villager is unavailable";
+            var context = resident.context(level);
+            if (member.getValue() && (context == null || !guard(context))) return "Equip guards before assigning them";
+        }
+        if (!trade.proposer.equals(home.id()) && !trade.counter(trade.terms, home.id())) return "No counteroffers remain";
+        SettlementExchangeService.authorize(trade, request, home.id(), player.getUUID());
+        trade.routeRevision = route == null ? 0 : route.revision;
+        request.selectedRoute = routeId; request.participants.clear(); request.participants.putAll(members);
+        SettlementExchangeService.changed(level, request);
+        return "Transport terms updated. The other settlement must accept";
     }
     static List<SettlementFoodRequest> prepare(ServerLevel level, SettlementFoodRequest leader, SettlementRecord home, DiplomaticRoute crossing, long now) {
         var data = SettlementSavedData.get(level); var result = new ArrayList<SettlementFoodRequest>(); var preparedJobs = new ArrayList<UUID>();

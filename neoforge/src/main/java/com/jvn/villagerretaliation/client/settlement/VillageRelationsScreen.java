@@ -61,18 +61,24 @@ public final class VillageRelationsScreen extends VillagerWindowScreen {
     @Override protected void init() {
         initWindow(700, 420, false);
         int y = top + 30;
+        int navigationStep = Math.min(24, Math.max(14, (panelHeight - 56) / 9));
+        int navigationHeight = Math.min(20, navigationStep - 2);
         for (var tab : new View[]{View.CONTACTS, View.KNOWLEDGE, View.REPORTS, View.OUTBOX, View.HISTORY, View.PERSPECTIVES}) {
-            var button = addRenderableWidget(VillagerUi.buttonBuilder(label(tab), ignored -> navigate(tab)).bounds(left, y, 96, 20).build());
+            var button = addRenderableWidget(VillagerUi.buttonBuilder(label(tab), ignored -> navigate(tab)).bounds(left, y, 96, navigationHeight).build());
             button.active = tab != view && (tab == View.KNOWLEDGE || tab == View.PERSPECTIVES || village != null)
                     && (tab != View.HISTORY || historyTarget != null)
                     && (tab != View.REPORTS && tab != View.OUTBOX || snapshot != null && snapshot.inspects());
-            y += 24;
+            y += navigationStep;
         }
         var food = addRenderableWidget(VillagerUi.buttonBuilder(SettlementAidScreen.text("title"), ignored ->
-                minecraft.setScreen(new SettlementAidScreen(this, village, null, ""))).bounds(left, y, 96, 20).build());
+                minecraft.setScreen(new SettlementAidScreen(this, village, null, ""))).bounds(left, y, 96, navigationHeight).build());
         food.active = snapshot != null && snapshot.inspects() && village != null;
+        var trades = addRenderableWidget(VillagerUi.buttonBuilder(SettlementExchangeScreen.text("title"), ignored ->
+                minecraft.setScreen(new SettlementExchangeScreen(this, village, selected == null ? null : selected.id())))
+                .bounds(left, y + navigationStep * 2, 96, navigationHeight).build());
+        trades.active = snapshot != null && snapshot.inspects() && village != null;
         foodRequest = addRenderableWidget(VillagerUi.buttonBuilder(SettlementAidScreen.text("request"), ignored ->
-                minecraft.setScreen(new SettlementAidScreen(this, perspective, selected.id(), selected.name()))).bounds(left, y + 24, 96, 20).build());
+                minecraft.setScreen(new SettlementAidScreen(this, perspective, selected.id(), selected.name()))).bounds(left, y + navigationStep, 96, navigationHeight).build());
         addRenderableWidget(VillagerUi.buttonBuilder(Component.translatable("gui.back"), ignored -> onClose())
                 .bounds(left, top + panelHeight - 20, 96, 20).build());
         search = addRenderableWidget(new EditBox(font, left + 106, top + 30, panelWidth - 106, 20, text("search")));

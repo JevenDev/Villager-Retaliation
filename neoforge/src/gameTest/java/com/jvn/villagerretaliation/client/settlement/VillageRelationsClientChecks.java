@@ -25,6 +25,9 @@ final class VillageRelationsClientChecks {
     private ExploredMapScreen map;
     private int phase, ticks;
     private UUID journey;
+    private net.minecraft.core.BlockPos mapCenter;
+    private int observationCursor;
+    private SettlementExchangeClientChecks exchangeChecks;
 
     VillageRelationsClientChecks(VillageAllegianceId town, SettlementManagementScreen management, Consumer<String> capture) {
         this.town = town; this.management = management; this.capture = capture;
@@ -38,6 +41,7 @@ final class VillageRelationsClientChecks {
                     var level = minecraft.getSingleplayerServer().overworld();
                     var registry = VillageAllegianceRegistrySavedData.get(level);
                     var center = registry.canonicalRecord(town).orElseThrow().center();
+                    mapCenter = center;
                     var oakvale = registry.create(level.getGameTime(), level.dimension().location(), center.offset(128, 0, 0), "");
                     var stoneford = registry.create(level.getGameTime(), level.dimension().location(), center.offset(256, 0, 64), "");
                     var hidden = registry.create(level.getGameTime(), level.dimension().location(), center.offset(384, 0, 128), "");
@@ -128,7 +132,7 @@ final class VillageRelationsClientChecks {
                 minecraft.options.guiScale().set(3); minecraft.resizeDisplay(); next();
             }
             case 11 -> {
-                if (ticks < 5) return false;
+                if (ticks < 5 || !observeRoute()) return false;
                 bounds(minecraft.screen); capture.accept("settlement-aid-policy-small");
                 minecraft.options.guiScale().set(2); minecraft.resizeDisplay();
                 minecraft.screen.onClose(); require(minecraft.screen == relations, "aid returns to relations");
@@ -140,7 +144,14 @@ final class VillageRelationsClientChecks {
                 bounds(minecraft.screen); capture.accept("settlement-routes");
                 var choose = minecraft.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
                         .filter(button -> button.getMessage().getString().equals("Choose saved route")).findFirst().orElseThrow();
-                require(choose.active, "route server response reached the screen"); choose.onPress(); next();
+                require(choose.active, "route server response reached the screen"); choose.onPress();
+                require(minecraft.screen instanceof SettlementTradePickerScreen, "routes use a searchable picker");
+                var choices = minecraft.screen.children().stream().filter(ObjectSelectionList.class::isInstance)
+                        .map(child -> (ObjectSelectionList<?>) child).findFirst().orElseThrow();
+                require(!choices.children().isEmpty(), "saved route is listed");
+                choices.children().getFirst().mouseClicked(0, 0, 0);
+                labeled(minecraft.screen, "Choose").onPress();
+                labeled(minecraft.screen, "Roads").onPress(); next();
             }
             case 13 -> {
                 if (ticks < 30) return false;
@@ -161,11 +172,49 @@ final class VillageRelationsClientChecks {
             case 16 -> {
                 if (ticks < 30) return false;
                 bounds(minecraft.screen); capture.accept("settlement-caravan");
+                labeled(minecraft.screen, "Crew").onPress(); next();
+            }
+            case 17 -> {
+                if (ticks < 5) return false;
+                bounds(minecraft.screen); capture.accept("settlement-caravan-crew");
+                labeled(minecraft.screen, "Delivery").onPress(); next();
+            }
+            case 18 -> {
+                if (ticks < 5) return false;
+                bounds(minecraft.screen); capture.accept("settlement-caravan-delivery");
                 minecraft.screen.onClose(); require(minecraft.screen == management, "caravan screen returns to management");
-                return true;
+                minecraft.setScreen(new SettlementExchangeScreen(management, town.value(), null));
+                exchangeChecks = new SettlementExchangeClientChecks(capture); next();
+            }
+            case 19 -> {
+                return exchangeChecks.tick(minecraft);
             }
         }
         return false;
+    }
+
+    private boolean observeRoute() {
+        var repository = com.jvn.villagerretaliation.client.exploration.ExploredMapClient.repository();
+        require(repository != null, "explored map repository is ready");
+        int tileX = com.jvn.villagerretaliation.exploration.MapSnapshot.tile(mapCenter.getX());
+        int tileZ = com.jvn.villagerretaliation.exploration.MapSnapshot.tile(mapCenter.getZ());
+        repository.tick();
+        while (observationCursor < 57) {
+            int x = tileX - 1 + observationCursor % 19, z = tileZ - 1 + observationCursor / 19;
+            if (repository.get(x, z) == null) return false;
+            var columns = new java.util.ArrayList<com.jvn.villagerretaliation.exploration.MapSnapshot.Column>();
+            for (int i = 0; i < 64; i++) columns.add(new com.jvn.villagerretaliation.exploration.MapSnapshot.Column(i, mapCenter.getY() - 1,
+                    java.util.List.of(new com.jvn.villagerretaliation.exploration.MapSnapshot.Block(mapCenter.getY() - 1,
+                            "minecraft:grass_block", 0x80ad52, 0x3f76e4, 2)), true));
+            if (!repository.put(new com.jvn.villagerretaliation.exploration.MapSnapshot(x, z, System.currentTimeMillis(), columns, java.util.List.of()))) return false;
+            observationCursor++;
+        }
+        return true;
+    }
+
+    private static Button labeled(Screen screen, String label) {
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(button -> button.getMessage().getString().equals(label)).findFirst().orElseThrow();
     }
 
     private void next() { phase++; ticks = 0; }

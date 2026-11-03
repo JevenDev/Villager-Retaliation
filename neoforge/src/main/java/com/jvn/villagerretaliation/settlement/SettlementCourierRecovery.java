@@ -60,7 +60,7 @@ public final class SettlementCourierRecovery {
         var consumed = new ArrayList<ItemStack>(); request.offer.remaining().forEach(parcel -> consumed.add(parcel.item()));
         int boats = 0; long pendingFood = 0;
         for (var drop : journey.recovery) {
-            if (SettlementFoodService.isMeal(drop.item)) {
+            if (request.trade == null && SettlementFoodService.isMeal(drop.item)) {
                 if (drop.state == State.RESERVED) pendingFood += SettlementAidStock.nutrition(drop.item);
                 else consumed.add(drop.item);
             } else if (!ItemStack.matches(drop.item, journey.boat) || ++boats > 1 || journey.boatCustody != SettlementCourierJourney.BoatCustody.LOST)
@@ -86,6 +86,7 @@ public final class SettlementCourierRecovery {
         if (SettlementEncounterRecovery.died(level, request, courier)) return;
         SettlementCourierService.capture(journey, courier); journey.position = courier.blockPosition().immutable();
         journey.presence = SettlementCourierJourney.Presence.DEAD; journey.obstructed = true;
+        if (request.trade != null) SettlementExchangeTravel.lose(level, request, null, true);
         if (request.offer != null && request.offer.custody() == SettlementFoodOffer.Custody.COURIER) {
             for (var parcel : request.offer.remaining()) journey.recovery.add(new Drop(UUID.randomUUID(), parcel.item()));
             request.offer.custody = SettlementFoodOffer.Custody.RECOVERABLE;
@@ -120,7 +121,7 @@ public final class SettlementCourierRecovery {
             SettlementCourierService.block(level, request, "cargo_identity_mismatch"); return;
         }
         if (!SettlementCourierService.nativeDurable(level, journey, item, runtime, now)) return;
-        if (SettlementFoodService.isMeal(drop.item)) {
+        if (request.trade == null && SettlementFoodService.isMeal(drop.item)) {
             var remaining = new ArrayList<SettlementFoodOffer.Parcel>(); int count = drop.item.getCount();
             for (var parcel : request.offer.remaining()) {
                 var itemStack = parcel.item();
