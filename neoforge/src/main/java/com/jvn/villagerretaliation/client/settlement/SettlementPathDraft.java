@@ -40,6 +40,10 @@ public final class SettlementPathDraft {
         this(width, style, seed, branch, smooth);
         this.material = java.util.Objects.requireNonNull(material);
     }
+    public SettlementPathDraft(SettlementPath path, boolean smooth) {
+        this(path.width(), path.style(), path.material(), path.seed(), path.branch(), smooth);
+        this.nodes.addAll(path.nodes()); this.closed = path.closed();
+    }
     public SettlementPath path() { return new SettlementPath(this.nodes, this.width, this.style, this.material, this.seed, this.branch, this.closed); }
     public int selected() { return this.selected; }
     public int version() { return this.version; }
@@ -182,6 +186,27 @@ public final class SettlementPathDraft {
         var node = this.nodes.get(this.selected);
         if (!this.smooth) this.nodes.set(this.selected, new SettlementPath.Node(node.position()));
         else initializeCurve();
+    }
+    public void curveSelected(boolean curved) {
+        if (dragging() || this.selected < 0) return;
+        var before = state();
+        if (this.smooth != curved) { this.smooth = curved; this.version++; }
+        if (curved) initializeCurve();
+        else {
+            var node = this.nodes.get(this.selected);
+            if (node.incoming().lengthSqr() > 0 || node.outgoing().lengthSqr() > 0) {
+                this.nodes.set(this.selected, new SettlementPath.Node(node.position())); this.version++;
+            }
+        }
+        if (!before.equals(state())) remember(before);
+    }
+    public void linkSelectedHandles() {
+        if (dragging() || this.selected < 0) return;
+        var node = this.nodes.get(this.selected);
+        var tangent = node.outgoing().lengthSqr() > 0 ? node.outgoing() : node.incoming().scale(-1);
+        var linked = new SettlementPath.Node(node.position(), tangent.scale(-1), tangent);
+        if (linked.equals(node)) return;
+        remember(state()); this.nodes.set(this.selected, linked); this.version++;
     }
     private void initializeCurve() {
         var node = this.nodes.get(this.selected);

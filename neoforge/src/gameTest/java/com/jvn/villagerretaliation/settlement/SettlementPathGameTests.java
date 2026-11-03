@@ -24,6 +24,23 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class SettlementPathGameTests {
     private SettlementPathGameTests() {}
 
+    @GameTest(template = "empty", batch = "path_controls")
+    public static void selectedNodeControlsPreserveHistoryAndHandleLinking(GameTestHelper helper) {
+        var draft = new com.jvn.villagerretaliation.client.settlement.SettlementPathDraft(new SettlementPath(List.of(
+                new SettlementPath.Node(new net.minecraft.world.phys.Vec3(0.5, 24, .5)),
+                new SettlementPath.Node(new net.minecraft.world.phys.Vec3(8.5, 24, .5)),
+                new SettlementPath.Node(new net.minecraft.world.phys.Vec3(16.5, 24, 8.5))), 1, SettlementPath.Style.CLEAN, SettlementPath.Material.DIRT, 1, false), false);
+        draft.select(1); draft.curveSelected(true);
+        helper.assertTrue(draft.smoothMode() && draft.path().nodes().get(1).outgoing().lengthSqr() > 0, "Smooth uses the world curve initializer");
+        var curved = draft.path(); draft.curveSelected(false);
+        helper.assertTrue(!draft.smoothMode() && draft.path().nodes().get(1).outgoing().lengthSqr() == 0, "Straighten uses Lines mode and removes handles");
+        draft.undo(); helper.assertValueEqual(draft.path(), curved, "Straighten is a single undoable change");
+        draft.begin(1, 1); draft.drag(new net.minecraft.world.phys.Vec3(14.5, 24, 3.5), true); draft.finish();
+        var independent = draft.path(); draft.linkSelectedHandles();
+        var node = draft.path().nodes().get(1);
+        helper.assertTrue(node.incoming().add(node.outgoing()).lengthSqr() == 0, "linking mirrors the two handles");
+        draft.undo(); helper.assertValueEqual(draft.path(), independent, "linking preserves the previous independent handles in history"); helper.succeed();
+    }
     @GameTest(template = "empty", batch = "settlement_path")
     public static void widthsCurvesNoiseAndOverlapsStayBoundedAndConnected(GameTestHelper helper) {
         for (int width = 1; width <= 7; width++) {

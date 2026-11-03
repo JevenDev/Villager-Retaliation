@@ -20,6 +20,72 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_routes")
 @PrefixGameTestTemplate(false)
 public final class SettlementRouteGameTests {
+    @GameTest(template = "empty", batch = "route_curve")
+    public static void curveGeometryPersistsAndControlsTheSavedTravelPath(GameTestHelper helper) {
+        var f = SettlementCourierGameTests.fixture(helper, false); var level = helper.getLevel();
+        var player = helper.makeMockServerPlayerInLevel(); player.setUUID(f.home().leader());
+        com.jvn.villagerretaliation.diplomacy.VillageDiplomacyApi.set(level, f.home().id(), f.recipient().town().id(), com.jvn.villagerretaliation.diplomacy.VillageRelation.NEUTRAL);
+        var from = SettlementAidStock.depots(f.home(), false).getFirst().position();
+        var to = SettlementAidStock.depots(f.recipient().town(), true).getFirst().position();
+        var shape = new SettlementRouteShape(List.of(
+                new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(from), net.minecraft.world.phys.Vec3.ZERO, new net.minecraft.world.phys.Vec3(0, 0, 16)),
+                new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(to), new net.minecraft.world.phys.Vec3(0, 0, 16), net.minecraft.world.phys.Vec3.ZERO)), true);
+        AidRouteFixture.flat(level, from, to.south(24));
+        var departure = f.request().journey.crossing; var id = UUID.randomUUID();
+        String result = SettlementRouteService.save(player, id, f.home().id(), f.recipient().town().id(), "Curved road", 0, shape.points(), shape);
+        helper.assertTrue(result.startsWith("Saved."), "curved route is validated and saved: " + result);
+        var route = SettlementSavedData.get(level).aid().routes.get(id);
+        helper.assertTrue(route.path.steps().stream().anyMatch(step -> step.position().getZ() > Math.max(from.getZ(), to.getZ()) + 6), "travel follows the curved bulge instead of the straight shortcut");
+        helper.assertValueEqual(SettlementRoute.load(route.save()).shape, shape, "handles and curve mode survive save and reload");
+        helper.assertValueEqual(f.request().journey.crossing, departure, "editing curves cannot change a departed caravan's locked crossing");
+        var query = new com.jvn.villagerretaliation.network.SettlementRouteRequest(3,
+                com.jvn.villagerretaliation.network.SettlementRouteRequest.Action.VIEW, f.home().id().value(), f.recipient().town().id().value(), id, null, 0, "", List.of(), java.util.Map.of(), 0);
+        var snapshot = new CompoundTag(); SettlementRouteNetworking.snapshot(player, query, snapshot);
+        helper.assertValueEqual(SettlementRouteShape.load(snapshot.getCompound("Shape")), shape, "route picker sync retains all editable curve data");
+        AidRouteFixture.flat(level, from.below(), to.below().south(24));
+        helper.assertTrue(SettlementRouteService.preview(player, id, f.home().id(), f.recipient().town().id(), shape.points(), shape).path() != null,
+                "curve endpoints retain the existing two-block depot access tolerance on uneven ground");
+        AidRouteFixture.flat(level, from, to.south(24));
+        var blocked = shape.columns().get(shape.columns().size() / 2); AidRouteFixture.blocked(level, blocked);
+        var preview = SettlementRouteService.preview(player, id, f.home().id(), f.recipient().town().id(), shape.points(), shape);
+        helper.assertTrue(preview.path() == null && preview.blocked() != null, "blocked curves are rejected with a visible problem position");
+        helper.assertValueEqual(SettlementSavedData.get(level).aid().routes.get(id), route, "rejected curve previews cannot overwrite a saved route");
+        var stranger = helper.makeMockServerPlayerInLevel();
+        helper.assertTrue(SettlementRouteService.preview(stranger, id, f.home().id(), f.recipient().town().id(), shape.points(), shape).path() == null,
+                "curve requests retain settlement authority checks");
+        var wide = new SettlementRouteShape(List.of(new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(from), net.minecraft.world.phys.Vec3.ZERO, new net.minecraft.world.phys.Vec3(0, 0, 256)),
+                new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(to), new net.minecraft.world.phys.Vec3(0, 0, 256), net.minecraft.world.phys.Vec3.ZERO)), true);
+        var data = com.jvn.villagerretaliation.diplomacy.route.RouteSavedData.get(level); int jobs = data.preparations().size();
+        preview = SettlementRouteService.preview(player, UUID.randomUUID(), f.home().id(), f.recipient().town().id(), wide.points(), wide);
+        helper.assertTrue(preview.problem().startsWith("Surveying") && data.preparations().size() <= jobs + 8, "unobserved curves use bounded background terrain surveys");
+        SettlementRouteService.closePreview(player);
+        helper.assertTrue(data.preparations().size() <= jobs, "closing the curve draft releases survey jobs"); helper.succeed();
+    }
+    @GameTest(template = "empty", batch = "route_curve_codec")
+    public static void curveHandlesRoundTripAndRejectMalformedGeometry(GameTestHelper helper) {
+        var from = helper.absolutePos(new BlockPos(1, 24, 1)); var to = from.east(24);
+        var shape = new SettlementRouteShape(List.of(
+                new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(from), net.minecraft.world.phys.Vec3.ZERO, new net.minecraft.world.phys.Vec3(4, 0, 8)),
+                new SettlementPath.Node(net.minecraft.world.phys.Vec3.atBottomCenterOf(to), new net.minecraft.world.phys.Vec3(-3, 0, 9), net.minecraft.world.phys.Vec3.ZERO)), true);
+        var request = new com.jvn.villagerretaliation.network.SettlementRouteRequest(1,
+                com.jvn.villagerretaliation.network.SettlementRouteRequest.Action.PREVIEW, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, 0, "Curve", shape.points(), java.util.Map.of(), 0, shape);
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            com.jvn.villagerretaliation.network.SettlementRouteRequest.STREAM_CODEC.encode(buffer, request);
+            helper.assertValueEqual(com.jvn.villagerretaliation.network.SettlementRouteRequest.STREAM_CODEC.decode(buffer), request, "curve vectors round trip through the route packet");
+        } finally { buffer.release(); }
+        helper.assertValueEqual(SettlementRouteShape.load(shape.save()), shape, "curve data round trips without rounding tangents");
+        var malformed = shape.save(); malformed.getList("Nodes", Tag.TAG_COMPOUND).getCompound(0).remove("Outgoing");
+        boolean rejected = false; try { SettlementRouteShape.load(malformed); } catch (IllegalArgumentException expected) { rejected = true; }
+        helper.assertTrue(rejected, "missing curve vectors cannot silently become straight nodes");
+        malformed = shape.save(); var bad = new net.minecraft.nbt.ListTag(); bad.add(net.minecraft.nbt.DoubleTag.valueOf(Double.NaN)); bad.add(net.minecraft.nbt.DoubleTag.valueOf(0)); bad.add(net.minecraft.nbt.DoubleTag.valueOf(0));
+        malformed.getList("Nodes", Tag.TAG_COMPOUND).getCompound(0).put("Incoming", bad);
+        rejected = false; try { SettlementRouteShape.load(malformed); } catch (IllegalArgumentException expected) { rejected = true; }
+        helper.assertTrue(rejected, "non-finite handles are rejected");
+        var columns = shape.columns();
+        for (int i = 1; i < columns.size(); i++) helper.assertValueEqual(columns.get(i).distManhattan(columns.get(i - 1)), 1, "rasterized curves remain continuous for walking caravans");
+        helper.succeed();
+    }
     private static DiplomaticRoute path(BlockPos start, int length) {
         var steps = new java.util.ArrayList<DiplomaticRoute.Step>();
         for (int i = 0; i <= length; i++) steps.add(new DiplomaticRoute.Step(start.east(i), DiplomaticRoute.Mode.WALK));

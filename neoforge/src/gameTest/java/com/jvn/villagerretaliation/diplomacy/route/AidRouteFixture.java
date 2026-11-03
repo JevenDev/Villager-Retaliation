@@ -23,6 +23,16 @@ public final class AidRouteFixture {
         level.setBlock(position.above(2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
         level.getChunkAt(position).removeData(RouteGroundService.RECEIPTS.get());
     }
+    public static void blocked(ServerLevel level, BlockPos position) {
+        var data = RouteSavedData.get(level); var old = data.observation(level.dimension().location(), position.getX(), position.getZ());
+        var heights = new int[256]; var kinds = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            int x = old.chunk().getMinBlockX() + (i & 15), z = old.chunk().getMinBlockZ() + (i >> 4);
+            heights[i] = old.height(x, z); kinds[i] = old.kind(x, z);
+        }
+        kinds[(position.getZ() & 15) * 16 + (position.getX() & 15)] = RouteTerrain.BLOCKED;
+        data.observe(level.dimension().location(), new RouteTerrain(old.chunk(), heights, kinds, level.getServer().overworld().getGameTime()));
+    }
     public static void flat(ServerLevel level, BlockPos from, BlockPos to) {
         for (int x = (Math.min(from.getX(), to.getX()) >> 4) - 2; x <= (Math.max(from.getX(), to.getX()) >> 4) + 2; x++) {
             for (int z = (Math.min(from.getZ(), to.getZ()) >> 4) - 2; z <= (Math.max(from.getZ(), to.getZ()) >> 4) + 2; z++) {

@@ -17,6 +17,7 @@ public final class SettlementRoute {
     final UUID[] projects;
     final String[] blockers;
     java.util.List<net.minecraft.core.BlockPos> points = java.util.List.of();
+    SettlementRouteShape shape;
     String name;
     long revision;
 
@@ -67,6 +68,7 @@ public final class SettlementRoute {
         tag.putUUID("Origin", this.origin.value()); tag.putUUID("Destination", this.destination.value());
         tag.putString("Dimension", this.dimension.toString()); tag.putString("Name", this.name); tag.putLong("Revision", this.revision);
         tag.putLongArray("Points", this.points.stream().mapToLong(net.minecraft.core.BlockPos::asLong).toArray());
+        if (this.shape != null) tag.put("Shape", this.shape.save());
         tag.put("Path", this.path.save()); tag.putByteArray("Wear", this.wear); tag.putByteArray("Built", this.built); tag.putByteArray("PendingWear", this.pendingWear);
         var sections = new net.minecraft.nbt.ListTag();
         for (int i = 0; i < sections(); i++) {
@@ -85,6 +87,11 @@ public final class SettlementRoute {
         if (tag.contains("Points")) {
             if (!tag.contains("Points", Tag.TAG_LONG_ARRAY) || tag.getLongArray("Points").length > 12) throw new IllegalArgumentException("Invalid route points");
             result.points = java.util.Arrays.stream(tag.getLongArray("Points")).mapToObj(net.minecraft.core.BlockPos::of).toList();
+        }
+        if (tag.contains("Shape")) {
+            if (!tag.contains("Shape", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid route shape");
+            result.shape = SettlementRouteShape.load(tag.getCompound("Shape"));
+            if (!result.shape.points().equals(result.points)) throw new IllegalArgumentException("Route shape does not match waypoints");
         }
         byte[] wear = tag.getByteArray("Wear"), built = tag.getByteArray("Built");
         var sections = tag.getList("Sections", Tag.TAG_COMPOUND);

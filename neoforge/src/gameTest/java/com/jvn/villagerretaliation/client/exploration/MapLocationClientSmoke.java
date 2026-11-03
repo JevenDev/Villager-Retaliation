@@ -169,6 +169,7 @@ public final class MapLocationClientSmoke {
             }
             case 8 -> {
                 if (!MapFeatureClientChecks.tick(map)) return;
+                if (!SettlementRouteMapClientChecks.tick(map)) return;
                 map.onClose();
                 require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
                 map.onClose();

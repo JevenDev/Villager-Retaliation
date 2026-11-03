@@ -101,8 +101,8 @@ final class SettlementSelectionInspector {
         }
         this.primary = VillagerUi.buttonBuilder(Component.empty(), ignored -> this.action.accept(this.section))
                 .bounds(this.left, bottom - 66, this.width, 18).build();
-        this.routeEditor = VillagerUi.buttonBuilder(Component.literal("Edit persistent route"), ignored -> this.editRoute.run())
-                .bounds(this.left, bottom - 66, this.width, 18).build();
+        this.routeEditor = new com.jvn.villagerretaliation.client.ui.RouteButton(Component.literal("Edit persistent route"),
+                this.left, bottom - 66, this.width, 18, this.editRoute);
         add.accept(this.routeEditor);
         add.accept(this.primary);
         this.back = VillagerUi.buttonBuilder(Component.literal("Browse settlement"), ignored -> {

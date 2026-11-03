@@ -62,8 +62,9 @@ public final class ExploredMapScreen extends Screen {
         addRenderableWidget(Button.builder(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("villages"),
                 b -> minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen(this, null, null, null)))
                 .bounds(width - 90, 8, 80, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Routes"), b -> minecraft.setScreen(new SettlementRoutesScreen(this)))
-                .bounds(96, 8, 60, 20).build());
+        addRenderableWidget(new com.jvn.villagerretaliation.client.ui.RouteButton(Component.literal("Routes"), 96, 8, 76, 20,
+                () -> minecraft.setScreen(new SettlementRoutesScreen(this))))
+                .setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Create and edit routes between settlements")));
         followButton = addRenderableWidget(Button.builder(MapLayers.text(following ? "follow_on" : "follow_off"), b -> follow(!following))
                 .bounds(10, 34, 90, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(MapLayers.text("follow_hint"))).build());
         addRenderableWidget(Button.builder(MapLayers.text("layers"), b -> minecraft.setScreen(new MapLayersScreen(this)))

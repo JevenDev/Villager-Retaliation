@@ -12,9 +12,9 @@ import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 
-final class SettlementBuildOverlay {
-    record Bounds(int left, int top, int width, int height) {
-        boolean contains(double x, double y) {
+public final class SettlementBuildOverlay {
+    public record Bounds(int left, int top, int width, int height) {
+        public boolean contains(double x, double y) {
             return x >= this.left - 4 && x < this.left + this.width + 4
                     && y >= this.top - 4 && y < this.top + this.height + 4;
         }
@@ -32,11 +32,11 @@ final class SettlementBuildOverlay {
     private List<AbstractWidget> actions = List.of();
     private Bounds summaryBounds;
 
-    void summary(List<Component> summary, List<AbstractWidget> actions) { this.summary = summary; this.actions = actions; }
+    public void summary(List<Component> summary, List<AbstractWidget> actions) { this.summary = summary; this.actions = actions; }
     List<Component> summary() { return this.summary; }
 
     Bounds hint() { return this.hint; }
-    Bounds controls() { return this.controls; }
+    public Bounds controls() { return this.controls; }
     Bounds toggle() { return this.toggle; }
     int footerTop() { return this.footerTop; }
     boolean hintsVisible() { return this.hintsVisible; }
@@ -56,7 +56,7 @@ final class SettlementBuildOverlay {
         this.footerTop = height - 6 - Math.max(this.toggle.height(), visible ? limit * (font.lineHeight + 1) : 0);
     }
 
-    void layout(Font font, List<AbstractWidget> widgets, int width, int height, int railWidth) {
+    public void layout(Font font, List<AbstractWidget> widgets, int width, int height, int railWidth) {
         var visible = new ArrayList<>(widgets.stream().filter(widget -> widget.visible && !this.actions.contains(widget)).toList());
         visible.addAll(this.actions.stream().filter(widget -> widget.visible).toList());
         if (visible.isEmpty()) { this.controls = null; this.summaryBounds = null; return; }
@@ -114,7 +114,7 @@ final class SettlementBuildOverlay {
                 || this.controls != null && this.controls.contains(x, y);
     }
 
-    void renderControls(GuiGraphics graphics) {
+    public void renderControls(GuiGraphics graphics) {
         if (this.controls != null) TooltipRenderUtil.renderTooltipBackground(graphics,
                 this.controls.left(), this.controls.top(), this.controls.width(), this.controls.height(), 0);
         if (this.summaryBounds != null) {
@@ -143,18 +143,20 @@ final class SettlementBuildOverlay {
         graphics.pose().popPose();
     }
 
-    static final class ActionButton extends Button {
+    public static final class ActionButton extends Button {
         private String shortcut = "";
-        ActionButton shortcut(String shortcut) { this.shortcut = shortcut; return this; }
+        private java.util.function.BooleanSupplier selected = () -> false;
+        public ActionButton selected(java.util.function.BooleanSupplier selected) { this.selected = selected; return this; }
+        public ActionButton shortcut(String shortcut) { this.shortcut = shortcut; return this; }
         int shortcutWidth(Font font) { return this.shortcut.isEmpty() ? 0 : font.width(this.shortcut) + 8; }
-        ActionButton(Component label, OnPress action) {
+        public ActionButton(Component label, OnPress action) {
             super(0, 0, 64, 18, label, action, DEFAULT_NARRATION);
         }
 
         @Override
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             if (this.active && isHoveredOrFocused()) graphics.fill(getX(), getY(), getRight(), getBottom(), 0x30FFFFFF);
-            if (isFocused()) graphics.fill(getX() + 3, getBottom() - 2, getRight() - 3, getBottom() - 1, 0xFFFFFFFF);
+            if (isFocused() || this.selected.getAsBoolean()) graphics.fill(getX() + 3, getBottom() - 2, getRight() - 3, getBottom() - 1, 0xFFFFFFFF);
             var font = Minecraft.getInstance().font;
             int color = this.active ? 0xFFFFFF : 0x777777;
             if (this.shortcut.isEmpty()) renderScrollingString(graphics, font, 4, color);

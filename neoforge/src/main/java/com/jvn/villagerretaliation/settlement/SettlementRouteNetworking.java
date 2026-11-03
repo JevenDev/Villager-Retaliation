@@ -23,8 +23,9 @@ public final class SettlementRouteNetworking {
         else switch (query.action()) {
             case VIEW, CLOSE -> { }
             case PREVIEW -> {
-                var preview = SettlementRouteService.preview(player, query.route(), new VillageAllegianceId(query.origin()), new VillageAllegianceId(query.destination()), query.points());
+                var preview = SettlementRouteService.preview(player, query.route(), new VillageAllegianceId(query.origin()), new VillageAllegianceId(query.destination()), query.points(), query.shape());
                 message = preview.problem();
+                if (preview.blocked() != null) response.putLong("Blocked", preview.blocked().asLong());
                 if (preview.path() != null) {
                     response.putLongArray("Preview", preview.path().steps().stream().mapToLong(step -> step.position().asLong()).toArray());
                     response.putDouble("Seconds", (preview.path().steps().size() - 1) * .4);
@@ -38,7 +39,7 @@ public final class SettlementRouteNetworking {
                     message = "Crossing estimate: " + Math.round(response.getDouble("Seconds")) + "s. Development: " + obstructed + " protected or unsuitable cells, " + unloaded + " await loaded terrain. Save to establish the route";
                 }
             }
-            case SAVE -> message = SettlementRouteService.save(player, query.route(), new VillageAllegianceId(query.origin()), new VillageAllegianceId(query.destination()), query.name(), query.revision(), query.points());
+            case SAVE -> message = SettlementRouteService.save(player, query.route(), new VillageAllegianceId(query.origin()), new VillageAllegianceId(query.destination()), query.name(), query.revision(), query.points(), query.shape());
             case REMOVE -> message = SettlementRouteService.remove(player, route, query.revision());
             case BUILD -> message = route != null && route.revision == query.revision() ? SettlementRouteService.construct(player, route, query.section()) : "Route changed, refresh first";
             case RECALL -> message = SettlementCaravanService.recall(player, query.journey(), query.revision());
@@ -57,6 +58,8 @@ public final class SettlementRouteNetworking {
             if (!town.territory().active() || !town.dimension().equals(level.dimension().location())
                     || !visible.containsKey(town.id()) && !town.permits(player.getUUID(), SettlementPermission.VIEW) || towns.size() >= 128) continue;
             var row = new CompoundTag(); row.putUUID("Id", town.id().value()); row.putString("Name", registry.canonicalRecord(town.id()).map(record -> record.displayName()).orElse("Settlement"));
+            SettlementAidStock.depots(town, false).stream().findFirst().ifPresent(depot -> row.putLong("Departure", depot.position().asLong()));
+            SettlementAidStock.depots(town, true).stream().findFirst().ifPresent(depot -> row.putLong("Arrival", depot.position().asLong()));
             row.putBoolean("Manage", town.permits(player.getUUID(), SettlementPermission.DIPLOMACY)); row.putLong("Position", town.center().asLong()); towns.add(row);
         }
         response.put("Towns", towns);
@@ -69,6 +72,7 @@ public final class SettlementRouteNetworking {
             SettlementRouteService.refresh(level, route);
             response.putLongArray("Path", route.path.steps().stream().mapToLong(step -> step.position().asLong()).toArray());
             response.putLongArray("Points", route.points.stream().mapToLong(net.minecraft.core.BlockPos::asLong).toArray());
+            if (route.shape != null) response.put("Shape", route.shape.save());
             response.putDouble("Seconds", route.estimatedTicks() / 20);
             var sections = new ListTag();
             for (int i = 0; i < route.sections(); i++) {
