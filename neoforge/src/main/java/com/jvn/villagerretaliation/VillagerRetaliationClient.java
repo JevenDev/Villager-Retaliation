@@ -48,6 +48,7 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.PreviewMeshCache::tick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerWorldTextIndicatorClient::onClientTick);
         modEventBus.addListener(com.jvn.villagerretaliation.client.exploration.MapFogRenderer::registerShaders);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.exploration.MapCompass::registerShaders);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);

@@ -29,7 +29,7 @@ public final class MapLocationClientSmoke {
     private static int worldX, worldZ;
     private static List<MapLocation> backgroundLocations;
     private static MapLocation coveredLocation;
-    private static boolean occlusionChecked;
+    private static boolean occlusionChecked, compassChecked;
 
     @SubscribeEvent public static void beforeRender(ScreenEvent.Render.Pre event) {
         if (System.getProperty(OUTPUT) == null || phase != 1 || !(event.getScreen() instanceof MapLocationEditScreen editor)) return;
@@ -44,6 +44,11 @@ public final class MapLocationClientSmoke {
     }
 
     @SubscribeEvent public static void afterRender(ScreenEvent.Render.Post event) {
+        if (System.getProperty(OUTPUT) != null && !compassChecked && event.getScreen() instanceof ExploredMapScreen screen
+                && screen.transitionProgress() == 1) {
+            MapCompassClientChecks.verify(screen);
+            compassChecked = true;
+        }
         if (backgroundLocations == null || !(event.getScreen() instanceof MapLocationEditScreen)) return;
         event.getGuiGraphics().flush();
         var mc = Minecraft.getInstance();
@@ -170,6 +175,7 @@ public final class MapLocationClientSmoke {
             case 8 -> {
                 if (!MapFeatureClientChecks.tick(map)) return;
                 if (!SettlementRouteMapClientChecks.tick(map)) return;
+                require(compassChecked, "the compass rendering checks ran on an open map");
                 map.onClose();
                 require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
                 map.onClose();

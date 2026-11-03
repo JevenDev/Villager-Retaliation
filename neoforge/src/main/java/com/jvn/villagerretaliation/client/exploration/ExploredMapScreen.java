@@ -69,7 +69,8 @@ public final class ExploredMapScreen extends Screen {
                 .bounds(10, 34, 90, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(MapLayers.text("follow_hint"))).build());
         addRenderableWidget(Button.builder(MapLayers.text("layers"), b -> minecraft.setScreen(new MapLayersScreen(this)))
                 .bounds(width - 76, 34, 66, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(width - 76, height - 26, 66, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+                .bounds(width - 76, height - MapCompass.SIZE - MapCompass.PADDING - 28, 66, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("map.villagerretaliation.center"), b -> center()).bounds(10, height - 26, 80, 20).build());
         addRenderableWidget(Button.builder(Component.literal("\u2212"), b -> zoomAt(width / 2.0, height / 2.0, view().scale() / 1.25)).bounds(96, height - 26, 24, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> zoomAt(width / 2.0, height / 2.0, view().scale() * 1.25)).bounds(124, height - 26, 24, 20).build());
@@ -120,8 +121,7 @@ public final class ExploredMapScreen extends Screen {
         float controlsAlpha = MapScreenTransition.ease(Math.clamp((opening - .8f) / .2f, 0, 1));
         for (var child : children()) if (child instanceof AbstractWidget widget) widget.setAlpha(controlsAlpha);
         if (controlsAlpha < .02f) return;
-        int titleColor = repository != null && lighting.red() + lighting.green() + lighting.blue() > 2.1f ? 0x40464f : 0xffffff;
-        graphics.drawCenteredString(font, title, width / 2, 12, titleColor | ((int)(controlsAlpha * 255) << 24));
+        if (minecraft.player != null) MapCompass.render(graphics, width, height, minecraft.player.getViewYRot(partial), controlsAlpha);
         super.render(graphics, mouseX, mouseY, partial);
         relations.renderPopup(graphics, font, mouseX, mouseY, partial);
         if (!relations.hasPopup()) locations.render(graphics, font, mouseX, mouseY, partial);
