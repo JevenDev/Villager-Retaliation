@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltipStyle;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -8,7 +9,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -115,7 +115,7 @@ public final class SettlementBuildOverlay {
     }
 
     public void renderControls(GuiGraphics graphics) {
-        if (this.controls != null) TooltipRenderUtil.renderTooltipBackground(graphics,
+        if (this.controls != null) VillagerTooltipStyle.DEFAULT.renderBackground(graphics,
                 this.controls.left(), this.controls.top(), this.controls.width(), this.controls.height(), 0);
         if (this.summaryBounds != null) {
             var font = Minecraft.getInstance().font;
@@ -127,10 +127,10 @@ public final class SettlementBuildOverlay {
     void renderHint(GuiGraphics graphics, Font font, Component text, AbstractWidget toggleButton, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 1000);
-        TooltipRenderUtil.renderTooltipBackground(graphics, this.toggle.left(), this.toggle.top(), this.toggle.width(), this.toggle.height(), 0);
+        VillagerTooltipStyle.DEFAULT.renderBackground(graphics, this.toggle.left(), this.toggle.top(), this.toggle.width(), this.toggle.height(), 0);
         toggleButton.render(graphics, mouseX, mouseY, partialTick);
         if (this.hintsVisible) {
-            TooltipRenderUtil.renderTooltipBackground(graphics, this.hint.left(), this.hint.top(), this.hint.width(), this.hint.height(), 0);
+            VillagerTooltipStyle.DEFAULT.renderBackground(graphics, this.hint.left(), this.hint.top(), this.hint.width(), this.hint.height(), 0);
             int y = this.hint.top();
             for (var line : this.lines) {
                 graphics.drawString(font, line, this.hint.left(), y, 0xFFFFFF);

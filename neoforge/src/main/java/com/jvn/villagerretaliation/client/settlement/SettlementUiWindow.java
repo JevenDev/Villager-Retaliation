@@ -1,10 +1,10 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltipStyle;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 
 final class SettlementUiWindow {
@@ -116,7 +116,7 @@ final class SettlementUiWindow {
     }
 
     void render(GuiGraphics graphics, Font font, Component title) {
-        TooltipRenderUtil.renderTooltipBackground(graphics, this.left + 4, this.top + 4, this.width - 8, this.height - 8, 0);
+        VillagerTooltipStyle.DEFAULT.renderBackground(graphics, this.left + 4, this.top + 4, this.width - 8, this.height - 8, 0);
         int titleRight = this.left + this.width - 4;
         for (var widget : this.widgets) {
             if (widget.visible && widget.getY() < this.top + TITLE_HEIGHT)

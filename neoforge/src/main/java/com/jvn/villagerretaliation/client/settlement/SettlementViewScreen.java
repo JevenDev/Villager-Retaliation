@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltipStyle;
+import com.jvn.villagerretaliation.client.ui.VillagerTooltips;
 import com.jvn.villagerretaliation.client.ui.VillagerUi;
 import com.jvn.villagerretaliation.client.interaction.DialogueCameraOcclusion;
 import com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer;
@@ -33,7 +35,6 @@ import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -52,7 +53,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class SettlementViewScreen extends Screen implements com.jvn.villagerretaliation.client.inventory.ProductionClient.Receiver,
-        com.jvn.villagerretaliation.client.inventory.TransferClient.Receiver {
+        com.jvn.villagerretaliation.client.inventory.TransferClient.Receiver, VillagerTooltips.Provider {
     static final float PITCH = SettlementViewCamera.PITCH;
     private final SettlementManagementScreen parent;
     private final UUID session;
@@ -955,7 +956,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     private void renderChrome(GuiGraphics graphics, int mouseX, int mouseY) {
         renderHeader(graphics, mouseX, mouseY, this.width);
-        TooltipRenderUtil.renderTooltipBackground(graphics, 6, SettlementViewLayout.HEADER_HEIGHT + 6,
+        VillagerTooltipStyle.DEFAULT.renderBackground(graphics, 6, SettlementViewLayout.HEADER_HEIGHT + 6,
                 this.layout.railSize, (this.layout.railSize + 2) * 7 - 2, 0);
         this.buildOverlay.renderControls(graphics);
         var commands = contextButtons().stream().filter(button -> button.visible && !(button instanceof SettlementBuildOverlay.ActionButton)).toList();
@@ -1033,7 +1034,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         int y = Math.clamp((int) point[1] - 12 - lines.size() * this.font.lineHeight, SettlementViewLayout.HEADER_HEIGHT + 8,
                 Math.max(SettlementViewLayout.HEADER_HEIGHT + 8, this.height - lines.size() * this.font.lineHeight - 8));
         if (this.buildOverlay.controls() != null && y + lines.size() * this.font.lineHeight >= this.buildOverlay.controls().top()) return;
-        TooltipRenderUtil.renderTooltipBackground(graphics, x, y, width, lines.size() * this.font.lineHeight, 0);
+        VillagerTooltipStyle.DEFAULT.renderBackground(graphics, x, y, width, lines.size() * this.font.lineHeight, 0);
         for (var line : lines) { graphics.drawString(this.font, line, x, y, 0xFFAAAA); y += this.font.lineHeight; }
     }
 

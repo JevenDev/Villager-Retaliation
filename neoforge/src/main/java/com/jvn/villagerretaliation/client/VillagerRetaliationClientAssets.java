@@ -6,6 +6,10 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.resources.ResourceLocation;
 
 public final class VillagerRetaliationClientAssets {
+    public static final ResourceLocation TOOLTIP_BACKGROUND_TEXTURE =
+            texture("gui/tooltip/background");
+    public static final ResourceLocation TOOLTIP_BORDER_TEXTURE =
+            texture("gui/tooltip/border");
     public static final ResourceLocation VANILLA_VILLAGER_SKIN =
             ResourceLocation.withDefaultNamespace("textures/entity/villager/villager.png");
     public static final ResourceLocation COMBAT_VILLAGER_SKIN =

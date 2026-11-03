@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.settlement;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltipStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -7,7 +8,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.lwjgl.glfw.GLFW;
@@ -244,7 +244,7 @@ final class SettlementViewPopup {
     void render(GuiGraphics graphics, Font font, int mouseX, int mouseY, float partialTick) {
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 1400);
-        TooltipRenderUtil.renderTooltipBackground(graphics, this.left + PADDING, this.top + PADDING,
+        VillagerTooltipStyle.DEFAULT.renderBackground(graphics, this.left + PADDING, this.top + PADDING,
                 this.width - PADDING * 2, this.height - PADDING * 2, 0);
         graphics.enableScissor(this.left + PADDING, this.top + PADDING, this.left + this.width - PADDING,
                 this.top + PADDING + this.bodyHeight);
