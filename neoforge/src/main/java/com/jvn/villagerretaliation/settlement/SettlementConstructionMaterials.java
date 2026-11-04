@@ -332,7 +332,7 @@ public final class SettlementConstructionMaterials {
     public static boolean place(Villager builder, CompoundTag state, BuilderWorker.PlacementGroup group) {
         var town = town(builder, state);
         var project = project(builder, state);
-        if (town == null || project == null || !reserved(project) || !project.active()) return false;
+        if (town == null || project == null || !reserved(project) || !project.active() || project.paused()) return false;
         var level = (ServerLevel) builder.level();
         project.observeSite(town.workplace(project.area()));
         var site = project.site();

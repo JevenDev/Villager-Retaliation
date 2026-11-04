@@ -31,10 +31,12 @@ public final class SettlementBuildingPlanner {
         var level = player.serverLevel();
         var town = SettlementSavedData.get(level).get(new VillageAllegianceId(request.town())).orElse(null);
         if (!SettlementConstructionService.canBuild(player, town)) return empty(request, "permission");
-        var plan = SettlementConstructionService.scan(level, request.structure(), request.rotation());
-        if (plan == null || plan.blocks().size() > SettlementBuildingPreviewPayload.MAX_BLOCKS
-                || plan.materials().size() > SettlementBuildingPreviewPayload.MAX_MATERIALS) return empty(request, "prefab");
-        var origin = SettlementConstructionService.origin(plan, request.anchor());
+        var basePlan = SettlementConstructionService.scan(level, request.structure(), request.rotation());
+        if (basePlan == null || basePlan.blocks().size() > SettlementBuildingPreviewPayload.MAX_BLOCKS
+                || basePlan.materials().size() > SettlementBuildingPreviewPayload.MAX_MATERIALS) return empty(request, "prefab");
+        var origin = SettlementConstructionService.origin(basePlan, request.anchor());
+        var preparation = SettlementBuildingPreparation.preview(player, town, basePlan, origin, request.preparation());
+        var plan = preparation.failure().isEmpty() ? preparation.preparation().apply(basePlan) : basePlan;
         var builders = new ArrayList<SettlementBuildingPreviewPayload.Builder>();
         for (var member : VillageAllegianceRegistrySavedData.get(level).residentRoster(town.id(), level.getGameTime())) {
             var builder = SettlementConstructionService.resolveBuilder(level, town, member.id());
@@ -70,27 +72,101 @@ public final class SettlementBuildingPlanner {
                     label.substring(0, Math.min(256, label.length()))));
         }
         var blocks = plan.blocks().stream().map(block -> new SettlementBuildingPreviewPayload.PreviewBlock(block.localPos(), block.state())).toList();
-        String failure = SettlementConstructionService.placementFailure(player, town, plan, origin);
+        String failure = preparation.failure().isEmpty() ? SettlementConstructionService.placementFailure(player, town, plan, origin) : preparation.failure();
+        var entrances = entrances(level, basePlan, origin);
+        var diagnostics = diagnostics(player, town, plan, origin, failure, entrances, request.builder(), basePlan.worldMin(origin).getY());
+        if (preparation.problem() != null && diagnostics.size() < 128) diagnostics.add(new SettlementBuildingPreviewPayload.Diagnostic(preparation.problem(), preparation.failure(), true));
+        var terrain = preparation.preparation() == null ? List.<SettlementBuildingPreviewPayload.TerrainCell>of() : preparation.preparation().cells().stream()
+                .map(cell -> new SettlementBuildingPreviewPayload.TerrainCell(origin.offset(cell.local()), cell.before(), cell.after())).toList();
 
         return new SettlementBuildingPreviewPayload(request.town(), request.requestId(), request.structure(), request.anchor(), request.rotation(),
                 origin, plan.worldMin(origin), plan.worldMax(origin), plan.price(), town.economy().constructionFunds(),
                 failure, blocks, materials,
-                builders.stream().limit(SettlementBuildingPreviewPayload.MAX_BUILDERS).toList(), blockers(level, player, town, plan, origin, failure));
+                builders.stream().limit(SettlementBuildingPreviewPayload.MAX_BUILDERS).toList(),
+                diagnostics.stream().filter(SettlementBuildingPreviewPayload.Diagnostic::blocking).map(SettlementBuildingPreviewPayload.Diagnostic::position).distinct().toList(),
+                diagnostics, terrain, entrances, request.preparation(), preparation.failure().isEmpty() ? BuilderStructureScanner.fingerprint(plan) : "");
     }
 
-    private static List<BlockPos> blockers(net.minecraft.server.level.ServerLevel level, ServerPlayer player, SettlementRecord town,
-            BuilderStructureScanner.StructurePlan plan, BlockPos origin, String failure) {
-        if (failure.isEmpty() || !(failure.equals("bounds") || failure.equals("blocked_existing") || failure.equals("site_unloaded"))) return List.of();
-        var positions = new ArrayList<BlockPos>();
+    private static List<BlockPos> entrances(net.minecraft.server.level.ServerLevel level, BuilderStructureScanner.StructurePlan plan, BlockPos origin) {
+        var result = new ArrayList<BlockPos>();
+        var states = plan.blocks().stream().collect(java.util.stream.Collectors.toMap(BuilderStructureScanner.BuildBlock::localPos, BuilderStructureScanner.BuildBlock::state));
+        for (var block : plan.blocks()) {
+            if (!(block.state().getBlock() instanceof net.minecraft.world.level.block.DoorBlock)
+                    || block.state().getValue(net.minecraft.world.level.block.DoorBlock.HALF) != net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER) continue;
+            var facing = block.state().getValue(net.minecraft.world.level.block.DoorBlock.FACING);
+            BlockPos entrance = null;
+            int shortest = 9;
+            for (var direction : List.of(facing, facing.getOpposite())) {
+                for (int distance = 1; distance < shortest; distance++) {
+                    var local = block.localPos().relative(direction, distance);
+                    if (local.getX() < plan.localMin().getX() || local.getX() > plan.localMax().getX()
+                            || local.getZ() < plan.localMin().getZ() || local.getZ() > plan.localMax().getZ()) {
+                        entrance = origin.offset(block.localPos().relative(direction));
+                        shortest = distance;
+                        break;
+                    }
+                    var foot = states.get(local);
+                    var head = states.get(local.above());
+                    if (foot != null && !foot.getCollisionShape(level, origin.offset(local)).isEmpty()
+                            || head != null && !head.getCollisionShape(level, origin.offset(local.above())).isEmpty()) break;
+                }
+            }
+            if (entrance != null) result.add(entrance);
+            if (result.size() == 16) break;
+        }
+        return List.copyOf(result);
+    }
+
+    private static ArrayList<SettlementBuildingPreviewPayload.Diagnostic> diagnostics(ServerPlayer player, SettlementRecord town,
+            BuilderStructureScanner.StructurePlan plan, BlockPos origin, String failure, List<BlockPos> entrances, java.util.UUID selected, int groundY) {
+        var level = player.serverLevel();
+        var result = new ArrayList<SettlementBuildingPreviewPayload.Diagnostic>();
         for (var block : plan.siteBlocks(level, origin)) {
             var pos = plan.worldPos(origin, block);
-            boolean blocked = failure.equals("bounds") ? !town.contains(pos, pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos)
-                    : !level.hasChunkAt(pos) || level.getBlockEntity(pos) != null || !level.mayInteract(player, pos)
-                    || !com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.placementCheck(level, null, pos, block, false).valid();
-            if (blocked) positions.add(pos);
-            if (positions.size() == 128) break;
+            String reason = "";
+            boolean blocking = true;
+            if (!town.contains(pos, pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos)) reason = "bounds";
+            else if (!level.hasChunkAt(pos)) reason = "site_unloaded";
+            else if (!level.mayInteract(player, pos)) reason = "protected";
+            else if (level.getBlockEntity(pos) != null) reason = "container";
+            else {
+                var check = com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner.placementCheck(level, null, pos, block, false);
+                if (!check.valid()) reason = check.statusKey().replace("interaction.work.builder.", "");
+                else if (!block.state().getCollisionShape(level, pos).isEmpty()
+                        && !level.getEntities((net.minecraft.world.entity.Entity) null, new net.minecraft.world.phys.AABB(pos),
+                                entity -> entity.isAlive() && !entity.isSpectator()).isEmpty()) {
+                    reason = "blocked_entity";
+                    blocking = false;
+                }
+            }
+            if (!reason.isEmpty()) result.add(new SettlementBuildingPreviewPayload.Diagnostic(pos, reason, blocking));
+            if (result.size() == 96) break;
         }
-        return positions;
+        if (!failure.isEmpty() && result.stream().noneMatch(SettlementBuildingPreviewPayload.Diagnostic::blocking))
+            result.add(new SettlementBuildingPreviewPayload.Diagnostic(plan.worldMin(origin), failure, true));
+        var predicted = plan.blocks().stream().collect(java.util.stream.Collectors.toMap(block -> plan.worldPos(origin, block), BuilderStructureScanner.BuildBlock::state));
+        for (var entrance : entrances) {
+            boolean clear = true;
+            for (var pos : List.of(entrance, entrance.above())) {
+                if (!level.hasChunkAt(pos) || !predicted.getOrDefault(pos, level.getBlockState(pos)).getCollisionShape(level, pos).isEmpty()) clear = false;
+            }
+            if (!clear) result.add(new SettlementBuildingPreviewPayload.Diagnostic(entrance, "access_blocked", false));
+        }
+        var builder = selected == null || selected.equals(SettlementProject.AUTOMATIC_BUILDER) ? null : SettlementConstructionService.resolveBuilder(level, town, selected);
+        if (builder != null && level.getEntity(builder.getUUID()) == builder && !entrances.isEmpty() && failure.isEmpty()) {
+            var path = builder.getNavigation().createPath(entrances.getFirst(), 1);
+            if (path == null || !path.canReach()) result.add(new SettlementBuildingPreviewPayload.Diagnostic(entrances.getFirst(), "builder_access", false));
+        }
+        var min = plan.worldMin(origin);
+        var max = plan.worldMax(origin);
+        for (int x = min.getX(); x <= max.getX() && result.size() < 128; x++) {
+            for (int z = min.getZ(); z <= max.getZ() && result.size() < 128; z++) {
+                var support = new BlockPos(x, groundY - 1, z);
+                if (level.hasChunkAt(support) && !predicted.getOrDefault(support, level.getBlockState(support)).isFaceSturdy(level, support, net.minecraft.core.Direction.UP))
+                    result.add(new SettlementBuildingPreviewPayload.Diagnostic(support, "foundation_gap", false));
+            }
+        }
+        return result;
     }
 
     static SettlementBuildingPreviewPayload projectPreview(net.minecraft.server.level.ServerLevel level, SettlementRecord town, SettlementProject project, int requestId) {
@@ -104,6 +180,7 @@ public final class SettlementBuildingPlanner {
 
     private static SettlementBuildingPreviewPayload empty(SettlementBuildingPreviewRequestPayload request, String failure) {
         return new SettlementBuildingPreviewPayload(request.town(), request.requestId(), request.structure(), request.anchor(), request.rotation(),
-                request.anchor(), BlockPos.ZERO, BlockPos.ZERO, 0, CurrencyAmount.ZERO, failure, List.of(), List.of(), List.of());
+                request.anchor(), BlockPos.ZERO, BlockPos.ZERO, 0, CurrencyAmount.ZERO, failure, List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(), request.preparation(), "");
     }
 }

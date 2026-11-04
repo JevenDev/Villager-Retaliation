@@ -18,7 +18,9 @@ import net.minecraft.world.level.block.state.BlockState;
 public record SettlementBuildingPreviewPayload(UUID town, int requestId, ResourceLocation structure, BlockPos anchor,
                                                Rotation rotation, BlockPos origin, BlockPos min, BlockPos max,
                                                int price, CurrencyAmount funds, String failure, List<PreviewBlock> blocks,
-                                               List<Material> materials, List<Builder> builders, List<BlockPos> blockers) implements CustomPacketPayload {
+                                               List<Material> materials, List<Builder> builders, List<BlockPos> blockers,
+                                               List<Diagnostic> diagnostics, List<TerrainCell> terrain, List<BlockPos> entrances,
+                                               com.jvn.villagerretaliation.settlement.SettlementTerrainOptions preparation, String fingerprint) implements CustomPacketPayload {
     public static final int MAX_BLOCKS = 65_536;
     public static final int MAX_MATERIALS = 1_024;
     public static final int MAX_BUILDERS = 512;
@@ -32,7 +34,20 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         this(town, requestId, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, List.of());
     }
 
+    public SettlementBuildingPreviewPayload(UUID town, int requestId, ResourceLocation structure, BlockPos anchor,
+            Rotation rotation, BlockPos origin, BlockPos min, BlockPos max, int price, CurrencyAmount funds, String failure,
+            List<PreviewBlock> blocks, List<Material> materials, List<Builder> builders, List<BlockPos> blockers) {
+        this(town, requestId, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, blockers,
+                List.of(), List.of(), List.of(), com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.NONE, "");
+    }
+
     public SettlementBuildingPreviewPayload {
+        Objects.requireNonNull(preparation);
+        if (diagnostics.size() > 128 || terrain.size() > 4096 || entrances.size() > 16 || fingerprint == null || fingerprint.length() > 64)
+            throw new IllegalArgumentException("Invalid building diagnostics");
+        diagnostics = List.copyOf(diagnostics);
+        terrain = List.copyOf(terrain);
+        entrances = entrances.stream().map(BlockPos::immutable).toList();
         Objects.requireNonNull(town);
         Objects.requireNonNull(structure);
         Objects.requireNonNull(anchor);
@@ -81,6 +96,18 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         }
         buffer.writeVarInt(payload.blockers().size());
         payload.blockers().forEach(buffer::writeBlockPos);
+        payload.preparation().write(buffer);
+        buffer.writeUtf(payload.fingerprint(), 64);
+        buffer.writeVarInt(payload.diagnostics().size());
+        for (var diagnostic : payload.diagnostics()) {
+            buffer.writeBlockPos(diagnostic.position()); buffer.writeUtf(diagnostic.reason(), 64); buffer.writeBoolean(diagnostic.blocking());
+        }
+        buffer.writeVarInt(payload.terrain().size());
+        for (var cell : payload.terrain()) {
+            buffer.writeBlockPos(cell.position()); buffer.writeVarInt(Block.getId(cell.before())); buffer.writeVarInt(Block.getId(cell.after()));
+        }
+        buffer.writeVarInt(payload.entrances().size());
+        payload.entrances().forEach(buffer::writeBlockPos);
     }
 
     private static SettlementBuildingPreviewPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -107,7 +134,34 @@ public record SettlementBuildingPreviewPayload(UUID town, int requestId, Resourc
         var blockers = new ArrayList<BlockPos>();
         count = VillagerPayloads.readCollectionSize(buffer, 128, "building blockers");
         for (int index = 0; index < count; index++) blockers.add(buffer.readBlockPos());
-        return new SettlementBuildingPreviewPayload(town, request, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, blockers);
+        var preparation = com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.read(buffer);
+        var fingerprint = buffer.readUtf(64);
+        var diagnostics = new ArrayList<Diagnostic>();
+        count = VillagerPayloads.readCollectionSize(buffer, 128, "building diagnostics");
+        for (int index = 0; index < count; index++) diagnostics.add(new Diagnostic(buffer.readBlockPos(), buffer.readUtf(64), buffer.readBoolean()));
+        var terrain = new ArrayList<TerrainCell>();
+        count = VillagerPayloads.readCollectionSize(buffer, 4096, "building terrain");
+        for (int index = 0; index < count; index++) terrain.add(new TerrainCell(buffer.readBlockPos(), Block.stateById(buffer.readVarInt()), Block.stateById(buffer.readVarInt())));
+        var entrances = new ArrayList<BlockPos>();
+        count = VillagerPayloads.readCollectionSize(buffer, 16, "building entrances");
+        for (int index = 0; index < count; index++) entrances.add(buffer.readBlockPos());
+        return new SettlementBuildingPreviewPayload(town, request, structure, anchor, rotation, origin, min, max, price, funds, failure, blocks, materials, builders, blockers,
+                diagnostics, terrain, entrances, preparation, fingerprint);
+    }
+
+    public record Diagnostic(BlockPos position, String reason, boolean blocking) {
+        public Diagnostic {
+            Objects.requireNonNull(position);
+            if (reason == null || reason.isBlank() || reason.length() > 64) throw new IllegalArgumentException("Invalid placement diagnostic");
+            position = position.immutable();
+        }
+    }
+
+    public record TerrainCell(BlockPos position, BlockState before, BlockState after) {
+        public TerrainCell {
+            Objects.requireNonNull(position); Objects.requireNonNull(before); Objects.requireNonNull(after);
+            position = position.immutable();
+        }
     }
 
     public record PreviewBlock(BlockPos local, BlockState state) {

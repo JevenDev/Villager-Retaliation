@@ -135,6 +135,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Button applyGizmo;
     private Button cancelGizmo;
     private Button changePrefab;
+    private Button focusBuildingIssue;
+    private SettlementBuildOverlay.Bounds placementIssueLabel;
+    private BlockPos placementIssuePosition;
     private SettlementSelectionGizmo gizmo;
     private boolean buildingGizmo;
     private SettlementManagementPayload.Area editingArea;
@@ -489,6 +492,13 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 editArea(area);
             }
         }).shortcut("Enter"));
+        this.focusBuildingIssue = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Next placement issue"), ignored -> {
+            var draft = this.parent.buildingDraft();
+            if (draft == null || !draft.currentPreview() || draft.preview.diagnostics().isEmpty()) return;
+            draft.diagnosticIndex = Math.floorMod(draft.diagnosticIndex + 1, draft.preview.diagnostics().size());
+            var diagnostic = draft.preview.diagnostics().get(draft.diagnosticIndex);
+            focus(diagnostic.position().getX() + 0.5, diagnostic.position().getZ() + 0.5);
+        }));
         this.changePrefab = addRenderableWidget(new SettlementBuildOverlay.ActionButton(SettlementManagementScreen.text("change_prefab"), ignored -> management().newBuilding()));
         this.cancelGizmo = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.translatable("gui.cancel"), ignored -> cancelGizmo()));
         this.hintToggle = addRenderableWidget(new SettlementViewUi.IconButton(Component.literal("Hide hints"), 6, this.height - 24, 18, 18,
@@ -998,18 +1008,21 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var buttons = new ArrayList<Button>();
         for (var button : this.guardButtons) if (button != null) buttons.add(button);
         for (var button : new Button[]{this.returnToPost, this.groupActions, this.commandResults, this.transform, this.resize,
-                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
+                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.focusBuildingIssue, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
         buttons.addAll(this.routeButtons);
         return buttons;
     }
 
     private void renderPlacementBlocker(GuiGraphics graphics) {
+        this.placementIssueLabel = null;
+        this.placementIssuePosition = null;
         BlockPos position = null;
         String reason = "";
         var building = this.parent.buildingDraft();
-        if (building != null && building.currentPreview() && !building.preview.failure().isBlank()) {
-            position = building.preview.blockers().isEmpty() ? building.anchor : building.preview.blockers().getFirst();
-            reason = SettlementPlacementSummary.failure(building.preview.failure());
+        if (building != null && building.currentPreview() && !building.preview.diagnostics().isEmpty()) {
+            var diagnostic = building.preview.diagnostics().get(Math.floorMod(building.diagnosticIndex, building.preview.diagnostics().size()));
+            position = diagnostic.position();
+            reason = SettlementPlacementSummary.failure(diagnostic.reason()) + " [click to focus]";
         } else if (this.walls.active()) {
             var cell = this.walls.cells().stream().filter(value -> switch (value.kind()) { case BLOCKED, OUTSIDE, UNAVAILABLE -> true; default -> false; }).findFirst().orElse(null);
             if (cell != null) { position = cell.position(); reason = cell.kind() == com.jvn.villagerretaliation.settlement.SettlementWallTerrain.Kind.OUTSIDE ? "Outside owned land"
@@ -1036,6 +1049,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 Math.max(SettlementViewLayout.HEADER_HEIGHT + 8, this.height - lines.size() * this.font.lineHeight - 8));
         if (this.buildOverlay.controls() != null && y + lines.size() * this.font.lineHeight >= this.buildOverlay.controls().top()) return;
         VillagerTooltipStyle.DEFAULT.renderBackground(graphics, x, y, width, lines.size() * this.font.lineHeight, 0);
+        if (building != null) {
+            this.placementIssueLabel = new SettlementBuildOverlay.Bounds(x, y, width, lines.size() * this.font.lineHeight);
+            this.placementIssuePosition = position;
+        }
         for (var line : lines) { graphics.drawString(this.font, line, x, y, 0xFFAAAA); y += this.font.lineHeight; }
     }
 
@@ -1069,7 +1086,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6})
                 widgets.add(index < 0 ? this.wallSpacing : this.wallButtons.get(index));
         } else {
-            for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.cancelGizmo})
+            for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.focusBuildingIssue, this.cancelGizmo})
                 if (button != null) widgets.add(button);
         }
         var actions = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
@@ -1245,6 +1262,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.applyGizmo.active = draft == null || draft.placed && !draft.submitting;
             this.cancelGizmo.visible = manipulating;
             this.changePrefab.visible = manipulating && draft != null;
+            this.focusBuildingIssue.visible = manipulating && draft != null && draft.currentPreview() && !draft.preview.diagnostics().isEmpty();
         }
         if (this.manage != null) {
             this.manage.setMessage(this.inspected instanceof SettlementManagementPayload.Depot ? Component.literal("Depot settings")
@@ -2530,6 +2548,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     @Override
     public boolean mouseClicked(double x, double y, int button) {
         if (SettlementViewClient.transitioning()) return true;
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.popup == null && this.placementIssueLabel != null
+                && this.placementIssueLabel.contains(x, y) && this.placementIssuePosition != null
+                && this.parent.buildingDraft() != null && this.parent.buildingDraft().currentPreview()) {
+            focus(this.placementIssuePosition.getX() + 0.5, this.placementIssuePosition.getZ() + 0.5);
+            return true;
+        }
         if (worldContains(x, y) && this.popup == null && (this.search == null || !this.search.isFocused())
                 && SettlementViewKeyMappings.PEEK.matchesMouse(button)) {
             this.peekKey = InputConstants.Type.MOUSE.getOrCreate(button);
@@ -3084,7 +3108,14 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
         }
         if (draft != null && draft.currentPreview()) {
-            for (var blocked : draft.preview.blockers()) LevelRenderer.renderLineBox(pose, lines, new AABB(blocked).inflate(0.025), 1, 0.2F, 0.15F, 1);
+            for (var diagnostic : draft.preview.diagnostics()) LevelRenderer.renderLineBox(pose, lines, new AABB(diagnostic.position()).inflate(0.025),
+                    1, diagnostic.blocking() ? 0.2F : 0.75F, 0.15F, 1);
+            for (var cell : draft.preview.terrain()) LevelRenderer.renderLineBox(pose, lines, new AABB(cell.position()).inflate(0.015),
+                    cell.after().isAir() ? 1F : 0.25F, cell.after().isAir() ? 0.5F : 0.9F, 0.3F, 0.6F);
+            for (var entrance : draft.preview.entrances()) LevelRenderer.renderLineBox(pose, lines, new AABB(entrance).expandTowards(0, 1, 0).inflate(0.04),
+                    0.2F, 0.9F, 1F, 1F);
+            LevelRenderer.renderLineBox(pose, lines, new AABB(draft.preview.min().getX(), draft.anchor.getY() - 0.02, draft.preview.min().getZ(),
+                    draft.preview.max().getX() + 1, draft.anchor.getY() + 0.02, draft.preview.max().getZ() + 1), 0.3F, 0.7F, 1F, 1F);
         }
         for (var bed : this.selection.beds()) {
             if (contains(bed)) LevelRenderer.renderLineBox(pose, lines, bedBounds(bed).inflate(0.015D), 0.25F, 0.8F, 1.0F, 1.0F);

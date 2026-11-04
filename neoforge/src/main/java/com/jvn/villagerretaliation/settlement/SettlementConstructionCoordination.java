@@ -61,6 +61,7 @@ final class SettlementConstructionCoordination {
                                    LevelReader view, int index, long now) {
         if (project.wallConstruction() != null && !project.wallConstruction().available(index, project.crew())) return false;
         if (project.order() != null && !project.order().available(index, project.crew())) return false;
+        if (project.preparation() != null && !project.preparation().available(index, project.crew())) return false;
         var group = BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().get(index));
         for (var part : group.parts()) {
             if (!view.hasChunkAt(part.worldPos())) return false;

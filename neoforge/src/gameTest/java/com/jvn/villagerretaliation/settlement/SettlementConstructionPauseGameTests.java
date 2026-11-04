@@ -27,6 +27,8 @@ public final class SettlementConstructionPauseGameTests {
             helper.assertTrue(f.town().startProject(f.leader().getUUID(), project), "project starts");
             SettlementConstructionService.reconcile(f.builder());
             var state = HiredWorkStateStore.state(f.builder());
+            com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState.setPlacedIndex(state, 1);
+            SettlementConstructionService.observe(f.builder(), state);
             var escrow = project.materialEscrow().copy();
             var funds = f.town().economy().balance();
             var outsider = net.neoforged.neoforge.common.util.FakePlayerFactory.get(helper.getLevel(),
@@ -41,15 +43,15 @@ public final class SettlementConstructionPauseGameTests {
             } finally { buffer.release(); }
             helper.assertTrue(SettlementManagementService.execute(f.leader(), command), "build authority pauses");
             helper.assertValueEqual(project.phase(), BuilderBuildPhase.PAUSED, "snapshot phase exposes pause");
-            var before = state.copy();
+            var before = com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState.task(state).copy();
             var session = HiredWorkSession.create(helper.getLevel(), f.builder(), HiredVillagerRole.BUILDER);
             new BuilderWorker().tick(helper.getLevel(), f.builder(), null, session.context());
-            helper.assertValueEqual(state, before, "native work preserves progress and inputs");
+            helper.assertValueEqual(com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState.task(state), before, "native work preserves project progress");
             var worker = SettlementWorkerState.capture(helper.getLevel(), f.builder(),
                     SettlementWorkforceService.duty(f.builder()).orElseThrow(), helper.getLevel().getGameTime());
             SettlementBackgroundConstruction.tick(helper.getLevel(), f.town(), worker, 200, 1.0);
             helper.assertValueEqual(worker.status(), "construction_paused", "background work also stops");
-            helper.assertValueEqual(project.placed(), 0, "pause creates no blocks");
+            helper.assertValueEqual(project.placed(), 1, "pause retains existing progress without creating blocks");
             helper.assertValueEqual(project.materialEscrow(), escrow, "pause retains material escrow");
             helper.assertValueEqual(f.town().economy().balance(), funds, "pause does not settle payment");
             helper.assertTrue(project.reservesFootprint(), "paused construction keeps its site");

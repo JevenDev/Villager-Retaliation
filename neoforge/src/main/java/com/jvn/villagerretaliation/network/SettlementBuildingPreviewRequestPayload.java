@@ -10,7 +10,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Rotation;
 
 public record SettlementBuildingPreviewRequestPayload(UUID town, int requestId, ResourceLocation structure,
-                                                      BlockPos anchor, Rotation rotation, UUID builder) implements CustomPacketPayload {
+                                                      BlockPos anchor, Rotation rotation, UUID builder,
+                                                      com.jvn.villagerretaliation.settlement.SettlementTerrainOptions preparation) implements CustomPacketPayload {
     public static final Type<SettlementBuildingPreviewRequestPayload> TYPE = VillagerPayloads.type("settlement_building_preview_request");
     public static final StreamCodec<RegistryFriendlyByteBuf, SettlementBuildingPreviewRequestPayload> STREAM_CODEC = VillagerPayloads.codec(
             (buffer, payload) -> {
@@ -21,10 +22,16 @@ public record SettlementBuildingPreviewRequestPayload(UUID town, int requestId, 
                 buffer.writeEnum(payload.rotation());
                 buffer.writeBoolean(payload.builder() != null);
                 if (payload.builder() != null) buffer.writeUUID(payload.builder());
+                payload.preparation().write(buffer);
             }, buffer -> new SettlementBuildingPreviewRequestPayload(buffer.readUUID(), buffer.readVarInt(), buffer.readResourceLocation(),
-                    buffer.readBlockPos(), buffer.readEnum(Rotation.class), buffer.readBoolean() ? buffer.readUUID() : null));
+                    buffer.readBlockPos(), buffer.readEnum(Rotation.class), buffer.readBoolean() ? buffer.readUUID() : null, com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.read(buffer)));
+
+    public SettlementBuildingPreviewRequestPayload(UUID town, int requestId, ResourceLocation structure, BlockPos anchor, Rotation rotation, UUID builder) {
+        this(town, requestId, structure, anchor, rotation, builder, com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.NONE);
+    }
 
     public SettlementBuildingPreviewRequestPayload {
+        Objects.requireNonNull(preparation);
         Objects.requireNonNull(town);
         Objects.requireNonNull(structure);
         Objects.requireNonNull(anchor);

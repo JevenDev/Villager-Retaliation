@@ -85,7 +85,7 @@ final class SettlementIssueService {
                     bounded(work.status(), 128), bounded(detail, 512), Page.RESIDENTS, member.id(), member.id(), area, true));
         }
         for (var project : town.projects().values()) {
-            if (!project.reservesFootprint()) continue;
+            if (!project.reservesFootprint() || project.paused()) continue;
             String cause = project.blocker().replace("interaction.work.builder.", "");
             if (cause.isBlank() && !project.missingMaterials().isBlank()) cause = "missing_materials";
             if (cause.isBlank()) continue;

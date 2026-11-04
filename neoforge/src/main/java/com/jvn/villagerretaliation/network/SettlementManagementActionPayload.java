@@ -114,6 +114,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeBlockPos(build.anchor());
                 buffer.writeEnum(build.rotation());
                 buffer.writeUUID(build.builder());
+                build.preparation().write(buffer);
+                buffer.writeUtf(build.fingerprint(), 64);
             }
             case StartProject start -> {
                 buffer.writeEnum(Kind.START_PROJECT);
@@ -319,7 +321,8 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             case DRAFT_BLUEPRINT -> new DraftBlueprint(buffer.readResourceLocation());
             case PLACE_BLUEPRINT -> new PlaceBlueprint(buffer.readUUID(), buffer.readBlockPos(), buffer.readEnum(net.minecraft.world.level.block.Rotation.class));
             case COMMISSION_BUILDING -> new CommissionBuilding(buffer.readUUID(), buffer.readResourceLocation(), buffer.readBlockPos(),
-                    buffer.readEnum(net.minecraft.world.level.block.Rotation.class), buffer.readUUID());
+                    buffer.readEnum(net.minecraft.world.level.block.Rotation.class), buffer.readUUID(),
+                    com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.read(buffer), buffer.readUtf(64));
             case START_PROJECT -> new StartProject(buffer.readUUID(), buffer.readUUID());
             case CONFIGURE_PROJECT -> {
                 var project = buffer.readUUID();
@@ -677,8 +680,15 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
     }
 
     public record CommissionBuilding(UUID request, net.minecraft.resources.ResourceLocation structure, net.minecraft.core.BlockPos anchor,
-                                     net.minecraft.world.level.block.Rotation rotation, UUID builder) implements Command {
+                                     net.minecraft.world.level.block.Rotation rotation, UUID builder,
+                                     com.jvn.villagerretaliation.settlement.SettlementTerrainOptions preparation, String fingerprint) implements Command {
+        public CommissionBuilding(UUID request, net.minecraft.resources.ResourceLocation structure, net.minecraft.core.BlockPos anchor,
+                                  net.minecraft.world.level.block.Rotation rotation, UUID builder) {
+            this(request, structure, anchor, rotation, builder, com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.NONE, "");
+        }
         public CommissionBuilding {
+            Objects.requireNonNull(preparation);
+            if (fingerprint == null || fingerprint.length() > 64) throw new IllegalArgumentException("Invalid building fingerprint");
             Objects.requireNonNull(request);
             Objects.requireNonNull(structure);
             Objects.requireNonNull(anchor);

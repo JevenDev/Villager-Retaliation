@@ -116,6 +116,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
 
         if (SettlementConstructionService.paused(villager, context.state())) {
             villager.getNavigation().stop();
+            HiredWorkerBrain.clearFailure(context);
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            clearBuildSiteIntermediateNavigation(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             return WorkResult.idle("interaction.work.builder.paused");
         }
 

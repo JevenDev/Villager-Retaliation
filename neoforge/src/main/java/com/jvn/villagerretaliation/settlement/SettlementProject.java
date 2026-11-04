@@ -22,6 +22,9 @@ public final class SettlementProject {
     private CompoundTag task;
     private Status status;
     private boolean paused;
+    private SettlementBuildingPreparation preparation;
+    SettlementBuildingPreparation preparation() { return this.preparation; }
+    void preparation(SettlementBuildingPreparation preparation) { this.preparation = preparation; }
     private SettlementConstructionSite site;
     private SettlementArea workplace;
     private UUID previousArea;
@@ -395,6 +398,7 @@ public final class SettlementProject {
         if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
         tag.putBoolean("Paused", this.paused);
+        if (this.preparation != null) tag.put("BuildingPreparation", this.preparation.save());
         if (this.workplace != null) tag.put("Workplace", this.workplace.save());
         if (this.previousArea != null) tag.putUUID("PreviousArea", this.previousArea);
         if (this.previousSettings != null) tag.put("PreviousSettings", this.previousSettings.save());
@@ -438,6 +442,11 @@ public final class SettlementProject {
             project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));
         }
         project.repairOf=tag.hasUUID("RepairOf")?tag.getUUID("RepairOf"):null;
+        if (tag.contains("BuildingPreparation")) {
+            if (!tag.contains("BuildingPreparation", Tag.TAG_COMPOUND) || project.order != null || project.wallConstruction != null)
+                throw new IllegalArgumentException("Invalid building preparation");
+            project.preparation = SettlementBuildingPreparation.load(tag.getCompound("BuildingPreparation"));
+        }
         project.paused = tag.getBoolean("Paused");
         if (project.paused && !project.unfinished()) throw new IllegalArgumentException("Finished construction cannot be paused");
         project.fee = tag.getInt("Fee");

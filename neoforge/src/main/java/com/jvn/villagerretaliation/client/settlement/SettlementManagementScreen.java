@@ -1153,6 +1153,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
         for (var entry : this.snapshot.entries()) {
             if (entry.id().equals(project.id())) break;
             if (entry instanceof SettlementManagementPayload.Project earlier && earlier.status() == SettlementProject.Status.PENDING
+                    && earlier.phase() != com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED
                     && !earlier.blocker().isBlank()) return earlier;
         }
         return null;

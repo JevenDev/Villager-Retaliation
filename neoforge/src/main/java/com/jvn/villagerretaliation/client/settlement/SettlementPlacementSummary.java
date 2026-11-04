@@ -45,6 +45,15 @@ final class SettlementPlacementSummary {
         } else return List.of();
         var lines = new ArrayList<Component>();
         lines.add(Component.literal("Placing: " + title));
+        if (building != null && building.currentPreview()) {
+            long excavate = building.preview.terrain().stream().filter(cell -> cell.after().isAir()).count();
+            long fill = building.preview.terrain().size() - excavate;
+            lines.add(Component.literal("Terrain: " + building.preparation.mode().label() + " / remove " + excavate + " / place or replace " + fill));
+            if (!building.preview.diagnostics().isEmpty()) {
+                var diagnostic = building.preview.diagnostics().get(Math.floorMod(building.diagnosticIndex, building.preview.diagnostics().size()));
+                lines.add(Component.literal(failure(diagnostic.reason()) + " at " + diagnostic.position().toShortString()));
+            }
+        }
         lines.add(Component.literal(status).withColor(status.startsWith("Cannot") || status.startsWith("Request failed") ? 0xFF9999
                 : status.startsWith("Valid") ? 0xA5DBAD : 0xE7C77A));
         if (!positions.isEmpty()) {
@@ -60,6 +69,16 @@ final class SettlementPlacementSummary {
     static String failure(String failure) {
         return switch (failure) {
             case "bounds", "site_outside_area" -> "Outside owned land or allowed height";
+            case "terrain_depth" -> "Terrain exceeds the selected preparation depth";
+            case "terrain_unsafe" -> "Preparation would change a container, liquid or unsafe block";
+            case "material_quote_too_large" -> "The prepared building needs too many material types";
+            case "terrain_changed" -> "Terrain changed since review. Check the updated preview";
+            case "protected" -> "You cannot modify this block";
+            case "container" -> "An existing container or block entity occupies this position";
+            case "blocked_entity" -> "An entity must move before this block can be placed";
+            case "foundation_gap" -> "Foundation has no solid support here";
+            case "access_blocked" -> "The entrance needs two blocks of clearance";
+            case "builder_access" -> "The selected builder cannot currently reach the entrance";
             case "overlap" -> "Overlaps an existing area or project";
             case "blocked_existing" -> "A building, container or protected block is in the way";
             case "site_unloaded" -> "Terrain has not loaded yet";

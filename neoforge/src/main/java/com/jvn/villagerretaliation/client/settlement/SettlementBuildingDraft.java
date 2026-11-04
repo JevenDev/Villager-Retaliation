@@ -19,6 +19,8 @@ final class SettlementBuildingDraft {
     final String label;
     BlockPos anchor;
     Rotation rotation = Rotation.NONE;
+    com.jvn.villagerretaliation.settlement.SettlementTerrainOptions preparation = com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.NONE;
+    int diagnosticIndex;
     UUID builder = com.jvn.villagerretaliation.settlement.SettlementProject.AUTOMATIC_BUILDER;
     boolean placed;
     boolean submitting;
@@ -38,6 +40,12 @@ final class SettlementBuildingDraft {
         this.structure = structure;
         this.label = label;
         this.anchor = anchor;
+    }
+
+    static int nextRequestId() { return sequence = sequence == Integer.MAX_VALUE ? 1 : sequence + 1; }
+
+    void preparation(com.jvn.villagerretaliation.settlement.SettlementTerrainOptions options) {
+        if (!this.submitting && !this.preparation.equals(options)) { this.preparation = options; changed(); }
     }
 
     void move(BlockPos anchor) {
@@ -77,21 +85,21 @@ final class SettlementBuildingDraft {
             this.dirty = false;
             this.sentAt = now;
             this.refreshAt = now + 2_000L;
-            this.requestId = sequence = sequence == Integer.MAX_VALUE ? 1 : sequence + 1;
+            this.requestId = nextRequestId();
             PacketDistributor.sendToServer(new SettlementBuildingPreviewRequestPayload(town, this.requestId,
-                    this.structure, this.anchor, this.rotation, this.builder));
+                    this.structure, this.anchor, this.rotation, this.builder, this.preparation));
         }
     }
 
     void accept(SettlementBuildingPreviewPayload payload) {
         if (payload.requestId() != this.requestId || !payload.structure().equals(this.structure)) return;
         this.pending = false;
-        if (!payload.anchor().equals(this.anchor) || payload.rotation() != this.rotation || this.dirty) return;
+        if (!payload.anchor().equals(this.anchor) || payload.rotation() != this.rotation || !payload.preparation().equals(this.preparation) || this.dirty) return;
         this.preview = payload;
     }
 
     boolean currentPreview() {
-        return !this.dirty && this.preview != null && this.preview.anchor().equals(this.anchor) && this.preview.rotation() == this.rotation;
+        return !this.dirty && this.preview != null && this.preview.anchor().equals(this.anchor) && this.preview.rotation() == this.rotation && this.preview.preparation().equals(this.preparation);
     }
 
     String placementStatus() {
@@ -125,7 +133,7 @@ final class SettlementBuildingDraft {
         this.ghostAnchor = this.anchor;
         var min = this.preview.min().subtract(this.preview.origin());
         var max = this.preview.max().subtract(this.preview.origin());
-        var origin = this.anchor.offset(-Math.floorDiv(min.getX() + max.getX(), 2), -min.getY(), -Math.floorDiv(min.getZ() + max.getZ(), 2));
+        var origin = this.preview.origin().offset(this.anchor.subtract(this.preview.anchor()));
         return this.ghost = new ConstructionBlueprintItem.PreviewData(this.request, this.builder, minecraft.level.dimension(), this.structure,
                 this.label, origin, this.preview.rotation(), min, max, this.preview.blocks().size(), 0, this.preview.price(), "", "", "",
                 false, false, false, false, blocks);

@@ -74,18 +74,30 @@ public final class SettlementConstructionService {
 
     public static String commission(ServerPlayer player, SettlementRecord town, UUID request, ResourceLocation structure,
                                     BlockPos anchor, Rotation rotation, UUID resident) {
+        return commission(player, town, request, structure, anchor, rotation, resident, SettlementTerrainOptions.NONE, "");
+    }
+
+    public static String commission(ServerPlayer player, SettlementRecord town, UUID request, ResourceLocation structure,
+                                    BlockPos anchor, Rotation rotation, UUID resident, SettlementTerrainOptions options, String fingerprint) {
         if (!canBuild(player, town)) return "permission";
         var existing = town.project(request);
         if (existing != null) {
             var accepted = scan(player.serverLevel(), structure, rotation);
             return accepted != null && existing.requestedBuilder().equals(resident) && existing.structure().equals(structure)
-                    && existing.rotation() == rotation && existing.origin().equals(origin(accepted, anchor)) ? "" : "duplicate";
+                    && existing.rotation() == rotation && existing.origin().equals(origin(accepted, anchor))
+                    && (existing.preparation() == null ? !options.enabled() : existing.preparation().options().equals(options))
+                    && (!options.enabled() || existing.matchesPlan(scan(player.serverLevel(), existing))
+                            && BuilderStructureScanner.fingerprint(scan(player.serverLevel(), existing)).equals(fingerprint)) ? "" : "duplicate";
         }
         var level = player.serverLevel();
         if (SettlementSavedData.get(level).settlements().stream().anyMatch(other -> other.knowsProject(request))) return "duplicate";
         var plan = scan(level, structure, rotation);
         if (plan == null) return "prefab";
         var origin = origin(plan, anchor);
+        var preparation = SettlementBuildingPreparation.preview(player, town, plan, origin, options);
+        if (!preparation.failure().isEmpty()) return preparation.failure();
+        plan = preparation.preparation().apply(plan);
+        if (options.enabled() && !BuilderStructureScanner.fingerprint(plan).equals(fingerprint)) return "terrain_changed";
         String failure = placementFailure(player, town, plan, origin);
         if (!failure.isEmpty()) return failure;
         if (resident == null) return "builder";
@@ -95,6 +107,7 @@ public final class SettlementConstructionService {
         var area = workplace(level, town, plan, origin, request);
         if (area == null || !town.owns(area)) return "bounds";
         var project = SettlementProject.planned(town, area, resident, plan, origin, request, level.getGameTime());
+        if (options.enabled()) project.preparation(preparation.preparation());
         project.queue(player.getUUID());
         if (!town.queueProject(player.getUUID(), project)) return "capacity";
         tickQueue(level, town);
@@ -108,7 +121,9 @@ public final class SettlementConstructionService {
 
     static BuilderStructureScanner.StructurePlan scan(ServerLevel level, SettlementProject project) {
         if (project.order() != null) return project.order().plan(project.id());
-        return project.wallConstruction() == null ? scan(level, project.structure(), project.rotation()) : project.wallConstruction().plan(project.id());
+        if (project.wallConstruction() != null) return project.wallConstruction().plan(project.id());
+        var plan = scan(level, project.structure(), project.rotation());
+        return plan == null || project.preparation() == null ? plan : project.preparation().apply(plan);
     }
 
     public static java.util.Optional<BuilderStructureScanner.StructurePlan> currentPlan(ServerLevel level, CompoundTag state) {

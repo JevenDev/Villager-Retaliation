@@ -46,8 +46,20 @@ public final class SettlementBuildingScreen extends VillagerWindowScreen {
     @Override
     protected void init() {
         initWindow(520, this.height - 16);
-        int builderHeight = Math.clamp((this.panelHeight - 206) / 2, 26, 80);
-        this.materialTop = this.top + 78 + builderHeight + 22;
+        int builderHeight = Math.clamp((this.panelHeight - 232) / 2, 26, 80);
+        this.materialTop = this.top + 104 + builderHeight + 22;
+        int optionsWidth = (this.panelWidth - 6) * 2 / 3;
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(this.draft.preparation.mode().label()), button -> {
+            var modes = com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.Mode.values();
+            this.draft.preparation(new com.jvn.villagerretaliation.settlement.SettlementTerrainOptions(
+                    modes[(this.draft.preparation.mode().ordinal() + 1) % modes.length], this.draft.preparation.depth()));
+            button.setMessage(Component.literal(this.draft.preparation.mode().label()));
+        }).bounds(this.left, this.top + 56, optionsWidth, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal("Depth: " + this.draft.preparation.depth()), button -> {
+            this.draft.preparation(new com.jvn.villagerretaliation.settlement.SettlementTerrainOptions(this.draft.preparation.mode(),
+                    this.draft.preparation.depth() % com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.MAX_DEPTH + 1));
+            button.setMessage(Component.literal("Depth: " + this.draft.preparation.depth()));
+        }).bounds(this.left + optionsWidth + 6, this.top + 56, this.panelWidth - optionsWidth - 6, 20).build());
         this.builders = addRenderableWidget(new Builders(builderHeight));
         this.materials = addRenderableWidget(new Materials());
         int third = (this.panelWidth - 12) / 3;
@@ -59,7 +71,7 @@ public final class SettlementBuildingScreen extends VillagerWindowScreen {
             if (!this.draft.ready() || this.parent.submitting()) return;
             this.draft.submitting();
             this.parent.submit(new SettlementManagementActionPayload.CommissionBuilding(this.draft.request, this.draft.structure,
-                    this.draft.anchor, this.draft.rotation, this.draft.builder));
+                    this.draft.anchor, this.draft.rotation, this.draft.builder, this.draft.preparation, this.draft.preview.fingerprint()));
         }).bounds(this.left + (third + 6) * 2, this.top + this.panelHeight - 20, third, 20).build());
         refresh();
     }
@@ -110,12 +122,12 @@ public final class SettlementBuildingScreen extends VillagerWindowScreen {
         }
         long available = this.candidates.stream().filter(candidate -> !candidate.id().equals(
                 com.jvn.villagerretaliation.settlement.SettlementProject.AUTOMATIC_BUILDER)).count();
-        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders_count", available), this.left, this.top + 60, 0xFFFFFF);
+        graphics.drawString(this.font, SettlementManagementScreen.text("building_builders_count", available), this.left, this.top + 86, 0xFFFFFF);
         graphics.drawString(this.font, SettlementManagementScreen.text("building_materials"), this.left, this.materialTop - 14, 0xFFFFFF);
         String failure = this.draft.failure.isEmpty() && this.draft.preview != null ? this.draft.preview.failure() : this.draft.failure;
         Component hint = this.draft.submitting ? SettlementManagementScreen.text("saving") : failure.isEmpty()
                 ? SettlementManagementScreen.text(available == 0 && this.draft.preview != null ? "building_no_builders" : "building_supply_hint") : Component.translatableWithFallback("villagerretaliation.gui.settlement.failure." + failure,
-                        SettlementManagementScreen.text("building_failure_" + failure).getString());
+                        SettlementPlacementSummary.failure(failure));
         graphics.drawWordWrap(this.font, hint, this.left, this.top + this.panelHeight - 55, this.panelWidth, failure.isEmpty() ? 0xB8B8B8 : 0xFF9999);
     }
 
@@ -126,7 +138,7 @@ public final class SettlementBuildingScreen extends VillagerWindowScreen {
 
     private final class Builders extends ObjectSelectionList<BuilderRow> {
         Builders(int height) {
-            super(SettlementBuildingScreen.this.minecraft, panelWidth, height, top + 76, 22);
+            super(SettlementBuildingScreen.this.minecraft, panelWidth, height, top + 102, 22);
             setX(left);
         }
         void refresh() {

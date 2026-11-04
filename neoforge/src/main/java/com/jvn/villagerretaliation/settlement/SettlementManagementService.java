@@ -86,7 +86,7 @@ public final class SettlementManagementService {
             case SettlementManagementActionPayload.ClaimPlot plot -> SettlementPlotService.claim(
                     player, town, plot.x(), plot.z(), plot.free(), plot.revision(), plot.price());
             case SettlementManagementActionPayload.CommissionBuilding build -> SettlementConstructionService.commission(player, town,
-                    build.request(), build.structure(), build.anchor(), build.rotation(), build.builder());
+                    build.request(), build.structure(), build.anchor(), build.rotation(), build.builder(), build.preparation(), build.fingerprint());
             case SettlementManagementActionPayload.Home home -> result(home.assign()
                     ? SettlementHousingService.assign(player, town, home.resident(), home.bed())
                     : SettlementHousingService.release(player, town, home.resident(), home.bed()), command);

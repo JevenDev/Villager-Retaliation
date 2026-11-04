@@ -724,7 +724,12 @@ public final class BuilderStructureScanner {
             List<MaterialRequirement> materials,
             int price,
             List<BuildBlock> clearingBlocks,
-            boolean wall) {
+            boolean wall, boolean prepared) {
+        public StructurePlan(BuilderStructureCatalog.Entry entry, Rotation rotation, Vec3i templateSize,
+                             BlockPos localMin, BlockPos localMax, List<BuildBlock> blocks,
+                             List<MaterialRequirement> materials, int price, List<BuildBlock> clearingBlocks, boolean wall) {
+            this(entry, rotation, templateSize, localMin, localMax, blocks, materials, price, clearingBlocks, wall, false);
+        }
         public StructurePlan(BuilderStructureCatalog.Entry entry, Rotation rotation, Vec3i templateSize,
                              BlockPos localMin, BlockPos localMax, List<BuildBlock> blocks,
                              List<MaterialRequirement> materials, int price, List<BuildBlock> clearingBlocks) {
@@ -732,7 +737,7 @@ public final class BuilderStructureScanner {
         }
 
         public boolean outdoor() {
-            return this.wall || !this.blocks.isEmpty() && this.blocks.getFirst().replacedState() != null;
+            return this.wall || !this.prepared && !this.blocks.isEmpty() && this.blocks.getFirst().replacedState() != null;
         }
 
         public int blockLimit() {

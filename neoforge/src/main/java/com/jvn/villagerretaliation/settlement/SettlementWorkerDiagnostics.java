@@ -19,7 +19,8 @@ public final class SettlementWorkerDiagnostics {
                 : status.contains("observation") || status.contains("observed") || status.endsWith("needs_world")
                         || status.equals("tree_needs_native_growth") || status.equals("project.site_unloaded")
                         || status.equals("project.pending_world") ? Severity.OBSERVATION
-                : status.startsWith("simulation_") || status.equals("equipment_busy") ? Severity.INFO : Severity.WARNING;
+                : status.startsWith("simulation_") || status.equals("equipment_busy") || status.equals("construction_paused")
+                        || status.equals("project.paused") || status.equals("interaction.work.builder.paused") ? Severity.INFO : Severity.WARNING;
         return new Diagnostic(severity, recovery);
     }
 
@@ -44,6 +45,8 @@ public final class SettlementWorkerDiagnostics {
 
     public static String describe(String status) {
         return switch (status) {
+            case "project.paused", "construction_paused", "interaction.work.builder.paused" ->
+                    "Resume this project from Projects when construction should continue.";
             case "temporary_task_unloaded" -> "Temporary work waits for the worker and task area to be loaded.";
             case "temporary_task_invalid" -> "Cancel the damaged temporary queue before issuing another task.";
             case "temporary_task_target_missing" -> "The selected animal or hunting target is not loaded.";
