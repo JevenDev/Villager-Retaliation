@@ -58,9 +58,10 @@ final class MapRecordedTerrainClientChecks {
         }
         set("observation", null);
         loading.join().tick();
-        ExploredMapClientSmoke.navigation(screen).focus(Double.parseDouble(metadata.getProperty("cameraX")),
-                Double.parseDouble(metadata.getProperty("cameraZ")));
-        ExploredMapClientSmoke.zoom(screen, stage == 1 ? 0.8 : stage == 4 ? 0.4 : 2.5);
+        double offset = stage == 4 ? -320 : 0;
+        ExploredMapClientSmoke.navigation(screen).focus(Double.parseDouble(metadata.getProperty("cameraX")) + offset,
+                Double.parseDouble(metadata.getProperty("cameraZ")) + offset);
+        ExploredMapClientSmoke.zoom(screen, stage == 1 ? 0.8 : stage == 4 ? 0.25 : 2.5);
         if (System.nanoTime() - started < 10_000_000_000L) return false;
         if (ExploredMapClient.tiles().uploads() - uploads < 100)
             throw new AssertionError("Actual recorded terrain must reach the map atlas before visual checks");
@@ -80,7 +81,7 @@ final class MapRecordedTerrainClientChecks {
         if (stage == 3) VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.set(false);
         if (stage == 4) {
             VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.set(true);
-            ExploredMapClientSmoke.zoom(screen, 0.4);
+            ExploredMapClientSmoke.zoom(screen, 0.25);
         }
         if (stage < 5) return false;
         set("repository", original);

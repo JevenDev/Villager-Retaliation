@@ -10,6 +10,7 @@ final class MapRegionChecks {
     static void run(Path root) throws Exception {
         roundTrip(root);
         reusableReads(root);
+        emptySurfaceCache(root);
         recovery(root);
         migration(root);
         scaling(root);
@@ -65,6 +66,35 @@ final class MapRegionChecks {
             fails(() -> MapStore.decodeSurface(buffer.raw, smallLength, 1, 0), "reused buffer still validates tile checksum");
             length = region.read(0, buffer);
             check(MapStore.decodeSurface(buffer.raw, length, 0, 0).equals(MapSurfaceSnapshot.from(large)), "large record survives reuse after shorter reads");
+        }
+    }
+    private static void emptySurfaceCache(Path root) throws Exception {
+        Path scope = root.resolve("empty-surfaces");
+        try (var store = new MapStore(scope)) {
+            while (store.migrateStep().more()) { }
+            store.write(tile(0, 0, 1));
+            var terrain = store.readSurface(0, 0);
+            var missing = store.readSurface(1, 0);
+            check(missing.columns().isEmpty() && store.readSurface(1, 0) == missing,
+                    "empty cells in recorded regions reuse their decoded surface");
+            for (int stride : new int[]{2, 4, 8}) store.readOverview(0, 0, stride);
+            check(store.readSurface(1, 0) == missing, "zooming through overviews reuses empty source tiles");
+            var distant = store.readSurface(-100, -100);
+            check(store.readSurface(-100, -100) == distant, "missing regions also reuse empty source tiles");
+            for (int x = 1000; x <= 1000 + MapRepository.MAX_SURFACES; x++) store.readSurface(x, 0);
+            check(store.readSurface(0, 0) == terrain, "empty terrain cannot evict recorded surface data");
+            check(store.readSurface(1, 0) != missing, "empty source caching remains bounded");
+            store.write(tile(1, 0, 2));
+            check(!store.readSurface(1, 0).columns().isEmpty(), "new observations invalidate empty source tiles");
+            check(store.readOverview(0, 0, 8).columns().size() == 2, "new observations invalidate every cached overview");
+            store.write(new MapSnapshot(1, 0, 3, List.of(), List.of()));
+            var cleared = store.readSurface(1, 0);
+            check(cleared.columns().isEmpty() && store.readSurface(1, 0) == cleared,
+                    "a saved empty replacement cannot retain old terrain");
+        }
+        try (var store = new MapStore(scope)) {
+            check(!store.readSurface(0, 0).columns().isEmpty() && store.readSurface(1, 0).columns().isEmpty(),
+                    "surface cache changes preserve saved map contents after reopening");
         }
     }
     private static int newest(byte[] bytes, int index) {

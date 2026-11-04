@@ -22,6 +22,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
 public final class MapFogRenderer {
+    static final int FOG_MARGIN = 584;
     private static final ResourceLocation CLOUDS = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
     private static final long WIND_START = System.nanoTime();
     private static ShaderInstance shader;
@@ -69,7 +70,7 @@ public final class MapFogRenderer {
                     (float)(pages.originZ(2) - view.z()), (float)(pages.originZ(3) - view.z()));
         }
         shader.safeGetUniform("FirstLevel").set(pages == null ? 4f : (float)view.level());
-        shader.safeGetUniform("TerrainTexelSize").set((float)(1 << view.level()));
+        shader.safeGetUniform("TerrainTexelSize").set((float) (1 << view.level()));
         double period = 3072;
         shader.safeGetUniform("CloudPeriod").set((float)period);
         shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), period * 4), wrap(view.z(), period * 4));
@@ -90,6 +91,24 @@ public final class MapFogRenderer {
         draw(graphics, view.width(), view.height());
     }
     static void renderMask(MapTileView pages, int width, int height) {
+        var span = shader.getUniform("WorldSpan").getFloatBuffer();
+        var origin = shader.getUniform("CloudOrigin").getFloatBuffer();
+        // fixed world cells preserve the discovery fringe through zoom and origin wraps
+        int step = 4;
+        // the margin covers both blur passes, including samples just outside the viewport
+        int margin = FOG_MARGIN / step;
+        int maskWidth = (int) Math.ceil(span.get(0) / step) + margin * 2 + 1;
+        int maskHeight = (int) Math.ceil(span.get(1) / step) + margin * 2 + 1;
+        int x = (int) Math.floor((origin.get(0) - span.get(0) * 0.5) / step) * step - FOG_MARGIN;
+        int z = (int) Math.floor((origin.get(1) - span.get(1) * 0.5) / step) * step - FOG_MARGIN;
+        shader.safeGetUniform("MaskOrigin").set(x - origin.get(0), z - origin.get(1));
+        shader.safeGetUniform("MaskSpan").set((float) (maskWidth * step), (float) (maskHeight * step));
+        var region = new MapTileView.FogRegion(x, z, maskWidth, maskHeight,
+                shader.getUniform("FirstLevel").getFloatBuffer().get(0), shader);
+        if (pages.fogReady(region)) {
+            RenderSystem.setShaderTexture(5, pages.fogMask(maskWidth, maskHeight).getColorTextureId());
+            return;
+        }
         int drawTarget = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         int readTarget = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int[] viewport = new int[4], scissor = new int[4];
@@ -100,8 +119,8 @@ public final class MapFogRenderer {
         boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
         int maskTexture;
         try {
-            var mask = pages.fogMask(width, height);
-            var temporary = pages.fogBlur(width, height);
+            var mask = pages.fogMask(maskWidth, maskHeight);
+            var temporary = pages.fogBlur(maskWidth, maskHeight);
             RenderSystem.disableScissor();
             RenderSystem.disableDepthTest();
             RenderSystem.disableBlend();
@@ -130,6 +149,7 @@ public final class MapFogRenderer {
             if (blend) RenderSystem.enableBlend();
             else RenderSystem.disableBlend();
         }
+        pages.fogRendered(region);
         RenderSystem.setShaderTexture(5, maskTexture);
     }
 

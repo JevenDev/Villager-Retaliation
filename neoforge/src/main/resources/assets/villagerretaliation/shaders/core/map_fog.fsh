@@ -11,6 +11,8 @@ uniform float OpeningProgress;
 uniform float ParchmentColors;
 uniform vec2 Viewport;
 uniform vec2 WorldSpan;
+uniform vec2 MaskOrigin;
+uniform vec2 MaskSpan;
 uniform vec4 PageX;
 uniform vec4 PageZ;
 uniform float FirstLevel;
@@ -61,12 +63,13 @@ vec3 parchmentColor(vec3 color, vec3 light) {
 }
 
 ivec2 terrainPixel(vec2 plane) {
+    int pageSide = textureSize(Sampler3, 0).x;
     for (int level = int(FirstLevel); level < 4; level++) {
         int stride = 1 << level;
         vec2 local = plane - vec2(PageX[level], PageZ[level]);
         ivec2 tile = ivec2(floor(local / float(8 * stride)));
-        if (any(lessThan(tile, ivec2(0))) || any(greaterThanEqual(tile, ivec2(64)))) continue;
-        vec4 bytes = floor(texelFetch(Sampler3, tile + ivec2(0, level * 64), 0) * 255.0 + 0.5);
+        if (any(lessThan(tile, ivec2(0))) || any(greaterThanEqual(tile, ivec2(pageSide)))) continue;
+        vec4 bytes = floor(texelFetch(Sampler3, tile + ivec2(0, level * pageSide), 0) * 255.0 + 0.5);
         int slot = int(bytes.r) + int(bytes.g) * 256 - 1;
         if (slot < 0) continue;
         if (slot == 65534) return ivec2(-1);
@@ -90,41 +93,64 @@ float bankNoise(vec2 point, float period) {
             mix(paperHash(mod(cell + vec2(0.0, 1.0), period)), paperHash(mod(cell + vec2(1.0), period)), blend.x), blend.y);
 }
 
-float cloudStep() {
-    float pixelSize = max(WorldSpan.x / Viewport.x, WorldSpan.y / Viewport.y);
-    return max(TerrainTexelSize, exp2(floor(log2(pixelSize))));
+vec2 cloudTexel(vec2 plane) {
+    return floor((CloudOrigin + plane) / TerrainTexelSize);
 }
 
-vec2 cloudTexel(vec2 plane) {
-    return floor((CloudOrigin + plane) / cloudStep());
+vec2 cloudPoint(vec2 plane) {
+    return (cloudTexel(plane) + 0.5) * TerrainTexelSize;
 }
 
 // cc0 references: https://godotshaders.com/shader/clouds-in-motion/
 // https://godotshaders.com/shader/pixelated-radial-2d-clouds/
-float cloudCrest(float x) {
-    return 0.3 * sin(x * 0.1) + 0.3 * sin(x * 0.553) + 0.42 * sin(x * 1.2);
+float cloudCrest(float x, float period) {
+    // integer harmonics keep the crests continuous when wrapped world coordinates cross zero
+    vec3 frequency = max(vec3(1.0), floor(vec3(0.1, 0.553, 1.2) * period / 6.28318530718 + 0.5));
+    float phase = mod(x, period) * (6.28318530718 / period);
+    return dot(sin(phase * frequency), vec3(0.3, 0.3, 0.42));
 }
 
-float cloudLayer(vec2 point, float wind) {
+float cloudLayer(vec2 point, float wind, float period) {
     point *= 3.5;
-    point.x += wind * 0.5;
+    point.x = mod(point.x + wind * 0.5, period);
     float cell = floor(point.x);
-    float distance = point.y - cloudCrest(point.x);
+    float distance = point.y - cloudCrest(point.x, period);
     for (int neighbor = -1; neighbor <= 1; neighbor++) {
         float x = cell + float(neighbor);
-        vec2 center = vec2(x + 0.5, cloudCrest(x + 0.5));
-        float radius = 0.75 + 0.25 * sin(40.0 * x + wind * 0.5);
+        vec2 center = vec2(x + 0.5, cloudCrest(x + 0.5, period));
+        float radius = 0.75 + 0.25 * sin(40.0 * mod(x, period) + wind * 0.5);
         distance = min(distance, length(point - center) - radius);
     }
     return distance;
 }
 
+float cloudBankCrest(float point, float period, float seed) {
+    float cell = floor(point);
+    float local = fract(point);
+    float crest = 0.0;
+    for (int neighbor = -1; neighbor <= 1; neighbor++) {
+        float index = mod(cell + float(neighbor), period);
+        float radius = 0.6 + paperHash(vec2(index, seed)) * 0.18;
+        float dx = local - float(neighbor) - 0.5;
+        crest = max(crest, sqrt(max(0.0, radius * radius - dx * dx)));
+    }
+    return crest;
+}
+
+float cloudBankOrientation(vec2 plane) {
+    vec2 position = (cloudPoint(plane) - CloudOrigin - MaskOrigin) / MaskSpan;
+    vec2 uv = vec2(position.x, 1.0 - position.y);
+    vec2 step = vec2(16.0) / MaskSpan;
+    float x = abs(texture(Sampler5, uv + vec2(step.x, 0.0)).r - texture(Sampler5, uv - vec2(step.x, 0.0)).r);
+    float z = abs(texture(Sampler5, uv + vec2(0.0, step.y)).r - texture(Sampler5, uv - vec2(0.0, step.y)).r);
+    return x / max(x + z, 0.00001);
+}
+
 vec4 parchmentClouds(vec2 plane, float haze) {
-    float pixelSize = max(WorldSpan.x / Viewport.x, WorldSpan.y / Viewport.y);
-    float cells = max(4.0, floor(CloudPeriod / clamp(pixelSize * 72.0, 16.0, 512.0) / 4.0) * 4.0);
+    // keep cloud geometry in world space while sampling at the terrain pixel scale
+    float cells = max(4.0, floor(CloudPeriod / 192.0));
     float scale = CloudPeriod / cells;
-    float stepSize = cloudStep();
-    vec2 point = (cloudTexel(plane) + 0.5) * stepSize / scale;
+    vec2 point = cloudPoint(plane) / scale;
     vec2 wind = vec2(CloudDriftX.x, CloudDriftZ.x) / scale;
     float first = bankNoise(point - wind + vec2(11.37, 7.91), cells);
     vec2 upperWind = vec2(CloudDriftX.y, CloudDriftZ.y) / scale;
@@ -134,18 +160,43 @@ vec4 parchmentClouds(vec2 plane, float haze) {
     vec3 shadow = vec3(0.65, 0.61, 0.48);
     vec3 paper = vec3(0.94, 0.88, 0.72);
     vec3 color = shadow;
+    vec3 banks = shadow;
+    bool hasBanks = haze < 1.0;
+    // approximate world distance keeps successive banks evenly spaced outside discovery
+    float bankDistance = log(max(haze, 0.0001) / max(1.0 - haze, 0.0001)) * 158.11764706;
+    float orientation = hasBanks ? cloudBankOrientation(plane) : 0.0;
     for (int layer = 0; layer < 6; layer++) {
         float depth = float(layer) / 5.0;
         float motion = (first - 0.5) * (2.0 + depth * 3.0) + (second - 0.5) * (3.0 - depth * 2.0) + depth * 17.0;
-        vec2 position = vec2(point.x + second * 1.4, (0.5 - radial) * 2.0 + 0.3 + 1.5 * (depth - 0.5));
-        float edge = cloudLayer(position, motion);
-        float cover = 1.0 - smoothstep(0.0, 0.08, edge);
-        color = mix(color, mix(shadow, paper, depth), cover);
+        // each wind wrap advances a whole number of cloud periods
+        float flow = CloudDriftX[2 - layer / 2] * (4.0 / scale);
+        vec2 position = vec2(point.x + second * 1.4 + flow, (0.5 - radial) * 2.0 + 0.3 + 1.5 * (depth - 0.5));
+        if (haze > 0.8) {
+            float edge = cloudLayer(position, motion, cells * 14.0);
+            float cover = 1.0 - smoothstep(0.0, 0.08, edge);
+            color = mix(color, mix(shadow, paper, depth), cover);
+        }
+        if (hasBanks) {
+            vec2 drift = vec2(CloudDriftX[2 - layer / 2], CloudDriftZ[2 - layer / 2]);
+            vec2 world = cloudPoint(plane) + drift * 4.0;
+            float puffCells = max(1.0, floor(CloudPeriod / mix(64.0, 128.0, depth)));
+            float puffSize = CloudPeriod / puffCells;
+            vec2 puffPoint = world / puffSize + vec2(depth * 17.0, depth * 11.0);
+            float acrossX = cloudBankCrest(puffPoint.x, puffCells, float(layer));
+            float acrossZ = cloudBankCrest(puffPoint.y, puffCells, float(layer) + 7.0);
+            float crest = mix(acrossX, acrossZ, orientation);
+            // haze 0.5 marks discovery, so each lighter bank starts farther into the fog
+            float swell = bankNoise(world / (scale * 2.0) + vec2(depth * 31.7, depth * 13.9), cells * 0.5) - 0.5;
+            float front = float(layer) * 96.0 - (crest - 0.5) * puffSize * 2.0 + swell * 64.0;
+            float cover = smoothstep(front - 0.5, front + 0.5, bankDistance);
+            // the outer bank inherits the moving body instead of forming a flat highlight rim
+            vec3 bankColor = layer == 5 ? color : mix(shadow, paper, depth);
+            banks = mix(banks, bankColor, cover);
+        }
     }
-    color *= 0.985 + (paperHash(floor(screenPos)) - 0.5) * 0.009;
-    float front = mix(0.20, 0.035, smoothstep(0.25, 0.75, noise));
-    float opacity = smoothstep(front, 0.48, haze);
-    return vec4(color * dot(Lighting, vec3(0.2126, 0.7152, 0.0722)), opacity);
+    if (hasBanks) color = banks;
+    color *= 0.985 + (paperHash(mod(floor(cloudPoint(plane)), CloudPeriod)) - 0.5) * 0.009;
+    return vec4(color * dot(Lighting, vec3(0.2126, 0.7152, 0.0722)), 1.0);
 }
 
 float cloudDither(vec2 plane) {
@@ -160,28 +211,40 @@ vec2 discoveryUv() {
     return vec2(screenPos.x / Viewport.x, 1.0 - screenPos.y / Viewport.y);
 }
 
-float cloudHaze(vec2 plane) {
-    vec2 position = ((cloudTexel(plane) + 0.5) * cloudStep() - CloudOrigin) / WorldSpan + 0.5;
-    return 1.0 - texture(Sampler5, vec2(position.x, 1.0 - position.y)).r;
+vec2 cloudCoverage(vec2 plane) {
+    vec2 position = (cloudPoint(plane) - CloudOrigin - MaskOrigin) / MaskSpan;
+    return vec2(1.0) - texture(Sampler5, vec2(position.x, 1.0 - position.y)).rg;
 }
 
 vec4 blurDiscovery() {
     vec2 direction = DiscoveryPass < 2.5 ? vec2(2.0, 0.0) : vec2(0.0, 2.0);
     vec2 stepSize = direction / vec2(textureSize(Sampler5, 0));
-    float coverage = 0.0;
+    float coverage = 0.0, total = 0.0;
+    // dense taps prevent steps in the wide discovery fade
+    for (int tap = -72; tap <= 72; tap++) {
+        float weight = exp(-float(tap * tap) / 2257.92);
+        coverage += texture(Sampler5, discoveryUv() + stepSize * float(tap)).r * weight;
+        total += weight;
+    }
+    float narrow = 0.0;
+    vec2 narrowStep = (DiscoveryPass < 2.5 ? vec2(1.0, 0.0) : vec2(0.0, 1.0)) / vec2(textureSize(Sampler5, 0));
     for (int tap = -4; tap <= 4; tap++) {
         int distance = abs(tap);
         float weight = distance == 0 ? 13.0 : distance == 1 ? 10.0 : distance == 2 ? 7.0 : distance == 3 ? 4.0 : 1.0;
-        coverage += texture(Sampler5, discoveryUv() + stepSize * float(tap)).r * weight;
+        narrow += texture(Sampler5, discoveryUv() + narrowStep * float(tap)).g * weight;
     }
-    return vec4(vec3(coverage / 57.0), 1.0);
+    return vec4(coverage / total, narrow / 57.0, 0.0, 1.0);
 }
 
-float waterRipple(vec2 plane) {
-    vec2 world = CloudOrigin + plane;
-    float wave = sin(world.y * 0.39269908 + sin(world.x * 0.09817477) * 0.7);
+float waterFlow(vec2 plane) {
+    vec2 point = (CloudOrigin + plane) / vec2(96.0, 32.0);
+    vec2 drift = vec2(CloudDriftX.x / 96.0);
+    // periodic noise keeps the wash continuous through world origin and wind clock wraps
+    float swell = bankNoise(point - drift, 32.0);
+    float current = bankNoise(point * 2.0 + vec2(swell * 0.8) + vec2(drift.x, -drift.y) * 2.0, 64.0);
+    float wash = (swell - 0.5) * 0.055 + (smoothstep(0.35, 0.65, current) - 0.5) * 0.025;
     float pixelSize = max(WorldSpan.x / Viewport.x, WorldSpan.y / Viewport.y);
-    return wave * (1.0 - smoothstep(2.0, 6.0, pixelSize)) * 0.012;
+    return wash * (1.0 - smoothstep(2.0, 6.0, pixelSize));
 }
 
 ivec2 cloudPixel(ivec2 pixel, ivec2 size) {
@@ -254,12 +317,15 @@ void main() {
         fragColor = blurDiscovery();
         return;
     }
-    vec2 plane = (screenPos / Viewport - 0.5) * WorldSpan;
-    ivec2 pixel = terrainPixel(plane);
+    vec2 plane = DiscoveryPass > 0.5 ? MaskOrigin + screenPos / Viewport * MaskSpan
+            : (screenPos / Viewport - 0.5) * WorldSpan;
     if (DiscoveryPass > 0.5) {
-        fragColor = vec4(vec3(pixel.x >= 0 ? 1.0 : 0.0), 1.0);
+        // sample inside a world column, never on an integer block boundary
+        vec2 samplePlane = floor((CloudOrigin + plane) / 4.0) * 4.0 + 2.5 - CloudOrigin;
+        fragColor = vec4(vec3(terrainPixel(samplePlane).x >= 0 ? 1.0 : 0.0), 1.0);
         return;
     }
+    ivec2 pixel = terrainPixel(plane);
     // only discovered pixels may supply terrain colors to the cloud fringe
     if (pixel.x >= 0) {
         vec4 terrain = texelFetch(Sampler0, pixel, 0);
@@ -268,18 +334,16 @@ void main() {
         if (ParchmentColors > 0.5) {
             color = parchmentColor(terrain.rgb, light);
             float water = smoothstep(0.08, 0.3, terrain.b - max(terrain.r, terrain.g));
-            color *= 1.0 + water * waterRipple(plane);
-            float haze = cloudHaze(plane);
-            if (haze > 0.0) {
-                vec4 cloud = parchmentClouds(plane, haze);
-                if (cloud.a > cloudDither(plane)) color = cloud.rgb;
-            }
+            color *= 1.0 + water * waterFlow(plane);
+            vec2 coverage = cloudCoverage(plane);
+            float opacity = smoothstep(0.2, 0.5, coverage.y);
+            if (opacity > cloudDither(plane)) color = parchmentClouds(plane, coverage.x).rgb;
         }
         fragColor = vec4(color, 1.0);
         return;
     }
     if (ParchmentColors > 0.5) {
-        float haze = cloudHaze(plane);
+        float haze = cloudCoverage(plane).x;
         fragColor = vec4(parchmentClouds(plane, haze).rgb, 1.0);
         return;
     }

@@ -22,6 +22,7 @@ public final class MapStore implements AutoCloseable {
     private record Legacy(Path path, byte[] bytes, MapSnapshot tile, boolean write) { }
     private static final java.util.regex.Pattern LEGACY_NAME = java.util.regex.Pattern.compile("(-?\\d+)_(-?\\d+)\\.vrmap");
     private final Long2ObjectLinkedOpenHashMap<MapSurfaceSnapshot> overviewSources = new Long2ObjectLinkedOpenHashMap<>(256);
+    private final Long2ObjectLinkedOpenHashMap<MapSurfaceSnapshot> emptySurfaces = new Long2ObjectLinkedOpenHashMap<>(256);
     private record OverviewKey(int x, int z, int stride) {
         @Override public int hashCode() { return (int)it.unimi.dsi.fastutil.HashCommon.mix(MapSnapshot.key(x, z)) ^ stride; }
     }
@@ -29,9 +30,10 @@ public final class MapStore implements AutoCloseable {
     private final LinkedHashMap<OverviewKey, MapSurfaceSnapshot> emptyOverviews = new LinkedHashMap<>(256, .75f, true);
     synchronized void rememberSurface(MapSurfaceSnapshot surface) {
         boolean empty = surface.columns().isEmpty() && surface.markers().isEmpty();
-        if (empty) overviewSources.remove(surface.key());
-        else overviewSources.putAndMoveToLast(surface.key(), surface);
-        while (overviewSources.size() > MapRepository.MAX_SURFACES) overviewSources.removeFirst();
+        var cache = empty ? emptySurfaces : overviewSources;
+        (empty ? overviewSources : emptySurfaces).remove(surface.key());
+        cache.putAndMoveToLast(surface.key(), surface);
+        while (cache.size() > MapRepository.MAX_SURFACES) cache.removeFirst();
     }
     public MapStore(Path base, String server, String world, String player, String dimension) {
         this(base.resolve(hash(server + "\n" + world + "\n" + player + "\n" + dimension)));
@@ -161,6 +163,8 @@ public final class MapStore implements AutoCloseable {
     synchronized MapSurfaceSnapshot readSurface(int x, int z) throws IOException {
         var cached = overviewSources.getAndMoveToLast(MapSnapshot.key(x, z));
         if (cached != null) return cached;
+        cached = emptySurfaces.getAndMoveToLast(MapSnapshot.key(x, z));
+        if (cached != null) return cached;
         var surface = readSurfaceData(x, z);
         rememberSurface(surface);
         return surface;
@@ -255,7 +259,7 @@ public final class MapStore implements AutoCloseable {
             try {
                 byte[] bytes = encode(tile);
                 grouped.computeIfAbsent(key, unused -> new LinkedHashMap<>()).put(MapRegionFile.index(tile.x(), tile.z()), bytes);
-                overviewSources.remove(tile.key());
+                overviewSources.remove(tile.key()); emptySurfaces.remove(tile.key());
                 for (int stride = 2; stride <= MapOverview.STRIDE; stride *= 2) {
                     var overviewKey = new OverviewKey(Math.floorDiv(tile.x(), stride), Math.floorDiv(tile.z(), stride), stride);
                     overviews.remove(overviewKey); emptyOverviews.remove(overviewKey);
@@ -330,7 +334,7 @@ public final class MapStore implements AutoCloseable {
         IOException failure = null;
         for (var region : regions.values()) try { region.close(); }
         catch (IOException e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
-        regions.clear(); missingRegions.clear(); overviewSources.clear(); overviews.clear(); emptyOverviews.clear();
+        regions.clear(); missingRegions.clear(); overviewSources.clear(); emptySurfaces.clear(); overviews.clear(); emptyOverviews.clear();
         if (legacyFiles != null) try { legacyFiles.close(); }
         catch (IOException e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
         legacyFiles = null; legacyIterator = null;

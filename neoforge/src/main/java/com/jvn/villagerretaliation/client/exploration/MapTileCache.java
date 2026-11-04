@@ -14,7 +14,7 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.EmptyBlockGetter;
 
 final class MapTileCache implements AutoCloseable {
-    static final int CAPACITY = 4096, ATLAS_SIDE = 1024;
+    static final int CAPACITY = 4096, COARSE_CAPACITY = 8192, ATLAS_SIDE = 1024, ATLAS_HEIGHT = 1280;
     private final java.util.List<Long2ObjectLinkedOpenHashMap<Entry>> levels = java.util.List.of(
             new Long2ObjectLinkedOpenHashMap<>(), new Long2ObjectLinkedOpenHashMap<>(),
             new Long2ObjectLinkedOpenHashMap<>(), new Long2ObjectLinkedOpenHashMap<>());
@@ -41,10 +41,10 @@ final class MapTileCache implements AutoCloseable {
         var current = Minecraft.getInstance().getModelManager().getMissingModel();
         if (models != current) { close(); models = current; return false; }
         if (terrain == null) {
-            terrain = new DynamicTexture(ATLAS_SIDE, ATLAS_SIDE, true); return false;
+            terrain = new DynamicTexture(ATLAS_SIDE, ATLAS_HEIGHT, true); return false;
         }
         if (masks == null) {
-            masks = new DynamicTexture(ATLAS_SIDE * 2, ATLAS_SIDE, true); return false;
+            masks = new DynamicTexture(ATLAS_SIDE * 2, ATLAS_HEIGHT, true); return false;
         }
         return true;
     }
@@ -53,7 +53,7 @@ final class MapTileCache implements AutoCloseable {
         var entries = levels.get(level);
         var entry = entries.getAndMoveToLast(source.key());
         if (entry != null && entry.source.sameContent(source) && (entry.north == north || entry.north != null && entry.north.sameContent(north))) { entry.source = source; entry.north = north; return entry; }
-        int slot = entry != null ? entry.slot : entries.size() < CAPACITY ? level * CAPACITY + entries.size() : entries.removeFirst().slot;
+        int slot = entry != null ? entry.slot : entries.size() < (level == 3 ? COARSE_CAPACITY : CAPACITY) ? level * CAPACITY + entries.size() : entries.removeFirst().slot;
         MapFlatTile.prepare(source, reader, colors, coverage, heights, north, color);
         boolean empty = true;
         for (long mask : coverage) if (mask != 0) { empty = false; break; }

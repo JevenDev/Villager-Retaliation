@@ -80,7 +80,7 @@ final class MapNavigation {
     }
 
     private static double minimumZoom(int width, int height) {
-        return Math.min(24, Math.max(width, height) / 2800.0);
+        return Math.min(24, Math.max(width, height) / 4000.0);
     }
 
     private static int arrow(int key) {

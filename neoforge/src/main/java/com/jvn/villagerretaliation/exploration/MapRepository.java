@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 
 /** Client-owned LRU. One bounded disk batch in flight. Dirty data is pinned until its exact revision is saved. */
 public final class MapRepository implements AutoCloseable {
-    public static final int MAX_TILES = 192, MAX_DIRTY = 64, MAX_REQUESTS = 256, MAX_SURFACES = 4096;
+    public static final int MAX_TILES = 192, MAX_DIRTY = 64, MAX_REQUESTS = 256, MAX_SURFACES = 4096, MAX_OVERVIEWS = 8192;
     private static final int READ_BATCH = 128, WRITE_BATCH = 8;
     private final MapStore store;
     private final java.util.function.LongSupplier clock;
@@ -82,7 +82,7 @@ public final class MapRepository implements AutoCloseable {
                 }
                 rememberMarkers(region);
                 overviews.put(result.key, region); generation++;
-                while (overviews.size() > MAX_SURFACES) {
+                while (overviews.size() > MAX_OVERVIEWS) {
                     var retired = overviews.keySet().iterator().next(); overviews.remove(retired);
                     overviewKeys.get(retired.stride).remove(MapSnapshot.key(retired.x, retired.z));
                 }

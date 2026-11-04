@@ -13,6 +13,8 @@
     {"name": "DiscoveryPass", "type": "float", "count": 1, "values": [0]},
     {"name": "Viewport", "type": "float", "count": 2, "values": [1, 1]},
     {"name": "WorldSpan", "type": "float", "count": 2, "values": [1, 1]},
+    {"name": "MaskOrigin", "type": "float", "count": 2, "values": [0, 0]},
+    {"name": "MaskSpan", "type": "float", "count": 2, "values": [1, 1]},
     {"name": "CloudOrigin", "type": "float", "count": 2, "values": [0, 0]},
     {"name": "CloudDriftX", "type": "float", "count": 3, "values": [0, 0, 0]},
     {"name": "CloudDriftZ", "type": "float", "count": 3, "values": [0, 0, 0]},

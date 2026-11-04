@@ -36,6 +36,30 @@ public final class MapNavigationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
+    public static void widestZoomReachesFiveHundredBlockScale(GameTestHelper helper) {
+        var navigation = new MapNavigation();
+        navigation.resize(640, 360);
+        navigation.focus(-120, -240);
+        var before = navigation.view();
+        navigation.zoomAt(420, 90, 0);
+        var widest = navigation.view();
+        helper.assertValueEqual(MapOrientation.scaleBlocks(widest.scale(), 80), 500, "the widest zoom displays a 500 block scale");
+        helper.assertTrue(Math.abs(before.worldX(420) - widest.worldX(420)) < 0.000001
+                && Math.abs(before.worldZ(90) - widest.worldZ(90)) < 0.000001, "the extra zoom preserves the cursor anchor");
+        navigation.zoomAt(420, 90, 0);
+        helper.assertTrue(navigation.view() == widest, "further zoom out stops at the new limit");
+        navigation.resize(640, 640);
+        helper.assertValueEqual(navigation.view().scale(), widest.scale(), "resizing preserves a valid wide zoom");
+        double span = navigation.view().width() / navigation.view().scale();
+        int radius = (int) Math.ceil(span / 128) + (int) Math.ceil(MapFogRenderer.FOG_MARGIN / 64.0) + 1;
+        helper.assertTrue(radius <= MapTileView.PAGE_SIDE / 2 - 2, "the page table covers the widest view and fog margin");
+        helper.assertTrue((radius * 2 + 1) * (radius * 2 + 2) <= MapTileCache.COARSE_CAPACITY
+                && (radius * 2 + 1) * (radius * 2 + 2) <= com.jvn.villagerretaliation.exploration.MapRepository.MAX_OVERVIEWS,
+                "coarse caches retain the widest square view including north neighbors");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
     public static void losingFocusAndResizingReleaseMapInput(GameTestHelper helper) {
         var navigation = new MapNavigation();
         navigation.resize(640, 360);
