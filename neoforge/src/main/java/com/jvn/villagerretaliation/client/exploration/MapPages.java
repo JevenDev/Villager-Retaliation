@@ -1,40 +1,27 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.platform.NativeImage;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
 
 final class MapPages {
     private static final int WIDTH = 208, HEIGHT = 217;
     static final int CORNER_SIZE = 119, CORNER_OFFSET = 15;
-    private static final ResourceLocation WOOD = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "textures/gui/map_wood_corner.png");
-    private static final ResourceLocation PAGE_1 = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "textures/gui/map_left_page_1.png");
-    private static final ResourceLocation PAGE_1_SELECTED = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "textures/gui/map_left_page_1_selected.png");
-    private static final ResourceLocation PAGE_2 = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "textures/gui/map_left_page_2.png");
+    private static final MapHudSprite WOOD = new MapHudSprite("map_wood_corner", CORNER_SIZE, CORNER_SIZE);
+    private static final MapHudSprite PAGE_1 = new MapHudSprite("map_left_page_1", WIDTH, HEIGHT);
+    private static final MapHudSprite PAGE_1_SELECTED = new MapHudSprite("map_left_page_1_selected", WIDTH, HEIGHT);
+    private static final MapHudSprite PAGE_2 = new MapHudSprite("map_left_page_2", WIDTH, HEIGHT);
     private final MapTabs tabs = new MapTabs();
     private final MapBottomPage bottom = new MapBottomPage();
     private float mouseX, mouseY, zoom;
     private float entrance = 1;
     private long lastFrame;
-    private boolean[] pageMask, selectedPageMask;
     private boolean pageHovered;
     private float pageX, pageY, pagePeek;
     private int screenWidth, screenHeight;
 
-    void init() {
-        tabs.load();
-        bottom.load();
-        pageMask = loadMask(PAGE_1);
-        selectedPageMask = loadMask(PAGE_1_SELECTED);
-    }
     boolean overPage(double x, double y) {
-        if (pageMask == null || x < 0 || y < 0 || x >= screenWidth || y >= screenHeight) return false;
-        int px = (int) Math.floor(x - pageX), py = (int) Math.floor(y - pageY);
-        return px >= 0 && py >= 0 && px < WIDTH && py < HEIGHT && (pageHovered ? selectedPageMask : pageMask)[px + py * WIDTH];
+        return x >= 0 && y >= 0 && x < screenWidth && y < screenHeight
+                && (pageHovered ? PAGE_1_SELECTED : PAGE_1).contains(x - pageX, y - pageY);
     }
     MapBottomPage bottom() { return bottom; }
     boolean overBottomPage(double x, double y) { return bottom.at(x, y); }
@@ -48,12 +35,7 @@ final class MapPages {
     void renderCorner(GuiGraphics graphics, int width, int height) {
         float left = width - CORNER_SIZE + CORNER_OFFSET + (zoom - mouseX) * 3 + cornerSlide();
         float top = height - CORNER_SIZE + CORNER_OFFSET + (zoom - mouseY) * 3 + cornerSlide();
-        graphics.pose().pushPose();
-        graphics.pose().translate(left, top, 0);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        graphics.blit(WOOD, 0, 0, 0, 0, CORNER_SIZE, CORNER_SIZE, CORNER_SIZE, CORNER_SIZE);
-        graphics.pose().popPose();
+        WOOD.render(graphics, left, top);
     }
 
     void render(GuiGraphics graphics, int width, int height, int x, int y, double scale, float opacity, float entrance) {
@@ -83,29 +65,10 @@ final class MapPages {
         RenderSystem.defaultBlendFunc();
         graphics.setColor(1, 1, 1, opacity);
         bottom.render(graphics, width, height, x, y, mouseX, mouseY, zoom, smoothing, this.entrance);
-        renderPage(graphics, PAGE_2, -84 - mouseX * 2 - zoom * 2 - (1 - this.entrance) * WIDTH, -68 - mouseY * 2 - zoom * 2 - (1 - this.entrance) * HEIGHT);
-        renderPage(graphics, pageHovered ? PAGE_1_SELECTED : PAGE_1, pageX, pageY);
+        PAGE_2.render(graphics, -84 - mouseX * 2 - zoom * 2 - (1 - this.entrance) * WIDTH, -68 - mouseY * 2 - zoom * 2 - (1 - this.entrance) * HEIGHT);
+        (pageHovered ? PAGE_1_SELECTED : PAGE_1).render(graphics, pageX, pageY);
         renderCorner(graphics, width, height);
         graphics.setColor(1, 1, 1, 1);
         tabs.render(graphics, width, height, x, y, mouseX, mouseY, zoom, smoothing, opacity, this.entrance);
-    }
-
-    private static boolean[] loadMask(ResourceLocation texture) {
-        var mask = new boolean[WIDTH * HEIGHT];
-        try (var input = Minecraft.getInstance().getResourceManager().getResourceOrThrow(texture).open();
-             var image = NativeImage.read(input)) {
-            for (int y = 0; y < HEIGHT; y++) for (int x = 0; x < WIDTH; x++)
-                mask[x + y * WIDTH] = image.getPixelRGBA(x * image.getWidth() / WIDTH, y * image.getHeight() / HEIGHT) >>> 24 != 0;
-        } catch (IOException exception) { throw new UncheckedIOException("Failed to load map page " + texture, exception); }
-        return mask;
-    }
-
-    private static void renderPage(GuiGraphics graphics, ResourceLocation texture, float x, float y) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        graphics.blit(texture, 0, 0, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT);
-        graphics.pose().popPose();
     }
 }

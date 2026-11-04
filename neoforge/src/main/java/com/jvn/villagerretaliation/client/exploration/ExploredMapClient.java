@@ -44,6 +44,9 @@ public final class ExploredMapClient {
     @EventBusSubscriber(modid = "villagerretaliation", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
     public static final class Registration {
         @SubscribeEvent public static void keys(RegisterKeyMappingsEvent event) { event.register(OPEN); }
+        @SubscribeEvent public static void reload(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> MapHudSprite.clearMasks());
+        }
     }
     public static MapRepository repository() { return repository; }
     static MapTileCache tiles() { return TILES; }

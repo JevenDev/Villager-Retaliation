@@ -125,7 +125,6 @@ final class MapHudClientChecks {
             }
         };
         var page = new MapBottomPage();
-        page.load();
         target.bindWrite(true);
         for (int width : new int[]{320, 640, 960}) {
             page.render(graphics, width, 360, -1, -1, 0, 0, 0, 1, 1);
@@ -138,9 +137,9 @@ final class MapHudClientChecks {
         page.render(graphics, 640, 360, 200, 345, 0, 0, 0, 1, 1);
         require(textures.getLast().equals(selected) && position[1] == 325,
                 "hover swaps the bottom page sprite and slides it ten pixels upward");
-        page.load();
+        MapHudSprite.clearMasks();
         page.render(graphics, 640, 360, 200, 345, 0, 0, 0, 0, 1);
-        require(position[1] == 325, "reinitializing the page preserves its hover offset for the settings return");
+        require(position[1] == 325, "reloading HUD masks preserves the page hover offset");
         page.render(graphics, 640, 360, -1, -1, .25f, -.5f, 1, 1, 1);
         require(textures.getLast().equals(texture) && position[0] == 93.25f && position[1] == 339.5f,
                 "bottom page parallax retains fractional movement and zoom pushes it outward");

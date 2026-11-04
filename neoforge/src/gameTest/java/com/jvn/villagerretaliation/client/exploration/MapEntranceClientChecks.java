@@ -25,7 +25,6 @@ final class MapEntranceClientChecks {
         boolean blend = GL11.glIsEnabled(GL11.GL_BLEND), depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         var target = new TextureTarget(640, 360, false, Minecraft.ON_OSX);
         var pages = new MapPages();
-        pages.init();
         RenderSystem.backupProjectionMatrix();
         var modelView = RenderSystem.getModelViewStack();
         modelView.pushMatrix().identity();
@@ -90,7 +89,7 @@ final class MapEntranceClientChecks {
                 try (var input = minecraft.getResourceManager().getResourceOrThrow(texture).open()) { sprites[index] = NativeImage.read(input); }
             }
             for (boolean raised : new boolean[]{false, true}) {
-                var pages = new MapPages(); pages.init(); pages.bottom().raised(raised);
+                var pages = new MapPages(); pages.bottom().raised(raised);
                 target.setClearColor(.25f, .5f, .75f, 1); target.clear(Minecraft.ON_OSX); target.bindWrite(true);
                 RenderSystem.disableBlend();
                 pages.render(graphics, 640, 360, 320, 180, MapNavigation.DEFAULT_SCALE, 1, 1);

@@ -23,7 +23,6 @@ final class MapTabsClientChecks {
         var shader = RenderSystem.getShader();
         boolean blend = GL11.glIsEnabled(GL11.GL_BLEND), depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         var tabs = new MapTabs();
-        tabs.load();
         var sprites = new NativeImage[3];
         var selectedSprites = new NativeImage[3];
         RenderSystem.backupProjectionMatrix();

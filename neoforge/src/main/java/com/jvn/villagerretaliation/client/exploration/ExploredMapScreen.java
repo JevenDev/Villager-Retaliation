@@ -55,7 +55,6 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
         MapLocationsClient.refresh();
         transition.open();
         navigation.resize(width, height);
-        pages.init();
         if (!centered && minecraft.player != null) { center(); centered = true; }
         zoomScale = addRenderableWidget(new MapZoomScale(height, () -> view().scale(),
                 scale -> zoomAt(width / 2.0, height / 2.0, scale)));
