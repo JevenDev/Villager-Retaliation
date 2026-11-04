@@ -187,6 +187,17 @@ public final class AuthoringEditorClientSmoke {
         }
     }
 
+    private static void profileEditor(String scenario, int allocationLimit, String message) {
+        if (!EditorPerformanceChecks.BENCHMARKS) return;
+        STEPS.add(() -> EditorCampaignProfile.start(scenario));
+        pause(4000);
+        STEPS.add(() -> {
+            var profile = EditorCampaignProfile.stop(output());
+            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < allocationLimit,
+                    message + profile);
+        });
+    }
+
     private static void buildWorldContentSteps() {
         STEPS.add(() -> {
             set("showWorkspace", true);
@@ -197,12 +208,14 @@ public final class AuthoringEditorClientSmoke {
             var selection = (EditorWorldContent.Selection) ((java.util.concurrent.CompletableFuture<?>) field(editor, "worldSelection")).join();
             require(!selection.campaign().isBlank(), "Current world identifies its campaign.");
             capture("00-current-world-selection");
-            long started = System.nanoTime();
+            long started = EditorPerformanceChecks.BENCHMARKS ? System.nanoTime() : 0;
             invoke("loadWorldContent", new Class<?>[0]);
-            long elapsed = System.nanoTime() - started;
-            System.out.printf(java.util.Locale.ROOT, "World content import request: %.3f ms on the client thread%n", elapsed / 1e6);
-            require(elapsed < 250_000_000, "Starting a world import does not parse or validate the library on the client thread.");
-            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = true;
+            if (EditorPerformanceChecks.BENCHMARKS) {
+                long elapsed = System.nanoTime() - started;
+                System.out.printf(java.util.Locale.ROOT, "World content import request: %.3f ms on the client thread%n", elapsed / 1e6);
+                require(elapsed < 250_000_000, "Starting a world import does not parse or validate the library on the client thread.");
+            }
+            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = EditorPerformanceChecks.BENCHMARKS;
         });
         waitUntil(() -> field(editor, "worldContent") == null);
         STEPS.add(() -> {
@@ -219,63 +232,61 @@ public final class AuthoringEditorClientSmoke {
             var index = browser.get(imported, "en_us");
             require(index == browser.get(imported, "en_us"), "Imported content adopts the prepared browser index.");
             require(index.entries().stream().anyMatch(entry -> entry.title().equals("Blank Map Promise")), "The library displays localized quest titles.");
-            System.out.printf(java.util.Locale.ROOT, "World content loading and handoff: longest rendered frame gap %.3f ms%n", worldLoadingGap / 1e6);
-            require(worldLoadingGap < 500_000_000, "World loading and handoff keep rendering without a long client stall.");
+            if (EditorPerformanceChecks.BENCHMARKS) {
+                System.out.printf(java.util.Locale.ROOT, "World content loading and handoff: longest rendered frame gap %.3f ms%n", worldLoadingGap / 1e6);
+                require(worldLoadingGap < 500_000_000, "World loading and handoff keep rendering without a long client stall.");
+            }
             capture("00-current-world-content");
             set("groupContent", false);
-            contentBrowserTimes.clear(); measureContentBrowser = true;
         });
-        pause(1250);
+        if (EditorPerformanceChecks.BENCHMARKS) {
+            STEPS.add(() -> { contentBrowserTimes.clear(); measureContentBrowser = true; });
+            pause(1250);
+            STEPS.add(() -> {
+                measureContentBrowser = false;
+                require(contentBrowserTimes.size() >= 20, "The imported library renders through multiple frames.");
+                var times = contentBrowserTimes.stream().sorted().toList();
+                double median = times.get(times.size() / 2) / 1e6;
+                System.out.printf(java.util.Locale.ROOT, "Content library (%d entries): %.3f ms median render%n", ((AuthoringWorkspace) field(editor, "workspace")).documents().size(), median);
+                require(median < 8, "A large content list renders only visible rows: " + median + " ms.");
+            });
+        }
         STEPS.add(() -> {
-            measureContentBrowser = false;
-            require(contentBrowserTimes.size() >= 20, "The imported library renders through multiple frames.");
-            var times = contentBrowserTimes.stream().sorted().toList();
-            double median = times.get(times.size() / 2) / 1e6;
-            System.out.printf(java.util.Locale.ROOT, "Content library (%d entries): %.3f ms median render%n", ((AuthoringWorkspace) field(editor, "workspace")).documents().size(), median);
-            require(median < 8, "A large content list renders only visible rows: " + median + " ms.");
             set("groupContent", true);
             ((EditorContentBrowser) field(editor, "contentBrowser")).reveal((AuthoringDocument) field(editor, "document"));
         });
         pause(250);
+        STEPS.add(() -> capture("00-readable-library"));
+        profileEditor("default-campaign", 4, "The complete bundled campaign editor stays responsive without repeated schema work: ");
         STEPS.add(() -> {
-            capture("00-readable-library");
-            EditorCampaignProfile.start("default-campaign");
-        });
-        pause(4000);
-        STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
-                    "The complete bundled campaign editor stays responsive without repeated schema work: " + profile);
             var imported = (AuthoringWorkspace) field(editor, "workspace");
             var largest = imported.documents().stream().filter(value -> value.kind() == DefinitionKind.QUEST)
                     .max(java.util.Comparator.comparingInt(value -> value.value("/stages").getAsJsonArray().size())).orElseThrow();
             invoke("select", new Class<?>[] {AuthoringDocument.class}, largest);
         });
         pause(500);
-        STEPS.add(() -> EditorCampaignProfile.start("largest-quest"));
-        pause(4000);
+        profileEditor("largest-quest", 8, "The largest bundled quest stays responsive with the full campaign loaded: ");
+        STEPS.add(() -> capture("00-largest-campaign-quest"));
         STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 8,
-                    "The largest bundled quest stays responsive with the full campaign loaded: " + profile);
-            capture("00-largest-campaign-quest");
-        });
-        STEPS.add(() -> {
-            long before = System.nanoTime();
+            long before = EditorPerformanceChecks.BENCHMARKS ? System.nanoTime() : 0;
             invoke("updatePlaytestPresentation", new Class<?>[0]);
-            double elapsed = (System.nanoTime() - before) / 1e6;
-            System.out.printf(java.util.Locale.ROOT, "Campaign playtest presentation update: %.3f ms%n", elapsed);
-            require(elapsed < 50, "Opening Playtest reuses prepared campaign validation without blocking a tick.");
+            if (EditorPerformanceChecks.BENCHMARKS) {
+                double elapsed = (System.nanoTime() - before) / 1e6;
+                System.out.printf(java.util.Locale.ROOT, "Campaign playtest presentation update: %.3f ms%n", elapsed);
+                require(elapsed < 50, "Opening Playtest reuses prepared campaign validation without blocking a tick.");
+            }
             set("validationCache", new EditorValidationCache());
-            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = true;
+            worldLoadingFrame = 0; worldLoadingGap = 0; measureWorldLoading = EditorPerformanceChecks.BENCHMARKS;
             invoke("enterPlaytest", new Class<?>[0]);
         });
         pause(3000);
         STEPS.add(() -> {
             measureWorldLoading = false;
             require(EditorPlaytestViewport.layout() != null, "The full campaign opens the split game viewport.");
-            System.out.printf(java.util.Locale.ROOT, "Campaign Playtest with cold validation: longest frame gap %.3f ms%n", worldLoadingGap / 1e6);
-            require(worldLoadingGap < 500_000_000, "Cold campaign validation keeps the game rendering in Playtest.");
+            if (EditorPerformanceChecks.BENCHMARKS) {
+                System.out.printf(java.util.Locale.ROOT, "Campaign Playtest with cold validation: longest frame gap %.3f ms%n", worldLoadingGap / 1e6);
+                require(worldLoadingGap < 500_000_000, "Cold campaign validation keeps the game rendering in Playtest.");
+            }
             capture("00-campaign-playtest");
         });
         replaceText(() -> poolPoint(1450, 98), () -> "missing neighbour");
@@ -623,14 +634,10 @@ public final class AuthoringEditorClientSmoke {
             require(EditorPlaytestViewport.active(), "Reopening Playtest restores the split game viewport.");
         });
         pause(3000);
-        STEPS.add(() -> EditorCampaignProfile.start("current-world-playtest-reopened"));
-        pause(4000);
+        profileEditor("current-world-playtest-reopened", 4, "Reopened Playtest remains responsive with the complete campaign: ");
         STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
-                    "Reopened Playtest remains responsive with the complete campaign: " + profile);
             capture("91-campaign-current-world-playtest");
-            System.out.println("Default campaign quest testing passed in the current world, including setup rollback and reopened editor performance.");
+            System.out.println("Default campaign quest testing passed in the current world, including setup rollback and reopening the editor.");
             document = workspace.createDocument(DefinitionKind.QUEST, "test:current_world_setup");
             EditorContentTools.recipe(workspace, document, "Fetch quest");
             DialogueGraph.addNode(document, "finish");
@@ -761,13 +768,8 @@ public final class AuthoringEditorClientSmoke {
             require(((EditorDialoguePool) field(editor, "dialoguePool")).supports(pool[0], pool[0].json()), "Bundled fisherman dialogue opens as pool cards.");
         });
         pause(500);
-        STEPS.add(() -> { capture("00-dialogue-pool-cards"); EditorCampaignProfile.start("dialogue-pool"); });
-        pause(4000);
-        STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
-                    "Dialogue pool cards stay responsive with the default campaign loaded: " + profile);
-        });
+        STEPS.add(() -> capture("00-dialogue-pool-cards"));
+        profileEditor("dialogue-pool", 4, "Dialogue pool cards stay responsive with the default campaign loaded: ");
         replaceText(() -> poolCardPoint(600, 675), () -> "<b>Edited on a pool card</b>, {player}.");
         click(() -> poolCardPoint(530, 350));
         STEPS.add(() -> {
@@ -813,25 +815,21 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         STEPS.add(() -> { capture("00-dialogue-pool-large-text"); set("preferences", preferences[0]); });
-        STEPS.add(() -> {
-            var imported = (AuthoringWorkspace) field(editor, "workspace");
-            var root = new com.google.gson.JsonObject(); var lines = new com.google.gson.JsonArray();
-            for (int i = 0; i < 500; i++) {
-                var entry = pool[0].value("/lines/0").getAsJsonObject(); entry.addProperty("id", "stress_" + i); lines.add(entry);
-            }
-            root.add("lines", lines);
-            var stress = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue/en_us/stress.json", root);
-            imported.add(stress); invoke("select", new Class<?>[] {AuthoringDocument.class}, stress);
-        });
-        pause(500);
-        STEPS.add(() -> EditorCampaignProfile.start("dialogue-pool-500-entries"));
-        pause(4000);
-        STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4,
-                    "Large dialogue pools render only visible cards: " + profile);
-            capture("00-dialogue-pool-500-entries");
-        });
+        if (EditorPerformanceChecks.BENCHMARKS) {
+            STEPS.add(() -> {
+                var imported = (AuthoringWorkspace) field(editor, "workspace");
+                var root = new com.google.gson.JsonObject(); var lines = new com.google.gson.JsonArray();
+                for (int i = 0; i < 500; i++) {
+                    var entry = pool[0].value("/lines/0").getAsJsonObject(); entry.addProperty("id", "stress_" + i); lines.add(entry);
+                }
+                root.add("lines", lines);
+                var stress = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/dialogue/en_us/stress.json", root);
+                imported.add(stress); invoke("select", new Class<?>[] {AuthoringDocument.class}, stress);
+            });
+            pause(500);
+            profileEditor("dialogue-pool-500-entries", 4, "Large dialogue pools render only visible cards: ");
+            STEPS.add(() -> capture("00-dialogue-pool-500-entries"));
+        }
     }
 
     private static void buildResourceViewSteps() {
@@ -857,11 +855,9 @@ public final class AuthoringEditorClientSmoke {
             invoke("setPointer", new Class<?>[] {String.class}, "/steps/1");
         });
         pause(250);
-        STEPS.add(() -> { capture("00-scene-step-editor"); EditorCampaignProfile.start("scene-resource"); });
-        pause(4000);
+        STEPS.add(() -> capture("00-scene-step-editor"));
+        profileEditor("scene-resource", 4, "Scene editing stays responsive: ");
         STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Scene editing stays responsive: " + profile);
             invoke("setPointer", new Class<?>[] {String.class}, "/actors/1");
         });
         pause(250);
@@ -879,11 +875,9 @@ public final class AuthoringEditorClientSmoke {
             invoke("select", new Class<?>[] {AuthoringDocument.class}, messages);
         });
         pause(250);
-        STEPS.add(() -> { capture("00-dialogue-message-editor"); EditorCampaignProfile.start("dialogue-message-resource"); });
-        pause(4000);
+        STEPS.add(() -> capture("00-dialogue-message-editor"));
+        profileEditor("dialogue-message-resource", 4, "Remaining dialogue formats edit one entry at a time: ");
         STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Remaining dialogue formats edit one entry at a time: " + profile);
             var imported = (AuthoringWorkspace) field(editor, "workspace");
             var words = imported.documents().stream().filter(value -> value.resourcePath().endsWith("/dialogue_words/en_us/greetings/voice.json")).findFirst().orElseThrow();
             invoke("select", new Class<?>[] {AuthoringDocument.class}, words);
@@ -893,18 +887,15 @@ public final class AuthoringEditorClientSmoke {
         STEPS.add(() -> {
             var imported = (AuthoringWorkspace) field(editor, "workspace");
             var root = new com.google.gson.JsonObject(); var messages = new com.google.gson.JsonObject();
-            for (int i = 0; i < 5000; i++) messages.addProperty("translation." + i, "Readable translation " + i);
+            int count = EditorPerformanceChecks.BENCHMARKS ? 5000 : 8;
+            for (int i = 0; i < count; i++) messages.addProperty("translation." + i, "Readable translation " + i);
             root.add("messages", messages);
             var locale = new AuthoringDocument(DefinitionKind.RESOURCE, "data/test/quests/example/locales/en_us.json", root);
             imported.add(locale); invoke("select", new Class<?>[] {AuthoringDocument.class}, locale);
         });
         pause(500);
-        STEPS.add(() -> { capture("00-translation-editor"); EditorCampaignProfile.start("translations-5000-entries"); });
-        pause(4000);
-        STEPS.add(() -> {
-            var profile = EditorCampaignProfile.stop(output());
-            require(profile.medianMillis() < 8 && profile.p95Millis() < 16 && profile.allocatedMegabytes() < 4, "Large translation resources render only visible entries: " + profile);
-        });
+        STEPS.add(() -> capture("00-translation-editor"));
+        profileEditor("translations-5000-entries", 4, "Large translation resources render only visible entries: ");
     }
 
     private static float[] poolCardPoint(float x, float y) {
@@ -4028,11 +4019,13 @@ public final class AuthoringEditorClientSmoke {
         });
         waitUntil(() -> {
             if (EditorLiveQuestTest.view().busy()) return false;
-            long started = System.nanoTime();
+            long started = EditorPerformanceChecks.BENCHMARKS ? System.nanoTime() : 0;
             invoke("applyPlaytestDraft", new Class<?>[0]);
-            double elapsed = (System.nanoTime() - started) / 1e6;
-            System.out.printf(java.util.Locale.ROOT, "Playtest apply dispatch: %.3f ms%n", elapsed);
-            require(elapsed < 100, "Applying a draft returns to rendering while export and validation run in the background.");
+            if (EditorPerformanceChecks.BENCHMARKS) {
+                double elapsed = (System.nanoTime() - started) / 1e6;
+                System.out.printf(java.util.Locale.ROOT, "Playtest apply dispatch: %.3f ms%n", elapsed);
+                require(elapsed < 100, "Applying a draft returns to rendering while export and validation run in the background.");
+            }
             return true;
         });
         waitUntil(() -> {
@@ -4835,7 +4828,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void renderContentBrowserBenchmark() {
-        EditorCampaignProfile.endUI();
+        if (EditorPerformanceChecks.BENCHMARKS) EditorCampaignProfile.endUI();
         if (!measureContentBrowser) return;
         ImGui.setNextWindowPos(ImGui.getMainViewport().getWorkPosX() + 450, ImGui.getMainViewport().getWorkPosY() + 220);
         ImGui.setNextWindowSize(440, 440);
@@ -4847,7 +4840,7 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void frame() {
-        EditorCampaignProfile.beginFrame();
+        if (EditorPerformanceChecks.BENCHMARKS) EditorCampaignProfile.beginFrame();
         if (finished || stepping) return;
         if (measureWorldLoading) {
             long now = System.nanoTime();

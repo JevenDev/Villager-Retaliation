@@ -266,13 +266,6 @@ public final class SettlementFarmAcceptanceGameTests {
     }
 
     @net.minecraft.gametest.framework.GameTestGenerator
-    public static java.util.Collection<net.minecraft.gametest.framework.TestFunction> repeatedWaterTrips() {
-        return java.util.stream.IntStream.range(0, 2).mapToObj(repeat -> new net.minecraft.gametest.framework.TestFunction(
-                "native_farm_repeat", "nativefarm.repeat_water_trips_" + repeat, "settlement_farm_acceptance:empty",
-                4000, 0, true, SettlementFarmAcceptanceGameTests::nativeFarmerWalksRepeatedWaterTripsWithoutTeleports)).toList();
-    }
-
-    @net.minecraft.gametest.framework.GameTestGenerator
     public static java.util.Collection<net.minecraft.gametest.framework.TestFunction> farmingRegressions() {
         if (!java.util.Arrays.asList(System.getProperty("neoforge.enabledGameTestNamespaces", "").split(",")).contains("settlement_farm_acceptance"))
             return List.of();

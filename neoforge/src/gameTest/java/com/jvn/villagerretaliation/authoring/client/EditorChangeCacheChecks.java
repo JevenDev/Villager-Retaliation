@@ -16,7 +16,7 @@ final class EditorChangeCacheChecks {
         changesFollowHistoryMovesAndSaveBaselines();
         reviewReusesFilesAndFieldDiffs();
         cachedBytesRemainDefensive();
-        benchmarkIdleChangesAndRecovery();
+        if (EditorPerformanceChecks.BENCHMARKS) benchmarkIdleChangesAndRecovery();
         return 3;
     }
 

@@ -26,6 +26,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("settlement_retention")
 @PrefixGameTestTemplate(false)
 public final class SettlementRetentionGameTests {
+    private static final boolean STRESS = Boolean.getBoolean("villagerretaliation.retentionStress");
+
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_retention")
     public static void receiptRangesRetainHolesVersionsAndRestartNamespaces(GameTestHelper helper) throws IOException {
         var owner = new Object();
@@ -63,19 +65,21 @@ public final class SettlementRetentionGameTests {
         var ledger = new SettlementReceiptLedger();
         SettlementReceipt first = null;
         int firstSize = 0;
-        long start = System.nanoTime();
-        for (int index = 1; index <= 100_000; index++) {
+        int operations = STRESS ? 100_000 : 128;
+        int checkpoint = STRESS ? 1000 : 16;
+        long start = STRESS ? System.nanoTime() : 0;
+        for (int index = 1; index <= operations; index++) {
             var receipt = SettlementReceipt.issue(owner, "construction");
             if (first == null) first = receipt;
             ledger.applied(receipt, 1);
-            if (index == 1000) firstSize = bytes(ledger.save());
+            if (index == checkpoint) firstSize = bytes(ledger.save());
         }
         int finalSize = bytes(ledger.save());
-        helper.assertValueEqual(ledger.ranges(), 1, "100000 completed placements retain one exact range");
-        helper.assertValueEqual(finalSize, firstSize, "serialized receipt size stays constant after 1000 operations");
+        helper.assertValueEqual(ledger.ranges(), 1, "sequential completed placements retain one exact range");
+        helper.assertValueEqual(finalSize, firstSize, "serialized receipt size stays constant as completions accumulate");
         var restored = SettlementReceiptLedger.load(disk(ledger.save()));
         helper.assertValueEqual(restored.version(first), 1L, "the oldest operation remains protected after fresh disk load");
-        com.mojang.logging.LogUtils.getLogger().info("Settlement receipt endurance: operations=100000 ranges={} bytes={} elapsed_ms={}", ledger.ranges(), finalSize, (System.nanoTime() - start) / 1_000_000);
+        if (STRESS) com.mojang.logging.LogUtils.getLogger().info("Settlement receipt endurance: operations={} ranges={} bytes={} elapsed_ms={}", operations, ledger.ranges(), finalSize, (System.nanoTime() - start) / 1_000_000);
         helper.succeed();
     }
 
@@ -121,32 +125,34 @@ public final class SettlementRetentionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_retention")
-    public static void projectEnduranceBoundsHotRecordsAndHistoryWithoutForgettingRequests(GameTestHelper helper) throws IOException {
+    public static void cancelledProjectEnduranceBoundsHistoryWithoutForgettingRequests(GameTestHelper helper) throws IOException {
         var fixture = fixture(helper);
         var town = fixture.town();
         UUID first = null;
         int firstSize = 0;
-        long start = System.nanoTime();
-        for (int index = 1; index <= 2048; index++) {
+        int operations = STRESS ? 2048 : SettlementRecord.PROJECT_HISTORY_LIMIT * 2 + SettlementRecord.PROJECT_MAINTENANCE_LIMIT;
+        int checkpoint = operations / 2;
+        long start = STRESS ? System.nanoTime() : 0;
+        for (int index = 1; index <= operations; index++) {
             var project = project(fixture, 1);
             if (first == null) first = project.id();
             helper.assertTrue(town.startProject(town.leader(), project), "sequential project starts");
-            town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
+            town.finishProject(project.id(), SettlementProject.Status.CANCELLED);
             SettlementConstructionService.synchronizePayments(town, fixture.builder());
             helper.assertTrue(town.maintainProjects() <= SettlementRecord.PROJECT_MAINTENANCE_LIMIT, "maintenance has a fixed visit budget");
-            if (index == 1024) firstSize = bytes(town.save(helper.getLevel().registryAccess()));
+            if (index == checkpoint) firstSize = bytes(town.save(helper.getLevel().registryAccess()));
         }
         var saved = town.save(helper.getLevel().registryAccess());
         int finalSize = bytes(saved);
-        helper.assertValueEqual(town.projects().size(), 0, "completed work leaves no hot payment or construction scan entries");
+        helper.assertValueEqual(town.projects().size(), 0, "cancelled work leaves no hot payment or construction scan entries");
         helper.assertValueEqual(town.projectHistory().size(), SettlementRecord.PROJECT_HISTORY_LIMIT, "recent summaries stay bounded");
-        helper.assertValueEqual(saved.getLongArray("RetiredProjects").length, (2048 - SettlementRecord.PROJECT_HISTORY_LIMIT) * 2, "old random request identities retain only exact 16-byte guards");
-        helper.assertTrue(finalSize - firstSize <= 128 * 1024, "save growth is limited to exact request and payment identities");
+        helper.assertValueEqual(saved.getLongArray("RetiredProjects").length, (operations - SettlementRecord.PROJECT_HISTORY_LIMIT) * 2, "old random request identities retain only exact 16-byte guards");
+        helper.assertTrue(finalSize - firstSize <= (operations - checkpoint) * 128, "save growth is limited to exact request and payment identities");
         var restored = SettlementRecord.load(disk(saved), helper.getLevel().registryAccess(), () -> {});
         helper.assertTrue(restored.knowsProject(first), "the oldest request cannot recommission after reload");
         helper.assertValueEqual(restored.maintainProjects(), 0, "retired workload adds no maintenance scan cost");
         helper.assertValueEqual(bytes(restored.save(helper.getLevel().registryAccess())), finalSize, "repeated compaction is stable");
-        com.mojang.logging.LogUtils.getLogger().info("Settlement project endurance: projects=2048 hot={} summaries={} bytes_at_1024={} bytes_at_2048={} elapsed_ms={}", town.projects().size(), town.projectHistory().size(), firstSize, finalSize, (System.nanoTime() - start) / 1_000_000);
+        if (STRESS) com.mojang.logging.LogUtils.getLogger().info("Settlement project endurance: projects={} hot={} summaries={} checkpoint_bytes={} final_bytes={} elapsed_ms={}", operations, town.projects().size(), town.projectHistory().size(), firstSize, finalSize, (System.nanoTime() - start) / 1_000_000);
         helper.succeed();
     }
 

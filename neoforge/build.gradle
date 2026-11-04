@@ -317,6 +317,7 @@ neoForge {
             systemProperty 'villagerretaliation.campaignScenario', providers.gradleProperty('campaignScenario').orElse('').get()
             systemProperty 'villagerretaliation.campaignScenarioRepeats', providers.gradleProperty('campaignScenarioRepeats').orElse('1').get()
             systemProperty 'villagerretaliation.campaignScenarioReports', campaignScenarioReports.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.retentionStress', providers.gradleProperty('retentionStress').orElse('false').get()
             systemProperty 'villagerretaliation.settlementLoadProfile', providers.gradleProperty('settlementLoadProfile').orElse('0').get()
             systemProperty 'villagerretaliation.settlementLoadProfilePaced', providers.gradleProperty('settlementLoadProfilePaced').orElse('false').get()
             systemProperty 'villagerretaliation.settlementLoadProfileRequire20Tps', providers.gradleProperty('settlementLoadProfileRequire20Tps').orElse('false').get()
