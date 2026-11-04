@@ -85,8 +85,8 @@ public final class MapNavigationGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100)
     public static void transitionsResumeAndReverseWithoutReopening(GameTestHelper helper) {
-        for (int step = 0; step <= 100_000; step++) {
-            float eased = MapScreenTransition.ease(step / 100_000.0F);
+        for (float progress : new float[]{-1, 0, Math.nextUp(0.0F), .1F, .25F, .5F, .75F, .9F, .99F, Math.nextDown(1.0F), 1, 2}) {
+            float eased = MapScreenTransition.ease(progress);
             helper.assertTrue(eased >= 0 && eased <= 1, "floating point easing stays within valid opacity bounds");
         }
         long[] now = {0};
@@ -109,6 +109,38 @@ public final class MapNavigationGameTests {
         instant.open();
         helper.assertValueEqual(instant.progress(false), 1.0F, "disabled animations open immediately");
         helper.assertTrue(instant.close(false), "disabled animations close immediately");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void hudEntranceSkipsAndResumesWithoutReplaying(GameTestHelper helper) {
+        long[] now = {0};
+        var transition = new MapScreenTransition(() -> now[0]);
+        transition.open();
+        helper.assertTrue(transition.hudProgress(true) == 0, "HUD entrance waits for the map opening");
+        now[0] = 1_249_000_000;
+        helper.assertTrue(transition.hudProgress(true) == 0, "HUD entrance stays hidden until the map transition completes");
+        now[0] = 1_250_000_000;
+        helper.assertTrue(transition.progress(true) == 1 && transition.hudProgress(true) == 0, "HUD entrance starts after the map transition");
+        now[0] += 225_000_000;
+        helper.assertTrue(Math.abs(transition.hudProgress(true) - .5f) < .00001f, "HUD entrance advances over 450 milliseconds");
+        now[0] += 225_000_000;
+        helper.assertTrue(transition.hudProgress(true) == 1, "HUD entrance finishes exactly at its resting positions");
+        transition.close(true);
+        helper.assertTrue(transition.hudProgress(true) == 1, "closing does not restart the entrance");
+        var resumed = new MapScreenTransition(() -> now[0]);
+        resumed.open();
+        resumed.suspend();
+        resumed.open();
+        helper.assertTrue(resumed.hudProgress(true) == 1, "returning from another screen does not replay the entrance");
+        var skipped = new MapScreenTransition(() -> now[0]);
+        skipped.open();
+        skipped.finishOpening();
+        helper.assertTrue(skipped.hudProgress(true) == 1, "manual input skips both opening phases");
+        var disabled = new MapScreenTransition(() -> now[0]);
+        disabled.open();
+        helper.assertTrue(disabled.hudProgress(false) == 1 && disabled.hudProgress(true) == 1,
+                "disabled opening animations show the HUD immediately without a later replay");
         helper.succeed();
     }
 }

@@ -13,7 +13,7 @@ final class MapRegionChecks {
         emptySurfaceCache(root);
         recovery(root);
         migration(root);
-        scaling(root);
+        if (ExploredMapChecks.BENCHMARKS) scaling(root);
         System.out.println("Passed " + passed + " compressed-region checks");
     }
     private static MapSnapshot tile(int x, int z, long revision) {

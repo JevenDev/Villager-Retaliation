@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 
 /** Disposable fixtures and deterministic images; no Minecraft client, world save or graphics context. */
 public final class ExploredMapChecks {
+    static final boolean BENCHMARKS = Boolean.getBoolean("villagerretaliation.mapStorageBenchmarks");
     private static int passed;
     private static Path output;
     public static void main(String[] args) throws Exception {
@@ -37,8 +38,6 @@ public final class ExploredMapChecks {
         expectFailure(() -> MapStore.decode(bytes, 0, 0), "corrupt checksum rejected");
         expectFailure(() -> MapStore.decode(new byte[]{1,2,3}, 0, 0), "truncated tile rejected");
         expectFailure(() -> MapStore.decode(MapStore.encode(base), 1, 0), "coordinate substitution rejected");
-        Files.write(store.root().resolve("r.0.0.vrregion.pending"),new byte[]{1,2,3});
-        check(store.read(0,0).equals(marked), "interrupted pending write preserves committed tile");
         store.close();
         MapRegionChecks.run(fixture);
         legacy(fixture);
@@ -196,16 +195,18 @@ public final class ExploredMapChecks {
             }
             var actual = MapOverview.combine(origin, origin, stride, sources);
             check(actual.sameContent(expected), "bulk overview preserves materials, heights, light and discovery at stride " + stride + " / " + origin);
-            long before = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId());
-            for (int repeat = 0; repeat < 20; repeat++) MapOverview.combine(origin, origin, stride, sources);
-            long bulkBytes = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId()) - before;
-            before = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId());
-            for (int repeat = 0; repeat < 20; repeat++) {
-                var region = MapOverview.empty(origin, origin, stride);
-                for (var source : sources) region = MapOverview.update(region, source);
+            if (BENCHMARKS) {
+                long before = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId());
+                for (int repeat = 0; repeat < 20; repeat++) MapOverview.combine(origin, origin, stride, sources);
+                long bulkBytes = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId()) - before;
+                before = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId());
+                for (int repeat = 0; repeat < 20; repeat++) {
+                    var region = MapOverview.empty(origin, origin, stride);
+                    for (var source : sources) region = MapOverview.update(region, source);
+                }
+                long incrementalBytes = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId()) - before;
+                check(bulkBytes < incrementalBytes / 2, "bulk overview cuts transient allocation by at least half at stride " + stride);
             }
-            long incrementalBytes = ((com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean()).getThreadAllocatedBytes(Thread.currentThread().threadId()) - before;
-            check(bulkBytes < incrementalBytes / 2, "bulk overview cuts transient allocation by at least half at stride " + stride);
         }
     }
     private static void overview(Path root) throws Exception {

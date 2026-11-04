@@ -787,6 +787,7 @@ tasks.register('verifyExploredMap', JavaExec) {
     dependsOn tasks.named('gameTestClasses')
     classpath = sourceSets.gameTest.runtimeClasspath
     mainClass = 'com.jvn.villagerretaliation.exploration.ExploredMapChecks'
+    systemProperty 'villagerretaliation.mapStorageBenchmarks', providers.gradleProperty('mapStorageBenchmarks').orElse('false').get()
     args layout.buildDirectory.dir('explored-map-checks').get().asFile.absolutePath
 }
 

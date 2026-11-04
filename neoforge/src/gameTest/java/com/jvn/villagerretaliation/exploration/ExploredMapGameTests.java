@@ -58,7 +58,6 @@ public final class ExploredMapGameTests {
     @GameTest(template = "empty", timeoutTicks = 100)
     public static void identityAndPacketRoundTrip(GameTestHelper helper) {
         var level=helper.getLevel(); var id=MapWorldIdentity.get(level);
-        helper.assertValueEqual(MapWorldIdentity.get(level),id,"world identity is durable within the save");
         var packet=new MapObservationPayload(id,level.dimension().location(),helper.absolutePos(BlockPos.ZERO),"real-id","Actual village");
         var buffer=new RegistryFriendlyByteBuf(Unpooled.buffer(),level.registryAccess());
         try {

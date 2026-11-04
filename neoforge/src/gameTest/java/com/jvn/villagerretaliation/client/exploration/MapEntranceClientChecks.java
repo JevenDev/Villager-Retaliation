@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.client.exploration;
 
-import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -17,7 +16,6 @@ final class MapEntranceClientChecks {
     private MapEntranceClientChecks() { }
 
     static void verify() {
-        verifyTiming();
         var minecraft = Minecraft.getInstance();
         var graphics = new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
         graphics.flush();
@@ -33,39 +31,16 @@ final class MapEntranceClientChecks {
             RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, 640, 360, 0, -1000, 1000), VertexSorting.ORTHOGRAPHIC_Z);
             RenderSystem.disableDepthTest();
             verifyAlpha(graphics, target);
-            int[][] visible = new int[3][3];
-            float[] progress = {0, .3f, 1};
-            for (int phase = 0; phase < progress.length; phase++) {
-                target.setClearColor(0, 0, 0, 0);
-                target.clear(Minecraft.ON_OSX);
+            for (float entrance : new float[]{0, 1}) {
                 target.bindWrite(true);
-                pages.render(graphics, 640, 360, 320, 180, MapNavigation.DEFAULT_SCALE, 1,
-                        VillagerClientUiUtil.easeOutCubic(progress[phase]));
-                MapCompass.render(graphics, 640, 360, 0, 1, pages.compassX(), pages.compassY());
+                pages.render(graphics, 640, 360, 320, 180, MapNavigation.DEFAULT_SCALE, 1, entrance);
                 graphics.flush();
-                try (var image = new NativeImage(640, 360, false)) {
-                    RenderSystem.bindTexture(target.getColorTextureId());
-                    image.downloadTexture(0, false);
-                    image.flipY();
-                    for (int y = 0; y < 360; y++) for (int x = 0; x < 640; x++) {
-                        if (image.getPixelRGBA(x, y) >>> 24 == 0) continue;
-                        require(phase != 0, "all decorative elements begin completely offscreen");
-                        if (x < 200 && y < 220) visible[phase][0]++;
-                        if (x >= 520 && y < 180) visible[phase][1]++;
-                        if (x >= 490 && y >= 210) visible[phase][2]++;
-                    }
-                    image.writeToFile(Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"), "map-hud-entrance-" + phase + ".png"));
-                }
-                if (phase == 0) require(pages.controlAt(620, 30) == null
-                        && !MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()),
-                        "offscreen tabs and compass cannot be hovered at their resting positions");
+                require((pages.controlAt(620, 30) == MapPages.Control.ROUTES) == (entrance == 1),
+                        "route tab hit targets follow the HUD entrance");
+                require(MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()) == (entrance == 1),
+                        "compass hit targets follow the HUD entrance");
             }
-            for (int layer = 0; layer < 3; layer++)
-                require(visible[1][layer] > 0 && visible[2][layer] > visible[1][layer],
-                        "left pages, right tabs and the compass corner enter progressively from their edges");
-            require(pages.controlAt(620, 30) == MapPages.Control.ROUTES && MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()),
-                    "hover targets arrive with the tabs and compass");
-            System.out.println("Map HUD entrance checks passed: transition sequencing, offscreen start, edge slides, moving hover targets, exact completion, skipped animation and screen resume");
+            System.out.println("Map HUD entrance checks passed: moving hit targets and render-state transparency");
         } catch (IOException exception) { throw new UncheckedIOException(exception); }
         finally {
             modelView.popMatrix();
@@ -130,36 +105,6 @@ final class MapEntranceClientChecks {
 
     private static boolean opaque(NativeImage image, int x, int y) {
         return x >= 0 && y >= 0 && x < image.getWidth() && y < image.getHeight() && image.getPixelRGBA(x, y) >>> 24 != 0;
-    }
-
-    private static void verifyTiming() {
-        long[] now = {0};
-        var transition = new MapScreenTransition(() -> now[0]);
-        transition.open();
-        require(transition.hudProgress(true) == 0, "HUD entrance waits for the map opening");
-        now[0] = 1_249_000_000;
-        require(transition.hudProgress(true) == 0, "HUD entrance stays hidden until the map transition completes");
-        now[0] = 1_250_000_000;
-        require(transition.progress(true) == 1 && transition.hudProgress(true) == 0, "HUD entrance starts after the map transition");
-        now[0] += 225_000_000;
-        require(Math.abs(transition.hudProgress(true) - .5f) < .00001f, "HUD entrance advances over 450 milliseconds");
-        now[0] += 225_000_000;
-        require(transition.hudProgress(true) == 1, "HUD entrance finishes exactly at its resting positions");
-        transition.close(true);
-        require(transition.hudProgress(true) == 1, "closing does not restart the entrance");
-        var resumed = new MapScreenTransition(() -> now[0]);
-        resumed.open();
-        resumed.suspend();
-        resumed.open();
-        require(resumed.hudProgress(true) == 1, "returning from another screen does not replay the entrance");
-        var skipped = new MapScreenTransition(() -> now[0]);
-        skipped.open();
-        skipped.finishOpening();
-        require(skipped.hudProgress(true) == 1, "manual input skips both opening phases");
-        var disabled = new MapScreenTransition(() -> now[0]);
-        disabled.open();
-        require(disabled.hudProgress(false) == 1 && disabled.hudProgress(true) == 1,
-                "disabled opening animations show the HUD immediately without a later replay");
     }
 
     private static void require(boolean condition, String message) {

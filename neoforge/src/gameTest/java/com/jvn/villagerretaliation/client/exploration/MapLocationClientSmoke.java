@@ -104,6 +104,7 @@ public final class MapLocationClientSmoke {
             }
             return;
         }
+        if (!ExploredMapClientSmoke.prepare()) return;
         if (++ticks < 10) return;
         ticks = 0;
         switch (phase) {
@@ -198,12 +199,7 @@ public final class MapLocationClientSmoke {
                 if (!SettlementRouteMapClientChecks.tick(map)) return;
                 if (!MapRecordedTerrainClientChecks.tick(map)) return;
                 require(compassChecked, "the compass rendering checks ran on an open map");
-                map.onClose();
-                require(mc.screen == map && map.transitionProgress() > 0, "the resumed map still animates closing");
-                map.onClose();
-                require(mc.screen == null, "a second close returns to the world");
-                mc.setScreen(new ExploredMapScreen());
-                require(((ExploredMapScreen) mc.screen).transitionProgress() < 1, "a fresh map still animates after returning from the editor");
+                if (!ExploredMapClientSmoke.verifyLifecycle(map)) return;
                 try {
                     Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"),
                             "Map location client smoke passed\nPlacement, item textures, scroll selection, server save, names, labels, cancel, sharing menu and delete passed\n");

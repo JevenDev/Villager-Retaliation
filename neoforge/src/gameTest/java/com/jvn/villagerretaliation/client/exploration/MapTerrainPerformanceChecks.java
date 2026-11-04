@@ -60,7 +60,12 @@ public final class MapTerrainPerformanceChecks {
         phase = new Phase(); phase.mode = MODES[stage]; phase.begin();
     }
 
-    static void tick() {
+    @SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        if (System.getProperty("villagerretaliation.exploredMapClientSmoke") != null
+                && System.getProperty("villagerretaliation.mapPerformanceSource") != null) tick();
+    }
+
+    private static void tick() {
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.getOverlay() != null) return;
         mc.setWindowActive(true);

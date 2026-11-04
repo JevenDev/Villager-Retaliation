@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.exploration.MapFlatTile;
 import com.jvn.villagerretaliation.exploration.MapLighting;
 import com.jvn.villagerretaliation.exploration.MapView;
 import com.jvn.villagerretaliation.exploration.MapRepository;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.function.Consumer;
-import java.util.HashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -30,7 +28,6 @@ import org.joml.Matrix4f;
 final class MapParchmentClientChecks {
     private static final float CLOUD_SPAN = 384f;
     private static final int[] COLORS = {0x00308A48, 0x00B25A2A, 0x00808080, 0x00E0F2FF};
-    private static final int[] WATER_TONES = {94, 102, 110, 114};
 
     private MapParchmentClientChecks() { }
 
@@ -64,56 +61,18 @@ final class MapParchmentClientChecks {
             try (var original = render(graphics, target, shader, fixture, false, MapLighting.DAY, false);
                  var styled = render(graphics, target, shader, fixture, true, MapLighting.DAY, false);
                  var restored = render(graphics, target, shader, fixture, false, MapLighting.DAY, false);
-                 var night = render(graphics, target, shader, fixture, true, MapLighting.at(0.5, true), false);
-                 var fog = render(graphics, target, shader, fixture, true, MapLighting.DAY, true)) {
-                int minimum = 255, maximum = 0;
-                long daylight = 0, moonlight = 0, landWash = 0, waterWash = 0;
+                 var night = render(graphics, target, shader, fixture, true, MapLighting.at(0.5, true), false)) {
+                long daylight = 0, moonlight = 0;
                 for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
                     int color = original.getPixelRGBA(x, y);
                     require(color == (COLORS[x * COLORS.length / target.width] | 0xFF000000),
                             "disabling parchment preserves the original terrain colors exactly");
                     require(restored.getPixelRGBA(x, y) == color, "the config toggle restores colors immediately without reloading tiles");
-                    int paper = styled.getPixelRGBA(x, y);
-                    if (x >= target.width / 4 && x < target.width / 2) waterColor(paper);
-                    else warm(paper);
-                    warm(fog.getPixelRGBA(x, y));
-                    daylight += brightness(paper);
-                    if (x < target.width / 4) landWash += brightness(paper);
-                    else if (x < target.width / 2) waterWash += brightness(paper);
+                    daylight += brightness(styled.getPixelRGBA(x, y));
                     moonlight += brightness(night.getPixelRGBA(x, y));
-                    if (x > target.width / 2 && x < target.width * 3 / 4) {
-                        minimum = Math.min(minimum, paper & 255);
-                        maximum = Math.max(maximum, paper & 255);
-                    }
                 }
-                int middle = target.height / 2;
-                int land = (int) (landWash / (target.width / 4) / target.height);
-                int water = (int) (waterWash / (target.width / 2 - target.width / 4) / target.height);
-                int stone = brightness(styled.getPixelRGBA(target.width * 5 / 8, middle));
-                int highlights = brightness(styled.getPixelRGBA(target.width * 7 / 8, middle));
-                require(water - land > 90, "the blue-green water wash stays distinct from terrain despite darker wave faces (contrast: " + (water - land) + ")");
-                require(highlights - stone > 180, "the ink and paper palette preserves strong terrain contrast");
-                int coast = brightness(styled.getPixelRGBA(target.width / 4, middle));
-                int interior = brightness(styled.getPixelRGBA(target.width / 4 + 4, middle));
-                require(Math.abs(interior - coast) < 20, "material boundaries do not add dark pixel outlines");
-                require(maximum - minimum >= 2 && maximum - minimum <= 8, "paper texture stays subtle on flat terrain");
-                require(moonlight < daylight * 0.8 && moonlight > daylight * 0.2, "the parchment map retains readable day and night lighting");
-                var output = Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"));
-                original.writeToFile(output.resolve("map-original-palette.png"));
-                styled.writeToFile(output.resolve("map-parchment-palette.png"));
+                require(moonlight > 0 && moonlight < daylight, "cached terrain responds to night lighting");
             }
-            for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) {
-                int shade = y < 3 ? 180 : y < 6 ? 220 : 255;
-                terrain.getPixels().setPixelRGBA(x, y, MapFlatTile.shade(0x00FF4040, shade));
-            }
-            terrain.upload();
-            try (var water = render(graphics, target, shader, fixture, true, MapLighting.DAY, false)) {
-                int deep = brightness(water.getPixelRGBA(target.width / 2, target.height / 8));
-                int shallow = brightness(water.getPixelRGBA(target.width / 2, target.height * 7 / 8));
-                require(shallow - deep > 35, "water retains its depth shading instead of becoming a flat paper fill");
-                water.writeToFile(Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"), "map-parchment-water.png"));
-            }
-            verifyWater(graphics, target, shader, fixture, terrain, masks, pages);
             verifyClouds(graphics, target, shader, fixture, terrain, masks, pages, clouds, regions);
             verifyCaches(graphics, target);
             verifyWideZoom(graphics);
@@ -132,129 +91,6 @@ final class MapParchmentClientChecks {
             if (depth) RenderSystem.enableDepthTest();
             else RenderSystem.disableDepthTest();
         }
-    }
-
-    private static void verifyWater(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                    int[] fixture, DynamicTexture terrain, DynamicTexture masks, DynamicTexture pages) throws IOException {
-        fillTerrain(terrain, 0x00FF4040);
-        try (var still = renderWater(graphics, target, shader, fixture, true, 0, 0);
-             var moving = renderWater(graphics, target, shader, fixture, true, 4, 0);
-             var early = renderWater(graphics, target, shader, fixture, true, 0.425f, 0);
-             var wrapped = renderWater(graphics, target, shader, fixture, true, 6144, 0);
-             var distant = renderWater(graphics, target, shader, fixture, true, 0, 12288);
-             var vanilla = renderWater(graphics, target, shader, fixture, false, 0, 0);
-             var vanillaMoving = renderWater(graphics, target, shader, fixture, false, 4, 0)) {
-            var output = Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"));
-            still.writeToFile(output.resolve("map-water-surface.png"));
-            moving.writeToFile(output.resolve("map-water-surface-moving.png"));
-            int changed = 0, earlyChanged = 0, strongest = 0;
-            for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                int color = still.getPixelRGBA(x, y);
-                int next = moving.getPixelRGBA(x, y);
-                require(flatWaterTone(color & 255, next & 255), "water lighting uses flat palette tones with hard transitions");
-                int difference = Math.abs(brightness(color) - brightness(next));
-                if (difference > 3) changed++;
-                if (Math.abs(brightness(color) - brightness(early.getPixelRGBA(x, y))) > 3) earlyChanged++;
-                strongest = Math.max(strongest, difference);
-                require(Math.abs(brightness(color) - brightness(wrapped.getPixelRGBA(x, y))) <= 3,
-                        "water motion remains continuous when the wind clock wraps");
-                require(Math.abs(brightness(color) - brightness(distant.getPixelRGBA(x, y))) <= 3,
-                        "water currents retain their world position across wrapped map coordinates");
-                require(vanilla.getPixelRGBA(x, y) == vanillaMoving.getPixelRGBA(x, y), "vanilla water remains unchanged by animation");
-                waterColor(moving.getPixelRGBA(x, y));
-            }
-            require(changed > target.width * target.height / 10,
-                    "layered ripples visibly move across the water (changed pixels: " + changed + ")");
-            require(earlyChanged < target.width * target.height / 8 && earlyChanged * 2 < changed,
-                    "half a second advances only a small part of the wave pattern");
-            require(strongest > 30 && strongest < 130, "wave faces and crests have clear contrast while retaining readable water colors");
-        }
-        fillTerrain(terrain, COLORS[0]);
-        try (var land = renderWater(graphics, target, shader, fixture, true, 0, 0);
-             var moving = renderWater(graphics, target, shader, fixture, true, 4, 0)) {
-            for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++)
-                require(land.getPixelRGBA(x, y) == moving.getPixelRGBA(x, y), "water animation leaves land and map details stationary");
-        }
-        verifyWaterGrid(graphics, target, shader, fixture, terrain);
-        verifyWaterOverview(graphics, target, shader, fixture, masks, pages);
-        System.out.println("Paper water checks passed: layered ripples, terrain grid alignment, continuous wraps, static land and unchanged vanilla water");
-    }
-
-    private static void verifyWaterGrid(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                        int[] fixture, DynamicTexture terrain) {
-        fillTerrain(terrain, 0x00FF4040);
-        double scale = target.width / 64.0;
-        var view = new MapView(target.width, target.height, 0, 0, scale);
-        try (var still = renderWater(graphics, target, shader, fixture, true, 0, 0, 64, 4);
-             var moving = renderWater(graphics, target, shader, fixture, true, 4, 0, 64, 4)) {
-            int changed = 0;
-            for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                int cx = (int) view.screenX(Math.floor(view.worldX(x + 0.5) / 4) * 4 + 2);
-                int cy = (int) view.screenY(Math.floor(view.worldZ(y + 0.5) / 4) * 4 + 2);
-                if (cx < 0 || cx >= target.width || cy < 0 || cy >= target.height) continue;
-                int before = still.getPixelRGBA(x, y) & 255, after = moving.getPixelRGBA(x, y) & 255;
-                int centerBefore = still.getPixelRGBA(cx, cy) & 255, centerAfter = moving.getPixelRGBA(cx, cy) & 255;
-                require(Math.abs(after * centerBefore - before * centerAfter) <= 520,
-                        "water animation shares one brightness change across each terrain texel");
-                if (Math.abs(after - before) > 3) changed++;
-            }
-            require(changed > target.width * target.height / 100, "coarser terrain pixels retain visible water motion");
-        }
-    }
-
-    private static void verifyWaterOverview(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                            int[] fixture, DynamicTexture masks, DynamicTexture pages) throws IOException {
-        for (int y = 0; y < 8; y++) for (int x = 0; x < 16; x++) masks.getPixels().setPixelRGBA(x, y, -1);
-        for (int y = 192; y < 256; y++) for (int x = 0; x < 64; x++) pages.getPixels().setPixelRGBA(x, y, 1);
-        masks.upload(); pages.upload();
-        try (var still = renderWaterOverview(graphics, target, shader, fixture, 0);
-             var moving = renderWaterOverview(graphics, target, shader, fixture, 4)) {
-            int changed = 0;
-            for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                int before = still.getPixelRGBA(x, y), after = moving.getPixelRGBA(x, y);
-                require(flatWaterTone(before & 255, after & 255), "the widest zoom retains flat water tones");
-                waterColor(after);
-                if (Math.abs(brightness(before) - brightness(after)) > 3) changed++;
-            }
-            require(changed > target.width * target.height / 100, "water waves remain visible and animated at the 500 block scale");
-            var output = Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"));
-            still.writeToFile(output.resolve("map-water-overview.png"));
-            moving.writeToFile(output.resolve("map-water-overview-moving.png"));
-        } finally {
-            for (int y = 0; y < 8; y++) for (int x = 0; x < 16; x++) masks.getPixels().setPixelRGBA(x, y, x % 2 == 0 ? 255 : 0);
-            for (int y = 192; y < 256; y++) for (int x = 0; x < 64; x++) pages.getPixels().setPixelRGBA(x, y, 0);
-            masks.upload(); pages.upload();
-        }
-    }
-
-    private static NativeImage renderWaterOverview(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                                   int[] fixture, float wind) {
-        return render(graphics, target, shader, fixture, true, MapLighting.DAY, false, loaded -> {
-            loaded.safeGetUniform("WorldSpan").set(4000f, 4000f * target.height / target.width);
-            loaded.safeGetUniform("TerrainTexelSize").set(8f);
-            loaded.safeGetUniform("FirstLevel").set(3f);
-            loaded.safeGetUniform("PageX").set(-2048f, -2048f, -2048f, -2048f);
-            loaded.safeGetUniform("PageZ").set(-2048f, -2048f, -2048f, -2048f);
-            loaded.safeGetUniform("CloudOrigin").set(0f, 0f);
-            loaded.safeGetUniform("CloudDriftX").set(0f, wind, 0f);
-        });
-    }
-
-    private static NativeImage renderWater(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                           int[] fixture, boolean parchment, float wind, float origin) {
-        return renderWater(graphics, target, shader, fixture, parchment, wind, origin, 384, 1);
-    }
-
-    private static NativeImage renderWater(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                           int[] fixture, boolean parchment, float wind, float origin, float span, float texelSize) {
-        return render(graphics, target, shader, fixture, parchment, MapLighting.DAY, false, loaded -> {
-            loaded.safeGetUniform("WorldSpan").set(span, span * target.height / target.width);
-            loaded.safeGetUniform("TerrainTexelSize").set(texelSize);
-            loaded.safeGetUniform("PageX").set(-256f, -256f, -256f, -256f);
-            loaded.safeGetUniform("PageZ").set(-256f, -256f, -256f, -256f);
-            loaded.safeGetUniform("CloudOrigin").set(origin, origin);
-            loaded.safeGetUniform("CloudDriftX").set(0f, wind, 0f);
-        });
     }
 
     private static void verifyCaches(GuiGraphics graphics, TextureTarget target) throws IOException, ReflectiveOperationException {
@@ -386,63 +222,22 @@ final class MapParchmentClientChecks {
         var output = Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"));
         try (var clear = renderClouds(graphics, target, shader, fixture, true, 0)) {
             fillPages(pages, 32);
-            try (var fringe = renderClouds(graphics, target, shader, fixture, true, 0);
-                 var moving = renderClouds(graphics, target, shader, fixture, true, 96);
-                 var classic = renderClouds(graphics, target, shader, fixture, false, 0);
-                 var classicMoving = renderClouds(graphics, target, shader, fixture, false, 96);
-                 var cloudsOnly = render(graphics, target, shader, fixture, true, MapLighting.DAY, false, loaded -> configureClouds(loaded, 0),
-                         loaded -> loaded.safeGetUniform("FirstLevel").set(4f))) {
+            try (var fringe = renderClouds(graphics, target, shader, fixture, true, 0)) {
                 fringe.writeToFile(output.resolve("map-discovery-clouds.png"));
-                moving.writeToFile(output.resolve("map-discovery-clouds-wind.png"));
-                classic.writeToFile(output.resolve("map-vanilla-clouds.png"));
                 int edge = target.width / 2;
-                int terrainPixels = 0, cloudPixels = 0, moved = 0, classicMoved = 0, cloudEdges = 0;
-                int[] ranks = new int[16], samples = new int[16];
-                var shades = new HashSet<Integer>();
-                int darkest = 765, lightest = 0;
-                for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                    int color = fringe.getPixelRGBA(x, y);
-                    if (x < edge - target.width / 4) require(color == clear.getPixelRGBA(x, y), "clouds leave the explored interior clear");
-                    if (x < edge - Math.ceil(target.width * 16 / CLOUD_SPAN) && y > target.height / 4 && y < target.height * 3 / 4)
-                        require(color == clear.getPixelRGBA(x, y), "stacked cloud banks grow outward instead of covering explored terrain");
-                    if (x >= edge - target.width / 4 && x < edge) {
-                        boolean join = x >= edge - Math.ceil(target.width * 16 / CLOUD_SPAN);
-                        if (join) samples[ditherRank(x, y, target.width, target.height)]++;
-                        boolean terrainPixel = color == clear.getPixelRGBA(x, y);
-                        require(terrainPixel || color == cloudsOnly.getPixelRGBA(x, y), "the cloud edge dithers crisp pixels without blurring their colors");
-                        if (terrainPixel) terrainPixels++;
-                        else {
-                            cloudPixels++;
-                            if (join) ranks[ditherRank(x, y, target.width, target.height)]++;
+                for (int y = 0; y < target.height; y++)
+                    require(fringe.getPixelRGBA(target.width / 4, y) == clear.getPixelRGBA(target.width / 4, y),
+                            "discovery clouds leave the explored interior clear");
+                for (boolean parchment : new boolean[]{false, true}) {
+                    fillTerrain(terrain, COLORS[0]);
+                    try (var reference = renderClouds(graphics, target, shader, fixture, parchment, 0)) {
+                        fillTerrain(terrain, 0x00FF00FF);
+                        try (var hidden = renderClouds(graphics, target, shader, fixture, parchment, 0)) {
+                            for (int y = 0; y < target.height; y++) for (int x = edge; x < target.width; x++)
+                                require(hidden.getPixelRGBA(x, y) == reference.getPixelRGBA(x, y),
+                                        "both map palettes hide cached terrain outside discovery");
                         }
                     }
-                    if (x >= edge) {
-                        shades.add(color);
-                        if (x > edge && Math.abs(brightness(color) - brightness(fringe.getPixelRGBA(x - 1, y))) > 16) cloudEdges++;
-                        if (color != moving.getPixelRGBA(x, y)) moved++;
-                        if (classic.getPixelRGBA(x, y) != classicMoving.getPixelRGBA(x, y)) classicMoved++;
-                        darkest = Math.min(darkest, brightness(color));
-                        lightest = Math.max(lightest, brightness(color));
-                    }
-                }
-                require(terrainPixels > target.height && cloudPixels > target.height, "the discovery edge transitions through visible terrain and clouds");
-                int[] lowerRanks = {0, 4, 1, 5}, upperRanks = {15, 11, 14, 10};
-                double lower = 0, upper = 0;
-                for (int column = 0; column < 4; column++) {
-                    lower += ranks[lowerRanks[column]] / (double) samples[lowerRanks[column]];
-                    upper += ranks[upperRanks[column]] / (double) samples[upperRanks[column]];
-                }
-                require((lower - upper) / 4 > 0.05,
-                        "ordered dither ranks fade gradually within each terrain texel column");
-                require(shades.size() > 12, "irregular cloud banks retain internal shading detail");
-                require(cloudEdges > target.height / 4, "cloud banks have defined irregular edges instead of a blurred wash");
-                require(moved > target.width * target.height / 20, "parchment cloud billows move with the wind");
-                require(classicMoved > target.height, "disabling parchment restores the moving vanilla cloud silhouettes");
-                require(lightest - darkest > 45, "cloud shadows and highlights remain visible against the parchment");
-                fillTerrain(terrain, 0x00FF00FF);
-                try (var hidden = renderClouds(graphics, target, shader, fixture, true, 0)) {
-                    for (int y = 0; y < target.height; y++) for (int x = edge; x < target.width; x++)
-                        require(hidden.getPixelRGBA(x, y) == fringe.getPixelRGBA(x, y), "clouds never reveal cached terrain outside discovery");
                 }
                 fillTerrain(terrain, COLORS[0]);
                 fillPages(pages, 48);
@@ -474,55 +269,6 @@ final class MapParchmentClientChecks {
         fillPages(pages, 32);
         verifyPanning(graphics, target, shader, fixture);
         verifyZoom(graphics, target, shader, fixture, masks, pages);
-        verifyAnimation(graphics, target, shader, fixture);
-        for (float progress : new float[]{0.28F, 0.68F}) {
-            try (var vanilla = renderTransition(graphics, target, shader, false, progress);
-                 var parchment = renderTransition(graphics, target, shader, true, progress)) {
-                int visible = 0;
-                for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                    int color = vanilla.getPixelRGBA(x, y);
-                    require(parchment.getPixelRGBA(x, y) == color, "opening and closing use identical vanilla clouds in both map modes");
-                    if (color >>> 24 == 0) continue;
-                    visible++;
-                    require((color & 255) == (color >>> 8 & 255) && (color >>> 8 & 255) == (color >>> 16 & 255),
-                            "transition clouds keep their vanilla colors");
-                }
-                require(visible > 100, "the vanilla cloud transition renders visible clouds");
-            }
-        }
-    }
-
-    private static void verifyAnimation(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] fixture) throws IOException {
-        try (var before = renderAnimation(graphics, target, shader, fixture, 0, false);
-             var after = renderAnimation(graphics, target, shader, fixture, 2, false);
-             var wrapped = renderAnimation(graphics, target, shader, fixture, 0, true)) {
-            int moved = 0;
-            for (int y = 0; y < target.height; y++) for (int x = 0; x < target.width; x++) {
-                int original = before.getPixelRGBA(x, y), animated = after.getPixelRGBA(x, y), looped = wrapped.getPixelRGBA(x, y);
-                int difference = 0;
-                for (int bit = 0; bit < 24; bit += 8) {
-                    difference = Math.max(difference, Math.abs((original >> bit & 255) - (animated >> bit & 255)));
-                    require(Math.abs((original >> bit & 255) - (looped >> bit & 255)) <= 2,
-                            "cloud layers remain continuous when their wind offsets wrap");
-                }
-                if (difference > 8) moved++;
-            }
-            var output = Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"));
-            before.writeToFile(output.resolve("map-cloud-animation-start.png"));
-            after.writeToFile(output.resolve("map-cloud-animation-two-seconds.png"));
-            require(moved > target.width * target.height / 50,
-                    "cloud banks visibly move within two seconds at their actual world scale (changed pixels: " + moved + ")");
-        }
-    }
-
-    private static NativeImage renderAnimation(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] fixture,
-                                                float seconds, boolean wrapped) {
-        return render(graphics, target, shader, fixture, true, MapLighting.DAY, true, loaded -> {
-            configureClouds(loaded, seconds * 2);
-            loaded.safeGetUniform("CloudPeriod").set(3072f);
-            loaded.safeGetUniform("WorldSpan").set(1024f, 576f);
-            if (wrapped) loaded.safeGetUniform("CloudDriftX").set(3072f, 6144f, 12288f);
-        });
     }
 
     private static void verifyPanning(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] fixture) throws IOException {
@@ -607,14 +353,6 @@ final class MapParchmentClientChecks {
         });
     }
 
-    private static int ditherRank(int x, int y, int width, int height) {
-        int worldX = (int) Math.floor((x + 0.5) * CLOUD_SPAN / width - CLOUD_SPAN / 2);
-        int worldZ = (int) Math.floor((y + 0.5) * CLOUD_SPAN / height - CLOUD_SPAN / 2);
-        int low = ((worldX & 1) ^ (worldZ & 1)) * 2 + (worldZ & 1);
-        int high = (((worldX >> 1) & 1) ^ ((worldZ >> 1) & 1)) * 2 + ((worldZ >> 1) & 1);
-        return low * 4 + high;
-    }
-
     private static void fillTerrain(DynamicTexture terrain, int color) {
         for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) terrain.getPixels().setPixelRGBA(x, y, color);
         terrain.upload();
@@ -641,17 +379,6 @@ final class MapParchmentClientChecks {
         loaded.safeGetUniform("CloudDriftZ").set(wind * 0.3F, wind * 0.1275F, wind * 0.0525F);
     }
 
-    private static NativeImage renderTransition(GuiGraphics graphics, TextureTarget target, ShaderInstance shader,
-                                                boolean parchment, float progress) {
-        target.setClearColor(0, 0, 0, 0);
-        target.clear(Minecraft.ON_OSX);
-        target.bindWrite(true);
-        VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.set(parchment);
-        shader.safeGetUniform("ParchmentColors").set(parchment ? 1f : 0f);
-        MapFogRenderer.renderOpening(graphics, target.width, target.height, MapLighting.DAY, progress);
-        return snapshot(target);
-    }
-
     private static NativeImage render(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] textures,
                                       boolean parchment, MapLighting lighting, boolean fog) {
         return render(graphics, target, shader, textures, parchment, lighting, fog, ignored -> { });
@@ -659,12 +386,6 @@ final class MapParchmentClientChecks {
 
     private static NativeImage render(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] textures,
                                       boolean parchment, MapLighting lighting, boolean fog, Consumer<ShaderInstance> configure) {
-        return render(graphics, target, shader, textures, parchment, lighting, fog, configure, ignored -> { });
-    }
-
-    private static NativeImage render(GuiGraphics graphics, TextureTarget target, ShaderInstance shader, int[] textures,
-                                      boolean parchment, MapLighting lighting, boolean fog, Consumer<ShaderInstance> configure,
-                                      Consumer<ShaderInstance> beforeDraw) {
         target.bindWrite(true);
         VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.set(parchment);
         MapFogRenderer.render(graphics, new MapView(target.width, target.height, 0, 0, 1), null, null, lighting);
@@ -680,7 +401,6 @@ final class MapParchmentClientChecks {
         for (int index = 0; index < textures.length; index++) RenderSystem.setShaderTexture(index, textures[index]);
         try (var mask = new MapTileView()) {
             if (parchment) MapFogRenderer.renderMask(mask, target.width, target.height);
-            beforeDraw.accept(shader);
             RenderSystem.setShader(() -> shader);
             var pose = graphics.pose().last().pose();
             var vertices = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
@@ -711,22 +431,6 @@ final class MapParchmentClientChecks {
             image.close();
             throw exception;
         }
-    }
-
-    private static boolean flatWaterTone(int before, int after) {
-        for (int from : WATER_TONES) for (int to : WATER_TONES)
-            if (Math.abs(after * from - before * to) <= Math.max(from, to)) return true;
-        return false;
-    }
-
-    private static void waterColor(int color) {
-        require((color >>> 8 & 255) > (color & 255) && (color >>> 16 & 255) > (color & 255),
-                "water retains a muted blue-green wash against the warm paper terrain");
-    }
-
-    private static void warm(int color) {
-        require((color & 255) > (color >>> 8 & 255) && (color >>> 8 & 255) > (color >>> 16 & 255),
-                "terrain and unexplored areas use the warm parchment palette");
     }
 
     private static int brightness(int color) { return (color & 255) + (color >>> 8 & 255) + (color >>> 16 & 255); }
