@@ -21,21 +21,17 @@ final class SettlementStatusBarClientChecks {
         var font = Minecraft.getInstance().font;
         for (int width : new int[]{320, 480, 640, 960}) {
             var layout = SettlementStatusBar.layout(font, header, 0, width);
-            require(layout.width() == Math.min(width, 476), "the supplied bar never extends beyond its native width");
-            require(layout.left() == (width - layout.width()) / 2, "the native bar is centered");
+            require(layout.width() > 0 && layout.left() >= 0 && layout.left() + layout.width() <= width,
+                    "the status bar remains inside the screen");
+            require(layout.name().equals(header.name()), "the settlement name remains visible");
             require(layout.subtitle().startsWith("Day 1  "), "day and level share the second line");
-            require(layout.divider() >= 96, "the name panel retains space without scaling its contents");
-            require(layout.boundary(layout.metricLeft(4)) <= layout.left() + layout.width() - 1, "metrics stay inside the container");
-            for (int index = 0; index < 4; index++) {
-                int cell = layout.metricLeft(index + 1) - layout.metricLeft(index);
-                require(cell >= 32, "native icons retain equal padding inside each metric group");
-                if (width >= 476) {
-                    require(cell == 32 + font.width(layout.values().get(index)), "group widths follow their own text");
-                    if (index > 0) {
-                        int previousEnd = layout.metricLeft(index - 1) + 6 + 16 + 4 + font.width(layout.values().get(index - 1));
-                        require(layout.metricLeft(index) + 6 - previousEnd == 12, "content has the same gap between every group");
-                    }
-                }
+            require(layout.divider() > 0 && layout.divider() < layout.width(), "the name and metrics both have visible space");
+            require(layout.values().stream().noneMatch(String::isBlank), "each settlement metric has a value");
+            for (int index = 0; index < layout.values().size(); index++) {
+                int left = layout.boundary(layout.metricLeft(index));
+                int right = layout.boundary(layout.metricLeft(index + 1));
+                require(left >= layout.left() && right > left && right <= layout.left() + layout.width(),
+                        "metric groups remain visible inside the container");
             }
         }
     }

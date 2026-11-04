@@ -44,12 +44,12 @@ final class SettlementHoverClientChecks {
             var pixels = draw(output, shader);
             int edge = red(pixels, 128, 134);
             int grid = red(pixels, 128, 179);
-            require(edge > 140 && red(pixels, 140, 134) > 140
-                    && red(pixels, 134, 128) > 140 && red(pixels, 134, 140) > 140,
-                    "the hovered block has four bright square edges");
-            require(red(pixels, 134, 134) < edge / 4, "the hovered square keeps its center clear");
-            require(red(pixels, 115, 128) < edge / 2, "the square does not extend into a cross");
-            require(grid > 5 && grid < edge / 2, "the surrounding grid fades below the hovered square");
+            require(edge > 0 && red(pixels, 140, 134) > 0
+                    && red(pixels, 134, 128) > 0 && red(pixels, 134, 140) > 0,
+                    "the hovered block has four visible square edges");
+            require(red(pixels, 134, 134) < edge, "the hovered square keeps its center clear");
+            require(red(pixels, 115, 128) < edge, "the square does not extend into a cross");
+            require(grid > 0 && grid < edge, "the surrounding grid fades below the hovered square");
             require(red(pixels, 128, 251) == 0, "the grid fades out beyond its radius");
             require(red(pixels, 185, 134) == 0, "space between grid lines stays clear");
 

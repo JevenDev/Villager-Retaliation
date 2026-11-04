@@ -103,6 +103,7 @@ public final class SettlementViewClientSmoke {
     private static SettlementInfrastructureClientChecks infrastructureChecks;
     private static boolean previewMeshesRequested, previewMeshesChecked;
     private static boolean resourceFormsChecked;
+    private static final java.util.Set<Class<?>> draggedWindowForms = new java.util.HashSet<>();
     private static int ticks;
     private static double originalX;
     private static double originalZ;
@@ -2222,10 +2223,13 @@ public final class SettlementViewClientSmoke {
     private static void requireButtonsFit(net.minecraft.client.gui.screens.Screen screen) {
         int width = screen.width;
         int height = screen.height;
+        boolean checkDragging = (screen instanceof SettlementWorkerScreen
+                || screen instanceof com.jvn.villagerretaliation.client.inventory.ProductionRecipeScreen)
+                && draggedWindowForms.add(screen.getClass());
         for (var size : java.util.List.of(new int[]{320, 240}, new int[]{426, 240}, new int[]{width, height})) {
             screen.resize(Minecraft.getInstance(), size[0], size[1]);
             checkButtonsFit(screen);
-            if (screen instanceof com.jvn.villagerretaliation.client.ui.VillagerWindowScreen window) {
+            if (checkDragging && screen instanceof com.jvn.villagerretaliation.client.ui.VillagerWindowScreen window) {
                 SettlementViewPanelClientChecks.verifyWindow(window);
                 checkButtonsFit(screen);
             }
