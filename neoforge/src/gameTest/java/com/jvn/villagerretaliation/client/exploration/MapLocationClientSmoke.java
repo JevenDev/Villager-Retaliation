@@ -46,6 +46,7 @@ public final class MapLocationClientSmoke {
     @SubscribeEvent public static void afterRender(ScreenEvent.Render.Post event) {
         if (System.getProperty(OUTPUT) != null && !compassChecked && event.getScreen() instanceof ExploredMapScreen screen
                 && screen.transitionProgress() == 1) {
+            MapHudClientChecks.verify(screen);
             MapCompassClientChecks.verify(screen);
             MapParchmentClientChecks.verify(screen);
             compassChecked = true;

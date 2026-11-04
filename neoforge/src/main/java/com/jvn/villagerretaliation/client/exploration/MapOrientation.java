@@ -12,14 +12,12 @@ final class MapOrientation {
         return Math.max(1, (int) ((fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1) * power));
     }
     static void render(GuiGraphics graphics, MapView view, Font font, int mouseX, int mouseY, boolean minimap) {
-        int northX = view.width() - (minimap ? 10 : 22), northY = minimap ? 5 : 66;
-        graphics.fill(northX - 7, northY - 2, northX + 8, northY + (minimap ? 11 : 26), 0x99000000);
-        graphics.drawCenteredString(font, MapLayers.text("north"), northX, northY, 0xffeee8d8);
-        if (minimap) return;
-        graphics.vLine(northX, northY + 13, northY + 22, 0xffeee8d8);
-        graphics.fill(northX - 1, northY + 11, northX + 2, northY + 13, 0xffeee8d8);
-        graphics.fill(northX - 3, northY + 13, northX - 1, northY + 15, 0xffeee8d8);
-        graphics.fill(northX + 2, northY + 13, northX + 4, northY + 15, 0xffeee8d8);
+        if (minimap) {
+            int northX = view.width() - 10, northY = 5;
+            graphics.fill(northX - 7, northY - 2, northX + 8, northY + 11, 0x99000000);
+            graphics.drawCenteredString(font, MapLayers.text("north"), northX, northY, 0xffeee8d8);
+            return;
+        }
         int blocks = scaleBlocks(view.scale(), 80), pixels = (int) Math.round(blocks * view.scale());
         int x = 10, y = view.height() - 40;
         var label = MapLayers.text("scale", blocks);

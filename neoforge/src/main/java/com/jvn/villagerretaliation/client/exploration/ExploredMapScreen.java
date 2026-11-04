@@ -19,7 +19,7 @@ public final class ExploredMapScreen extends Screen {
     private java.util.List<MapMarkerLayout.Group> renderedMarkers = java.util.List.of();
     private final MapNavigation navigation = new MapNavigation();
     private final MapScreenTransition transition = new MapScreenTransition();
-    private boolean centered, following;
+    private boolean centered, following, hudKeyDown;
     private Button followButton;
     private long renderedFrames;
     public ExploredMapScreen() { this(null); }
@@ -74,6 +74,17 @@ public final class ExploredMapScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("map.villagerretaliation.center"), b -> center()).bounds(10, height - 26, 80, 20).build());
         addRenderableWidget(Button.builder(Component.literal("\u2212"), b -> zoomAt(width / 2.0, height / 2.0, view().scale() / 1.25)).bounds(96, height - 26, 24, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> zoomAt(width / 2.0, height / 2.0, view().scale() * 1.25)).bounds(124, height - 26, 24, 20).build());
+        updateHudVisibility();
+    }
+    private void updateHudVisibility() {
+        boolean visible = !minecraft.options.hideGui;
+        for (var child : children()) if (child instanceof AbstractWidget widget) widget.visible = visible;
+        if (!visible) {
+            setFocused(null);
+            locations.close();
+            relations.closePopup();
+            renderedMarkers = java.util.List.of();
+        }
     }
     private void follow(boolean enabled) {
         following = enabled;
@@ -86,6 +97,8 @@ public final class ExploredMapScreen extends Screen {
     @Override public boolean isPauseScreen() { return false; }
     @Override public void renderBackground(GuiGraphics graphics, int x, int y, float partial) { }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partial) {
+        updateHudVisibility();
+        if (!minecraft.isWindowActive()) hudKeyDown = false;
         navigation.update(System.nanoTime(), minecraft.isWindowActive());
         if (following && minecraft.screen == this && minecraft.player != null) navigation.focus(minecraft.player.getX(), minecraft.player.getZ());
         var repository = ExploredMapClient.repository();
@@ -99,25 +112,29 @@ public final class ExploredMapScreen extends Screen {
         if (repository != null) {
             var view = view();
             TILES.render(graphics, view, lighting);
-            graphics.enableScissor(0, 0, width, height);
-            relations.renderTerrain(graphics, view, layers);
-            relations.render(graphics, view, font, layers, false);
-            var destinations = MapMarkerOverlay.visible(destinations(), layers);
-            for (var destination : destinations)
-                if (destination.kind() == MapDestination.Kind.QUEST) QuestMapOverlay.renderArea(graphics, view, destination);
-            renderedMarkers = MapMarkerLayout.groups(destinations, view, priorityMarker());
-            MapMarkerOverlay.render(graphics, view, font, renderedMarkers, layers, priorityMarker(), mouseX, mouseY, false);
-            if (minecraft.player != null) MapPlayerIcon.render(graphics, (float)view.screenX(minecraft.player.getX()),
-                    (float)view.screenY(minecraft.player.getZ()), minecraft.player.getViewYRot(partial));
-            MapDestinationTracker.render(graphics, view, font, false);
-            MapOrientation.render(graphics, view, font, mouseX, mouseY, false);
-            graphics.disableScissor(); renderedFrames++;
-            if (!repository.error().isEmpty()) graphics.drawString(font, Component.translatable("map.villagerretaliation.storage_error"), 160, height - 20, 0xff9999);
+            renderedFrames++;
+            if (!minecraft.options.hideGui) {
+                graphics.enableScissor(0, 0, width, height);
+                relations.renderTerrain(graphics, view, layers);
+                relations.render(graphics, view, font, layers, false);
+                var destinations = MapMarkerOverlay.visible(destinations(), layers);
+                for (var destination : destinations)
+                    if (destination.kind() == MapDestination.Kind.QUEST) QuestMapOverlay.renderArea(graphics, view, destination);
+                renderedMarkers = MapMarkerLayout.groups(destinations, view, priorityMarker());
+                MapMarkerOverlay.render(graphics, view, font, renderedMarkers, layers, priorityMarker(), mouseX, mouseY, false);
+                if (minecraft.player != null) MapPlayerIcon.render(graphics, (float)view.screenX(minecraft.player.getX()),
+                        (float)view.screenY(minecraft.player.getZ()), minecraft.player.getViewYRot(partial));
+                MapDestinationTracker.render(graphics, view, font, false);
+                MapOrientation.render(graphics, view, font, mouseX, mouseY, false);
+                graphics.disableScissor();
+                if (!repository.error().isEmpty()) graphics.drawString(font, Component.translatable("map.villagerretaliation.storage_error"), 160, height - 20, 0xff9999);
+            }
         } else {
             graphics.fill(0, 0, width, height, lighting.background());
-            graphics.drawCenteredString(font, Component.translatable("map.villagerretaliation.connecting"), width / 2, height / 2, 0xddd7cc);
+            if (!minecraft.options.hideGui) graphics.drawCenteredString(font, Component.translatable("map.villagerretaliation.connecting"), width / 2, height / 2, 0xddd7cc);
         }
         if (opening < 1) MapFogRenderer.renderOpening(graphics, width, height, lighting, opening);
+        if (minecraft.options.hideGui) return;
         float controlsAlpha = MapScreenTransition.ease(Math.clamp((opening - .8f) / .2f, 0, 1));
         for (var child : children()) if (child instanceof AbstractWidget widget) widget.setAlpha(controlsAlpha);
         if (controlsAlpha < .02f) return;
@@ -139,8 +156,8 @@ public final class ExploredMapScreen extends Screen {
         return MapMarkerLayout.groups(MapMarkerOverlay.visible(destinations(), layers), view(), priorityMarker());
     }
     private String priorityMarker() { return MapDestinationTracker.key().isEmpty() ? selectedMarker : MapDestinationTracker.key(); }
-    MapMarkerLayout.Group hoveredMarker(double x, double y) { return MapMarkerOverlay.at(renderedMarkers, x, y); }
-    MapMarkerLayout.Group markerAt(double x, double y) { return MapMarkerOverlay.at(markerGroups(), x, y); }
+    MapMarkerLayout.Group hoveredMarker(double x, double y) { return minecraft.options.hideGui ? null : MapMarkerOverlay.at(renderedMarkers, x, y); }
+    MapMarkerLayout.Group markerAt(double x, double y) { return minecraft.options.hideGui ? null : MapMarkerOverlay.at(markerGroups(), x, y); }
     void showDestination(MapDestination destination) { locations.open(destination, width / 2, height / 2); }
     void shareLocations() { locations.shareAll(); }
     void selectMarker(MapDestination destination) { selectedMarker = destination.key(); }
@@ -156,13 +173,17 @@ public final class ExploredMapScreen extends Screen {
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (transition.closing()) return true;
         finishOpening();
-        if (locations.scroll(x, y, vertical) || relations.scroll(x, y, vertical)) return true;
+        if (!minecraft.options.hideGui && (locations.scroll(x, y, vertical) || relations.scroll(x, y, vertical))) return true;
         zoomAt(x, y, view().scale() * Math.pow(1.15, vertical)); return true;
     }
     @Override public boolean mouseClicked(double x, double y, int button) {
         if (ExploredMapClient.OPEN.matchesMouse(button)) { onClose(); return true; }
         if (transition.closing()) return true;
         finishOpening();
+        if (minecraft.options.hideGui) {
+            if (button == 0) { navigation.beginDrag(); return true; }
+            return false;
+        }
         if (locations.clickOpen(x, y, button)) return true;
         if (relations.clickOpen(x, y, button)) return true;
         if (super.mouseClicked(x, y, button)) return true;
@@ -179,26 +200,37 @@ public final class ExploredMapScreen extends Screen {
         return super.mouseDragged(x, y, button, dx, dy);
     }
     @Override public void mouseMoved(double x, double y) {
-        locations.hover(x, y);
-        super.mouseMoved(x, y);
+        if (!minecraft.options.hideGui) {
+            locations.hover(x, y);
+            super.mouseMoved(x, y);
+        }
     }
     @Override public boolean keyPressed(int key, int scan, int modifiers) {
         if (transition.closing()) {
             if (ExploredMapClient.OPEN.matches(key, scan) || key == GLFW.GLFW_KEY_ESCAPE) onClose();
             return true;
         }
-        if (locations.key(key)) { finishOpening(); return true; }
-        if (relations.key(key)) { finishOpening(); return true; }
+        if (key == GLFW.GLFW_KEY_F1) {
+            if (!hudKeyDown) {
+                hudKeyDown = true;
+                minecraft.options.hideGui = !minecraft.options.hideGui;
+                updateHudVisibility();
+            }
+            return true;
+        }
+        if (!minecraft.options.hideGui && locations.key(key)) { finishOpening(); return true; }
+        if (!minecraft.options.hideGui && relations.key(key)) { finishOpening(); return true; }
         if (ExploredMapClient.OPEN.matches(key, scan) || key == GLFW.GLFW_KEY_ESCAPE) { onClose(); return true; }
         finishOpening();
-        if ((modifiers & GLFW.GLFW_MOD_CONTROL) != 0 && key == GLFW.GLFW_KEY_F) {
+        if (!minecraft.options.hideGui && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0 && key == GLFW.GLFW_KEY_F) {
             minecraft.setScreen(new MapSearchScreen(this)); return true;
         }
         if (key == GLFW.GLFW_KEY_HOME) { center(); return true; }
         if (navigation.press(key)) { follow(false); return true; } return super.keyPressed(key, scan, modifiers);
     }
     @Override public boolean keyReleased(int key, int scan, int modifiers) {
+        if (key == GLFW.GLFW_KEY_F1) { hudKeyDown = false; return true; }
         if (navigation.release(key)) return true; return super.keyReleased(key, scan, modifiers);
     }
-    @Override public void removed() { navigation.clear(); transition.suspend(); relations.closePopup(); }
+    @Override public void removed() { hudKeyDown = false; navigation.clear(); transition.suspend(); relations.closePopup(); }
 }
