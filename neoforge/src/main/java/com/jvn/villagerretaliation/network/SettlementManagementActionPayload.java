@@ -142,6 +142,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 buffer.writeBoolean(job.paused());
                 buffer.writeUUID(job.worker());
             }
+            case PauseProject pause -> {
+                buffer.writeEnum(Kind.PAUSE_PROJECT);
+                buffer.writeUUID(pause.project());
+                buffer.writeBoolean(pause.paused());
+            }
             case CancelProject cancel -> {
                 buffer.writeEnum(Kind.CANCEL_PROJECT);
                 buffer.writeUUID(cancel.project());
@@ -326,6 +331,7 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
                 yield new ConfigureProject(project, revision, priority, assistants);
             }
             case CONFIGURE_FARM_JOB -> new ConfigureFarmJob(buffer.readUUID(), buffer.readVarLong(), buffer.readVarInt(), buffer.readBoolean(), buffer.readUUID());
+            case PAUSE_PROJECT -> new PauseProject(buffer.readUUID(), buffer.readBoolean());
             case CANCEL_PROJECT -> new CancelProject(buffer.readUUID());
             case REORDER_PROJECT -> new ReorderProject(buffer.readUUID(), buffer.readUUID(), buffer.readVarLong());
             case ASSIGN -> new Assign(buffer.readUUID(), buffer.readUUID());
@@ -546,11 +552,11 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
 
     private enum Kind {
         ADVANCE, ASSIGN, RELEASE, APPLICANT, SAVE_AREA, REMOVE_AREA, CONFIGURE_DEPOT, STOCK_TARGET,
-        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT, REORDER_PROJECT, CONFIGURE_FARM_JOB
+        TREASURY, BUDGET, SAVE_ORDER, REMOVE_ORDER, PERMISSIONS, TRANSFER, INVENTORY, VIEW, GUARD, SAVE_WORKER, START_PROJECT, CANCEL_PROJECT, DRAFT_BLUEPRINT, PLACE_BLUEPRINT, BREW, HOME, COMMISSION_BUILDING, WORKER_ENABLED, MANAGEMENT, CLAIM_PLOT, AUTOMATIC_STAFFING, SAVE_WORKSITE, RESET_WORKER, FILL_STAFFING, CONFIGURE_PROJECT, SAVE_ROUTE, SAVE_STORAGE, STORAGE_FILTER, SAVE_STORAGE_FILTER, SAVE_EQUIPMENT, REORDER_PROJECT, CONFIGURE_FARM_JOB, PAUSE_PROJECT
     }
 
     public sealed interface Command permits Advance, Assign, Release, Applicant, SaveArea, RemoveArea,
-            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment, ReorderProject, ConfigureFarmJob {
+            ConfigureDepot, StockTarget, Treasury, Budget, SaveOrder, RemoveOrder, Permissions, Transfer, Inventory, View, Guard, SaveWorker, StartProject, CancelProject, DraftBlueprint, PlaceBlueprint, Brew, Home, CommissionBuilding, WorkerEnabled, Management, ClaimPlot, AutomaticStaffing, SaveWorksite, ResetWorker, FillStaffing, ConfigureProject, SaveRoute, SaveStorage, StorageFilter, SaveStorageFilter, SaveEquipment, ReorderProject, ConfigureFarmJob, PauseProject {
     }
 
     public record ConfigureFarmJob(UUID job, long revision, int priority, boolean paused, UUID worker) implements Command {
@@ -704,6 +710,10 @@ public record SettlementManagementActionPayload(UUID town, Command command, UUID
             Objects.requireNonNull(before);
             if (revision < 0 || project.equals(before)) throw new IllegalArgumentException("Invalid pending project move");
         }
+    }
+
+    public record PauseProject(UUID project, boolean paused) implements Command {
+        public PauseProject { Objects.requireNonNull(project); }
     }
 
     public record CancelProject(UUID project) implements Command {

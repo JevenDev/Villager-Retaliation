@@ -11,7 +11,8 @@ public enum BuilderBuildPhase {
     DEPOSITING_LEFTOVERS("depositing_leftovers"),
     COMPLETE("complete"),
     BLOCKED("blocked"),
-    CANCELLED("cancelled");
+    CANCELLED("cancelled"),
+    PAUSED("paused");
 
     private final String id;
 

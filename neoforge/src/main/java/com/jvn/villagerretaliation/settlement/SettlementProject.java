@@ -21,6 +21,7 @@ public final class SettlementProject {
     private final BlockPos max;
     private CompoundTag task;
     private Status status;
+    private boolean paused;
     private SettlementConstructionSite site;
     private SettlementArea workplace;
     private UUID previousArea;
@@ -46,6 +47,15 @@ public final class SettlementProject {
     private boolean checkedPlanMatches;
 
     public CompoundTag materialEscrow() { return this.materialEscrow; }
+    public boolean paused() { return this.paused; }
+
+    boolean pause(boolean paused) {
+        if (!unfinished() || this.paused == paused) return false;
+        this.paused = paused;
+        if (this.crew != null) this.crew.releaseAll();
+        return true;
+    }
+
     public boolean pending() { return this.status == Status.PENDING; }
     public boolean unfinished() { return active() || pending(); }
     UUID authority() { return this.authority; }
@@ -286,6 +296,7 @@ public final class SettlementProject {
     }
 
     public String blocker() {
+        if (this.paused) return "paused";
         if (pending() && !this.task.getString("BlockedReason").isEmpty() && !this.task.getString("BlockedReason").equals("materials")) {
             return this.task.getString("BlockedReason");
         }
@@ -311,7 +322,7 @@ public final class SettlementProject {
     }
 
     public com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase() {
-        return BuilderTaskState.phase(state());
+        return this.paused ? com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED : BuilderTaskState.phase(state());
     }
 
     boolean overlaps(SettlementProject other) {
@@ -355,6 +366,7 @@ public final class SettlementProject {
             return false;
         }
         this.status = status;
+        this.paused = false;
         if (this.crew != null) this.crew.releaseAll();
         if (status == Status.COMPLETED) {
             if (this.crew != null) this.crew.refresh(ignored -> true);
@@ -382,6 +394,7 @@ public final class SettlementProject {
         tag.getCompound("Task").putUUID("RequestedBuilder", this.requestedBuilder);
         if (this.site != null) tag.put("Site", this.site.save());
         tag.putString("Status", this.status.name());
+        tag.putBoolean("Paused", this.paused);
         if (this.workplace != null) tag.put("Workplace", this.workplace.save());
         if (this.previousArea != null) tag.putUUID("PreviousArea", this.previousArea);
         if (this.previousSettings != null) tag.put("PreviousSettings", this.previousSettings.save());
@@ -425,6 +438,8 @@ public final class SettlementProject {
             project.crew = SettlementConstructionCrew.load(tag.getCompound("Crew"), project.builder, project.total(), project.task.getInt("PlacedIndex"));
         }
         project.repairOf=tag.hasUUID("RepairOf")?tag.getUUID("RepairOf"):null;
+        project.paused = tag.getBoolean("Paused");
+        if (project.paused && !project.unfinished()) throw new IllegalArgumentException("Finished construction cannot be paused");
         project.fee = tag.getInt("Fee");
         project.materialEscrow = tag.getCompound("MaterialEscrow").copy();
         SettlementConstructionMaterials.validate(project.materialEscrow, project.order != null

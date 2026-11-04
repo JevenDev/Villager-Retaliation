@@ -500,6 +500,10 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 action(3, selected instanceof SettlementManagementPayload.Project project && project.farm() != null ? "farm_job" : "project_crew",
                         selected instanceof SettlementManagementPayload.Project);
                 action(4, "policy.create", selected instanceof SettlementManagementPayload.Project project && project.farm() == null);
+                action(5, selected instanceof SettlementManagementPayload.Project project
+                        && project.phase() == com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED ? "resume_project" : "pause_project",
+                        permits(SettlementPermission.BUILD) && selected instanceof SettlementManagementPayload.Project project && project.farm() == null
+                                && (project.status() == SettlementProject.Status.ACTIVE || project.status() == SettlementProject.Status.PENDING));
                 this.actions[3].setMessage(Component.literal(selected instanceof SettlementManagementPayload.Project project && project.farm() != null
                         ? "Manage preparation" : "Construction crew"));
 
@@ -657,7 +661,9 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                 } else if (action == 1 && selected != null) {
                     confirm("cancel_project", selected, () -> submit(new SettlementManagementActionPayload.CancelProject(selected.id())));
                 } else if (selected instanceof SettlementManagementPayload.Project project) {
-                    if (action == 4) this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id(),
+                    if (action == 5) submit(new SettlementManagementActionPayload.PauseProject(project.id(),
+                            project.phase() != com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED));
+                    else if (action == 4) this.minecraft.setScreen(new SettlementPoliciesScreen(this, this.snapshot.header().id(),
                             new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
                                     com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER, project.id(), null, null,
                                     net.minecraft.world.item.ItemStack.EMPTY, 0)));
@@ -959,7 +965,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
             case SettlementManagementPayload.Order order -> text("order_row", enumText("direction", order.direction()), order.target(),
                     text(order.enabled() ? "enabled" : "disabled"));
             case SettlementManagementPayload.Project project -> project.farm() != null ? farmProgress(project) : text("project_row",
-                    project.status() == SettlementProject.Status.ACTIVE ? enumText("project_phase", project.phase())
+                    project.status() == SettlementProject.Status.ACTIVE || project.phase() == com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED ? enumText("project_phase", project.phase())
                             : enumText("project_status", project.status()), project.placed(), project.total());
             case SettlementManagementPayload.History history -> text("history_time", history.gameTime() / 24_000L + 1L);
             case SettlementManagementPayload.Delegate delegate -> Component.literal(String.join(", ",
@@ -1112,7 +1118,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                     }
                     lines.add(Component.literal(project.status() == SettlementProject.Status.PENDING
                             ? "Drag onto another pending project to change queue order."
-                            : project.status() == SettlementProject.Status.ACTIVE ? "Active construction cannot be moved or paused. Cancel to stop."
+                            : project.status() == SettlementProject.Status.ACTIVE ? "Pause to suspend construction while keeping supplies and the reserved site."
                             : "Construction finished."));
                     if (project.status() == SettlementProject.Status.PENDING) {
                         var earlier = blockingProject(project);

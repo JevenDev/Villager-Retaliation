@@ -134,7 +134,7 @@ public final class SettlementConstructionService {
                 .forEach(project -> project.order().record(level, town, project));
         int active = (int) town.projects().values().stream().filter(SettlementProject::active).count();
         for (var project : List.copyOf(town.projects().values())) {
-            if (!project.pending()) continue;
+            if (!project.pending() || project.paused()) continue;
             if (active >= project.capacity(town)) continue;
             String blocker = "";
             if (!town.permits(project.authority(), SettlementPermission.BUILD)) blocker = "permission";
@@ -382,6 +382,27 @@ public final class SettlementConstructionService {
         return true;
     }
 
+    public static boolean pause(ServerPlayer player, SettlementRecord town, UUID projectId, boolean paused) {
+        if (!canBuild(player, town) || SettlementSavedData.get(player.serverLevel()).readOnly()) return false;
+        var project = town.projects().get(projectId);
+        if (project == null || !project.pause(paused)) return false;
+        town.changed();
+        if (paused) {
+            for (var id : java.util.stream.Stream.concat(java.util.stream.Stream.of(project.builder()), project.assistants().stream()).toList()) {
+                if (player.serverLevel().getEntity(id) instanceof Villager builder) {
+                    builder.getNavigation().stop();
+                    HiredWorkSession.invalidate(builder);
+                }
+            }
+        }
+        return true;
+    }
+
+    public static boolean paused(Villager builder, CompoundTag state) {
+        var project = project(builder, state);
+        return project != null && project.paused();
+    }
+
     public static boolean cancel(ServerPlayer player, SettlementRecord town, UUID projectId) {
         var project = town.projects().get(projectId);
         if (!canBuild(player, town) || project == null || !project.unfinished()) {
@@ -448,7 +469,7 @@ public final class SettlementConstructionService {
         if (project == null) {
             return duty == null && !state.getCompound(BuilderTaskState.TASK_TAG).hasUUID("SettlementTown");
         }
-        return project.active() && duty != null && duty.area().enabled() && duty.town().owns(project)
+        return project.active() && !project.paused() && duty != null && duty.area().enabled() && duty.town().owns(project)
                 && project.includes(builder.getUUID()) && duty.town().assignedProject(builder.getUUID()) == project
                 && builder.level().getWorldBorder().isWithinBounds(project.min()) && builder.level().getWorldBorder().isWithinBounds(project.max())
                 && project.town().equals(duty.town().id().value()) && duty.area().type() == SettlementAreaType.CONSTRUCTION
@@ -466,7 +487,7 @@ public final class SettlementConstructionService {
 
     public static void observe(Villager builder, CompoundTag state) {
         var project = project(builder, state);
-        if (project == null || !project.active() || !project.includes(builder.getUUID())) return;
+        if (project == null || !project.active() || project.paused() || !project.includes(builder.getUUID())) return;
         var town = town(builder, state);
         if (project.crew() != null) {
             var plan = scan((ServerLevel) builder.level(), project);

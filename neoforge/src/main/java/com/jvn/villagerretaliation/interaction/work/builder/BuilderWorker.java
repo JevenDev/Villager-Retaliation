@@ -114,6 +114,11 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.builder.choose_structure");
         }
 
+        if (SettlementConstructionService.paused(villager, context.state())) {
+            villager.getNavigation().stop();
+            return WorkResult.idle("interaction.work.builder.paused");
+        }
+
         Optional<BuilderStructureScanner.StructurePlan> plan = currentPlan(level, context.state());
         if (plan.isEmpty()) {
             BuilderTaskState.setBlocked(context.state(), "missing_structure");

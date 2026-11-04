@@ -34,6 +34,7 @@ final class SettlementManagementValidation {
             case PlaceBlueprint ignored -> SettlementPermission.BUILD;
             case CommissionBuilding ignored -> SettlementPermission.BUILD;
             case StartProject ignored -> SettlementPermission.BUILD;
+            case PauseProject ignored -> SettlementPermission.BUILD;
             case CancelProject ignored -> SettlementPermission.BUILD;
             case ConfigureProject ignored -> SettlementPermission.BUILD;
             case ReorderProject ignored -> SettlementPermission.BUILD;

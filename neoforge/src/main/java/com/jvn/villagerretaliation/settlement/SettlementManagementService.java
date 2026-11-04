@@ -102,6 +102,8 @@ public final class SettlementManagementService {
                     project.project(), project.revision(), project.priority(), project.assistants()), command);
             case SettlementManagementActionPayload.ConfigureFarmJob job -> result(SettlementFarmJobService.configure(player, town,
                     job.job(), job.revision(), job.priority(), job.paused(), job.worker()), command);
+            case SettlementManagementActionPayload.PauseProject pause -> result(SettlementConstructionService.pause(player, town,
+                    pause.project(), pause.paused()), command);
             case SettlementManagementActionPayload.CancelProject cancel -> result(town.farmJobs().containsKey(cancel.project())
                     ? SettlementFarmJobService.cancel(player, town, cancel.project())
                     : SettlementConstructionService.cancel(player, town, cancel.project()), command);
