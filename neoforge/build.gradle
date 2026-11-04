@@ -201,6 +201,7 @@ neoForge {
             gameDirectory.set(mapLocationClientSmokeDirectory)
             systemProperty 'villagerretaliation.mapLocationClientSmoke', mapLocationClientSmokeDirectory.get().asFile.absolutePath
             systemProperty 'villagerretaliation.mapRecordedTerrainSource', providers.gradleProperty('mapRecordedTerrainSource').orElse('').get()
+            systemProperty 'villagerretaliation.mapShaderClientSmokeOnly', providers.gradleProperty('mapShaderClientSmokeOnly').orElse('false').get()
             programArguments.addAll '--quickPlaySingleplayer', 'MapLocationSmoke', '--width', '1280', '--height', '720'
         }
 

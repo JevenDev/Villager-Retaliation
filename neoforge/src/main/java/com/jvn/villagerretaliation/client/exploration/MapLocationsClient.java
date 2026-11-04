@@ -37,7 +37,12 @@ public final class MapLocationsClient {
         return Component.translatable("map.villagerretaliation.location." + key, arguments);
     }
 
+    public static Component iconName(MapLocation.Icon icon) {
+        return icon.mapSprite() ? text("icon." + icon.name().toLowerCase(Locale.ROOT)) : icon(icon).getHoverName();
+    }
+
     public static ItemStack icon(MapLocation.Icon icon) {
+        if (icon.mapSprite()) return ItemStack.EMPTY;
         return icons.computeIfAbsent(icon, value -> value == MapLocation.Icon.OMINOUS_BANNER
                 ? Raid.getLeaderBannerInstance(Minecraft.getInstance().level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN))
                 : new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(value.name().toLowerCase(Locale.ROOT)))));

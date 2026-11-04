@@ -57,6 +57,10 @@ final class MapDestinationTracker {
                     graphics.fill(-half, row, half + 1, row + 1, 0xffffe8a3);
                 }
                 graphics.pose().popPose();
+            } else if (MapMarkerLayout.bottomAnchored(target)) {
+                var box = MapMarkerLayout.sprite(target, view).bounds();
+                graphics.renderOutline(box.left() - 3, box.top() - 3, box.right() - box.left() + 6,
+                        box.bottom() - box.top() + 6, 0xffffe8a3);
             } else graphics.renderOutline((int) x - 11, (int) y - 11, 23, 23, 0xffffe8a3);
         }
         Component label = minimap ? (sameDimension ? distance(target) : MapLayers.text("other_dimension_short"))

@@ -79,7 +79,7 @@ final class SettlementViewPopup {
         }
         Component hint = Component.translatable("villagerretaliation.gui.settlement_view.action_hint").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC);
         int textWidth = details.stream().mapToInt(font::width).max().orElse(0);
-        for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> ") + (action.icon().isEmpty() ? 0 : 20));
+        for (var action : actions) textWidth = Math.max(textWidth, font.width(action.label()) + font.width("-> ") + (action.hasIcon() ? 20 : 0));
         if (!actions.isEmpty()) textWidth = Math.max(textWidth, font.width(hint));
         int minimumLeft = this.target.kind() == Kind.BUILD ? Math.max(4, this.anchorX) : 4;
         int availableWidth = this.target.kind() == Kind.BUILD ? viewportWidth - minimumLeft - 4 : viewportWidth - 16;
@@ -97,9 +97,9 @@ final class SettlementViewPopup {
         this.buttons.clear();
         this.contentHeight = this.textHeight;
         for (var action : actions) {
-            var label = font.split(action.label(), this.width - PADDING * 2 - font.width("-> ") - (action.icon().isEmpty() ? 0 : 20));
-            int labelWidth = label.stream().mapToInt(font::width).max().orElse(0) + font.width("-> ") + (action.icon().isEmpty() ? 0 : 20);
-            Button button = new ActionButton(font, action, label, Math.min(this.width - PADDING * 2, labelWidth + HIT_PADDING), Math.max(label.size() * this.lineHeight, action.icon().isEmpty() ? 0 : 18));
+            var label = font.split(action.label(), this.width - PADDING * 2 - font.width("-> ") - (action.hasIcon() ? 20 : 0));
+            int labelWidth = label.stream().mapToInt(font::width).max().orElse(0) + font.width("-> ") + (action.hasIcon() ? 20 : 0);
+            Button button = new ActionButton(font, action, label, Math.min(this.width - PADDING * 2, labelWidth + HIT_PADDING), Math.max(label.size() * this.lineHeight, action.hasIcon() ? 18 : 0));
             this.buttons.add(button);
             this.bodyWidth = Math.max(this.bodyWidth, labelWidth);
             this.contentHeight += button.getHeight();
@@ -274,12 +274,14 @@ final class SettlementViewPopup {
     private static final class ActionButton extends Button {
         private final Font font;
         private final net.minecraft.world.item.ItemStack icon;
+        private final WorldViewMenu.IconRenderer renderer;
         private final List<FormattedCharSequence> lines;
 
         private ActionButton(Font font, Action action, List<FormattedCharSequence> lines, int width, int height) {
             super(0, 0, width, height, action.label(), ignored -> action.run().run(), DEFAULT_NARRATION);
             this.font = font;
             this.icon = action.icon();
+            this.renderer = action.renderer();
             this.lines = lines;
             this.active = action.enabled();
         }
@@ -289,11 +291,12 @@ final class SettlementViewPopup {
             int color = !this.active ? 0x555555 : isFocused() ? 0xFFFFFF : 0xAAAAAA;
             graphics.drawString(this.font, isFocused() ? "->" : ">", getX(), getY(), color);
             int textX = getX() + this.font.width("-> ");
-            if (!this.icon.isEmpty()) {
-                graphics.renderItem(this.icon, textX, getY());
+            if (this.renderer != null || !this.icon.isEmpty()) {
+                if (this.renderer != null) this.renderer.render(graphics, textX, getY());
+                else graphics.renderItem(this.icon, textX, getY());
                 textX += 20;
             }
-            int y = getY() + (this.icon.isEmpty() ? 0 : 4);
+            int y = getY() + (this.renderer != null || !this.icon.isEmpty() ? 4 : 0);
             for (var line : this.lines) {
                 graphics.drawString(this.font, line, textX, y, color);
                 y += this.font.lineHeight + 1;
@@ -315,7 +318,12 @@ final class SettlementViewPopup {
         }
     }
 
-    record Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon, Component disabledReason) {
+    record Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon,
+                  Component disabledReason, WorldViewMenu.IconRenderer renderer) {
+        boolean hasIcon() { return !icon.isEmpty() || renderer != null; }
+        Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon, Component disabledReason) {
+            this(label, enabled, run, key, icon, disabledReason, null);
+        }
         Action(Component label, boolean enabled, Runnable run, Object key, net.minecraft.world.item.ItemStack icon) {
             this(label, enabled, run, key, icon, Component.empty());
         }

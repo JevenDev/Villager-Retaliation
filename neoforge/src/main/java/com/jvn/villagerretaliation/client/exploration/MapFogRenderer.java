@@ -153,6 +153,28 @@ public final class MapFogRenderer {
         RenderSystem.setShaderTexture(5, maskTexture);
     }
 
+    static void renderAtmosphere(GuiGraphics graphics, MapView view, MapLighting lighting) {
+        if (shader == null || !VillagerRetaliationConfig.PARCHMENT_MAP_COLORS.get()) return;
+        graphics.flush();
+        double seconds = (System.nanoTime() - WIND_START) / 1e9;
+        shader.safeGetUniform("AtmospherePass").set(1f);
+        shader.safeGetUniform("OpeningProgress").set(-1f);
+        shader.safeGetUniform("DiscoveryPass").set(0f);
+        shader.safeGetUniform("Viewport").set((float) view.width(), (float) view.height());
+        shader.safeGetUniform("WorldSpan").set((float) (view.width() / view.scale()), (float) (view.height() / view.scale()));
+        shader.safeGetUniform("CloudOrigin").set(wrap(view.x(), 24576), wrap(view.z(), 24576));
+        shader.safeGetUniform("CloudPeriod").set(3072f);
+        shader.safeGetUniform("TerrainTexelSize").set((float) (1 << view.level()));
+        shader.safeGetUniform("AtmosphereDriftX").set(wrap(seconds * .055, 32), wrap(seconds * .026, 32), wrap(seconds * -.012, 32));
+        shader.safeGetUniform("AtmosphereDriftZ").set(wrap(seconds * .014, 32), wrap(seconds * -.02, 32), wrap(seconds * .008, 32));
+        shader.safeGetUniform("Lighting").set(lighting.red(), lighting.green(), lighting.blue());
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        draw(graphics, view.width(), view.height());
+        shader.safeGetUniform("AtmospherePass").set(0f);
+        RenderSystem.disableBlend();
+    }
+
     static void renderOpening(GuiGraphics graphics, int width, int height, MapLighting lighting, float progress) {
         if (shader == null) return;
         graphics.flush();

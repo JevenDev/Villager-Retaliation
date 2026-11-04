@@ -46,7 +46,7 @@ final class MapLocationEditScreen extends Screen {
         addRenderableWidget(Button.builder(text(alwaysShowName ? "always" : "hover"), button -> {
             alwaysShowName = !alwaysShowName; button.setMessage(text(alwaysShowName ? "always" : "hover"));
         }).bounds(left + 8, top + 106, panelWidth - 16, 20).build());
-        chooseIcon = addRenderableWidget(Button.builder(text("icon", MapLocationsClient.icon(icon).getHoverName()), button -> chooseIcon())
+        chooseIcon = addRenderableWidget(Button.builder(text("icon", MapLocationsClient.iconName(icon)), button -> chooseIcon())
                 .bounds(left + 30, top + 134, panelWidth - 38, 20).build());
         save = addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> save())
                 .bounds(left + 8, top + 180, (panelWidth - 24) / 2, 20).build());
@@ -59,9 +59,10 @@ final class MapLocationEditScreen extends Screen {
     private void chooseIcon() {
         menu = new WorldViewMenu(font, width, height, left + panelWidth, top + 24, List.of(text("choose_icon")),
                 Arrays.stream(MapLocation.Icon.values()).map(value -> new WorldViewMenu.Action(
-                        MapLocationsClient.icon(value).getHoverName(), true, () -> {
-                            icon = value; chooseIcon.setMessage(text("icon", MapLocationsClient.icon(icon).getHoverName())); menu = null;
-                        }, MapLocationsClient.icon(value))).toList());
+                        MapLocationsClient.iconName(value), true, () -> {
+                            icon = value; chooseIcon.setMessage(text("icon", MapLocationsClient.iconName(icon))); menu = null;
+                        }, MapLocationsClient.icon(value), value.mapSprite()
+                                ? (graphics, x, y) -> MapMarkerIcon.render(graphics, value, x, y) : null)).toList());
     }
 
     private MapLocation draft() {
@@ -100,7 +101,7 @@ final class MapLocationEditScreen extends Screen {
         graphics.drawCenteredString(font, text("coordinates", original.x(), original.z()), width / 2, top + 17, 0xaaaaaa);
         graphics.drawString(font, text("name"), left + 8, top + 29, 0xffffff);
         graphics.drawString(font, text("preview"), left + 8, top + 67, 0xffffff);
-        graphics.renderItem(MapLocationsClient.icon(icon), left + 8, top + 136);
+        MapMarkerIcon.render(graphics, icon, left + 8, top + 136);
         graphics.drawString(font, error, left + 8, top + 163, 0xff9999);
         super.render(graphics, menu == null ? x : -1, menu == null ? y : -1, partial);
         if (menu != null) menu.render(graphics, font, x, y, partial);

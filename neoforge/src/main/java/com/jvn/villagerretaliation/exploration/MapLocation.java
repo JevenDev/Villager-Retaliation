@@ -60,6 +60,14 @@ public record MapLocation(UUID id, ResourceLocation dimension, int x, int z, Ico
         EMERALD_ORE, COPPER_ORE, REDSTONE_ORE, LAPIS_ORE, CRAFTING_TABLE, FURNACE, ANVIL,
         WHITE_BED, CAMPFIRE, TORCH, APPLE, BOW, SHIELD, BOOK, COMPASS,
         BREWING_STAND, LOOM, BLAST_FURNACE, SMOKER, STONECUTTER, CARTOGRAPHY_TABLE,
-        COMPOSTER, FLETCHING_TABLE, CAULDRON, LECTERN, SMITHING_TABLE, GRINDSTONE
+        COMPOSTER, FLETCHING_TABLE, CAULDRON, LECTERN, SMITHING_TABLE, GRINDSTONE,
+        RUINED_PORTAL, DESERT_TEMPLE, PILLAGER_OUTPOST, NETHER_PORTAL;
+
+        public boolean mapSprite() {
+            return switch (this) {
+                case RUINED_PORTAL, DESERT_TEMPLE, PILLAGER_OUTPOST, NETHER_PORTAL -> true;
+                default -> false;
+            };
+        }
     }
 }

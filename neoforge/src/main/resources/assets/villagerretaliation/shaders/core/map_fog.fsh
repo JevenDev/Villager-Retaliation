@@ -9,6 +9,9 @@ uniform sampler2D Sampler5;
 uniform float DiscoveryPass;
 uniform float OpeningProgress;
 uniform float ParchmentColors;
+uniform float AtmospherePass;
+uniform vec3 AtmosphereDriftX;
+uniform vec3 AtmosphereDriftZ;
 uniform vec2 Viewport;
 uniform vec2 WorldSpan;
 uniform vec2 MaskOrigin;
@@ -50,7 +53,7 @@ vec3 parchmentColor(vec3 color, vec3 light) {
     vec3 palette = mix(PARCHMENT_INK, wash, smoothstep(0.0, 0.55, tone));
     palette = mix(palette, paper, smoothstep(0.5, 1.0, tone));
     float waterDepth = smoothstep(0.55, 1.0, color.b);
-    vec3 waterColor = mix(vec3(0.69, 0.67, 0.57), vec3(0.93, 0.88, 0.72), waterDepth);
+    vec3 waterColor = mix(vec3(0.4, 0.53, 0.58), vec3(0.76, 0.82, 0.77), waterDepth);
     palette = mix(palette, waterColor, water);
     palette = mix(palette, color, 0.025);
     // keep the paper grain fixed on the page while the terrain pans and zooms
@@ -99,6 +102,29 @@ vec2 cloudTexel(vec2 plane) {
 
 vec2 cloudPoint(vec2 plane) {
     return (cloudTexel(plane) + 0.5) * TerrainTexelSize;
+}
+
+vec4 atmosphericClouds(vec2 plane) {
+    vec3 color = vec3(0.0);
+    float remaining = 1.0;
+    for (int layer = 0; layer < 3; layer++) {
+        float depth = float(layer);
+        float scale = CloudPeriod / 32.0 * exp2(depth);
+        vec2 point = cloudPoint(plane) / vec2(scale * 2.0, scale);
+        point -= vec2(AtmosphereDriftX[layer], AtmosphereDriftZ[layer]);
+        point += vec2(depth * 11.7, depth * 7.3);
+        float body = bankNoise(point, 32.0);
+        float wisps = bankNoise(point * 2.0 + vec2(body * 0.8), 64.0);
+        float density = body * 0.7 + wisps * 0.3;
+        float cover = smoothstep(0.5, 0.54, density);
+        float highlight = smoothstep(0.62, 0.66, density);
+        float opacity = (cover * 0.65 + highlight * 0.35) * (0.18 - depth * 0.04);
+        vec3 shade = mix(vec3(0.9, 0.92, 0.9), vec3(1.0, 0.99, 0.94), highlight);
+        color += shade * opacity * remaining;
+        remaining *= 1.0 - opacity;
+    }
+    float alpha = 1.0 - remaining;
+    return vec4(alpha > 0.0 ? color / alpha * dot(Lighting, vec3(0.2126, 0.7152, 0.0722)) : vec3(0.0), alpha);
 }
 
 // cc0 references: https://godotshaders.com/shader/clouds-in-motion/
@@ -236,15 +262,48 @@ vec4 blurDiscovery() {
     return vec4(coverage / total, narrow / 57.0, 0.0, 1.0);
 }
 
+// cc0 reference: https://godotshaders.com/shader/medieval-water%e4%b8%ad%e4%b8%96%e7%ba%aa%e6%b0%b4/
+vec3 waterNoise(vec2 point, float period) {
+    vec2 cell = floor(point), local = fract(point);
+    float a = paperHash(mod(cell, period));
+    float b = paperHash(mod(cell + vec2(1.0, 0.0), period));
+    float c = paperHash(mod(cell + vec2(0.0, 1.0), period));
+    float d = paperHash(mod(cell + vec2(1.0), period));
+    vec2 blend = local * local * (3.0 - 2.0 * local);
+    vec2 slope = 6.0 * local * (1.0 - local);
+    // carry height and slope together so lighting does not need extra noise samples
+    return vec3(mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y),
+            slope.x * mix(b - a, d - c, blend.y), slope.y * mix(c - a, d - b, blend.x));
+}
+
+vec3 waterWaves(vec2 world, float wind) {
+    vec2 point = world / vec2(128.0, 32.0);
+    vec2 first = point + vec2(wind * 0.25, wind * 2.0);
+    vec2 second = point * 1.5 + vec2(-wind * 0.25, wind * 2.0);
+    vec3 waves = vec3(0.0);
+    float amplitude = 0.5, frequency = 1.0;
+    for (int octave = 0; octave < 2; octave++) {
+        vec3 a = waterNoise(first * frequency, 16.0 * frequency);
+        vec3 b = waterNoise(second * frequency, 16.0 * frequency);
+        waves.x += (a.x + b.x) * amplitude;
+        waves.yz += (a.yz + b.yz * 1.5) * (amplitude * frequency);
+        amplitude *= 0.5; frequency *= 2.0;
+    }
+    return waves;
+}
+
 float waterFlow(vec2 plane) {
-    vec2 point = (CloudOrigin + plane) / vec2(96.0, 32.0);
-    vec2 drift = vec2(CloudDriftX.x / 96.0);
-    // periodic noise keeps the wash continuous through world origin and wind clock wraps
-    float swell = bankNoise(point - drift, 32.0);
-    float current = bankNoise(point * 2.0 + vec2(swell * 0.8) + vec2(drift.x, -drift.y) * 2.0, 64.0);
-    float wash = (swell - 0.5) * 0.055 + (smoothstep(0.35, 0.65, current) - 0.5) * 0.025;
-    float pixelSize = max(WorldSpan.x / Viewport.x, WorldSpan.y / Viewport.y);
-    return wash * (1.0 - smoothstep(2.0, 6.0, pixelSize));
+    vec2 world = cloudPoint(plane);
+    float wind = CloudDriftX.y;
+    vec3 waves = waterWaves(world, wind / 32.0);
+    vec3 normal = normalize(vec3(-waves.y * 0.3, 1.0, -waves.z * 0.3));
+    vec3 light = normalize(vec3(-0.4, 1.0, 0.25));
+    float lighting = (dot(normal, light) - light.y) * 0.65 + 0.055;
+    float shade = lighting < 0.0 ? -0.06 : lighting > 0.06 ? 0.1 : 0.02;
+    float detail = bankNoise(world / 8.0 + vec2(wind, -wind) / 8.0, 384.0);
+    float foam = step(1.0, waves.x) * step(0.65, detail);
+    float tone = foam > 0.0 ? 0.14 : shade;
+    return tone;
 }
 
 ivec2 cloudPixel(ivec2 pixel, ivec2 size) {
@@ -309,6 +368,10 @@ vec4 openingClouds() {
 }
 
 void main() {
+    if (AtmospherePass > 0.5) {
+        fragColor = atmosphericClouds((screenPos / Viewport - 0.5) * WorldSpan);
+        return;
+    }
     if (OpeningProgress >= 0.0) {
         fragColor = openingClouds();
         return;
@@ -334,7 +397,7 @@ void main() {
         if (ParchmentColors > 0.5) {
             color = parchmentColor(terrain.rgb, light);
             float water = smoothstep(0.08, 0.3, terrain.b - max(terrain.r, terrain.g));
-            color *= 1.0 + water * waterFlow(plane);
+            if (water > 0.0) color *= 1.0 + water * waterFlow(plane);
             vec2 coverage = cloudCoverage(plane);
             float opacity = smoothstep(0.2, 0.5, coverage.y);
             if (opacity > cloudDither(plane)) color = parchmentClouds(plane, coverage.x).rgb;

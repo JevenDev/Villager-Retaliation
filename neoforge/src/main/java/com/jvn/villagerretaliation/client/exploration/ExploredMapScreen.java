@@ -112,6 +112,7 @@ public final class ExploredMapScreen extends Screen {
         if (repository != null) {
             var view = view();
             TILES.render(graphics, view, lighting);
+            MapFogRenderer.renderAtmosphere(graphics, view, lighting);
             renderedFrames++;
             if (!minecraft.options.hideGui) {
                 graphics.enableScissor(0, 0, width, height);

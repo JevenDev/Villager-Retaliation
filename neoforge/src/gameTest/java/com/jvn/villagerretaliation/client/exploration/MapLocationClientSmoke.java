@@ -22,6 +22,7 @@ import org.lwjgl.glfw.GLFW;
 @EventBusSubscriber(modid = "villagerretaliation", value = Dist.CLIENT)
 public final class MapLocationClientSmoke {
     private static final String OUTPUT = "villagerretaliation.mapLocationClientSmoke";
+    private static final boolean SHADER_ONLY = Boolean.getBoolean("villagerretaliation.mapShaderClientSmokeOnly");
     private static int phase, ticks;
     private static long start;
     private static ExploredMapScreen map;
@@ -47,9 +48,18 @@ public final class MapLocationClientSmoke {
         if (System.getProperty(OUTPUT) != null && !compassChecked && event.getScreen() instanceof ExploredMapScreen screen
                 && screen.transitionProgress() == 1) {
             MapHudClientChecks.verify(screen);
-            MapCompassClientChecks.verify(screen);
+            if (!SHADER_ONLY) MapCompassClientChecks.verify(screen);
+            MapAtmosphereClientChecks.verify(screen);
             MapParchmentClientChecks.verify(screen);
+            MapMarkerIconClientChecks.verify(screen);
             compassChecked = true;
+            if (SHADER_ONLY) {
+                try {
+                    Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"),
+                            "Map location client smoke passed\nPaper shader checks only\n");
+                } catch (IOException failure) { throw new UncheckedIOException(failure); }
+                phase = 99; Minecraft.getInstance().stop();
+            }
         }
         if (backgroundLocations == null || !(event.getScreen() instanceof MapLocationEditScreen)) return;
         event.getGuiGraphics().flush();
@@ -85,6 +95,13 @@ public final class MapLocationClientSmoke {
         require(System.nanoTime() - start < 180_000_000_000L, "marker smoke timed out at phase " + phase);
         mc.options.pauseOnLostFocus = false;
         if (mc.level == null || mc.player == null || mc.getOverlay() != null || ExploredMapClient.repository() == null) return;
+        if (SHADER_ONLY) {
+            if (map == null) {
+                VillagerRetaliationConfig.ANIMATE_EXPLORED_MAP_OPENING.set(false);
+                map = new ExploredMapScreen(); mc.setScreen(map);
+            }
+            return;
+        }
         if (++ticks < 10) return;
         ticks = 0;
         switch (phase) {
@@ -106,7 +123,7 @@ public final class MapLocationClientSmoke {
             case 1 -> {
                 require(occlusionChecked, "editor occlusion was checked on a rendered frame");
                 screenshot("marker-editor.png");
-                for (var icon : MapLocation.Icon.values()) require(!MapLocationsClient.icon(icon).isEmpty(), "every icon resolves to an item");
+                for (var icon : MapLocation.Icon.values()) require(icon.mapSprite() || !MapLocationsClient.icon(icon).isEmpty(), "every icon resolves to a sprite or an item");
                 var editor = (MapLocationEditScreen) mc.screen;
                 editor.children().stream().filter(child -> child instanceof Button button && button.getMessage().getString().startsWith("Icon:"))
                         .map(Button.class::cast).findFirst().orElseThrow().onPress();

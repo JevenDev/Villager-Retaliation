@@ -131,6 +131,21 @@ public final class MapLocationGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void spriteIconsPreserveExistingPacketOrdinalsAndSavedNames(GameTestHelper helper) {
+        String[] legacy = "EMERALD,OMINOUS_BANNER,IRON_SWORD,DIAMOND_SWORD,IRON_AXE,IRON_HOE,IRON_SHOVEL,IRON_PICKAXE,CHEST,BARREL,BREAD,WHEAT,FISHING_ROD,DIAMOND_ORE,IRON_ORE,GOLD_ORE,COAL_ORE,EMERALD_ORE,COPPER_ORE,REDSTONE_ORE,LAPIS_ORE,CRAFTING_TABLE,FURNACE,ANVIL,WHITE_BED,CAMPFIRE,TORCH,APPLE,BOW,SHIELD,BOOK,COMPASS,BREWING_STAND,LOOM,BLAST_FURNACE,SMOKER,STONECUTTER,CARTOGRAPHY_TABLE,COMPOSTER,FLETCHING_TABLE,CAULDRON,LECTERN,SMITHING_TABLE,GRINDSTONE".split(",");
+        for (int index = 0; index < legacy.length; index++)
+            helper.assertValueEqual(MapLocation.Icon.valueOf(legacy[index]).ordinal(), index, "existing icon packet ordinals remain stable");
+        for (var icon : List.of(MapLocation.Icon.RUINED_PORTAL, MapLocation.Icon.DESERT_TEMPLE,
+                MapLocation.Icon.PILLAGER_OUTPOST, MapLocation.Icon.NETHER_PORTAL)) {
+            helper.assertTrue(icon.ordinal() >= legacy.length && icon.mapSprite(), "new sprites append to the manual icon catalog");
+            var source = marker("overworld", "Map landmark");
+            var location = new MapLocation(source.id(), source.dimension(), source.x(), source.z(), icon, source.name(), "", false);
+            helper.assertValueEqual(MapLocation.load(location.save()), location, "manual sprite choices survive saving and loading");
+        }
+        helper.succeed();
+    }
+
     private static void expectInvalid(GameTestHelper helper, Runnable action) {
         boolean rejected = false;
         try { action.run(); } catch (IllegalArgumentException invalid) { rejected = true; }

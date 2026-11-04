@@ -96,6 +96,82 @@ public final class MapMarkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void spriteAnchorsDriveHitTestingLabelsAndViewportCulling(GameTestHelper helper) {
+        var view = new MapView(400, 240, 0, 0, 1);
+        var dimension = ResourceLocation.withDefaultNamespace("overworld");
+        var destinations = new java.util.ArrayList<MapDestination>();
+        destinations.add(village("Village", 0, 0));
+        for (var icon : com.jvn.villagerretaliation.exploration.MapLocation.Icon.values()) if (icon.mapSprite())
+            destinations.add(new MapDestination(MapDestination.Kind.LOCATION, icon.name(), dimension, 0, 0, icon.name(), icon.name(), icon, true, 0xffffffff, 0));
+        for (var destination : destinations) {
+            var group = MapMarkerLayout.groups(List.of(destination), view, destination.key()).getFirst();
+            var box = MapMarkerLayout.bounds(group);
+            helper.assertValueEqual(box, new MapMarkerLayout.Box(184, 88, 216, 120), "sprite canvas ends at the projected target's bottom center");
+            helper.assertTrue(MapMarkerLayout.contains(group, 200, 88) && MapMarkerLayout.contains(group, 200, 120),
+                    "the sprite's upper body and target anchor both receive clicks");
+            helper.assertFalse(MapMarkerLayout.contains(group, 200, 125), "empty space below a bottom-anchored sprite is not clickable");
+            var labels = MapMarkerLayout.labels(List.of(group), view, destination.key(), -1, -1, true, text -> text.length() * 6, 9, List.of());
+            helper.assertValueEqual(labels.size(), 1, "bottom-anchored markers retain their labels");
+            var label = labels.getFirst();
+            helper.assertFalse(box.overlaps(new MapMarkerLayout.Box(label.x() - 2, label.y() - 1, label.x() + label.width() + 2, label.y() + 10)),
+                    "labels stay outside the actual sprite canvas");
+        }
+        var legacy = new MapDestination(MapDestination.Kind.LOCATION, "legacy", dimension, 0, 0, "Chest", "Chest",
+                com.jvn.villagerretaliation.exploration.MapLocation.Icon.CHEST, true, 0xffffffff, 0);
+        helper.assertValueEqual(MapMarkerLayout.bounds(MapMarkerLayout.groups(List.of(legacy), view, "").getFirst()), new MapMarkerLayout.Box(192, 112, 208, 128),
+                "existing item markers keep their centered placement");
+        for (double zoom : new double[]{.12, .75, 1, 1.25, 2.5, 4, 24}) {
+            var zoomed = new MapView(1000, 1000, 0, 0, zoom);
+            double size = 16 * (1 << zoomed.level()) * zoom;
+            for (var destination : destinations) {
+                var group = MapMarkerLayout.groups(List.of(destination), zoomed, destination.key()).getFirst();
+                var box = MapMarkerLayout.bounds(group);
+                helper.assertValueEqual(box, new MapMarkerLayout.Box((int) Math.floor(500 - size / 2), (int) Math.floor(500 - size), (int) Math.ceil(500 + size / 2), 500),
+                        "zoomed sprites grow with terrain and keep their bottom-center anchor");
+                helper.assertTrue(MapMarkerLayout.contains(group, box.left(), box.top()), "the enlarged upper sprite receives clicks");
+                helper.assertFalse(MapMarkerLayout.contains(group, box.left() - 3, box.top()), "clicks outside the enlarged canvas miss");
+                var labels = MapMarkerLayout.labels(List.of(group), zoomed, destination.key(), -1, -1, true, text -> text.length() * 6, 9, List.of());
+                helper.assertValueEqual(labels.size(), 1, "zoomed sprites retain an unobstructed label");
+                var label = labels.getFirst();
+                helper.assertFalse(box.overlaps(new MapMarkerLayout.Box(label.x() - 2, label.y() - 1, label.x() + label.width() + 2, label.y() + 10)),
+                        "labels avoid the full zoomed sprite canvas");
+            }
+            int offset = (int) Math.floor((zoomed.height() / 2.0 + size - 8) / zoom);
+            helper.assertFalse(MapMarkerLayout.groups(List.of(village("Zoomed edge", 0, offset)), zoomed, "").isEmpty(),
+                    "zoomed sprites remain visible while their upper body intersects the viewport");
+        }
+        helper.assertFalse(MapMarkerLayout.groups(List.of(village("Edge village", 0, 128)), view, "").isEmpty(),
+                "a sprite remains visible when its target is just below the viewport");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void spriteTexelsStayAlignedThroughPanningAndLodChanges(GameTestHelper helper) {
+        for (int coordinate : new int[]{-29999987, -3, 29999985}) {
+            var destination = village("Grid village", coordinate, coordinate + 8);
+            for (double zoom : new double[]{.12, .75, 1, 1.25, 2.5, 4, 24}) {
+                var view = new MapView(640, 480, coordinate - .375, coordinate + 8.125, zoom);
+                var moved = new MapView(640, 480, view.x() + .125, view.z() - .25, zoom);
+                var sprite = MapMarkerLayout.groups(List.of(destination), view, "").getFirst().sprite();
+                var panned = MapMarkerLayout.groups(List.of(destination), moved, "").getFirst().sprite();
+                int stride = 1 << view.level();
+                helper.assertTrue(Math.abs(sprite.size() / 16 - stride * zoom) < 1e-8,
+                        "each source pixel has exactly the terrain texel's projected size at every LOD");
+                double left = view.worldX(sprite.x()), top = view.worldZ(sprite.y());
+                helper.assertTrue(Math.abs(left / stride - Math.rint(left / stride)) < 1e-8
+                        && Math.abs(top / stride - Math.rint(top / stride)) < 1e-8, "sprite edges lie on world terrain texel boundaries");
+                helper.assertTrue(Math.abs(left + 8 * stride - Math.floorDiv(coordinate, stride) * stride) < 1e-8
+                        && Math.abs(top + 16 * stride - Math.floorDiv(coordinate + 8, stride) * stride) < 1e-8,
+                        "bottom-center anchors snap to their target texel including negative world coordinates");
+                helper.assertTrue(Math.abs(panned.x() - sprite.x() + .125 * zoom) < 1e-8
+                        && Math.abs(panned.y() - sprite.y() - .25 * zoom) < 1e-8,
+                        "fractional panning moves terrain and sprite texels together without screen-pixel snapping");
+            }
+        }
+        helper.succeed();
+    }
+
     private static MapDestination village(String id, int x, int z) {
         return new MapDestination(MapDestination.Kind.VILLAGE, id, ResourceLocation.withDefaultNamespace("overworld"),
                 x, z, id, id, null, true, 0xffffffff, 0);

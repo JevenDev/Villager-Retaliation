@@ -52,9 +52,14 @@ final class MapMarkerOverlay {
                 continue;
             }
             var destination = group.members().getFirst();
+            var box = MapMarkerLayout.bounds(group);
             switch (destination.kind()) {
-                case VILLAGE -> MapVillageIcon.render(graphics, x, y);
-                case LOCATION -> graphics.renderItem(MapLocationsClient.icon(destination.icon()), x - 8, y - 8);
+                case VILLAGE -> MapVillageIcon.render(graphics, group.sprite());
+                case LOCATION -> {
+                    var sprite = group.sprite();
+                    if (sprite == null) MapMarkerIcon.render(graphics, destination.icon(), box.left(), box.top());
+                    else MapMarkerIcon.render(graphics, destination.icon(), (float) sprite.x(), (float) sprite.y(), (float) sprite.size());
+                }
                 case QUEST -> {
                     for (int i = -4; i <= 4; i++) {
                         graphics.fill(x + i, y + i, x + i + 2, y + i + 2, destination.color());
@@ -62,7 +67,12 @@ final class MapMarkerOverlay {
                     }
                 }
             }
-            if (destination.key().equals(selected)) graphics.renderOutline(x - 10, y - 10, 21, 21, 0xffffe8a3);
+            if (destination.key().equals(selected)) {
+                if (MapMarkerLayout.bottomAnchored(destination)) {
+                    graphics.renderOutline(box.left() - 2, box.top() - 2, box.right() - box.left() + 4,
+                            box.bottom() - box.top() + 4, 0xffffe8a3);
+                } else graphics.renderOutline(x - 10, y - 10, 21, 21, 0xffffe8a3);
+            }
         }
         var reserved = new java.util.ArrayList<MapMarkerLayout.Box>();
         if (!minimap) {
@@ -86,7 +96,7 @@ final class MapMarkerOverlay {
     static MapMarkerLayout.Group at(List<MapMarkerLayout.Group> groups, double x, double y) {
         for (int i = groups.size() - 1; i >= 0; i--) {
             var group = groups.get(i);
-            if (Math.abs(group.x() - x) <= 10 && Math.abs(group.y() - y) <= 10) return group;
+            if (MapMarkerLayout.contains(group, x, y)) return group;
         }
         return null;
     }
