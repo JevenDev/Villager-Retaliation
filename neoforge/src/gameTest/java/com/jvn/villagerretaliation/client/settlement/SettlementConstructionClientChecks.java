@@ -31,6 +31,7 @@ public final class SettlementConstructionClientChecks {
     private static long started;
     private static int phase;
     private static int ticks;
+    private static long nextActionAt;
     private static CompletableFuture<VillageAllegianceId> preparing;
     private static VillageAllegianceId town;
     private static SettlementManagementScreen management;
@@ -90,13 +91,55 @@ public final class SettlementConstructionClientChecks {
                 String rejected = minecraft.getSingleplayerServer().submit(() -> SettlementConstructionQueueGameTests.rejectSmokeCommand(
                         minecraft.getSingleplayerServer().getPlayerList().getPlayer(player), forged)).join();
                 require(!rejected.isEmpty(), "The server rejects forged active-project moves");
+                nextActionAt = Util.getMillis() + 750;
+                phase = 32;
+                ticks = 0;
+            }
+            case 32 -> {
+                if (Util.getMillis() < nextActionAt) return;
+                var rows = list(management);
+                rows.mouseClicked(rows.getX() + 30, rows.getY() + 16, 0);
+                click(management, SettlementManagementScreen.text("pause_project").getString());
+                nextActionAt = Util.getMillis() + 750;
+                phase = 30;
+                ticks = 0;
+            }
+            case 30 -> {
+                if (management.submitting() || management.snapshot().entries().stream().filter(SettlementManagementPayload.Project.class::isInstance)
+                        .map(SettlementManagementPayload.Project.class::cast).noneMatch(project -> project.phase()
+                                == com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED)) return;
+                if (Util.getMillis() < nextActionAt) return;
+                capture("project-paused");
+                click(management, SettlementManagementScreen.text("resume_project").getString());
+                phase = 31;
+                ticks = 0;
+            }
+            case 31 -> {
+                if (management.submitting() || management.snapshot().entries().stream().filter(SettlementManagementPayload.Project.class::isInstance)
+                        .map(SettlementManagementPayload.Project.class::cast).anyMatch(project -> project.phase()
+                                == com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.PAUSED)) return;
                 management.newBuilding();
-                next();
+                phase = 4;
+                ticks = 0;
             }
             case 4 -> {
                 if (!(minecraft.screen instanceof SettlementBlueprintScreen catalog) || catalog.thumbnailCount() < 2) return;
                 require(!list(catalog).children().isEmpty(), "Small house variants are available");
+                list(catalog).children().getFirst().mouseClicked(0, 0, 0);
+                var details = catalog.selectedDetails();
+                require(details != null && details.width() > 0 && details.beds() > 0, "Real house geometry exposes dimensions and beds");
+                require(details.matches(1, 0), "Housing filter uses actual bed capacity");
+                require(!details.matches(0, 2), "Fully supplied filter rejects missing materials and funds");
                 capture("house-small-thumbnails");
+                click(catalog, "Purpose: All");
+                click(catalog, "Cost: All");
+                capture("house-affordability-filter");
+                click(catalog, "Cost: Fee affordable");
+                require(list(catalog).children().isEmpty(), "Fully supplied filter excludes unfunded house templates");
+                click(catalog, "Cost: Fully supplied");
+                click(catalog, "Purpose: Housing");
+                click(catalog, "Purpose: Workplaces");
+                click(catalog, "Purpose: Other");
                 click(catalog, "House Medium");
                 next();
             }
@@ -131,16 +174,39 @@ public final class SettlementConstructionClientChecks {
                 require(draft.anchor.equals(originalAnchor.east(2)), "Moving the blueprint preserves its requested world position");
                 require(draft.ghost() != null && !draft.ghost().blocks().isEmpty(), "Rotated preview retains the authored block palette");
                 capture("moved-rotated-blueprint");
-                minecraft.setScreen(new SettlementBuildingScreen(management));
+                click(minecraft.screen, net.minecraft.network.chat.Component.translatable("villagerretaliation.gui.settlement_view.building_choose_builder").getString());
                 next();
             }
             case 9 -> {
                 if (!(minecraft.screen instanceof SettlementBuildingScreen)) return;
                 capture("construction-materials");
+                click(minecraft.screen, "Keep terrain");
+                click(minecraft.screen, "Level ground");
+                click(minecraft.screen, "Fill shallow holes");
+                click(minecraft.screen, "Depth: 2");
+                next();
+            }
+            case 10 -> {
+                var draft = management.buildingDraft();
+                if (!draft.currentPreview()) return;
+                require(draft.preparation.mode() == com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.Mode.FOUNDATION
+                        && draft.preparation.depth() == 3, "Review controls request bounded foundation preparation");
+                require(!draft.preview.terrain().isEmpty(), "Foundation preview contains explicit world changes");
+                require(draft.ghost().origin().equals(draft.preview.origin()), "Adding below-ground preparation preserves the template origin");
+                capture("foundation-materials");
+                ((SettlementBuildingScreen) minecraft.screen).onClose();
+                next();
+            }
+            case 11 -> {
+                if (!(minecraft.screen instanceof SettlementViewScreen)) return;
+                var draft = management.buildingDraft();
+                if (!draft.currentPreview()) return;
+                if (!draft.preview.diagnostics().isEmpty()) click(minecraft.screen, "Next placement issue");
+                capture("foundation-placement-feedback");
                 try {
                     Files.createDirectories(Path.of(System.getProperty(OUTPUT)));
                     Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement construction client smoke passed\n"
-                            + "Native pending drag reordered server state; active move rejected; house size filters and real template thumbnails; moved rotated blueprint and material UI.\n");
+                            + "Native queue drag and pause/resume. Actual house metadata and affordability filters. Rotated blueprint, terrain options, material quote and world feedback.\n");
                 } catch (java.io.IOException exception) { throw new java.io.UncheckedIOException(exception); }
                 phase = 99;
                 minecraft.stop();

@@ -16,6 +16,9 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
     private final List<BuilderStructureCatalog.Entry> entries = BuilderStructureCatalog.entries();
     private String query = "";
     private String houseSize = "small";
+    private int purpose;
+    private int cost;
+    private final java.util.Map<net.minecraft.resources.ResourceLocation, SettlementBuildingDetails> details = new java.util.LinkedHashMap<>();
     private BuilderStructureCatalog.Entry selected;
     private Blueprints list;
     private Button draft;
@@ -23,6 +26,9 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
     private final java.util.Set<net.minecraft.resources.ResourceLocation> visible = new java.util.LinkedHashSet<>();
     private net.minecraft.resources.ResourceLocation requested;
     private int thumbnailRequest;
+    private final java.util.Map<net.minecraft.resources.ResourceLocation, Long> quotedAt = new java.util.HashMap<>();
+
+    SettlementBuildingDetails selectedDetails() { return this.selected == null ? null : this.details.get(this.selected.id()); }
     private long thumbnailSent;
 
     public SettlementBlueprintScreen(SettlementManagementScreen parent) {
@@ -55,6 +61,17 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
         search.setHint(SettlementManagementScreen.text("search"));
         search.setValue(this.query);
         addRenderableWidget(search);
+        int halfFilter = (this.panelWidth - 4) / 2;
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(new String[]{"Purpose: All", "Purpose: Housing", "Purpose: Workplaces", "Purpose: Other"}[this.purpose]), button -> {
+            this.purpose = (this.purpose + 1) % 4;
+            button.setMessage(Component.literal(new String[]{"Purpose: All", "Purpose: Housing", "Purpose: Workplaces", "Purpose: Other"}[this.purpose]));
+            this.list.refresh();
+        }).bounds(this.left, this.top + 72, halfFilter, 20).build());
+        addRenderableWidget(VillagerUi.buttonBuilder(Component.literal(new String[]{"Cost: All", "Cost: Fee affordable", "Cost: Fully supplied"}[this.cost]), button -> {
+            this.cost = (this.cost + 1) % 3;
+            button.setMessage(Component.literal(new String[]{"Cost: All", "Cost: Fee affordable", "Cost: Fully supplied"}[this.cost]));
+            this.list.refresh();
+        }).bounds(this.left + halfFilter + 4, this.top + 72, halfFilter, 20).build());
         this.list = addRenderableWidget(new Blueprints());
         search.setResponder(value -> {
             this.query = value;
@@ -79,10 +96,14 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
         long now = net.minecraft.Util.getMillis();
         if (this.requested != null && now - this.thumbnailSent > 3_000L) this.requested = null;
         if (this.requested == null && now - this.thumbnailSent >= 250L && this.parent.snapshot().header() != null) {
-            this.requested = this.visible.stream().filter(id -> !this.thumbnails.containsKey(id)).findFirst().orElse(null);
+            this.requested = this.visible.stream().filter(id -> !this.thumbnails.containsKey(id) || !this.details.containsKey(id) || now - this.quotedAt.getOrDefault(id, 0L) > 5_000L).findFirst().orElse(null);
+            if (this.requested == null && (this.purpose != 0 || this.cost != 0)) {
+                this.requested = this.entries.stream().filter(this::matchesBase).map(BuilderStructureCatalog.Entry::id)
+                        .filter(id -> !this.details.containsKey(id)).findFirst().orElse(null);
+            }
             if (this.requested != null) {
                 this.thumbnailSent = now;
-                this.thumbnailRequest++;
+                this.thumbnailRequest = SettlementBuildingDraft.nextRequestId();
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.jvn.villagerretaliation.network.SettlementBuildingPreviewRequestPayload(
                         this.parent.snapshot().header().id(), this.thumbnailRequest, this.requested,
                         this.parent.snapshot().header().center().above(), net.minecraft.world.level.block.Rotation.NONE, null));
@@ -137,9 +158,20 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
                 }
             }
         }
-        if (this.thumbnails.size() >= 32) this.thumbnails.remove(this.thumbnails.keySet().iterator().next());
+        this.details.put(this.requested, SettlementBuildingDetails.from(payload));
+        this.quotedAt.put(this.requested, net.minecraft.Util.getMillis());
+        if (this.thumbnails.size() >= 128) this.thumbnails.remove(this.thumbnails.keySet().iterator().next());
         this.thumbnails.put(this.requested, java.util.List.copyOf(pixels));
         this.requested = null;
+        double scroll = this.list.getScrollAmount();
+        this.list.refresh();
+        this.list.setScrollAmount(scroll);
+    }
+
+    private boolean matchesBase(BuilderStructureCatalog.Entry entry) {
+        String needle = this.query.strip().toLowerCase(Locale.ROOT);
+        return (this.houseSize.isEmpty() || entry.houseSize().equals(this.houseSize))
+                && (entry.menuLabel().toLowerCase(Locale.ROOT).contains(needle) || entry.id().toString().contains(needle));
     }
 
     private static int shade(int color, double factor) {
@@ -153,7 +185,8 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
 
     private void updateButton() {
         if (this.draft != null) {
-            this.draft.active = this.selected != null && !this.parent.submitting();
+            this.draft.active = this.selected != null && !this.parent.submitting()
+                    && (selectedDetails() == null || selectedDetails().available());
         }
     }
 
@@ -171,28 +204,32 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.left + this.panelWidth / 2, this.top + 4, 0xFFFFFF);
-        Component message = SettlementManagementScreen.text("building_prefab_hint");
-        graphics.drawWordWrap(this.font, message, this.left, this.top + this.panelHeight - 68, this.panelWidth, 0xD0D0D0);
+        var info = selectedDetails();
+        if (info != null) {
+            graphics.drawString(this.font, info.summary(), this.left, this.top + this.panelHeight - 78, 0xD0D0D0);
+            graphics.drawWordWrap(this.font, Component.literal(info.supplySummary()), this.left, this.top + this.panelHeight - 64, this.panelWidth,
+                    info.affordable() && info.missingKinds() == 0 ? 0x9BC59B : 0xE5AD76);
+        } else graphics.drawWordWrap(this.font, this.list.children().isEmpty() && this.entries.stream().filter(this::matchesBase)
+                .anyMatch(entry -> !this.details.containsKey(entry.id())) ? Component.literal("Loading matching buildings...")
+                : SettlementManagementScreen.text("building_prefab_hint"), this.left,
+                this.top + this.panelHeight - 68, this.panelWidth, 0xD0D0D0);
     }
 
     private final class Blueprints extends ObjectSelectionList<BlueprintRow> {
         private Blueprints() {
-            super(SettlementBlueprintScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 150), top + 76, 26);
+            super(SettlementBlueprintScreen.this.minecraft, panelWidth, Math.max(32, panelHeight - 192), top + 100, 42);
             setX(left);
         }
 
         private void refresh() {
             clearEntries();
-            String needle = query.strip().toLowerCase(Locale.ROOT);
             for (var entry : entries) {
-                if (!houseSize.isEmpty() && !entry.houseSize().equals(houseSize)) continue;
-                if (entry.menuLabel().toLowerCase(Locale.ROOT).contains(needle) || entry.id().toString().contains(needle)) {
-                    var row = new BlueprintRow(entry);
-                    addEntry(row);
-                    if (entry.equals(selected)) {
-                        setSelected(row);
-                    }
-                }
+                if (!matchesBase(entry)) continue;
+                var info = details.get(entry.id());
+                if ((purpose != 0 || cost != 0) && (info == null || !info.matches(purpose, cost))) continue;
+                var row = new BlueprintRow(entry);
+                addEntry(row);
+                if (entry.equals(selected)) setSelected(row);
             }
             if (children().stream().noneMatch(row -> row.entry.equals(selected))) {
                 selected = null;
@@ -250,7 +287,16 @@ public final class SettlementBlueprintScreen extends VillagerWindowScreen {
             if (thumbnail == null) graphics.drawString(font, "...", x + 12, y + 7, 0x888888);
             else for (var pixel : thumbnail) graphics.fill(x + 3 + pixel.x(), y + 2 + pixel.y(),
                     x + 3 + pixel.x() + pixel.width(), y + 3 + pixel.y(), pixel.color());
-            graphics.drawString(font, font.plainSubstrByWidth(this.entry.menuLabel(), width - 48), x + 42, y + 7, 0xFFFFFF);
+            graphics.drawString(font, font.plainSubstrByWidth(this.entry.menuLabel(), width - 48), x + 42, y + 3, 0xFFFFFF);
+            var info = details.get(this.entry.id());
+            if (info == null) graphics.drawString(font, "Loading building details...", x + 42, y + 16, 0x888888);
+            else {
+                graphics.drawString(font, font.plainSubstrByWidth(info.summary(), width - 48), x + 42, y + 16, 0xBBBBBB);
+                graphics.drawString(font, font.plainSubstrByWidth(info.supplySummary(), width - 48), x + 42, y + 29,
+                        info.affordable() && info.missingKinds() == 0 ? 0x9BC59B : 0xE5AD76);
+                if (hovered && !info.shortages().isEmpty()) SettlementBlueprintScreen.this.setTooltipForNextRenderPass(
+                        info.shortages().stream().flatMap(line -> font.split(Component.literal(line), Math.min(300, width)).stream()).toList());
+            }
         }
     }
 }
