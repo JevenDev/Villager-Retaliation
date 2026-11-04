@@ -97,6 +97,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private final Map<UUID, SettlementManagementPayload.Project> projects = new LinkedHashMap<>();
     private final SettlementViewNavigation navigation;
     private final SettlementViewPeek peek = new SettlementViewPeek();
+    private final SettlementHoverRenderer groundHover = new SettlementHoverRenderer();
     private InputConstants.Key peekKey;
     private Set<UUID> peekFocus = Set.of();
     private SettlementViewPopup popup;
@@ -443,7 +444,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 net.minecraft.world.item.Items.FILLED_MAP, false, () -> this.interaction.is(Mode.SELECT_PLOT), this::togglePlots));
         this.overlayButton = addRenderableWidget(tool(Component.literal("Overlays"),
                 toolTop + (this.layout.railSize + 2) * 5, net.minecraft.world.item.Items.SPYGLASS, false,
-                () -> this.preferences.workOverlay || this.preferences.issueOverlay || this.preferences.constructionOverlay || this.preferences.logisticsOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
+                () -> this.preferences.hoverGrid || this.preferences.workOverlay || this.preferences.issueOverlay || this.preferences.constructionOverlay || this.preferences.logisticsOverlay || SettlementBoundsClient.enabled(this.header.id()), () -> openActionPopup(SettlementViewPopup.Kind.OVERLAYS)));
         addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
                 net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
@@ -3092,7 +3093,8 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.selectedBlock).inflate(0.015D),
                     0.25F, 0.9F, 1.0F, 1.0F);
         }
-        if (this.gizmo == null && this.hovered.position() != null && !this.hovered.position().equals(this.selectedBlock)
+        if (!this.interaction.is(Mode.SELECT) && this.gizmo == null
+                && this.hovered.position() != null && !this.hovered.position().equals(this.selectedBlock)
                 && this.hovered.resident() == null && !SettlementViewClient.panelsOpen(this)) {
             LevelRenderer.renderLineBox(pose, lines, new AABB(this.hovered.position()).inflate(0.015D),
                     1.0F, 0.78F, 0.25F, 0.7F);
@@ -3285,12 +3287,29 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     void renderPlotTint(RenderLevelStageEvent event) {
         this.peek.render(event);
+        renderGroundHover(event);
         if (this.interaction.is(Mode.SELECT_PLOT)) {
             SettlementPlotRenderer.render(event, this.plotSnapshot, this.selectedPlot, hoveredPlot());
         } else if (SettlementBoundsClient.enabled(this.header.id()) || this.interaction.is(Mode.DRAW_AREA)
                 || this.editingArea != null || this.parent.buildingDraft() != null) {
             SettlementPlotRenderer.render(event, this.plotSnapshot, null, null, true);
         }
+    }
+
+    private void renderGroundHover(RenderLevelStageEvent event) {
+        if (this.minecraft.screen != this || !this.minecraft.isWindowActive() || SettlementViewClient.transitioning()
+                || SettlementViewClient.closing() || !this.interaction.is(Mode.SELECT) || this.popup != null
+                || this.gizmo != null || this.panning || !this.preferences.hoverGrid || !terrainLoaded()) return;
+        double x = this.minecraft.mouseHandler.xpos() * this.width / this.minecraft.getWindow().getScreenWidth();
+        double y = this.minecraft.mouseHandler.ypos() * this.height / this.minecraft.getWindow().getScreenHeight();
+        if (!worldContains(x, y)) return;
+        var target = pick(x, y);
+        if (target.position() == null || target.resident() != null || target.entity() != null) return;
+        var ray = ray(x, y);
+        var hit = SettlementViewPeek.clip(this.minecraft.level, ray.origin(), ray.origin().add(ray.direction().scale(256)),
+                ClipContext.Block.OUTLINE, event.getCamera().getEntity());
+        if (hit.getType() != HitResult.Type.MISS && contains(hit.getBlockPos()))
+            this.groundHover.render(event, hit.getLocation());
     }
 
     private AABB draftBounds() {
@@ -3399,6 +3418,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
 
     void endSession() {
         clearPeek();
+        this.groundHover.clear();
         savePreferences();
         this.commands.clear();
         this.snapshots.clear();
@@ -3817,6 +3837,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case OVERLAYS -> {
                 details.add(Component.literal("World overlays"));
+                actions.add(menuAction(Component.literal("Hover grid: " + (this.preferences.hoverGrid ? "On" : "Off")), true, () -> {
+                    this.preferences.hoverGrid = !this.preferences.hoverGrid;
+                    savePreferences();
+                }));
                 actions.add(menuAction(Component.literal("Preset: Construction"), true, () -> {
                     this.preferences.constructionOverlay = true;
                     this.preferences.issueOverlay = true;

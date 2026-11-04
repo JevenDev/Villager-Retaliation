@@ -45,6 +45,7 @@ public final class SettlementViewPreferences {
     public boolean sidebar = true;
     public boolean map = true;
     public boolean hints = true;
+    public boolean hoverGrid = true;
     public boolean workOverlay;
     public boolean issueOverlay;
     public boolean constructionOverlay;
@@ -64,6 +65,7 @@ public final class SettlementViewPreferences {
             boolean sidebar = bool(values, "sidebar", true);
             boolean map = bool(values, "map", true);
             boolean hints = bool(values, "hints", true);
+            boolean hoverGrid = bool(values, "hoverGrid", true);
             boolean work = bool(values, "work", false);
             boolean issues = bool(values, "issues", false);
             boolean construction = bool(values, "construction", false);
@@ -104,6 +106,7 @@ public final class SettlementViewPreferences {
             this.sidebar = sidebar;
             this.map = map;
             this.hints = hints;
+            this.hoverGrid = hoverGrid;
             this.workOverlay = work;
             this.issueOverlay = issues;
             this.constructionOverlay = construction;
@@ -185,6 +188,7 @@ public final class SettlementViewPreferences {
         values.setProperty("sidebar", Boolean.toString(this.sidebar));
         values.setProperty("map", Boolean.toString(this.map));
         values.setProperty("hints", Boolean.toString(this.hints));
+        values.setProperty("hoverGrid", Boolean.toString(this.hoverGrid));
         values.setProperty("work", Boolean.toString(this.workOverlay));
         values.setProperty("issues", Boolean.toString(this.issueOverlay));
         values.setProperty("construction", Boolean.toString(this.constructionOverlay));

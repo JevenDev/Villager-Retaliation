@@ -43,6 +43,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.duel.DuelFxClient::registerShaders);
         modEventBus.addListener(com.jvn.villagerretaliation.client.settlement.SettlementPlotRenderer::registerShaders);
         modEventBus.addListener(com.jvn.villagerretaliation.client.settlement.SettlementPeekRenderer::registerShaders);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.settlement.SettlementHoverRenderer::registerShaders);
         modEventBus.addListener(com.jvn.villagerretaliation.client.PreviewMeshCache::registerReloadListener);
         modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.VillagerStyledTextRenderer::registerReloadListener);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.PreviewMeshCache::tick);

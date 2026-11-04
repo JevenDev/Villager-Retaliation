@@ -28,7 +28,9 @@ final class SettlementWorldViewClientChecks {
     private CompletableFuture<?> homecoming;
     private SettlementArea area;
     private SettlementPeekClientChecks.LiveFade peekFade;
-    private int phase;
+    private int phase = -1;
+    private double pointerX;
+    private double pointerY;
     private int ticks;
     private int openingCase;
     private net.minecraft.client.CameraType openingPerspective;
@@ -44,6 +46,29 @@ final class SettlementWorldViewClientChecks {
     }
 
     boolean tick(Minecraft minecraft) {
+        if (this.phase == -1) {
+            if (this.ticks++ == 0) {
+                this.pointerX = minecraft.mouseHandler.xpos();
+                this.pointerY = minecraft.mouseHandler.ypos();
+                SettlementHoverClientChecks.verify(minecraft);
+                SettlementHoverClientChecks.pointAtGround(minecraft, this.view);
+            }
+            if (this.ticks == 10) {
+                SettlementHoverClientChecks.verifyRendered(this.view);
+                this.capture.accept("world-ground-hover");
+                SettlementHoverClientChecks.toggle(this.view, false);
+            }
+            if (this.ticks == 15) {
+                SettlementHoverClientChecks.verifyDisabled(this.view);
+                this.capture.accept("world-ground-hover-disabled");
+                SettlementHoverClientChecks.toggle(this.view, true);
+            }
+            if (this.ticks < 20) return false;
+            SettlementHoverClientChecks.verifyRendered(this.view);
+            GLFW.glfwSetCursorPos(minecraft.getWindow().getWindow(), this.pointerX, this.pointerY);
+            this.ticks = 0;
+            this.phase = 0;
+        }
         if (this.phase == 0) {
             if (this.peekFade == null) {
                 SettlementPeekClientChecks.verify(minecraft, this.view, this.center);

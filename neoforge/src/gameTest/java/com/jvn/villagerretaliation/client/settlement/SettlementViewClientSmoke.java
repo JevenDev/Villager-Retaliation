@@ -260,6 +260,15 @@ public final class SettlementViewClientSmoke {
                 minecraft.stop();
                 return;
             }
+            if (Boolean.getBoolean("villagerretaliation.settlementWorldViewClientSmoke")) {
+                hideOverviewMap(screen);
+                showOverviewMap(screen);
+                hidePanel(screen, "Hide settlement");
+                literalButton(screen, "Residents").onPress();
+                worldViewChecks = new SettlementWorldViewClientChecks(screen, fixture.town(), fixture.center(), SettlementViewClientSmoke::capture);
+                phase = 903;
+                return;
+            }
             if (farmChecks == null) {
                 if (pathChecks == null) pathChecks = new SettlementPathClientChecks(screen, fixture.center(), SettlementViewClientSmoke::capture);
                 if (!pathChecks.tick(minecraft)) return;
@@ -283,11 +292,6 @@ public final class SettlementViewClientSmoke {
             showOverviewMap(screen);
             hidePanel(screen, "Hide settlement");
             literalButton(screen, "Residents").onPress();
-            if (Boolean.getBoolean("villagerretaliation.settlementWorldViewClientSmoke")) {
-                worldViewChecks = new SettlementWorldViewClientChecks(screen, fixture.town(), fixture.center(), SettlementViewClientSmoke::capture);
-                phase = 903;
-                return;
-            }
             capture("terrain-overview-map");
             capture("minimum-zoom");
             screen.mouseScrolled(screen.viewportWidth() / 2.0D, 80, 0, Math.log(screen.viewHeight() / originalHeight) / Math.log(1.15D));
@@ -2174,13 +2178,14 @@ public final class SettlementViewClientSmoke {
             saved.constructionOverlay = true;
             saved.structurePreviews = true;
             saved.logisticsOverlay = true;
+            saved.hoverGrid = false;
             saved.save();
             var restored = new SettlementViewPreferences(path);
             require(restored.height == SettlementViewWindow.MAX_HEIGHT && restored.yaw == 315 && !restored.sidebar,
                     "restored preferences clamp camera limits");
             require(restored.browserPage == Page.PROJECTS && restored.browsers.get(Page.PROJECTS).equals(saved.browsers.get(Page.PROJECTS))
                     && restored.bookmarks.equals(saved.bookmarks), "browser settings and named camera bookmarks survive reload");
-            require(restored.constructionOverlay && restored.structurePreviews && restored.logisticsOverlay, "overlay choices survive reload");
+            require(restored.constructionOverlay && restored.structurePreviews && restored.logisticsOverlay && !restored.hoverGrid, "overlay choices survive reload");
             var browser = new SettlementViewBrowser();
             browser.restore(restored, Page.PROJECTS);
             browser.remember(restored);
@@ -2189,7 +2194,8 @@ public final class SettlementViewClientSmoke {
             browser.restore(restored, Page.PROJECTS);
             require(browser.query.equals("gate") && browser.sort == SettlementViewPreferences.BrowserSort.NAME, "switching categories restores their settings");
             Files.writeString(path, "version=1\nsidebar=false\n");
-            require(new SettlementViewPreferences(path).bookmarks.isEmpty(), "older preferences load without new workspace fields");
+            require(new SettlementViewPreferences(path).bookmarks.isEmpty() && new SettlementViewPreferences(path).hoverGrid,
+                    "older preferences load with the hover grid enabled");
             Files.writeString(path, "version=broken");
             var corrupt = new SettlementViewPreferences(path);
             corrupt.save();
