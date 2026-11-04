@@ -136,6 +136,12 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Button cancelGizmo;
     private Button changePrefab;
     private Button focusBuildingIssue;
+    private Button buildingSnap;
+    private Button buildingSpacing;
+    private com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode snapMode = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.FREE;
+    private int buildingGap = 2;
+    private List<BlockPos> entranceGuide = List.of();
+    private long nextEntranceGuide;
     private SettlementBuildOverlay.Bounds placementIssueLabel;
     private BlockPos placementIssuePosition;
     private SettlementSelectionGizmo gizmo;
@@ -492,6 +498,16 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 editArea(area);
             }
         }).shortcut("Enter"));
+        this.buildingSnap = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Snap: Free"), ignored -> {
+            var modes = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.values();
+            this.snapMode = modes[(this.snapMode.ordinal() + 1) % modes.length];
+            var draft = this.parent.buildingDraft();
+            if (draft != null && draft.currentPreview()) alignBuilding(draft, draft.anchor);
+            synchronizeGizmo(); updateActions();
+        }));
+        this.buildingSpacing = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Spacing: 2"), ignored -> {
+            this.buildingGap = this.buildingGap % 5 + 1; updateActions();
+        }));
         this.focusBuildingIssue = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Next placement issue"), ignored -> {
             var draft = this.parent.buildingDraft();
             if (draft == null || !draft.currentPreview() || draft.preview.diagnostics().isEmpty()) return;
@@ -760,6 +776,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         this.inspector.tick();
         var draft = this.parent.buildingDraft();
         if (draft != null) draft.tick(this.header.id());
+        if (now >= this.nextEntranceGuide) { updateEntranceGuide(draft); this.nextEntranceGuide = now + 500; }
         synchronizeGizmo();
         updateActions();
         if (this.commands.timeout(now)) {
@@ -1008,7 +1025,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var buttons = new ArrayList<Button>();
         for (var button : this.guardButtons) if (button != null) buttons.add(button);
         for (var button : new Button[]{this.returnToPost, this.groupActions, this.commandResults, this.transform, this.resize,
-                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.focusBuildingIssue, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
+                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.focusBuildingIssue, this.buildingSnap, this.buildingSpacing, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
         buttons.addAll(this.routeButtons);
         return buttons;
     }
@@ -1086,7 +1103,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             for (int index : new int[]{0, 1, -1, 2, 3, 4, 5, 6})
                 widgets.add(index < 0 ? this.wallSpacing : this.wallButtons.get(index));
         } else {
-            for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.focusBuildingIssue, this.cancelGizmo})
+            for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.focusBuildingIssue, this.buildingSnap, this.buildingSpacing, this.cancelGizmo})
                 if (button != null) widgets.add(button);
         }
         var actions = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
@@ -1263,6 +1280,10 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             this.cancelGizmo.visible = manipulating;
             this.changePrefab.visible = manipulating && draft != null;
             this.focusBuildingIssue.visible = manipulating && draft != null && draft.currentPreview() && !draft.preview.diagnostics().isEmpty();
+            this.buildingSnap.visible = this.buildingSpacing.visible = manipulating && draft != null;
+            this.buildingSnap.active = this.buildingSpacing.active = draft != null && draft.currentPreview() && !draft.submitting;
+            this.buildingSnap.setMessage(Component.literal("Snap: " + switch (this.snapMode) { case FREE -> "Free"; case STREET -> "Street"; case BUILDINGS -> "Buildings"; case PLOTS -> "Plots"; }));
+            this.buildingSpacing.setMessage(Component.literal("Spacing: " + this.buildingGap));
         }
         if (this.manage != null) {
             this.manage.setMessage(this.inspected instanceof SettlementManagementPayload.Depot ? Component.literal("Depot settings")
@@ -2200,11 +2221,49 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             draft.placed = true;
             draft.rotate(change.turns());
             var old = draft.bounds();
-            draft.move(draft.anchor.offset((int) Math.round(change.bounds().minX - old.minX),
+            alignBuilding(draft, draft.anchor.offset((int) Math.round(change.bounds().minX - old.minX),
                     (int) Math.round(change.bounds().minY - old.minY), (int) Math.round(change.bounds().minZ - old.minZ)));
         } else {
             this.areaBounds = change.bounds();
         }
+    }
+
+    private List<BlockPos> nearbyRoads(BlockPos anchor) {
+        var roads = new ArrayList<BlockPos>();
+        if (this.minecraft.level == null) return roads;
+        for (int dx = -20; dx <= 20; dx++) for (int dz = -20; dz <= 20; dz++) {
+            var column = anchor.offset(dx, 0, dz);
+            if (!this.minecraft.level.hasChunkAt(column)) continue;
+            var pos = com.jvn.villagerretaliation.settlement.SettlementPathTerrain.surface(this.minecraft.level, column.getX(), column.getZ());
+            if (com.jvn.villagerretaliation.settlement.SettlementPathTerrain.road(this.minecraft.level.getBlockState(pos))
+                    && this.projects.values().stream().noneMatch(p -> pos.getX() >= p.min().getX() && pos.getX() <= p.max().getX()
+                            && pos.getZ() >= p.min().getZ() && pos.getZ() <= p.max().getZ())) roads.add(pos);
+        }
+        return roads;
+    }
+
+    private void alignBuilding(SettlementBuildingDraft draft, BlockPos anchor) {
+        var neighbors = this.projects.values().stream().filter(p -> p.status() != SettlementProject.Status.CANCELLED)
+                .map(p -> new AABB(Vec3.atLowerCornerOf(p.min()), Vec3.atLowerCornerOf(p.max().offset(1, 1, 1)))).toList();
+        var placement = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.suggest(draft.preview, anchor, this.snapMode,
+                this.buildingGap, this.snapMode == com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.STREET ? nearbyRoads(anchor) : List.of(), neighbors);
+        draft.rotate(placement.turns()); draft.move(placement.anchor());
+    }
+
+    private void updateEntranceGuide(SettlementBuildingDraft draft) {
+        this.entranceGuide = List.of();
+        if (draft == null || !draft.currentPreview() || draft.preview.entrances().isEmpty()) return;
+        var start = draft.preview.entrances().getFirst();
+        var road = nearbyRoads(start).stream().min(java.util.Comparator.comparingDouble(pos ->
+                com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.horizontal(pos, start))).orElse(null);
+        if (road == null) return;
+        var route = new ArrayList<BlockPos>();
+        var pos = start;
+        while ((pos.getX() != road.getX() || pos.getZ() != road.getZ()) && route.size() < 40) {
+            route.add(pos);
+            pos = pos.offset(Integer.compare(road.getX(), pos.getX()), 0, pos.getX() == road.getX() ? Integer.compare(road.getZ(), pos.getZ()) : 0);
+        }
+        this.entranceGuide = List.copyOf(route);
     }
 
     private boolean permits(SettlementPermission permission) {
@@ -2739,7 +2798,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         if (draft != null) {
             if (hit.position() != null) {
-                draft.move(hit.position().above());
+                alignBuilding(draft, hit.position().above());
                 draft.placed = true;
                 synchronizeGizmo();
                 updateActions();
@@ -3106,6 +3165,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         selected ? 0.25F : 0.65F, selected ? 0.9F : 0.65F,
                         selected ? 1.0F : 0.65F, selected ? 1.0F : 0.45F);
             }
+        }
+        for (var step : this.entranceGuide) {
+            boolean clear = this.minecraft.level.hasChunkAt(step) && this.minecraft.level.getBlockState(step).getCollisionShape(this.minecraft.level, step).isEmpty()
+                    && this.minecraft.level.getBlockState(step.above()).getCollisionShape(this.minecraft.level, step.above()).isEmpty();
+            LevelRenderer.renderLineBox(pose, lines, new AABB(step).deflate(0.08).setMaxY(step.getY() + 0.12), clear ? 0.2F : 1F, clear ? 0.85F : 0.25F, 1F, 0.8F);
         }
         if (draft != null && draft.currentPreview()) {
             for (var diagnostic : draft.preview.diagnostics()) LevelRenderer.renderLineBox(pose, lines, new AABB(diagnostic.position()).inflate(0.025),
