@@ -597,7 +597,7 @@ public final class SettlementManagementGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_management")
-    public static void everyManagementPageAndActionRoundTripsWithExactCurrency(GameTestHelper helper) {
+    public static void managementPagesAndCommandsPreserveExactCurrency(GameTestHelper helper) {
         Fixture fixture = fixture(helper);
         var header = snapshot(fixture, Page.SUMMARY, 0, "").header();
         UUID id = UUID.randomUUID();
@@ -621,9 +621,11 @@ public final class SettlementManagementGameTests {
             Page page = pages.get(index);
             roundTrip(helper, SettlementManagementPayload.STREAM_CODEC, new SettlementManagementPayload(
                     fixture.town().dimension(), page == Page.TOWNS ? null : header, page, 3, 175, "Bread", 23, false, List.of(entries.get(index))));
-            roundTrip(helper, SettlementManagementRequestPayload.STREAM_CODEC,
-                    new SettlementManagementRequestPayload(page == Page.TOWNS ? null : id, page, 3, "Bread", 23, false));
         }
+        roundTrip(helper, SettlementManagementRequestPayload.STREAM_CODEC,
+                new SettlementManagementRequestPayload(null, Page.TOWNS, 3, "Bread", 23, true));
+        roundTrip(helper, SettlementManagementRequestPayload.STREAM_CODEC,
+                new SettlementManagementRequestPayload(id, Page.RESIDENTS, 3, "Bread", 23, false));
         var commands = List.<SettlementManagementActionPayload.Command>of(
                 new SettlementManagementActionPayload.Advance(),
                 new SettlementManagementActionPayload.View(),

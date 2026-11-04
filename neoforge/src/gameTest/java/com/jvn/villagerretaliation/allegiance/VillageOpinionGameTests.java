@@ -1,11 +1,9 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.network.VillageEntryPayload;
-import com.jvn.villagerretaliation.network.VillageOverviewPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import io.netty.buffer.Unpooled;
-import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -97,7 +95,7 @@ public final class VillageOpinionGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void opinionPacketsRoundTrip(GameTestHelper helper) {
+    public static void entryPacketPreservesPersonalOpinion(GameTestHelper helper) {
         var dimension = helper.getLevel().dimension().location();
         var opinion = new VillageOpinion(-40.5D, VillagerReputationLevel.SUSPICIOUS);
         var entry = new VillageEntryPayload(dimension, "Golden Fields", opinion);
@@ -106,11 +104,6 @@ public final class VillageOpinionGameTests {
             VillageEntryPayload.STREAM_CODEC.encode(buffer, entry);
             helper.assertValueEqual(VillageEntryPayload.STREAM_CODEC.decode(buffer), entry,
                     "entry packet retains the name, dimension and personal average");
-            var overview = new VillageOverviewPayload(BlockPos.ZERO, dimension, true, "Golden Fields",
-                    VillageLifecycleState.ACTIVE, 2, 0, 0, 2, 0, 0, 0, 1, List.of(), opinion);
-            VillageOverviewPayload.STREAM_CODEC.encode(buffer, overview);
-            helper.assertValueEqual(VillageOverviewPayload.STREAM_CODEC.decode(buffer), overview,
-                    "overview packet retains the opinion");
         } finally {
             buffer.release();
         }

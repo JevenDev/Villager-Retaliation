@@ -128,7 +128,8 @@ public final class VillageOverviewGameTests {
             residents.add(resident);
         }
         var payload = new VillageOverviewPayload(BlockPos.ZERO, helper.getLevel().dimension().location(), true,
-                "Bounded", VillageLifecycleState.ACTIVE, 200, 0, 200, 200, 0, 200, 200, 100, residents, VillageOpinion.NEUTRAL);
+                "Bounded", VillageLifecycleState.ACTIVE, 200, 0, 200, 200, 0, 200, 200, 100, residents,
+                new VillageOpinion(-40.5D, VillagerReputationLevel.SUSPICIOUS));
         helper.assertValueEqual(payload.residents().size(), VillageOverviewPayload.MAX_RESIDENTS,
                 "a large village cannot create an unbounded roster packet");
         helper.assertValueEqual(payload.adults(), 200, "summary population is not truncated with the rows");

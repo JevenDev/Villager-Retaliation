@@ -45,7 +45,8 @@ public final class DialogueStyleGameTests {
 
     @GameTest(template = "empty", batch = "dialogue_cues")
     public static void styleCatalogsAndParsedPerformancesSurviveTheWire(GameTestHelper helper) {
-        var payload = new DialogueStylesPayload(Map.of("nervous", style("{\"tag\":\"nervous\",\"text_effects\":{\"shake\":true,\"color\":\"gold\"},\"speed\":0.8}")));
+        var payload = new DialogueStylesPayload(Map.of("nervous", style("{\"tag\":\"nervous\",\"text_effects\":{\"shake\":true,\"color\":\"gold\"},\"speed\":0.8}"),
+                "subtle", subtleStyle(), "uneasy", lifecycleStyle()));
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {
             DialogueStylesPayload.STREAM_CODEC.encode(buffer, payload);
@@ -119,7 +120,7 @@ public final class DialogueStyleGameTests {
 
     @GameTest(template = "empty", batch = "dialogue_cues")
     public static void animationSettingsInheritRestoreAndSurvivePackets(GameTestHelper helper) {
-        var subtle = style("{\"tag\":\"subtle\",\"text_effects\":{\"shake\":{\"strength\":0.25,\"speed\":2},\"wavy\":{\"speed\":0}}}");
+        var subtle = subtleStyle();
         var strong = style("{\"tag\":\"strong\",\"text_effects\":{\"shake\":{\"strength\":3}}}");
         var segments = DialogueTextSegment.parse("<subtle>A<b>B</b><strong>C</strong>D</subtle>E", null, Map.of("subtle", subtle, "strong", strong));
         var outer = DialogueTextSegment.slice(segments, 0, 1).getFirst().effects();
@@ -134,9 +135,6 @@ public final class DialogueStyleGameTests {
                 com.jvn.villagerretaliation.dialogue.normal.DialogueTextAnimation.DEFAULT, "boolean effects preserve legacy animation defaults");
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {
-            var catalog = new DialogueStylesPayload(Map.of("subtle", subtle));
-            DialogueStylesPayload.STREAM_CODEC.encode(buffer, catalog);
-            helper.assertValueEqual(DialogueStylesPayload.STREAM_CODEC.decode(buffer), catalog, "style animation settings survive catalog synchronization");
             DialogueTextSegment.writeList(buffer, segments);
             helper.assertValueEqual(DialogueTextSegment.readList(buffer), segments, "per-span animation settings survive dialogue packets");
         } finally { buffer.release(); }
@@ -151,12 +149,7 @@ public final class DialogueStyleGameTests {
 
     @GameTest(template = "empty", batch = "dialogue_cues")
     public static void styleLifecycleCuesFollowRevealAndSurvivePackets(GameTestHelper helper) {
-        var style = style("""
-                {"tag":"uneasy","speed":0.5,"text_effects":{"shake":{"strength":0.35,"speed":0.8}},
-                 "on_enter":["look=nearest_participant","disagree","particle:smoke amount:2",
-                             "sound:entity.villager.no volume=0.4 pitch=1.2","pause=50"],
-                 "on_exit":["look=player","particle:heart","sound:entity.villager.yes"]}
-                """);
+        var style = lifecycleStyle();
         helper.assertTrue(style.restorePose(), "cue styles restore pose by default");
         helper.assertFalse(style("{\"tag\":\"legacy\"}").restorePose(), "legacy visual styles preserve inline pose behavior");
         var styles = Map.of("uneasy", style);
@@ -176,9 +169,6 @@ public final class DialogueStyleGameTests {
         helper.assertValueEqual(clock.pose(700, 0, 0, 12, 7), new DialoguePlayback.Pose(12, 7), "explicit exit gaze follows automatic restoration");
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {
-            var catalog = new DialogueStylesPayload(styles);
-            DialogueStylesPayload.STREAM_CODEC.encode(buffer, catalog);
-            helper.assertValueEqual(DialogueStylesPayload.STREAM_CODEC.decode(buffer), catalog, "cue lists and restore policy survive synchronization");
             DialogueTextSegment.writeList(buffer, segments);
             helper.assertValueEqual(DialogueTextSegment.readList(buffer), segments, "expanded style scopes survive speech packets");
             helper.assertFalse(buffer.isReadable(), "style cue packets are fully consumed");
@@ -250,6 +240,19 @@ public final class DialogueStyleGameTests {
             helper.assertTrue(rejected, "invalid style lifecycle rejected: " + fields);
         }
         helper.succeed();
+    }
+
+    private static DialogueStyle subtleStyle() {
+        return style("{\"tag\":\"subtle\",\"text_effects\":{\"shake\":{\"strength\":0.25,\"speed\":2},\"wavy\":{\"speed\":0}}}");
+    }
+
+    private static DialogueStyle lifecycleStyle() {
+        return style("""
+                {"tag":"uneasy","speed":0.5,"text_effects":{"shake":{"strength":0.35,"speed":0.8}},
+                 "on_enter":["look=nearest_participant","disagree","particle:smoke amount:2",
+                             "sound:entity.villager.no volume=0.4 pitch=1.2","pause=50"],
+                 "on_exit":["look=player","particle:heart","sound:entity.villager.yes"]}
+                """);
     }
 
     private static DialogueStyle style(String json) { return DialogueStyle.read(json(json)); }

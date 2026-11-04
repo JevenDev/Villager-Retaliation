@@ -313,7 +313,7 @@ public final class SettlementConstructionGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100, batch = "settlement_construction")
-    public static void projectCommandsAndManagementSnapshotsRoundTrip(GameTestHelper helper) {
+    public static void projectCommandsRoundTripThroughManagement(GameTestHelper helper) {
         var fixture = fixture(helper);
         var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         try {
@@ -328,8 +328,6 @@ public final class SettlementConstructionGameTests {
             var snapshot = SettlementManagementService.snapshot(fixture.leader(), new SettlementManagementRequestPayload(
                     fixture.town().id().value(), SettlementManagementRequestPayload.Page.PROJECTS, 0, id.toString(), 1, false));
             helper.assertValueEqual(snapshot.entries().size(), 1, "projects can be retrieved by exact identity");
-            SettlementManagementPayload.STREAM_CODEC.encode(buffer, snapshot);
-            helper.assertValueEqual(SettlementManagementPayload.STREAM_CODEC.decode(buffer), snapshot, "project pages round trip with progress and materials");
             var cancel = new SettlementManagementActionPayload(fixture.town().id().value(), new SettlementManagementActionPayload.CancelProject(id));
             SettlementManagementActionPayload.STREAM_CODEC.encode(buffer, cancel);
             helper.assertValueEqual(SettlementManagementActionPayload.STREAM_CODEC.decode(buffer), cancel, "project cancellation has a typed codec");
