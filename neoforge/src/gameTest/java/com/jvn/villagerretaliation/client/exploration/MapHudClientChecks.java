@@ -35,6 +35,7 @@ final class MapHudClientChecks {
                 verifyTabNavigation(screen, target);
                 verifyRelationsPage(screen, target);
                 verifyBottomPage(screen, target);
+                verifyNarrowLayout(screen, target);
                 var destinations = screen.destinations();
                 var widgets = screen.children().stream().filter(AbstractWidget.class::isInstance).map(AbstractWidget.class::cast).toList();
                 require(!widgets.isEmpty(), "the map has controls to hide");
@@ -518,6 +519,35 @@ final class MapHudClientChecks {
         } finally {
             screen.setFocused(null);
             ExploredMapClientSmoke.navigation(screen).clear();
+            ExploredMapClientSmoke.navigation(screen).focus(original.x(), original.z());
+            ExploredMapClientSmoke.zoom(screen, original.scale());
+        }
+    }
+
+    private static void verifyNarrowLayout(ExploredMapScreen screen, TextureTarget target) {
+        var minecraft = Minecraft.getInstance();
+        var original = screen.view();
+        try {
+            screen.resize(minecraft, 320, original.height());
+            var scale = (MapZoomScale) screen.children().getFirst();
+            int x = scale.getX() + 12, y = screen.height - 12;
+            var graphics = new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
+            target.bindWrite(true);
+            screen.render(graphics, x, y, 0);
+            graphics.flush();
+            require(scale.isMouseOver(x, y) && screen.settingsPage().at(x, y),
+                    "the narrow layout places settings paper underneath the ruler");
+            var before = screen.view();
+            screen.mouseScrolled(x, y, 0, 1);
+            require(screen.view().scale() > before.scale() && screen.view().x() == before.x() && screen.view().z() == before.z(),
+                    "ruler wheel zoom takes priority over overlapping paper and keeps the map center fixed");
+            screen.mouseClicked(x, y, 0);
+            screen.mouseReleased(x, y, 0);
+            require(minecraft.screen == screen && screen.getFocused() == scale,
+                    "clicking the overlapping ruler gives it focus without opening settings");
+            System.out.println("Map narrow layout checks passed: ruler wheel and click priority over settings paper");
+        } finally {
+            screen.resize(minecraft, original.width(), original.height());
             ExploredMapClientSmoke.navigation(screen).focus(original.x(), original.z());
             ExploredMapClientSmoke.zoom(screen, original.scale());
         }

@@ -65,16 +65,12 @@ public final class MapMarkerGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
-    public static void destinationArrowsAndScaleStayWithinTheViewport(GameTestHelper helper) {
+    public static void destinationArrowsStayWithinTheViewport(GameTestHelper helper) {
         helper.assertTrue(MapDestinationTracker.edge(320, 180, 640, 66, 290, 10) == null, "onscreen destinations need no edge arrow");
         for (double[] point : new double[][]{{-30000000, -30000000}, {30000000, 0}, {320, 30000000}, {0, 180}}) {
             var edge = MapDestinationTracker.edge(point[0], point[1], 640, 66, 290, 10);
             helper.assertTrue(edge != null && Double.isFinite(edge.angle()) && edge.x() >= 10 && edge.x() <= 630
                     && edge.y() >= 66 && edge.y() <= 290, "arrows remain inside the usable map area at world limits");
-        }
-        for (double scale : new double[]{.12, .25, 1, 2.5, 24}) {
-            int blocks = MapOrientation.scaleBlocks(scale, 80);
-            helper.assertTrue(blocks >= 1 && blocks * scale <= 80, "the scale uses real block distances and fits its allotted width");
         }
         helper.assertTrue(village("distance", -3, -4).distance(0, 0) == 5, "distance handles negative world coordinates");
         helper.succeed();

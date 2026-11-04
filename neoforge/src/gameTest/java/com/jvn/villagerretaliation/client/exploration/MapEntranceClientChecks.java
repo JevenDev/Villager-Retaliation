@@ -56,14 +56,14 @@ final class MapEntranceClientChecks {
                     }
                     image.writeToFile(Path.of(System.getProperty("villagerretaliation.mapLocationClientSmoke"), "map-hud-entrance-" + phase + ".png"));
                 }
-                if (phase == 0) require(!pages.overTab(620, 30)
+                if (phase == 0) require(pages.controlAt(620, 30) == null
                         && !MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()),
                         "offscreen tabs and compass cannot be hovered at their resting positions");
             }
             for (int layer = 0; layer < 3; layer++)
                 require(visible[1][layer] > 0 && visible[2][layer] > visible[1][layer],
                         "left pages, right tabs and the compass corner enter progressively from their edges");
-            require(pages.overTab(620, 30) && MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()),
+            require(pages.controlAt(620, 30) == MapPages.Control.ROUTES && MapCompass.hovered(640, 360, 598, 318, pages.compassX(), pages.compassY()),
                     "hover targets arrive with the tabs and compass");
             System.out.println("Map HUD entrance checks passed: transition sequencing, offscreen start, edge slides, moving hover targets, exact completion, skipped animation and screen resume");
         } catch (IOException exception) { throw new UncheckedIOException(exception); }

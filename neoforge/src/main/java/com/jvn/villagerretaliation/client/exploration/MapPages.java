@@ -1,9 +1,25 @@
 package com.jvn.villagerretaliation.client.exploration;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 final class MapPages {
+    enum Control {
+        ROUTES, VILLAGES, SEARCH, RELATIONS, SETTINGS;
+
+        List<Component> tooltip() {
+            return switch (this) {
+                case ROUTES -> List.of(MapLayers.text("routes"), MapLayers.text("routes_hint"));
+                case VILLAGES -> List.of(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("villages"), MapLayers.text("villages_hint"));
+                case SEARCH -> List.of(MapLocationsClient.text("title"), MapLayers.text("search_shortcut"));
+                case RELATIONS -> List.of(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("title"), MapLayers.text("relations_hint"));
+                case SETTINGS -> List.of(MapLayers.text("settings"), MapLayers.text("settings_hint"));
+            };
+        }
+    }
+
     private static final int WIDTH = 208, HEIGHT = 217;
     static final int CORNER_SIZE = 119, CORNER_OFFSET = 15;
     private static final MapHudSprite WOOD = new MapHudSprite("map_wood_corner", CORNER_SIZE, CORNER_SIZE);
@@ -19,14 +35,22 @@ final class MapPages {
     private float pageX, pageY, pagePeek;
     private int screenWidth, screenHeight;
 
-    boolean overPage(double x, double y) {
+    private boolean overPage(double x, double y) {
         return x >= 0 && y >= 0 && x < screenWidth && y < screenHeight
                 && (pageHovered ? PAGE_1_SELECTED : PAGE_1).contains(x - pageX, y - pageY);
     }
     MapBottomPage bottom() { return bottom; }
-    boolean overBottomPage(double x, double y) { return bottom.at(x, y); }
-    int tabAt(double x, double y) { return tabs.at(x, y); }
-    boolean overTab(double x, double y) { return tabAt(x, y) >= 0; }
+    Control controlAt(double x, double y) {
+        var tab = switch (tabs.at(x, y)) {
+            case 0 -> Control.ROUTES;
+            case 1 -> Control.VILLAGES;
+            case 2 -> Control.SEARCH;
+            default -> null;
+        };
+        if (tab != null) return tab;
+        if (overPage(x, y)) return Control.RELATIONS;
+        return bottom.at(x, y) ? Control.SETTINGS : null;
+    }
     float compassX() { return -mouseX * 1.5f + zoom * .5f + cornerSlide(); }
     float compassY() { return -mouseY * 1.5f + zoom * .5f + cornerSlide(); }
 

@@ -323,7 +323,7 @@ final class MapParchmentClientChecks {
             navigation.resize(target.width, target.height);
             navigation.zoomAt(320, 320, 0);
             var view = navigation.view();
-            require(MapOrientation.scaleBlocks(view.scale(), 80) == 500, "the widest rendered map reaches the 500 block scale");
+            require(view.width() / view.scale() == 4000, "the widest rendered map covers four thousand blocks");
             var missing = MapTileView.class.getDeclaredField("missing"); missing.setAccessible(true);
             long deadline = System.nanoTime() + 30_000_000_000L;
             boolean ready;

@@ -46,12 +46,8 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
     }
     static void resetTiles() { TILES.close(); }
     long renderedFrames() { return renderedFrames; }
-    void focusLocation(MapLocation location) {
-        navigation.focus(location.x(), location.z()); centered = true;
-    }
     @Override protected void init() {
-        locations.close();
-        relations.closePopup();
+        closePopups();
         MapLocationsClient.refresh();
         transition.open();
         navigation.resize(width, height);
@@ -66,8 +62,7 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
         for (var child : children()) if (child instanceof AbstractWidget widget) widget.visible = visible;
         if (!visible) {
             setFocused(null);
-            locations.close();
-            relations.closePopup();
+            closePopups();
             renderedMarkers = java.util.List.of();
         }
     }
@@ -128,13 +123,8 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
         if (!relations.hasPopup()) {
             locations.render(graphics, font, mouseX, mouseY, partial);
             if (!locations.hasPopup()) {
-                int tab = hoveredTab(mouseX, mouseY);
-                if (tab >= 0) graphics.renderComponentTooltip(font, MapTabs.tooltip(tab), mouseX, mouseY);
-                else if (pages.overPage(mouseX, mouseY) && !overWidget(mouseX, mouseY))
-                    graphics.renderComponentTooltip(font, java.util.List.of(
-                            com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("title"), MapLayers.text("relations_hint")), mouseX, mouseY);
-                else if (pages.overBottomPage(mouseX, mouseY) && !overWidget(mouseX, mouseY))
-                    graphics.renderComponentTooltip(font, java.util.List.of(MapLayers.text("settings"), MapLayers.text("settings_hint")), mouseX, mouseY);
+                var control = hoveredControl(mouseX, mouseY);
+                if (control != null) graphics.renderComponentTooltip(font, control.tooltip(), mouseX, mouseY);
                 else if (minecraft.player != null && overCompass(mouseX, mouseY))
                     graphics.renderComponentTooltip(font, MapCompass.tooltip(minecraft.player, minecraft.player.getViewYRot(partial)), mouseX, mouseY);
             }
@@ -160,18 +150,20 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
         for (var child : children()) if (child instanceof AbstractWidget widget && widget.isMouseOver(x, y)) return true;
         return false;
     }
-    private int hoveredTab(double x, double y) { return overWidget(x, y) ? -1 : pages.tabAt(x, y); }
-    private void openTab(int tab) {
-        locations.close();
-        relations.closePopup();
-        switch (tab) {
-            case 0 -> minecraft.setScreen(new SettlementRoutesScreen(this));
-            case 1 -> minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen(this, null, null, null));
-            case 2 -> minecraft.setScreen(new MapSearchScreen(this));
+    private MapPages.Control hoveredControl(double x, double y) { return overWidget(x, y) ? null : pages.controlAt(x, y); }
+    private void closePopups() { locations.close(); relations.closePopup(); }
+    private void openControl(MapPages.Control control) {
+        closePopups();
+        switch (control) {
+            case ROUTES -> minecraft.setScreen(new SettlementRoutesScreen(this));
+            case VILLAGES -> minecraft.setScreen(new com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen(this, null, null, null));
+            case SEARCH -> minecraft.setScreen(new MapSearchScreen(this));
+            case RELATIONS -> relations.toggle();
+            case SETTINGS -> minecraft.setScreen(new MapLayersScreen(this));
         }
     }
     private boolean overCompass(double x, double y) { return MapCompass.hovered(width, height, x, y, pages.compassX(), pages.compassY()); }
-    private boolean overMapControl(double x, double y) { return pages.overTab(x, y) || pages.overPage(x, y) || pages.overBottomPage(x, y) || zoomScale != null && zoomScale.isMouseOver(x, y); }
+    private boolean overMapControl(double x, double y) { return overWidget(x, y) || pages.controlAt(x, y) != null; }
     void showDestination(MapDestination destination) { locations.open(destination, width / 2, height / 2); }
     void shareLocations() { locations.shareAll(); }
     void selectMarker(MapDestination destination) { selectedMarker = destination.key(); }
@@ -186,8 +178,8 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
     @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
         if (transition.closing()) return true;
         finishOpening();
-        if (!minecraft.options.hideGui && (locations.scroll(x, y, vertical) || relations.scroll(x, y, vertical) || pages.overTab(x, y) || pages.overPage(x, y) || pages.overBottomPage(x, y)
-                || zoomScale.mouseScrolled(x, y, horizontal, vertical))) return true;
+        if (!minecraft.options.hideGui && (locations.scroll(x, y, vertical) || relations.scroll(x, y, vertical)
+                || zoomScale.mouseScrolled(x, y, horizontal, vertical) || pages.controlAt(x, y) != null)) return true;
         zoomAt(x, y, view().scale() * Math.pow(1.15, vertical)); return true;
     }
     @Override public boolean mouseClicked(double x, double y, int button) {
@@ -208,20 +200,9 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
             if (getFocused() == zoomScale) navigation.clear();
             return true;
         }
-        int tab = hoveredTab(x, y);
-        if (tab >= 0) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) openTab(tab);
-            return true;
-        }
-        if (pages.overPage(x, y)) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) { locations.close(); relations.toggle(); }
-            return true;
-        }
-        if (pages.overBottomPage(x, y)) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                locations.close(); relations.closePopup();
-                minecraft.setScreen(new MapLayersScreen(this));
-            }
+        var control = hoveredControl(x, y);
+        if (control != null) {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) openControl(control);
             return true;
         }
         if (overMapControl(x, y)) return true;
@@ -261,7 +242,7 @@ public final class ExploredMapScreen extends Screen implements VillagerTooltips.
         if (ExploredMapClient.OPEN.matches(key, scan) || key == GLFW.GLFW_KEY_ESCAPE) { onClose(); return true; }
         finishOpening();
         if (!minecraft.options.hideGui && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0 && key == GLFW.GLFW_KEY_F) {
-            openTab(2); return true;
+            openControl(MapPages.Control.SEARCH); return true;
         }
         if (!minecraft.options.hideGui && getFocused() == zoomScale && zoomScale.keyPressed(key, scan, modifiers)) return true;
         if (key == GLFW.GLFW_KEY_HOME) { center(); return true; }

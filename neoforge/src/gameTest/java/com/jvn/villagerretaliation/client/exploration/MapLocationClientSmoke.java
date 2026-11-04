@@ -154,7 +154,7 @@ public final class MapLocationClientSmoke {
                 require(saved.x() == worldX && saved.z() == worldZ, "cursor placement retains exact map coordinates");
                 require(saved.previewName().equals("Supplies") && saved.alwaysShowName(), "both names and visibility survive server save");
                 require(saved.icon() == MapLocation.Icon.IRON_SWORD, "selected item survives server save");
-                map.focusLocation(saved);
+                map.focusDestination(MapDestination.location(saved));
                 phase = 4;
             }
             case 4 -> {

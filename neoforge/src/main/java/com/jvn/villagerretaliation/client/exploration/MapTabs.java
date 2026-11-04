@@ -1,7 +1,5 @@
 package com.jvn.villagerretaliation.client.exploration;
 
-import java.util.List;
-import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.GuiGraphics;
 
 final class MapTabs {
@@ -33,15 +31,6 @@ final class MapTabs {
             if (index != hovered) renderTab(graphics, index);
         if (hovered >= 0) renderTab(graphics, hovered);
         graphics.setColor(1, 1, 1, 1);
-    }
-
-    static List<Component> tooltip(int tab) {
-        return switch (tab) {
-            case 0 -> List.of(MapLayers.text("routes"), MapLayers.text("routes_hint"));
-            case 1 -> List.of(com.jvn.villagerretaliation.client.settlement.VillageRelationsScreen.text("villages"), MapLayers.text("villages_hint"));
-            case 2 -> List.of(MapLocationsClient.text("title"), MapLayers.text("search_shortcut"));
-            default -> List.of();
-        };
     }
 
     int at(double x, double y) {

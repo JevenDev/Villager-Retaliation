@@ -110,13 +110,7 @@ final class VillageRelationsMap {
         if (button == 0 && new MapLayers(false).visible(MapLayers.Layer.RELATIONS)) { selected = village; refresh(); return true; }
         popup = new VillageMapPopup(Minecraft.getInstance().font, screen.width, screen.height, village, destination.name(), x, y,
                 () -> { popup = null; Minecraft.getInstance().setScreen(new VillageRelationsScreen(screen, perspective, village, null)); },
-                () -> { popup = null; focus(perspective, village); }, MapLocationMenus.details(destination), List.of(
-                new com.jvn.villagerretaliation.client.settlement.WorldViewMenu.Action(
-                        MapLayers.text(MapDestinationTracker.tracking(destination) ? "stop_tracking" : "track_destination"), true,
-                        () -> { MapDestinationTracker.toggle(destination); popup = null; }),
-                new com.jvn.villagerretaliation.client.settlement.WorldViewMenu.Action(
-                        MapLayers.text(MapDestinationTracker.favorite(destination) ? "unfavorite" : "favorite"), true,
-                        () -> { MapDestinationTracker.toggleFavorite(destination); popup = null; })));
+                () -> { popup = null; focus(perspective, village); }, MapLocationMenus.details(destination), MapLocationMenus.destinationActions(destination, this::closePopup));
         Minecraft.getInstance().getNarrator().sayNow(popup.narration());
         return true;
     }

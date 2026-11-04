@@ -36,14 +36,14 @@ public final class MapNavigationGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)
-    public static void widestZoomReachesFiveHundredBlockScale(GameTestHelper helper) {
+    public static void widestZoomCoversFourThousandBlocks(GameTestHelper helper) {
         var navigation = new MapNavigation();
         navigation.resize(640, 360);
         navigation.focus(-120, -240);
         var before = navigation.view();
         navigation.zoomAt(420, 90, 0);
         var widest = navigation.view();
-        helper.assertValueEqual(MapOrientation.scaleBlocks(widest.scale(), 80), 500, "the widest zoom displays a 500 block scale");
+        helper.assertValueEqual(widest.width() / widest.scale(), 4000.0, "the widest zoom covers four thousand blocks");
         helper.assertTrue(Math.abs(before.worldX(420) - widest.worldX(420)) < 0.000001
                 && Math.abs(before.worldZ(90) - widest.worldZ(90)) < 0.000001, "the extra zoom preserves the cursor anchor");
         navigation.zoomAt(420, 90, 0);

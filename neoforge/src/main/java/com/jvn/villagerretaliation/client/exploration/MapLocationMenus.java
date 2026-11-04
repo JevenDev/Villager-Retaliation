@@ -91,7 +91,7 @@ final class MapLocationMenus {
             if (destination.radius() > 0) details.add(MapLayers.text("quest_radius", destination.radius()));
             var actions = new ArrayList<Action>();
             actions.add(new Action(text("focus"), sameDimension(destination), () -> { close(); screen.focusDestination(destination); }));
-            actions.addAll(destinationActions(destination));
+            actions.addAll(destinationActions(destination, this::close));
             actions.add(new Action(MapLayers.text("open_journal"), true, () -> {
                 close(); Minecraft.getInstance().setScreen(new com.jvn.villagerretaliation.client.interaction.QuestJournalScreen(
                         com.jvn.villagerretaliation.client.quest.VrQuestJournalSource.INSTANCE, screen, destination.id()));
@@ -127,7 +127,7 @@ final class MapLocationMenus {
                 new Action(text("edit"), true, () -> edit(location)),
                 new Action(text("share"), true, () -> share(location.id())),
                 new Action(text("delete"), true, () -> confirmDelete(location))));
-        actions.addAll(destinationActions(destination));
+        actions.addAll(destinationActions(destination, this::close));
         show(details(destination), actions);
     }
 
@@ -138,11 +138,11 @@ final class MapLocationMenus {
         return List.of(Component.literal(destination.name()), text("coordinates", (int) destination.x(), (int) destination.z()),
                 Component.literal(destination.dimension().toString()), MapDestinationTracker.distance(destination));
     }
-    List<Action> destinationActions(MapDestination destination) {
+    static List<Action> destinationActions(MapDestination destination, Runnable close) {
         return List.of(new Action(MapLayers.text(MapDestinationTracker.tracking(destination) ? "stop_tracking" : "track_destination"), true, () -> {
-                    MapDestinationTracker.toggle(destination); close();
+                    MapDestinationTracker.toggle(destination); close.run();
                 }), new Action(MapLayers.text(MapDestinationTracker.favorite(destination) ? "unfavorite" : "favorite"), true, () -> {
-                    MapDestinationTracker.toggleFavorite(destination); close();
+                    MapDestinationTracker.toggleFavorite(destination); close.run();
                 }));
     }
 

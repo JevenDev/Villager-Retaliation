@@ -5,12 +5,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 final class MapOrientation {
-    static int scaleBlocks(double scale, int maxPixels) {
-        double desired = maxPixels / scale;
-        double power = Math.pow(10, Math.floor(Math.log10(desired)));
-        double fraction = desired / power;
-        return Math.max(1, (int) ((fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1) * power));
-    }
     static void render(GuiGraphics graphics, MapView view, Font font, int mouseX, int mouseY, boolean minimap) {
         if (minimap) {
             int northX = view.width() - 10, northY = 5;
