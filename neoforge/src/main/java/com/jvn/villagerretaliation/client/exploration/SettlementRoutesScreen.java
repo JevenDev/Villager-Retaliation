@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.exploration;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltips;
 import com.jvn.villagerretaliation.client.settlement.SettlementConfirmScreen;
 import com.jvn.villagerretaliation.client.settlement.SettlementTradePickerScreen;
 import com.jvn.villagerretaliation.client.settlement.WorldViewMenu;
@@ -35,7 +36,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-public final class SettlementRoutesScreen extends Screen {
+public final class SettlementRoutesScreen extends Screen implements VillagerTooltips.Provider {
     private enum Tool { DRAW, EDIT, PAN }
     private Tool tool = Tool.DRAW;
     private final SettlementBuildOverlay nodeToolbar = new SettlementBuildOverlay();

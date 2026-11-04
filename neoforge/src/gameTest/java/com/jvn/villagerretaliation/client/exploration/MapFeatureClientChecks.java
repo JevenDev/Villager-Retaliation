@@ -75,7 +75,7 @@ final class MapFeatureClientChecks {
                 var hidden = map.markerAt(map.width / 2.0, map.height / 2.0);
                 require(hidden == null || hidden.members().stream().noneMatch(value -> value.kind() == MapDestination.Kind.LOCATION), "hidden personal markers cannot receive clicks");
                 layers.toggle(MapLayers.Layer.LOCATIONS);
-                button(map, MapLocationsClient.text("title").getString()).onPress();
+                map.keyPressed(GLFW.GLFW_KEY_F, 0, GLFW.GLFW_MOD_CONTROL);
                 require(mc.screen instanceof MapSearchScreen, "locations opens unified search");
                 search(mc.screen).setValue("NEEDLE");
                 require(rows(mc.screen).children().size() == 2, "search combines names with the current dimension filter");
@@ -86,7 +86,7 @@ final class MapFeatureClientChecks {
                 search(mc.screen).setValue("needle supplies"); mc.screen.keyPressed(GLFW.GLFW_KEY_ENTER, 0, 0);
                 require(mc.screen == map && map.view().x() == destination.x(), "keyboard search focuses the chosen destination");
                 map.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
-                button(map, MapLayers.text("layers").getString()).onPress();
+                mc.setScreen(new MapLayersScreen(map));
                 button(mc.screen, MapLayers.text("minimap").getString()).onPress();
                 button(mc.screen, MapLayers.text("layer_off", MapLayers.Layer.VILLAGE_NAMES.title()).getString()).onPress();
                 require(new MapLayers(true).visible(MapLayers.Layer.VILLAGE_NAMES) && new MapLayers(false).visible(MapLayers.Layer.VILLAGE_NAMES), "minimap layer changes preserve the full map setting");
@@ -95,11 +95,16 @@ final class MapFeatureClientChecks {
                 phase++;
             }
             case 2 -> {
+                if (((MapLayersScreen) mc.screen).progress() < 1) return false;
                 capture("map-layers.png"); mc.screen.onClose();
-                button(map, MapLocationsClient.text("title").getString()).onPress();
+                phase = 20;
+            }
+            case 20 -> {
+                if (mc.screen != map) return false;
+                map.keyPressed(GLFW.GLFW_KEY_F, 0, GLFW.GLFW_MOD_CONTROL);
                 button(mc.screen, MapLayers.text("favorites_all").getString()).onPress();
                 require(rows(mc.screen).children().size() == 1, "favorites filter finds only the saved favorite");
-                phase++;
+                phase = 3;
             }
             case 3 -> {
                 capture("map-favorites.png"); mc.screen.onClose();
@@ -117,17 +122,22 @@ final class MapFeatureClientChecks {
                 set(QuestJournalScreen.class, journal, "animationStartMillis", net.minecraft.Util.getMillis() - 1000);
                 journal.tick();
                 require(mc.screen == map && map.transitionProgress() == 1 && map.view().x() == quest.x(), "closing the journal restores the same open map and camera");
-                button(map, MapLayers.text("follow_off").getString()).onPress(); phase++;
+                map.keyPressed(GLFW.GLFW_KEY_HOME, 0, 0); phase++;
             }
             case 6 -> {
-                require(map.view().x() == mc.player.getX() && map.view().z() == mc.player.getZ(), "follow centers the map on the moving player");
+                require(map.view().x() == mc.player.getX() && map.view().z() == mc.player.getZ(), "Home centers the map on the player");
                 capture("map-tracking.png");
+                double before = map.view().x();
                 map.mouseClicked(map.width / 2.0 + 40, map.height / 2.0 + 40, 0);
                 map.mouseDragged(map.width / 2.0 + 60, map.height / 2.0 + 40, 0, 20, 0); map.mouseReleased(0, 0, 0);
-                require(!(boolean) field(ExploredMapScreen.class, map, "following"), "manual dragging turns off follow");
-                button(map, MapLayers.text("follow_off").getString()).onPress();
-                map.keyPressed(GLFW.GLFW_KEY_RIGHT, 0, 0); map.keyReleased(GLFW.GLFW_KEY_RIGHT, 0, 0);
-                require(!(boolean) field(ExploredMapScreen.class, map, "following"), "arrow navigation turns off follow");
+                require(map.view().x() != before, "manual dragging pans after a reset");
+                before = map.view().x();
+                map.keyPressed(GLFW.GLFW_KEY_RIGHT, 0, 0);
+                long now = System.nanoTime();
+                ExploredMapClientSmoke.navigation(map).update(now, true);
+                ExploredMapClientSmoke.navigation(map).update(now + 50_000_000, true);
+                map.keyReleased(GLFW.GLFW_KEY_RIGHT, 0, 0);
+                require(map.view().x() > before, "arrow navigation pans after dragging");
                 VillagerRetaliationConfig.SHOW_EXPLORED_MAP_MINIMAP.set(true);
                 mc.setScreen(null); phase++;
             }

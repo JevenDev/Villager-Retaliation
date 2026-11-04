@@ -18,13 +18,7 @@ final class MapOrientation {
             graphics.drawCenteredString(font, MapLayers.text("north"), northX, northY, 0xffeee8d8);
             return;
         }
-        int blocks = scaleBlocks(view.scale(), 80), pixels = (int) Math.round(blocks * view.scale());
-        int x = 10, y = view.height() - 40;
-        var label = MapLayers.text("scale", blocks);
-        graphics.fill(x - 3, y - 14, x + Math.max(pixels, font.width(label)) + 4, y + 4, 0x99000000);
-        graphics.drawString(font, label, x, y - 12, 0xffeee8d8);
-        graphics.hLine(x, x + pixels, y, 0xffeee8d8);
-        graphics.vLine(x, y - 2, y + 3, 0xffeee8d8); graphics.vLine(x + pixels, y - 2, y + 3, 0xffeee8d8);
+        int y = view.height() - 40;
         if (mouseX >= 0 && mouseX < view.width() && mouseY >= 64 && mouseY < view.height() - 64) {
             var coordinates = MapLocationsClient.text("coordinates", (int) Math.floor(view.worldX(mouseX)), (int) Math.floor(view.worldZ(mouseY)));
             String text = font.plainSubstrByWidth(coordinates.getString(), Math.max(80, view.width() - 210));

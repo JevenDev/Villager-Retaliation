@@ -4,13 +4,26 @@ import com.jvn.villagerretaliation.exploration.MapView;
 import org.lwjgl.glfw.GLFW;
 
 final class MapNavigation {
+    static final double DEFAULT_SCALE = 2.5;
     private static final double WORLD_LIMIT = 29_999_000;
-    private MapView view = new MapView(1, 1, 0, 0, 2.5);
+    private MapView view = new MapView(1, 1, 0, 0, DEFAULT_SCALE);
     private boolean dragging;
     private int heldKeys;
     private long lastFrame;
+    private MapView resetFrom, resetTarget;
+    private long resetStart;
 
     MapView view() { return this.view; }
+    boolean resetting() { return this.resetTarget != null; }
+
+    void resetTo(double x, double z) {
+        clear();
+        this.resetFrom = this.view;
+        this.resetTarget = new MapView(this.view.width(), this.view.height(),
+                Math.clamp(x, -WORLD_LIMIT, WORLD_LIMIT), Math.clamp(z, -WORLD_LIMIT, WORLD_LIMIT),
+                Math.clamp(DEFAULT_SCALE, minimumZoom(this.view.width(), this.view.height()), 24));
+        this.resetStart = -1;
+    }
 
     void resize(int width, int height) {
         width = Math.max(1, width);
@@ -21,6 +34,7 @@ final class MapNavigation {
     }
 
     void focus(double x, double z) {
+        cancelReset();
         x = Math.clamp(x, -WORLD_LIMIT, WORLD_LIMIT);
         z = Math.clamp(z, -WORLD_LIMIT, WORLD_LIMIT);
         if (x != this.view.x() || z != this.view.z())
@@ -28,6 +42,7 @@ final class MapNavigation {
     }
 
     void zoomAt(double x, double y, double target) {
+        cancelReset();
         var before = this.view;
         double scale = Math.clamp(target, minimumZoom(before.width(), before.height()), 24);
         if (scale == before.scale()) return;
@@ -39,12 +54,27 @@ final class MapNavigation {
         if (!active) { clear(); return; }
         double elapsed = this.lastFrame == 0 ? 0 : Math.clamp((now - this.lastFrame) / 1e9, 0, .05);
         this.lastFrame = now;
+        if (resetting()) {
+            if (this.resetStart < 0) this.resetStart = now;
+            double progress = Math.clamp((now - this.resetStart) / 450_000_000.0, 0, 1);
+            if (progress == 1) {
+                set(this.resetTarget);
+                cancelReset();
+            } else {
+                double eased = MapScreenTransition.ease((float) progress);
+                set(new MapView(this.view.width(), this.view.height(),
+                        this.resetFrom.x() + (this.resetTarget.x() - this.resetFrom.x()) * eased,
+                        this.resetFrom.z() + (this.resetTarget.z() - this.resetFrom.z()) * eased,
+                        this.resetFrom.scale() * Math.pow(this.resetTarget.scale() / this.resetFrom.scale(), eased)));
+            }
+            return;
+        }
         double dx = (((this.heldKeys & 2) != 0 ? 1 : 0) - ((this.heldKeys & 1) != 0 ? 1 : 0)) * 200 * elapsed;
         double dz = (((this.heldKeys & 8) != 0 ? 1 : 0) - ((this.heldKeys & 4) != 0 ? 1 : 0)) * 200 * elapsed;
         panPixels(dx, dz);
     }
 
-    void beginDrag() { this.dragging = true; }
+    void beginDrag() { cancelReset(); this.dragging = true; }
     void endDrag() { this.dragging = false; }
 
     boolean drag(double dx, double dy) {
@@ -55,6 +85,7 @@ final class MapNavigation {
 
     boolean press(int key) {
         int arrow = arrow(key);
+        if (arrow != 0) cancelReset();
         this.heldKeys |= arrow;
         return arrow != 0;
     }
@@ -66,9 +97,15 @@ final class MapNavigation {
     }
 
     void clear() {
+        cancelReset();
         this.dragging = false;
         this.heldKeys = 0;
         this.lastFrame = 0;
+    }
+
+    private void cancelReset() {
+        this.resetFrom = null;
+        this.resetTarget = null;
     }
 
     private void panPixels(double dx, double dz) {

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.exploration;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltips;
 import com.jvn.villagerretaliation.client.settlement.WorldViewMenu;
 import com.jvn.villagerretaliation.exploration.MapLocation;
 import com.jvn.villagerretaliation.network.MapLocationRequest;
@@ -16,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 import static com.jvn.villagerretaliation.client.exploration.MapLocationsClient.text;
 
-final class MapLocationEditScreen extends Screen {
+final class MapLocationEditScreen extends Screen implements VillagerTooltips.Provider {
     private final ExploredMapScreen parent;
     private final MapLocation original;
     private MapLocation.Icon icon;

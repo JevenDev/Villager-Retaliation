@@ -7,6 +7,9 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
+import java.util.List;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -18,6 +21,7 @@ public final class MapCompass {
     static final int PADDING = 10;
     private static final ResourceLocation BACKGROUND = ResourceLocation.fromNamespaceAndPath("vr_explored_map", "textures/gui/compass.png");
     private static final ResourceLocation NEEDLE = ResourceLocation.fromNamespaceAndPath("vr_explored_map", "textures/gui/compass_needle.png");
+    private static final String[] DIRECTIONS = {"S", "SW", "W", "NW", "N", "NE", "E", "SE"};
     private static ShaderInstance shader;
 
     private MapCompass() { }
@@ -31,9 +35,29 @@ public final class MapCompass {
         }
     }
 
+    static boolean hovered(int width, int height, double x, double y) { return hovered(width, height, x, y, 0, 0); }
+
+    static boolean hovered(int width, int height, double x, double y, float offsetX, float offsetY) {
+        double dx = x - (width - PADDING - SIZE / 2.0 + offsetX), dy = y - (height - PADDING - SIZE / 2.0 + offsetY);
+        return dx * dx + dy * dy < SIZE * SIZE / 4.0;
+    }
+
+    static String direction(float yaw) {
+        return DIRECTIONS[Math.floorMod(Mth.floor((Mth.wrapDegrees(yaw) + 22.5f) / 45), DIRECTIONS.length)];
+    }
+
+    static List<Component> tooltip(Player player, float yaw) {
+        return List.of(player.getName(), MapLayers.text("compass_coordinates", player.getBlockX(), player.getBlockY(), player.getBlockZ()),
+                MapLayers.text("facing", direction(yaw)));
+    }
+
     static void render(GuiGraphics graphics, int width, int height, float yaw, float opacity) {
+        render(graphics, width, height, yaw, opacity, 0, 0);
+    }
+
+    static void render(GuiGraphics graphics, int width, int height, float yaw, float opacity, float offsetX, float offsetY) {
         if (shader == null || opacity <= 0) return;
-        int left = width - SIZE - PADDING, top = height - SIZE - PADDING;
+        float left = width - SIZE - PADDING + offsetX, top = height - SIZE - PADDING + offsetY;
         double angle = Math.toRadians(Mth.wrapDegrees(yaw) + 180);
         graphics.flush();
         shader.safeGetUniform("Rotation").set((float) Math.cos(angle), (float) Math.sin(angle));

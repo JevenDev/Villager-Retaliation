@@ -25,6 +25,7 @@ final class MapLocationMenus {
     MapLocationMenus(ExploredMapScreen screen) { this.screen = screen; }
 
     void close() { menu = null; }
+    boolean hasPopup() { return menu != null; }
     void hover(double x, double y) { if (menu != null) menu.hover(x, y); }
     void render(GuiGraphics graphics, Font font, int x, int y, float partial) {
         if (menu != null) menu.render(graphics, font, x, y, partial);

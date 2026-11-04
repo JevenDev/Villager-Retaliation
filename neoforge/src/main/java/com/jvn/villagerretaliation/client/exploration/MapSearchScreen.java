@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.exploration;
 
+import com.jvn.villagerretaliation.client.ui.VillagerTooltips;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
 
-final class MapSearchScreen extends Screen {
+final class MapSearchScreen extends Screen implements VillagerTooltips.Provider {
     private final ExploredMapScreen parent;
     private String query = "";
     private ResourceLocation dimension;

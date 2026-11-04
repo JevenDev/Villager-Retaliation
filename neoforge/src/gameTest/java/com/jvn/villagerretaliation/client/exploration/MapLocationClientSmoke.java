@@ -46,8 +46,10 @@ public final class MapLocationClientSmoke {
 
     @SubscribeEvent public static void afterRender(ScreenEvent.Render.Post event) {
         if (System.getProperty(OUTPUT) != null && !compassChecked && event.getScreen() instanceof ExploredMapScreen screen
-                && screen.transitionProgress() == 1) {
+                && screen.transitionProgress() == 1 && screen.hudProgress() == 1) {
+            MapEntranceClientChecks.verify();
             MapHudClientChecks.verify(screen);
+            MapTabsClientChecks.verify(screen);
             if (!SHADER_ONLY) MapCompassClientChecks.verify(screen);
             MapAtmosphereClientChecks.verify(screen);
             MapParchmentClientChecks.verify(screen);
