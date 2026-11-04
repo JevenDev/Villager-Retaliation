@@ -120,6 +120,7 @@ public final class SettlementConstructionService {
     }
 
     static BuilderStructureScanner.StructurePlan scan(ServerLevel level, SettlementProject project) {
+        if (project.buildingWork() != null) return project.buildingWork().plan(project.id());
         if (project.order() != null) return project.order().plan(project.id());
         if (project.wallConstruction() != null) return project.wallConstruction().plan(project.id());
         var plan = scan(level, project.structure(), project.rotation());
@@ -147,6 +148,8 @@ public final class SettlementConstructionService {
         java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
                 .filter(project -> project.order() != null)
                 .forEach(project -> project.order().record(level, town, project));
+        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
+                .filter(project -> project.buildingWork() != null).forEach(project -> project.buildingWork().record(town, project));
         int active = (int) town.projects().values().stream().filter(SettlementProject::active).count();
         for (var project : List.copyOf(town.projects().values())) {
             if (!project.pending() || project.paused()) continue;
@@ -207,6 +210,7 @@ public final class SettlementConstructionService {
     }
 
     private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {
+        if (project.buildingWork() != null) return !project.buildingWork().safe(level, town, project);
         if (project.order() != null) return project.order().protectedSite(level, town);
         if (project.wallConstruction() != null) return project.wallConstruction().protectedSite(level, town);
         if(project.repairOf()!=null) return !AutonomousVillageMaintenance.safe(level,town,project);
@@ -255,7 +259,7 @@ public final class SettlementConstructionService {
                 || !level.getWorldBorder().isWithinBounds(min) || !level.getWorldBorder().isWithinBounds(max)) return "bounds";
         var footprint = new AABB(Vec3.atLowerCornerOf(min), Vec3.atLowerCornerOf(max.offset(1, 1, 1)));
         if (SettlementSavedData.get(level).settlements().stream().filter(other -> other.dimension().equals(town.dimension()))
-                .flatMap(other -> java.util.stream.Stream.concat(other.projects().values().stream(), other.projectHistory().values().stream()).filter(other::owns)).anyMatch(project -> (project.reservesFootprint() || project.status() == SettlementProject.Status.COMPLETED)
+                .flatMap(other -> java.util.stream.Stream.concat(other.projects().values().stream(), other.projectHistory().values().stream()).filter(other::owns)).anyMatch(project -> (project.reservesFootprint() || project.status() == SettlementProject.Status.COMPLETED && !project.retired() && project.buildingWork() == null)
                 && (project.wallConstruction() != null ? project.wallConstruction().overlaps(min, max)
                         : new AABB(Vec3.atLowerCornerOf(project.min()), Vec3.atLowerCornerOf(project.max().offset(1, 1, 1)))
                                 .intersects(footprint)))) return "overlap";

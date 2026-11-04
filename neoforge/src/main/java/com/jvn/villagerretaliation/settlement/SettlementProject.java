@@ -22,6 +22,14 @@ public final class SettlementProject {
     private CompoundTag task;
     private Status status;
     private boolean paused;
+    private boolean retired;
+    private SettlementBuildingWork buildingWork;
+    SettlementBuildingWork buildingWork() { return this.buildingWork; }
+    void buildingWork(SettlementBuildingWork work) { this.buildingWork = work; }
+    public boolean retired() { return this.retired; }
+    void retire() { this.retired = true; }
+    public boolean completedBuilding() { return this.status == Status.COMPLETED && !this.retired && this.order == null
+            && this.wallConstruction == null && this.buildingWork == null && this.repairOf == null; }
     private SettlementBuildingPreparation preparation;
     SettlementBuildingPreparation preparation() { return this.preparation; }
     void preparation(SettlementBuildingPreparation preparation) { this.preparation = preparation; }
@@ -75,7 +83,7 @@ public final class SettlementProject {
         this.previousArea = this.workplace == null ? null : town.duties().get(worker);
         this.previousSettings = this.workplace == null ? null : town.workerSettings().get(worker);
         this.status = Status.ACTIVE;
-        if (this.wallConstruction != null || this.order != null) this.crew = new SettlementConstructionCrew(worker, total(), 0);
+        if (this.wallConstruction != null || this.order != null || this.buildingWork != null) this.crew = new SettlementConstructionCrew(worker, total(), 0);
         this.paymentReserved = true;
         this.task.remove("BlockedReason");
     }
@@ -386,6 +394,8 @@ public final class SettlementProject {
     CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
+        tag.putBoolean("BuildingRetired", this.retired);
+        if (this.buildingWork != null) tag.put("BuildingWork", this.buildingWork.save());
         if(repairOf!=null) tag.putUUID("RepairOf",repairOf);
         tag.putUUID("Area", this.area);
         tag.putUUID("Builder", this.builder);
@@ -436,6 +446,16 @@ public final class SettlementProject {
             if (!project.matchesPlan(plan) || !project.structure().equals(plan.entry().id()) || project.total() != plan.blocks().size()
                     || !project.origin().equals(project.order.origin()) || !project.min().equals(plan.worldMin(project.origin()))
                     || !project.max().equals(plan.worldMax(project.origin()))) throw new IllegalArgumentException("Construction order changed");
+        }
+        project.retired = tag.getBoolean("BuildingRetired");
+        if (tag.contains("BuildingWork")) {
+            if (project.order != null || project.wallConstruction != null || !tag.contains("BuildingWork", Tag.TAG_COMPOUND))
+                throw new IllegalArgumentException("Invalid building work");
+            project.buildingWork = SettlementBuildingWork.load(tag.getCompound("BuildingWork"));
+            var plan = project.buildingWork.plan(project.id());
+            if (!project.matchesPlan(plan) || !project.structure().equals(plan.entry().id()) || project.total() != plan.blocks().size()
+                    || !project.origin().equals(project.buildingWork.origin()) || !project.min().equals(plan.worldMin(project.origin()))
+                    || !project.max().equals(plan.worldMax(project.origin()))) throw new IllegalArgumentException("Building work plan changed");
         }
         if (tag.contains("Crew")) {
             if (!tag.contains("Crew", Tag.TAG_COMPOUND)) throw new IllegalArgumentException("Invalid construction crew");

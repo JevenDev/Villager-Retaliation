@@ -316,7 +316,8 @@ public final class SettlementManagementService {
                     job.priority(), job.revision(), true, workerName, List.of(),
                     new SettlementManagementPayload.FarmProgress(job.done(false), job.total(false), job.done(true), job.total(true), job.paused(), job.requested())));
         });
-        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream()).forEach(project -> entries.add(new SettlementManagementPayload.Project(
+        java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
+                .filter(project -> !project.retired() && (project.buildingWork() == null || project.unfinished())).forEach(project -> entries.add(new SettlementManagementPayload.Project(
                         project.id(), display(project.label()), project.area(), project.builder(), project.origin(), project.min(), project.max(), project.status(),
                         project.placed(), project.total(), project.blocker().substring(0, Math.min(128, project.blocker().length())),
                         project.materials().substring(0, Math.min(512, project.materials().length())), project.phase(),

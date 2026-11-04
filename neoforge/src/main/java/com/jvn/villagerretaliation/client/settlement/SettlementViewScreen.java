@@ -3709,7 +3709,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                             () -> focus(position.getX() + 0.5D, position.getZ() + 0.5D)));
                     if (issue.kind() == SettlementManagementPayload.IssueKind.PROJECT && project != null) {
                         actions.add(menuAction(Component.literal("Assign construction crew"), true,
-                                () -> this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this))));
+                                () -> openProject(project)));
                     } else if (worker != null) {
                         actions.add(menuAction(Component.literal("Assign workplace"), ready && permits(SettlementPermission.STAFF),
                                 () -> management().assignResident(worker)));
@@ -3975,7 +3975,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                                 + project.blocker().replace("interaction.work.builder.", ""), SettlementManagementScreen.text("project_blocked").getString()));
                     }
                     if (!project.missingMaterials().isBlank()) details.add(SettlementManagementScreen.text("project_missing", project.missingMaterials()));
-                    actions.add(contextAction("manage_selection", ready, () -> this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this))));
+                    actions.add(contextAction("manage_selection", ready, () -> openProject(project)));
                     actions.add(new SettlementViewPopup.Action(SettlementManagementScreen.text(project.farm() == null ? "project_builder" : "project_farmer"), ready,
                             () -> openManagement(Page.RESIDENTS, project.builder().toString())));
                     if (permits(SettlementPermission.BUILD)) {
@@ -4137,7 +4137,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             }
             case STAFF -> {
                 if (selected instanceof SettlementManagementPayload.Project project) {
-                    this.minecraft.setScreen(new SettlementProjectScreen(management(), project, this));
+                    openProject(project);
                 } else if (selected instanceof SettlementManagementPayload.Area && area != null && area.plan() != null) {
                     this.parent.submit(new SettlementManagementActionPayload.FillStaffing(area.id()));
                 } else {
@@ -4225,6 +4225,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         screen.navigateTo(page, query);
     }
 
+    private void openProject(SettlementManagementPayload.Project project) {
+        this.minecraft.setScreen(project.status() == SettlementProject.Status.COMPLETED
+                ? new SettlementCompletedBuildingScreen(management(), project, this) : new SettlementProjectScreen(management(), project, this));
+    }
+
     private void manageSelection() {
         if (!this.selection.beds().isEmpty()) { openHousingAssignments(); return; }
         if (this.inspected instanceof SettlementManagementPayload.Depot depot) {
@@ -4242,7 +4247,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.resident != null) {
             openManagement(Page.RESIDENTS, this.resident.id().toString());
         } else if (this.projects.containsKey(this.selectedArea)) {
-            this.minecraft.setScreen(new SettlementProjectScreen(management(), this.projects.get(this.selectedArea), this));
+            openProject(this.projects.get(this.selectedArea));
         } else if (this.areas.containsKey(this.selectedArea)) {
             this.parent.clearBuildingDraft();
             this.editingArea = this.areas.get(this.selectedArea);
