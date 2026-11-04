@@ -73,6 +73,12 @@ public final class SettlementPathEditor {
         this.localCells = List.of();
         this.feedback = branch ? "Select an existing path or road to branch from" : "Click valid ground to start a path";
     }
+    public void edit(SettlementPath path) {
+        begin(path.branch());
+        this.draft = new SettlementPathDraft(path, false);
+        this.draft.stopExtending();
+    }
+
     public void cancel(UUID session, Consumer<SettlementPathRequestPayload> send) {
         if (!active() || this.confirming) return;
         rememberSettings();

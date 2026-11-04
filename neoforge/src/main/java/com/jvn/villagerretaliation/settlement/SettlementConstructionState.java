@@ -92,8 +92,11 @@ final class SettlementConstructionState {
     }
 
     private void trimProjectHistory() {
-        while (this.projectHistory.size() > PROJECT_HISTORY_LIMIT) {
-            var oldest = this.projectHistory.keySet().iterator().next();
+        var removable = this.projectHistory.values().stream().filter(project -> !project.completedBuilding())
+                .filter(project -> this.projects.values().stream().noneMatch(pending -> pending.pending() && pending.prerequisites().contains(project.id())))
+                .map(SettlementProject::id).toList();
+        for (int index = 0; index < removable.size() - PROJECT_HISTORY_LIMIT; index++) {
+            var oldest = removable.get(index);
             this.projectHistory.remove(oldest);
             this.retiredProjects.add(oldest);
         }

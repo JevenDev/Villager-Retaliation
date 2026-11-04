@@ -74,7 +74,7 @@ public final class SettlementCompletedBuildingScreen extends VillagerWindowScree
     @Override public void tick() {
         if (this.waiting && Util.getMillis() - this.sentAt > 3_000L) send();
         this.queue.active = !this.waiting && this.info != null && !this.info.queued() && !this.info.fingerprint().isEmpty();
-        this.queue.setMessage(Component.literal(this.request.action() == Action.DISMANTLE ? "Confirm dismantling" : "Queue reviewed work"));
+        this.queue.setMessage(Component.literal(this.info != null && this.info.queued() ? "Work queued" : this.request.action() == Action.DISMANTLE ? "Confirm dismantling" : "Queue reviewed work"));
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

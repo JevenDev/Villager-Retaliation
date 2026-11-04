@@ -116,7 +116,7 @@ final class SettlementConstructionOrder {
                         || !level.getBlockState(cell.position().above()).isAir() || !level.getBlockState(cell.position().above(2)).isAir()))) return true;
         if (this.originals.stream().anyMatch(entry -> !entry.equals(SettlementWallsSavedData.get(level).get(entry.id())))) return true;
         if (!wall() && java.util.stream.Stream.concat(town.projects().values().stream(), town.projectHistory().values().stream())
-                .anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED && project.order() == null
+                .anyMatch(project -> project.status() == SettlementProject.Status.COMPLETED && !project.retired() && project.buildingWork() == null && project.order() == null
                         && this.cells.stream().anyMatch(cell -> project.wallConstruction() != null
                                 ? project.wallConstruction().overlaps(cell.position(), cell.position())
                                 : cell.position().getX() >= project.min().getX() && cell.position().getX() <= project.max().getX()

@@ -735,12 +735,22 @@ public final class SettlementRecord {
     public long constructionQueueRevision() { return this.construction.queueRevision(); }
 
     boolean queueProject(UUID actor, SettlementProject project) {
-        var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
-        if (!permits(actor, SettlementPermission.BUILD) || !project.pending() || !actor.equals(project.authority())
-                || !project.town().equals(this.id.value()) || knowsProject(project.id()) || !project.within(area) || !owns(project)
-                || project.capacity(this) == 0 || projects().values().stream().filter(SettlementProject::pending).count() >= CONSTRUCTION_QUEUE_LIMIT
-                || projects().values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))) return false;
-        this.construction.add(project);
+        return queueProjects(actor, java.util.List.of(project));
+    }
+
+    boolean queueProjects(UUID actor, java.util.List<SettlementProject> proposed) {
+        if (proposed.isEmpty() || proposed.size() > CONSTRUCTION_QUEUE_LIMIT
+                || proposed.stream().map(SettlementProject::id).distinct().count() != proposed.size()
+                || !permits(actor, SettlementPermission.BUILD)
+                || projects().values().stream().filter(SettlementProject::pending).count() + proposed.size() > CONSTRUCTION_QUEUE_LIMIT) return false;
+        for (var project : proposed) {
+            var area = project.workplace() == null ? workplace(project.area()) : project.workplace();
+            if (!project.pending() || !actor.equals(project.authority()) || !project.town().equals(this.id.value())
+                    || knowsProject(project.id()) || !project.within(area) || !owns(project) || project.capacity(this) == 0
+                    || projects().values().stream().anyMatch(existing -> existing.reservesFootprint() && existing.overlaps(project))
+                    || proposed.stream().anyMatch(other -> other != project && other.overlaps(project))) return false;
+        }
+        proposed.forEach(this.construction::add);
         this.construction.queueChanged();
         changed();
         return true;

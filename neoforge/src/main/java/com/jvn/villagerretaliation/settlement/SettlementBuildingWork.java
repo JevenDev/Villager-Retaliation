@@ -5,7 +5,6 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCata
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.network.SettlementBuildingRequestPayload.Action;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -45,12 +44,11 @@ final class SettlementBuildingWork {
                 this.blocks.stream().mapToInt(b -> b.localPos().getY()).min().orElseThrow(), this.blocks.stream().mapToInt(b -> b.localPos().getZ()).min().orElseThrow());
         var max = new BlockPos(this.blocks.stream().mapToInt(b -> b.localPos().getX()).max().orElseThrow(),
                 this.blocks.stream().mapToInt(b -> b.localPos().getY()).max().orElseThrow(), this.blocks.stream().mapToInt(b -> b.localPos().getZ()).max().orElseThrow());
-        var materials = new LinkedHashMap<net.minecraft.world.item.Item, Integer>();
-        for (var block : this.blocks) if (block.requiresMaterial()) materials.merge(block.requiredItem().getItem(), block.requiredItem().getCount(), Integer::sum);
+        var materials = BuilderStructureScanner.materialRequirements(this.blocks.stream().map(BuilderStructureScanner.BuildBlock::state).toList());
         var entry = new BuilderStructureCatalog.Entry(ResourceLocation.parse("villagerretaliation:building_work/" + id),
                 "Maintenance", this.action.name().toLowerCase(java.util.Locale.ROOT), 0, BuilderConstructionCost.EXACT, "");
         return this.plan = new BuilderStructureScanner.StructurePlan(entry, Rotation.NONE, max.subtract(min).offset(1, 1, 1), min, max,
-                this.blocks, materials.entrySet().stream().map(row -> new BuilderStructureScanner.MaterialRequirement(new ItemStack(row.getKey()), row.getValue())).toList(), this.price);
+                this.blocks, materials, this.price);
     }
 
     boolean safe(ServerLevel level, SettlementRecord town, SettlementProject project) {
@@ -66,7 +64,8 @@ final class SettlementBuildingWork {
     }
 
     void record(SettlementRecord town, SettlementProject project) {
-        if (this.action == Action.DISMANTLE && project.status() == SettlementProject.Status.COMPLETED) {
+        if (this.action == Action.DISMANTLE && project.status() == SettlementProject.Status.COMPLETED
+                && (project.site() == null || !project.site().unsettled())) {
             var original = town.project(this.source);
             if (original != null && !original.retired()) { original.retire(); town.changed(); }
         }

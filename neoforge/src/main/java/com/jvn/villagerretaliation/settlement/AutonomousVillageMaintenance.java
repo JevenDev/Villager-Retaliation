@@ -13,7 +13,7 @@ final class AutonomousVillageMaintenance {
         var structures=List.copyOf(state.structures.entrySet());
         var entry=structures.stream().filter(row->state.need.equals("repair:"+row.getKey())).findFirst()
                 .orElseGet(()->structures.get(Math.floorMod(state.maintenanceCursor++,structures.size())));
-        var original=town.project(entry.getKey());if(original==null || original.status()!=SettlementProject.Status.COMPLETED) return false;
+        var original=town.project(entry.getKey());if(original==null || !original.completedBuilding()) return false;
         var plan=SettlementConstructionService.scan(level,original.structure(),original.rotation());
         if(plan==null || plan.blocks().size()>4096 || !original.matchesPlan(plan)) return false;
         int missing=0;
@@ -47,7 +47,7 @@ final class AutonomousVillageMaintenance {
     }
     static boolean safe(ServerLevel level,SettlementRecord town,SettlementProject project) {
         var source=town.project(project.repairOf());
-        if(source==null || source.status()!=SettlementProject.Status.COMPLETED || !source.min().equals(project.min())
+        if(source==null || !source.completedBuilding() || !source.min().equals(project.min())
                 || !source.max().equals(project.max()) || !source.origin().equals(project.origin()) || !source.structure().equals(project.structure())
                 || source.rotation()!=project.rotation()) return false;
         var plan=SettlementConstructionService.scan(level,project.structure(),project.rotation());

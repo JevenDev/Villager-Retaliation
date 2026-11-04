@@ -3106,6 +3106,8 @@
   "villagerretaliation.gui.settlement.work.crafting": "Crafting",
   "villagerretaliation.gui.settlement.work.crafted": "Crafted",
   "villagerretaliation.gui.settlement.work.missing_materials": "Missing materials",
+  "villagerretaliation.gui.settlement.project_blocker.prerequisite": "Waiting for the district paths to finish",
+  "villagerretaliation.gui.settlement.project_blocker.prerequisite_cancelled": "A required district path was cancelled. Cancel this building and submit a new plan",
   "villagerretaliation.gui.settlement.trade_status.none": "Waiting for the next trade cycle.",
   "villagerretaliation.gui.settlement.trade_status.disabled": "Order disabled.",
   "villagerretaliation.gui.settlement.trade_status.stage_locked": "Requires Village stage.",

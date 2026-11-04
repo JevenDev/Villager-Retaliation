@@ -137,6 +137,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     private Button changePrefab;
     private Button focusBuildingIssue;
     private Button buildingSnap;
+    private Button districtAdd;
     private Button buildingSpacing;
     private com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode snapMode = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.FREE;
     private int buildingGap = 2;
@@ -457,6 +458,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         addRenderableWidget(tool(Component.literal("Settlement menu"), toolTop + (this.layout.railSize + 2) * 6,
                 net.minecraft.world.item.Items.BOOK, false, () -> this.popup != null && this.popup.target().kind() == SettlementViewPopup.Kind.NAVIGATION,
                 () -> openHeaderPopup(SettlementViewPopup.Kind.NAVIGATION, this.layout.worldLeft)));
+        addRenderableWidget(tool(Component.literal("District plan"), toolTop + (this.layout.railSize + 2) * 7,
+                net.minecraft.world.item.Items.PAPER, false, () -> this.parent.districtDraft().size() > 0,
+                () -> { if (buildPendingReason().isEmpty()) this.minecraft.setScreen(new SettlementDistrictScreen(management(), this)); }));
         this.claimFree = addRenderableWidget(VillagerUi.buttonBuilder(text("plot_free"), ignored -> claimPlot(true))
                 .bounds(this.layout.worldLeft, this.layout.commandBottom - 44, Math.max(40, (this.panelLeft - this.layout.worldLeft - 10) / 2), 20).build());
         this.buyPlot = addRenderableWidget(VillagerUi.buttonBuilder(text("plot_buy", 0), ignored -> claimPlot(false))
@@ -498,6 +502,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                 editArea(area);
             }
         }).shortcut("Enter"));
+        this.districtAdd = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Add to district"), ignored -> stageDistrict()));
         this.buildingSnap = addRenderableWidget(new SettlementBuildOverlay.ActionButton(Component.literal("Snap: Free"), ignored -> {
             var modes = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.values();
             this.snapMode = modes[(this.snapMode.ordinal() + 1) % modes.length];
@@ -1025,7 +1030,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         var buttons = new ArrayList<Button>();
         for (var button : this.guardButtons) if (button != null) buttons.add(button);
         for (var button : new Button[]{this.returnToPost, this.groupActions, this.commandResults, this.transform, this.resize,
-                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.focusBuildingIssue, this.buildingSnap, this.buildingSpacing, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
+                this.applyGizmo, this.cancelGizmo, this.changePrefab, this.focusBuildingIssue, this.buildingSnap, this.buildingSpacing, this.districtAdd, this.claimFree, this.buyPlot}) if (button != null) buttons.add(button);
         buttons.addAll(this.routeButtons);
         return buttons;
     }
@@ -1106,7 +1111,9 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
             for (var button : new Button[]{this.transform, this.resize, this.applyGizmo, this.changePrefab, this.focusBuildingIssue, this.buildingSnap, this.buildingSpacing, this.cancelGizmo})
                 if (button != null) widgets.add(button);
         }
+        widgets.add(this.districtAdd);
         var actions = new ArrayList<net.minecraft.client.gui.components.AbstractWidget>();
+        if (this.districtAdd != null && this.districtAdd.visible) actions.add(this.districtAdd);
         if (this.infrastructure.active()) { actions.add(this.infrastructureButtons.get(0)); actions.add(this.infrastructureButtons.get(2)); }
         else if (this.farms.active()) { actions.add(this.farmButtons.get(0)); actions.add(this.farmButtons.get(2)); }
         else if (this.paths.active()) { actions.add(this.pathButtons.get(8)); actions.add(this.pathButtons.get(9)); }
@@ -1258,6 +1265,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
         var draft = this.parent.buildingDraft();
         boolean manipulating = this.gizmo != null;
+        if (this.districtAdd != null) {
+            this.districtAdd.visible = draft != null || this.paths.active();
+            this.districtAdd.active = !this.parent.districtDraft().full() && (draft != null && this.parent.districtDraft().canAdd(draft) || this.paths.canConfirm());
+            this.districtAdd.setMessage(Component.literal("Add to district (" + this.parent.districtDraft().size() + "/16)"));
+        }
         if (this.groupActions != null) {
             this.groupActions.visible = this.selection.totalSize() != 0 && !manipulating && !this.interaction.is(Mode.SELECT_PLOT);
             this.groupActions.active = !this.commands.busy();
@@ -2228,23 +2240,48 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         }
     }
 
+    private void stageDistrict() {
+        if (this.parent.districtDraft().full()) return;
+        var building = this.parent.buildingDraft();
+        if (building != null && this.parent.districtDraft().canAdd(building)) {
+            this.parent.districtDraft().add(building);
+            this.parent.clearBuildingDraft();
+        } else if (this.paths.canConfirm()) this.parent.districtDraft().add(this.paths.draft().path(), this.paths.cells());
+        else return;
+        enterMode(Mode.SELECT);
+        this.guardFeedback = Component.literal("Added to district. Open District plan to review and commission.");
+        updateActions();
+    }
+
+    boolean districtEditAvailable() { return !buildMode(); }
+
+    void editDistrictPath(com.jvn.villagerretaliation.settlement.SettlementPath path) {
+        enterMode(Mode.SELECT); this.paths.edit(path);
+        this.minecraft.setScreen(this); updateActions();
+    }
+
     private List<BlockPos> nearbyRoads(BlockPos anchor) {
         var roads = new ArrayList<BlockPos>();
+        for (var path : this.parent.districtDraft().paths()) for (var cell : path.cells())
+            if ((cell.kind() == com.jvn.villagerretaliation.settlement.SettlementPathTerrain.Kind.CONVERT
+                    || cell.kind() == com.jvn.villagerretaliation.settlement.SettlementPathTerrain.Kind.EXISTING) && com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.horizontal(cell.position(), anchor) <= 400) roads.add(cell.position());
         if (this.minecraft.level == null) return roads;
         for (int dx = -20; dx <= 20; dx++) for (int dz = -20; dz <= 20; dz++) {
             var column = anchor.offset(dx, 0, dz);
             if (!this.minecraft.level.hasChunkAt(column)) continue;
             var pos = com.jvn.villagerretaliation.settlement.SettlementPathTerrain.surface(this.minecraft.level, column.getX(), column.getZ());
             if (com.jvn.villagerretaliation.settlement.SettlementPathTerrain.road(this.minecraft.level.getBlockState(pos))
-                    && this.projects.values().stream().noneMatch(p -> pos.getX() >= p.min().getX() && pos.getX() <= p.max().getX()
+                    && this.projects.values().stream().noneMatch(p -> (p.building() || p.status() == SettlementProject.Status.PENDING || p.status() == SettlementProject.Status.ACTIVE)
+                            && pos.getX() >= p.min().getX() && pos.getX() <= p.max().getX()
                             && pos.getZ() >= p.min().getZ() && pos.getZ() <= p.max().getZ())) roads.add(pos);
         }
         return roads;
     }
 
     private void alignBuilding(SettlementBuildingDraft draft, BlockPos anchor) {
-        var neighbors = this.projects.values().stream().filter(p -> p.status() != SettlementProject.Status.CANCELLED)
-                .map(p -> new AABB(Vec3.atLowerCornerOf(p.min()), Vec3.atLowerCornerOf(p.max().offset(1, 1, 1)))).toList();
+        var neighbors = new ArrayList<>(this.projects.values().stream().filter(p -> p.status() != SettlementProject.Status.CANCELLED)
+                .map(p -> new AABB(Vec3.atLowerCornerOf(p.min()), Vec3.atLowerCornerOf(p.max().offset(1, 1, 1)))).toList());
+        this.parent.districtDraft().buildings().forEach(building -> neighbors.add(building.bounds()));
         var placement = com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.suggest(draft.preview, anchor, this.snapMode,
                 this.buildingGap, this.snapMode == com.jvn.villagerretaliation.settlement.SettlementBuildingAlignment.Mode.STREET ? nearbyRoads(anchor) : List.of(), neighbors);
         draft.rotate(placement.turns()); draft.move(placement.anchor());
@@ -3141,6 +3178,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
         if (this.preferences.constructionOverlay && this.preferences.structurePreviews && !buildMode()) this.constructionOverlay.render(event);
         var draft = this.parent.buildingDraft();
         if (draft != null) ConstructionBlueprintPreviewRenderer.renderPreview(event, draft.ghost(), false);
+        ConstructionBlueprintPreviewRenderer.renderPreview(event, this.parent.districtDraft().ghost(), false);
         if (this.walls.active()) ConstructionBlueprintPreviewRenderer.renderPreview(event, this.walls.ghost(), false);
         if (this.paths.active()) SettlementPathGizmo.renderTerrain(this.paths, event);
         if (this.farms.active()) SettlementFarmGizmo.render(this.farms, event);
@@ -3166,8 +3204,11 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
                         selected ? 1.0F : 0.65F, selected ? 1.0F : 0.45F);
             }
         }
+        for (var path : this.parent.districtDraft().paths()) for (var cell : path.cells())
+            LevelRenderer.renderLineBox(pose, lines, new AABB(cell.position()).setMaxY(cell.position().getY() + 0.15), 0.25F, 0.85F, 1F, 0.8F);
         for (var step : this.entranceGuide) {
-            boolean clear = this.minecraft.level.hasChunkAt(step) && this.minecraft.level.getBlockState(step).getCollisionShape(this.minecraft.level, step).isEmpty()
+            boolean clear = this.minecraft.level.hasChunkAt(step) && this.minecraft.level.getBlockState(step.below()).isFaceSturdy(this.minecraft.level, step.below(), Direction.UP)
+                    && this.minecraft.level.getBlockState(step).getCollisionShape(this.minecraft.level, step).isEmpty()
                     && this.minecraft.level.getBlockState(step.above()).getCollisionShape(this.minecraft.level, step.above()).isEmpty();
             LevelRenderer.renderLineBox(pose, lines, new AABB(step).deflate(0.08).setMaxY(step.getY() + 0.12), clear ? 0.2F : 1F, clear ? 0.85F : 0.25F, 1F, 0.8F);
         }
@@ -4290,7 +4331,7 @@ public final class SettlementViewScreen extends Screen implements com.jvn.villag
     }
 
     private void openProject(SettlementManagementPayload.Project project) {
-        this.minecraft.setScreen(project.status() == SettlementProject.Status.COMPLETED
+        this.minecraft.setScreen(project.building()
                 ? new SettlementCompletedBuildingScreen(management(), project, this) : new SettlementProjectScreen(management(), project, this));
     }
 

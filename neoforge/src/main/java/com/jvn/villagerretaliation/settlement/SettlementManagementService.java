@@ -324,7 +324,7 @@ public final class SettlementManagementService {
                         project.missingMaterials().substring(0, Math.min(512, project.missingMaterials().length())),
                         project.priority(), project.pending() ? town.constructionQueueRevision() : project.crewRevision(), project.workplace() != null || town.worksitePlans().containsKey(project.area()),
                         constructionName(level, project.builder()), project.assistants().stream()
-                                .map(id -> new SettlementManagementPayload.CrewMember(id, constructionName(level, id))).toList())));
+                                .map(id -> new SettlementManagementPayload.CrewMember(id, constructionName(level, id))).toList(), null, project.completedBuilding())));
     }
 
     private static String constructionName(ServerLevel level, UUID id) {

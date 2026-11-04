@@ -81,6 +81,75 @@ public final class SettlementBuildingLifecycleGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void completedBuildingsRemainManageableBeyondTheRecentProjectHistory(GameTestHelper helper) {
+        var f = SettlementConstructionGameTests.fixture(helper);
+        try {
+            var state = new SettlementConstructionState(); UUID first = null;
+            for (int i = 0; i < 40; i++) {
+                var project = SettlementProject.create(f.town(), f.area().id(), f.builder().getUUID(), f.plan(), f.origin(), UUID.randomUUID(), helper.getLevel().getGameTime());
+                if (first == null) first = project.id();
+                project.finish(SettlementProject.Status.COMPLETED); state.add(project); state.maintainProjects(f.town());
+            }
+            helper.assertTrue(state.project(first) != null, "completed building identities outlive the bounded activity history");
+            var tag = new net.minecraft.nbt.CompoundTag(); state.save(tag);
+            var restored = new SettlementConstructionState(); restored.load(tag, f.town(), f.town().radius());
+            helper.assertTrue(restored.project(first).completedBuilding(), "building management survives save and history trimming");
+        } finally { f.builder().discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void repairUsesReservedMaterialsAndTheNativePlacementJournal(GameTestHelper helper) {
+        var f = SettlementConstructionGameTests.fixture(helper);
+        try {
+            var source = completed(helper, f);
+            var missing = f.plan().blocks().stream().filter(b -> b.state().is(Blocks.COBBLESTONE)).findFirst().orElseThrow();
+            var position = f.origin().offset(missing.localPos());
+            helper.getLevel().setBlock(position, Blocks.AIR.defaultBlockState(), 2);
+            var request = request(f, source, Action.REPAIR); var quote = SettlementBuildingManagement.inspect(f.leader(), request);
+            helper.assertTrue(SettlementBuildingManagement.inspect(f.leader(), new SettlementBuildingRequestPayload(request.town(), request.building(),
+                    request.request(), request.action(), true, quote.fingerprint())).queued(), "repair queues");
+            var project = f.town().project(request.request()); var plan = SettlementConstructionService.scan(helper.getLevel(), project);
+            SettlementConstructionGameTests.fundAndDispatch(helper, f.town(), plan, project.origin(), project.id());
+            SettlementConstructionMaterials.collect(f.town(), project, f.builder().getUUID(), SettlementConstructionMaterials.collectionTarget(project));
+            SettlementConstructionService.reconcile(f.builder());
+            var group = com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker.placementGroup(plan, project.origin(), plan.blocks().getFirst());
+            for (int i = 0; i < 64 && !project.site().observed(position); i++)
+                SettlementConstructionSiteService.observeArea(helper.getLevel(), f.town(), f.town().workplace(project.area()), null);
+            helper.assertTrue(SettlementConstructionMaterials.place(f.builder(), com.jvn.villagerretaliation.interaction.HiredWorkStateStore.state(f.builder()), group), "repair uses native journaled placement");
+            helper.assertTrue(helper.getLevel().getBlockState(position).is(Blocks.COBBLESTONE), "the missing block is physically repaired");
+            helper.assertTrue(project.materialEscrow().getList("Quote", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).getInt("Spent") == 1, "the repair spends exactly one reserved material");
+        } finally { f.builder().discard(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void maintenanceQuotesIncludeWaterAndEveryStackedMaterial(GameTestHelper helper) {
+        var state = Blocks.OAK_STAIRS.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, true);
+        var block = new BuilderStructureScanner.BuildBlock(net.minecraft.core.BlockPos.ZERO, state, null,
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_STAIRS), BuilderStructureScanner.BuilderToolAction.NONE, Blocks.AIR.defaultBlockState());
+        var work = new SettlementBuildingWork(UUID.randomUUID(), Action.REPAIR, net.minecraft.core.BlockPos.ZERO, java.util.List.of(block), 1);
+        var id = UUID.randomUUID(); var plan = work.plan(id);
+        helper.assertValueEqual(plan.materials().size(), 2, "waterlogged output charges the stairs and water bucket");
+        helper.assertValueEqual(BuilderStructureScanner.fingerprint(SettlementBuildingWork.load(work.save()).plan(id)), BuilderStructureScanner.fingerprint(plan), "exact maintenance bill survives reload");
+        helper.succeed();
+    }
+
+    public static com.jvn.villagerretaliation.network.SettlementManagementPayload.Project prepareCompletedSmoke(net.minecraft.server.level.ServerPlayer player,
+            com.jvn.villagerretaliation.allegiance.VillageAllegianceId id) {
+        var level = player.serverLevel(); var town = SettlementSavedData.get(level).get(id).orElseThrow();
+        var project = town.projects().values().stream().filter(SettlementProject::active).findFirst().orElseThrow();
+        var plan = SettlementConstructionService.scan(level, project);
+        for (var block : plan.blocks()) level.setBlock(plan.worldPos(project.origin(), block), block.state(), 2);
+        var missing = plan.blocks().stream().filter(block -> block.state().is(Blocks.COBBLESTONE)).findFirst().orElseThrow();
+        level.setBlock(plan.worldPos(project.origin(), missing), Blocks.AIR.defaultBlockState(), 2);
+        town.finishProject(project.id(), SettlementProject.Status.COMPLETED);
+        return (com.jvn.villagerretaliation.network.SettlementManagementPayload.Project) SettlementManagementService.snapshot(player,
+                new com.jvn.villagerretaliation.network.SettlementManagementRequestPayload(id.value(),
+                        com.jvn.villagerretaliation.network.SettlementManagementRequestPayload.Page.PROJECTS, 0, project.id().toString(), 1, false)).entries().getFirst();
+    }
+
     static SettlementProject completed(GameTestHelper helper, SettlementConstructionGameTests.Fixture f) {
         f.town().advance();
         for (var block : f.plan().blocks()) helper.getLevel().setBlock(f.origin().offset(block.localPos()), block.state(), 2);

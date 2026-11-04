@@ -71,7 +71,7 @@ public final class SettlementBuildingManagement {
                     request.action() == Action.DISMANTLE ? ItemStack.EMPTY : block.requiredItem(),
                     request.action() == Action.DISMANTLE ? BuilderStructureScanner.BuilderToolAction.NONE : block.toolAction(), current));
         }
-        var bounds = new SettlementArea(source.id(), SettlementAreaType.HOME, source.label(), source.min(), source.max(), 5, true);
+        var bounds = new SettlementArea(source.id(), SettlementAreaType.HOME, "Building survey", source.min(), source.max(), 5, true);
         var survey = SettlementBuildingSurvey.inspect(level, bounds);
         var occupants = town.homes().values().stream().filter(home -> home.bed() != null && bounds.contains(home.bed())).toList();
         lines.add("Purpose: " + (beds > 0 && stations > 0 ? "Home and workplace" : beds > 0 ? "Housing" : stations > 0 ? "Workplace" : "Utility building"));

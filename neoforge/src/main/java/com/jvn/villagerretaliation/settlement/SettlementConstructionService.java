@@ -153,6 +153,8 @@ public final class SettlementConstructionService {
         int active = (int) town.projects().values().stream().filter(SettlementProject::active).count();
         for (var project : List.copyOf(town.projects().values())) {
             if (!project.pending() || project.paused()) continue;
+            String prerequisite = prerequisiteFailure(town, project);
+            if (!prerequisite.isEmpty()) { if (project.waitFor(prerequisite)) town.changed(); continue; }
             if (active >= project.capacity(town)) continue;
             String blocker = "";
             if (!town.permits(project.authority(), SettlementPermission.BUILD)) blocker = "permission";
@@ -207,6 +209,15 @@ public final class SettlementConstructionService {
             if (care != null) care.remember(builder);
             active++;
         }
+    }
+
+    static String prerequisiteFailure(SettlementRecord town, SettlementProject project) {
+        for (var id : project.prerequisites()) {
+            var required = town.project(id);
+            if (required == null || required.status() == SettlementProject.Status.CANCELLED) return "prerequisite_cancelled";
+        }
+        return project.prerequisites().stream().map(town::project).anyMatch(required -> required.status() != SettlementProject.Status.COMPLETED
+                || required.site() != null && required.site().unsettled()) ? "prerequisite" : "";
     }
 
     private static boolean protectedSite(ServerLevel level, SettlementRecord town, SettlementProject project) {

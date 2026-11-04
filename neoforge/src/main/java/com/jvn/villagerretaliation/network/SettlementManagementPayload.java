@@ -265,6 +265,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.writeBoolean(project.farm().paused());
                     buffer.writeUUID(project.farm().requested());
                 }
+                buffer.writeBoolean(project.building());
             }
             case Issue issue -> {
                 buffer.writeEnum(issue.kind());
@@ -424,7 +425,7 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
                     buffer.readBlockPos(), buffer.readBlockPos(),
                     buffer.readEnum(SettlementProject.Status.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase.class), buffer.readUtf(512),
-                    buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readUtf(128), readCrew(buffer), readFarmProgress(buffer));
+                    buffer.readVarInt(), buffer.readVarLong(), buffer.readBoolean(), buffer.readUtf(128), readCrew(buffer), readFarmProgress(buffer), buffer.readBoolean());
             case ISSUES -> new Issue(id, name, buffer.readEnum(IssueKind.class), buffer.readUtf(128), buffer.readUtf(512),
                     buffer.readEnum(Page.class), readOptionalId(buffer), readOptionalId(buffer), readOptionalId(buffer),
                     buffer.readBoolean());
@@ -885,13 +886,20 @@ public record SettlementManagementPayload(ResourceLocation dimension, Header hea
     public record Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
                           int placed, int total, String blocker, String materials,
                           com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
-                          int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants, FarmProgress farm) implements Entry {
+                          int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants, FarmProgress farm, boolean building) implements Entry {
+        public Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
+                       int placed, int total, String blocker, String materials,
+                       com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
+                       int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants, FarmProgress farm) {
+            this(id, name, area, builder, origin, min, max, status, placed, total, blocker, materials, phase, missingMaterials,
+                    priority, crewRevision, crewAvailable, builderName, assistants, farm, false);
+        }
         public Project(UUID id, String name, UUID area, UUID builder, BlockPos origin, BlockPos min, BlockPos max, SettlementProject.Status status,
                        int placed, int total, String blocker, String materials,
                        com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase phase, String missingMaterials,
                        int priority, long crewRevision, boolean crewAvailable, String builderName, List<CrewMember> assistants) {
             this(id, name, area, builder, origin, min, max, status, placed, total, blocker, materials, phase, missingMaterials,
-                    priority, crewRevision, crewAvailable, builderName, assistants, null);
+                    priority, crewRevision, crewAvailable, builderName, assistants, null, false);
         }
 
         public Project {

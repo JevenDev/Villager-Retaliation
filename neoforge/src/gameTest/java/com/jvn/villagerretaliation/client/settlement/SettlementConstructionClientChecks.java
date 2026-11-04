@@ -37,6 +37,7 @@ public final class SettlementConstructionClientChecks {
     private static SettlementManagementScreen management;
     private static UUID moved;
     private static net.minecraft.core.BlockPos originalAnchor;
+    private static CompletableFuture<SettlementManagementPayload.Project> completedBuilding;
 
     private SettlementConstructionClientChecks() {}
 
@@ -203,10 +204,75 @@ public final class SettlementConstructionClientChecks {
                 if (!draft.currentPreview()) return;
                 if (!draft.preview.diagnostics().isEmpty()) click(minecraft.screen, "Next placement issue");
                 capture("foundation-placement-feedback");
+                draft.preparation(com.jvn.villagerretaliation.settlement.SettlementTerrainOptions.NONE);
+                next();
+            }
+            case 12 -> {
+                var draft = management.buildingDraft();
+                if (!draft.ready()) return;
+                click(minecraft.screen, "Snap: Free");
+                next();
+            }
+            case 13 -> {
+                var draft = management.buildingDraft();
+                if (!draft.ready()) return;
+                click(minecraft.screen, "Add to district (0/16)");
+                require(management.districtDraft().size() == 1 && management.buildingDraft() == null, "staging keeps a separate uncommissioned building preview");
+                phase = 33; ticks = 0;
+            }
+            case 33 -> {
+                require(management.districtDraft().ghost() != null && !management.districtDraft().ghost().blocks().isEmpty(), "staged buildings retain their combined world preview");
+                capture("district-world-preview");
+                click(minecraft.screen, "District plan");
+                phase = 14; ticks = 0;
+            }
+            case 14 -> {
+                if (!(minecraft.screen instanceof SettlementDistrictScreen screen)) return;
+                capture("district-plan");
+                click(screen, "Review combined cost");
+                next();
+            }
+            case 15 -> {
+                var screen = (SettlementDistrictScreen) minecraft.screen;
+                if (!enabled(screen, "Commission district")) return;
+                capture("district-combined-quote");
+                click(screen, "Commission district");
+                next();
+            }
+            case 16 -> {
+                if (management.districtDraft().size() != 0) return;
+                ((SettlementDistrictScreen) minecraft.screen).onClose();
+                var player = minecraft.player.getUUID();
+                completedBuilding = minecraft.getSingleplayerServer().submit(() -> com.jvn.villagerretaliation.settlement.SettlementBuildingLifecycleGameTests.prepareCompletedSmoke(
+                        minecraft.getSingleplayerServer().getPlayerList().getPlayer(player), town));
+                next();
+            }
+            case 17 -> {
+                if (!completedBuilding.isDone() || !(minecraft.screen instanceof SettlementViewScreen view)) return;
+                require(completedBuilding.join().building(), "completed authored structures expose building management");
+                minecraft.setScreen(new SettlementCompletedBuildingScreen(management, completedBuilding.join(), view));
+                next();
+            }
+            case 18 -> {
+                if (list(minecraft.screen).children().size() < 5) return;
+                capture("completed-building-details");
+                click(minecraft.screen, "Repair missing blocks");
+                next();
+            }
+            case 19 -> {
+                if (!enabled(minecraft.screen, "Queue reviewed work")) return;
+                capture("completed-building-repair-quote");
+                click(minecraft.screen, "Queue reviewed work");
+                next();
+            }
+            case 20 -> {
+                if (minecraft.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                        .noneMatch(button -> button.getMessage().getString().equals("Work queued"))) return;
+                capture("completed-building-repair-queued");
                 try {
                     Files.createDirectories(Path.of(System.getProperty(OUTPUT)));
                     Files.writeString(Path.of(System.getProperty(OUTPUT), "result.txt"), "Settlement construction client smoke passed\n"
-                            + "Native queue drag and pause/resume. Actual house metadata and affordability filters. Rotated blueprint, terrain options, material quote and world feedback.\n");
+                            + "Native queue drag and pause/resume. House filters, terrain and street snapping. District staging, combined quote and commissioning. Completed building inspection and repair commissioning.\n");
                 } catch (java.io.IOException exception) { throw new java.io.UncheckedIOException(exception); }
                 phase = 99;
                 minecraft.stop();
@@ -219,6 +285,11 @@ public final class SettlementConstructionClientChecks {
 
     private static ObjectSelectionList<?> list(Screen screen) {
         return screen.children().stream().filter(ObjectSelectionList.class::isInstance).map(child -> (ObjectSelectionList<?>) child).findFirst().orElseThrow();
+    }
+
+    private static boolean enabled(Screen screen, String label) {
+        return screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .anyMatch(button -> button.getMessage().getString().equals(label) && button.active);
     }
 
     private static void click(Screen screen, String label) {

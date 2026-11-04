@@ -61,6 +61,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
     private final SettlementManagementScreen parent;
     private final SettlementManagementPayload.Resident assigning;
     private SettlementBuildingDraft buildingDraft;
+    private final SettlementDistrictDraft districtDraft = new SettlementDistrictDraft();
     private final SettlementManagementPayload.Bed choosingBed;
     private int contentLeft;
     private int contentWidth;
@@ -505,7 +506,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                         permits(SettlementPermission.BUILD) && selected instanceof SettlementManagementPayload.Project project && project.farm() == null
                                 && (project.status() == SettlementProject.Status.ACTIVE || project.status() == SettlementProject.Status.PENDING));
                 this.actions[3].setMessage(Component.literal(selected instanceof SettlementManagementPayload.Project project && project.farm() != null
-                        ? "Manage preparation" : selected instanceof SettlementManagementPayload.Project project && project.status() == SettlementProject.Status.COMPLETED ? "Manage building" : "Construction crew"));
+                        ? "Manage preparation" : selected instanceof SettlementManagementPayload.Project project && project.building() ? "Manage building" : "Construction crew"));
 
             }
             case TOWNS -> action(0, "open", selected != null);
@@ -667,7 +668,7 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
                             new com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.Target(
                                     com.jvn.villagerretaliation.settlement.SettlementSupplyPolicy.TargetKind.CONSUMER, project.id(), null, null,
                                     net.minecraft.world.item.ItemStack.EMPTY, 0)));
-                    else if (action == 3) this.minecraft.setScreen(project.status() == SettlementProject.Status.COMPLETED
+                    else if (action == 3) this.minecraft.setScreen(project.building()
                             ? new SettlementCompletedBuildingScreen(this, project, null) : new SettlementProjectScreen(this, project, null));
                     else navigate(Page.RESIDENTS, 0, project.builder().toString());
                 }
@@ -750,6 +751,14 @@ public final class SettlementManagementScreen extends VillagerWindowScreen {
 
     SettlementBuildingDraft buildingDraft() {
         return root().buildingDraft;
+    }
+
+    SettlementDistrictDraft districtDraft() { return root().districtDraft; }
+
+    void editBuilding(SettlementBuildingDraft draft) {
+        root().buildingDraft = draft;
+        this.minecraft.setScreen(this);
+        SettlementViewClient.resume(this);
     }
 
     void clearBuildingDraft() {

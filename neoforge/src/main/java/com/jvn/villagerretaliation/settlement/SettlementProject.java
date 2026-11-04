@@ -23,6 +23,18 @@ public final class SettlementProject {
     private Status status;
     private boolean paused;
     private boolean retired;
+    private UUID district;
+    private java.util.List<UUID> prerequisites = java.util.List.of();
+    java.util.List<UUID> prerequisites() { return this.prerequisites; }
+    void prerequisites(java.util.List<UUID> projects) {
+        if (projects.size() > 16 || projects.contains(this.id) || projects.stream().distinct().count() != projects.size())
+            throw new IllegalArgumentException("Invalid project prerequisites");
+        this.prerequisites = java.util.List.copyOf(projects);
+    }
+    private String districtFingerprint = "";
+    UUID district() { return this.district; }
+    String districtFingerprint() { return this.districtFingerprint; }
+    void district(UUID district, String fingerprint) { this.district = district; this.districtFingerprint = fingerprint; }
     private SettlementBuildingWork buildingWork;
     SettlementBuildingWork buildingWork() { return this.buildingWork; }
     void buildingWork(SettlementBuildingWork work) { this.buildingWork = work; }
@@ -395,6 +407,12 @@ public final class SettlementProject {
         CompoundTag tag = new CompoundTag();
         tag.putUUID("Id", this.id);
         tag.putBoolean("BuildingRetired", this.retired);
+        if (!this.prerequisites.isEmpty()) {
+            var prerequisites = new net.minecraft.nbt.ListTag();
+            for (var id : this.prerequisites) { var row = new CompoundTag(); row.putUUID("Project", id); prerequisites.add(row); }
+            tag.put("Prerequisites", prerequisites);
+        }
+        if (this.district != null) { tag.putUUID("District", this.district); tag.putString("DistrictFingerprint", this.districtFingerprint); }
         if (this.buildingWork != null) tag.put("BuildingWork", this.buildingWork.save());
         if(repairOf!=null) tag.putUUID("RepairOf",repairOf);
         tag.putUUID("Area", this.area);
@@ -448,6 +466,19 @@ public final class SettlementProject {
                     || !project.max().equals(plan.worldMax(project.origin()))) throw new IllegalArgumentException("Construction order changed");
         }
         project.retired = tag.getBoolean("BuildingRetired");
+        if (tag.contains("Prerequisites")) {
+            var prerequisites = tag.getList("Prerequisites", Tag.TAG_COMPOUND);
+            if (!tag.contains("Prerequisites", Tag.TAG_LIST) || prerequisites.size() > 16) throw new IllegalArgumentException("Invalid project prerequisites");
+            project.prerequisites(prerequisites.stream().map(raw -> {
+                var row = (CompoundTag) raw;
+                if (!row.hasUUID("Project")) throw new IllegalArgumentException("Missing prerequisite identity");
+                return row.getUUID("Project");
+            }).toList());
+        }
+        if (tag.contains("District")) {
+            if (!tag.hasUUID("District") || tag.getString("DistrictFingerprint").length() != 64) throw new IllegalArgumentException("Invalid district identity");
+            project.district(tag.getUUID("District"), tag.getString("DistrictFingerprint"));
+        }
         if (tag.contains("BuildingWork")) {
             if (project.order != null || project.wallConstruction != null || !tag.contains("BuildingWork", Tag.TAG_COMPOUND))
                 throw new IllegalArgumentException("Invalid building work");
