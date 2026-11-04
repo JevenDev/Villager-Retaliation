@@ -32,8 +32,8 @@ final class EditorContentBrowserChecks {
         validationCacheTracksDefinitionsAndSupportingFiles();
         asyncValidationUsesIsolatedSnapshotsAndRejectsStaleResults();
         worldPreparationOwnsResourcesAndSavesDraftsOffThread();
-        benchmarkLargeLibrary();
-        return 8;
+        if (EditorPerformanceChecks.BENCHMARKS) benchmarkLargeLibrary();
+        return EditorPerformanceChecks.BENCHMARKS ? 8 : 7;
     }
 
     private static AuthoringWorkspace workspace() throws IOException { return AuthoringWorkspace.create(Files.createTempDirectory("editor-content-browser")); }

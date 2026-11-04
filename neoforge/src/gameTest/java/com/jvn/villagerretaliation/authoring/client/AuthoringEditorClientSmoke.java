@@ -1623,8 +1623,6 @@ public final class AuthoringEditorClientSmoke {
             set("resetLayout", true);
             try {
                 EditorBufferChecks.supportingFilesKeepIndependentDraftsAndBaselines();
-                EditorClientChecks.packFileEditorsPreservePendingEdits();
-                EditorClientChecks.packFinalizationPreservesAdvancedMetadataAndRecovery();
                 workspace = AuthoringWorkspace.create(output().resolve("buffer-workspace"));
                 String json = "{\"nodes\":{\"start\":{\"lines\":[\"Original\"],\"responses\":[]}},\"entries\":[{\"id\":\"default\",\"label\":\"Talk\",\"start\":\"start\"}]}";
                 workspace.importResources(Map.of(firstPath, json.getBytes(java.nio.charset.StandardCharsets.UTF_8), secondPath, json.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
@@ -2005,33 +2003,35 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildPanelSteps() {
-        for (float scale : new float[] {1, 2}) {
-            STEPS.add(() -> {
-                set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(scale));
-                set("view", 0); set("filesMode", false); set("guideStep", -1); set("showCreate", false); set("resetLayout", true);
-            });
-            pause(350);
-            STEPS.add(() -> {
-                capture("72-content-panel-" + (int) scale);
-                panelSections.add(new PanelSection("Content###VR_Content", "Content tools", true));
-            });
-            pause(250);
-            STEPS.add(() -> {
-                capture("73-content-tools-" + (int) scale);
-                panelSections.add(new PanelSection("Content###VR_Content", "Content tools", false));
-                panelSections.add(new PanelSection("Work area###VR_Work", "Simulated conditions", true));
-                set("view", 1);
-            });
-            pause(250);
-            STEPS.add(() -> { capture("74-preview-panel-" + (int) scale); set("view", 2); });
-            pause(250);
-            STEPS.add(() -> { capture("75-build-panel-" + (int) scale); set("view", 4); set("filesMode", true); });
-            pause(250);
-            STEPS.add(() -> capture("76-files-panel-" + (int) scale));
+        if (Boolean.getBoolean("villagerretaliation.editorVisualCaptures")) {
+            for (float scale : new float[] {1, 2}) {
+                STEPS.add(() -> {
+                    set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(scale));
+                    set("view", 0); set("filesMode", false); set("guideStep", -1); set("showCreate", false); set("resetLayout", true);
+                });
+                pause(350);
+                STEPS.add(() -> {
+                    capture("72-content-panel-" + (int) scale);
+                    panelSections.add(new PanelSection("Content###VR_Content", "Content tools", true));
+                });
+                pause(250);
+                STEPS.add(() -> {
+                    capture("73-content-tools-" + (int) scale);
+                    panelSections.add(new PanelSection("Content###VR_Content", "Content tools", false));
+                    panelSections.add(new PanelSection("Work area###VR_Work", "Simulated conditions", true));
+                    set("view", 1);
+                });
+                pause(250);
+                STEPS.add(() -> { capture("74-preview-panel-" + (int) scale); set("view", 2); });
+                pause(250);
+                STEPS.add(() -> { capture("75-build-panel-" + (int) scale); set("view", 4); set("filesMode", true); });
+                pause(250);
+                STEPS.add(() -> capture("76-files-panel-" + (int) scale));
+            }
         }
         STEPS.add(() -> {
             set("preferences", ((EditorPreferences) field(editor, "preferences")).withScale(1));
-            set("view", 0); set("filesMode", false); set("resetLayout", true);
+            set("view", 0); set("filesMode", false); set("guideStep", -1); set("showCreate", false); set("resetLayout", true);
             panelSections.add(new PanelSection("Work area###VR_Work", "Simulated conditions", false));
         });
         pause(250);
@@ -2108,14 +2108,16 @@ public final class AuthoringEditorClientSmoke {
         });
         pause(250);
         click(() -> featureActionPoint);
-        STEPS.add(dropdownFrameTimes::clear);
-        pause(1000);
-        STEPS.add(() -> {
-            require(dropdownFrameTimes.size() >= 20, "The objective dropdown renders across multiple frames.");
-            var sorted = dropdownFrameTimes.stream().sorted().toList();
-            System.out.printf(java.util.Locale.ROOT, "Editor objective dropdown: %.3f ms median render across %d open frames%n", sorted.get(sorted.size() / 2) / 1_000_000.0, sorted.size());
-            capture("81-objective-dropdown");
-        });
+        if (EditorPerformanceChecks.BENCHMARKS) {
+            STEPS.add(dropdownFrameTimes::clear);
+            pause(1000);
+            STEPS.add(() -> {
+                require(dropdownFrameTimes.size() >= 20, "The objective dropdown renders across multiple frames.");
+                var sorted = dropdownFrameTimes.stream().sorted().toList();
+                System.out.printf(java.util.Locale.ROOT, "Editor objective dropdown: %.3f ms median render across %d open frames%n", sorted.get(sorted.size() / 2) / 1_000_000.0, sorted.size());
+                capture("81-objective-dropdown");
+            });
+        }
         key(ImGuiKey.Home);
         var root = com.jvn.villagerretaliation.quest.schema.v3.QuestV3Schema.export();
         var labels = new EditorSchema(root).options(root.getAsJsonObject("$defs").getAsJsonObject("objective")).keySet().stream().toList();
@@ -2545,7 +2547,7 @@ public final class AuthoringEditorClientSmoke {
             long start = System.nanoTime();
             invoke("inspectValue", new Class<?>[] {com.google.gson.JsonElement.class, String.class, String.class, int.class},
                     document.value("/stages/0/objectives"), "/stages/0/objectives", "Objectives", 0);
-            dropdownFrameTimes.add(System.nanoTime() - start);
+            if (EditorPerformanceChecks.BENCHMARKS) dropdownFrameTimes.add(System.nanoTime() - start);
             if (featureActionPoint == null) featureActionPoint = new float[] {(ImGui.getItemRectMinX() + ImGui.getItemRectMaxX()) / 2,
                     (ImGui.getItemRectMinY() + ImGui.getItemRectMaxY()) / 2};
         }
@@ -3472,12 +3474,6 @@ public final class AuthoringEditorClientSmoke {
     }
 
     private static void buildCampaignSteps() {
-        STEPS.add(() -> {
-            try {
-                EditorClientChecks.packFileEditorsPreservePendingEdits();
-                EditorClientChecks.packFinalizationPreservesAdvancedMetadataAndRecovery();
-            } catch (IOException exception) { throw new UncheckedIOException(exception); }
-        });
         var originalWorkspace = new AuthoringWorkspace[1];
         var originalDocument = new AuthoringDocument[1];
         var originalName = new String[1];

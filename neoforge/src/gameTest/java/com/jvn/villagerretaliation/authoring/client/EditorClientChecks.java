@@ -25,6 +25,8 @@ public final class EditorClientChecks {
         graphClipboardTransfersLocalizedDependencies();
         connectedNodeCreationIsAtomic();
         managedExportsPreserveExternalFilesAndBackups();
+        packFileEditorsPreservePendingEdits();
+        packFinalizationPreservesAdvancedMetadataAndRecovery();
         previewScenariosRestoreIndependentChecks();
         recipesAndObjectivesValidate();
         nodeRenamingAndDeletionPreserveReferences();
@@ -67,7 +69,7 @@ public final class EditorClientChecks {
         quickOpenRanksRecentFilesAndResourceIds();
         diagnosticsFilterGroupAndCycleThroughIssues();
         wordingPreviewsAreAtomicAndRejectStaleContent();
-        return 53 + EditorLifecycleChecks.run() + EditorPersistenceChecks.run() + EditorChangeCacheChecks.run() + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorBufferChecks.run() + EditorResourcePickerChecks.run() + EditorLocalizationChecks.run() + EditorCampaignGraphChecks.run() + EditorSceneChecks.run() + EditorTestSuiteChecks.run() + EditorSupportingChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run() + EditorDialogueLinkChecks.run() + EditorWordingChecks.run();
+        return 55 + EditorLifecycleChecks.run() + EditorPersistenceChecks.run() + EditorChangeCacheChecks.run() + EditorQuestChecks.run() + EditorPlaytestChecks.run() + EditorContentBrowserChecks.run() + EditorGraphSizingChecks.run() + EditorRegressionChecks.run() + EditorGraphInlineChecks.run() + EditorPerformanceChecks.run() + EditorVariableChecks.run() + EditorCompletionChecks.run() + EditorPackFolderChecks.run() + EditorBufferChecks.run() + EditorResourcePickerChecks.run() + EditorLocalizationChecks.run() + EditorCampaignGraphChecks.run() + EditorSceneChecks.run() + EditorTestSuiteChecks.run() + EditorSupportingChecks.run() + EditorWorkflowChecks.run() + EditorQualityChecks.run() + EditorProductivityChecks.run() + EditorDialoguePoolChecks.run() + EditorResourceViewChecks.run() + EditorDialogueLinkChecks.run() + EditorWordingChecks.run();
     }
 
     private static void diagnosticsFilterGroupAndCycleThroughIssues() {
@@ -290,7 +292,7 @@ public final class EditorClientChecks {
         check(rejected, "files cannot be used as drop destinations");
     }
 
-    public static void packFileEditorsPreservePendingEdits() throws java.io.IOException {
+    private static void packFileEditorsPreservePendingEdits() throws java.io.IOException {
         var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-file-edits"));
         var metadata = workspace.packMetadata();
         var files = new EditorPackFiles();
@@ -318,7 +320,7 @@ public final class EditorClientChecks {
         files.close();
     }
 
-    public static void packFinalizationPreservesAdvancedMetadataAndRecovery() throws java.io.IOException {
+    private static void packFinalizationPreservesAdvancedMetadataAndRecovery() throws java.io.IOException {
         var workspace = com.jvn.villagerretaliation.authoring.core.AuthoringWorkspace.create(java.nio.file.Files.createTempDirectory("vr-pack-settings"));
         var metadata = workspace.packMetadata(); metadata.add("filter", json("{\"block\":[]}")); workspace.setPackMetadata(metadata);
         var build = new EditorPackBuild(); build.load(workspace);

@@ -99,6 +99,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             gameDirectory.set(authoringEditorClientSmokeDirectory)
             systemProperty 'villagerretaliation.authoringEditorClientSmoke', authoringEditorClientSmokeDirectory.get().asFile.absolutePath
+            systemProperty 'villagerretaliation.editorBenchmarks', providers.gradleProperty('editorBenchmarks').orElse('false').get()
+            systemProperty 'villagerretaliation.editorVisualCaptures', providers.gradleProperty('editorVisualCaptures').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorCompletionSmokeOnly', providers.gradleProperty('authoringEditorCompletionSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorPackFolderSmokeOnly', providers.gradleProperty('authoringEditorPackFolderSmokeOnly').orElse('false').get()
             systemProperty 'villagerretaliation.authoringEditorBufferSmokeOnly', providers.gradleProperty('authoringEditorBufferSmokeOnly').orElse('false').get()
@@ -777,8 +779,9 @@ tasks.register('verifyEditor', JavaExec) {
     group = 'verification'
     description = 'Runs standalone in-game editor checks without campaign migration checks or a Minecraft client.'
     dependsOn tasks.named('gameTestClasses')
-    classpath = sourceSets.gameTest.runtimeClasspath
+    classpath = sourceSets.gameTest.runtimeClasspath + configurations.compileClasspath.filter { it.name.startsWith('imgui-java-binding-') }
     mainClass = 'com.jvn.villagerretaliation.authoring.client.EditorClientChecks'
+    systemProperty 'villagerretaliation.editorBenchmarks', providers.gradleProperty('editorBenchmarks').orElse('false').get()
 }
 
 tasks.register('verifyExploredMap', JavaExec) {
@@ -799,8 +802,9 @@ tasks.register('verifyAuthoring', JavaExec) {
     group = 'verification'
     description = 'Runs authoring regressions without launching a Minecraft client or server.'
     dependsOn tasks.named('gameTestClasses')
-    classpath = sourceSets.gameTest.runtimeClasspath
+    classpath = sourceSets.gameTest.runtimeClasspath + configurations.compileClasspath.filter { it.name.startsWith('imgui-java-binding-') }
     mainClass = 'com.jvn.villagerretaliation.authoring.AuthoringChecks'
+    systemProperty 'villagerretaliation.editorBenchmarks', providers.gradleProperty('editorBenchmarks').orElse('false').get()
     systemProperty 'villagerretaliation.greetingReviewDirectory', layout.buildDirectory.dir('greeting-review').get().asFile.absolutePath
 }
 

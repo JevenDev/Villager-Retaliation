@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 final class EditorPerformanceChecks {
+    static final boolean BENCHMARKS = Boolean.getBoolean("villagerretaliation.editorBenchmarks");
     private EditorPerformanceChecks() { }
 
     static int run() throws IOException {
@@ -23,8 +24,10 @@ final class EditorPerformanceChecks {
         highlightsAndCoverageTrackLogicChanges();
         fieldCandidatesPreserveValidationAndIsolation();
         schemaMenusPreserveDefaultsAndIsolation();
-        benchmarkSchemaMenus();
-        benchmarkGraphPreparation();
+        if (BENCHMARKS) {
+            benchmarkSchemaMenus();
+            benchmarkGraphPreparation();
+        }
         schemaCachesTrackRevisionsAndPendingValues();
         fileIndexesTrackEveryMembershipChange();
         playtestSnapshotsAvoidIdleJsonCopies();
@@ -277,22 +280,24 @@ final class EditorPerformanceChecks {
 
     private static void playtestSnapshotsAvoidIdleJsonCopies() throws IOException {
         var workspace = workspace();
-        var document = largeDocument(1000);
+        var document = largeDocument(BENCHMARKS ? 1000 : 4);
         workspace.add(document);
         var snapshot = EditorTestSnapshot.capture(workspace);
         check(snapshot.current(workspace, false) && snapshot.current(workspace, true), "the initial applied snapshot matches both content and logic");
-        var threads = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
-        long thread = Thread.currentThread().threadId();
-        for (int i = 0; i < 100; i++) snapshot.current(workspace, true);
-        long allocated = threads.getThreadAllocatedBytes(thread);
-        long start = System.nanoTime();
-        for (int i = 0; i < 1000; i++) {
-            check(snapshot.current(workspace, false) && snapshot.current(workspace, true), "idle reads retain the applied snapshot");
+        if (BENCHMARKS) {
+            var threads = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
+            long thread = Thread.currentThread().threadId();
+            for (int i = 0; i < 100; i++) snapshot.current(workspace, true);
+            long allocated = threads.getThreadAllocatedBytes(thread);
+            long start = System.nanoTime();
+            for (int i = 0; i < 1000; i++) {
+                check(snapshot.current(workspace, false) && snapshot.current(workspace, true), "idle reads retain the applied snapshot");
+            }
+            long bytes = threads.getThreadAllocatedBytes(thread) - allocated;
+            check(bytes < 2_000_000, "idle checks must not copy or project all document JSON: " + bytes + " bytes");
+            System.out.printf(java.util.Locale.ROOT, "Editor playtest snapshot (1000 nodes): %.6f ms, %d bytes per idle check%n",
+                    (System.nanoTime() - start) / 2_000_000_000.0, bytes / 2000);
         }
-        long bytes = threads.getThreadAllocatedBytes(thread) - allocated;
-        check(bytes < 2_000_000, "idle checks must not copy or project all document JSON: " + bytes + " bytes");
-        System.out.printf(java.util.Locale.ROOT, "Editor playtest snapshot (1000 nodes): %.6f ms, %d bytes per idle check%n",
-                (System.nanoTime() - start) / 2_000_000_000.0, bytes / 2000);
         document.edit("Change wording", root -> root.getAsJsonObject("nodes").getAsJsonObject("node_0").getAsJsonArray("lines").set(0, new com.google.gson.JsonPrimitive("Updated")));
         check(!snapshot.current(workspace, false) && snapshot.current(workspace, true), "wording edits invalidate content while retaining live logic");
         document.edit("Change logic", root -> root.getAsJsonObject("nodes").getAsJsonObject("node_0").addProperty("next", "node_2"));
