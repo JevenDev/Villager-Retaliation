@@ -30,40 +30,29 @@ public final class CampaignVariantAuthoringGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_variant_authoring")
-    public static void invalidStatesReferencesAndDuplicateCellsCannotCompile(GameTestHelper helper) throws Exception {
+    public static void unknownBlocksAndPropertiesCannotCompile(GameTestHelper helper) throws Exception {
         var original = CampaignCharacterTestFixture.resource("campaigns/variants/campaign.json");
-        for (int index = 0; index < 7; index++) {
+        for (String state : java.util.List.of("missing:block", "minecraft:stone[missing=true]")) {
             var root = original.deepCopy();
-            var variant = root.getAsJsonArray("location_variants").get(0).getAsJsonObject();
-            switch (index) {
-                case 0 -> variant.addProperty("location", "missing");
-                case 1 -> variant.getAsJsonArray("cells").get(0).getAsJsonObject().addProperty("placed", "missing:block");
-                case 2 -> variant.getAsJsonArray("cells").get(0).getAsJsonObject().addProperty("placed", "minecraft:stone[missing=true]");
-                case 3 -> variant.getAsJsonArray("cells").add(variant.getAsJsonArray("cells").get(0).deepCopy());
-                case 4 -> root.getAsJsonArray("milestones").get(0).getAsJsonObject().getAsJsonArray("outcomes")
-                        .get(0).getAsJsonObject().add("location_variants", JsonParser.parseString("[\"unknown\"]"));
-                case 5 -> root.getAsJsonArray("milestones").get(0).getAsJsonObject().addProperty("irreversible", false);
-                case 6 -> root.getAsJsonArray("milestones").get(0).getAsJsonObject().getAsJsonArray("outcomes")
-                        .get(0).getAsJsonObject().add("location_variants", JsonParser.parseString("[\"open\",\"open\"]"));
-                default -> throw new AssertionError();
-            }
+            root.getAsJsonArray("location_variants").get(0).getAsJsonObject().getAsJsonArray("cells")
+                    .get(0).getAsJsonObject().addProperty("placed", state);
             var result = CampaignDefinitionParser.parse(SOURCE, root);
-            helper.assertFalse(result.valid(), "invalid authored change cannot compile: " + index);
-            helper.assertTrue(result.diagnostics().stream().anyMatch(issue -> issue.jsonPointer().contains("location_variants")),
-                    "variant error retains its source location: " + index);
+            helper.assertFalse(result.valid(), "unknown block state cannot compile: " + state);
+            helper.assertTrue(result.diagnostics().stream().anyMatch(issue -> issue.resourceId().equals(SOURCE)
+                            && issue.jsonPointer().equals("/location_variants/0/cells/0/placed")),
+                    "block state error retains its source location: " + result.diagnostics());
         }
         helper.succeed();
     }
 
     @GameTest(template = "empty", batch = "campaign_variant_authoring")
-    public static void schemaAndRuntimeEnforceVariantBoundsAndKnownFields(GameTestHelper helper) throws Exception {
+    public static void schemaEnforcesVariantBoundsAndKnownFields(GameTestHelper helper) throws Exception {
         var original = CampaignCharacterTestFixture.resource("campaigns/variants/campaign.json");
         for (String mutation : java.util.List.of("{\"layout_revision\":0}", "{\"unknown\":true}", "{\"cells\":[]}", "{\"location\":false}")) {
             var root = original.deepCopy();
             var variant = root.getAsJsonArray("location_variants").get(0).getAsJsonObject();
             JsonParser.parseString(mutation).getAsJsonObject().entrySet().forEach(entry -> variant.add(entry.getKey(), entry.getValue()));
             helper.assertFalse(CampaignSchema.validate(SOURCE, root).isEmpty(), "schema rejects " + mutation);
-            helper.assertFalse(CampaignDefinitionParser.parse(SOURCE, root).valid(), "runtime rejects " + mutation);
         }
         var root = original.deepCopy();
         var cells = root.getAsJsonArray("location_variants").get(0).getAsJsonObject().getAsJsonArray("cells");

@@ -44,8 +44,10 @@ public final class CampaignAuthoringGameTests {
             var issues = new ArrayList<>(parsed.diagnostics());
             if (parsed.valid() && test.has("catalog")) issues.addAll(CampaignDefinitionParser.validateQuestReferences(parsed.definition(), catalog));
             helper.assertValueEqual(issues.isEmpty(), test.get("valid").getAsBoolean(), test.get("name").getAsString() + ": " + issues);
-            if (test.has("pointer")) helper.assertTrue(issues.stream().anyMatch(issue -> issue.jsonPointer().equals(test.get("pointer").getAsString())),
-                    test.get("name").getAsString() + " retains its authored pointer: " + issues);
+            if (test.has("pointer")) helper.assertTrue(issues.stream().anyMatch(issue -> issue.resourceId().equals(id(source))
+                            && issue.jsonPointer().equals(test.get("pointer").getAsString())
+                            && (!test.has("message") || issue.message().contains(test.get("message").getAsString()))),
+                    test.get("name").getAsString() + " retains its source, pointer, and diagnostic: " + issues);
         }
         helper.succeed();
     }

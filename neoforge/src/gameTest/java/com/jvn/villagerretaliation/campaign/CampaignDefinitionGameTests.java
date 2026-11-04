@@ -83,18 +83,6 @@ public final class CampaignDefinitionGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_definitions")
-    public static void chapterAndMilestoneDependenciesRejectCycles(GameTestHelper helper) {
-        var raw = fixture();
-        raw.getAsJsonArray("chapters").get(0).getAsJsonObject().add("prerequisites",
-                JsonParser.parseString("[{\"chapter\":\"aftermath\"}]"));
-        reject(helper, raw, "/chapters/0/prerequisites", "cycle");
-        raw.getAsJsonArray("chapters").get(0).getAsJsonObject().add("prerequisites",
-                JsonParser.parseString("[{\"milestone\":\"dragon\"}]"));
-        reject(helper, raw, "/chapters/0/prerequisites", "cycle");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "campaign_definitions")
     public static void prerequisiteTargetsAndOutcomesMustExist(GameTestHelper helper) {
         var raw = fixture();
         var requirement = raw.getAsJsonArray("chapters").get(1).getAsJsonObject()
@@ -114,32 +102,6 @@ public final class CampaignDefinitionGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_definitions")
-    public static void questReferencesMustUseDeclaredBundles(GameTestHelper helper) {
-        var raw = fixture();
-        milestone(raw).getAsJsonObject("catch_up").addProperty("quest", "test:undeclared");
-        reject(helper, raw, "/milestones/0/catch_up/quest", "quest_bundles");
-        raw = fixture();
-        milestone(raw).addProperty("quest", "test:catch_up");
-        reject(helper, raw, "/milestones/0/quest", "belong to its chapter");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "campaign_definitions")
-    public static void duplicateIdsAndReferencesDoNotOverwriteDefinitions(GameTestHelper helper) {
-        var raw = fixture();
-        raw.getAsJsonArray("chapters").add(raw.getAsJsonArray("chapters").get(0).deepCopy());
-        reject(helper, raw, "/chapters/2/id", "duplicate");
-        raw = fixture();
-        var outcomes = milestone(raw).getAsJsonArray("outcomes");
-        outcomes.add(outcomes.get(0).deepCopy());
-        reject(helper, raw, "/milestones/0/outcomes/2/id", "duplicate");
-        raw = fixture();
-        raw.getAsJsonArray("quest_bundles").add("test:journey");
-        reject(helper, raw, "/quest_bundles/2", "duplicate");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "campaign_definitions")
     public static void localizationKeysRemainCampaignOwned(GameTestHelper helper) {
         var raw = fixture();
         milestone(raw).getAsJsonArray("outcomes").get(0).getAsJsonObject().addProperty("title_key", "other_campaign.title");
@@ -148,7 +110,7 @@ public final class CampaignDefinitionGameTests {
     }
 
     @GameTest(template = "empty", batch = "campaign_definitions")
-    public static void schemaAndRuntimeRejectUnsupportedShapesAtTheSamePointer(GameTestHelper helper) {
+    public static void schemaRejectsUnsupportedShapesAtAuthoredPointers(GameTestHelper helper) {
         var raw = fixture();
         raw.addProperty("unsupported", true);
         rejectShape(helper, raw, "/unsupported");
@@ -174,6 +136,17 @@ public final class CampaignDefinitionGameTests {
         raw = fixture();
         raw.getAsJsonArray("facts").get(0).getAsJsonObject().addProperty("scope", "party");
         rejectShape(helper, raw, "/facts/0/scope");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "campaign_definitions")
+    public static void schemaFailuresReachTheParserUnchanged(GameTestHelper helper) {
+        var raw = fixture();
+        raw.addProperty("unsupported", true);
+        var diagnostics = CampaignSchema.validate(SOURCE, raw);
+        var parsed = CampaignDefinitionParser.parse(SOURCE, raw);
+        helper.assertFalse(parsed.valid(), "schema failures prevent compilation");
+        helper.assertValueEqual(parsed.diagnostics(), diagnostics, "the parser forwards schema diagnostics unchanged");
         helper.succeed();
     }
 
@@ -352,7 +325,6 @@ public final class CampaignDefinitionGameTests {
     private static void rejectShape(GameTestHelper helper, JsonObject raw, String pointer) {
         helper.assertTrue(CampaignSchema.validate(SOURCE, raw).stream().anyMatch(value -> value.jsonPointer().equals(pointer)),
                 "schema rejects " + pointer);
-        reject(helper, raw, pointer, "");
     }
 
     private static void reject(GameTestHelper helper, JsonObject raw, String pointer, String message) {

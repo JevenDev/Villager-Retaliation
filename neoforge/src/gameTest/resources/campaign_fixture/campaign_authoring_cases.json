@@ -67,6 +67,7 @@
   },
   {
     "name": "duplicate bundles",
+    "message": "duplicate",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/quest_bundles/1",
@@ -82,6 +83,7 @@
   },
   {
     "name": "duplicate chapter ids",
+    "message": "duplicate",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/chapters/1/id",
@@ -106,6 +108,7 @@
   },
   {
     "name": "duplicate outcome ids",
+    "message": "duplicate",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/milestones/0/outcomes/1/id",
@@ -154,6 +157,7 @@
   },
   {
     "name": "milestone belongs to its chapter",
+    "message": "belong to its chapter",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/milestones/0/quest",
@@ -182,6 +186,7 @@
   },
   {
     "name": "catch-up uses declared bundles",
+    "message": "quest_bundles",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/milestones/0/catch_up/quest",
@@ -194,6 +199,7 @@
   },
   {
     "name": "chapter prerequisite cycle",
+    "message": "cycle",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/chapters/0/prerequisites",
@@ -210,6 +216,7 @@
   },
   {
     "name": "milestone prerequisite cycle",
+    "message": "cycle",
     "fixture": "reconciliation",
     "valid": false,
     "pointer": "/chapters/0/prerequisites",
